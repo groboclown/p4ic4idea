@@ -1,7 +1,7 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.2.19</version>
+    <version>0.3.0</version>
     <idea-version since-build="IC-140.2110" until-build="IC-141"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[

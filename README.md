@@ -1,9 +1,37 @@
 # IDEA Community VCS Integration for Perforce
 
-This is the location for the Perforce VCS integration into the IntelliJ IDEA Community Edition IDE.
+This is the location for the Perforce VCS integration into the [IntelliJ IDEA Community Edition IDE](https://www.jetbrains.com/idea/).
 
 **Currently Supported IDEA versions: 14.1**
 
+
+# Getting Started
+
+1. Install the plugin by one of these methods:
+    * From within IDEA
+        1. Open the IDE settings dialog ( **File** -> **Settings...** ).
+        1. Navigate to the **Plugins** panel.
+        1. Click the **Browse repositories...** button.
+        1. Select the **Perforce IDEA Community Integration** plugin.
+    * Download and install from disk:
+        1. Download from the
+           [Jetbrains plugin center](http://plugins.jetbrains.com/plugin/7685)
+           or from the [Github releases](https://github.com/groboclown/p4ic4idea/releases/latest)
+        1. In IDEA, open the IDE settings dialog ( **File** -> **Settings...** ).
+        1. Navigate to the Plugins panel.
+        1. Click the **Install plugin from disk...** button.
+        1. Navigate to the downloaded zip file.
+1. In IDEA, select the VCS root directory managed by Perforce.
+    1. Open the IDE settings dialog ( **File** -> **Settings...** ).
+    1. Select the **Version Control** panel.
+    1. Select the root directory from the list (or add a new one), and choose
+       "Perforce" from the drop-down selection.
+1. Choose the Perforce connection method.
+    1. From either the **Version Control** panel (select the pencil
+       icon with the Perforce root selected), or the Perforce panel
+       under the Version Control.
+    1. Select the connection type and the parameters,
+       and click **OK**.
 
 
 # Status and Todo

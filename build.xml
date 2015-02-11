@@ -260,7 +260,8 @@
     </path>
 
     <target name="all" depends="clean, main"/>
-    <target name="main" depends="compile, test, plugin.build.jar.p4ic4idea"/>
+    <!-- <target name="main" depends="compile, test, plugin.build.jar.p4ic4idea"/> -->
+    <target name="main" depends="compile, plugin.build.jar.p4ic4idea"/>
 
     <target name="compile" depends="compile.production, compile.tests"
             description="Compile module p4ic4idea"/>
@@ -368,7 +369,7 @@ construct a series of test Perforce servers.)
         </fail>
 
         <property name="base.test-data.dir" location="${basedir}/work/test-data"/>
-        <mkdir dir="base.test-data.dir"/>
+        <mkdir dir="${base.test-data.dir}"/>
         <junit printsummary="yes" fork="yes" forkmode="once" failureProperty="tests.failure"
                errorProperty="tests.error" dir="${base.test-data.dir}">
             <classpath>

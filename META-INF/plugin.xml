@@ -2,7 +2,7 @@
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
     <version>0.3.0</version>
-    <idea-version since-build="IC-140.2110" until-build="IC-141"/>
+    <idea-version since-build="IC-140.2110"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>

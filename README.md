@@ -2,7 +2,7 @@
 
 This is the location for the Perforce VCS integration into the IntelliJ IDEA Community Edition IDE.
 
-**Currently Supported IDEA versions: 14.2**
+**Currently Supported IDEA versions: 14.1**
 
 
 

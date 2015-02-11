@@ -1,0 +1,8 @@
+project.jdk.home=/opt/jdk
+project.jdk.bin=${project.jdk.home}/bin
+idea.home=/opt/JetBrains/IntelliJ IDEA Community Edition
+jdk.home.idea_ic=${idea.home}
+#jdk.bin.idea_ic=${idea.home}/jre/bin
+javac2.instrumentation.includeJavaRuntime=false
+p4d=/usr/local/bin/p4d-2.6_x64-2014.2.962050
+

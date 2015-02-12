@@ -442,11 +442,6 @@ public class P4Exec {
     }
 
 
-    private static final byte[] MATCH_START = new byte[] {
-            '-', '-', '-', ' ', 'l', 'a', 'p', 's', 'e', ' '
-    };
-
-
     @NotNull
     public byte[] loadFile(@NotNull Project project, @NotNull final IFileSpec spec)
             throws VcsException, CancellationException, IOException {
@@ -454,53 +449,6 @@ public class P4Exec {
         return runWithClient(project, new WithClient<byte[]>() {
             @Override
             public byte[] run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
-                // The server can return more data than it should.
-                // This is in the form of extra lines like "--- lapse 0.34s"
-                // Unfortunately, fetching the file size from the server doesn't work on Windows,
-                // because the server-stored text files save the new lines as '\n', but are received on
-                // windows as '\r\n', which alters the expected size (there can also be inline
-                // expansion of variables).
-                // Therefore, we have to scan backwards through the bytes until we find the
-                // first of the extra information, which is a "--- lapse " line.  Note, if we scan
-                // forward, then we could falsely catch a file that intentionally contains that stuff.
-
-                /* something like this, although the db. order can change
---- lapse .112s
---- usage 7+31us 0+0io 0+0net 2600k 0pf
---- rpc msgs/size in+out 2+4/0mb+0mb himarks 318788/7492 snd/rcv .000s/.002s
---- db.user
----   pages in+out+cached 3+0+2
----   locks read/write 1/0 rows get+pos+scan put+del 1+0+0 0+0
----   total lock wait+held read/write 0ms+1ms/0ms+0ms
---- db.group
----   pages in+out+cached 3+0+2
----   locks read/write 1/0 rows get+pos+scan put+del 0+1+1 0+0
----   total lock wait+held read/write 1ms+1ms/0ms+0ms
---- db.domain
----   pages in+out+cached 3+0+2
----   locks read/write 1/0 rows get+pos+scan put+del 1+0+0 0+0
----   total lock wait+held read/write 0ms+1ms/0ms+0ms
---- db.view
----   pages in+out+cached 3+0+2
----   locks read/write 1/0 rows get+pos+scan put+del 0+1+2 0+0
----   total lock wait+held read/write 1ms+0ms/0ms+0ms
---- db.revdx
----   pages in+out+cached 3+0+2
----   locks read/write 1/0 rows get+pos+scan put+del 0+1+1 0+0
----   total lock wait+held read/write 0ms+4ms/0ms+0ms
---- db.revhx
----   pages in+out+cached 3+0+2
----   locks read/write 1/0 rows get+pos+scan put+del 0+1+2 0+0
----   total lock wait+held read/write 0ms+2ms/0ms+0ms
---- db.trigger
----   pages in+out+cached 3+0+2
----   locks read/write 1/0 rows get+pos+scan put+del 0+1+1 0+0
---- db.protect
----   pages in+out+cached 3+0+2
----   locks read/write 1/0 rows get+pos+scan put+del 0+1+1 0+0
----   total lock wait+held read/write 0ms+1ms/0ms+0ms
-                 */
-
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 GetFileContentsOptions fileContentsOptions = new GetFileContentsOptions(false, true);
                 // setting "don't annotate files" to true means we ignore the revision
@@ -519,27 +467,6 @@ public class P4Exec {
                     inp.close();
                 }
                 byte[] ret = baos.toByteArray();
-
-                /* Old code to work around #12.  Will be removed once
-                the fix is verified.
-
-                outerMatch:
-                for (int pos = ret.length; --pos >= MATCH_START.length;) {
-                    int pos2 = pos;
-                    for (int mpos = MATCH_START.length; --mpos >= 0;) {
-                        if (ret[pos2--] != MATCH_START[mpos]) {
-                            continue outerMatch;
-                        }
-                    }
-                    // complete match
-                    byte[] r2 = new byte[pos2];
-                    System.arraycopy(ret, 0, r2, 0, pos2);
-                    return r2;
-                }
-                */
-
-                // no match
-                LOG.info("No ending db statistics found in file " + spec);
                 return ret;
             }
         });

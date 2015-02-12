@@ -98,9 +98,19 @@ public abstract class ConnectionHandler {
         ret.setProperty(PropertyDefs.PROG_VERSION_KEY, "1");
 
         ret.setProperty(PropertyDefs.IGNORE_FILE_NAME_KEY, P4Config.P4_IGNORE_FILE);
-        ret.setProperty(PropertyDefs.ENABLE_PROGRESS, "1");
-        ret.setProperty(PropertyDefs.ENABLE_TRACKING, "1");
+
+        //ret.setProperty(PropertyDefs.ENABLE_PROGRESS, "1");
+
+        // This is the -ZTrack option, which spits out a bunch of
+        // table lock commands:
+        // http://answers.perforce.com/articles/KB/3090/?l=en_US&fs=RelatedArticle
+        // It causes some commands, like getFileContents,
+        // to spew out a bunch of stuff that we don't want.
+        // See issue #12.
+        //ret.setProperty(PropertyDefs.ENABLE_TRACKING, "1");
+
         ret.setProperty(PropertyDefs.WRITE_IN_PLACE_KEY, "1");
+
         //ret.setProperty(PropertyDefs.AUTO_CONNECT_KEY, "0");
         //ret.setProperty(PropertyDefs.AUTO_LOGIN_KEY, "0");
         //ret.setProperty(PropertyDefs.ENABLE_PROGRESS, "0");

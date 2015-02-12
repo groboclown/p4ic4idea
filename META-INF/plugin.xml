@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.3.0</version>
+    <version>0.3.0.1</version>
     <idea-version since-build="IC-140.2110"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.3.1</em> Bug fixes
+                <ol>
+                    <li>Improve Perforce connection performance (bug#12).</li>
+                </ol>
+            </li>
             <li><em>0.3.0</em> Initial public release.</li>
         </ol>
     ]]></change-notes>

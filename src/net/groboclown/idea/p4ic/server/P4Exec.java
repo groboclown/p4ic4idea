@@ -520,6 +520,9 @@ public class P4Exec {
                 }
                 byte[] ret = baos.toByteArray();
 
+                /* Old code to work around #12.  Will be removed once
+                the fix is verified.
+
                 outerMatch:
                 for (int pos = ret.length; --pos >= MATCH_START.length;) {
                     int pos2 = pos;
@@ -533,6 +536,7 @@ public class P4Exec {
                     System.arraycopy(ret, 0, r2, 0, pos2);
                     return r2;
                 }
+                */
 
                 // no match
                 LOG.info("No ending db statistics found in file " + spec);

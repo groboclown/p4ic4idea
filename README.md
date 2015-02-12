@@ -20,7 +20,20 @@ This is the location for the Perforce VCS integration into the [IntelliJ IDEA Co
         1. In IDEA, open the IDE settings dialog ( **File** -> **Settings...** ).
         1. Navigate to the Plugins panel.
         1. Click the **Install plugin from disk...** button.
-        1. Navigate to the downloaded zip file.
+        1. Select the downloaded zip file.
+    * Build it yourself:
+        1. You'll need Ant 1.8 or better, a JDK 1.7, a version of
+           IntelliJ IDEA v 14.1 or better, and the plugin code from
+           GitHub on your local computer. You'll need a copy of
+           p4d (or p4s for Windows) to run the tests.
+        1. Copy the `local.properties.template` to `local.properties`
+           in the source root directory, and edit the values to
+           match your configuration.
+        1. Run `ant all` from the source root directory.
+        1. In IDEA, open the IDE settings dialog ( **File** -> **Settings...** ).
+        1. Navigate to the Plugins panel.
+        1. Click the **Install plugin from disk...** button.
+        1. Select `p4ic4idea.zip` from the source root directory.
 1. In IDEA, select the VCS root directory managed by Perforce.
     1. Open the IDE settings dialog ( **File** -> **Settings...** ).
     1. Select the **Version Control** panel.

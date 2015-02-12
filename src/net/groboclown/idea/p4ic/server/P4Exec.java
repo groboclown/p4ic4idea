@@ -14,7 +14,6 @@
 package net.groboclown.idea.p4ic.server;
 
 import com.intellij.openapi.diagnostic.Logger;
-
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.openapi.vcs.VcsException;
@@ -27,16 +26,11 @@ import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.file.*;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.impl.generic.core.Changelist;
-import com.perforce.p4java.impl.generic.core.InputMapper;
 import com.perforce.p4java.impl.generic.core.file.FilePath;
-import com.perforce.p4java.impl.mapbased.server.Parameters;
-import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.option.server.ChangelistOptions;
 import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
 import com.perforce.p4java.option.server.GetFileContentsOptions;
-import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.server.callback.ICommandCallback;
@@ -153,7 +147,7 @@ public class P4Exec {
         return runWithClient(project, new WithClient<IChangelist>() {
             @Override
             public IChangelist run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
-                IChangelist cl = getChangelist(server, id);
+                IChangelist cl = server.getChangelist(id);
                 if (id != cl.getId()) {
                     LOG.warn("Perforce Java API error: returned changelist with id " + cl.getId() + " when requested " + id);
                     //throw new P4Exception("Perforce Java API error: returned changelist with id " + cl.getId() + " when requested " + id);
@@ -316,7 +310,7 @@ public class P4Exec {
                 // invocation, we must perform all the changelist updates within this
                 // call, and we can't go outside this method.
 
-                IChangelist changelist = getChangelist(server, changelistId);
+                IChangelist changelist = server.getChangelist(changelistId);
                 if (changelist != null && changelist.getStatus() == ChangelistStatus.PENDING) {
                     changelist.setDescription(description);
                     changelist.update();
@@ -354,23 +348,23 @@ public class P4Exec {
 
                 // This version doesn't do the right thing.  It incorrectly
                 // returns a changelist with a -1 id.
-                //IChangelist ret = client.createChangelist(newChange);
-                int newId = createChangelist(server, client, newChange);
-                if (newId <= 0) {
-                    throw new P4Exception("P4JavaAPI returned a changelist with an invalid changelist id: " + newId);
-                }
-                newChange.setId(newId);
-                newChange.setServer(null);
-                newChange.setServerImpl(null);
-                newChange.setStatus(ChangelistStatus.PENDING);
-                if (newChange.getId() <= 0) {
+                IChangelist ret = client.createChangelist(newChange);
+                //int newId = client.createChangelist(newChange);
+                //if (newId <= 0) {
+                //    throw new P4Exception("P4JavaAPI returned a changelist with an invalid changelist id: " + newId);
+                //}
+                //newChange.setId(newId);
+                //newChange.setServer(null);
+                //newChange.setServerImpl(null);
+                //newChange.setStatus(ChangelistStatus.PENDING);
+                if (ret.getId() <= 0) {
                     throw new P4Exception("P4JavaAPI returned a changelist with an invalid changelist id: " + newChange.getId());
                 }
 
                 // server cannot leave this method
-                newChange.setServer(null);
+                ret.setServer(null);
 
-                return newChange;
+                return ret;
             }
         });
     }
@@ -397,7 +391,7 @@ public class P4Exec {
         return runWithClient(project, new WithClient<List<IFileSpec>>() {
             @Override
             public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
-                IChangelist cl = getChangelist(server, id);
+                IChangelist cl = server.getChangelist(id);
                 if (cl == null) {
                     return null;
                 }
@@ -985,7 +979,7 @@ public class P4Exec {
     }
 
 
-    /**
+    /*
      * A re-implementation of the create changelist.  For some reason,
      * the server.getChangelist() command can not load the data correctly,
      * so we need to change this to make it return the correct ID.
@@ -997,8 +991,8 @@ public class P4Exec {
      * @throws ConnectionException
      * @throws RequestException
      * @throws AccessException
-     */
     private static int createChangelist(IOptionsServer oServer, IClient client, IChangelist newChangelist) throws ConnectionException, RequestException, AccessException {
+
         LOG.info("creating changelist");
         if (client.getName() == null) {
             throw new NullPointerError("Null client name in newChangelist method call");
@@ -1063,9 +1057,10 @@ public class P4Exec {
 
         throw new IllegalStateException("Could not find new changelist ID");
     }
+        */
 
 
-    /**
+    /*
      * A reimplementation of IOptionsServer.getChangelist(int), which just
      * doesn't work - the Changelist constructor doesn't perform the correct
      * loading.  It looks like the code receives multiple lines from the
@@ -1076,7 +1071,6 @@ public class P4Exec {
      * @param oServer server connection
      * @param id changelist id
      * @return changelist with that ID, or null if it doesn't exist.
-     */
     private static IChangelist getChangelist(IOptionsServer oServer, int id) throws P4JavaException {
         Server server;
         if (oServer instanceof P4ServerProxy) {
@@ -1109,5 +1103,7 @@ public class P4Exec {
         }
         return null;
     }
+
+        */
 
 }

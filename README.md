@@ -307,10 +307,6 @@ has special usage.
 
 # P4Java API bugs
 
-* Creating a new changelist, or fetching a single changelist, both
-  incorrectly reload the Changelist object from the map iterator
-  when the map is empty, rather than on the first pass when it actually
-  contains data.  See P4Exec for the work-around.
 * p4 submit -i crashes Windows servers, most likely because the incoming
   submit map is wrong.  Although I believe this also happens when this is
   changed to pass everything as arguments rather than the input map.
@@ -319,14 +315,6 @@ has special usage.
 * Looks like passing the password in the property doesn't work right.
   It still needs a "login", but at least we can not store the login
   in the ticket file.
-* Loading the file contents can return extra information regarding the
-  Perforce server performance running the operation.  -In order to combat this,
-  the command performs an extra step to read the extended file status
-  to pull in the actual file size, then trim down the returned file
-  to the actual size.-  The file is scanned backwards to find the
-  start of the stats (size doesn't work due to server stored size vs.
-  client download size differences; think -k and line ending changes).
-  his needs to be monitored to make sure there isn't too much being trimmed.
 * p4java API can flood the temp directory with "p4j\*.tmp" files.
   The plugin has a watch-dog thread that cleans these up
   periodically.

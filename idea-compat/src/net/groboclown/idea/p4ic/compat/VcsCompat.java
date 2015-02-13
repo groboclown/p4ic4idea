@@ -15,7 +15,7 @@
 package net.groboclown.idea.p4ic.compat;
 
 import com.intellij.openapi.project.Project;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class VcsCompat {
     public static final VcsCompat getInstance() {
@@ -23,5 +23,5 @@ public abstract class VcsCompat {
     }
 
 
-    public abstract void setupPlugin(@NotNull Project project);
+    public abstract void setupPlugin(@Nullable Project project);
 }

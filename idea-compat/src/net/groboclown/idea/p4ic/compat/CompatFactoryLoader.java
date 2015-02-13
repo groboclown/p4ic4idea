@@ -149,8 +149,12 @@ public class CompatFactoryLoader {
     }
 
     private static int compareIdeaVersionNumbers(String first, String second) {
+        // Version can be "IC-version.number" (IC meaning the Community edition)
         if (first.indexOf('-') > 0) {
             first = first.substring(first.indexOf('-') + 1);
+        }
+        if (second.indexOf('-') > 0) {
+            second = second.substring(second.indexOf('-') + 1);
         }
         try {
             final int pos1 = first.indexOf('.');

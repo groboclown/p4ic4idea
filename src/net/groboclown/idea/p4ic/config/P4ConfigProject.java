@@ -15,6 +15,7 @@ package net.groboclown.idea.p4ic.config;
 
 import com.intellij.openapi.components.*;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -241,6 +242,22 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
         public String toString() {
             return config.getServiceName() + " " + clientName;
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null || ! obj.getClass().equals(ClientImpl.class)) {
+                return false;
+            }
+            ClientImpl that = (ClientImpl) obj;
+            return Comparing.equal(config, that.config) &&
+                    Comparing.equal(clientName, that.clientName);
+        }
+
+        @Override
+        public int hashCode() {
+            return config.hashCode() + clientName.hashCode();
+        }
+
 
         private synchronized void setupRoots() throws P4InvalidConfigException {
             if (roots != null || status == null) {

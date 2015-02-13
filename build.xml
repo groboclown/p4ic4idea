@@ -228,12 +228,14 @@
         <path refid="${module.jdk.classpath.p4ic4idea}"/>
         <pathelement location="${p4ic4idea.output.dir}"/>
         <pathelement location="lib/p4java-2014.1.965322.jar"/>
+        <pathelement location="lib/mockito-all-1.9.5.jar"/>
     </path>
 
     <path id="p4ic4idea.runtime.module.classpath">
         <pathelement location="${p4ic4idea.testoutput.dir}"/>
         <pathelement location="${p4ic4idea.output.dir}"/>
         <pathelement location="lib/p4java-2014.1.965322.jar"/>
+        <pathelement location="lib/mockito-all-1.9.5.jar"/>
     </path>
 
 
@@ -304,7 +306,7 @@
                 executable="${module.jdk.bin.p4ic4idea}/javac" includeantruntime="false">
             <compilerarg line="${compiler.args.p4ic4idea}"/>
             <bootclasspath refid="p4ic4idea.module.bootclasspath"/>
-            <classpath refid="p4ic4idea.module.classpath"/>
+            <classpath refid="p4ic4idea.runtime.module.classpath"/>
             <src refid="p4ic4idea.module.test.sourcepath"/>
             <patternset refid="excluded.from.compilation.p4ic4idea"/>
         </javac2>
@@ -374,7 +376,7 @@ construct a series of test Perforce servers.)
                errorProperty="tests.error" dir="${base.test-data.dir}">
             <classpath>
                 <path location="${p4ic4idea.testoutput.dir}"/>
-                <path refid="p4ic4idea.module.classpath"/>
+                <path refid="p4ic4idea.runtime.module.classpath"/>
             </classpath>
 
             <!-- Add the plain output to allow for step-by-step reporting of tests -->

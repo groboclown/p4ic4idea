@@ -13,3 +13,4 @@ p4ic4idea.zip
 # specific user properties
 local.properties
 *.iml
+.idea/

@@ -8,9 +8,9 @@ hs_err_pid*
 
 # compiled output
 work/
+out/
 p4ic4idea.zip
 
 # specific user properties
 local.properties
-*.iml
 .idea/

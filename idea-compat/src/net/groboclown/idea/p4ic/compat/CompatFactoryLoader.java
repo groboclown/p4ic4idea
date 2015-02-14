@@ -69,11 +69,16 @@ public class CompatFactoryLoader {
                                                    ClassLoader[] loaders) {
         CompatFactory best = null;
         for (String className: classNames) {
+            boolean everFound = false;
             for (ClassLoader loader: loaders) {
                 CompatFactory factory = loadClass(className, loader);
+                everFound |= factory != null;
                 if (isCompatible(apiVersion, factory) && isBetterVersion(best, factory)) {
                     best = factory;
                 }
+            }
+            if (! everFound) {
+                LOG.warn("Could not load compatibility class " + className);
             }
         }
         return best;
@@ -93,7 +98,9 @@ public class CompatFactoryLoader {
             LOG.error("Not a CompatFactory: " + className);
             return null;
         } catch (Exception e) {
-            LOG.info("CompatFactory can't be loaded: " + className, e);
+            // These are fine - it probably means that the class loader
+            // was wrong.
+            LOG.debug("CompatFactory can't be loaded: " + className, e);
             return null;
         } catch (NoClassDefFoundError e) {
             LOG.info("CompatFactory can't be loaded: " + className, e);

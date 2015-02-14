@@ -14,14 +14,20 @@
 
 package net.groboclown.idea.p4ic.compat;
 
+import org.jetbrains.annotations.NotNull;
+
 public abstract class CompatManager {
-    public static final CompatManager getInstance() {
+    @NotNull
+    public static CompatManager getInstance() {
         return CompatFactoryLoader.getInstance();
     }
 
+    @NotNull
     public abstract UICompat getUICompat();
 
+    @NotNull
     public abstract VcsCompat getVcsCompat();
 
+    @NotNull
     public abstract HistoryCompat getHistoryCompat();
 }

@@ -18,22 +18,26 @@ import net.groboclown.idea.p4ic.compat.CompatManager;
 import net.groboclown.idea.p4ic.compat.HistoryCompat;
 import net.groboclown.idea.p4ic.compat.UICompat;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
+import org.jetbrains.annotations.NotNull;
 
 public class CompatManager135 extends CompatManager {
     private final UICompat135 uiCompat = new UICompat135();
     private final VcsCompat135 vcsCompat = new VcsCompat135();
     private final HistoryCompat135 historyCompat = new HistoryCompat135();
 
+    @NotNull
     @Override
     public UICompat getUICompat() {
         return uiCompat;
     }
 
+    @NotNull
     @Override
     public VcsCompat getVcsCompat() {
         return vcsCompat;
     }
 
+    @NotNull
     @Override
     public HistoryCompat getHistoryCompat() {
         return historyCompat;

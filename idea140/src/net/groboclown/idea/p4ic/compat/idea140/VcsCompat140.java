@@ -18,11 +18,11 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.vcs.log.VcsUserRegistry;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 public class VcsCompat140 extends VcsCompat {
     @Override
-    public void setupPlugin(@Nullable Project project) {
+    public void setupPlugin(@NotNull Project project) {
         ServiceManager.getService(project, VcsUserRegistry.class); // make sure to read the registry before opening commit dialog
     }
 }

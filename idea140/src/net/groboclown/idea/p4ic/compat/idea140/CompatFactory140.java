@@ -16,18 +16,22 @@ package net.groboclown.idea.p4ic.compat.idea140;
 
 import net.groboclown.idea.p4ic.compat.CompatFactory;
 import net.groboclown.idea.p4ic.compat.CompatManager;
+import org.jetbrains.annotations.NotNull;
 
 public class CompatFactory140 implements CompatFactory {
+    @NotNull
     @Override
     public String getMinCompatibleApiVersion() {
         return "140.2110";
     }
 
+    @NotNull
     @Override
     public String getMaxCompatibleApiVersion() {
         return "141";
     }
 
+    @NotNull
     @Override
     public CompatManager createCompatManager() throws IllegalStateException {
         return new CompatManager140();

@@ -202,7 +202,9 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
     }
 
     public void deactivate() {
-        if (isDisposed()) return;
+        if (isDisposed()) {
+            return;
+        }
         StatusBar statusBar = WindowManager.getInstance().getStatusBar(project);
         if (statusBar != null) {
             statusBar.removeWidget(ID());

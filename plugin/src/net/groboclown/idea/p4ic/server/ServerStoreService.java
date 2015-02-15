@@ -122,7 +122,7 @@ public class ServerStoreService implements ApplicationComponent {
         private final Object clientSync = new Object();
         private final ServerConfig config;
         private final Map<String, RawServerExecutor> clientExec = new HashMap<String, RawServerExecutor>();
-        private boolean onlineChanging;
+        private volatile boolean onlineChanging;
         private final List<SoftReference<Project>> referenceCounts = new ArrayList<SoftReference<Project>>();
 
         // we are online by default, until told otherwise
@@ -272,6 +272,7 @@ public class ServerStoreService implements ApplicationComponent {
             return isOnline;
         }
 
+
         @Override
         public void onReconnect() {
             Project someProject = getAnyProjectReference();
@@ -348,20 +349,21 @@ public class ServerStoreService implements ApplicationComponent {
 
         @Override
         public boolean onDisconnect() {
+            if (! isOnline) {
+                // user already decided to go offline.
+                return false;
+            }
+            if (onlineChanging) {
+                // Online mode already being adjusted.  Caller
+                // should not retry the connection.
+                return false;
+            }
+
             synchronized (changeSync) {
-                while (onlineChanging) {
-                    if (ApplicationManager.getApplication().isDispatchThread()) {
-                        // do not block the dispatch thread on this
-                        return false;
-                    }
-                    try {
-                        changeSync.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                if (! isOnline) {
-                    // user already decided to go offline.
+                // try check again now that we're in the synchronized
+                // block.  Note that onlineChanging is volatile, so
+                // this double-checking will work.
+                if (onlineChanging) {
                     return false;
                 }
                 onlineChanging = true;
@@ -373,6 +375,9 @@ public class ServerStoreService implements ApplicationComponent {
                                 OnServerDisconnectListener.TOPIC).onDisconnect(config, future);
                         boolean wentOffline;
                         try {
+                            // This is the potential for a deadlock.  This
+                            // is also why onlineChanging is checked outside
+                            // the synchronized block.
                             wentOffline = future.get() ==
                                     OnServerDisconnectListener.OnDisconnectAction.WORK_OFFLINE;
                         } catch (VcsException e) {
@@ -381,6 +386,8 @@ public class ServerStoreService implements ApplicationComponent {
 
                         if (wentOffline) {
                             wentOffline();
+                        } else {
+                            wentOnline();
                         }
                         return ! wentOffline;
                     }
@@ -415,6 +422,24 @@ public class ServerStoreService implements ApplicationComponent {
         }
 
 
+        private void wentOnline() {
+            synchronized (connectionSync) {
+                isOnline = true;
+                for (RawServerExecutor exec : clientExec.values()) {
+                    exec.wentOnline();
+                }
+                for (SoftReference<Project> sp : referenceCounts) {
+                    Project p = sp.get();
+                    if (p != null && !p.isDisposed()) {
+                        p.getMessageBus().
+                                syncPublisher(P4RemoteConnectionStateListener.TOPIC).
+                                onPerforceServerConnected(config);
+                    }
+                }
+            }
+        }
+
+
         // Must be run inside synchronized (changeSync), and inside
         // a try/catch block for setting the onlineChanging state.
         private void wentOffline() {
@@ -431,7 +456,6 @@ public class ServerStoreService implements ApplicationComponent {
                                 onPerforceServerDisconnected(config);
                     }
                 }
-                isOnline = false;
             }
         }
     }

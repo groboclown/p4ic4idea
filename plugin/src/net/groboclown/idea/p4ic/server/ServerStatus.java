@@ -25,18 +25,18 @@ public interface ServerStatus {
     void removeClient(@NotNull String clientName);
 
     @NotNull
-    public ServerConfig getConfig();
+    ServerConfig getConfig();
 
-    public boolean isWorkingOffline();
+    boolean isWorkingOffline();
 
-    public boolean isWorkingOnline();
+    boolean isWorkingOnline();
 
-    public void onReconnect();
+    void onReconnect();
 
     /**
      * @return true if the caller should retry to reconnect, false if not.
      */
-    public boolean onDisconnect();
+    boolean onDisconnect();
 
     void forceDisconnect();
 }

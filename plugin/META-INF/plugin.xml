@@ -1,7 +1,7 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.3.1</version>
+    <version>0.3.1.0</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
@@ -48,23 +48,6 @@
       operations, and put the changes into the currently selected
       IDEA changelist.
       </p>
-      <p><strong>Known Issues</strong></p>
-      <ul>
-        <li><em>Connection Settings</em> - trusted ticket files are not used.</li>
-        <li><em>Revert</em> - Reverting a moved file requires a project file refresh (or changelist refresh) to see it moved into the correct location.</li>
-        <li><em>Changelist</em> - A file which is edited but not checked out is not processed correctly; it always becomes checked out.</li>
-        <li><em>Move a file between changelists</em> - Move/add and move/delete files are both put into the moved changelist
-  when only one is moved.  However, this is only reflected in the UI when the changelist view is refreshed.</li>
-        <li><em>Add/Edit</em> - If a file was edited without telling VCS (edit during offline mode, etc),
-  then the server is reconnected and the file is added (Alt+Shift+A),
-  the file is not reflected in the correct changelist.  A refresh is needed
-  to show it.  The file cannot be reverted until the refresh happens.</li>
-        <li><em>Rename / Move</em> - Moving a file will correctly show the old/new files in the changelist, but
-  it can also incorrectly mark the directory and other files as "Modified without checkout".
-  Refreshing the changelist fixes this.</li>
-        <li><em>Errors</em> - Errors need to be localized</li>
-      </ul>
-      
     ]]></description>
     <depends>com.intellij.modules.vcs</depends>
     <vendor url="https://github.com/groboclown/p4ic4idea" email="groboclown@gmail.com">Groboclown</vendor>

@@ -47,16 +47,13 @@ public class CompatFactoryLoader {
 
 
     public static boolean isSupported() {
-        // FIXME debugging
-        return false;
-
-        //try {
-        //    // always non-null
-        //    getInstance();
-        //    return true;
-        //} catch (Exception e) {
-        //    return false;
-        //}
+        try {
+            // always non-null
+            getInstance();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
 

@@ -33,11 +33,13 @@ public class P4Bundle {
     }
 
     public static String message(
+            @NonNls
             @PropertyKey(resourceBundle = BUNDLE) String key, Object... params) {
         return CommonBundle.message(getBundle(), key, params);
     }
 
     public static String getString(
+            @NonNls
             @PropertyKey(resourceBundle = BUNDLE) String key) {
         return getBundle().getString(key);
     }

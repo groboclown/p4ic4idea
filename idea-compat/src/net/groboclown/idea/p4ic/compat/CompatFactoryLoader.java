@@ -45,6 +45,21 @@ public class CompatFactoryLoader {
         return manager;
     }
 
+
+    public static boolean isSupported() {
+        // FIXME debugging
+        return false;
+
+        //try {
+        //    // always non-null
+        //    getInstance();
+        //    return true;
+        //} catch (Exception e) {
+        //    return false;
+        //}
+    }
+
+
     /**
      * Given a set of {@link CompatFactory} class names, find the one
      * that is best compatible with the currently running IDE.

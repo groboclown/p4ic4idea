@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.extension;
 
+import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
@@ -45,6 +46,7 @@ import net.groboclown.idea.p4ic.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.changes.P4ChangeProvider;
 import net.groboclown.idea.p4ic.changes.P4ChangelistListener;
 import net.groboclown.idea.p4ic.changes.P4CommittedChangeListNew;
+import net.groboclown.idea.p4ic.compat.CompatFactoryLoader;
 import net.groboclown.idea.p4ic.compat.UICompat;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
 import net.groboclown.idea.p4ic.config.*;
@@ -178,7 +180,21 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeListNew> {
 
     @Override
     protected void start() throws VcsException {
-        // do nothing
+        if (!CompatFactoryLoader.isSupported()) {
+            ApplicationManager.getApplication().invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    Messages.showMessageDialog(myProject,
+                            P4Bundle.message("ide.not.supported.message",
+                                    ApplicationInfo.getInstance().getApiVersion(),
+                                    P4Bundle.getString("p4ic.name"),
+                                    P4Bundle.getString("p4ic.bug.url")),
+                            P4Bundle.message("ide.not.supported.title"),
+                            Messages.getErrorIcon());
+                }
+            });
+            throw new VcsException(P4Bundle.message("ide.not.supported.title"));
+        }
     }
 
     @Override

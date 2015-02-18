@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.changes;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangesViewRefresher;
@@ -26,4 +27,13 @@ public class P4ChangesViewRefresher implements ChangesViewRefresher {
         ChangeListManager.getInstance(project).ensureUpToDate(true);
     }
 
+
+    public static void refreshLater(@NotNull final Project project) {
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                ChangeListManager.getInstance(project).ensureUpToDate(true);
+            }
+        });
+    }
 }

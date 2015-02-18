@@ -33,7 +33,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class P4CommittedChangeListNew extends CommittedChangeListImpl implements VcsRevisionNumberAware {
+public class P4CommittedChangeList extends CommittedChangeListImpl implements VcsRevisionNumberAware {
 
     @NotNull
     private final P4Vcs myVcs;
@@ -42,7 +42,7 @@ public class P4CommittedChangeListNew extends CommittedChangeListImpl implements
     @NotNull
     private final Client myClient;
 
-    public P4CommittedChangeListNew(@NotNull P4Vcs vcs, @NotNull Client client, @NotNull IChangelist changelist) throws VcsException {
+    public P4CommittedChangeList(@NotNull P4Vcs vcs, @NotNull Client client, @NotNull IChangelist changelist) throws VcsException {
         super(changelist.getId() + ": " + changelist.getDescription(),
                 changelist.getDescription(),
                 changelist.getUsername(),

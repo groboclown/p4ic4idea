@@ -14,10 +14,7 @@
 package net.groboclown.idea.p4ic.server;
 
 import com.intellij.openapi.project.Project;
-import net.groboclown.idea.p4ic.config.Client;
-import net.groboclown.idea.p4ic.config.P4Config;
-import net.groboclown.idea.p4ic.config.P4ConfigListener;
-import net.groboclown.idea.p4ic.config.P4ConfigProject;
+import net.groboclown.idea.p4ic.config.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
@@ -111,6 +108,9 @@ public class ClientManager {
         } finally {
             clientAccess.writeLock().unlock();
         }
+
+        // add notice to message bus about clients loaded.
+        project.getMessageBus().syncPublisher(P4ClientsReloadedListener.TOPIC).clientsLoaded(project, clients);
     }
 
 

@@ -14,7 +14,6 @@
 package net.groboclown.idea.p4ic.extension;
 
 import com.intellij.openapi.diagnostic.Logger;
-
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
@@ -24,6 +23,7 @@ import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import org.jetbrains.annotations.NotNull;
@@ -119,6 +119,9 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             }
             lfs.refreshIoFiles(filesToRefresh);
         }
+
+        // A refresh of the changes is sometimes needed.
+        P4ChangesViewRefresher.refreshLater(vcs.getProject());
     }
 
     @Override

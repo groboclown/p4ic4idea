@@ -21,7 +21,6 @@ import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.ServerStoreService;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,36 +43,11 @@ public class P4WorkOnlineAction extends AnAction {
         final P4Vcs vcs = P4Vcs.getInstance(getProject(e));
         Set<ServerConfig> offlineServers = new HashSet<ServerConfig>();
 
+        // Tell the servers that they should be working online.
+        ServerStoreService.getInstance().workOnline();
+
         // Force the configurations to be reloaded.
         vcs.reloadConfigs();
-
-        for (Client client : vcs.getClients()) {
-            if (client.isWorkingOffline()) {
-                offlineServers.add(client.getConfig());
-            } else {
-                // check if it really is online
-                try {
-                    client.getServer().checkConnection();
-                } catch (P4InvalidConfigException ex) {
-                    // Should be correctly handled by the thrower
-                    //ErrorDialog.logError(project, P4Bundle.message("configuration.dialog.valid-connection.title"), ex);
-                    // offlineServers.add(client.getConfig());
-                }
-            }
-        }
-
-        for (ServerConfig config: offlineServers) {
-            while (true) {
-                try {
-                    ServerStoreService.getInstance().getServerStatus(project, config).
-                            onReconnect();
-                    break;
-                } catch (P4InvalidConfigException e1) {
-                    // should be handled by the thrower
-                    // FIXME at least log the issue
-                }
-            }
-        }
     }
 
     /**

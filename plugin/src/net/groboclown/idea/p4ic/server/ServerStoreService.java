@@ -115,6 +115,15 @@ public class ServerStoreService implements ApplicationComponent {
         return "Perforce Server Store Service";
     }
 
+    public void workOnline() {
+        synchronized (sync) {
+            for (ServerData data: servers.values())
+            {
+                data.onReconnect();
+            }
+        }
+    }
+
 
     private static class ServerData implements ServerStatus {
         private final Object connectionSync = new Object();

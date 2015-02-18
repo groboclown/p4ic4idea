@@ -195,6 +195,9 @@ public class P4ChangelistListener implements ChangeListListener {
                             }
                         }
                         P4StatusMessage.throwIfError(messages, true);
+
+                        // May require a screen refresh for changes
+                        P4ChangesViewRefresher.refreshLater(myProject);
                     }
                 });
             } else {
@@ -226,11 +229,12 @@ public class P4ChangelistListener implements ChangeListListener {
                                             changeList.getId(), paths));
                         }
 
-                        // FIXME this requires a screen refresh (not resync) of the changelist,
+                        P4StatusMessage.throwIfError(messages, true);
+
+                        // this requires a screen refresh (not resync) of the changelist,
                         // such as toggling the file list display for the change, in order to
                         // make the decorator draw the new change number.
-
-                        P4StatusMessage.throwIfError(messages, true);
+                        P4ChangesViewRefresher.refreshLater(myProject);
                     }
                 });
             }

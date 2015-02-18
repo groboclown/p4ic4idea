@@ -1,5 +1,16 @@
 # IDEA Community VCS Integration for Perforce
 
+## ::v0.3.2::
+
+### Overview
+
+* Minor UI bug fixes.
+
+### Details
+
+* Minor UI bug fixes.
+      * Returning online can cause error "user selected work offline" (#20)
+
 ## ::v0.3.1::
 
 ### Overview

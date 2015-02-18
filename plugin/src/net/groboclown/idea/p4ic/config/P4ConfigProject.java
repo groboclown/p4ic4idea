@@ -25,6 +25,7 @@ import net.groboclown.idea.p4ic.server.ServerStatus;
 import net.groboclown.idea.p4ic.server.ServerStoreService;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.server.exceptions.P4WorkingOfflineException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -100,10 +101,6 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             client.getRoots();
             ret.add(client);
         }
-
-
-        // add notice to message bus about clients loaded.
-        project.getMessageBus().syncPublisher(P4ClientsReloadedListener.TOPIC).clientsLoaded(project, ret);
 
 
         return ret;
@@ -293,7 +290,9 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             } catch (VcsException e) {
                 P4InvalidConfigException ex = new P4InvalidConfigException(e.getMessage());
                 ex.initCause(e);
-                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, sourceConfig, ex);
+                if (! (e instanceof P4WorkingOfflineException)) {
+                    project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, sourceConfig, ex);
+                }
                 throw ex;
             }
         }

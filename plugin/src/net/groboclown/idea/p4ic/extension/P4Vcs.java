@@ -45,7 +45,7 @@ import net.groboclown.idea.p4ic.background.VcsSettableFuture;
 import net.groboclown.idea.p4ic.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.changes.P4ChangeProvider;
 import net.groboclown.idea.p4ic.changes.P4ChangelistListener;
-import net.groboclown.idea.p4ic.changes.P4CommittedChangeListNew;
+import net.groboclown.idea.p4ic.changes.P4CommittedChangeList;
 import net.groboclown.idea.p4ic.compat.CompatFactoryLoader;
 import net.groboclown.idea.p4ic.compat.UICompat;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
@@ -67,7 +67,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.util.*;
 
-public class P4Vcs extends AbstractVcs<P4CommittedChangeListNew> {
+public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     private static final Logger LOG = Logger.getInstance(P4Vcs.class);
 
     private static final FileStatus[] PREFERRED_STATUS = new FileStatus[] {

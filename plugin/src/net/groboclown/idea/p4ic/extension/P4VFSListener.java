@@ -24,6 +24,7 @@ import com.intellij.vcsUtil.VcsFileUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.Background;
+import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import org.jetbrains.annotations.NotNull;
@@ -131,7 +132,8 @@ public class P4VFSListener extends VcsVFSListener {
                 // "Modified but not checked out" changelist.  This refresh is supposed to update
                 // that status, but it appears that the call to mark those files as dirty happens after
                 // this invocation.
-                //ChangeListManager.getInstance(project).ensureUpToDate(true);
+
+                P4ChangesViewRefresher.refreshLater(vcs.getProject());
             }
         });
     }

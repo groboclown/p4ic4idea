@@ -14,6 +14,7 @@
 package net.groboclown.idea.p4ic;
 
 import com.intellij.openapi.components.ProjectComponent;
+
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;

@@ -55,23 +55,6 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
     }
 
 
-    /*
-    P4CommittedChangeListNew(@NotNull P4Vcs vcs, @NotNull ServerConfig config,
-            String title, String description, String committer, int id, Date date,
-            List<Change> changes) {
-        super(title, description, committer, id, date, changes);
-        this.myVcs = vcs;
-        this.myRevision = new VcsRevisionNumber.Int(id);
-        this.myConfig = config;
-    }
-
-    public P4CommittedChangeListNew(@NotNull P4Vcs vcs, @NotNull ServerConfig config, @NotNull IChangelistSummary changelist)
-            throws VcsException, CancellationException {
-        this(vcs, config, vcs.getServer(config).getChangelist(changelist.getId()));
-    }
-    */
-
-
     @NotNull
     public VcsRevisionNumber.Int getRevision() {
         return myRevision;

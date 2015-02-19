@@ -17,8 +17,6 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.FileP4Config;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
@@ -27,12 +25,10 @@ import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.util.ResourceBundle;
 
 public class P4ConfigConnectionPanel implements ConnectionPanel {
     private static final String DEFAULT_P4CONFIG_NAME = ".p4config";
@@ -149,7 +145,13 @@ public class P4ConfigConnectionPanel implements ConnectionPanel {
 
     void setConfigFileText(String text) {
         if (text == null || text.length() <= 0) {
-            text = (new File(project.getBaseDir().getPath(), DEFAULT_P4CONFIG_NAME)).getAbsolutePath();
+            if (project == null || project.getBaseDir() == null) {
+                // This can happen when the user edits the default settings.
+                // See bug #21.
+                text = new File(".", DEFAULT_P4CONFIG_NAME).getAbsolutePath();
+            } else {
+                text = (new File(project.getBaseDir().getPath(), DEFAULT_P4CONFIG_NAME)).getAbsolutePath();
+            }
         }
         myP4ConfigFile.setText(text);
     }

@@ -1,6 +1,9 @@
-# IDEA Community VCS Integration for Perforce
+# Perforce IDEA Community Integration
 
-This is the location for the Perforce VCS integration into the [IntelliJ IDEA Community Edition IDE](https://www.jetbrains.com/idea/).
+### VCS support for Perforce
+
+The plugin allows for associating an [IntelliJ IDEA Community Edition IDE](https://www.jetbrains.com/idea/)
+project with a Perforce repository through IDEA's built-in VCS support.
 
 **Currently Supported IDEA versions: 13.5 (Android Studio), 14.0 (build 14.2118 and above)**
 
@@ -24,14 +27,14 @@ This is the location for the Perforce VCS integration into the [IntelliJ IDEA Co
         1. Click the **Install plugin from disk...** button.
         1. Select the downloaded zip file.
     * Build it yourself:
-        1. You'll need Ant 1.8 or better, a JDK 1.7, a version of
-           IntelliJ IDEA v 14.1 or better, and the plugin code from
+        1. You'll need Ant 1.8 or better, a JDK 1.7, and the source code from
            GitHub on your local computer. You'll need a copy of
-           p4d (or p4s for Windows) to run the tests.
+           p4d (or p4s for Windows) to run the tests.  The code comes with
+           copies of the correct dependent libraries.
         1. Copy the `local.properties.template` to `local.properties`
            in the source root directory, and edit the values to
            match your configuration.
-        1. Run `ant all` from the source root directory.
+        1. Run `ant` from the root source directory.
         1. In IDEA, open the IDE settings dialog ( **File** -> **Settings...** ).
         1. Navigate to the Plugins panel.
         1. Click the **Install plugin from disk...** button.

@@ -1,7 +1,7 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.3.1.1</version>
+    <version>0.3.2</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
@@ -9,6 +9,7 @@
             <li><em>0.3.2</em>
                 <ol>
                     <li>Minor UI bug fixes.</li>
+                    <li>Fix failure to edit default settings.</li>
                 </ol>
             </li>
             <li><em>0.3.1</em>
@@ -31,7 +32,7 @@
         <li>Does not synchronize local files with the server.</li>
         <li>Does not indicate to the user whether a file is
         synchronized to the head revision or not.</li>
-        <li>Repository browsing not implemented.</li>
+        <li>No repository browsing.</li>
       </ul>
       <p><strong>Getting Started</strong></p>
       <p>
@@ -52,6 +53,11 @@
       a file, and deleting a file will perform the correct Perforce
       operations, and put the changes into the currently selected
       IDEA changelist.
+      </p>
+      <p>
+      Please visit the GitHub project
+      <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue">open issues</a>
+      for a list of known issues, or for reporting new ones.
       </p>
     ]]></description>
     <depends>com.intellij.modules.vcs</depends>

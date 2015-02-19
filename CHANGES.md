@@ -5,11 +5,16 @@
 ### Overview
 
 * Minor UI bug fixes.
+* Fix for default settings panel
 
 ### Details
 
 * Minor UI bug fixes.
-      * Returning online can cause error "user selected work offline" (#20)
+      * Returning online can cause error "user selected work offline" (#20).
+* Fix for default settings panel
+      * If you edit the default settings for the Perforce plugin
+        (File -> Other Settings -> Default Settings), the panel will throw
+        an exception (#21).
 
 ## ::v0.3.1::
 

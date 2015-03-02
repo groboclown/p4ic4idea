@@ -1,3 +1,3 @@
 [submodule "intellij-lib"]
 	path = intellij-lib
-	url = git://git.code.sf.net/p/p4ic4idealibs/git-code
+	url = http://git.code.sf.net/p/p4ic4idealibs/git-code

@@ -61,12 +61,14 @@ public class P4ChangelistListener implements ChangeListListener {
         // Adding a changelist does not automatically create a corresponding
         // Perforce changelist.  It must have files added to it that are
         // Perforce-backed in order for it to become one.
-        LOG.debug("changeListAdded: " + list.getName() + "; [" + list.getComment() + "]; " + list.getClass().getSimpleName());
+        LOG.info("changeListAdded: " + list.getName() + "; [" + list.getComment() + "]; " + list.getClass()
+                                                                                                .getSimpleName());
     }
 
     @Override
     public void changeListRemoved(@NotNull final ChangeList list) {
-        LOG.debug("changeListRemoved: " + list.getName() + "; [" + list.getComment() + "]; " + list.getClass().getSimpleName());
+        LOG.info("changeListRemoved: " + list.getName() + "; [" + list.getComment() + "]; " + list.getClass()
+                                                                                                  .getSimpleName());
 
         if (list instanceof LocalChangeList && ! P4ChangeListMapping.isDefaultChangelist((LocalChangeList) list)) {
             Background.runInBackground(myProject, CHANGELIST_REMOVED,
@@ -110,8 +112,9 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void changesRemoved(@NotNull final Collection<Change> changes, @NotNull final ChangeList fromList) {
-        LOG.debug("changesRemoved: changes " + changes);
-        LOG.debug("changesRemoved: changelist " + fromList.getName() + "; [" + fromList.getComment() + "]; " + fromList.getClass().getSimpleName());
+        LOG.info("changesRemoved: changes " + changes);
+        LOG.info("changesRemoved: changelist " + fromList.getName() + "; [" + fromList.getComment() + "]; " + fromList
+                .getClass().getSimpleName());
 
         if (fromList instanceof LocalChangeList) {
             // Move the changes into the default change list
@@ -148,8 +151,10 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void changesAdded(@NotNull final Collection<Change> changes, @NotNull final ChangeList toList) {
-        LOG.debug("changesAdded: changes " + changes);
-        LOG.debug("changesAdded: changelist " + toList.getName() + "; [" + toList.getComment() + "]; " + toList.getClass().getSimpleName());
+        LOG.info("changesAdded: changes " + changes);
+        LOG.info(
+                "changesAdded: changelist " + toList.getName() + "; [" + toList.getComment() + "]; " + toList.getClass()
+                                                                                                             .getSimpleName());
 
         if (toList instanceof LocalChangeList) {
             final List<FilePath> paths = getPathsFromChanges(changes);
@@ -201,7 +206,7 @@ public class P4ChangelistListener implements ChangeListListener {
                     }
                 });
             } else {
-                LOG.debug("Need to create a new p4 changelist");
+                LOG.info("Need to create a new p4 changelist");
                 Background.runInBackground(myProject, CHANGES_ADDED, myVcs.getConfiguration().getUpdateOption(), new Background.ER() {
                     @Override
                     public void run(@NotNull ProgressIndicator indicator) throws Exception {
@@ -250,7 +255,7 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void changeListRenamed(final ChangeList list, final String oldName) {
-        LOG.debug("changeListRenamed: from " + oldName + " to " + list);
+        LOG.info("changeListRenamed: from " + oldName + " to " + list);
 
         if (Comparing.equal(list.getName(), oldName)) {
             return;
@@ -283,7 +288,7 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void changeListCommentChanged(final ChangeList list, final String oldComment) {
-        LOG.debug("changeListCommentChanged: " + list);
+        LOG.info("changeListCommentChanged: " + list);
 
         // This is the same logic as with the name change.
         changeListRenamed(list, list.getName() + "x");
@@ -291,7 +296,7 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void changesMoved(final Collection<Change> changes, final ChangeList fromList, final ChangeList toList) {
-        LOG.debug("changesMoved: " + fromList + " to " + toList);
+        LOG.info("changesMoved: " + fromList + " to " + toList);
 
         // This is just like a "changes added" command,
         // in the sense that the old list doesn't matter too much.
@@ -300,17 +305,17 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void defaultListChanged(final ChangeList oldDefaultList, final ChangeList newDefaultList) {
-        LOG.debug("defaultListChanged: " + oldDefaultList + " to " + newDefaultList);
+        LOG.info("defaultListChanged: " + oldDefaultList + " to " + newDefaultList);
     }
 
     @Override
     public void unchangedFileStatusChanged() {
-        LOG.debug("unchangedFileStatusChanged");
+        LOG.info("unchangedFileStatusChanged");
     }
 
     @Override
     public void changeListUpdateDone() {
-        LOG.debug("changeListUpdateDone");
+        LOG.info("changeListUpdateDone");
     }
 
     private boolean isUnderVcs(final FilePath path) {

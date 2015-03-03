@@ -66,12 +66,9 @@
                 <patternset refid="compiler.resources"/>
                 <type type="file"/>
             </fileset>
-            <!--
             <fileset dir="${basedir}/resources">
-                <patternset refid="compiler.resources"/>
                 <type type="file"/>
             </fileset>
-            -->
         </copy>
     </target>
 

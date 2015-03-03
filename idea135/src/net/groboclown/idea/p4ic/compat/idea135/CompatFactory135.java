@@ -25,10 +25,11 @@ public class CompatFactory135 implements CompatFactory {
         return "135.1286";
     }
 
+    // supports up to 139.
     @NotNull
     @Override
     public String getMaxCompatibleApiVersion() {
-        return "136";
+        return "140";
     }
 
     @NotNull

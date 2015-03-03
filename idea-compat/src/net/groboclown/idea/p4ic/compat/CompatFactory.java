@@ -7,6 +7,12 @@ public interface CompatFactory {
     @NotNull
     String getMinCompatibleApiVersion();
 
+    /**
+     * The API is compatible with versions up to, but not including,
+     * this returned version.
+     *
+     * @return API version beyond what this factory supports.
+     */
     @NotNull
     String getMaxCompatibleApiVersion();
 

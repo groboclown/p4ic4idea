@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.3.2</version>
+    <version>0.3.3</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.3.3</em>
+                <ol>
+                    <li>Add support for all versions between 13.5 to 14.1</li>
+                </ol>
+            </li>
             <li><em>0.3.2</em>
                 <ol>
                     <li>Minor UI bug fixes.</li>

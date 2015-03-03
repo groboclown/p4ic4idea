@@ -1,5 +1,13 @@
 # IDEA Community VCS Integration for Perforce
 
+
+## ::v0.3.3::
+
+### Overview
+
+* Add in support for all versions between 13.5 and 14.1
+
+
 ## ::v0.3.2::
 
 ### Overview

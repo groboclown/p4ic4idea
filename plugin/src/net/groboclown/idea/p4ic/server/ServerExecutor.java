@@ -62,16 +62,37 @@ public class ServerExecutor {
     }
 
 
-        @Nullable
+    /**
+     * Should only be called from {@link net.groboclown.idea.p4ic.changes.P4ChangeListCache}
+     *
+     * @param changelistId
+     * @return
+     * @throws VcsException
+     */
+    @Nullable
     public IChangelist getChangelist(int changelistId) throws VcsException {
         return exec.getChangelist(project, changelistId);
     }
 
+    /**
+     * Should only be called from {@link net.groboclown.idea.p4ic.changes.P4ChangeListCache}
+     *
+     * @param changelistId
+     * @return
+     * @throws VcsException
+     */
     @Nullable
     public List<P4FileInfo> getFilesInChangelist(int changelistId) throws VcsException {
         return exec.getFilesInChangelist(project, changelistId);
     }
 
+    /**
+     * Should only be called from {@link net.groboclown.idea.p4ic.changes.P4ChangeListCache}
+     *
+     * @param comment
+     * @return
+     * @throws VcsException
+     */
     @NotNull
     public IChangelist createChangelist(@NotNull String comment) throws VcsException {
         return exec.createChangelist(project, comment);
@@ -98,25 +119,34 @@ public class ServerExecutor {
         return exec.editFiles(project, edited, changelistId);
     }
 
-    @Deprecated
-    public void deleteChangelist(IChangelist changelist) throws VcsException {
-        exec.deleteChangelist(project, changelist);
-    }
-
     public void deleteChangelist(int changelistId) throws VcsException {
         exec.deleteChangelist(project, changelistId);
     }
 
-    public List<P4StatusMessage> moveFilesBetweenChangelists(int sourceChangelistId, int targetChangelistId,
-            List<FilePath> affected)
+    /**
+     * Should only be called from {@link net.groboclown.idea.p4ic.changes.P4ChangeListCache}
+     *
+     * @param sourceChangelistId
+     * @param targetChangelistId
+     * @param affected
+     * @return
+     * @throws VcsException
+     */
+    public List<P4StatusMessage> moveFilesToChangelist(int targetChangelistId, List<FilePath> affected)
             throws VcsException {
-        return exec.moveFilesBetweenChangelists(project, sourceChangelistId, targetChangelistId, affected);
+        return exec.moveFilesToChangelist(project, targetChangelistId, affected);
     }
 
     public void updateChangelistComment(int changelistId, @NotNull String comment) throws VcsException {
         exec.updateChangelistComment(project, changelistId, comment);
     }
 
+    /**
+     * NOTE should be only called from the P4ChangeListCache.
+     *
+     * @return pending changelists
+     * @throws VcsException
+     */
     public List<IChangelistSummary> getPendingClientChangelists() throws VcsException {
         return exec.getPendingClientChangelists(project);
     }

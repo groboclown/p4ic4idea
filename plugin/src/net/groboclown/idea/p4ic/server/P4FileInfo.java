@@ -576,6 +576,7 @@ public class P4FileInfo {
                             LOG.debug("a not-in-view file: " + message.getMessage());
                             continue;
                         } else {
+                            LOG.warn("Problem running p4 where " + remaining);
                             throw new P4JavaException(message.toString());
                         }
                     }
@@ -616,8 +617,17 @@ public class P4FileInfo {
         while (iter.hasNext()) {
             IFileSpec spec = iter.next();
             String path = spec.getAnnotatedPreferredPathString();
-            int pos = Math.min(path.indexOf('@'), path.indexOf('#'));
-            if (pos >= 0) {
+            int pos1 = path.indexOf('@');
+            int pos2 = path.indexOf('#');
+            if (pos1 < 0 && pos2 < 0) {
+                path = spec.toString();
+                pos1 = path.indexOf('@');
+                pos2 = path.indexOf('#');
+            }
+            pos1 = (pos1 < 0 ? path.length() : pos1);
+            pos2 = (pos2 < 0 ? path.length() : pos2);
+            int pos = Math.min(pos1, pos2);
+            if (pos >= 0 && pos < path.length()) {
                 path = path.substring(0, pos);
                 replaced.add(path);
                 iter.remove();

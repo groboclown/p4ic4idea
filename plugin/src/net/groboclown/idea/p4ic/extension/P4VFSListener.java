@@ -100,6 +100,10 @@ public class P4VFSListener extends VcsVFSListener {
             @Override
             public void run(@NotNull ProgressIndicator indicator) throws Exception {
                 List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
+
+                // TODO it's possible to *integrate* between clients if
+                // they share the same server.
+
                 SplitClientFileMap split = splitMap(moveMap);
                 synchronized (vfsSync) {
                     for (Client client: split.getClients()) {

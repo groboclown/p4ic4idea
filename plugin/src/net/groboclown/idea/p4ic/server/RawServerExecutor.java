@@ -20,7 +20,6 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.client.IClientSummary;
-import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -28,7 +27,6 @@ import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.config.ServerConfig;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.history.P4AnnotatedLine;
 import net.groboclown.idea.p4ic.history.P4FileRevision;
 import net.groboclown.idea.p4ic.server.exceptions.P4ApiException;
@@ -127,14 +125,13 @@ public class RawServerExecutor {
         }
     }
 
-
     @Nullable
-    public IChangelist getChangelist(@NotNull final Project project, final int rev)
+    public IChangelist getChangelist(@NotNull final Project project, final int changelistId)
             throws VcsException, CancellationException {
         return performAction(project, new ServerTask<IChangelist>() {
             @Override
             public IChangelist run(@NotNull P4Exec exec) throws VcsException, CancellationException {
-                return exec.getChangelist(project, rev);
+                return exec.getChangelist(project, changelistId);
             }
         });
     }
@@ -363,7 +360,7 @@ public class RawServerExecutor {
 
                 List<P4FileInfo> p4files = getFilePathInfo(project, files);
                 List<IFileSpec> specs = new ArrayList<IFileSpec>(p4files.size());
-                for (P4FileInfo fi: p4files) {
+                for (P4FileInfo fi : p4files) {
                     IFileSpec pair = fi.getOpenedPair();
                     if (pair != null) {
                         specs.add(pair);
@@ -430,18 +427,6 @@ public class RawServerExecutor {
     }
 
 
-    @Deprecated
-    public void deleteChangelist(@NotNull Project project, @NotNull final IChangelist p4)
-            throws VcsException, CancellationException {
-        if (p4.getStatus() == ChangelistStatus.SUBMITTED || p4.getId() <= 0) {
-            // can't delete submitted changelists, and can't delete the
-            // default changelist.
-            return;
-        }
-        performAction(project, new DeleteChangelistTask(project, p4.getId()));
-    }
-
-
     public void deleteChangelist(@NotNull Project project, int changelistId)
             throws VcsException, CancellationException {
         if (changelistId <= 0) {
@@ -450,17 +435,17 @@ public class RawServerExecutor {
         performAction(project, new DeleteChangelistTask(project, changelistId));
     }
 
-    public List<P4StatusMessage> moveFilesBetweenChangelists(@NotNull Project project,
-            final int sourceChangelist, final int targetChangelist,
+    public List<P4StatusMessage> moveFilesToChangelist(@NotNull Project project, final int targetChangelist,
             @Nullable List<FilePath> filesToMove) throws VcsException, CancellationException {
         if (filesToMove == null) {
             filesToMove = Collections.emptyList();
         }
         return performAction(project,
-                new MoveFilesBetweenChangelistsTask(project, sourceChangelist, targetChangelist, filesToMove));
+                new MoveFilesBetweenChangelistsTask(project, targetChangelist, filesToMove));
     }
 
 
+    /*
     @Nullable
     public IChangelist loadChangeList(@NotNull final Project project, final int changelistId)
             throws VcsException, CancellationException {
@@ -471,9 +456,9 @@ public class RawServerExecutor {
                 return exec.getChangelist(project, changelistId);
             }
         });
-        P4Vcs.getInstance(project).getChangeListMapping().updateP4Changelist(new RawClient(), changelistId, ret);
         return ret;
     }
+    */
 
 
     public void updateChangelistComment(@NotNull final Project project, final int changelistId,
@@ -498,7 +483,6 @@ public class RawServerExecutor {
             }
         });
         assert ret != null;
-        P4Vcs.getInstance(project).getChangeListMapping().updatePendingP4ChangeLists(config.getConfig(), ret);
         LOG.info("pending changelist count: " + ret.size());
         return ret;
     }

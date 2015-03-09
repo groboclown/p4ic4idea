@@ -60,7 +60,8 @@ public abstract class ConnectionHandler {
 
 
     public String createUrl(@NotNull ServerConfig config) {
-        return config.getProtocol().toString() + "://" + config.getPort();
+        // Trim the config port.  See bug #23
+        return config.getProtocol().toString() + "://" + config.getPort().trim();
     }
 
 

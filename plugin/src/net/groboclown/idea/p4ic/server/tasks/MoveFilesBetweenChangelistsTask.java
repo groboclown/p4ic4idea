@@ -41,38 +41,23 @@ import java.util.concurrent.CancellationException;
  */
 public class MoveFilesBetweenChangelistsTask extends ServerTask<List<P4StatusMessage>> {
     private final Project project;
-    private final int source;
     private final int target;
     private final List<FilePath> files;
 
     public MoveFilesBetweenChangelistsTask(
-            @NotNull Project project, int source, int target,
+            @NotNull Project project, int target,
             @NotNull List<FilePath> files) {
         this.project = project;
-        if (source <= 0) {
-            if (source != IChangelist.DEFAULT && source != IChangelist.UNKNOWN) {
-                throw new IllegalArgumentException("source must be positive or " +
-                        IChangelist.DEFAULT + " or " + IChangelist.UNKNOWN);
-            }
-            if (source == IChangelist.UNKNOWN) {
-                assert ! files.isEmpty();
-            }
-        }
         if (target <= 0) {
             target = IChangelist.DEFAULT;
         }
-        assert source != target;
-        this.source = source;
         this.target = target;
         this.files = files;
-
-        // source files can be empty; this means move all the changes
-        // from source into the target.
     }
 
     @Override
     public List<P4StatusMessage> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
-        log("moving from change " + source + " to " + target);
+        log("moving to change " + target);
 
         List<P4FileInfo> expectedFiles = exec.loadFileInfo(project, FileSpecUtil.getFromFilePaths(files));
 
@@ -112,35 +97,7 @@ public class MoveFilesBetweenChangelistsTask extends ServerTask<List<P4StatusMes
         }
 
         // Check the source changelist files.
-        final List<IFileSpec> sourceFiles;
-        if (source == IChangelist.UNKNOWN) {
-            sourceFiles = P4FileInfo.toClientList(expectedFiles);
-        } else {
-            IChangelist sourceCl = exec.getChangelist(project, source);
-            if (sourceCl == null || sourceCl.getStatus() == ChangelistStatus.SUBMITTED) {
-                // nothing to do
-                log("Source changelist " + source + " is already submitted, is pending, or doesn't exist");
-                return Collections.emptyList();
-            }
-            sourceFiles = exec.getFileSpecsInChangelist(project, source);
-            // Find the files in the source that are actually being moved.
-            if (!expectedFiles.isEmpty() && sourceFiles != null) {
-                // If we were given files, then use those files to slim down the
-                // moved files.
-                Iterator<IFileSpec> iter = sourceFiles.iterator();
-                specLoop:
-                while (iter.hasNext()) {
-                    IFileSpec next = iter.next();
-                    for (P4FileInfo file : expectedFiles) {
-                        if (file.isSameFile(next)) {
-                            continue specLoop;
-                        }
-                    }
-                    log("ignoring existing file " + next.getLocalPathString());
-                    iter.remove();
-                }
-            }
-        }
+        final List<IFileSpec> sourceFiles = P4FileInfo.toClientList(expectedFiles);
 
         List<P4StatusMessage> ret = new ArrayList<P4StatusMessage>();
         if (sourceFiles != null && ! sourceFiles.isEmpty()) {

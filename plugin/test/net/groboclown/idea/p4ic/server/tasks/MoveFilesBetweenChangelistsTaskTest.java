@@ -19,7 +19,7 @@ public class MoveFilesBetweenChangelistsTaskTest {
         try {
             new MoveFilesBetweenChangelistsTask(
                     projectFixture.getProject(),
-                    IChangelist.DEFAULT, IChangelist.DEFAULT,
+                    IChangelist.DEFAULT,
                     Collections.<FilePath>emptyList());
             fail("did not throw IllegalArgumentException");
         } catch (IllegalArgumentException e) {

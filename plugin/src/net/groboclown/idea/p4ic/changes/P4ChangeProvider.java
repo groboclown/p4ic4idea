@@ -20,13 +20,10 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.perforce.p4java.core.IChangelist;
-import com.perforce.p4java.core.IChangelistSummary;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.history.P4ContentRevision;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
-import net.groboclown.idea.p4ic.server.ServerExecutor;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.SubProgressIndicator;
 import org.jetbrains.annotations.NotNull;
@@ -95,8 +92,11 @@ public class P4ChangeProvider implements ChangeProvider {
 
          */
 
-        Map<Client, List<IChangelistSummary>> pendingChangelists = getPendingP4ChangeLists();
-        Map<LocalChangeList, Map<Client, IChangelistSummary>> known = vcs.getChangeListMapping().cleanMappings(pendingChangelists);
+        P4ChangeListCache.getInstance().reloadCachesFor(vcs.getClients());
+        final Map<Client, List<P4ChangeList>> pendingChangelists =
+                P4ChangeListCache.getInstance().getChangeListsForAll(vcs.getClients());
+
+        final Map<LocalChangeList, Map<Client, P4ChangeList>> known = vcs.getChangeListMapping().cleanMappings();
 
         progress.setFraction(0.2);
 
@@ -123,26 +123,22 @@ public class P4ChangeProvider implements ChangeProvider {
             sub.setFraction(1.0);
         }
 
-        // Whatever is left over in the dirty bucket needs to be assigned to some changelist
+        // Process the remaining dirty files
         for (FilePath fp: filePaths) {
             VirtualFile vf = fp.getVirtualFile();
             if (vf != null) {
                 if (! vf.isDirectory()) {
+                    LOG.info("Found unversioned file " + vf);
                     builder.processUnversionedFile(vf);
                 }
             } else {
+                LOG.info("Found locally deleted file " + fp);
                 builder.processLocallyDeletedFile(fp);
             }
         }
-    }
 
-    private Map<Client, List<IChangelistSummary>> getPendingP4ChangeLists() throws VcsException {
-        Map<Client, List<IChangelistSummary>> ret = new HashMap<Client, List<IChangelistSummary>>();
-        for (Client client: vcs.getClients()) {
-            ServerExecutor exec = client.getServer();
-            ret.put(client, exec.getPendingClientChangelists());
-        }
-        return ret;
+        // TODO Ensure every file in an idea changelist is in the correct
+        // associated Perforce changelist. (#22 comment 3)
     }
 
     private List<FilePath> getFilesUnderClient(Client client, Collection<FilePath> files) {
@@ -177,67 +173,79 @@ public class P4ChangeProvider implements ChangeProvider {
      */
     private void loadUnmappedP4ChangeListsToExitingIdea(
             ChangeListManagerGate addGate,
-            Map<Client, List<IChangelistSummary>> pendingChangelists,
-            Map<LocalChangeList, Map<Client, IChangelistSummary>> known, SubProgressIndicator prog)
+            Map<Client, List<P4ChangeList>> pendingChangelists,
+            Map<LocalChangeList, Map<Client, P4ChangeList>> known, SubProgressIndicator prog)
             throws VcsException {
-        List<LocalChangeList> existingIdeaChangeLists = ChangeListManager.getInstance(vcs.getProject()).getChangeLists();
-
-        // Loop over first the matchers.
-        // This allows for best match first, over all the changelists, then
-        // next best match, and so on.  That way, we don't
-        // accidentally pull in too aggressively.
+        List<LocalChangeList> allIdeaChangeLists = ChangeListManager.getInstance(vcs.getProject()).getChangeLists();
 
         prog.setFraction(0.1);
 
-        Set<P4ChangeListMapping.P4ClId> foundClIds = new HashSet<P4ChangeListMapping.P4ClId>();
-        for (Map<Client, IChangelistSummary> map: known.values()) {
-            for (Map.Entry<Client, IChangelistSummary> e: map.entrySet()) {
-                foundClIds.add(new P4ChangeListMapping.P4ClId(e.getKey().getConfig(), e.getValue()));
+        Set<P4ChangeListId> associatedP4clIds = new HashSet<P4ChangeListId>();
+        for (Map<Client, P4ChangeList> map: known.values()) {
+            for (P4ChangeList cl: map.values()) {
+                associatedP4clIds.add(cl.getId());
             }
         }
 
         prog.setFraction(0.2);
 
-        // The goal is to use all the pending changelists.  So map those.
+        // For each p4 pending changelist that isn't already associated with an
+        // IDEA changelist, find a match to any IDEA changelist that doesn't
+        // already have a p4 changelist for that specific client.
+
+        // However, the outer loop is the matchers.  This prevents aggressive
+        // consumption of changes - allow the more exact matchers to match the
+        // changelists before a looser one tries to match.
+
         double matcherIndex = 0.0;
         for (ClMatcher matcher : CL_MATCHERS) {
             prog.setFraction(0.2 + 0.7 * (matcherIndex / (double) CL_MATCHERS.length));
             matcherIndex += 1.0;
-            for (Map.Entry<Client, List<IChangelistSummary>> pending : pendingChangelists.entrySet()) {
-                List<LocalChangeList> unusedIdeaChangelists = filterOutUsedChangelists(existingIdeaChangeLists, known, pending.getKey());
-                for (IChangelistSummary cls : pending.getValue()) {
-                    P4ChangeListMapping.P4ClId p4ClId = new P4ChangeListMapping.P4ClId(pending.getKey().getConfig(), cls);
-                    if (foundClIds.contains(p4ClId)) {
+
+            for (Map.Entry<Client, List<P4ChangeList>> pending : pendingChangelists.entrySet()) {
+                final Client client = pending.getKey();
+                final List<LocalChangeList> unusedIdeaChangeLists =
+                        filterOutUsedChangelists(allIdeaChangeLists, known, client);
+                for (P4ChangeList p4cl : pending.getValue()) {
+                    if (associatedP4clIds.contains(p4cl.getId())) {
                         continue;
                     }
-                    if (P4ChangeListMapping.isDefaultChangelist(cls)) {
+
+                    if (p4cl.getId().isDefaultChangelist()) {
                         // special default changelist handling.  The IDEA default
                         // named changelist should always exist to correspond to the
-                        // Perforce default changelist.
+                        // Perforce default changelist.  Note that this is
+                        // independent of the matchers.
 
+                        LOG.info("Associating " + client.getClientName() + " default changelist to IDEA changelist " +
+                                P4ChangeListMapping.DEFAULT_CHANGE_NAME);
                         addGate.findOrCreateList(P4ChangeListMapping.DEFAULT_CHANGE_NAME, "");
-                        foundClIds.add(p4ClId);
+                        associatedP4clIds.add(p4cl.getId());
 
                         // The mapping from default to default is implicit in the
                         // P4ChangeListMappingNew class.
-                    } else if (!knownChangelist(pending.getKey(), cls, known)) {
-                        LocalChangeList match = matcher.match(cls, splitNameComment(cls), unusedIdeaChangelists);
+                    } else {
+                        // it's not associated with any IDEA changelist.
+                        LocalChangeList match = matcher.match(p4cl, splitNameComment(p4cl), unusedIdeaChangeLists);
 
                         if (match != null) {
-                            // Ensure the name matches the changelist, with a unique name
-                            setUniqueName(match, cls, existingIdeaChangeLists);
-                            foundClIds.add(p4ClId);
+                            LOG.info("Associating " + p4cl.getId() + " to IDEA changelist " + match);
 
+                            // Ensure the name matches the changelist, with a unique name
+                            setUniqueName(match, p4cl, allIdeaChangeLists);
+
+                            // Record this new association
+                            associatedP4clIds.add(p4cl.getId());
                             if (known.containsKey(match)) {
-                                known.get(match).put(pending.getKey(), cls);
+                                known.get(match).put(client, p4cl);
                             } else {
-                                Map<Client, IChangelistSummary> km = new HashMap<Client, IChangelistSummary>();
-                                km.put(pending.getKey(), cls);
+                                Map<Client, P4ChangeList> km = new HashMap<Client, P4ChangeList>();
+                                km.put(client, p4cl);
                                 known.put(match, km);
                             }
-                            vcs.getChangeListMapping().createMapping(match, pending.getKey().getConfig(), cls);
+                            vcs.getChangeListMapping().bindChangelists(match, p4cl.getId());
                         }
-                    } // else it's a changelist with an existing p4 mapping
+                    }
                 }
             }
         }
@@ -245,21 +253,20 @@ public class P4ChangeProvider implements ChangeProvider {
         prog.setFraction(0.9);
 
         // All the remaining changelists need to be mapped to a new changelist.
-        for (Map.Entry<Client, List<IChangelistSummary>> pending : pendingChangelists.entrySet()) {
-            for (IChangelistSummary cls : pending.getValue()) {
-                P4ChangeListMapping.P4ClId p4ClId = new P4ChangeListMapping.P4ClId(pending.getKey().getConfig(), cls);
-                if (foundClIds.contains(p4ClId)) {
-                    continue;
+        for (List<P4ChangeList> pendingChanges : pendingChangelists.values()) {
+            for (P4ChangeList p4cl : pendingChanges) {
+                if (! associatedP4clIds.contains(p4cl.getId())) {
+                    LocalChangeList lcl = createUniqueChangeList(addGate, p4cl, allIdeaChangeLists);
+                    vcs.getChangeListMapping().bindChangelists(lcl, p4cl.getId());
                 }
-                LocalChangeList lcl = createUniqueChangeList(addGate, cls, existingIdeaChangeLists);
-                vcs.getChangeListMapping().createMapping(lcl, pending.getKey().getConfig(), cls);
             }
         }
 
         prog.setFraction(1.0);
     }
 
-    private void setUniqueName(LocalChangeList changeList, IChangelistSummary cls, List<LocalChangeList> existingIdeaChangeLists) {
+    // This matches with createUniqueChangeList
+    private void setUniqueName(LocalChangeList changeList, P4ChangeList cls, List<LocalChangeList> existingIdeaChangeLists) {
         String[] desc = splitNameComment(cls);
         LOG.info("Mapped @" + cls.getId() + " to " + changeList.getName());
         String name = desc[0];
@@ -282,7 +289,9 @@ public class P4ChangeProvider implements ChangeProvider {
         }
     }
 
-    private LocalChangeList createUniqueChangeList(ChangeListManagerGate addGate, IChangelistSummary cls, List<LocalChangeList> existingIdeaChangeLists) {
+    // This matches with setUniqueName
+    private LocalChangeList createUniqueChangeList(ChangeListManagerGate addGate, P4ChangeList cls,
+            List<LocalChangeList> allIdeaChangeLists) {
         String[] desc = splitNameComment(cls);
         String name = desc[0];
         int count = -1;
@@ -290,7 +299,7 @@ public class P4ChangeProvider implements ChangeProvider {
         while (true) {
             // Make sure we check against ALL change lists, not just the
             // filtered ones.
-            for (LocalChangeList lcl : existingIdeaChangeLists) {
+            for (LocalChangeList lcl : allIdeaChangeLists) {
                 if (lcl.getName().equals(name)) {
                     // the new name collides with an existing change (not the same change)
                     name = desc[0] + " (" + (++count) + ")";
@@ -299,19 +308,19 @@ public class P4ChangeProvider implements ChangeProvider {
             }
 
             // it's a unique name!
-            LOG.info("Mapped @" + cls.getId() + " to new IDEA change " + name);
+            LOG.info("Mapped " + cls.getId() + " to new IDEA change " + name);
             LocalChangeList ret = addGate.addChangeList(name, desc[1]);
-            existingIdeaChangeLists.add(ret);
+            allIdeaChangeLists.add(ret);
             return ret;
         }
     }
 
     private List<LocalChangeList> filterOutUsedChangelists(
-            List<LocalChangeList> existingIdeaChangeLists,
-            Map<LocalChangeList, Map<Client, IChangelistSummary>> known,
+            List<LocalChangeList> allIdeaChangeLists,
+            Map<LocalChangeList, Map<Client, P4ChangeList>> known,
             Client client) {
-        List<LocalChangeList> ret = new ArrayList<LocalChangeList>(existingIdeaChangeLists);
-        for (Map.Entry<LocalChangeList, Map<Client, IChangelistSummary>> e: known.entrySet()) {
+        List<LocalChangeList> ret = new ArrayList<LocalChangeList>(allIdeaChangeLists);
+        for (Map.Entry<LocalChangeList, Map<Client, P4ChangeList>> e: known.entrySet()) {
             if (e.getValue().containsKey(client)) {
                 ret.remove(e.getKey());
             }
@@ -323,16 +332,6 @@ public class P4ChangeProvider implements ChangeProvider {
             }
         }
         return ret;
-    }
-
-    private boolean knownChangelist(@NotNull Client client, @NotNull IChangelistSummary cls, @NotNull Map<LocalChangeList, Map<Client, IChangelistSummary>> known) {
-        for (Map<Client, IChangelistSummary> map: known.values()) {
-            IChangelistSummary c = map.get(client);
-            if (c != null && c.getId() == cls.getId()) {
-                return true;
-            }
-        }
-        return false;
     }
 
 
@@ -352,6 +351,11 @@ public class P4ChangeProvider implements ChangeProvider {
         final List<P4FileInfo> files = client.getServer().getFilePathInfo(filePaths);
         progress.setFraction(0.1);
 
+
+        // This code looks to be too aggressive.  It is probably the
+        // root cause behind #22 (2nd comment).
+
+
         for (P4FileInfo file : files) {
             VirtualFile vf = file.getPath().getVirtualFile();
             LOG.info("processing " + file);
@@ -365,10 +369,6 @@ public class P4ChangeProvider implements ChangeProvider {
                 if (changeList == null) {
                     LOG.error("Did not map an IntelliJ changelist for Perforce changelist " + file.getChangelist() +
                             " (file " + file + ")");
-                    //LOG.info("Did not map an IntelliJ changelist for Perforce changelist " + file.getChangelist());
-                    //changeList = addGate.findOrCreateList("(@" + file.getChangelist() + ")", "");
-                    //vcs.getChangeListMapping().createMappingToP4Id(changeList, file.getChangelist());
-                    //changeList = clm.getDefaultChangeList();
                     continue;
                 }
 
@@ -400,6 +400,7 @@ public class P4ChangeProvider implements ChangeProvider {
     }
 
     private void moveP4FilesIntoIdeaChangeLists(Client client, ChangelistBuilder builder, List<P4FileInfo> files) throws VcsException {
+        // FIXME go through cache
         List<P4FileInfo> opened = client.getServer().loadOpenFiles(client.getRoots().toArray(new VirtualFile[client.getRoots().size()]));
         LOG.info("opened files: " + opened);
         // remove files not already handled
@@ -416,14 +417,16 @@ public class P4ChangeProvider implements ChangeProvider {
             builder.processChangeInList(change,
                     changeList,
                     P4Vcs.getKey());
+
+            // Any way to use this call?
             //builder.reportChangesOutsideProject() ?
         }
     }
 
-    private static String[] splitNameComment(IChangelistSummary p4cl) {
+    private static String[] splitNameComment(P4ChangeList p4cl) {
         String[] ret = new String[2];
-        String desc = p4cl.getDescription();
-        if (p4cl.getId() == IChangelist.DEFAULT) {
+        String desc = p4cl.getComment();
+        if (p4cl.getId().isDefaultChangelist()) {
             ret[0] = P4ChangeListMapping.DEFAULT_CHANGE_NAME;
             ret[1] = "";
         } else if (desc == null) {
@@ -462,9 +465,9 @@ public class P4ChangeProvider implements ChangeProvider {
     }
 
 
-    private static interface ClMatcher {
+    private interface ClMatcher {
         @Nullable
-        LocalChangeList match(@NotNull IChangelistSummary cls, @NotNull String[] desc, @NotNull List<LocalChangeList> unusedIdeaChangelists);
+        LocalChangeList match(@NotNull P4ChangeList cls, @NotNull String[] desc, @NotNull List<LocalChangeList> unusedIdeaChangelists);
     }
 
     private static ClMatcher[] CL_MATCHERS = new ClMatcher[] {
@@ -478,7 +481,7 @@ public class P4ChangeProvider implements ChangeProvider {
     private static class ExactMatcher implements ClMatcher {
         @Nullable
         @Override
-        public LocalChangeList match(@NotNull IChangelistSummary cls, @NotNull String[] desc, @NotNull List<LocalChangeList> unusedIdeaChangelists) {
+        public LocalChangeList match(@NotNull P4ChangeList cls, @NotNull String[] desc, @NotNull List<LocalChangeList> unusedIdeaChangelists) {
             // check exact match on name & comment
             for (LocalChangeList lcl : unusedIdeaChangelists) {
                 if (desc[0].equals(lcl.getName().trim())) {
@@ -498,7 +501,7 @@ public class P4ChangeProvider implements ChangeProvider {
     private static class CasedNameMatcher implements ClMatcher {
         @Nullable
         @Override
-        public LocalChangeList match(@NotNull IChangelistSummary cls, @NotNull String[] desc, @NotNull List<LocalChangeList> unusedIdeaChangelists) {
+        public LocalChangeList match(@NotNull P4ChangeList cls, @NotNull String[] desc, @NotNull List<LocalChangeList> unusedIdeaChangelists) {
             // check exact match on name & comment
             for (LocalChangeList lcl : unusedIdeaChangelists) {
                 if (desc[0].equals(lcl.getName().trim())) {
@@ -513,7 +516,7 @@ public class P4ChangeProvider implements ChangeProvider {
     private static class NameMatcher implements ClMatcher {
         @Nullable
         @Override
-        public LocalChangeList match(@NotNull IChangelistSummary cls, @NotNull String[] desc, @NotNull List<LocalChangeList> unusedIdeaChangelists) {
+        public LocalChangeList match(@NotNull P4ChangeList cls, @NotNull String[] desc, @NotNull List<LocalChangeList> unusedIdeaChangelists) {
             // check exact match on name & comment
             for (LocalChangeList lcl : unusedIdeaChangelists) {
                 if (desc[0].equalsIgnoreCase(lcl.getName().trim())) {
@@ -528,7 +531,7 @@ public class P4ChangeProvider implements ChangeProvider {
     private static class NameNumberedMatcher implements ClMatcher {
         @Nullable
         @Override
-        public LocalChangeList match(@NotNull IChangelistSummary cls, @NotNull String[] desc, @NotNull List<LocalChangeList> unusedIdeaChangelists) {
+        public LocalChangeList match(@NotNull P4ChangeList cls, @NotNull String[] desc, @NotNull List<LocalChangeList> unusedIdeaChangelists) {
             // check exact match on name & comment
             // match ignore case "[p4 name](\s+\(\d+\)\)"
             Pattern pattern = Pattern.compile(Pattern.quote(desc[0]) + "\\s+\\(\\d+\\)", Pattern.CASE_INSENSITIVE);
@@ -544,7 +547,7 @@ public class P4ChangeProvider implements ChangeProvider {
     private static class NumberedMatcher implements ClMatcher {
         @Nullable
         @Override
-        public LocalChangeList match(@NotNull IChangelistSummary cls, @NotNull String[] desc, @NotNull List<LocalChangeList> unusedIdeaChangelists) {
+        public LocalChangeList match(@NotNull P4ChangeList cls, @NotNull String[] desc, @NotNull List<LocalChangeList> unusedIdeaChangelists) {
             // check exact match on name & comment
             // match ignore case "[p4 name](\s+\(\d+\)\)"
             String match = "(@" + cls.getId() + ")";

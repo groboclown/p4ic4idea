@@ -14,26 +14,20 @@
 package net.groboclown.idea.p4ic.changes;
 
 import com.intellij.openapi.components.*;
-
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.VcsBundle;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
-import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
-import com.perforce.p4java.core.IChangelistSummary;
 import net.groboclown.idea.p4ic.config.Client;
-import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.concurrent.CancellationException;
 
 /**
  * Maps between perforce changelists and IDEA changelists.  Due to the
@@ -42,6 +36,10 @@ import java.util.concurrent.CancellationException;
  * This handles the creation of the Perforce changelists, but the IDEA changelist
  * creation should only happen during the
  * {@link P4ChangesViewRefresher} life cycle.
+ * </p>
+ * <p>
+ * It's up to the calling classes to reload the {@link P4ChangeListCache}.
+ * </p>
  */
 @State(
         name = "P4ChangeListMapping",
@@ -76,11 +74,11 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
     @Override
     public Element getState() {
         Element ret = new Element("p4-idea-changelist-mapping");
-        for (Map.Entry<String, Map<String, P4ClId>> en: state.ideaToPerforce.entrySet()) {
+        for (Map.Entry<String, Map<String, P4ChangeListId>> en: state.ideaToPerforce.entrySet()) {
             Element idea = new Element("idea-map");
             ret.addContent(idea);
             idea.setAttribute("idea-id", en.getKey());
-            for (P4ClId p4cl: en.getValue().values()) {
+            for (P4ChangeListId p4cl: en.getValue().values()) {
                 Element p4 = new Element("p4-map");
                 idea.addContent(p4);
                 p4.setAttribute("scid", p4cl.getServerConfigId());
@@ -100,7 +98,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
                 String idea = ideaMap.getAttributeValue("idea-id");
                 List<Element> p4idList = ideaMap.getChildren("p4-map");
                 if (idea != null && p4idList != null) {
-                    Map<String, P4ClId> i2p = new HashMap<String, P4ClId>();
+                    Map<String, P4ChangeListId> i2p = new HashMap<String, P4ChangeListId>();
                     newState.ideaToPerforce.put(idea, i2p);
                     for (Element p4id: p4idList) {
                         String scid = p4id.getAttributeValue("scid");
@@ -108,8 +106,8 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
                         try {
                             int clid = Integer.parseInt(p4id.getAttributeValue("clid"));
                             if (scid != null && client != null) {
-                                P4ClId p4cl = new P4ClId(scid, client, clid);
-                                i2p.put(p4cl.getServerClientId(), p4cl);
+                                P4ChangeListId p4cl = new P4ChangeListIdImpl(scid, client, clid);
+                                i2p.put(getServerClientId(p4cl), p4cl);
                                 newState.perforceToIdea.put(p4cl, idea);
                             }
                         } catch (NumberFormatException e) {
@@ -125,130 +123,8 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
 
     private static class State {
         // idea change id -> (server / client ID -> p4 change)
-        Map<String, Map<String, P4ClId>> ideaToPerforce = new HashMap<String, Map<String, P4ClId>>();
-        Map<P4ClId, String> perforceToIdea = new HashMap<P4ClId, String>();
-    }
-
-
-    // To be part of the state means that this can't be immutable - it needs setters and getters.
-    public static class P4ClId implements P4ChangeListId {
-        private final int clid;
-
-        @NotNull
-        private final String scid;
-
-        @NotNull
-        private final String clientName;
-
-        P4ClId(@NotNull ServerConfig sc, @NotNull IChangelistSummary summary) {
-            if (summary.getId() < 0) {
-                LOG.debug("pending changelist: " + summary.getDescription() + " has invalid id: " + summary.getId() +
-                        "; marking it as the default changelist");
-                clid = P4_DEFAULT;
-            } else {
-                clid = summary.getId();
-            }
-            this.scid = sc.getServiceName();
-            this.clientName = summary.getClientId();
-            assert this.clid >= 0;
-        }
-
-        P4ClId(@NotNull Client client, int clid) {
-            if (clid < 0) {
-                LOG.warn("pending changelist has invalid id: " + clid + "; marking it as the default changelist");
-                clid = P4_DEFAULT;
-            }
-            this.clid = clid;
-            this.scid = client.getConfig().getServiceName();
-            this.clientName = client.getClientName();
-            assert clid >= 0;
-        }
-
-        P4ClId(@NotNull String scid, @NotNull String clientName, int clid) {
-            if (clid < 0) {
-                LOG.warn("pending changelist has invalid id: " + clid + "; marking it as the default changelist");
-                clid = P4_DEFAULT;
-            }
-            this.clid = clid;
-            this.scid = scid;
-            this.clientName = clientName;
-        }
-
-        @Override
-        public int getChangeListId() {
-            return clid;
-        }
-
-        @NotNull
-        @Override
-        public String getServerConfigId() {
-            return scid;
-        }
-
-        @NotNull
-        @Override
-        public String getClientName() {
-            return clientName;
-        }
-
-        @Override
-        public boolean isNumberedChangelist() {
-            return clid > 0;
-        }
-
-        @Override
-        public boolean isDefaultChangelist() {
-            return clid == P4_DEFAULT;
-        }
-
-        @Override
-        public boolean isIn(@NotNull Client client) {
-            return scid.equals(client.getConfig().getServiceName()) &&
-                    clientName.equals(client.getClientName());
-        }
-
-
-        @NotNull
-        String getServerClientId() {
-            return scid + ((char) 1) + clientName;
-        }
-
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == null || ! (o.getClass().equals(P4ClId.class))) {
-                return false;
-            }
-            if (o == this) {
-                return true;
-            }
-            P4ClId that = (P4ClId) o;
-            // due to the dynamic loading nature of this class, there are some
-            // weird circumstances where the scid and client name can be null.
-            return that.clid == this.clid &&
-                    Comparing.equal(that.scid, this.scid) &&
-                    Comparing.equal(that.clientName, this.clientName);
-        }
-
-        @Override
-        public int hashCode() {
-            return clid + scid.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return getServerConfigId() + "+" + getClientName() + "@" + getChangeListId();
-        }
-    }
-
-
-    public static boolean isDefaultChangelist(@Nullable IChangelistSummary p4) {
-        return (p4 != null && p4.getId() <= 0);
-    }
-
-
-    public static boolean isDefaultChangelist(int p4) {
-        return (p4 <= 0);
+        Map<String, Map<String, P4ChangeListId>> ideaToPerforce = new HashMap<String, Map<String, P4ChangeListId>>();
+        Map<P4ChangeListId, String> perforceToIdea = new HashMap<P4ChangeListId, String>();
     }
 
 
@@ -261,47 +137,27 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
         return ChangeListManager.getInstance(project).getDefaultChangeList();
     }
 
+
+    /**
+     * There is always a Perforce default changelist, so this will never return null.
+     *
+     * @param client
+     * @return The Perforce changelist for the current project's default changelist, or
+     *      just the Perforce default changelist.
+     */
     @NotNull
     public P4ChangeListId getProjectDefaultPerforceChangelist(@NotNull Client client) {
         LocalChangeList change = getDefaultIdeaChangelist();
         P4ChangeListId ret = null;
         if (change != null) {
-            LOG.warn("Default IDEA changelist is null");
             ret = getPerforceChangelistFor(client, change);
         }
         if (ret == null) {
-            return new P4ClId(client, P4_DEFAULT);
+            return new P4ChangeListIdImpl(client, P4_DEFAULT);
         }
         return ret;
     }
 
-
-    /**
-     * Creates a mapping between a local IDEA changelist and a Perforce
-     * changelist.
-     * <p/>
-     * This should never be called for the default change lists.
-     *
-     * @param idea idea-backed changelist
-     * @param p4   perforce-backed changelist
-     */
-    void createMapping(@NotNull LocalChangeList idea, @NotNull ServerConfig sc, @NotNull IChangelistSummary p4) {
-        createMappingToP4Id(idea, new P4ClId(sc, p4));
-    }
-
-
-    /**
-     * Creates a mapping between a local IDEA changelist and a Perforce
-     * changelist.
-     * <p/>
-     * This should never be called for the default change lists.
-     *
-     * @param idea idea-backed changelist
-     * @param p4   perforce-backed changelist
-     */
-    void createMapping(@NotNull LocalChangeList idea, @NotNull Client client, int p4) {
-        createMappingToP4Id(idea, new P4ClId(client, p4));
-    }
 
     /**
      * Creates a mapping between a local IDEA changelist and a Perforce
@@ -312,32 +168,29 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
      * @param idea idea-backed changelist
      * @param p4id perforce-backed changelist id
      */
-    void createMappingToP4Id(@NotNull LocalChangeList idea, @NotNull P4ClId p4id) {
+    void bindChangelists(@NotNull LocalChangeList idea, @NotNull P4ChangeListId p4id) {
         checkForInvalidMapping(idea, p4id);
-        if (isDefaultChangelist(idea) && isDefaultChangelist(p4id.getChangeListId())) {
+        if (isDefaultChangelist(idea) && p4id.isDefaultChangelist()) {
             // this is an implicit mapping
             return;
         }
         synchronized (sync) {
-            Map<String, P4ClId> p4ChangeMap = state.ideaToPerforce.get(idea.getId());
+            Map<String, P4ChangeListId> p4ChangeMap = state.ideaToPerforce.get(idea.getId());
             if (p4ChangeMap != null) {
-                if (p4ChangeMap.containsKey(p4id.getServerClientId())) {
+                if (p4ChangeMap.containsKey(getServerClientId(p4id))) {
                     // ensure the other-way-around exists and is correct
                     state.perforceToIdea.put(p4id, idea.getId());
 
-                    //throw new IllegalStateException("Already have mapping for IDEA changelist " + idea +
-                    //        " to perforce change " + state.ideaToPerforce.get(idea.getId()) +
-                    //        "; cannot overwrite this to Perforce change " + p4.getId());
                     LOG.warn("Already have mapping for IDEA changelist " + idea +
                             " to perforce change " + state.ideaToPerforce.get(idea.getId()) +
                             "; going to overwrite this to Perforce change " + p4id);
                     return;
                 }
             } else {
-                p4ChangeMap = new HashMap<String, P4ClId>();
+                p4ChangeMap = new HashMap<String, P4ChangeListId>();
                 state.ideaToPerforce.put(idea.getId(), p4ChangeMap);
             }
-            p4ChangeMap.put(p4id.getServerClientId(), p4id);
+            p4ChangeMap.put(getServerClientId(p4id), p4id);
 
 
             if (state.perforceToIdea.containsKey(p4id)) {
@@ -357,17 +210,23 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
     }
 
     @Nullable
-    String removePerforceMapping(@NotNull P4ClId p4id) {
-        if (isDefaultChangelist(p4id.getChangeListId())) {
-            throw new IllegalArgumentException("cannot remove the default changelist mapping");
+    String removePerforceMapping(@NotNull P4ChangeListId p4id) {
+        if (p4id.isDefaultChangelist()) {
+            //throw new IllegalArgumentException("cannot remove the default changelist mapping");
+            LOG.warn("cannot remove the default changelist mapping");
+            return null;
         }
         String idea;
         synchronized (sync) {
             idea = state.perforceToIdea.remove(p4id);
             if (idea != null) {
-                // FIXME WRONG
-
-                state.ideaToPerforce.remove(idea);
+                final Map<String, P4ChangeListId> i2p = state.ideaToPerforce.get(idea);
+                if (i2p != null) {
+                    i2p.remove(getServerClientId(p4id));
+                    if (i2p.isEmpty()) {
+                        state.ideaToPerforce.remove(idea);
+                    }
+                }
             }
         }
         return idea;
@@ -385,15 +244,17 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
      * @return the associated Perforce changelist ID if known, null if not.
      */
     @Nullable
-    Map<String, P4ClId> removeMapping(@NotNull LocalChangeList idea) {
+    Map<String, P4ChangeListId> removeMapping(@NotNull LocalChangeList idea) {
         if (isDefaultChangelist(idea)) {
-            throw new IllegalArgumentException("cannot remove the default changelist mapping");
+            //throw new IllegalArgumentException("cannot remove the default changelist mapping");
+            LOG.warn("cannot remove the default changelist mapping");
+            return null;
         }
-        final Map<String, P4ClId> p4idList;
+        final Map<String, P4ChangeListId> p4idList;
         synchronized (sync) {
             p4idList = state.ideaToPerforce.remove(idea.getId());
             if (p4idList != null) {
-                for (P4ClId p4id: p4idList.values()) {
+                for (P4ChangeListId p4id: p4idList.values()) {
                     state.perforceToIdea.remove(p4id);
                 }
             }
@@ -401,22 +262,10 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
         return p4idList;
     }
 
-
     @Nullable
-    public LocalChangeList getLocalChangelist(@NotNull ServerConfig sc, @NotNull IChangelistSummary p4) {
-        return getLocalChangelist(new P4ClId(sc, p4));
-    }
-
-
-    @Nullable
-    public LocalChangeList getLocalChangelist(@NotNull Client client, int p4id) {
-        return getLocalChangelist(new P4ClId(client, p4id));
-    }
-
-    @Nullable
-    LocalChangeList getLocalChangelist(@NotNull P4ClId p4) {
+    LocalChangeList getLocalChangelist(@NotNull Client client, int changeListId) {
         ChangeListManager clm = ChangeListManager.getInstance(project);
-        if (isDefaultChangelist(p4.getChangeListId())) {
+        if (changeListId == P4_DEFAULT) {
             for (LocalChangeList cl: clm.getChangeLists()) {
                 if (cl.getName().equals(DEFAULT_CHANGE_NAME)) {
                     return cl;
@@ -427,15 +276,17 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
             return cl;
         }
 
+        P4ChangeListId p4id = new P4ChangeListIdImpl(client, changeListId);
+
         final String id;
         synchronized (sync) {
-            id = state.perforceToIdea.get(p4);
+            id = state.perforceToIdea.get(p4id);
         }
         if (id == null) {
             return null;
         }
         LocalChangeList cl = clm.getChangeList(id);
-        LOG.info("Mapped p4 changelist " + p4 + " to " + cl);
+        LOG.info("Mapped p4 changelist " + p4id + " to " + cl);
         return cl;
     }
 
@@ -469,9 +320,9 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
      */
     @Nullable
     public P4ChangeListId getPerforceChangelistFor(@NotNull Client client, @NotNull LocalChangeList idea) {
-        Collection<P4ClId> changelists = getInnerPerforceChangelists(idea);
+        Collection<P4ChangeListId> changelists = getInnerPerforceChangelists(idea);
         if (changelists != null) {
-            for (P4ClId clid : changelists) {
+            for (P4ChangeListId clid : changelists) {
                 if (clid.isIn(client)) {
                     return clid;
                 }
@@ -493,11 +344,11 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
      */
     @Nullable
     public Collection<P4ChangeListId> getPerforceChangelists(@NotNull LocalChangeList idea) {
-        Collection<P4ClId> ret = getInnerPerforceChangelists(idea);
+        Collection<P4ChangeListId> ret = getInnerPerforceChangelists(idea);
         if (ret == null) {
             return null;
         }
-        return Collections.<P4ChangeListId>unmodifiableCollection(ret);
+        return Collections.unmodifiableCollection(ret);
     }
 
 
@@ -511,17 +362,17 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
      *      otherwise the corresponding Perforce changes.
      */
     @Nullable
-    private Collection<P4ClId> getInnerPerforceChangelists(@NotNull LocalChangeList idea) {
+    private Collection<P4ChangeListId> getInnerPerforceChangelists(@NotNull LocalChangeList idea) {
         if (isDefaultChangelist(idea)) {
             List<Client> clients = P4Vcs.getInstance(project).getClients();
-            List<P4ClId> ret = new ArrayList<P4ClId>(clients.size());
+            List<P4ChangeListId> ret = new ArrayList<P4ChangeListId>(clients.size());
             for (Client client: clients) {
-                ret.add(new P4ClId(client, P4_DEFAULT));
+                ret.add(new P4ChangeListIdImpl(client, P4_DEFAULT));
             }
             return ret;
         }
 
-        Map<String, P4ClId> ret;
+        Map<String, P4ChangeListId> ret;
         synchronized (sync) {
             ret = state.ideaToPerforce.get(idea.getId());
         }
@@ -532,18 +383,17 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
     }
 
 
-    /**
+    /*
      * Updates the internal mapping for the given list of changes.
      * This should be implicitly called by the
      * {@link net.groboclown.idea.p4ic.server.RawServerExecutor} during
      * requests from the server for a list of all the pending changelists.
-     */
     public void updatePendingP4ChangeLists(@NotNull ServerConfig sc, @NotNull List<IChangelistSummary> changes) {
         synchronized (sync) {
-            Set<P4ClId> current = new HashSet<P4ClId>(state.perforceToIdea.keySet());
+            Set<P4ChangeListId> current = new HashSet<P4ChangeListId>(state.perforceToIdea.keySet());
             for (IChangelistSummary summary: changes) {
                 if (summary != null) {
-                    P4ClId p4id = new P4ClId(sc, summary);
+                    P4ChangeListId p4id = new P4ClId(sc, summary);
                     if (summary.getStatus() == ChangelistStatus.SUBMITTED) {
                         LOG.info("Remove mapping for P4 changelist " + summary.getId() + "; it is now submitted");
                         removePerforceMapping(p4id);
@@ -553,15 +403,16 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
             }
             // Anything left in the current list isn't valid anymore - it could
             // have been deleted.
-            for (P4ClId p4: current) {
+            for (P4ChangeListId p4: current) {
                 LOG.info("Remove mapping for P4 changelist " + p4 + "; it is now deleted");
                 removePerforceMapping(p4);
             }
         }
     }
+     */
 
 
-    /**
+    /*
      * Updates the internal mapping for the changelist that was retrieved
      * from the server.  This should be implicitly called by the
      * {@link net.groboclown.idea.p4ic.server.RawServerExecutor} when single
@@ -569,7 +420,6 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
      *
      * @param changelistId changelist ID that was fetched
      * @param change summary retrieved by the server.
-     */
     public void updateP4Changelist(@NotNull Client client, int changelistId, @Nullable IChangelistSummary change) {
         if (change == null) {
             // deleted
@@ -582,44 +432,51 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
             removePerforceMapping(new P4ClId(client, changelistId));
         }
     }
+     */
 
 
     /**
      * Removes mappings for IDEA changelists that no longer exist, and Perforce
-     * changelists that no longer exist.
+     * changelists that no longer exist.  Used by the {@link P4ChangeProvider}.
      *
-     * @param pendingChangelists mapping of all pending changelists (passed in to prevent
-     *                           duplicate p4 calls)
-     * @return the known mappings
-     * @throws com.intellij.openapi.vcs.VcsException
-     * @throws java.util.concurrent.CancellationException
+     * @return a copy of the known mappings
      */
     @NotNull
-    Map<LocalChangeList, Map<Client, IChangelistSummary>> cleanMappings(@NotNull Map<Client, List<IChangelistSummary>> pendingChangelists) throws VcsException, CancellationException {
+    Map<LocalChangeList, Map<Client, P4ChangeList>> cleanMappings() throws VcsException {
+        // Step 1: Get all of the changes this mapping knows about
         // Load in the project changelists and use that to see what is valid.
         Set<String> localIdea;
         synchronized (sync) {
             localIdea = new HashSet<String>(state.ideaToPerforce.keySet());
         }
-        List<P4ClId> changeIds = new ArrayList<P4ClId>();
-        for (Map.Entry<Client, List<IChangelistSummary>> e: pendingChangelists.entrySet()) {
-            for (IChangelistSummary cs : e.getValue()) {
-                changeIds.add(new P4ClId(e.getKey().getConfig(), cs));
+
+        // Step 2: load all the cached pending change lists
+        final Map<Client, List<P4ChangeList>> pendingChanges = P4ChangeListCache.getInstance().getChangeListsForAll(
+                P4Vcs.getInstance(project).getClients());
+        final Map<String, Client> clientIdMap = new HashMap<String, Client>();
+        final Map<P4ChangeListId, P4ChangeList> allP4Changes = new HashMap<P4ChangeListId, P4ChangeList>();
+        for (Map.Entry<Client, List<P4ChangeList>> changes: pendingChanges.entrySet()) {
+            clientIdMap.put(getServerClientId(changes.getKey()), changes.getKey());
+            for (P4ChangeList change: changes.getValue()) {
+                allP4Changes.put(change.getId(), change);
             }
         }
 
-        // Find any current local changelists that don't have a valid pending p4 changelist
-        for (LocalChangeList lcl: ChangeListManager.getInstance(project).getChangeLists()) {
-            if (localIdea.remove(lcl.getId())) {
-                // This is a changelist that we haven't seen in this loop, and that
-                // exists in our state mapping.
+        // Step 3 and 4:
+        Map<String, LocalChangeList> ideaIdToChange = new HashMap<String, LocalChangeList>();
+        for (LocalChangeList lcl : ChangeListManager.getInstance(project).getChangeLists()) {
+            ideaIdToChange.put(lcl.getId(), lcl);
 
-                // If the mapped-to p4 changelist is not known, then we need to
-                // remove this mapping.
-                Collection<P4ClId> p4ids = getInnerPerforceChangelists(lcl);
+            // Step 3: find all the IDEA changelists that we have as a mapping, but don't exist
+            // any more.  That will be what remains in the localIdea variable after  this loop.
+            if (localIdea.remove(lcl.getId())) {
+                // This is a changelist that still exists and that we have in a mapping.
+
+                // Step 4: remove all unknown changelists from the mapping.
+                Collection<P4ChangeListId> p4ids = getInnerPerforceChangelists(lcl);
                 if (p4ids != null) {
-                    for (P4ClId p4id: p4ids) {
-                        if (!changeIds.contains(p4id)) {
+                    for (P4ChangeListId p4id : p4ids) {
+                        if (!allP4Changes.containsKey(p4id)) {
                             removePerforceMapping(p4id);
                         }
                     }
@@ -627,75 +484,69 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
             }
         }
 
-        // All known local changelists that no longer exist must be removed from the
-        // mappings; we removed all the live ones from this set in the above loop
-        for (String ideaCl: localIdea) {
+        // Our state is now such that, for all valid IDEA changelists, we only have
+        // them mapped to valid P4 changelists.  There may still be IDEA changelists
+        // in our mapping that no longer exist.
+
+        // Step 5: Remove any non-existent IDEA changes from the mapping.
+        for (String ideaCl : localIdea) {
             synchronized (sync) {
-                Map<String, P4ClId> p4ids = state.ideaToPerforce.remove(ideaCl);
-                if (p4ids != null) {
-                    for (P4ClId p4id: p4ids.values()) {
+                final Map<String, P4ChangeListId> p4idList = state.ideaToPerforce.remove(ideaCl);
+                if (p4idList != null) {
+                    for (P4ChangeListId p4id : p4idList.values()) {
                         state.perforceToIdea.remove(p4id);
                     }
                 }
             }
         }
 
-        // Find any registered p4 changelist that was either deleted or submitted
-        Set<P4ClId> localP4;
+        // Now return the valid values
+        Map<LocalChangeList, Map<Client, P4ChangeList>> ret = new HashMap<LocalChangeList, Map<Client, P4ChangeList>>();
         synchronized (sync) {
-            localP4 = new HashSet<P4ClId>(state.perforceToIdea.keySet());
-        }
-        localP4.removeAll(changeIds);
-        for (P4ClId p4id: localP4) {
-            removePerforceMapping(p4id);
-        }
+            for (Map.Entry<String, Map<String, P4ChangeListId>> en : state.ideaToPerforce.entrySet()) {
+                @NotNull
+                LocalChangeList lcl = ideaIdToChange.get(en.getKey());
 
-        // Load up all known mappings for the changes
-        Map<LocalChangeList, Map<Client, IChangelistSummary>> ret = new HashMap<LocalChangeList, Map<Client, IChangelistSummary>>();
-        synchronized (sync) {
-            for (Map.Entry<String, Map<String, P4ClId>> e: state.ideaToPerforce.entrySet()) {
-                String ideaChangeId = e.getKey();
+                Map<Client, P4ChangeList> changeMap = new HashMap<Client, P4ChangeList>();
+                ret.put(lcl, changeMap);
 
-                // note that for each idea change, there can be at
-                // most 1 changelist per client.
-                Map<Client, IChangelistSummary> retMap = new HashMap<Client, IChangelistSummary>();
-                for (P4ClId p4id: e.getValue().values()) {
-                    for (Map.Entry<Client, List<IChangelistSummary>> e2 : pendingChangelists.entrySet()) {
-                        Client client = e2.getKey();
-                        if (client.getConfig().getServiceName().equals(p4id.getServerConfigId()) &&
-                                client.getClientName().equals(p4id.getClientName())) {
-                            for (IChangelistSummary cs : e2.getValue()) {
-                                if (cs.getId() == p4id.clid) {
-                                    retMap.put(e2.getKey(), cs);
-                                    break;
-                                }
-                            }
-                        }
-                    }
+                for (Map.Entry<String, P4ChangeListId> stringMap: en.getValue().entrySet()) {
+                    @NotNull
+                    Client client = clientIdMap.get(stringMap.getKey());
+
+                    @NotNull
+                    P4ChangeList change = allP4Changes.get(stringMap.getValue());
+
+                    changeMap.put(client, change);
                 }
-                ret.put(ChangeListManager.getInstance(project).getChangeList(ideaChangeId), retMap);
             }
         }
         return ret;
     }
 
 
-    private void checkForInvalidMapping(@NotNull LocalChangeList idea, @NotNull P4ClId p4) {
+    private void checkForInvalidMapping(@NotNull LocalChangeList idea, @NotNull P4ChangeListId p4) {
+
         if (isDefaultChangelist(idea)) {
-            if (! isDefaultChangelist(p4.getChangeListId())) {
-                throw new IllegalArgumentException("cannot pair default IDEA changelist with the non-default P4 changelist (" + p4 + ")");
+            if (! p4.isDefaultChangelist()) {
+                //throw new IllegalArgumentException("cannot pair default IDEA changelist with the non-default P4 changelist (" + p4 + ")");
+                LOG.warn("cannot pair default IDEA changelist with the non-default P4 changelist (" + p4 + ")");
             }
             // else it's fine
-        } else if (isDefaultChangelist(p4.getChangeListId())) {
-            throw new IllegalArgumentException("cannot pair non-default IDEA changelist (" + idea + ") with the default P4 changelist");
+        } else if (p4.isDefaultChangelist()) {
+            //throw new IllegalArgumentException("cannot pair non-default IDEA changelist (" + idea + ") with the default P4 changelist");
+            LOG.warn("cannot pair non-default IDEA changelist (" + idea + ") with the default P4 changelist");
         }
         // else it's fine.
     }
 
 
-    private boolean isPendingOrNew(@Nullable IChangelist p4) {
-        return (p4 != null) &&
-                (p4.getStatus() != null) &&
-                (p4.getStatus() != ChangelistStatus.SUBMITTED);
+    private String getServerClientId(@NotNull P4ChangeListId id) {
+        return id.getServerConfigId() + ((char) 1) + id.getClientName();
+    }
+
+
+    private String getServerClientId(@NotNull Client client) {
+        return client.getConfig().getServiceName() + ((char) 1) + client.getClientName();
     }
 }

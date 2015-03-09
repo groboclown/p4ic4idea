@@ -14,11 +14,8 @@
 package net.groboclown.idea.p4ic.background;
 
 import com.intellij.ide.util.DelegatingProgressIndicator;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.compat.UICompat;
 import net.groboclown.idea.p4ic.ui.ErrorDialog;
@@ -33,6 +30,9 @@ public class Background {
 
     public static void runInBackground(@NotNull final Project project, @NotNull final String title, @NotNull PerformInBackgroundOption option,
                                        @NotNull final ER runner) {
+        // TEST see if just using what threading IDEA gives us
+        // causes us to do the right thing.
+        /*
         if (ApplicationManager.getApplication().isDispatchThread()) {
             ProgressManager.getInstance().run(new Task.Backgroundable(project, title, true, option) {
                 @Override
@@ -45,6 +45,7 @@ public class Background {
                 }
             });
         } else {
+        */
             ProgressIndicator indicator = UICompat.getInstance().getGlobalProgressIndicator();
             if (indicator == null) {
                 indicator = new DelegatingProgressIndicator();
@@ -54,7 +55,7 @@ public class Background {
             } catch (Exception e) {
                 ErrorDialog.logError(project, title, e);
             }
-        }
+        //}
     }
 
 

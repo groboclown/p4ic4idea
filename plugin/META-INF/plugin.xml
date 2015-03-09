@@ -1,30 +1,23 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.3.3</version>
+    <version>0.4.0</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.4.0</em>
+                <ol>
+                    <li>Major refactoring to the management of changelists.</li>
+                    <li>Bug fixes with connection settings.</li>
+                    <li>Bug fixes with threading.</li>
+                </ol>
+            </li>
             <li><em>0.3.3</em>
                 <ol>
                     <li>Add support for all versions between 13.5 to 14.1</li>
                 </ol>
             </li>
-            <li><em>0.3.2</em>
-                <ol>
-                    <li>Minor UI bug fixes.</li>
-                    <li>Fix failure to edit default settings.</li>
-                </ol>
-            </li>
-            <li><em>0.3.1</em>
-                <ol>
-                    <li>Add support for IDEA 135 builds.</li>
-                    <li>Improve Perforce connection performance.</li>
-                    <li>Minor UI bug fixes.</li>
-                </ol>
-            </li>
-            <li><em>0.3.0</em> Initial public release.</li>
         </ol>
     ]]></change-notes>
     <description><![CDATA[
@@ -149,6 +142,11 @@
         <projectService
                 serviceInterface="net.groboclown.idea.p4ic.changes.P4ChangeListMapping"
                 serviceImplementation="net.groboclown.idea.p4ic.changes.P4ChangeListMapping"/>
+
+        <!-- Perforce changelist to IDEA changelist mapping -->
+        <projectService
+                serviceInterface="net.groboclown.idea.p4ic.concurrent.ExecutorService"
+                serviceImplementation="net.groboclown.idea.p4ic.concurrent.ExecutorService"/>
     </extensions>
 
     <project-components>
@@ -174,6 +172,9 @@
         </component>
         <component>
             <implementation-class>net.groboclown.idea.p4ic.server.ServerStoreService</implementation-class>
+        </component>
+        <component>
+            <implementation-class>net.groboclown.idea.p4ic.changes.P4ChangeListCache</implementation-class>
         </component>
     </application-components>
 </idea-plugin>

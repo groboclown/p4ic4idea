@@ -81,7 +81,7 @@ public class P4Edit extends BasicAction {
 
         LOG.info("adding or editing files: " + affectedFiles);
 
-        // FIXME this may be bad form - it probably needs to run in-process.
+        // TODO this may be bad form - it probably needs to run in-process.
         Background.runInBackground(project, EDIT, vcs.getConfiguration().getEditOption(), new Background.ER() {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {

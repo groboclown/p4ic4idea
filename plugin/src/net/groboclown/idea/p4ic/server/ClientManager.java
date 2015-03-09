@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+// TODO make a project service
 public class ClientManager {
     private final Project project;
     private final P4ConfigProject configProject;
@@ -97,12 +98,13 @@ public class ClientManager {
         } catch (P4InvalidClientException e) {
             // NOTE invalid configuration call will be done
             // outside of here
+            // TODO properly log
             e.printStackTrace();
             clients = Collections.emptyList();
         } catch (P4InvalidConfigException e) {
             // NOTE invalid configuration call will be done
             // outside of here
-            // FIXME properly log
+            // TODO properly log
             e.printStackTrace();
             clients = Collections.emptyList();
         } finally {
@@ -133,6 +135,4 @@ public class ClientManager {
             dispose();
         }
     }
-
-
 }

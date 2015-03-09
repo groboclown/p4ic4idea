@@ -1,6 +1,26 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.4.0::
+
+### Overview
+
+* Major refactoring to the management of changelists.
+* Bug fixes.
+
+### Details
+
+* Major refactoring to the management of changelists.
+    * Perforce Changelists are now cached application-wide.
+      This allows for code clean-up that should hopefully make
+      some of the file migration between changelists
+      less common (#22).
+* Bug fixes.
+    * non-numeric perforce server port (#23)
+    * Background threads were causing refresh problems.  Turned them
+      off to limit the number of issues they caused.
+
+
 ## ::v0.3.3::
 
 ### Overview

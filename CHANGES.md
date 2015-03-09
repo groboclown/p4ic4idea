@@ -19,6 +19,7 @@
     * non-numeric perforce server port (#23)
     * Background threads were causing refresh problems.  Turned them
       off to limit the number of issues they caused.
+* Add support for IDEA 141.2.2
 
 
 ## ::v0.3.3::

@@ -148,14 +148,11 @@ public class P4ChangeListCache implements ApplicationComponent {
         final Set<P4FileInfo> files = new HashSet<P4FileInfo>(
                 client.getServer().loadOpenFiles(client.getRoots().toArray(new VirtualFile[client.getRoots().size()])));
         final List<IChangelistSummary> summaries = client.getServer().getPendingClientChangelists();
-        P4ChangeList defaultChange = null;
 
         // For each changelist, create the P4ChangeList object and remove the
         // found files.
         for (IChangelistSummary summary : summaries) {
-            if (summary.getId() < 0) {
-                LOG.error("`p4 changes` returned a negative changelist ID");
-            } else {
+            if (summary.getId() > 0) {
                 Set<P4FileInfo> changelistFiles = new HashSet<P4FileInfo>();
                 Iterator<P4FileInfo> iter = files.iterator();
                 while (iter.hasNext()) {
@@ -167,21 +164,27 @@ public class P4ChangeListCache implements ApplicationComponent {
                 }
                 P4ChangeList change = new P4ChangeList(new P4ChangeListIdImpl(client, summary), changelistFiles,
                         summary.getDescription(), summary.getUsername());
-                if (change.getId().isDefaultChangelist()) {
-                    if (defaultChange != null) {
-                        LOG.error("`p4 changes` returned multiple default changelists");
-                    } else {
-                        defaultChange = change;
-                    }
-                } else {
-                    serverCache.add(change);
-                }
+                serverCache.add(change);
             }
         }
 
+        // The remaining files are expected to be in default changelists.
+        P4ChangeList defaultChange;
+        Set<P4FileInfo> defaultChangeFiles = new HashSet<P4FileInfo>();
+        final Iterator<P4FileInfo> iter = files.iterator();
+        while (iter.hasNext()) {
+            final P4FileInfo next = iter.next();
+            if (next.getChangelist() <= P4_DEFAULT) {
+                iter.remove();
+                defaultChangeFiles.add(next);
+            }
+        }
+        defaultChange = new P4ChangeList(new P4ChangeListIdImpl(client, P4_DEFAULT),
+                defaultChangeFiles, null, null);
+
         // If there are left over files, then that could be an error.
         if (! files.isEmpty()) {
-            LOG.error("`p4 opeend` returned files that are not in opened changelists: " +
+            LOG.error("`p4 opened` returned files that are not in opened changelists: " +
                 files);
         }
 
@@ -189,11 +192,7 @@ public class P4ChangeListCache implements ApplicationComponent {
         lock.writeLock().lock();
         try {
             numberedCache.put(client.getConfig().getServiceName(), serverCache);
-            if (defaultChange == null) {
-                defaultCache.remove(getClientServerId(client));
-            } else {
-                defaultCache.put(getClientServerId(client), defaultChange);
-            }
+            defaultCache.put(getClientServerId(client), defaultChange);
         } finally {
             lock.writeLock().unlock();
         }

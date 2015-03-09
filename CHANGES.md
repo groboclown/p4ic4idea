@@ -1,6 +1,16 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.4.1::
+
+### Overview
+
+* Minor bug fix with changelist association with the default changelist.
+
+### Details
+
+
+
 ## ::v0.4.0::
 
 ### Overview

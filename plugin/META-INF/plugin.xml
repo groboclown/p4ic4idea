@@ -6,16 +6,16 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.4.1</em>
+                <ol>
+                    <li>Minor changelist handling bug fixes.</li>
+                </ol>
+            </li>
             <li><em>0.4.0</em>
                 <ol>
                     <li>Major refactoring to the management of changelists.</li>
                     <li>Bug fixes with connection settings.</li>
                     <li>Bug fixes with threading.</li>
-                </ol>
-            </li>
-            <li><em>0.3.3</em>
-                <ol>
-                    <li>Add support for all versions between 13.5 to 14.1</li>
                 </ol>
             </li>
         </ol>

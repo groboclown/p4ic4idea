@@ -29,6 +29,8 @@ project with a Perforce repository through IDEA's built-in VCS support.
            GitHub on your local computer. You'll need a copy of
            p4d (or p4s for Windows) to run the tests.  The code comes with
            copies of the correct dependent libraries.
+           *Note: the GitHub sources use a remote repository to host the
+           large IntelliJ dependent Jar files.*
         1. Copy the `local.properties.template` to `local.properties`
            in the source root directory, and edit the values to
            match your configuration.

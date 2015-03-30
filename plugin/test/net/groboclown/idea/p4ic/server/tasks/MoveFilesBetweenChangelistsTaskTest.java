@@ -12,7 +12,7 @@ import static org.junit.Assert.fail;
 
 public class MoveFilesBetweenChangelistsTaskTest {
     @Rule
-    public ProjectRule projectFixture;
+    public ProjectRule projectFixture = new ProjectRule("project");
 
     @Test
     public void testRunDoubleDefaults() throws Exception {

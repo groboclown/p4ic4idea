@@ -28,6 +28,7 @@ import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.changes.P4ChangeListCache;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.ui.P4OnCheckinPanel;
@@ -78,13 +79,17 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     @Override
     public List<VcsException> commit(List<Change> changes, final String preparedComment,
             @NotNull NullableFunction<Object, Object> parametersHolder, Set<String> feedback) {
-        //System.out.println("Submit to server: " + changes);
+        LOG.info("Submit to server: " + changes);
         final List<VcsException> errors = new ArrayList<VcsException>();
 
         // Find all the files and their respective P4 changelists.
+        // This method deals with the problem of discovering the
+        // changelists to submit, and their associated P4 client.
+        // The server end deals with filtering out the files that
+        // aren't requested to submit.
         final ChangeListManager clm = ChangeListManager.getInstance(vcs.getProject());
         final Map<Client, List<FilePath>> defaultChangeFiles = new HashMap<Client, List<FilePath>>();
-        final Map<Client, Map<Integer, List<FilePath>>> pathsPerChangeList = new HashMap<Client, Map<Integer, List<FilePath>>>();
+        final Map<Client, Map<P4ChangeListId, List<FilePath>>> pathsPerChangeList = new HashMap<Client, Map<P4ChangeListId, List<FilePath>>>();
         for (Change change: changes) {
             if (change != null && change.getVirtualFile() != null) {
                 LocalChangeList cl = clm.getChangeList(change);
@@ -92,54 +97,78 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             }
         }
 
-        // FIXME Currently disabled because of server crashes on Windows
-        // (caused due to incorrect API usage, but still...)
-        errors.add(new VcsException("Submit is disabled."));
-        /*
         // If there are files in the default changelist, they need to have their
         // own changelist.  This needs to happen first, because all files that
         // are not in the following changelists are moved into the default.
 
+        // This just puts the defaults into a changelist.  They will be submitted
+        // with the rest of the changelists below.
+
         if (! defaultChangeFiles.isEmpty()) {
-            try {
-                IChangelist changelist = vcs.getServer().createChangelist(preparedComment);
-                //System.out.println("Submitting files in default changelist as new changelist id " + changelist.getId());
-                errors.addAll(P4StatusMessage.messagesAsErrors(
-                        vcs.getServer().submitChangelist(
-                                defaultChangeFiles, null, changelist.getId())));
-            } catch (VcsException e) {
-                e.printStackTrace();
-                errors.add(e);
-            } catch (Exception e) {
-                e.printStackTrace();
-                errors.add(new VcsException(e));
-            }
-        }
-        for (Map.Entry<Integer, List<FilePath>> en: pathsPerChangeList.entrySet()) {
-            try {
-                IChangelist changelist = vcs.getServer().getChangelist(en.getKey());
-                if (changelist == null || changelist.getStatus() == ChangelistStatus.SUBMITTED) {
-                    errors.add(new VcsException("changelist " + changelist + " is already submitted or deleted"));
-                } else {
-                    errors.addAll(P4StatusMessage.messagesAsErrors(
-                            vcs.getServer().submitChangelist(
-                                    en.getValue(), null, changelist.getId())));
+            for (Map.Entry<Client, List<FilePath>> en: defaultChangeFiles.entrySet()) {
+                Client client = en.getKey();
+                try {
+                    final P4ChangeListId changeList = P4ChangeListCache.getInstance().createChangeList(
+                            client, preparedComment);
+                    Map<P4ChangeListId, List<FilePath>> clFp = pathsPerChangeList.get(client);
+                    if (clFp == null) {
+                        clFp = new HashMap<P4ChangeListId, List<FilePath>>();
+                        pathsPerChangeList.put(client, clFp);
+                    }
+                    P4ChangeListCache.getInstance().addFilesToChangelist(client,
+                            changeList, en.getValue());
+                    clFp.put(changeList, en.getValue());
+                } catch (VcsException e) {
+                    LOG.warn("Problem sorting files into changelists for client " +
+                            client + ": " + en.getValue(), e);
+                    errors.add(e);
                 }
-            } catch (VcsException e) {
-                e.printStackTrace();
-                errors.add(e);
-            } catch (Exception e) {
-                e.printStackTrace();
-                errors.add(new VcsException(e));
             }
         }
-        */
+        for (Map.Entry<Client, Map<P4ChangeListId, List<FilePath>>> en: pathsPerChangeList.entrySet()) {
+            final Client client = en.getKey();
+            for (Map.Entry<P4ChangeListId, List<FilePath>> clEn: en.getValue().entrySet()) {
+                LOG.info("Submit to " + client + " cl " + clEn.getValue() + " files " +
+                    clEn.getValue());
+                try {
+                    client.getServer().submitChangelist(clEn.getValue(),
+
+                            // TODO add jobs
+                            Collections.<String>emptyList(),
+
+                            // TODO add job status
+                            null,
+
+                            clEn.getKey().getChangeListId());
+                } catch (VcsException e) {
+                    LOG.warn("Problem submitting changelist " +
+                            clEn.getKey().getChangeListId(), e);
+                    errors.add(e);
+                }
+            }
+        }
+
+        // Mark the changes as needing an update
+        // Just requires a refresh.
+        ChangeListManager.getInstance(vcs.getProject()).
+                invokeAfterUpdate();
+                scheduleUpdate(true);
+        //invokeAfterUpdate(new Runnable() {
+        //        @Override
+        //        public void run() {
+        //            ChangeListManager.getInstance(vcs.getProject()).ensureUpToDate(true);
+        //        }
+        //    }, InvokeAfterUpdateMode.BACKGROUND_NOT_CANCELLABLE,
+        //    // TODO localize
+        //    "",
+        //    ModalityState.NON_MODAL);
+        //ensureUpToDate(true);
 
         return errors;
     }
 
     private void splitChanges(@NotNull Change change, @Nullable LocalChangeList lcl,
-            @NotNull Map<Client, Map<Integer, List<FilePath>>> clientPathsPerChangeList,
+            @NotNull Map<Client, Map<P4ChangeListId, List<FilePath>>> clientPathsPerChangeList,
             @NotNull Map<Client, List<FilePath>> defaultChangeFiles) {
         final VirtualFile vf = change.getVirtualFile();
         if (vf == null) {
@@ -151,27 +180,27 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         final Client client = vcs.getClientFor(fp);
         if (client == null) {
             // not under p4 control
-            LOG.info("Tried to submit a change (" + change + ") that is not under P4 control");
+            LOG.info("Tried to submit a change (" + change + " / " + fp + ") that is not under P4 control");
             return;
         }
         if (lcl != null) {
             Collection<P4ChangeListId> p4clList = vcs.getChangeListMapping().getPerforceChangelists(lcl);
             if (p4clList != null) {
-                // find the client
+                // find the changelist
                 for (P4ChangeListId p4cl: p4clList) {
                     if (p4cl.isIn(client)) {
                         // each IDEA changelist stores at most 1 p4 changelist per client.
                         // so we can exit once it's a client match.
                         if (p4cl.isNumberedChangelist()) {
-                            Map<Integer, List<FilePath>> pathsPerChangeList = clientPathsPerChangeList.get(client);
+                            Map<P4ChangeListId, List<FilePath>> pathsPerChangeList = clientPathsPerChangeList.get(client);
                             if (pathsPerChangeList == null) {
-                                pathsPerChangeList = new HashMap<Integer, List<FilePath>>();
+                                pathsPerChangeList = new HashMap<P4ChangeListId, List<FilePath>>();
                                 clientPathsPerChangeList.put(client, pathsPerChangeList);
                             }
-                            List<FilePath> files = pathsPerChangeList.get(p4cl.getChangeListId());
+                            List<FilePath> files = pathsPerChangeList.get(p4cl);
                             if (files == null) {
                                 files = new ArrayList<FilePath>();
-                                pathsPerChangeList.put(p4cl.getChangeListId(), files);
+                                pathsPerChangeList.put(p4cl, files);
                             }
                             files.add(fp);
                         } else {
@@ -201,14 +230,16 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     @Nullable
     @Override
     public List<VcsException> scheduleMissingFileForDeletion(List<FilePath> files) {
-        // FIXME figure out how to add these to the changelist; but which one?
+        // TODO figure out how to add these to the changelist; but which one?
+        LOG.info("scheduleMissingFileForDeletion: " + files);
         return null;
     }
 
     @Nullable
     @Override
     public List<VcsException> scheduleUnversionedFilesForAddition(List<VirtualFile> files) {
-        // FIXME figure out how to add these to the changelist; but which one?
+        // TODO figure out how to add these to the changelist; but which one?
+        LOG.info("scheduleUnversionedFilesForAddition: " + files);
         return null;
     }
 

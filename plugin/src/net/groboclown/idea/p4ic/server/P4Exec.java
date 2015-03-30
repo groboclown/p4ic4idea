@@ -27,6 +27,7 @@ import com.perforce.p4java.core.file.*;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.generic.core.file.FilePath;
+import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
@@ -519,6 +520,24 @@ public class P4Exec {
             public Void run(@NotNull IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 server.getServerInfo();
                 return null;
+            }
+        });
+    }
+
+    public List<P4StatusMessage> submit(@NotNull final Project project, final int changelistId,
+            @NotNull final List<String> jobIds,
+            @Nullable final String jobStatus) throws VcsException, CancellationException {
+        return runWithClient(project, new WithClient<List<P4StatusMessage>>() {
+            @Override
+            public List<P4StatusMessage> run(@NotNull final IOptionsServer server, @NotNull final IClient client)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                final IChangelist changelist = server.getChangelist(changelistId);
+                SubmitOptions options = new SubmitOptions();
+                options.setJobIds(jobIds);
+                if (jobStatus != null) {
+                    options.setJobStatus(jobStatus);
+                }
+                return getErrors(changelist.submit(options));
             }
         });
     }

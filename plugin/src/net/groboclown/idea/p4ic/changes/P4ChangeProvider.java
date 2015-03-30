@@ -14,6 +14,7 @@
 package net.groboclown.idea.p4ic.changes;
 
 import com.intellij.openapi.diagnostic.Logger;
+
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.FilePath;
@@ -183,6 +184,10 @@ public class P4ChangeProvider implements ChangeProvider {
         Set<P4ChangeListId> associatedP4clIds = new HashSet<P4ChangeListId>();
         for (Map<Client, P4ChangeList> map: known.values()) {
             for (P4ChangeList cl: map.values()) {
+                // TODO why is this an NPE?
+
+                LOG.info("cl " + cl);
+
                 associatedP4clIds.add(cl.getId());
             }
         }

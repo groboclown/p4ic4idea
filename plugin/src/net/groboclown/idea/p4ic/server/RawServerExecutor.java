@@ -199,12 +199,12 @@ public class RawServerExecutor {
 
     @NotNull
     public List<P4StatusMessage> submitChangelist(@NotNull Project project,
-            @Nullable List<FilePath> actualFiles, @Nullable Collection<String> jobIds, int changelistId)
+            @Nullable List<FilePath> actualFiles, @Nullable Collection<String> jobIds, String jobStatus, int changelistId)
             throws VcsException, CancellationException {
         if (changelistId <= 0) {
             throw new VcsException("Invalid changelist ID " + changelistId);
         }
-        return performAction(project, new SubmitRunner(project, actualFiles, jobIds, changelistId));
+        return performAction(project, new SubmitRunner(project, actualFiles, jobIds, jobStatus, changelistId));
     }
 
     @NotNull

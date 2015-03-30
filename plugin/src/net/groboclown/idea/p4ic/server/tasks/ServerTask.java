@@ -15,19 +15,15 @@ package net.groboclown.idea.p4ic.server.tasks;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.VcsException;
-import com.perforce.p4java.core.file.IFileOperationResult;
 import net.groboclown.idea.p4ic.server.P4Exec;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.CancellationException;
 
 /**
  * Higher level actions on Perforce objects.
  */
 public abstract class ServerTask<T> {
-    private final static Logger STATIC_LOG = Logger.getInstance(ServerTask.class);
     private final Logger LOG = Logger.getInstance(getClass());
 
     public abstract T run(@NotNull P4Exec exec)

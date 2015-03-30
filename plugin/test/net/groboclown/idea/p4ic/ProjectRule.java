@@ -14,7 +14,6 @@
 package net.groboclown.idea.p4ic;
 
 import com.intellij.openapi.components.ProjectComponent;
-
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
@@ -55,15 +54,13 @@ public class ProjectRule extends ExternalResource {
     }
 
 
-    public TempDirTestFixture createVcsRoot(String name)
-    {
+    public TempDirTestFixture createVcsRoot(String name) {
         //VcsUtil.getVcsRootFor()
         throw new NullPointerException();
     }
 
 
-    public FilePath createFilePath(String path, boolean exists, boolean isDirectory, boolean isReadable, boolean isWritable)
-    {
+    public FilePath createFilePath(String path, boolean exists, boolean isDirectory, boolean isReadable, boolean isWritable) {
         File file = new File(path);
         FilePath ret = mock(FilePath.class);
         when(ret.getPath()).thenReturn(path);
@@ -77,14 +74,18 @@ public class ProjectRule extends ExternalResource {
 
     @Override
     protected void before() throws Throwable {
+        super.before();
         projectFixtureBuilder = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(name);
         dirFixture = IdeaTestFixtureFactory.getFixtureFactory().createTempDirTestFixture();
         dirFixture.setUp();
+        projectFixture = null;
+        System.err.println("before!");
     }
 
 
     @Override
     protected void after() {
+        System.err.println("after!");
         if (projectFixture != null) {
             ((ProjectComponent) VcsDirtyScopeManager.getInstance(projectFixture.getProject())).projectClosed();
             ((ProjectComponent) ChangeListManager.getInstance(projectFixture.getProject())).projectClosed();
@@ -102,14 +103,32 @@ public class ProjectRule extends ExternalResource {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        super.after();
     }
 
 
     @NotNull
     private IdeaProjectTestFixture getProjectFixture() throws Exception {
         if (projectFixture == null) {
+            if (projectFixtureBuilder == null) {
+                try {
+                    before();
+                } catch (Exception e) {
+                    throw e;
+                } catch (Error e) {
+                    throw e;
+                } catch (Throwable throwable) {
+                    throw new RuntimeException(throwable);
+                }
+            }
             projectFixture = projectFixtureBuilder.getFixture();
             projectFixture.setUp();
+
+            // How to call setUp on the manager?
+            //VcsDirtyScopeManager.getInstance(projectFixture.getProject()).
+            ((ProjectComponent) ChangeListManager.getInstance(projectFixture.getProject())).projectOpened();
+            //((ChangeListManagerImpl) ChangeListManager.getInstance(projectFixture.getProject())).stopEveryThingIfInTestMode();
+            ((ProjectComponent) ProjectLevelVcsManager.getInstance(projectFixture.getProject())).projectOpened();
         }
         return projectFixture;
     }

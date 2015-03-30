@@ -1,6 +1,27 @@
 # IDEA Community VCS Integration for Perforce
 
 
+
+
+## ::v0.4.2::
+
+### Overview
+
+* Bug fix for localhost port.
+* Enabled submit.
+
+### Details
+
+* Submit enabled.  Very early version of submit is now possible.  It does not allow for
+  setting job status or adding jobs to the submitted changelist.  It has the issue like
+  much of the rest of the code where the changelist view isn't updated correctly.
+* Bug fix for localhost port.
+    * A `P4PORT=1666` format would fail parsing, because the P4 Java API only supports
+      `hostname:port` or `schema://hostname:port` formats.  As a fix,
+      `localhost` is prefixed for any P4PORT setting that does not have a colon in
+      the actual port part.
+
+
 ## ::v0.4.1::
 
 ### Overview

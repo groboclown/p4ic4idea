@@ -177,8 +177,9 @@ public class ServerExecutor {
         return exec.getVirtualFileInfo(project, virtualFiles);
     }
 
-    public List<P4StatusMessage> submitChangelist(@NotNull List<FilePath> files, @NotNull Collection<String> jobIds, int changelistId) throws VcsException {
-        return exec.submitChangelist(project, files, jobIds, changelistId);
+    public List<P4StatusMessage> submitChangelist(@NotNull List<FilePath> files, @NotNull Collection<String> jobIds,
+            String jobStatus, int changelistId) throws VcsException {
+        return exec.submitChangelist(project, files, jobIds, jobStatus, changelistId);
     }
 
     public byte[] loadFileAsBytes(@NotNull FilePath file, int rev) throws VcsException, CancellationException {

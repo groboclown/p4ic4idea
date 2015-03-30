@@ -138,6 +138,13 @@ public class P4ConfigUtil {
                     }
                 }
             }
+
+            if (ret[1].indexOf(':') < 0) {
+                // This is the form "port", which is not supported by the
+                // P4 java api.  So we must prepend a localhost to conform
+                // to what P4 java supports.
+                ret[1] = "localhost:" + ret[1];
+            }
         }
         return ret;
     }

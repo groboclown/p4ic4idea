@@ -183,12 +183,14 @@ public class P4ChangeProvider implements ChangeProvider {
 
         Set<P4ChangeListId> associatedP4clIds = new HashSet<P4ChangeListId>();
         for (Map<Client, P4ChangeList> map: known.values()) {
-            for (P4ChangeList cl: map.values()) {
-                // TODO why is this an NPE?
-
-                LOG.info("cl " + cl);
-
-                associatedP4clIds.add(cl.getId());
+            for (Map.Entry<Client, P4ChangeList> en: map.entrySet()) {
+                // It's possible to have a client map to a null changelist.
+                P4ChangeList cl = en.getValue();
+                if (cl != null) {
+                    associatedP4clIds.add(cl.getId());
+                //} else {
+                //    LOG.info("mapped client " + en.getKey() + " to null changelist");
+                }
             }
         }
 
@@ -372,7 +374,11 @@ public class P4ChangeProvider implements ChangeProvider {
 
                 LocalChangeList changeList = vcs.getChangeListMapping().getLocalChangelist(client, file.getChangelist());
                 if (changeList == null) {
-                    LOG.error("Did not map an IntelliJ changelist for Perforce changelist " + file.getChangelist() +
+                    // This can happen if the changelist was submitted,
+                    // and the file status hasn't been updated to be
+                    // marked as not open.
+
+                    LOG.warn("Did not map an IntelliJ changelist for Perforce changelist " + file.getChangelist() +
                             " (file " + file + ")");
                     continue;
                 }

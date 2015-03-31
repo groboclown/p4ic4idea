@@ -14,9 +14,13 @@
 package net.groboclown.idea.p4ic.changes;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangesViewRefresher;
+import com.intellij.openapi.vcs.changes.InvokeAfterUpdateMode;
+import com.intellij.openapi.vcs.changes.actions.RefreshAction;
+import net.groboclown.idea.p4ic.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 
 public class P4ChangesViewRefresher implements ChangesViewRefresher {
@@ -32,12 +36,20 @@ public class P4ChangesViewRefresher implements ChangesViewRefresher {
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             @Override
             public void run() {
-                // TODO need some way to force a status refresh.
+                ChangeListManager.getInstance(project).invokeAfterUpdate(new Runnable() {
+                        @Override
+                        public void run() {
+                            RefreshAction.doRefresh(project);
+                            // Taken from com.intellij.openapi.vcs.actions.RefreshStatuses
+                            //VcsDirtyScopeManager.getInstance(project).markEverythingDirty();
 
-                // This "ensureUpToDate" will invoke schedule refresh.
-                ChangeListManager.getInstance(project).ensureUpToDate(true);
-                //ChangesViewManager.getInstance(project).scheduleRefresh();
-
+                            // This "ensureUpToDate" will invoke schedule refresh.
+                            //ChangeListManager.getInstance(project).ensureUpToDate(true);
+                            //ChangesViewManager.getInstance(project).scheduleRefresh();
+                        }
+                    }, InvokeAfterUpdateMode.BACKGROUND_CANCELLABLE,
+                    P4Bundle.getString("change.view.refresh.title"),
+                    ModalityState.NON_MODAL);
             }
         });
     }

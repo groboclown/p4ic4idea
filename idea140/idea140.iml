@@ -51,7 +51,10 @@
           <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-140.2285.5/idea.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="file://C:/dev/intellij-community.github/intellij-community/platform/vcs-api/src" />
+          <root url="file://C:/dev/intellij-community.github/intellij-community/platform/vcs-impl/src" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">

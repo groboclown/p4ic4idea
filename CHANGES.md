@@ -8,6 +8,7 @@
 ### Overview
 
 * Bug fix for localhost port.
+* Fixed the change list view refresh.
 * Enabled submit.
 
 ### Details

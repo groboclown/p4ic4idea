@@ -145,5 +145,6 @@ From the change lists, you can view a difference against the head
 revision.  You can also view the file history, and compare different
 revisions against each other.
 
-Currently, submitting a changelist is not enabled.
+Currently, you cannot associate a job with a changelist, nor can you
+synchronize files.
 

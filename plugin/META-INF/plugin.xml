@@ -6,16 +6,20 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.4.2</em>
+                <ol>
+                    <li>Submit implementation added.  It does not
+                    allow for setting the job status, or associating
+                    jobs with the changelist.</li>
+                    <li>Fixed the changelist view refresh bug.</li>
+                    <li>Fixed issues with P4PORT referencing localhost.</li>
+                    <li>Fixed issues with multiple clients in a single
+                    project causing a NullPointerException.</li>
+                </ol>
+            </li>
             <li><em>0.4.1</em>
                 <ol>
                     <li>Minor changelist handling bug fixes.</li>
-                </ol>
-            </li>
-            <li><em>0.4.0</em>
-                <ol>
-                    <li>Major refactoring to the management of changelists.</li>
-                    <li>Bug fixes with connection settings.</li>
-                    <li>Bug fixes with threading.</li>
                 </ol>
             </li>
         </ol>
@@ -26,7 +30,8 @@
       Limitations:
       </p>
       <ul>
-        <li>Submit is disabled.</li>
+        <li>Submit does not associate jobs with the changelist, nor
+        does it set the job status.</li>
         <li>Does not synchronize local files with the server.</li>
         <li>Does not indicate to the user whether a file is
         synchronized to the head revision or not.</li>

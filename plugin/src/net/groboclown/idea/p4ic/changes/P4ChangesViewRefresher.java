@@ -32,7 +32,12 @@ public class P4ChangesViewRefresher implements ChangesViewRefresher {
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             @Override
             public void run() {
+                // TODO need some way to force a status refresh.
+
+                // This "ensureUpToDate" will invoke schedule refresh.
                 ChangeListManager.getInstance(project).ensureUpToDate(true);
+                //ChangesViewManager.getInstance(project).scheduleRefresh();
+
             }
         });
     }

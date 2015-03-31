@@ -13,14 +13,14 @@
  */
 package net.groboclown.idea.p4ic.extension;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.openapi.vcs.changes.ChangeList;
-import com.intellij.openapi.vcs.changes.ChangeListManager;
-import com.intellij.openapi.vcs.changes.LocalChangeList;
+import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -30,6 +30,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListCache;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
+import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.ui.P4OnCheckinPanel;
 import org.jetbrains.annotations.NotNull;
@@ -149,21 +150,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         }
 
         // Mark the changes as needing an update
-        // Just requires a refresh.
-        ChangeListManager.getInstance(vcs.getProject()).
-                invokeAfterUpdate();
-                scheduleUpdate(true);
-        //invokeAfterUpdate(new Runnable() {
-        //        @Override
-        //        public void run() {
-        //            ChangeListManager.getInstance(vcs.getProject()).ensureUpToDate(true);
-        //        }
-        //    }, InvokeAfterUpdateMode.BACKGROUND_NOT_CANCELLABLE,
-        //    // TODO localize
-        //    "",
-        //    ModalityState.NON_MODAL);
-        //ensureUpToDate(true);
-
+        P4ChangesViewRefresher.refreshLater(vcs.getProject());
         return errors;
     }
 

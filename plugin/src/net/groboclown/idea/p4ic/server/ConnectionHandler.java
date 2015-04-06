@@ -89,6 +89,8 @@ public abstract class ConnectionHandler {
 
     // server configs are required to have all values set in a pretty
     // solid valid config.
+    // TODO allow for this to return the actual problems with the
+    // configuration.
     public abstract boolean isConfigValid(@NotNull ServerConfig config);
 
 

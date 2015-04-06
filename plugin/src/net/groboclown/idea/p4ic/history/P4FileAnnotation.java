@@ -142,9 +142,9 @@ public class P4FileAnnotation extends FileAnnotation {
     }
 
     /**
-     * Get revision number for the line.
+     * Get revision number for the line. (blame list)
      *
-     * @param lineNumber
+     * @param lineNumber line number.
      */
     @Nullable
     @Override
@@ -160,7 +160,7 @@ public class P4FileAnnotation extends FileAnnotation {
      * @return current revision of file for the moment when annotation was computed;
      * null if provider does not provide this information
      * <p/>
-     * ! needed for automatic annotation close when file current revision changes
+     * Needed for automatic annotation close when file current revision changes.
      */
     @Nullable
     @Override
@@ -189,7 +189,8 @@ public class P4FileAnnotation extends FileAnnotation {
 
     @Override
     public boolean revisionsNotEmpty() {
-        // FIXME slow
+        // TODO this is a slow implementation.  There should be
+        // some easy speed-up opportunities here.
         List<VcsFileRevision> revs = getRevisions();
         return revs != null && ! revs.isEmpty();
     }
@@ -198,7 +199,7 @@ public class P4FileAnnotation extends FileAnnotation {
     @Override
     public AnnotationSourceSwitcher getAnnotationSourceSwitcher() {
 
-        // FIXME How to do this???
+        // TODO this needs an implementation
 
         return null;
     }

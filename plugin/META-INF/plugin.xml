@@ -1,7 +1,7 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.4.2</version>
+    <version>0.4.3</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
@@ -41,7 +41,7 @@
       <p>
       Once you install the plugin, you can associate a project directory
       with Perforce in the project settings (<b>File</b> - <b>Settings...</b>
-      for <en>Alt+Ctrl+S</alt>, and navigating to the Version Control panel.
+      or <en>Alt+Ctrl+S</alt>, and navigating to the Version Control panel.
       Make sure to edit the Perforce configuration.
       </p>
       <p>

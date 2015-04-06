@@ -32,19 +32,19 @@ public class P4OnCheckinPanel implements CheckinChangeListSpecificComponent {
 
     @Override
     public void onChangeListSelected(LocalChangeList list) {
-        // FIXME
+        // TODO implement
     }
 
     @Override
     public JComponent getComponent() {
-        // FIXME add job selection panel
+        // TODO add job selection panel
 
         return new JPanel();
     }
 
     @Override
     public void refresh() {
-        // FIXME
+        // TODO implement
     }
 
     @Override

@@ -295,7 +295,7 @@ public class RawServerExecutor {
                     }
                     if (! missed.isEmpty()) {
                         if (ret.isEmpty()) {
-                            // FIXME clean up this message, and localize it.
+                            // TODO clean up this message, and localize it.
                             // This is user facing!
                             P4InvalidConfigException ex = new P4InvalidConfigException("Roots (" + missed + ") are not under the client root (" + clientFp +
                                     ") or are not the parent of the client root.  Is the P4CONFIG file referencing the wrong client, or in the wrong directory?");
@@ -393,7 +393,7 @@ public class RawServerExecutor {
             throws VcsException, CancellationException {
         byte[] bytes = loadFileAsBytes(project, file, rev);
 
-        // FIXME encode the file correctly
+        // TODO encode the file correctly
         if (bytes != null) {
             return new String(bytes);
         }

@@ -352,7 +352,8 @@ public class P4ConfigUtil {
                 P4Config configFile = new FileP4Config(cf);
                 hierarchy.add(configFile);
             } catch (IOException e) {
-                // FIXME properly handle exception - UI prompt?
+                // TODO properly handle exception - UI prompt?
+                e.printStackTrace();
             }
         }
     }

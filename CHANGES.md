@@ -1,6 +1,20 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.4.3::
+
+### Overview
+
+* Minor bug fixes
+
+### Details
+
+* Minor bug fixes.
+    * Typo in the plugin description.
+    * Code comments cleanup and removed unused code.
+
+
+
 ## ::v0.4.2::
 
 ### Overview

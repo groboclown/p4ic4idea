@@ -53,7 +53,7 @@ import java.util.List;
 /**
  * Widget to display Perforce server connection information.
  *
- * FIXME make this show for multiple server configs.
+ * TODO make this show for multiple server configs.
  * For now, this only shows "connected" if ALL the project
  * connections are online, otherwise disconnected.
  */

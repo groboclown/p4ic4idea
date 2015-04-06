@@ -152,9 +152,9 @@ public class P4ChangeProvider implements ChangeProvider {
                     }
                 }
             } catch (P4InvalidConfigException e) {
-                // ignore; the thrower properly makes the call
-                // FIXME correct logging of the error
-                e.printStackTrace();
+                // the thrower properly makes the call to the
+                // config error listener
+                LOG.info(e);
             }
         }
         return ret;
@@ -411,7 +411,7 @@ public class P4ChangeProvider implements ChangeProvider {
     }
 
     private void moveP4FilesIntoIdeaChangeLists(Client client, ChangelistBuilder builder, List<P4FileInfo> files) throws VcsException {
-        // FIXME go through cache
+        // TODO go through the changelist cache
         List<P4FileInfo> opened = client.getServer().loadOpenFiles(client.getRoots().toArray(new VirtualFile[client.getRoots().size()]));
         LOG.info("opened files: " + opened);
         // remove files not already handled

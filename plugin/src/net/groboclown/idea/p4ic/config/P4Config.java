@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Matt Albrecht
  */
 public interface P4Config {
-    // FIXME this should be a client-side user setting
+    // TODO this should be a client-side user setting
     @NonNls
     public static final String P4_IGNORE_FILE = ".p4ignore";
 

@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.server.tasks;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -28,6 +29,8 @@ import java.util.*;
 import java.util.concurrent.CancellationException;
 
 public class MoveRunner extends ServerTask<List<P4StatusMessage>> {
+    private static final Logger LOG = Logger.getInstance(MoveRunner.class);
+
     private final Project project;
     private final Map<FilePath, FilePath> movedFiles;
     private final int destination;
@@ -192,16 +195,14 @@ public class MoveRunner extends ServerTask<List<P4StatusMessage>> {
             // use this instead: getIOFile().getAbsolutePath()
             FilePath fp = reverseLookup.remove(file.getPath().getIOFile().getAbsolutePath());
             if (fp == null) {
-                // FIXME Should be a LOG.error
-                log("ERROR: no vf mapping for " + file);
+                LOG.error("no vf mapping for " + file);
             } else {
                 ret.put(fp, file);
             }
         }
 
         if (!reverseLookup.isEmpty()) {
-            // FIXME Should be a LOG.error
-            log("ERROR: no p4 found for " + reverseLookup.values());
+            LOG.error("no p4 found for " + reverseLookup.values());
         }
 
         return ret;

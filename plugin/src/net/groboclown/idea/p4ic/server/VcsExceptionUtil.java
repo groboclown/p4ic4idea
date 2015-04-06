@@ -14,10 +14,7 @@
 package net.groboclown.idea.p4ic.server;
 
 import com.intellij.openapi.diagnostic.Logger;
-
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
-import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaError;
@@ -47,65 +44,6 @@ public class VcsExceptionUtil {
             throw (VirtualMachineError) t;
         }
     }
-
-/*
-    public static void throwAsVcsException(@Nullable Project project, @NotNull Throwable t)
-            throws VcsException, CancellationException {
-        throw getAsVcsException(project, t);
-    }
-*/
-
-    /**
-     * Return the exception cast as a VcsException.  If it is an uncatchable
-     * exception (cancellation, error, etc), it will be thrown instead of
-     * cast.
-     *
-     * @param t
-     * @return
-     */
-    /*
-    @NotNull
-    public static VcsException getAsVcsException(@Nullable Project project, @NotNull Throwable t) {
-        alwaysThrown(t);
-        Throwable checked = t;
-        while (true) {
-
-            if (checked instanceof VcsException) {
-                return (VcsException) checked;
-            }
-            if (checked instanceof CancellationException) {
-                throw (CancellationException) checked;
-            }
-            if (isCancellation(checked)) {
-                LOG.warn("Cancellation performed", checked);
-                throw new CancellationException(checked.getMessage());
-            }
-            if (isDisconnectError(checked)) {
-                LOG.warn("Connection to Perforce problem discovered", checked);
-                // FIXME use a Project here
-                return new P4DisconnectedException(project, checked);
-            }
-
-//            if (t instanceof P4JavaException || t instanceof P4JavaError) {
-//                throw new P4Exception(t);
-//            }
-
-//            if (checked instanceof RuntimeException) {
-//                throw (RuntimeException) checked;
-//            }
-//            if (checked instanceof Error) {
-//                throw (Error) checked;
-//            }
-
-            if (checked.getCause() != null && checked.getCause() != checked) {
-                checked = checked.getCause();
-            } else {
-                return new P4Exception(t);
-            }
-        }
-    }
-    */
-
 
     public static boolean isPasswordWrongMessage(@Nullable String message) {
         if (message == null) {

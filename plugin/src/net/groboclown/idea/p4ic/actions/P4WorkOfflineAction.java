@@ -33,7 +33,7 @@ import java.util.Set;
 
 /**
  * For now, this action is based on all the servers.
- * FIXME allow this to be one action per server.
+ * TODO allow this to be one action per server.
  */
 public class P4WorkOfflineAction extends AnAction {
     private final static Logger LOG = Logger.getInstance(P4WorkOfflineAction.class);

@@ -171,9 +171,7 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
 
 
     private boolean isCopyAnIntegrate() {
-
-        // FIXME make this a user preference based on the
-        // project
+        // TODO make this a user preference at the project level
 
         return false;
 
@@ -224,9 +222,8 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
             // use this instead: getIOFile().getAbsolutePath()
             VirtualFile vf = reverseLookup.remove(file.getPath().getIOFile().getAbsolutePath());
             if (vf == null) {
-                // FIXME Should be a LOG.warn
                 // It's a soft error, because we don't expect to get files we didn't request.
-                log("ERROR: no vf mapping for " + file);
+                LOG.warn("ERROR: no vf mapping for " + file);
             } else {
                 ret.put(vf, file);
             }

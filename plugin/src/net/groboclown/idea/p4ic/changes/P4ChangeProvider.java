@@ -14,7 +14,6 @@
 package net.groboclown.idea.p4ic.changes;
 
 import com.intellij.openapi.diagnostic.Logger;
-
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.FilePath;
@@ -30,17 +29,19 @@ import net.groboclown.idea.p4ic.ui.SubProgressIndicator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.*;
 import java.util.regex.Pattern;
 
 /**
  * Pushes changes FROM Perforce INTO idea.  No Perforce jobs will be altered.
- *
+ * <p/>
  * If there was an IDEA changelist that referenced a Perforce changelist that
  * has since been submitted or deleted, the IDEA changelist will be removed,
  * and any contents will be moved into the default changelist.
- *
- * If there is a Perforce changelist that has no
+ * <p/>
+ * If there is a Perforce changelist that has no mapping to IDEA, an IDEA
+ * change list is created.
  */
 public class P4ChangeProvider implements ChangeProvider {
     private static final Logger LOG = Logger.getInstance(P4ChangeProvider.class);
@@ -120,6 +121,7 @@ public class P4ChangeProvider implements ChangeProvider {
             moveP4FilesIntoIdeaChangeLists(client, builder, files);
             for (P4FileInfo f: files) {
                 filePaths.remove(f.getPath());
+                ensureOnlyIn(builder, client, f);
             }
             sub.setFraction(1.0);
         }
@@ -137,10 +139,35 @@ public class P4ChangeProvider implements ChangeProvider {
                 builder.processLocallyDeletedFile(fp);
             }
         }
-
-        // TODO Ensure every file in an idea changelist is in the correct
-        // associated Perforce changelist. (#22 comment 3)
     }
+
+    /**
+     * Ensure every file in an idea changelist is in the correct
+     * associated Perforce changelist. (bug #22 comment 3)
+     * There's a situation that can occur where a file has 2 different
+     * changes, each split across multiple change lists.  IDEA supports
+     * this, but Perforce doesn't.
+     *
+     * @param client client
+     * @param f file
+     */
+    private void ensureOnlyIn(@NotNull ChangelistBuilder builder, @NotNull final Client client, @NotNull final P4FileInfo f) {
+        File file = f.getPath().getIOFile();
+        LocalChangeList actualLocalChange =
+                vcs.getChangeListMapping().getLocalChangelist(client, f.getChangelist());
+        List<LocalChangeList> allIdeaChangeLists = ChangeListManager.getInstance(vcs.getProject()).getChangeLists();
+        for (LocalChangeList lcl: allIdeaChangeLists) {
+            if (! lcl.equals(actualLocalChange)) {
+                for (Change change : lcl.getChanges()) {
+                    if (change.affectsFile(file)) {
+                        LOG.info("moving to correct changelist (was double-filed): " + f);
+                        builder.processChangeInList(change, actualLocalChange, P4Vcs.getKey());
+                    }
+                }
+            }
+        }
+    }
+
 
     private List<FilePath> getFilesUnderClient(Client client, Collection<FilePath> files) {
         List<FilePath> ret = new ArrayList<FilePath>(files.size());
@@ -411,7 +438,8 @@ public class P4ChangeProvider implements ChangeProvider {
     }
 
     private void moveP4FilesIntoIdeaChangeLists(Client client, ChangelistBuilder builder, List<P4FileInfo> files) throws VcsException {
-        // TODO go through the changelist cache
+        // TODO go through the changelist cache, because it should be fresh.
+        List<P4FileInfo> opened = P4ChangeListCache.getInstance().getOpenedFiles();
         List<P4FileInfo> opened = client.getServer().loadOpenFiles(client.getRoots().toArray(new VirtualFile[client.getRoots().size()]));
         LOG.info("opened files: " + opened);
         // remove files not already handled

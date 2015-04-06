@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.server;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.config.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
@@ -26,6 +27,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 // TODO make a project service
 public class ClientManager {
+    private static final Logger LOG = Logger.getInstance(ClientManager.class);
+
     private final Project project;
     private final P4ConfigProject configProject;
     private final ReadWriteLock clientAccess;
@@ -98,14 +101,12 @@ public class ClientManager {
         } catch (P4InvalidClientException e) {
             // NOTE invalid configuration call will be done
             // outside of here
-            // TODO properly log
-            e.printStackTrace();
+            LOG.info(e);
             clients = Collections.emptyList();
         } catch (P4InvalidConfigException e) {
             // NOTE invalid configuration call will be done
             // outside of here
-            // TODO properly log
-            e.printStackTrace();
+            LOG.info(e);
             clients = Collections.emptyList();
         } finally {
             clientAccess.writeLock().unlock();

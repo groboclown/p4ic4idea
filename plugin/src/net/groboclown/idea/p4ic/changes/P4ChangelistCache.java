@@ -79,15 +79,13 @@ public class P4ChangeListCache implements ApplicationComponent {
         lock.readLock().lock();
         try {
             List<P4ChangeList> res = numberedCache.get(client.getConfig().getServiceName());
-            if (res == null)
-            {
+            if (res == null) {
                 reloadCache(client);
                 res = numberedCache.get(client.getConfig().getServiceName());
             }
             List<P4ChangeList> ret = new ArrayList<P4ChangeList>(res);
             final P4ChangeList change = defaultCache.get(getClientServerId(client));
-            if (change != null)
-            {
+            if (change != null) {
                 ret.add(change);
             }
             return ret;
@@ -125,15 +123,33 @@ public class P4ChangeListCache implements ApplicationComponent {
 
 
     @Nullable
-    public P4ChangeList getChangeListFor(@NotNull Client client, P4ChangeListId p4id) throws VcsException {
-        List<P4ChangeList> res = getCachedChangeListsFor(client);
-        for (P4ChangeList p4cl: res) {
-            if (p4cl.getId().equals(p4id)) {
-                return p4cl;
+    public P4ChangeList getChangeListFor(@NotNull Client client, @NotNull P4ChangeListId p4id) throws VcsException {
+        final List<P4ChangeList> res = getCachedChangeListsFor(client);
+        if (res != null) {
+            for (P4ChangeList p4cl : res) {
+                if (p4cl.getId().equals(p4id)) {
+                    return p4cl;
+                }
             }
         }
         return null;
     }
+
+
+    @Nullable
+    public P4ChangeList getChangeListForFile(@NotNull Client client, @NotNull P4FileInfo file) throws VcsException {
+        final List<P4ChangeList> res = getCachedChangeListsFor(client);
+        if (res != null) {
+            int changeId = file.getChangelist();
+            for (P4ChangeList p4cl : res) {
+                if (p4cl.getId().getChangeListId() == changeId) {
+                    return p4cl;
+                }
+            }
+        }
+        return null;
+    }
+
 
 
     public void reloadCachesFor(@NotNull final List<Client> clients) throws VcsException {
@@ -224,10 +240,10 @@ public class P4ChangeListCache implements ApplicationComponent {
     /**
      * Add files to a changelist.
      *
-     * @param client
+     * @param client client
      * @param changeList the change to add the files to, or {@code null} for the default changelist.
-     * @param affected
-     * @return
+     * @param affected affected files
+     * @return messages for the operation
      * @throws VcsException
      */
     public List<P4StatusMessage> addFilesToChangelist(@NotNull Client client, @Nullable P4ChangeListId changeList,
@@ -245,7 +261,7 @@ public class P4ChangeListCache implements ApplicationComponent {
 
     /**
      *
-     * @param client
+     * @param client client
      * @param changeListId    the ID for the changelist, or {@code null} for the default changelist on the client.
      * @return true if the changelist was updated; false if it doesn't exist or was submitted / deleted
      * @throws VcsException
@@ -324,6 +340,17 @@ public class P4ChangeListCache implements ApplicationComponent {
         // are checking changelists against the IDEA changelists.  That only happens AFTER a cache reload.
         // Not only that, but updating a comment means that we already have a changelist match between the
         // two systems.
+    }
+
+
+    @NotNull
+    public Collection<P4FileInfo> getOpenedFiles(@NotNull Client client) throws VcsException {
+        final List<P4ChangeList> changeLists = getChangeListsFor(client);
+        final Set<P4FileInfo> ret = new HashSet<P4FileInfo>();
+        for (P4ChangeList changeList : changeLists) {
+            ret.addAll(changeList.getFiles());
+        }
+        return ret;
     }
 
 

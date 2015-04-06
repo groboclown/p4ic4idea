@@ -72,7 +72,7 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
             } catch (AccessException ex) {
                 if (ex.getMessage().contains("'login' not necessary")) {
                     // ignore login and keep going
-                    // FIXME tell the caller that the password should be forgotten
+                    // TODO tell the caller that the password should be forgotten
                 } else {
                     throw ex;
                 }

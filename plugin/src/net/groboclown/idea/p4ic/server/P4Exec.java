@@ -293,7 +293,8 @@ public class P4Exec {
             @Override
             public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 List<IFileSpec> ret = new ArrayList<IFileSpec>();
-                // TODO ensure this allows for wildcard characters (*, #, @) in the file name.
+                // this allows for wildcard characters (*, #, @) in the file name,
+                // if they were properly escaped.
                 ret.addAll(client.editFiles(files,
                     false, false, changelistId, null));
                 return getErrors(ret);
@@ -451,8 +452,7 @@ public class P4Exec {
                     // Note: be absolutely sure to close the InputStream that is returned.
                     inp.close();
                 }
-                byte[] ret = baos.toByteArray();
-                return ret;
+                return baos.toByteArray();
             }
         });
     }
@@ -485,7 +485,7 @@ public class P4Exec {
 
     public void synchronizeFiles(@NotNull Project project, @NotNull final List<IFileSpec> files)
             throws VcsException, CancellationException {
-        // FIXME
+        // TODO this needs testing
         runWithClient(project, new WithClient<Void>() {
             @Override
             public Void run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
@@ -678,7 +678,7 @@ public class P4Exec {
         while (true) {
             // Must check offline status in the loop.
             if (serverStatus.isWorkingOffline()) {
-                // FIXME should never get to this point; the online/offline status should
+                // should never get to this point; the online/offline status should
                 // have already been determined before entering this method.
                 invalidateCache();
                 throw new P4WorkingOfflineException();
@@ -962,7 +962,7 @@ public class P4Exec {
         public boolean tick(int i, String s) {
             // System.out.println("P4 cmd progress: " + i + " - " + s);
             // If this returns "false", then this will stop the line processing
-            // from the server.
+            // from the server.  This can cause all kinds of horrible problems.
             return true;
         }
 

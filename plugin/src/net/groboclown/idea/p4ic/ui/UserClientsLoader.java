@@ -111,7 +111,7 @@ public class UserClientsLoader {
 
     private List<String> loadClientsFor(@Nullable String desc, @NotNull ServerConfig serverConfig) {
 
-        // FIXME should run with a progress bar
+        // TODO should run with a progress bar
         try {
             ServerStatus serverStatus = ServerStoreService.getInstance().getServerStatus(project, serverConfig);
             //ServerExecutor exec = serverStatus.getExecutorForClient(project, config.getClientname());

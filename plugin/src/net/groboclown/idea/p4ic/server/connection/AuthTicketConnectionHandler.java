@@ -22,6 +22,7 @@ import net.groboclown.idea.p4ic.server.ConnectionHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.Properties;
 
 public class AuthTicketConnectionHandler extends ConnectionHandler {
@@ -56,14 +57,17 @@ public class AuthTicketConnectionHandler extends ConnectionHandler {
 
     @Override
     public boolean forcedAuthentication(@NotNull IOptionsServer server, @NotNull ServerConfig config, @NotNull char[] password) throws P4JavaException {
-        if (password.length > 0) {
-            // If the password is blank, then there's no need for the
-            // user to log in; in fact, that wil raise an error.
-            server.login(new String(password), new LoginOptions(false, true));
-            return true;
-        } else {
-            return false;
+        try {
+            if (password.length > 0) {
+                // If the password is blank, then there's no need for the
+                // user to log in; in fact, that wil raise an error.
+                server.login(new String(password), new LoginOptions(false, true));
+                return true;
+            } else {
+                return false;
+            }
+        } finally {
+            Arrays.fill(password, (char) 0);
         }
-        // FIXME zero out password array
     }
 }

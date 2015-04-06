@@ -126,21 +126,21 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
 
     @Override
     public void rollbackMissingFileDeletion(List<FilePath> files, List<VcsException> exceptions, RollbackProgressListener listener) {
-        // FIXME is this right?
+        // TODO check if this is the right behavior
         throw new UnsupportedOperationException("Missing file delete is not reported by Perforce.");
     }
 
     @Override
     public void rollbackModifiedWithoutCheckout(List<VirtualFile> files, List<VcsException> exceptions, RollbackProgressListener listener) {
         // No-op operation?
-        // FIXME check if this should inspect the depot to see if it is
+        // TODO check if this should inspect the depot to see if it is
         // under the dpeot, and should just be force synched.
         LOG.info("rollbackModifiedWithoutCheckout: not implemented " + files);
     }
 
     @Override
     public void rollbackIfUnchanged(VirtualFile file) {
-        // FIXME remove from change list
+        // TODO remove from change list
         LOG.info("rollbackIfUnchanged: not implemented " + file);
     }
 }

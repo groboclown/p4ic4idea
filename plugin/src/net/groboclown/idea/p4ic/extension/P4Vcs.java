@@ -376,7 +376,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
      */
     @Override
     public boolean fileIsUnderVcs(FilePath filePath) {
-        // FIXME add checking against the P4IGNORE file.
+        // TODO add checking against the P4IGNORE file.
         return filePath != null &&
                 ! filePath.isDirectory() &&
                 // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
@@ -417,7 +417,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     }
 
 
-    // FIXME implement these
+    // TODO implement these
 
     /**
      * Returns the interface for performing update/sync operations.

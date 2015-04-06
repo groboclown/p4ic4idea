@@ -120,7 +120,7 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
             return new P4RevisionDescription(null);
         }
 
-        // FIXME this is really bad in terms of performance.
+        // TODO this is really bad in terms of performance.
         List<P4FileRevision> history;
         try {
             history = client.getServer().getRevisionHistory(fileInfo, 1);

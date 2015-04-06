@@ -19,6 +19,7 @@ import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.server.P4Exec;
+import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,15 +54,16 @@ public class DeleteChangelistTask extends ServerTask<Void> {
         List<IFileSpec> files = exec.getFileSpecsInChangelist(project, current.getId());
         if (files != null && ! files.isEmpty()) {
             // need to move the files into the default changelist.
-            exec.reopenFiles(project, files, IChangelist.DEFAULT, null);
-
-            // FIXME check the returned status
+            final List<P4StatusMessage> messages =
+                    exec.reopenFiles(project, files, IChangelist.DEFAULT, null);
+            P4StatusMessage.throwIfError(messages, false);
         }
 
         String res = exec.deletePendingChangelist(project, current.getId());
         log("deletePendingChangelist: returned [" + res + "]");
         // This is usually in the form "Change X deleted".  Can't really
         // parse errors with this.
+
         return null;
     }
 }

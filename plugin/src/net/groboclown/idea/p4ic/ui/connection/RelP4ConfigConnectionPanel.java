@@ -14,24 +14,20 @@
 package net.groboclown.idea.p4ic.ui.connection;
 
 import com.intellij.openapi.util.Comparing;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4Config;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import java.awt.*;
-import java.util.ResourceBundle;
 
-public class RelP4ConfigConnectionPanel implements ConnectionPanel {
+public class RelP4ConfigConnectionPanel implements RelativeConfigConnectionPanel {
     private JTextField myConfigFileName;
     private JPanel myRootPane;
 
     @Override
     public boolean isModified(@NotNull P4Config config) {
-        return Comparing.equal(config.getConfigFile(), myConfigFileName.getText());
+        return Comparing.equal(config.getConfigFile(), getConfigFileName());
     }
 
     @Override
@@ -57,6 +53,11 @@ public class RelP4ConfigConnectionPanel implements ConnectionPanel {
     @Override
     public void saveSettingsToConfig(@NotNull ManualP4Config config) {
         config.setConfigFile(myConfigFileName.getText());
+    }
+
+    @Override
+    public String getConfigFileName() {
+        return myConfigFileName.getText();
     }
 
 }

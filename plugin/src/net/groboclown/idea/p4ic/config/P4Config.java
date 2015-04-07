@@ -31,12 +31,22 @@ public interface P4Config {
     public static final String P4_IGNORE_FILE = ".p4ignore";
 
     enum ConnectionMethod {
-        CLIENT,
-        AUTH_TICKET,
-        P4CONFIG,
-        REL_P4CONFIG,
-        SSO,
-        DEFAULT
+        CLIENT(false),
+        AUTH_TICKET(false),
+        P4CONFIG(false),
+        REL_P4CONFIG(true),
+        SSO(false),
+        DEFAULT(false);
+
+        private final boolean isRelative;
+
+        ConnectionMethod(final boolean isRelative) {
+            this.isRelative = isRelative;
+        }
+
+        public boolean isRelativeToPath() {
+            return isRelative;
+        }
     }
 
     public boolean hasIsAutoOfflineSet();

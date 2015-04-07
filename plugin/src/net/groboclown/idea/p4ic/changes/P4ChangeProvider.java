@@ -438,9 +438,8 @@ public class P4ChangeProvider implements ChangeProvider {
     }
 
     private void moveP4FilesIntoIdeaChangeLists(Client client, ChangelistBuilder builder, List<P4FileInfo> files) throws VcsException {
-        // TODO go through the changelist cache, because it should be fresh.
-        List<P4FileInfo> opened = P4ChangeListCache.getInstance().getOpenedFiles();
-        List<P4FileInfo> opened = client.getServer().loadOpenFiles(client.getRoots().toArray(new VirtualFile[client.getRoots().size()]));
+        // go through the changelist cache, because it should be fresh.
+        Collection<P4FileInfo> opened = P4ChangeListCache.getInstance().getOpenedFiles(client);
         LOG.info("opened files: " + opened);
         // remove files not already handled
         opened.removeAll(files);

@@ -108,6 +108,7 @@ public class P4StatusMessage {
         }
     }
 
+
     @NotNull
     public static List<? extends VcsException> messagesAsErrors(@Nullable List<P4StatusMessage> p4StatusMessages) {
         if (p4StatusMessages == null || p4StatusMessages.isEmpty()) {
@@ -120,5 +121,44 @@ public class P4StatusMessage {
             }
         }
         return ret;
+    }
+
+
+    @NotNull
+    public static <T extends IFileOperationResult> List<P4StatusMessage> getErrors(
+            @Nullable Collection<T> specs) {
+        List<P4StatusMessage> ret = new ArrayList<P4StatusMessage>();
+        if (specs != null) {
+            for (T spec : specs) {
+                if (P4StatusMessage.isErrorStatus(spec)) {
+                    ret.add(new P4StatusMessage(spec));
+                } else if (spec.getOpStatus() == FileSpecOpStatus.INFO) {
+                    LOG.info("result: " + spec.getStatusMessage());
+                }
+            }
+        }
+        return ret;
+    }
+
+
+    @NotNull
+    public static <T extends IFileOperationResult> List<T> getNonErrors(@Nullable Collection<T> specs) {
+        List<T> ret = new ArrayList<T>();
+        if (specs != null) {
+            for (T spec: specs) {
+                if (!P4StatusMessage.isErrorStatus(spec)) {
+                    ret.add(spec);
+                }
+            }
+        }
+        return ret;
+    }
+
+    @NotNull
+    public static VcsException messageAsError(@NotNull final P4StatusMessage msg) {
+        if (msg.isError()) {
+            return new VcsException(msg.toString());
+        }
+        throw new IllegalArgumentException("not an error message: " + msg);
     }
 }

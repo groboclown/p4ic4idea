@@ -19,13 +19,15 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
-import net.groboclown.idea.p4ic.history.P4FileRevision;
 import net.groboclown.idea.p4ic.history.P4AnnotatedLine;
+import net.groboclown.idea.p4ic.history.P4FileRevision;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 
 public class ServerExecutor {
@@ -126,7 +128,6 @@ public class ServerExecutor {
     /**
      * Should only be called from {@link net.groboclown.idea.p4ic.changes.P4ChangeListCache}
      *
-     * @param sourceChangelistId
      * @param targetChangelistId
      * @param affected
      * @return
@@ -208,6 +209,13 @@ public class ServerExecutor {
 
     public void checkConnection() throws P4InvalidConfigException, CancellationException {
         exec.checkConnection(project);
+    }
+
+    @NotNull
+    public List<P4FileInfo> synchronizeFiles(@NotNull final Collection<FilePath> path, final int revision,
+            final int changelist, @NotNull final Collection<VcsException> errorsOutput)
+            throws VcsException, CancellationException {
+        return exec.synchronizeFiles(project, path, revision, changelist, errorsOutput);
     }
 
 

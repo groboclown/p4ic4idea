@@ -5,7 +5,7 @@
 The plugin allows for associating an [IntelliJ IDEA Community Edition IDE](https://www.jetbrains.com/idea/)
 project with a Perforce repository through IDEA's built-in VCS support.
 
-**Currently Supported IDEA versions: 13.5 through 14.1** *which includes Android Studio 1.0*
+**Currently Supported IDEA versions: 13.5 through 14.1.1** *which includes Android Studio 1.0*
 
 
 # Getting Started
@@ -145,6 +145,5 @@ From the change lists, you can view a difference against the head
 revision.  You can also view the file history, and compare different
 revisions against each other.
 
-Currently, you cannot associate a job with a changelist, nor can you
-synchronize files.
+Currently, you cannot associate a job with a changelist.
 

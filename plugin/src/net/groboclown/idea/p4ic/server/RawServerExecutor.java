@@ -513,22 +513,40 @@ public class RawServerExecutor {
         return performAction(project, new AnnotateFileTask(project, file, revStr));
     }
 
-    public void synchronizeFiles(@NotNull final Project project, @NotNull final Collection<VirtualFile> files,
-            final int revision, final int changelist)
+    @NotNull
+    public List<P4FileInfo> synchronizeFiles(@NotNull final Project project,
+            @NotNull final Collection<FilePath> files, final int revision, final int changelist,
+            @NotNull final Collection<VcsException> errorsOutput)
             throws VcsException, CancellationException {
-        performAction(project, new ServerTask<Void>() {
+        return performAction(project, new ServerTask<List<P4FileInfo>>() {
             @Override
-            public Void run(@NotNull P4Exec exec) throws VcsException, CancellationException {
+            public List<P4FileInfo> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
                 List<IFileSpec> specs;
                 if (revision >= 0) {
-                    specs = FileSpecUtil.getFromVirtualFilesAt(files, "#" + Integer.toString(revision), true);
+                    specs = FileSpecUtil.getFromFilePathsAt(files, "#" + Integer.toString(revision), true);
                 } else if (changelist >= 0) {
-                    specs = FileSpecUtil.getFromVirtualFilesAt(files, "@" + Integer.toString(changelist), true);
+                    specs = FileSpecUtil.getFromFilePathsAt(files, "@" + Integer.toString(changelist), true);
                 } else {
-                    specs = FileSpecUtil.getFromVirtualFilesAt(files, "#head", true);
+                    specs = FileSpecUtil.getFromFilePathsAt(files, "#head", true);
                 }
-                exec.synchronizeFiles(project, specs);
-                return null;
+                final List<IFileSpec> results = exec.synchronizeFiles(project, specs);
+
+                // Explicitly loop through the results to find which error
+                // messages are valid.
+                //errorsOutput.addAll(P4StatusMessage.messagesAsErrors(P4StatusMessage.getErrors(results)));
+                for (IFileSpec spec: results) {
+                    if (P4StatusMessage.isErrorStatus(spec)) {
+                        final P4StatusMessage msg = new P4StatusMessage(spec);
+
+                        // 17 = "file(s) up-to-date"
+                        if (msg.getErrorCode() != 17) {
+                            LOG.info(msg + ": error code " + msg.getErrorCode());
+                            errorsOutput.add(P4StatusMessage.messageAsError(msg));
+                        }
+                    }
+                }
+
+                return exec.loadFileInfo(project, P4StatusMessage.getNonErrors(results));
             }
         });
     }

@@ -5,13 +5,26 @@
 
 ### Overview
 
+* Added basic synchronization with server.
+* Added connection properties display to VCS configuration panel.
 * Minor bug fixes
 
 ### Details
 
+* Added basic synchronization with server.
+    * Only available through the VCS menu, not through the context menu.
+    * Does not handle merging.
+* Added connection properties display to VCS configuration panel.
+    * Allows for the user to view the connection properties that will
+      actually be used to connect to Perforce.
+    * For relative configurations, you can select the child path
+      (and see which child paths are detected to contain config files)
+      to see its specific configuration properties.
+    * Password is not displayed, but it indicates whether it is explicitly
+      set or not.
 * Minor bug fixes.
     * Typo in the plugin description.
-    * Code comments cleanup and removed unused code.
+    * Code cleanup.
 
 
 

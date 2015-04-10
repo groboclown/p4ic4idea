@@ -6,6 +6,15 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.4.3</em>
+                <ol>
+                    <li>Added connection properties display to VCS configuration
+                    panel.</li>
+                    <li>Add basic synchronization action.  Does not handle merging.</li>
+                    <li>Typo in the plugin description.</li>
+                    <li>Code cleanup.</li>
+                </ol>
+            </li>
             <li><em>0.4.2</em>
                 <ol>
                     <li>Submit implementation added.  It does not

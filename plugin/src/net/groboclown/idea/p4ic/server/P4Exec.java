@@ -53,6 +53,8 @@ import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
+import static net.groboclown.idea.p4ic.server.P4StatusMessage.getErrors;
+
 /**
  * Runs the commands against the server/client.  Handles the reconnection and login requirements.
  * The connection will remain open (or will be retried) until a {@link #dispose()}
@@ -471,6 +473,7 @@ public class P4Exec {
     }
 
 
+    @NotNull
     public List<P4StatusMessage> moveFile(@NotNull Project project, @NotNull final IFileSpec source,
             @NotNull final IFileSpec target, final int changelistId, final boolean leaveLocalFiles)
             throws VcsException, CancellationException {
@@ -483,14 +486,18 @@ public class P4Exec {
         });
     }
 
-    public void synchronizeFiles(@NotNull Project project, @NotNull final List<IFileSpec> files)
+    @NotNull
+    public List<IFileSpec> synchronizeFiles(@NotNull Project project, @NotNull final List<IFileSpec> files)
             throws VcsException, CancellationException {
         // TODO this needs testing
-        runWithClient(project, new WithClient<Void>() {
+        return runWithClient(project, new WithClient<List<IFileSpec>>() {
             @Override
-            public Void run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
-                client.sync(files, new SyncOptions(false, false, false, false, true));
-                return null;
+            public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                final List<IFileSpec> ret = client.sync(files, new SyncOptions(false, false, false, false, true));
+                if (ret == null) {
+                    return Collections.emptyList();
+                }
+                return ret;
             }
         });
     }
@@ -890,21 +897,6 @@ public class P4Exec {
         } catch (CancellationException e) {
             return null;
         }
-    }
-
-    @NotNull
-    private static <T extends IFileOperationResult> List<P4StatusMessage> getErrors(
-            Collection<T> specs) {
-        List<P4StatusMessage> ret = new ArrayList<P4StatusMessage>();
-
-        for (T spec : specs) {
-            if (P4StatusMessage.isErrorStatus(spec)) {
-                ret.add(new P4StatusMessage(spec));
-            } else if (spec.getOpStatus() == FileSpecOpStatus.INFO) {
-                LOG.info("result: " + spec.getStatusMessage());
-            }
-        }
-        return ret;
     }
 
 

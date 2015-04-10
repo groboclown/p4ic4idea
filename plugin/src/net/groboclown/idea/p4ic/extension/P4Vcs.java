@@ -30,7 +30,6 @@ import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.diff.RevisionSelector;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
-import com.intellij.openapi.vcs.impl.IllegalStateProxy;
 import com.intellij.openapi.vcs.merge.MergeProvider;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
@@ -311,13 +310,16 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     @Override
     public CheckinEnvironment getCheckinEnvironment() {
+        // There is a weird situation where the parent wouldn't
+        // be loading the check-in environment correctly.
         CheckinEnvironment ret = super.getCheckinEnvironment();
         if (ret == null) {
             super.setCheckinEnvironment(createCheckinEnvironment());
             ret = super.getCheckinEnvironment();
         }
-        if (ret == null || ! (ret instanceof P4CheckinEnvironment)) {
-            // really yikes!
+        //if (ret == null || ! (ret instanceof P4CheckinEnvironment)) {
+        if (ret == null) {
+                // really yikes!
             throw new IllegalStateException("created wrong checkin environment: " + ret);
         }
         return ret;
@@ -416,17 +418,18 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         return committedChangesProvider;
     }
 
-
-    // TODO implement these
-
     /**
      * Returns the interface for performing update/sync operations.
      */
     @Override
     @Nullable
     protected UpdateEnvironment createUpdateEnvironment() {
-        return IllegalStateProxy.create(UpdateEnvironment.class);
+        //return IllegalStateProxy.create(UpdateEnvironment.class);
+        return new P4SyncUpdateEnvironment(this);
     }
+
+
+    // TODO implement these
 
 
     /**

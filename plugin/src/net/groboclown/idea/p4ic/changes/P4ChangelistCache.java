@@ -48,7 +48,6 @@ import com.perforce.p4java.core.IChangelistSummary;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
-import net.groboclown.idea.p4ic.server.exceptions.P4ApiException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -78,10 +77,10 @@ public class P4ChangeListCache implements ApplicationComponent {
     public List<P4ChangeList> getChanges(@NotNull Client client) throws VcsException {
         lock.readLock().lock();
         try {
-            List<P4ChangeList> res = numberedCache.get(client.getConfig().getServiceName());
+            List<P4ChangeList> res = numberedCache.get(getClientServerId(client));
             if (res == null) {
                 reloadCache(client);
-                res = numberedCache.get(client.getConfig().getServiceName());
+                res = numberedCache.get(getClientServerId(client));
             }
             List<P4ChangeList> ret = new ArrayList<P4ChangeList>(res);
             final P4ChangeList change = defaultCache.get(getClientServerId(client));
@@ -109,14 +108,7 @@ public class P4ChangeListCache implements ApplicationComponent {
     public List<P4ChangeList> getChangeListsFor(@NotNull Client client) throws VcsException {
         List<P4ChangeList> res = getCachedChangeListsFor(client);
         if (res == null) {
-            // small window for a duplicate call into the cache reload, because this is outside of the lock.
-            // However, no real way to do this and keep from locking over a p4 operation.
-            reloadCache(client);
-            res = getCachedChangeListsFor(client);
-            if (res == null) {
-                throw new P4ApiException("could not load changelist cache for client " +
-                        client.getClientName() + '@' + client.getConfig().getServiceName());
-            }
+            res = reloadCache(client);
         }
         return res;
     }
@@ -151,15 +143,18 @@ public class P4ChangeListCache implements ApplicationComponent {
     }
 
 
-
-    public void reloadCachesFor(@NotNull final List<Client> clients) throws VcsException {
+    @NotNull
+    public Map<Client, List<P4ChangeList>> reloadCachesFor(@NotNull final List<Client> clients) throws VcsException {
+        Map<Client, List<P4ChangeList>> ret = new HashMap<Client, List<P4ChangeList>>();
         for (Client client: clients) {
-            reloadCache(client);
+            ret.put(client, reloadCache(client));
         }
+        return ret;
     }
 
 
-    public void reloadCache(final Client client) throws VcsException {
+    @NotNull
+    public List<P4ChangeList> reloadCache(final Client client) throws VcsException {
         final List<P4ChangeList> serverCache = new ArrayList<P4ChangeList>();
         final Set<P4FileInfo> files = new HashSet<P4FileInfo>(
                 client.getServer().loadOpenFiles(client.getRoots().toArray(new VirtualFile[client.getRoots().size()])));
@@ -174,6 +169,7 @@ public class P4ChangeListCache implements ApplicationComponent {
                 while (iter.hasNext()) {
                     final P4FileInfo file = iter.next();
                     if (file.getChangelist() == summary.getId()) {
+                        LOG.debug("Adding " + file + " to changelist " + file.getChangelist());
                         changelistFiles.add(file);
                         iter.remove();
                     }
@@ -181,6 +177,7 @@ public class P4ChangeListCache implements ApplicationComponent {
                 P4ChangeList change = new P4ChangeList(new P4ChangeListIdImpl(client, summary), changelistFiles,
                         summary.getDescription(), summary.getUsername());
                 serverCache.add(change);
+                LOG.debug("change " + change.getId() + " contains files " + change.getFiles());
             }
         }
 
@@ -193,10 +190,14 @@ public class P4ChangeListCache implements ApplicationComponent {
             if (next.getChangelist() <= P4_DEFAULT) {
                 iter.remove();
                 defaultChangeFiles.add(next);
+                LOG.debug("file " + next + " added to default changelist");
+            } else {
+                LOG.warn("File " + next + " not added to changelist (should be in " + next.getChangelist() + ")");
             }
         }
         defaultChange = new P4ChangeList(new P4ChangeListIdImpl(client, P4_DEFAULT),
                 defaultChangeFiles, null, null);
+        LOG.debug("default change contains files " + defaultChange.getFiles());
 
         // If there are left over files, then that could be an error.
         if (! files.isEmpty()) {
@@ -207,11 +208,14 @@ public class P4ChangeListCache implements ApplicationComponent {
 
         lock.writeLock().lock();
         try {
-            numberedCache.put(client.getConfig().getServiceName(), serverCache);
+            numberedCache.put(getClientServerId(client), serverCache);
             defaultCache.put(getClientServerId(client), defaultChange);
         } finally {
             lock.writeLock().unlock();
         }
+        final ArrayList<P4ChangeList> ret = new ArrayList<P4ChangeList>(serverCache);
+        ret.add(defaultChange);
+        return ret;
     }
 
 
@@ -223,13 +227,13 @@ public class P4ChangeListCache implements ApplicationComponent {
         lock.writeLock().lock();
         try {
             // Can only ever be a numbered changelist
-            List<P4ChangeList> changes = numberedCache.get(client.getConfig().getServiceName());
+            List<P4ChangeList> changes = numberedCache.get(getClientServerId(client));
             if (changes == null) {
                 changes = new ArrayList<P4ChangeList>();
             }
             // And it's only ever a new changelist, so no need to check if it's already added
             changes.add(changeList);
-            numberedCache.put(client.getConfig().getServiceName(), changes);
+            numberedCache.put(getClientServerId(client), changes);
         } finally {
             lock.writeLock().unlock();
         }
@@ -304,14 +308,14 @@ public class P4ChangeListCache implements ApplicationComponent {
                     defaultCache.put(getClientServerId(client), list);
                 }
             } else {
-                List<P4ChangeList> changes = numberedCache.get(client.getConfig().getServiceName());
+                List<P4ChangeList> changes = numberedCache.get(getClientServerId(client));
                 if (changes == null) {
                     if (list == null) {
                         // early exit - nothing to remove
                         return false;
                     }
                     changes = new ArrayList<P4ChangeList>();
-                    numberedCache.put(client.getConfig().getServiceName(), changes);
+                    numberedCache.put(getClientServerId(client), changes);
                 }
                 final Iterator<P4ChangeList> iter = changes.iterator();
                 while (iter.hasNext()) {
@@ -387,16 +391,32 @@ public class P4ChangeListCache implements ApplicationComponent {
 
     @Nullable
     private List<P4ChangeList> getCachedChangeListsFor(@NotNull Client client) {
+        final String serviceName = getClientServerId(client);
+        final P4ChangeList defaultChange;
         List<P4ChangeList> res;
         lock.readLock().lock();
         try {
-            res = numberedCache.get(client.getConfig().getServiceName());
+            res = numberedCache.get(serviceName);
             if (res != null) {
                 res = new ArrayList<P4ChangeList>(res);
             }
+            defaultChange = defaultCache.get(serviceName);
         } finally {
             lock.readLock().unlock();
         }
+
+        if (defaultChange != null) {
+            if (res == null) {
+                LOG.error("Default change exists for " + client + " when no numbered cache exists");
+                res = new ArrayList<P4ChangeList>();
+            }
+            res.add(defaultChange);
+            LOG.info(client + ": default change has " + defaultChange.getFiles().size() + " files");
+        } else if (res != null) {
+            LOG.error("No default changelist for " + client);
+        }
+        LOG.info("cached changes for " + client + " are " + res + " (" + (res == null ? -1 : res.size()) + ")");
+
         return res;
     }
 }

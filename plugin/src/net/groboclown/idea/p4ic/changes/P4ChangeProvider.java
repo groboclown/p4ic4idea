@@ -94,11 +94,13 @@ public class P4ChangeProvider implements ChangeProvider {
 
          */
 
-        P4ChangeListCache.getInstance().reloadCachesFor(vcs.getClients());
+
         final Map<Client, List<P4ChangeList>> pendingChangelists =
-                P4ChangeListCache.getInstance().getChangeListsForAll(vcs.getClients());
+                P4ChangeListCache.getInstance().reloadCachesFor(vcs.getClients());
 
         final Map<LocalChangeList, Map<Client, P4ChangeList>> known = vcs.getChangeListMapping().cleanMappings();
+        LOG.info("pending changelists: " + pendingChangelists);
+        LOG.info("known changelists: " + known);
 
         progress.setFraction(0.2);
 
@@ -215,8 +217,9 @@ public class P4ChangeProvider implements ChangeProvider {
                 P4ChangeList cl = en.getValue();
                 if (cl != null) {
                     associatedP4clIds.add(cl.getId());
-                //} else {
-                //    LOG.info("mapped client " + en.getKey() + " to null changelist");
+                    LOG.info("mapped client " + en.getKey() + " to changelist " + cl.getId());
+                } else {
+                    LOG.info("mapped client " + en.getKey() + " to null changelist");
                 }
             }
         }

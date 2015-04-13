@@ -13,6 +13,7 @@
                     <li>Add basic synchronization action.  Does not handle merging.</li>
                     <li>Typo in the plugin description.</li>
                     <li>Code cleanup.</li>
+                    <li>Fixed issues with changelist caching.</li>
                 </ol>
             </li>
             <li><em>0.4.2</em>

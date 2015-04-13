@@ -13,7 +13,8 @@
 
 * Added basic synchronization with server.
     * Only available through the VCS menu, not through the context menu.
-    * Does not handle merging.
+    * Does not handle merging.  Any potential issues with existing
+      checked-out files being synched are not reported.
 * Added connection properties display to VCS configuration panel.
     * Allows for the user to view the connection properties that will
       actually be used to connect to Perforce.
@@ -23,6 +24,8 @@
     * Password is not displayed, but it indicates whether it is explicitly
       set or not.
 * Minor bug fixes.
+    * Files in changelists are not always reported correctly.  This was due
+      to incorrect caching that came from an earlier refactoring effort.
     * Typo in the plugin description.
     * Code cleanup.
 

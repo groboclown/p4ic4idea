@@ -1,35 +1,26 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.4.3</version>
+    <version>0.5.0</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.5.0</em>
+                <ol>
+                    <li></li>
+                </ol>
+            </li>
             <li><em>0.4.3</em>
                 <ol>
                     <li>Added connection properties display to VCS configuration
                     panel.</li>
                     <li>Add basic synchronization action.  Does not handle merging.</li>
+                    <li>Fixed issues with changelist caching.</li>
+                    <li>Fixed issues related to files being put into multiple changelists,
+                    and files moving between changelists.</li>
                     <li>Typo in the plugin description.</li>
                     <li>Code cleanup.</li>
-                    <li>Fixed issues with changelist caching.</li>
-                </ol>
-            </li>
-            <li><em>0.4.2</em>
-                <ol>
-                    <li>Submit implementation added.  It does not
-                    allow for setting the job status, or associating
-                    jobs with the changelist.</li>
-                    <li>Fixed the changelist view refresh bug.</li>
-                    <li>Fixed issues with P4PORT referencing localhost.</li>
-                    <li>Fixed issues with multiple clients in a single
-                    project causing a NullPointerException.</li>
-                </ol>
-            </li>
-            <li><em>0.4.1</em>
-                <ol>
-                    <li>Minor changelist handling bug fixes.</li>
                 </ol>
             </li>
         </ol>

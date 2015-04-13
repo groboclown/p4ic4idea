@@ -1,6 +1,19 @@
 # IDEA Community VCS Integration for Perforce
 
 
+
+## ::v0.5.0::
+
+### Overview
+
+* Minor bug fixes.
+
+### Details
+
+* Minor bug fixes.
+
+
+
 ## ::v0.4.3::
 
 ### Overview
@@ -26,6 +39,7 @@
 * Minor bug fixes.
     * Files in changelists are not always reported correctly.  This was due
       to incorrect caching that came from an earlier refactoring effort.
+    * Files moved between changelists seems to be fixed (#22).
     * Typo in the plugin description.
     * Code cleanup.
 

@@ -518,6 +518,9 @@ public class RawServerExecutor {
             @NotNull final Collection<FilePath> files, final int revision, final int changelist,
             @NotNull final Collection<VcsException> errorsOutput)
             throws VcsException, CancellationException {
+        if (files.isEmpty()) {
+            return Collections.emptyList();
+        }
         return performAction(project, new ServerTask<List<P4FileInfo>>() {
             @Override
             public List<P4FileInfo> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
@@ -546,7 +549,9 @@ public class RawServerExecutor {
                     }
                 }
 
-                return exec.loadFileInfo(project, P4StatusMessage.getNonErrors(results));
+                final List<IFileSpec> nonErrors = P4StatusMessage.getNonErrors(results);
+                LOG.info("Synchronized " + nonErrors);
+                return exec.loadFileInfo(project, nonErrors);
             }
         });
     }

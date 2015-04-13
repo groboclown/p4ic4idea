@@ -23,7 +23,9 @@ import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
-import com.perforce.p4java.core.file.*;
+import com.perforce.p4java.core.file.IFileAnnotation;
+import com.perforce.p4java.core.file.IFileRevisionData;
+import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.generic.core.file.FilePath;
@@ -173,7 +175,11 @@ public class P4Exec {
     @NotNull
     public List<P4FileInfo> loadFileInfo(@NotNull Project project, @NotNull List<IFileSpec> fileSpecs)
             throws VcsException, CancellationException {
-        return runWithClient(project, new P4FileInfo.FstatLoadSpecs(fileSpecs));
+        // Avoid the dreaded "Usage: fstat ..." error.
+        if (! fileSpecs.isEmpty()) {
+            return runWithClient(project, new P4FileInfo.FstatLoadSpecs(fileSpecs));
+        }
+        return Collections.emptyList();
     }
 
 

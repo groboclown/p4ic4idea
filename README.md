@@ -25,7 +25,7 @@ project with a Perforce repository through IDEA's built-in VCS support.
         1. Click the **Install plugin from disk...** button.
         1. Select the downloaded zip file.
     * Build it yourself:
-        1. You'll need Ant 1.8 or better, a JDK 1.7, and the source code from
+        1. You'll need Ant 1.8 or better, a JDK 1.6, and the source code from
            GitHub on your local computer. You'll need a copy of
            p4d (or p4s for Windows) to run the tests.  The code comes with
            copies of the correct dependent libraries.

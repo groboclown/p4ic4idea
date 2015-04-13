@@ -14,15 +14,13 @@
 package net.groboclown.idea.p4ic.background;
 
 import com.intellij.openapi.application.ApplicationManager;
+
 import com.intellij.openapi.vcs.VcsException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * A Vcs specific version of a {@link java.util.concurrent.Future} class.
@@ -38,7 +36,7 @@ public class VcsSettableFuture<T> implements VcsFuture<T>, VcsFutureSetter<T> {
     private static VcsSettableFuture<?> EDT_GETTER;
 
     private final List<Runnable> listeners = new ArrayList<Runnable>();
-    private final BlockingQueue<Event<?>> events = new LinkedTransferQueue<Event<?>>();
+    private final BlockingQueue<Event<?>> events = new LinkedBlockingDeque<Event<?>>();
     private volatile boolean done;
     private volatile Throwable ex;
     private volatile T value;

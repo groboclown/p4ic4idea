@@ -41,9 +41,9 @@ import java.util.Map.Entry;
 
 public class P4ConfigPanel {
     private JPanel myMainPanel;
-    private JComboBox<ConnectionPanel> myConnectionChoice;
+    private JComboBox/*<ConnectionPanel>*/ myConnectionChoice; // JDK 1.6 does not have generic combo box
     private JButton myRefreshClientList;
-    private JComboBox<String> myClientList;
+    private JComboBox/*<String>*/ myClientList; // JDK 1.6 does not have generic combo box
     private JCheckBox myReuseEnvValueCheckBox;
     private JButton checkConnectionButton;
     private JCheckBox mySilentlyGoOfflineOnCheckBox;
@@ -57,7 +57,7 @@ public class P4ConfigPanel {
     private JCheckBox mySavePasswordsCheckBox;
     private JLabel myPasswordWarning;
     private RelP4ConfigConnectionPanel myRelP4ConfigPanel;
-    private JComboBox<String> myResolvePath;
+    private JComboBox/*<String>*/ myResolvePath; // JDK 1.6 does not have generic combo box
     private JTextArea myResolvedValuesField;
     private JLabel myResolvePathLabel;
     private JButton myRefreshResolved;
@@ -203,7 +203,7 @@ public class P4ConfigPanel {
         // ----------------------------------------------------------------
         // Dynamic setup for connection information
         for (int i = 0; i < myConnectionChoice.getItemCount(); i++) {
-            ConnectionPanel conn = myConnectionChoice.getItemAt(i);
+            ConnectionPanel conn = (ConnectionPanel) myConnectionChoice.getItemAt(i);
             if (conn.getConnectionMethod() == config.getConnectionMethod()) {
                 showConnectionPanel(conn);
                 conn.loadSettingsIntoGUI(config);
@@ -325,7 +325,7 @@ public class P4ConfigPanel {
 
     private void changeConnectionSelection() {
         int currentSelectedIndex = myConnectionChoice.getSelectedIndex();
-        ConnectionPanel selected = myConnectionChoice.getItemAt(currentSelectedIndex);
+        ConnectionPanel selected = (ConnectionPanel) myConnectionChoice.getItemAt(currentSelectedIndex);
         showConnectionPanel(selected);
     }
 

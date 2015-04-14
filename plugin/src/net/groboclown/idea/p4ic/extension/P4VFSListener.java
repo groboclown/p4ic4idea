@@ -17,6 +17,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsVFSListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileEvent;
@@ -26,6 +27,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.Background;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -101,9 +103,6 @@ public class P4VFSListener extends VcsVFSListener {
             public void run(@NotNull ProgressIndicator indicator) throws Exception {
                 List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
 
-                // TODO it's possible to *integrate* between clients if
-                // they share the same server.
-
                 SplitClientFileMap split = splitMap(moveMap);
                 synchronized (vfsSync) {
                     for (Client client: split.getClients()) {
@@ -120,8 +119,13 @@ public class P4VFSListener extends VcsVFSListener {
                             messages.addAll(client.getServer().deleteFiles(
                                     split.getCrossSourceFilePathsFor(client), changeListId));
 
+                            // perform an integrate for cross-client, if they share the same server.
+                            for (Map.Entry<P4FileInfo, VirtualFile> en: split.getSameServerCrossVirtualFilesForTarget(client).entrySet()) {
+                                messages.addAll(client.getServer().integrateFiles(en.getKey(), en.getValue(),changeListId));
+                            }
+
                             messages.addAll(client.getServer().addOrCopyFiles(
-                                    split.getCrossTargetFilePathsAsVirtualFilesFor(client),
+                                    split.getCrossTargetDifferentServerVirtualFilesFor(client),
                                     Collections.<VirtualFile, VirtualFile>emptyMap(), changeListId));
 
                             // We don't need to tell the user about this as an error message; it should be the
@@ -159,9 +163,6 @@ public class P4VFSListener extends VcsVFSListener {
             @Override
             public void run(@NotNull ProgressIndicator indicator) throws Exception {
                 Map<Client, List<VirtualFile>> clientAddedMap = vcs.mapVirtualFilesToClient(addedFiles);
-                if (clientAddedMap.isEmpty()) {
-                    return;
-                }
                 SplitClientFileMap splitClient = splitMap(copyFromMap);
                 Set<Client> clients = new HashSet<Client>(clientAddedMap.keySet());
                 clients.addAll(splitClient.getClients());
@@ -324,12 +325,26 @@ public class P4VFSListener extends VcsVFSListener {
         }
 
 
-        public boolean isCrossClient() {
-            return srcClient != null && tgtClient != null && srcClient != tgtClient;
+        boolean isCrossClient() {
+            return srcClient != null && tgtClient != null && ! srcClient.equals(tgtClient);
+        }
+
+        boolean isSameServerCrossClient() {
+            if (srcClient != null && tgtClient != null) {
+                if (srcClient.equals(tgtClient)) {
+                    // same client
+                    return false;
+                }
+                if (srcClient.getConfig().getServiceName().equals(tgtClient.getConfig().getServiceName())) {
+                    // same server, different client
+                    return true;
+                }
+            }
+            return false;
         }
 
 
-        public Client commonClient() {
+        Client commonClient() {
             if (srcClient != null) {
                 return srcClient;
             }
@@ -414,6 +429,35 @@ public class P4VFSListener extends VcsVFSListener {
             for (SplitClientFileEntry entry : crossClient) {
                 if (client.equals(entry.tgtClient)) {
                     ret.add(entry.tgtVirtualFile);
+                }
+            }
+            return ret;
+        }
+
+        @NotNull
+        Collection<VirtualFile> getCrossTargetDifferentServerVirtualFilesFor(@NotNull final Client client) {
+            List<VirtualFile> ret = new ArrayList<VirtualFile>(crossClient.size());
+            for (SplitClientFileEntry entry: crossClient) {
+                if (! entry.isSameServerCrossClient() && client.equals(entry.tgtClient)) {
+                    ret.add(entry.tgtVirtualFile);
+                }
+            }
+            return ret;
+        }
+
+        @NotNull
+        Map<P4FileInfo, VirtualFile> getSameServerCrossVirtualFilesForTarget(@NotNull final Client client) throws VcsException {
+            Map<P4FileInfo, VirtualFile> ret = new HashMap<P4FileInfo, VirtualFile>();
+            for (SplitClientFileEntry entry: crossClient) {
+                if (entry.isSameServerCrossClient() && client.equals(entry.tgtClient) && entry.srcClient != null) {
+                    if (entry.srcClient.isWorkingOnline()) {
+                        final List<P4FileInfo> srcPath = entry.srcClient.getServer().getFilePathInfo(Collections.singletonList(entry.srcFilePath));
+                        if (srcPath.size() != 1) {
+                            throw new VcsException("invalid server path for " + entry.srcFilePath);
+                        }
+                        ret.put(srcPath.get(0), entry.tgtVirtualFile);
+                    }
+                    // TODO make this an add somehow.
                 }
             }
             return ret;

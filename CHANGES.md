@@ -6,12 +6,15 @@
 
 ### Overview
 
-* Minor bug fixes.
+* Added support for IntelliJ on JDK 1.6
+* Minor bug fixes
 
 ### Details
 
-* Minor bug fixes.
-
+* Added support for IntelliJ on JDK 1.6.
+    * Compiled under JDK 1.6, and removed JDK 1.7-specific API calls.
+* Minor bug fixes
+    * Adding files (Ctrl+Alt+A) would sometimes call an unimplemented function.
 
 
 ## ::v0.4.3::

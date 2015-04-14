@@ -92,7 +92,6 @@ public class FileSpecUtil {
         return spec.get(0);
     }
 
-
     @NotNull
     public static List<IFileSpec> getFromFilePaths(@NotNull Collection<FilePath> files) throws P4Exception {
         return getFromFilePathsAt(files, "", false);

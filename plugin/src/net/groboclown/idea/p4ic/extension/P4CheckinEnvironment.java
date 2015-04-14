@@ -13,14 +13,14 @@
  */
 package net.groboclown.idea.p4ic.extension;
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.changes.*;
+import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.changes.ChangeList;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -32,11 +32,13 @@ import net.groboclown.idea.p4ic.changes.P4ChangeListCache;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.P4OnCheckinPanel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 public class P4CheckinEnvironment implements CheckinEnvironment {
     private static final Logger LOG = Logger.getInstance(P4CheckinEnvironment.class);
@@ -217,17 +219,66 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     @Nullable
     @Override
     public List<VcsException> scheduleMissingFileForDeletion(List<FilePath> files) {
-        // TODO figure out how to add these to the changelist; but which one?
         LOG.info("scheduleMissingFileForDeletion: " + files);
-        return null;
+        final List<VcsException> ret = new ArrayList<VcsException>();
+        final Map<Client, List<FilePath>> map;
+        try {
+            map = vcs.mapFilePathToClient(files);
+        } catch (P4InvalidConfigException e) {
+            ret.add(e);
+            // Can't proceed if this fails
+            return ret;
+        }
+
+        for (Entry<Client, List<FilePath>> entry : map.entrySet()) {
+            final Client client = entry.getKey();
+            final P4ChangeListId defaultChange = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client);
+            if (client.isWorkingOnline()) {
+                try {
+                    client.getServer().deleteFiles(entry.getValue(), defaultChange.getChangeListId());
+                } catch (VcsException e) {
+                    ret.add(e);
+                }
+            } else {
+                ret.add(new VcsException("client is offline: " + client));
+            }
+        }
+
+        return ret;
     }
 
     @Nullable
     @Override
     public List<VcsException> scheduleUnversionedFilesForAddition(List<VirtualFile> files) {
-        // TODO figure out how to add these to the changelist; but which one?
         LOG.info("scheduleUnversionedFilesForAddition: " + files);
-        return null;
+        final List<VcsException> ret = new ArrayList<VcsException>();
+
+        final Map<Client, List<VirtualFile>> map;
+        try {
+            map = vcs.mapVirtualFilesToClient(files);
+        } catch (P4InvalidConfigException e) {
+            ret.add(e);
+            // Can't proceed if this fails
+            return ret;
+        }
+
+        for (Entry<Client, List<VirtualFile>> entry : map.entrySet()) {
+            final Client client = entry.getKey();
+            final P4ChangeListId defaultChange = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client);
+            if (client.isWorkingOnline()) {
+                try {
+                    client.getServer().addOrCopyFiles(entry.getValue(),
+                            Collections.<VirtualFile, VirtualFile>emptyMap(),
+                            defaultChange.getChangeListId());
+                } catch (VcsException e) {
+                    ret.add(e);
+                }
+            } else {
+                ret.add(new VcsException("client is offline: " + client));
+            }
+        }
+
+        return ret;
     }
 
     @Override

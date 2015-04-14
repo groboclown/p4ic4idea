@@ -556,6 +556,24 @@ public class RawServerExecutor {
         });
     }
 
+    @NotNull
+    public Collection<P4StatusMessage> integrateFiles(@NotNull final Project project, @NotNull final P4FileInfo src,
+            @NotNull final VirtualFile target, final int changeListId) throws VcsException, CancellationException {
+        return performAction(project, new ServerTask<Collection<P4StatusMessage>>() {
+            @Override
+            public Collection<P4StatusMessage> run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
+                // Src must be the depot path, because it can come from a different
+                // client.
+                final IFileSpec srcSpec = src.toDepotSpec();
+
+                final IFileSpec tgtSpec = FileSpecUtil.getFromVirtualFiles(Collections.singletonList(target)).get(0);
+
+                // don't copy to client is set to "true" because the IDE will handle the actual copy.
+                return exec.integrateFiles(project, srcSpec, tgtSpec, changeListId, true);
+            }
+        });
+    }
+
     public void checkConnection(@NotNull final Project project)
             throws P4InvalidConfigException, CancellationException {
         try {

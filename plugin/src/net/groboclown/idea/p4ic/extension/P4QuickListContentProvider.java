@@ -47,6 +47,9 @@ public class P4QuickListContentProvider implements VcsQuickListContentProvider {
         add("Annotate", manager, actions);
         add("Compare.SameVersion", manager, actions);
 
+        // TODO add submit
+        // TODO add synchronize
+
         /*
         addSeparator(actions);
         add("P4.Shelve", manager, actions);

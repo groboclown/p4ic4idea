@@ -121,12 +121,14 @@ public class P4VFSListener extends VcsVFSListener {
 
                             // perform an integrate for cross-client, if they share the same server.
                             for (Map.Entry<P4FileInfo, VirtualFile> en: split.getSameServerCrossVirtualFilesForTarget(client).entrySet()) {
-                                messages.addAll(client.getServer().integrateFiles(en.getKey(), en.getValue(),changeListId));
+                                messages.addAll(client.getServer().integrateFiles(en.getKey(), en.getValue(), changeListId));
                             }
 
                             messages.addAll(client.getServer().addOrCopyFiles(
                                     split.getCrossTargetDifferentServerVirtualFilesFor(client),
                                     Collections.<VirtualFile, VirtualFile>emptyMap(), changeListId));
+
+                            // TODO ensure all the files were used.
 
                             // We don't need to tell the user about this as an error message; it should be the
                             // normal, expected operation.
@@ -455,9 +457,12 @@ public class P4VFSListener extends VcsVFSListener {
                         if (srcPath.size() != 1) {
                             throw new VcsException("invalid server path for " + entry.srcFilePath);
                         }
-                        ret.put(srcPath.get(0), entry.tgtVirtualFile);
+                        VirtualFile tgt = entry.tgtVirtualFile;
+                        if (tgt == null) {
+                            tgt = entry.tgtFilePath.getVirtualFile();
+                        }
+                        ret.put(srcPath.get(0), tgt);
                     }
-                    // TODO make this an add somehow.
                 }
             }
             return ret;

@@ -219,7 +219,7 @@ public class ServerExecutor {
     }
 
     @NotNull
-    public Collection<P4StatusMessage> integrateFiles(@NotNull final P4FileInfo src, @NotNull final VirtualFile tgt,
+    public Collection<P4StatusMessage> integrateFiles(@NotNull final P4FileInfo src, @NotNull final FilePath tgt,
             @NotNull final int changeListId) throws VcsException, CancellationException {
         return exec.integrateFiles(project, src, tgt, changeListId);
     }

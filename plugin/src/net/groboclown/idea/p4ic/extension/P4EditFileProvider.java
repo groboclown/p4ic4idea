@@ -67,7 +67,7 @@ public class P4EditFileProvider implements EditFileProvider {
             final Client client = en.getKey();
             final List<VirtualFile> files = en.getValue();
             if (client.isWorkingOnline()) {
-                LOG.info("EditFileProvider: edit " + files);
+                LOG.info("EditFileProvider (" + client + ") edit " + files);
                 unhandledFiles.removeAll(files);
 
                 // file editing is always run from within the AWT event
@@ -107,6 +107,9 @@ public class P4EditFileProvider implements EditFileProvider {
                 throw new VcsException("Could not change to writable: " + notWritable);
             }
         }
+
+        LOG.info("messages: " + messages);
+
         P4StatusMessage.throwIfError(messages, true);
     }
 

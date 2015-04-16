@@ -7,14 +7,17 @@
 ### Overview
 
 * Added support for IntelliJ on JDK 1.6
-* Minor bug fixes
+* Bug fixes
 
 ### Details
 
 * Added support for IntelliJ on JDK 1.6.
     * Compiled under JDK 1.6, and removed JDK 1.7-specific API calls.
-* Minor bug fixes
+* Bug fixes
     * Adding files (Ctrl+Alt+A) would sometimes call an unimplemented function.
+    * Multiple clients per project would mis-label a file as being under the wrong client.
+    * Deleted files would not be submitted.
+      
 
 
 ## ::v0.4.3::

@@ -317,10 +317,11 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             super.setCheckinEnvironment(createCheckinEnvironment());
             ret = super.getCheckinEnvironment();
         }
+        // It can return a proxy to the real environment, which is fine.
         //if (ret == null || ! (ret instanceof P4CheckinEnvironment)) {
         if (ret == null) {
-                // really yikes!
-            throw new IllegalStateException("created wrong checkin environment: " + ret);
+            // really yikes!
+            throw new IllegalStateException("created null CheckinEnvironment");
         }
         return ret;
     }
@@ -505,24 +506,45 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
      */
     public Map<Client, List<FilePath>> mapFilePathToClient(Collection<FilePath> filePaths)
             throws P4InvalidConfigException {
-        List<FilePath> paths = new ArrayList<FilePath>(filePaths);
+        // There can  be situations where one client is buried under another client
+        // path.  This needs to be able to handle that situation.
+
+        // Cache the list of clients, so we don't need to take the multiple impact of
+        // the call overhead for each loop.
+        final List<Client> allClients = getClients();
+
+        // Now find the actual mapping between file and client.
         Map<Client, List<FilePath>> ret = new HashMap<Client, List<FilePath>>();
-        for (Client config: getClients()) {
-            List<FilePath> configFiles = new ArrayList<FilePath>();
-            for (FilePath configRoot: config.getFilePathRoots()) {
-                Iterator<FilePath> iter = paths.iterator();
-                while (iter.hasNext()) {
-                    FilePath next = iter.next();
-                    if (next != null && next.isUnder(configRoot, false)) {
-                        configFiles.add(next);
-                        iter.remove();
+        for (FilePath input: filePaths) {
+            Client deepestClient = null;
+            int deepestDepth = -1;
+            for (Client client: allClients) {
+                for (FilePath configRoot: client.getFilePathRoots()) {
+                    int matchDepth = getFilePathMatchDepth(input, configRoot);
+                    if (matchDepth > deepestDepth) {
+                        deepestDepth = matchDepth;
+                        deepestClient = client;
+                        // keep searching in this client - the next match
+                        // may be deeper.  Yes, this is possible, but only
+                        // in very odd setups.
                     }
                 }
-                if (!configFiles.isEmpty()) {
-                    ret.put(config, configFiles);
+            }
+            if (deepestClient != null) {
+                List<FilePath> matched = ret.get(deepestClient);
+                if (matched == null) {
+                    matched = new ArrayList<FilePath>();
+                    ret.put(deepestClient, matched);
                 }
+                matched.add(input);
+            } else {
+                LOG.info("not under a Perforce client: " + input);
             }
         }
+
+        // TODO debugging - remove
+        LOG.info("client-file mapping: " + ret);
+
         return ret;
     }
 
@@ -537,27 +559,45 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
      */
     public Map<Client, List<VirtualFile>> mapVirtualFilesToClient(Collection<VirtualFile> virtualFiles)
             throws P4InvalidConfigException {
-        List<VirtualFile> paths = new ArrayList<VirtualFile>(virtualFiles);
+        // There can  be situations where one client is buried under another client
+        // path.  This needs to be able to handle that situation.
+
+        // Cache the list of clients, so we don't need to take the multiple impact of
+        // the call overhead for each loop.
+        final List<Client> allClients = getClients();
+
+        // Now find the actual mapping between file and client.
         Map<Client, List<VirtualFile>> ret = new HashMap<Client, List<VirtualFile>>();
-        for (Client config : getClients()) {
-            List<VirtualFile> configFiles = new ArrayList<VirtualFile>();
-            for (FilePath configRoot: config.getFilePathRoots()) {
-                Iterator<VirtualFile> iter = paths.iterator();
-                while (iter.hasNext()) {
-                    VirtualFile next = iter.next();
-                    if (next != null) {
-                        FilePath fp = VcsUtil.getFilePath(next);
-                        if (fp.isUnder(configRoot, false)) {
-                            configFiles.add(next);
-                            iter.remove();
-                        }
+        for (VirtualFile input : virtualFiles) {
+            Client deepestClient = null;
+            int deepestDepth = -1;
+            for (Client client : allClients) {
+                for (FilePath configRoot : client.getFilePathRoots()) {
+                    int matchDepth = getFilePathMatchDepth(VcsUtil.getFilePath(input), configRoot);
+                    if (matchDepth > deepestDepth) {
+                        deepestDepth = matchDepth;
+                        deepestClient = client;
+                        // keep searching in this client - the next match
+                        // may be deeper.  Yes, this is possible, but only
+                        // in very odd setups.
                     }
                 }
-                if (!configFiles.isEmpty()) {
-                    ret.put(config, configFiles);
+            }
+            if (deepestClient != null) {
+                List<VirtualFile> matched = ret.get(deepestClient);
+                if (matched == null) {
+                    matched = new ArrayList<VirtualFile>();
+                    ret.put(deepestClient, matched);
                 }
+                matched.add(input);
+            } else {
+                LOG.info("not under a Perforce client: " + input);
             }
         }
+
+        // TODO debugging - remove
+        LOG.info("client-file mapping: " + ret);
+
         return ret;
     }
 
@@ -585,11 +625,19 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     @Nullable
     public Client getClientFor(@NotNull FilePath fp) {
+        // Uses the same logic as the above client searches.
+
+        Client deepestMatch = null;
+        int deepestDepth = -1;
         for (Client config: getClients()) {
             try {
                 for (FilePath root : config.getFilePathRoots()) {
-                    if (fp.isUnder(root, false)) {
-                        return config;
+                    int depth = getFilePathMatchDepth(fp, root);
+                    if (depth > deepestDepth) {
+                        deepestMatch = config;
+                        deepestDepth = depth;
+                        // Keep searching in this client, in case there's
+                        // an even deeper root that should be used.
                     }
                 }
             } catch (P4InvalidConfigException e) {
@@ -597,7 +645,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
                 LOG.debug(e);
             }
         }
-        return null;
+        return deepestMatch;
     }
 
     @Nullable
@@ -605,37 +653,56 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         return getClientFor(VcsUtil.getFilePath(vf));
     }
 
-    @NotNull
-    public Map<Client, Collection<FilePath>> sortClientByFilePaths(List<FilePath> fpList) {
-        Map<Client, Collection<FilePath>> ret = new HashMap<Client, Collection<FilePath>>();
-        for (FilePath fp: fpList) {
-            Client sc = getClientFor(fp);
-            if (sc != null) {
-                Collection<FilePath> files = ret.get(sc);
-                if (files == null) {
-                    files = new ArrayList<FilePath>();
-                    ret.put(sc, files);
-                }
-                files.add(fp);
-            }
+
+    /**
+     * Checks if the input path is under the config root, and how deep
+     * the config root is.
+     * <p>
+     * This does not perform link expansion (get absolute path).  We
+     * assume that if you have a file under a path in a link, you want
+     * it to be at that location, and not at its real location.
+     * </p>
+     *
+     * @param input the file to match against a P4 client directory
+     * @param configRoot root directory of a client
+     * @return &lt; 0 if the file is not under the client directory, otherwise the
+     *      directory depth (from root) of the config root.
+     */
+    private int getFilePathMatchDepth(@NotNull final FilePath input, @NotNull final FilePath configRoot) {
+        final List<FilePath> inputParts = getPathParts(input);
+        final List<FilePath> rootParts = getPathParts(configRoot);
+
+        if (inputParts.size() < rootParts.size()) {
+            // input is at a higher ancestor level than the root parts,
+            // so there's no way it could be in this root.
+            return -1;
         }
-        return ret;
+
+        // See if input is under the root.
+        // We should be able to just  call input.isUnder(configRoot), but
+        // that seems to be buggy - it reported that "/a/b/c" was under "/a/b/d".
+
+        final FilePath sameRootDepth = inputParts.get(rootParts.size() - 1);
+        if (sameRootDepth.equals(configRoot)) {
+            // it's a match.  The input file ancestor path that is
+            // at the same directory depth as the config root is the same
+            // path.
+            return rootParts.size();
+        }
+
+        // Not under the same path, so it's not a match.
+        return -1;
     }
 
     @NotNull
-    public Map<Client, Collection<VirtualFile>> sortClientByVirtualFiles(List<VirtualFile> vfList) {
-        Map<Client, Collection<VirtualFile>> ret = new HashMap<Client, Collection<VirtualFile>>();
-        for (VirtualFile vf : vfList) {
-            Client sc = getClientFor(vf);
-            if (sc != null) {
-                Collection<VirtualFile> files = ret.get(sc);
-                if (files == null) {
-                    files = new ArrayList<VirtualFile>();
-                    ret.put(sc, files);
-                }
-                files.add(vf);
-            }
+    private List<FilePath> getPathParts(@NotNull final FilePath child) {
+        List<FilePath> ret = new ArrayList<FilePath>();
+        FilePath next = child;
+        while (next != null) {
+            ret.add(next);
+            next = next.getParentPath();
         }
+        Collections.reverse(ret);
         return ret;
     }
 

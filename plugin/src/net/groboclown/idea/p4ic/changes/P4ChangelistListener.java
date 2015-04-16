@@ -128,6 +128,7 @@ public class P4ChangelistListener implements ChangeListListener {
             // in case something messed up with the initial mapping of files to
             // a perforce changelist.
 
+
             Background.runInBackground(myProject, CHANGES_REMOVED, myVcs.getConfiguration().getUpdateOption(),
                     new Background.ER() {
                         @Override
@@ -135,11 +136,11 @@ public class P4ChangelistListener implements ChangeListListener {
                             indicator.setFraction(0.1);
                             List<FilePath> affected = getPathsFromChanges(changes);
                             indicator.setFraction(0.4);
-                            Map<Client, List<FilePath>> filesByServer = myVcs.mapFilePathToClient(affected);
+                            Map<Client, List<FilePath>> filesByClient = myVcs.mapFilePathToClient(affected);
                             double count = 0.0;
                             List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
-                            for (Map.Entry<Client, List<FilePath>> e: filesByServer.entrySet()) {
-                                indicator.setFraction(0.6 + (0.4 * (count / (double) filesByServer.size())));
+                            for (Map.Entry<Client, List<FilePath>> e: filesByClient.entrySet()) {
+                                indicator.setFraction(0.6 + (0.4 * (count / (double) filesByClient.size())));
                                 count += 1.0;
                                 messages.addAll(P4ChangeListCache.getInstance().addFilesToChangelist(e.getKey(),
                                         null, e.getValue()));

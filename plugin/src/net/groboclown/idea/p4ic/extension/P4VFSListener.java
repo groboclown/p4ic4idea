@@ -120,7 +120,9 @@ public class P4VFSListener extends VcsVFSListener {
                                     split.getCrossSourceFilePathsFor(client), changeListId));
 
                             // perform an integrate for cross-client, if they share the same server.
-                            for (Map.Entry<P4FileInfo, VirtualFile> en: split.getSameServerCrossVirtualFilesForTarget(client).entrySet()) {
+                            // TODO A bit of care is necessary, in case the user of the target client doesn't
+                            // have read access in the source client.
+                            for (Map.Entry<P4FileInfo, FilePath> en: split.getSameServerCrossVirtualFilesForTarget(client).entrySet()) {
                                 messages.addAll(client.getServer().integrateFiles(en.getKey(), en.getValue(), changeListId));
                             }
 
@@ -177,6 +179,10 @@ public class P4VFSListener extends VcsVFSListener {
                             // change a cross-client copy to be just an add.
                             // This can also happen if a file is copied from outside
                             // Perforce control.
+
+                            // TODO we can integrate between clients if the servers are the same.
+                            // TODO A bit of care is necessary, in case the user of the target client doesn't
+                            // have read access in the source client.
 
                             List<VirtualFile> added = new ArrayList<VirtualFile>(splitClient.getCrossTargetVirtualFilesFor(client));
                             List<VirtualFile> explicitAdd = clientAddedMap.get(client);
@@ -448,8 +454,8 @@ public class P4VFSListener extends VcsVFSListener {
         }
 
         @NotNull
-        Map<P4FileInfo, VirtualFile> getSameServerCrossVirtualFilesForTarget(@NotNull final Client client) throws VcsException {
-            Map<P4FileInfo, VirtualFile> ret = new HashMap<P4FileInfo, VirtualFile>();
+        Map<P4FileInfo, FilePath> getSameServerCrossVirtualFilesForTarget(@NotNull final Client client) throws VcsException {
+            Map<P4FileInfo, FilePath> ret = new HashMap<P4FileInfo, FilePath>();
             for (SplitClientFileEntry entry: crossClient) {
                 if (entry.isSameServerCrossClient() && client.equals(entry.tgtClient) && entry.srcClient != null) {
                     if (entry.srcClient.isWorkingOnline()) {
@@ -457,9 +463,9 @@ public class P4VFSListener extends VcsVFSListener {
                         if (srcPath.size() != 1) {
                             throw new VcsException("invalid server path for " + entry.srcFilePath);
                         }
-                        VirtualFile tgt = entry.tgtVirtualFile;
+                        FilePath tgt = entry.tgtFilePath;
                         if (tgt == null) {
-                            tgt = entry.tgtFilePath.getVirtualFile();
+                            throw new VcsException("no target? source is " + entry.srcFilePath);
                         }
                         ret.put(srcPath.get(0), tgt);
                     }

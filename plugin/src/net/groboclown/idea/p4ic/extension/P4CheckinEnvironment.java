@@ -94,7 +94,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         final Map<Client, List<FilePath>> defaultChangeFiles = new HashMap<Client, List<FilePath>>();
         final Map<Client, Map<P4ChangeListId, List<FilePath>>> pathsPerChangeList = new HashMap<Client, Map<P4ChangeListId, List<FilePath>>>();
         for (Change change: changes) {
-            if (change != null && change.getVirtualFile() != null) {
+            if (change != null) {
                 LocalChangeList cl = clm.getChangeList(change);
                 splitChanges(change, cl, pathsPerChangeList, defaultChangeFiles);
             }
@@ -107,6 +107,9 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         // This just puts the defaults into a changelist.  They will be submitted
         // with the rest of the changelists below.
 
+        LOG.info("changes in a changelist: " + pathsPerChangeList);
+        LOG.info("changes in default changelists: " + defaultChangeFiles);
+
         if (! defaultChangeFiles.isEmpty()) {
             for (Map.Entry<Client, List<FilePath>> en: defaultChangeFiles.entrySet()) {
                 Client client = en.getKey();
@@ -118,6 +121,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                         clFp = new HashMap<P4ChangeListId, List<FilePath>>();
                         pathsPerChangeList.put(client, clFp);
                     }
+                    LOG.info("moving from default changelist in " + client + " to " + changeList + ": " + en.getValue());
                     P4ChangeListCache.getInstance().addFilesToChangelist(client,
                             changeList, en.getValue());
                     clFp.put(changeList, en.getValue());
@@ -151,6 +155,8 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             }
         }
 
+        LOG.info("Errors: " + errors);
+
         // Mark the changes as needing an update
         P4ChangesViewRefresher.refreshLater(vcs.getProject());
         return errors;
@@ -159,13 +165,23 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     private void splitChanges(@NotNull Change change, @Nullable LocalChangeList lcl,
             @NotNull Map<Client, Map<P4ChangeListId, List<FilePath>>> clientPathsPerChangeList,
             @NotNull Map<Client, List<FilePath>> defaultChangeFiles) {
-        final VirtualFile vf = change.getVirtualFile();
-        if (vf == null) {
-            // unknown file.  deleted?
-            LOG.info("Tried to submit a change (" + change + ") which has no file");
+        final FilePath fp;
+        if (change.getVirtualFile() == null) {
+            // possibly deleted.
+            if (change.getBeforeRevision() != null) {
+                fp = change.getBeforeRevision().getFile();
+            } else {
+                LOG.info("Tried to submit a change (" + change + ") which has no file");
+                return;
+            }
+        } else {
+            fp = VcsUtil.getFilePath(change.getVirtualFile());
+        }
+        if (fp == null) {
+            LOG.info("Change " + change + " had no associated file path");
             return;
         }
-        final FilePath fp = VcsUtil.getFilePath(vf);
+
         final Client client = vcs.getClientFor(fp);
         if (client == null) {
             // not under p4 control

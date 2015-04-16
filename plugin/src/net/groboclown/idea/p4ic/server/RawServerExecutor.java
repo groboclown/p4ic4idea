@@ -23,10 +23,8 @@ import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
-import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.history.P4AnnotatedLine;
 import net.groboclown.idea.p4ic.history.P4FileRevision;
 import net.groboclown.idea.p4ic.server.exceptions.P4ApiException;
@@ -496,9 +494,8 @@ public class RawServerExecutor {
         return performAction(project, new ServerTask<List<P4FileInfo>>() {
             @Override
             public List<P4FileInfo> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
-                List<P4FileInfo> ret = exec.loadFileInfo(project, FileSpecUtil.getFromFilePathsAt(
+                return exec.loadFileInfo(project, FileSpecUtil.getFromFilePathsAt(
                         files, "#head", true));
-                return ret;
             }
         });
     }
@@ -558,7 +555,7 @@ public class RawServerExecutor {
 
     @NotNull
     public Collection<P4StatusMessage> integrateFiles(@NotNull final Project project, @NotNull final P4FileInfo src,
-            @NotNull final VirtualFile target, final int changeListId) throws VcsException, CancellationException {
+            @NotNull final FilePath target, final int changeListId) throws VcsException, CancellationException {
         return performAction(project, new ServerTask<Collection<P4StatusMessage>>() {
             @Override
             public Collection<P4StatusMessage> run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
@@ -566,7 +563,7 @@ public class RawServerExecutor {
                 // client.
                 final IFileSpec srcSpec = src.toDepotSpec();
 
-                final IFileSpec tgtSpec = FileSpecUtil.getFromVirtualFiles(Collections.singletonList(target)).get(0);
+                final IFileSpec tgtSpec = FileSpecUtil.getFromFilePaths(Collections.singletonList(target)).get(0);
 
                 // don't copy to client is set to "true" because the IDE will handle the actual copy.
                 return exec.integrateFiles(project, srcSpec, tgtSpec, changeListId, true);
@@ -587,10 +584,9 @@ public class RawServerExecutor {
         } catch (P4InvalidConfigException e) {
             // thrower handles the listener call
             throw e;
-        } catch (CancellationException e) {
-            throw e;
         } catch (VcsException e) {
-            e.printStackTrace();
+            LOG.info(e);
+            throw new P4InvalidConfigException(e.getMessage());
         }
     }
 
@@ -606,60 +602,6 @@ public class RawServerExecutor {
             closingPool.addAll(activePool);
             activePool.clear();
             idlePool.clear();
-        }
-    }
-
-
-    private class RawClient implements Client {
-
-        @NotNull
-        @Override
-        public ServerExecutor getServer() {
-            throw new IllegalStateException("not implemented");
-        }
-
-        @NotNull
-        @Override
-        public String getClientName() {
-            return clientName;
-        }
-
-        @NotNull
-        @Override
-        public ServerConfig getConfig() {
-            return config.getConfig();
-        }
-
-        @NotNull
-        @Override
-        public List<VirtualFile> getRoots() {
-            throw new IllegalStateException("not implemented");
-        }
-
-        @NotNull
-        @Override
-        public List<FilePath> getFilePathRoots() {
-            throw new IllegalStateException("not implemented");
-        }
-
-        @Override
-        public boolean isWorkingOffline() {
-            throw new IllegalStateException("not implemented");
-        }
-
-        @Override
-        public boolean isWorkingOnline() {
-            throw new IllegalStateException("not implemented");
-        }
-
-        @Override
-        public void forceDisconnect() {
-            throw new IllegalStateException("not implemented");
-        }
-
-        @Override
-        public void dispose() {
-            throw new IllegalStateException("not implemented");
         }
     }
 }

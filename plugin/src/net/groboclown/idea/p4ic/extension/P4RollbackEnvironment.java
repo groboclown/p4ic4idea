@@ -86,6 +86,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
                     List<FilePath> files = en.getValue();
                     if (client.isWorkingOnline() && ! files.isEmpty()) {
                         hasRefreshedFiles = true;
+                        LOG.info("Reverting in client " + client + ": " + files);
                         messages.addAll(client.getServer().revertFiles(files));
                     }
                 }

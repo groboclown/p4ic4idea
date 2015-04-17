@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.server.tasks;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.IFileRevisionData;
@@ -26,6 +27,8 @@ import java.util.*;
 import java.util.concurrent.CancellationException;
 
 public class GetRevisionHistoryTask extends ServerTask<List<P4FileRevision>> {
+    private static final Logger LOG = Logger.getInstance(GetRevisionHistoryTask.class);
+
     private final Project project;
     private final P4FileInfo file;
     private final int maxRevs;
@@ -54,9 +57,14 @@ public class GetRevisionHistoryTask extends ServerTask<List<P4FileRevision>> {
                     // We also don't want to add in the initial file, because
                     // that FileInfo has already been loaded.
                     ! file.isSameFile(spec)) {
+                LOG.info("Loading info on spec: " + spec);
                 findFiles.add(spec);
             }
         }
+
+        // TODO this doesn't quite do the right thing.  If a file was deleted,
+        // the file doesn't show up quite right.  Likewise, if it was moved
+        // from outside the current client, it will fail.
         List<P4FileInfo> files = new ArrayList<P4FileInfo>(exec.loadFileInfo(project, findFiles));
         files.add(file);
 

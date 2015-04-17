@@ -17,6 +17,8 @@
     * Adding files (Ctrl+Alt+A) would sometimes call an unimplemented function.
     * Multiple clients per project would mis-label a file as being under the wrong client.
     * Deleted files would not be submitted.
+    * Annotated file can encounter null depot file path, which causes an error.
+    * File history can cause an error when one file in the path was removed.
       
 
 

@@ -66,6 +66,10 @@ public class AnnotateFileTask extends ServerTask<List<P4AnnotatedLine>> {
             //if (ann.getUpper() != ann.getLower()) {
             //    LOG.info("upper/lower response: " + ann.getUpper() + "/" + ann.getLower());
             //}
+            if (ann.getDepotPath() == null) {
+                LOG.info("Annotation encountered null depot path for line " + lineNumber);
+                continue;
+            }
             P4FileInfo p4file = fileInfo.get(ann.getDepotPath());
             if (p4file == null) {
                 // depot path, so it's already escaped

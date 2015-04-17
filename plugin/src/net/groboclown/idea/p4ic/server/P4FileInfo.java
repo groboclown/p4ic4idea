@@ -536,21 +536,19 @@ public class P4FileInfo {
                         FilePath path = VcsUtil.getFilePath(FileSpecUtil.unescapeP4Path(spec.getClientPathString()), false);
                         ret.add(new P4FileInfo(path, spec));
                     } else {
-                        P4JavaException e = new P4JavaException("expected file spec, but found " + spec +
-                                " p[" + spec.getAnnotatedPreferredPathString() +
-                                " s[" + spec.getStatusMessage() +
-                                " a[" + spec.getAction() +
-                                " b[" + spec.getBaseFile() +
-                                " f[" + spec.getFromFile() +
-                                " c#" + spec.getRawCode() +
-                                "." + spec.getUniqueCode() +
-                                "." + spec.getGenericCode() +
-                                "." + spec.getSeverityCode() +
-                                "." + spec.getSubCode()
-                        );
-                        // Throwing an exception will hide the stack trace.
-                        LOG.info(e);
-                        throw e;
+                        // This state seems to indicate that the file is
+                        // not in the current client view.  Because this
+                        // came from an IFileSpec, we won't be able to
+                        // discover any more information about it.
+                        // TODO this could cause potential issues, as it
+                        // still creates a FilePath, but this is the only
+                        // case where the p4 file info will have a non-local
+                        // file path; the other code that this affects may need
+                        // extra protection for non-local file paths.
+                        LOG.info("Extended file information seems to indicate that it was on another client: " +
+                                spec.getDepotPathString());
+                        ret.add(new P4FileInfo(VcsUtil.getFilePathOnNonLocal(
+                                spec.getDepotPathString(), false)));
                     }
                     // else some commands return an empty last file spec; it's the
                     // status message..

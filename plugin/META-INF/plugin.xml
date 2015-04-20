@@ -33,7 +33,6 @@
       <ul>
         <li>Submit does not associate jobs with the changelist, nor
         does it set the job status.</li>
-        <li>Does not synchronize local files with the server.</li>
         <li>Does not indicate to the user whether a file is
         synchronized to the head revision or not.</li>
         <li>No repository browsing.</li>

@@ -8,7 +8,17 @@
         <ol>
             <li><em>0.5.0</em>
                 <ol>
-                    <li></li>
+                    <li>Added support for IntelliJ on JDK 1.6.</li>
+                    <li>Added job support to check-ins.
+                    Experimental: the list of acceptable job status values are pulled
+                    from the server.  If these are inaccessible, then the default
+                    list is shown.</li>
+                    <li>Fixed: adding files (Ctrl+Alt+A) would sometimes call an unimplemented function.</li>
+                    <li>Fixed: Multiple clients per project would mis-label a file as being under the wrong client.</li>
+                    <li>Fixed: Submitting a changelist which causes an error incorrectly reports the submit as successful.</li>
+                    <li>Fixed: Deleted files would not be submitted.</li>
+                    <li>Fixed: Annotated file can encounter null depot file path, which causes an error.</li>
+                    <li>Fixed: File history can cause an error when one file in the path was removed.</li>
                 </ol>
             </li>
             <li><em>0.4.3</em>
@@ -118,13 +128,13 @@
 
             <add-to-group group-id="VcsGroup" anchor="last"/>
         </group>
-
-
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
         <vcs name="p4ic" vcsClass="net.groboclown.idea.p4ic.extension.P4Vcs" displayName="Perforce"/>
+        <!--
         <vcsCheckinHandlerFactory implementation="net.groboclown.idea.p4ic.extension.P4CheckinHandlerFactory"/>
+        -->
         <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
         <vcsPopupProvider implementation="net.groboclown.idea.p4ic.extension.P4QuickListContentProvider"/>
 

@@ -175,7 +175,8 @@ public class P4ChangeListCache implements ApplicationComponent {
                     }
                 }
                 P4ChangeList change = new P4ChangeList(new P4ChangeListIdImpl(client, summary), changelistFiles,
-                        summary.getDescription(), summary.getUsername());
+                        summary.getDescription(), summary.getUsername(),
+                        client.getServer().getJobsForChangelist(summary.getId()));
                 serverCache.add(change);
                 LOG.debug("change " + change.getId() + " contains files " + change.getFiles());
             }
@@ -196,7 +197,7 @@ public class P4ChangeListCache implements ApplicationComponent {
             }
         }
         defaultChange = new P4ChangeList(new P4ChangeListIdImpl(client, P4_DEFAULT),
-                defaultChangeFiles, null, null);
+                defaultChangeFiles, null, null, null);
         LOG.debug("default change contains files " + defaultChange.getFiles());
 
         // If there are left over files, then that could be an error.
@@ -223,7 +224,8 @@ public class P4ChangeListCache implements ApplicationComponent {
     public P4ChangeListId createChangeList(@NotNull Client client, @NotNull String description) throws VcsException {
         final IChangelist p4cl = client.getServer().createChangelist(description);
         final P4ChangeList changeList = new P4ChangeList(new P4ChangeListIdImpl(client, p4cl),
-                Collections.<P4FileInfo>emptyList(), p4cl.getDescription(), p4cl.getUsername());
+                Collections.<P4FileInfo>emptyList(), p4cl.getDescription(), p4cl.getUsername(),
+                client.getServer().getJobsForChangelist(p4cl.getId()));
         lock.writeLock().lock();
         try {
             // Can only ever be a numbered changelist
@@ -298,7 +300,8 @@ public class P4ChangeListCache implements ApplicationComponent {
         } else {
             list = new P4ChangeList(changeListId, currentFiles,
                     summary == null ? null : summary.getDescription(),
-                    summary == null ? null : summary.getUsername());
+                    summary == null ? null : summary.getUsername(),
+                    client.getServer().getJobsForChangelist(changeListId.getChangeListId()));
         }
 
         lock.writeLock().lock();

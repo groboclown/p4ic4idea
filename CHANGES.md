@@ -7,18 +7,26 @@
 ### Overview
 
 * Added support for IntelliJ on JDK 1.6
+* Added job support to check-ins.
 * Bug fixes
 
 ### Details
 
-* Added support for IntelliJ on JDK 1.6.
+* Added support for IntelliJ on JDK 1.6. (#?)
     * Compiled under JDK 1.6, and removed JDK 1.7-specific API calls.
+* Added job support to check-ins. (#25 & #26)
+    * Experimental: the list of acceptable job status values are pulled
+      from the server.  If these are inaccessible, then the default
+      list is shown.
 * Bug fixes
     * Adding files (Ctrl+Alt+A) would sometimes call an unimplemented function.
     * Multiple clients per project would mis-label a file as being under the wrong client.
     * Deleted files would not be submitted.
     * Annotated file can encounter null depot file path, which causes an error.
     * File history can cause an error when one file in the path was removed.
+    * Submitting a changelist which causes an error incorrectly reports the submit as
+      successful. (#31)
+      
       
 
 

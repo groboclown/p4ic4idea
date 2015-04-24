@@ -224,6 +224,16 @@ public class ServerExecutor {
         return exec.integrateFiles(project, src, tgt, changeListId);
     }
 
+    @NotNull
+    public List<String> getJobStatusValues() throws VcsException, CancellationException {
+        return exec.getJobStatusValues(project);
+    }
+
+    @Nullable
+    public Collection<String> getJobsForChangelist(final int id) throws VcsException, CancellationException {
+        return exec.getJobsForChangelist(project, id);
+    }
+
 
     /*
     public void synchronizeFiles(@NotNull Collection<VirtualFile> files, int revision, int changelist)

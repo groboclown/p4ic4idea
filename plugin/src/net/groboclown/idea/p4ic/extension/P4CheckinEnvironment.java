@@ -21,6 +21,7 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
+import com.intellij.openapi.vcs.checkin.CheckinChangeListSpecificComponent;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -32,11 +33,14 @@ import net.groboclown.idea.p4ic.changes.P4ChangeListCache;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
-import net.groboclown.idea.p4ic.ui.P4OnCheckinPanel;
+import net.groboclown.idea.p4ic.ui.checkin.P4SubmitPanel;
+import net.groboclown.idea.p4ic.ui.checkin.SubmitContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -52,7 +56,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     @Nullable
     @Override
     public RefreshableOnComponent createAdditionalOptionsPanel(CheckinProjectPanel panel, PairConsumer<Object, Object> additionalDataConsumer) {
-        return new P4OnCheckinPanel(vcs.getProject(), panel);
+        return new P4OnCheckinPanel(vcs, panel, additionalDataConsumer);
     }
 
     @Nullable
@@ -138,15 +142,11 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                 LOG.info("Submit to " + client + " cl " + clEn.getValue() + " files " +
                     clEn.getValue());
                 try {
-                    client.getServer().submitChangelist(clEn.getValue(),
-
-                            // TODO add jobs
-                            Collections.<String>emptyList(),
-
-                            // TODO add job status
-                            null,
-
+                    List<P4StatusMessage> messages = client.getServer().submitChangelist(clEn.getValue(),
+                            getJobs(parametersHolder),
+                            getSubmitStatus(parametersHolder),
                             clEn.getKey().getChangeListId());
+                    errors.addAll(P4StatusMessage.messagesAsErrors(messages));
                 } catch (VcsException e) {
                     LOG.warn("Problem submitting changelist " +
                             clEn.getKey().getChangeListId(), e);
@@ -307,5 +307,79 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         // File status (read-only state) may have changed, or CVS substitution
         // may have happened.
         return true;
+    }
+
+
+    private static void setJobs(@NotNull List<String> jobIds, @NotNull PairConsumer<Object, Object> dataConsumer) {
+        dataConsumer.consume("jobIds", jobIds);
+    }
+
+    @NotNull
+    private static List<String> getJobs(@NotNull NullableFunction<Object, Object> dataFunc) {
+        final Object ret = dataFunc.fun("jobIds");
+        if (ret == null) {
+            return Collections.emptyList();
+        }
+        return List.class.cast(ret);
+    }
+
+    private static void setSubmitStatus(@NotNull String jobStatus, @NotNull PairConsumer<Object, Object> dataConsumer) {
+        dataConsumer.consume("jobStatus", jobStatus);
+    }
+
+    @Nullable
+    private static String getSubmitStatus(@NotNull NullableFunction<Object, Object> dataFunc) {
+        final Object ret = dataFunc.fun("jobStatus");
+        if (ret != null) {
+            return ret.toString();
+        }
+        return null;
+    }
+
+
+    private class P4OnCheckinPanel implements CheckinChangeListSpecificComponent {
+        private final P4Vcs vcs;
+        private final CheckinProjectPanel parentPanel;
+        private final PairConsumer<Object, Object> dataConsumer;
+        private final SubmitContext context;
+        private final P4SubmitPanel panel;
+
+
+        P4OnCheckinPanel(@NotNull P4Vcs vcs, @NotNull CheckinProjectPanel panel, final PairConsumer<Object, Object> additionalDataConsumer) {
+            this.vcs = vcs;
+            this.parentPanel = panel;
+            this.dataConsumer = additionalDataConsumer;
+            this.context = new SubmitContext(vcs, panel.getSelectedChanges());
+            this.panel = new P4SubmitPanel(context);
+        }
+
+        @Override
+        public void onChangeListSelected(LocalChangeList list) {
+            context.setSelectedCurrentChanges(list.getChanges());
+            panel.updateStatus();
+        }
+
+        @Override
+        public JComponent getComponent() {
+            return panel.getRootPanel();
+        }
+
+        @Override
+        public void refresh() {
+            restoreState();
+        }
+
+        @Override
+        public void saveState() {
+            // load from context into the data consumer
+            setJobs(context.getJobIds(), dataConsumer);
+            setSubmitStatus(context.getSubmitStatus(), dataConsumer);
+        }
+
+        @Override
+        public void restoreState() {
+            context.refresh(parentPanel.getSelectedChanges());
+            panel.updateStatus();
+        }
     }
 }

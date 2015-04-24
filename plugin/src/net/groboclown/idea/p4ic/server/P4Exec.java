@@ -23,6 +23,7 @@ import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
+import com.perforce.p4java.core.IJobSpec;
 import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -36,8 +37,6 @@ import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
 import com.perforce.p4java.option.server.GetFileContentsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
-import com.perforce.p4java.server.callback.IProgressCallback;
 import net.groboclown.idea.p4ic.background.VcsFuture;
 import net.groboclown.idea.p4ic.background.VcsSettableFuture;
 import net.groboclown.idea.p4ic.config.PasswordStore;
@@ -64,6 +63,11 @@ import static net.groboclown.idea.p4ic.server.P4StatusMessage.getErrors;
  */
 public class P4Exec {
     private static final Logger LOG = Logger.getInstance(P4Exec.class);
+
+    // Default list of status, in case of a problem.
+    public static final List<String> DEFAULT_JOB_STATUS = Arrays.asList(
+            "open", "suspended", "closed"
+    );
 
     private final Object sync = new Object();
 
@@ -495,7 +499,6 @@ public class P4Exec {
     @NotNull
     public List<IFileSpec> synchronizeFiles(@NotNull Project project, @NotNull final List<IFileSpec> files)
             throws VcsException, CancellationException {
-        // TODO this needs testing
         return runWithClient(project, new WithClient<List<IFileSpec>>() {
             @Override
             public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
@@ -508,6 +511,7 @@ public class P4Exec {
         });
     }
 
+    @NotNull
     public List<IFileAnnotation> getAnnotationsFor(@NotNull Project project, @NotNull final List<IFileSpec> specs)
             throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<List<IFileAnnotation>>() {
@@ -537,6 +541,7 @@ public class P4Exec {
         });
     }
 
+    @NotNull
     public List<P4StatusMessage> submit(@NotNull final Project project, final int changelistId,
             @NotNull final List<String> jobIds,
             @Nullable final String jobStatus) throws VcsException, CancellationException {
@@ -551,6 +556,47 @@ public class P4Exec {
                     options.setJobStatus(jobStatus);
                 }
                 return getErrors(changelist.submit(options));
+            }
+        });
+    }
+
+
+    /**
+     * Returns the list of job status used by the server.  If there was a
+     * problem reading the list, then the default list is returned instead.
+     *
+     * @param project
+     * @return list of job status used by the server
+     * @throws CancellationException
+     */
+    public List<String> getJobStatusValues(@NotNull final Project project) throws CancellationException {
+        try {
+            return runWithServer(project, new WithServer<List<String>>() {
+                @Override
+                public List<String> run(@NotNull final IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                    final IJobSpec spec = server.getJobSpec();
+                    final Map<String, List<String>> values = spec.getValues();
+                    if (values != null && values.containsKey("Status")) {
+                        return values.get("Status");
+                    }
+                    LOG.info("No Status values listed in job spec");
+                    return DEFAULT_JOB_STATUS;
+                }
+            });
+        } catch (VcsException e) {
+            LOG.info("Could not access the job spec", e);
+            return DEFAULT_JOB_STATUS;
+        }
+    }
+
+
+    @Nullable
+    public Collection<String> getJobsForChangelist(final Project project, final int changelistId) throws VcsException {
+        return runWithServer(project, new WithServer<Collection<String>>() {
+            @Override
+            public Collection<String> run(@NotNull final IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                final IChangelist changelist = server.getChangelist(changelistId);
+                return changelist.getJobIds();
             }
         });
     }
@@ -917,57 +963,6 @@ public class P4Exec {
         return (message != null &&
                 (message.contains("Your session has expired, please login again.")
                         || message.contains("Perforce password (P4PASSWD) invalid or unset.")));
-    }
-
-
-    private static class LoggingCommandCallback implements ICommandCallback {
-
-        @Override
-        public void issuingServerCommand(int i, String s) {
-            // System.out.println("P4 cmd start: " + i + " - " + s);
-        }
-
-        @Override
-        public void completedServerCommand(int i, long l) {
-            // System.out.println("P4 cmd finished: " + i + " - " + l);
-        }
-
-        @Override
-        public void receivedServerInfoLine(int i, String s) {
-            // System.out.println("P4 cmd info: " + i + " - " + s);
-        }
-
-        @Override
-        public void receivedServerErrorLine(int i, String s) {
-            LOG.warn("P4 cmd error: " + i + " - " + s);
-        }
-
-        @Override
-        public void receivedServerMessage(int i, int i1, int i2, String s) {
-            // System.out.println("P4 cmd msg: " + i + ":" + i1 + ":" + i2 + " - " + s);
-        }
-    }
-
-
-    static class LoggingProgressCallback implements IProgressCallback {
-
-        @Override
-        public void start(int i) {
-            // System.out.println("P4 cmd start progress: " + i);
-        }
-
-        @Override
-        public boolean tick(int i, String s) {
-            // System.out.println("P4 cmd progress: " + i + " - " + s);
-            // If this returns "false", then this will stop the line processing
-            // from the server.  This can cause all kinds of horrible problems.
-            return true;
-        }
-
-        @Override
-        public void stop(int i) {
-            // System.out.println("P4 cmd stop progress: " + i);
-        }
     }
 
 

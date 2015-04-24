@@ -35,7 +35,7 @@ import java.util.*;
 public class P4FileInfo {
     private static final Logger LOG = Logger.getInstance(P4FileInfo.class);
 
-    public static enum ClientAction {
+    public enum ClientAction {
         ADD(FileStatus.ADDED, true, false, false, false, FileGroup.CREATED_ID),
         DELETE(FileStatus.DELETED, false, true, false, false, FileGroup.REMOVED_FROM_REPOSITORY_ID),
         EDIT(FileStatus.MODIFIED, false, false, true, false, FileGroup.MODIFIED_ID),

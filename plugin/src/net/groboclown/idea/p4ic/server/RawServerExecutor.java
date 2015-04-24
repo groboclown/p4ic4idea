@@ -571,6 +571,16 @@ public class RawServerExecutor {
         });
     }
 
+    @NotNull
+    public List<String> getJobStatusValues(@NotNull final Project project) throws VcsException, CancellationException {
+        return performAction(project, new ServerTask<List<String>>() {
+            @Override
+            public List<String> run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
+                return exec.getJobStatusValues(project);
+            }
+        });
+    }
+
     public void checkConnection(@NotNull final Project project)
             throws P4InvalidConfigException, CancellationException {
         try {
@@ -588,6 +598,16 @@ public class RawServerExecutor {
             LOG.info(e);
             throw new P4InvalidConfigException(e.getMessage());
         }
+    }
+
+    @Nullable
+    public Collection<String> getJobsForChangelist(@NotNull final Project project, final int changelistId) throws VcsException, CancellationException {
+        return performAction(project, new ServerTask<Collection<String>>() {
+            @Override
+            public Collection<String> run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
+                return exec.getJobsForChangelist(project, changelistId);
+            }
+        });
     }
 
     void wentOnline() {

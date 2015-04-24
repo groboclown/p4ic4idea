@@ -53,14 +53,21 @@ public class P4ChangeList {
     private final Set<P4FileInfo> files;
     private final String comment;
     private final String owner;
+    private final List<String> jobIds;
     private final Date lastUpdateTime = new Date();
 
     public P4ChangeList(@NotNull final P4ChangeListId id, @NotNull final Collection<P4FileInfo> files,
-                        @Nullable final String comment, @Nullable final String owner) {
+                        @Nullable final String comment, @Nullable final String owner,
+                        @Nullable Collection<String> jobIds) {
         this.id = id;
         this.files = Collections.unmodifiableSet(new HashSet<P4FileInfo>(files));
         this.comment = comment;
         this.owner = owner;
+        if (jobIds == null || jobIds.isEmpty()) {
+            this.jobIds = Collections.emptyList();
+        } else {
+            this.jobIds = Collections.unmodifiableList(new ArrayList<String>(jobIds));
+        }
     }
 
     @NotNull
@@ -86,5 +93,10 @@ public class P4ChangeList {
     @NotNull
     public Date getLastUpdateTime() {
         return lastUpdateTime;
+    }
+
+    @NotNull
+    public List<String> getJobIdToStatus() {
+        return jobIds;
     }
 }

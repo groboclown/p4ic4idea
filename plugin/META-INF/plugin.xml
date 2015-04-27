@@ -20,6 +20,8 @@
                     <li>Fixed: Annotated file can encounter null depot file path, which causes an error.</li>
                     <li>Fixed: File history can cause an error when one file in the path was removed.</li>
                     <li>Fixed: Files would move incorrectly from the correct changelist into the default changelist.</li>
+                    <li>Fixed: Move file across clients should use integrate when clients share a server</li>
+                    <li>Fixed: Revert a moved file does not refresh status</li>
                 </ol>
             </li>
             <li><em>0.4.3</em>

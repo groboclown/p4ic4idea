@@ -20,7 +20,7 @@
       list is shown.
 * Bug fixes
     * Adding files (Ctrl+Alt+A) would sometimes call an unimplemented function.
-    * Multiple clients per project would mis-label a file as being under the wrong client.
+    * Multiple clients per project would label a file as being under the wrong client.
     * Deleted files would not be submitted.
     * Annotated file can encounter null depot file path, which causes an error.
     * File history can cause an error when one file in the path was removed.
@@ -28,6 +28,8 @@
       successful. (#31)
     * Files would move incorrectly from the correct changelist into the default
       changelist. (#22)
+    * Move file across clients should use integrate when clients share a server (#15)
+    * Revert a moved file does not refresh status (#7) 
 
 
 

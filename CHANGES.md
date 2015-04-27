@@ -26,6 +26,8 @@
     * File history can cause an error when one file in the path was removed.
     * Submitting a changelist which causes an error incorrectly reports the submit as
       successful. (#31)
+    * Files would move incorrectly from the correct changelist into the default
+      changelist. (#?)
       
       
 

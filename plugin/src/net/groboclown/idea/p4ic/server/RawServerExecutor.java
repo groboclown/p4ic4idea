@@ -197,12 +197,12 @@ public class RawServerExecutor {
 
     @NotNull
     public List<P4StatusMessage> submitChangelist(@NotNull Project project,
-            @Nullable List<FilePath> actualFiles, @Nullable Collection<String> jobIds, String jobStatus, int changelistId)
+            @Nullable List<FilePath> actualFiles, @Nullable Collection<P4Job> jobs, String jobStatus, int changelistId)
             throws VcsException, CancellationException {
         if (changelistId <= 0) {
             throw new VcsException("Invalid changelist ID " + changelistId);
         }
-        return performAction(project, new SubmitRunner(project, actualFiles, jobIds, jobStatus, changelistId));
+        return performAction(project, new SubmitRunner(project, actualFiles, jobs, jobStatus, changelistId));
     }
 
     @NotNull
@@ -601,11 +601,21 @@ public class RawServerExecutor {
     }
 
     @Nullable
-    public Collection<String> getJobsForChangelist(@NotNull final Project project, final int changelistId) throws VcsException, CancellationException {
-        return performAction(project, new ServerTask<Collection<String>>() {
+    public Collection<P4Job> getJobsForChangelist(@NotNull final Project project, final int changelistId) throws VcsException, CancellationException {
+        return performAction(project, new ServerTask<Collection<P4Job>>() {
             @Override
-            public Collection<String> run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
+            public Collection<P4Job> run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
                 return exec.getJobsForChangelist(project, changelistId);
+            }
+        });
+    }
+
+    @Nullable
+    public P4Job getJobForId(final Project project, final String jobId) throws VcsException, CancellationException {
+        return performAction(project, new ServerTask<P4Job>() {
+            @Override
+            public P4Job run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
+                return exec.getJobForId(project, jobId);
             }
         });
     }

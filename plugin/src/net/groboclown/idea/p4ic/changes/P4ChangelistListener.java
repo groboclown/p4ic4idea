@@ -114,44 +114,14 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void changesRemoved(@NotNull final Collection<Change> changes, @NotNull final ChangeList fromList) {
-        // TODO move to the simplified move operation
-
-
         LOG.info("changesRemoved: changes " + changes);
         LOG.info("changesRemoved: changelist " + fromList.getName() + "; [" + fromList.getComment() + "]; " + fromList
                 .getClass().getSimpleName());
 
-        if (fromList instanceof LocalChangeList) {
-            // Move the changes into the default change list
-
-            // This allows moving all the files into their respective default changelist,
-            // in case something messed up with the initial mapping of files to
-            // a perforce changelist.
-
-
-            Background.runInBackground(myProject, CHANGES_REMOVED, myVcs.getConfiguration().getUpdateOption(),
-                    new Background.ER() {
-                        @Override
-                        public void run(@NotNull ProgressIndicator indicator) throws Exception {
-                            indicator.setFraction(0.1);
-                            List<FilePath> affected = getPathsFromChanges(changes);
-                            indicator.setFraction(0.4);
-                            Map<Client, List<FilePath>> filesByClient = myVcs.mapFilePathToClient(affected);
-                            double count = 0.0;
-                            List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
-                            for (Map.Entry<Client, List<FilePath>> e: filesByClient.entrySet()) {
-                                indicator.setFraction(0.6 + (0.4 * (count / (double) filesByClient.size())));
-                                count += 1.0;
-                                messages.addAll(P4ChangeListCache.getInstance().addFilesToChangelist(e.getKey(),
-                                        null, e.getValue()));
-                            }
-                            P4StatusMessage.throwIfError(messages, true);
-                        }
-                    });
-            // else it's either not a Perforce change, or it's the default change.
-        } else {
-            LOG.debug("+ not local; is " + fromList.getClass().getName());
-        }
+        // This method doesn't do what it seems to say it does.
+        // It is called when part of a change is removed.  Only
+        // changelist removed will perform the move to default
+        // changelist.  A revert will move it out of the changelist.
     }
 
 

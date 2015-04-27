@@ -20,10 +20,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
-import com.perforce.p4java.core.ChangelistStatus;
-import com.perforce.p4java.core.IChangelist;
-import com.perforce.p4java.core.IChangelistSummary;
-import com.perforce.p4java.core.IJobSpec;
+import com.perforce.p4java.core.*;
 import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -591,12 +588,37 @@ public class P4Exec {
 
 
     @Nullable
-    public Collection<String> getJobsForChangelist(final Project project, final int changelistId) throws VcsException {
-        return runWithServer(project, new WithServer<Collection<String>>() {
+    public Collection<P4Job> getJobsForChangelist(final Project project, final int changelistId) throws VcsException, CancellationException {
+        return runWithServer(project, new WithServer<List<P4Job>>() {
             @Override
-            public Collection<String> run(@NotNull final IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public List<P4Job> run(@NotNull final IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 final IChangelist changelist = server.getChangelist(changelistId);
-                return changelist.getJobIds();
+                if (changelist == null) {
+                    return null;
+                }
+                final List<IJob> jobs = changelist.getJobs();
+                if (jobs == null) {
+                    return null;
+                }
+                List<P4Job> ret = new ArrayList<P4Job>(jobs.size());
+                for (IJob job: jobs) {
+                    ret.add(new P4Job(job));
+                }
+                return ret;
+            }
+        });
+    }
+
+    @Nullable
+    public P4Job getJobForId(final Project project, final String jobId) throws VcsException, CancellationException {
+        return runWithServer(project, new WithServer<P4Job>() {
+            @Override
+            public P4Job run(@NotNull final IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                final IJob job = server.getJob(jobId);
+                if (job == null) {
+                    return null;
+                }
+                return new P4Job(job);
             }
         });
     }

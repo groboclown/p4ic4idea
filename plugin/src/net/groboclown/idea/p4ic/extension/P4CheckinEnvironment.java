@@ -33,6 +33,7 @@ import net.groboclown.idea.p4ic.changes.P4ChangeListCache;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.server.P4Job;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.checkin.P4SubmitPanel;
@@ -310,12 +311,12 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     }
 
 
-    private static void setJobs(@NotNull List<String> jobIds, @NotNull PairConsumer<Object, Object> dataConsumer) {
+    private static void setJobs(@NotNull List<P4Job> jobIds, @NotNull PairConsumer<Object, Object> dataConsumer) {
         dataConsumer.consume("jobIds", jobIds);
     }
 
     @NotNull
-    private static List<String> getJobs(@NotNull NullableFunction<Object, Object> dataFunc) {
+    private static List<P4Job> getJobs(@NotNull NullableFunction<Object, Object> dataFunc) {
         final Object ret = dataFunc.fun("jobIds");
         if (ret == null) {
             return Collections.emptyList();
@@ -372,7 +373,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         @Override
         public void saveState() {
             // load from context into the data consumer
-            setJobs(context.getJobIds(), dataConsumer);
+            setJobs(context.getJobs(), dataConsumer);
             setSubmitStatus(context.getSubmitStatus(), dataConsumer);
         }
 

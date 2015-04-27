@@ -178,9 +178,9 @@ public class ServerExecutor {
         return exec.getVirtualFileInfo(project, virtualFiles);
     }
 
-    public List<P4StatusMessage> submitChangelist(@NotNull List<FilePath> files, @NotNull Collection<String> jobIds,
+    public List<P4StatusMessage> submitChangelist(@NotNull List<FilePath> files, @NotNull Collection<P4Job> jobs,
             String jobStatus, int changelistId) throws VcsException {
-        return exec.submitChangelist(project, files, jobIds, jobStatus, changelistId);
+        return exec.submitChangelist(project, files, jobs, jobStatus, changelistId);
     }
 
     public byte[] loadFileAsBytes(@NotNull FilePath file, int rev) throws VcsException, CancellationException {
@@ -230,15 +230,12 @@ public class ServerExecutor {
     }
 
     @Nullable
-    public Collection<String> getJobsForChangelist(final int id) throws VcsException, CancellationException {
+    public Collection<P4Job> getJobsForChangelist(final int id) throws VcsException, CancellationException {
         return exec.getJobsForChangelist(project, id);
     }
 
-
-    /*
-    public void synchronizeFiles(@NotNull Collection<VirtualFile> files, int revision, int changelist)
-            throws VcsException, CancellationException {
-        exec.synchronizeFiles(project, files, revision, changelist);
+    @Nullable
+    public P4Job getJobForId(final String jobId) throws VcsException, CancellationException {
+        return exec.getJobForId(project, jobId);
     }
-    */
 }

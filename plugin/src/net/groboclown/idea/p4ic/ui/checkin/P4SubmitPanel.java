@@ -46,6 +46,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.server.P4Job;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -85,7 +86,7 @@ public class P4SubmitPanel {
     private final SubmitContext context;
 
     @NotNull
-    private Set<String> lastJobList = Collections.emptySet();
+    private Set<P4Job> lastJobList = Collections.emptySet();
 
     private boolean expandState = false;
 
@@ -106,7 +107,7 @@ public class P4SubmitPanel {
         myJobTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(final ListSelectionEvent e) {
-                if (! e.getValueIsAdjusting()) {
+                if (!e.getValueIsAdjusting()) {
                     // Something in this call is disabling
                     // the currently selected item in the table.
                     updateStatus();
@@ -122,8 +123,12 @@ public class P4SubmitPanel {
                         // job was added successfully
                         myJobIdField.setText("");
                         jobTableModel.fireTableDataChanged();
+                    } else {
+                        Messages.showMessageDialog(context.getProject(),
+                                P4Bundle.message("submit.job.error.notfound.message", jobId),
+                                P4Bundle.getString("submit.job.error.notfound.title"),
+                                Messages.getErrorIcon());
                     }
-                    // TODO else report error that job wasn't found
                 }
             }
         });
@@ -131,9 +136,8 @@ public class P4SubmitPanel {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 int rowId = myJobTable.getSelectedRow();
-                if (rowId >= 0 && rowId < context.getJobIds().size()) {
-                    context.removeJobId(
-                            context.getJobIds().get(rowId));
+                if (rowId >= 0 && rowId < context.getJobs().size()) {
+                    context.removeJob(context.getJobs().get(rowId));
                     jobTableModel.fireTableDataChanged();
                 }
             }
@@ -176,7 +180,7 @@ public class P4SubmitPanel {
         myAssociateJobExpander.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(final MouseEvent e) {
-                expandState = ! expandState;
+                expandState = !expandState;
                 updateStatus();
             }
         });
@@ -196,26 +200,26 @@ public class P4SubmitPanel {
             public void run() {
                 boolean needsLayout = false;
 
-                final boolean jobsUpdated = ! (
-                        lastJobList.containsAll(context.getJobIds()) &&
-                        context.getJobIds().containsAll(lastJobList));
+                final boolean jobsUpdated = !(
+                        lastJobList.containsAll(context.getJobs()) &&
+                                context.getJobs().containsAll(lastJobList));
 
                 if (jobsUpdated) {
                     final int jobSelectionIndex = myJobTable.getSelectedRow();
-                    final String jobTableSelection;
-                    if (jobSelectionIndex >= 0 && jobSelectionIndex < context.getJobIds().size()) {
-                        jobTableSelection = context.getJobIds().get(jobSelectionIndex);
+                    final P4Job jobTableSelection;
+                    if (jobSelectionIndex >= 0 && jobSelectionIndex < context.getJobs().size()) {
+                        jobTableSelection = context.getJobs().get(jobSelectionIndex);
                     } else {
                         jobTableSelection = null;
                     }
                     jobTableModel.fireTableDataChanged();
                     if (jobTableSelection != null) {
-                        int rowId = context.getJobIds().indexOf(jobTableSelection);
+                        int rowId = context.getJobs().indexOf(jobTableSelection);
                         if (rowId >= 0 && rowId != jobSelectionIndex) {
                             myJobTable.setRowSelectionInterval(rowId, rowId);
                         }
                     }
-                    lastJobList = new HashSet<String>(context.getJobIds());
+                    lastJobList = new HashSet<P4Job>(context.getJobs());
                 }
 
                 if (context.isJobAssociationValid()) {
@@ -254,14 +258,14 @@ public class P4SubmitPanel {
                     myBrowseButton.setEnabled(false);
                     myJobIdField.setEnabled(false);
                     myJobStatus.setEnabled(false);
-                    if (! myJobsDisabledLabel.isVisible()) {
+                    if (!myJobsDisabledLabel.isVisible()) {
                         myJobsDisabledLabel.setVisible(true);
                         needsLayout = true;
                     }
                 }
 
                 if (expandState) {
-                    if (! Actions.Down.equals(myAssociateJobExpander.getIcon())) {
+                    if (!Actions.Down.equals(myAssociateJobExpander.getIcon())) {
                         myAssociateJobExpander.setIcon(Actions.Down);
                         myExpandedPanel.setVisible(true);
                         needsLayout = true;
@@ -304,7 +308,7 @@ public class P4SubmitPanel {
 
     private static final String[] COLUMN_NAMES = {
             P4Bundle.getString("submit.job.table.column.name"),
-            P4Bundle.getString("submit.job.table.column.assignee"),
+            //P4Bundle.getString("submit.job.table.column.assignee"),
             P4Bundle.getString("submit.job.table.column.description"),
     };
 
@@ -318,41 +322,52 @@ public class P4SubmitPanel {
     private void $$$setupUI$$$() {
         createUIComponents();
         myRootPanel = new JPanel();
-        myRootPanel.setLayout(new GridLayoutManager(4, 4, new Insets(0, 0, 0, 0), -1, -1));
-        myRootPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.title")));
+        myRootPanel.setLayout(new GridLayoutManager(4, 5, new Insets(0, 0, 0, 0), -1, -1));
+        myExpandedPanel = new JPanel();
+        myExpandedPanel.setLayout(new GridLayoutManager(3, 4, new Insets(0, 0, 0, 0), -1, -1));
+        myExpandedPanel.setVisible(true);
+        myRootPanel.add(myExpandedPanel, new GridConstraints(1, 0, 1, 5, GridConstraints.ANCHOR_NORTH, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        myExpandedPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), null));
         final JScrollPane scrollPane1 = new JScrollPane();
-        myRootPanel.add(scrollPane1, new GridConstraints(0, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        myExpandedPanel.add(scrollPane1, new GridConstraints(0, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         myJobTable.setCellSelectionEnabled(false);
         myJobTable.setColumnSelectionAllowed(false);
         myJobTable.setFillsViewportHeight(true);
         myJobTable.setShowVerticalLines(false);
         myJobTable.setSurrendersFocusOnKeystroke(true);
         scrollPane1.setViewportView(myJobTable);
+        final JLabel label1 = new JLabel();
+        this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.id"));
+        myExpandedPanel.add(label1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myJobIdField = new JTextField();
+        myExpandedPanel.add(myJobIdField, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         myAddJobButton = new JButton();
         myAddJobButton.setEnabled(false);
         this.$$$loadButtonText$$$(myAddJobButton, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.add.button"));
-        myRootPanel.add(myAddJobButton, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myExpandedPanel.add(myAddJobButton, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myBrowseButton = new JButton();
         myBrowseButton.setEnabled(false);
         this.$$$loadButtonText$$$(myBrowseButton, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.browse.button"));
-        myRootPanel.add(myBrowseButton, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer1 = new Spacer();
-        myRootPanel.add(spacer1, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        myJobIdField = new JTextField();
-        myRootPanel.add(myJobIdField, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        final JLabel label1 = new JLabel();
-        this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.status"));
-        myRootPanel.add(label1, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JLabel label2 = new JLabel();
-        this.$$$loadLabelText$$$(label2, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.id"));
-        myRootPanel.add(label2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        myRootPanel.add(myJobStatus, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myExpandedPanel.add(myBrowseButton, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myRemoveButton = new JButton();
         myRemoveButton.setEnabled(false);
         this.$$$loadButtonText$$$(myRemoveButton, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.remove.button"));
-        myRootPanel.add(myRemoveButton, new GridConstraints(2, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        label1.setLabelFor(myJobStatus);
-        label2.setLabelFor(myJobIdField);
+        myExpandedPanel.add(myRemoveButton, new GridConstraints(2, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myExpandedPanel.add(myJobStatus, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label2 = new JLabel();
+        this.$$$loadLabelText$$$(label2, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.status"));
+        myExpandedPanel.add(label2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myAssociateJobExpander = new JLabel();
+        this.$$$loadLabelText$$$(myAssociateJobExpander, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.title"));
+        myRootPanel.add(myAssociateJobExpander, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final Spacer spacer1 = new Spacer();
+        myRootPanel.add(spacer1, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        myJobsDisabledLabel = new JLabel();
+        myJobsDisabledLabel.setForeground(new Color(-65536));
+        this.$$$loadLabelText$$$(myJobsDisabledLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.not-enabled"));
+        myRootPanel.add(myJobsDisabledLabel, new GridConstraints(2, 0, 1, 5, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label1.setLabelFor(myJobIdField);
+        label2.setLabelFor(myJobStatus);
     }
 
     /**
@@ -430,16 +445,20 @@ public class P4SubmitPanel {
 
         @Override
         public Object getValueAt(final int rowIndex, final int columnIndex) {
-            // TODO replace with getting real values, not just strings
-            if (columnIndex == 0) {
-                return context.getJobIds().get(rowIndex);
+            final P4Job job = context.getJobs().get(rowIndex);
+            switch (columnIndex) {
+                case 0:
+                    return job.getJobId();
+                case 1:
+                    return job.getDescription();
+                default:
+                    return "";
             }
-            return "";
         }
 
         @Override
         public int getRowCount() {
-            return context.getJobIds().size();
+            return context.getJobs().size();
         }
 
         @Override

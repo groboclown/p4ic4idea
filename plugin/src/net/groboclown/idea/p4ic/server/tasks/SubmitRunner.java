@@ -21,6 +21,7 @@ import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.server.P4Exec;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
+import net.groboclown.idea.p4ic.server.P4Job;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import org.jetbrains.annotations.NotNull;
@@ -49,7 +50,7 @@ public class SubmitRunner extends ServerTask<List<P4StatusMessage>> {
 
     public SubmitRunner(
             @NotNull Project project, @Nullable List<FilePath> actualFiles,
-            @Nullable Collection<String> jobIds,
+            @Nullable Collection<P4Job> jobs,
             @Nullable String jobStatus,
             int changelistId) {
         this.project = project;
@@ -57,10 +58,13 @@ public class SubmitRunner extends ServerTask<List<P4StatusMessage>> {
             actualFiles = Collections.emptyList();
         }
         this.actualFiles = actualFiles;
-        if (jobIds == null) {
+        if (jobs == null) {
             this.jobIds = Collections.emptyList();
         } else {
-            this.jobIds = new ArrayList<String>(jobIds);
+            this.jobIds = new ArrayList<String>(jobs.size());
+            for (P4Job job: jobs) {
+                jobIds.add(job.getJobId());
+            }
         }
         this.jobStatus = jobStatus;
         this.changelistId = changelistId;

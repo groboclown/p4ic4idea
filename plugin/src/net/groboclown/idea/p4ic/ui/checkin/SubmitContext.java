@@ -47,8 +47,10 @@ import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4CheckinEnvironment;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.P4Exec;
+import net.groboclown.idea.p4ic.server.P4Job;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -62,26 +64,24 @@ public class SubmitContext {
     private static final Logger LOG = Logger.getInstance(SubmitContext.class);
 
     private final P4Vcs vcs;
-    private final List<String> jobIds;
-    private final Map<Change, Collection<P4ChangeListId>> changes;
+    private final List<P4Job> jobs;
     private List<String> acceptableJobStates = Collections.emptyList();
     private String jobServerId;
 
     // default status
     private String submitStatus = "closed";
 
+    private Client currentClient;
+
     private final Set<P4ChangeListId> currentChanges;
+
     private boolean isJobAssociationValid;
 
     public SubmitContext(@NotNull P4Vcs vcs, Collection<Change> ideaChanges) {
         this.vcs = vcs;
-        changes = getP4ChangesFor(ideaChanges);
-        jobIds = getJobsFor(changes.values());
-        currentChanges = new HashSet<P4ChangeListId>();
-        for (Collection<P4ChangeListId> changeLists: changes.values()) {
-            currentChanges.addAll(changeLists);
-        }
-        checkValidity();
+        this.jobs = new ArrayList<P4Job>();
+        this.currentChanges = new HashSet<P4ChangeListId>();
+        refresh(ideaChanges);
     }
 
 
@@ -93,18 +93,18 @@ public class SubmitContext {
         return isJobAssociationValid;
     }
 
-
-    // TODO swap out with actual job info so the UI can show info about it.
-    public List<String> getJobIds() {
-        return Collections.unmodifiableList(jobIds);
+    public List<P4Job> getJobs() {
+        return Collections.unmodifiableList(jobs);
     }
-
 
     // TODO return the server job info
     public boolean addJobId(@NotNull String jobId) {
-        if (isJobAssociationValid() && ! jobIds.contains(jobId)) {
-            // TODO validate that the job actually exists.
-            jobIds.add(jobId);
+        if (isJobAssociationValid()) {
+            P4Job job = getJob(jobId);
+            if (job == null) {
+                return false;
+            }
+            jobs.add(job);
             return true;
         } else {
             return false;
@@ -118,8 +118,8 @@ public class SubmitContext {
 
 
 
-    public void removeJobId(@NotNull String jobId) {
-        jobIds.remove(jobId);
+    public void removeJob(@NotNull P4Job jobId) {
+        jobs.remove(jobId);
     }
 
 
@@ -157,27 +157,17 @@ public class SubmitContext {
 
 
     public synchronized boolean setSelectedCurrentChanges(Collection<Change> ideaChanges) {
-        currentChanges.clear();
-        for (Change change: ideaChanges) {
-            Collection<P4ChangeListId> changeLists = changes.get(change);
-            if (changeLists != null) {
-                currentChanges.addAll(changeLists);
-            }
-            // TODO load the cached changelist
-        }
-        checkValidity();
+        refresh(ideaChanges);
         return isJobAssociationValid();
     }
 
 
-    public void refresh(Collection<Change> ideaChanges) {
-        changes.clear();
-        changes.putAll(getP4ChangesFor(ideaChanges));
-        jobIds.clear();
-        jobIds.addAll(getJobsFor(changes.values()));
+    public synchronized void refresh(Collection<Change> ideaChanges) {
+        jobs.clear();
         currentChanges.clear();
-        for (Collection<P4ChangeListId> changeLists : changes.values()) {
+        for (Collection<P4ChangeListId> changeLists : getP4ChangesFor(ideaChanges).values()) {
             currentChanges.addAll(changeLists);
+            jobs.addAll(getJobsFor(changeLists));
         }
         checkValidity();
     }
@@ -204,16 +194,17 @@ public class SubmitContext {
         isJobAssociationValid = false;
         jobServerId = null;
         String serverId = null;
-        Client jobClient = null;
+        currentClient = null;
         for (Client client: vcs.getClients()) {
             for (P4ChangeListId p4id : currentChanges) {
                 if (p4id.isIn(client)) {
                     String serviceName = client.getConfig().getServiceName();
                     if (serverId == null) {
                         serverId = serviceName;
-                        jobClient = client;
+                        currentClient = client;
                     } else if (! serverId.equals(serviceName)) {
                         isJobAssociationValid = false;
+                        currentClient = null;
                         return;
                     }
                 }
@@ -228,35 +219,47 @@ public class SubmitContext {
         // additional logic protection.
 
         if (jobServerId != null && ! jobServerId.equals(previousServerId)) {
-            acceptableJobStates = findJobStatesFor(jobClient);
+            acceptableJobStates = findJobStatesFor(currentClient);
+        }
+    }
+
+
+    @Nullable
+    private P4Job getJob(@NotNull final String jobId) {
+        if (currentClient == null) {
+            return null;
+        }
+        try {
+            return currentClient.getServer().getJobForId(jobId);
+        } catch (VcsException e) {
+            LOG.info(e);
+            return null;
         }
     }
 
 
     @NotNull
-    private List<String> getJobsFor(final Collection<Collection<P4ChangeListId>> values) {
-        Set<String> allJobs = new HashSet<String>();
+    private List<P4Job> getJobsFor(final Collection<P4ChangeListId> changes) {
+        Set<P4Job> allJobs = new HashSet<P4Job>();
 
         for (Client client: vcs.getClients()) {
-            for (Collection<P4ChangeListId> changes : values) {
-                for (P4ChangeListId change : changes) {
-                    if (change.isIn(client)) {
-                        try {
-                            final Collection<String> jobs = client.getServer().getJobsForChangelist(change.getChangeListId());
-                            if (jobs != null) {
-                                allJobs.addAll(jobs);
-                            }
-                        } catch (P4InvalidConfigException e) {
-                            LOG.info(e);
-                        } catch (VcsException e) {
-                            LOG.info(e);
+            for (P4ChangeListId change : changes) {
+                if (change.isIn(client)) {
+                    try {
+                        final Collection<P4Job> jobs = client.getServer().getJobsForChangelist(change.getChangeListId());
+                        if (jobs != null) {
+                            allJobs.addAll(jobs);
                         }
+                    } catch (P4InvalidConfigException e) {
+                        LOG.info(e);
+                    } catch (VcsException e) {
+                        LOG.info(e);
                     }
                 }
             }
         }
 
-        List<String> ret = new ArrayList<String>(allJobs);
+        List<P4Job> ret = new ArrayList<P4Job>(allJobs);
         Collections.sort(ret);
         return ret;
     }

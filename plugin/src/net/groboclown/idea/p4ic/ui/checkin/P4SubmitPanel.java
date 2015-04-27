@@ -119,7 +119,7 @@ public class P4SubmitPanel {
             public void actionPerformed(final ActionEvent e) {
                 String jobId = getJobIdFieldText();
                 if (jobId != null) {
-                    if (context.addJobId(jobId)) {
+                    if (context.addJobId(jobId) != null) {
                         // job was added successfully
                         myJobIdField.setText("");
                         jobTableModel.fireTableDataChanged();
@@ -229,6 +229,7 @@ public class P4SubmitPanel {
 
                     // TODO change to "true" when implemented
                     myBrowseButton.setEnabled(false);
+
                     myJobStatus.setEnabled(true);
                     final Object selectedJob = myJobStatus.getSelectedItem();
                     jobStatusModel.removeAllElements();

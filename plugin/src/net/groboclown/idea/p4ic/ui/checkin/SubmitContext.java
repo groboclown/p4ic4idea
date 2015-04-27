@@ -97,17 +97,17 @@ public class SubmitContext {
         return Collections.unmodifiableList(jobs);
     }
 
-    // TODO return the server job info
-    public boolean addJobId(@NotNull String jobId) {
+
+    public P4Job addJobId(@NotNull String jobId) {
         if (isJobAssociationValid()) {
             P4Job job = getJob(jobId);
             if (job == null) {
-                return false;
+                return null;
             }
             jobs.add(job);
-            return true;
+            return job;
         } else {
-            return false;
+            return null;
         }
     }
 

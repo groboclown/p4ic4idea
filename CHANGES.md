@@ -12,7 +12,7 @@
 
 ### Details
 
-* Added support for IntelliJ on JDK 1.6. (#?)
+* Added support for IntelliJ on JDK 1.6. (#28)
     * Compiled under JDK 1.6, and removed JDK 1.7-specific API calls.
 * Added job support to check-ins. (#25 & #26)
     * Experimental: the list of acceptable job status values are pulled
@@ -27,9 +27,8 @@
     * Submitting a changelist which causes an error incorrectly reports the submit as
       successful. (#31)
     * Files would move incorrectly from the correct changelist into the default
-      changelist. (#?)
-      
-      
+      changelist. (#22)
+
 
 
 ## ::v0.4.3::

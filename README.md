@@ -128,8 +128,9 @@ have its files managed in their own client and server.
 Some parts of the normal operation will act a bit differently.  For instance,
 IDEA changelists can be associated with multiple Perforce changelists, if
 files from different clients are added to them.  You can move files across
-servers, but these will be turned into simple add/delete operations
-(see [bug #15](https://github.com/groboclown/p4ic4idea/issues/15)).
+servers, but these will be turned into simple add/delete operations.
+If you submit an IDEA changelist that is associated with multiple servers,
+then you will not be able to associate jobs with it.
 
 
 # Workflow
@@ -145,5 +146,6 @@ From the change lists, you can view a difference against the head
 revision.  You can also view the file history, and compare different
 revisions against each other.
 
-Currently, you cannot associate a job with a changelist.
-
+When submitting a changelist, you may associate Perforce jobs with the
+changelist, and set the job status.  This association will only be used
+when the changelist is actually submitted.

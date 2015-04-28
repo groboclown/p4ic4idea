@@ -66,7 +66,7 @@ public class CompatFactoryLoader {
     public static CompatFactory loadCompatFactory() {
         CompatFactory factory = loadCompatFactory(getApiVersion(), findClassLoaders());
         if (factory == null) {
-            throw new IllegalStateException("IDE version " + getApiVersion() + " not compatible with the P4 plugin");
+            throw new IncompatibleApiVersionException(getApiVersion());
         }
         return factory;
     }
@@ -111,15 +111,6 @@ public class CompatFactoryLoader {
 
 
     private static boolean isCompatible(@NotNull String apiVersion, @Nullable CompatFactory factory) {
-        /*
-        return factory != null &&
-                compareIdeaVersionNumbers(
-                        apiVersion,
-                        factory.getMinCompatibleApiVersion()) >= 0 &&
-                compareIdeaVersionNumbers(
-                        apiVersion,
-                        factory.getMaxCompatibleApiVersion()) <= 0;
-        */
         if (factory == null) {
             return false;
         }
@@ -177,7 +168,7 @@ public class CompatFactoryLoader {
             // They are the same.
             return 0;
         } catch (NumberFormatException e) {
-            throw new IllegalStateException("Invalid IDEA version number (" + first + " vs " + second + ")", e);
+            throw new IncompatibleApiVersionException(first, second, e);
         }
     }
 

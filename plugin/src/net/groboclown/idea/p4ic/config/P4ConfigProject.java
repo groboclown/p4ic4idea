@@ -20,6 +20,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.ServerExecutor;
 import net.groboclown.idea.p4ic.server.ServerStatus;
 import net.groboclown.idea.p4ic.server.ServerStoreService;
@@ -78,7 +79,7 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             // Relative config file
             Map<VirtualFile, P4Config> map = P4ConfigUtil.loadProjectP4Configs(project, configFile, true);
             if (map.isEmpty()) {
-                P4InvalidConfigException ex = new P4InvalidConfigException("Relative p4config file specified, but none found");
+                P4InvalidConfigException ex = new P4InvalidConfigException(P4Bundle.message("error.config.no-file"));
                 project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, base, ex);
                 throw ex;
             }
@@ -155,18 +156,18 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             this.sourceConfig = config;
             this.config = ServerConfig.createNewServerConfig(config);
             if (this.config == null) {
-                P4InvalidConfigException ex = new P4InvalidConfigException("One of the required settings is missing");
+                P4InvalidConfigException ex = new P4InvalidConfigException(config);
                 project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, config, ex);
                 throw ex;
             }
             this.clientName = config.getClientname();
             if (clientName == null || clientName.length() <= 0) {
-                throw new P4InvalidClientException("No client name in configuration");
+                throw new P4InvalidClientException();
             }
             this.status = ServerStoreService.getInstance().getServerStatus(project, this.config);
             this.inputRoots = roots;
             if (roots.isEmpty()) {
-                throw new P4InvalidConfigException("No root directories given");
+                throw new P4InvalidConfigException(P4Bundle.message("error.config.no-roots"));
             }
         }
 
@@ -176,7 +177,7 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             if (status == null) {
                 // Note that this error is actually due to the client no longer being
                 // valid, rather than a real config problem.
-                throw new P4InvalidConfigException("disconnected");
+                throw new P4InvalidConfigException(P4Bundle.message("error.config.disconnected"));
             }
             return status.getExecutorForClient(project, clientName);
         }
@@ -269,7 +270,7 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
                 ServerExecutor exec = status.getExecutorForClient(project, clientName);
                 Collection<VirtualFile> realRoots = exec.findRoots(inputRoots);
                 if (realRoots.isEmpty()) {
-                    P4InvalidConfigException ex = new P4InvalidConfigException("Could not find a root directory for configuration (found " + realRoots + ")");
+                    P4InvalidConfigException ex = new P4InvalidConfigException(P4Bundle.message("error.config.root-not-found", realRoots));
                     project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, sourceConfig, ex);
                     throw ex;
                 }

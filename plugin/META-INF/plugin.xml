@@ -6,6 +6,12 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.5.1</em>
+                <ol>
+                    <li>Started work on internationalizing the exception messages.</li>
+                    <li>Bug fixes.</li>
+                </ol>
+            </li>
             <li><em>0.5.0</em>
                 <ol>
                     <li>Added support for IntelliJ on JDK 1.6.</li>
@@ -24,18 +30,6 @@
                     <li>Fixed: Revert a moved file does not refresh status</li>
                 </ol>
             </li>
-            <li><em>0.4.3</em>
-                <ol>
-                    <li>Added connection properties display to VCS configuration
-                    panel.</li>
-                    <li>Add basic synchronization action.  Does not handle merging.</li>
-                    <li>Fixed issues with changelist caching.</li>
-                    <li>Fixed issues related to files being put into multiple changelists,
-                    and files moving between changelists.</li>
-                    <li>Typo in the plugin description.</li>
-                    <li>Code cleanup.</li>
-                </ol>
-            </li>
         </ol>
     ]]></change-notes>
     <description><![CDATA[
@@ -44,8 +38,6 @@
       Limitations:
       </p>
       <ul>
-        <li>Submit does not associate jobs with the changelist, nor
-        does it set the job status.</li>
         <li>Does not indicate to the user whether a file is
         synchronized to the head revision or not.</li>
         <li>No repository browsing.</li>

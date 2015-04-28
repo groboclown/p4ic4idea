@@ -11,17 +11,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.server.exceptions;
 
-import net.groboclown.idea.p4ic.P4Bundle;
-import org.jetbrains.annotations.Nullable;
+package net.groboclown.idea.p4ic.compat;
 
-public class P4InvalidClientException extends P4DisconnectedException {
-    public P4InvalidClientException(@Nullable String clientName) {
-        super(P4Bundle.message("exception.invalid.client", clientName));
+public class IncompatibleApiVersionException extends IllegalStateException {
+    public IncompatibleApiVersionException(String apiVersion) {
+        // TODO make internationalized
+        // Can't use P4Bundle, because it's in a child project.
+        super("IDE version " + apiVersion + " not compatible with the P4 plugin");
     }
 
-    public P4InvalidClientException() {
-        super(P4Bundle.message("error.config.no-client"));
+
+    public IncompatibleApiVersionException(String firstVersion, String secondVersion, Exception source) {
+        super("Invalid IDEA version number (" + firstVersion + " vs " + secondVersion + ")", source);
     }
 }

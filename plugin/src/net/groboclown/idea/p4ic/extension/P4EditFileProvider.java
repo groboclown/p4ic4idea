@@ -19,6 +19,7 @@ import com.intellij.openapi.vcs.EditFileProvider;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import org.jetbrains.annotations.NotNull;
@@ -104,7 +105,7 @@ public class P4EditFileProvider implements EditFileProvider {
                 }
             });
             if (!notWritable.isEmpty()) {
-                throw new VcsException("Could not change to writable: " + notWritable);
+                throw new VcsException(P4Bundle.message("error.writable.failed", notWritable));
             }
         }
 

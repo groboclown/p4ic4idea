@@ -13,11 +13,14 @@
  */
 package net.groboclown.idea.p4ic.config;
 
+import com.perforce.p4java.env.PerforceEnvironment;
 import com.perforce.p4java.server.IServerAddress;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -100,4 +103,18 @@ public abstract class ServerConfig {
     }
 
     public abstract boolean storePasswordLocally();
+
+    @Override
+    public String toString() {
+        Map<String, String> ret = new HashMap<String, String>();
+        ret.put(PerforceEnvironment.P4PORT, P4ConfigUtil.toFullPort(getProtocol(), getPort()));
+        ret.put(PerforceEnvironment.P4TRUST,
+                getTrustTicket() == null ? null :
+                getTrustTicket().toString());
+        ret.put(PerforceEnvironment.P4USER, getUsername());
+        ret.put(PerforceEnvironment.P4TICKETS,
+                getAuthTicket() == null ? null :
+                getAuthTicket().toString());
+        return ret.toString();
+    }
 }

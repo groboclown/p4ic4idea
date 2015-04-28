@@ -2,6 +2,19 @@
 
 
 
+## ::v0.5.1::
+
+### Overview
+
+* Started work on internationalizing the exception messages.
+* Bug fixes
+
+### Details
+
+* Bug fixes
+    * 
+
+
 ## ::v0.5.0::
 
 ### Overview

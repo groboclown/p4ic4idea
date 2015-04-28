@@ -195,9 +195,6 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
 
             if (state.perforceToIdea.containsKey(p4id)) {
                 if (! state.perforceToIdea.get(p4id).equals(idea.getId())) {
-                    //throw new IllegalStateException("Already have mapping for Perforce changelist " + p4.getId() +
-                    //        " to IDEA change " + state.perforceToIdea.get(p4.getId()) +
-                    //        "; cannot overwrite this to IDEA change '" + idea + "'");
                     LOG.warn("Already have mapping for Perforce changelist " + p4id +
                             " to IDEA change " + state.perforceToIdea.get(p4id) +
                             "; going to overwrite this to IDEA change '" + idea + "'");
@@ -212,7 +209,6 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
     @Nullable
     String removePerforceMapping(@NotNull P4ChangeListId p4id) {
         if (p4id.isDefaultChangelist()) {
-            //throw new IllegalArgumentException("cannot remove the default changelist mapping");
             LOG.warn("cannot remove the default changelist mapping");
             return null;
         }
@@ -246,7 +242,6 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
     @Nullable
     Map<String, P4ChangeListId> removeMapping(@NotNull LocalChangeList idea) {
         if (isDefaultChangelist(idea)) {
-            //throw new IllegalArgumentException("cannot remove the default changelist mapping");
             LOG.warn("cannot remove the default changelist mapping");
             return null;
         }
@@ -529,12 +524,10 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
 
         if (isDefaultChangelist(idea)) {
             if (! p4.isDefaultChangelist()) {
-                //throw new IllegalArgumentException("cannot pair default IDEA changelist with the non-default P4 changelist (" + p4 + ")");
                 LOG.warn("cannot pair default IDEA changelist with the non-default P4 changelist (" + p4 + ")");
             }
             // else it's fine
         } else if (p4.isDefaultChangelist()) {
-            //throw new IllegalArgumentException("cannot pair non-default IDEA changelist (" + idea + ") with the default P4 changelist");
             LOG.warn("cannot pair non-default IDEA changelist (" + idea + ") with the default P4 changelist");
         }
         // else it's fine.

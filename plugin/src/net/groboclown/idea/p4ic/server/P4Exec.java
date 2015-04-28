@@ -34,6 +34,7 @@ import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
 import com.perforce.p4java.option.server.GetFileContentsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.VcsFuture;
 import net.groboclown.idea.p4ic.background.VcsSettableFuture;
 import net.groboclown.idea.p4ic.config.PasswordStore;
@@ -94,7 +95,7 @@ public class P4Exec {
         this.connectionHandler = connectionHandler;
         this.onServerProblem = onServerProblem;
         if (! connectionHandler.isConfigValid(serverStatus.getConfig())) {
-            throw new P4InvalidConfigException();
+            throw new P4InvalidConfigException(serverStatus.getConfig());
         }
     }
 
@@ -156,7 +157,6 @@ public class P4Exec {
                 IChangelist cl = server.getChangelist(id);
                 if (id != cl.getId()) {
                     LOG.warn("Perforce Java API error: returned changelist with id " + cl.getId() + " when requested " + id);
-                    //throw new P4Exception("Perforce Java API error: returned changelist with id " + cl.getId() + " when requested " + id);
                     cl.setId(id);
                 }
 
@@ -270,13 +270,13 @@ public class P4Exec {
             if (original != null) {
                 File f = new File(FileSpecUtil.unescapeP4Path(original));
                 if (! f.exists()) {
-                    throw new P4Exception("Adding a non-existent file: " + f);
+                    throw new P4Exception(P4Bundle.message("error.add.file-not-found", f));
                 }
                 // We must set the original path the hard way, to avoid the FilePath
                 // stripping off the stuff after the '#' or '@', if it was escaped originally.
                 file.setPath(new FilePath(FilePath.PathType.ORIGINAL, f.getAbsolutePath(), true));
             } else if (file.getLocalPathString() == null) {
-                throw new IllegalStateException("Must pass client spec setting to addFile");
+                throw new IllegalStateException(P4Bundle.message("error.add.no-local-file", file));
             }
             unescapedFiles.add(file);
         }
@@ -359,7 +359,7 @@ public class P4Exec {
 
                 IChangelist ret = client.createChangelist(newChange);
                 if (ret.getId() <= 0) {
-                    throw new P4Exception("P4JavaAPI returned a changelist with an invalid changelist id: " + newChange.getId());
+                    throw new P4Exception(P4Bundle.message("error.changelist.add.invalid-id", newChange.getId()));
                 }
 
                 // server cannot leave this method
@@ -562,7 +562,7 @@ public class P4Exec {
      * Returns the list of job status used by the server.  If there was a
      * problem reading the list, then the default list is returned instead.
      *
-     * @param project
+     * @param project project
      * @return list of job status used by the server
      * @throws CancellationException
      */
@@ -634,7 +634,7 @@ public class P4Exec {
                 // note: we're not caching the client
                 final IClient client = loadClient(server);
                 if (client == null) {
-                    throw new ConfigException("Invalid client name: " + clientName);
+                    throw new ConfigException(P4Bundle.message("error.run-client.invalid-client", clientName));
                 }
 
                 // disconnect happens as a separate activity.
@@ -691,7 +691,7 @@ public class P4Exec {
     private IOptionsServer connectServer(@NotNull File tempDir) throws P4JavaException, URISyntaxException {
         synchronized (sync) {
             if (disposed) {
-                throw new ConnectionException("connection on disposed P4Exec");
+                throw new ConnectionException(P4Bundle.message("error.p4exec.disposed"));
             }
             if (cachedServer == null || ! cachedServer.isConnected()) {
                 final Properties properties;

@@ -189,7 +189,7 @@ public class P4ChangelistListener implements ChangeListListener {
                         Map<Client, List<FilePath>> filesByServer = myVcs.mapFilePathToClient(paths);
 
                         if (filesByServer.size() > 1) {
-                            throw new P4InvalidConfigException("Only one server is allowed per IDEA changelist");
+                            throw new P4InvalidConfigException(P4Bundle.message("error.changelist.too-many-servers"));
                         }
 
                         List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();

@@ -15,6 +15,10 @@ package net.groboclown.idea.p4ic.server.exceptions;
 
 import com.perforce.p4java.exception.P4JavaException;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.config.P4ConfigUtil;
+import net.groboclown.idea.p4ic.config.ServerConfig;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.URISyntaxException;
 
@@ -27,11 +31,19 @@ public class P4InvalidConfigException extends P4DisconnectedException {
         super(e);
     }
 
-    public P4InvalidConfigException() {
-        this(P4Bundle.message("exception.invalid.config"));
-    }
+    //public P4InvalidConfigException() {
+    //    this(P4Bundle.message("exception.invalid.config"));
+    //}
 
     public P4InvalidConfigException(URISyntaxException e) {
         super(e);
+    }
+
+    public P4InvalidConfigException(@NotNull final ServerConfig config) {
+        super(P4Bundle.message("error.config.setup", config));
+    }
+
+    public P4InvalidConfigException(@NotNull final P4Config config) {
+        super(P4Bundle.message("error.config.setup", P4ConfigUtil.getProperties(config)));
     }
 }

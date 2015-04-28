@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.background;
 import com.intellij.openapi.application.ApplicationManager;
 
 import com.intellij.openapi.vcs.VcsException;
+import net.groboclown.idea.p4ic.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -123,7 +124,7 @@ public class VcsSettableFuture<T> implements VcsFuture<T>, VcsFutureSetter<T> {
                     EDT_GETTER = this;
                     isEdtGetter = true;
                 } else {
-                    throw new VcsException("Double future 'get' call in the EDT");
+                    throw new VcsException(P4Bundle.message("error.edt.double-call"));
                 }
             }
         }
@@ -168,7 +169,7 @@ public class VcsSettableFuture<T> implements VcsFuture<T>, VcsFutureSetter<T> {
                 throw new VcsException(ex);
             }
             if (cancelled) {
-                throw new CancellationException("Cancelled task");
+                throw new CancellationException(P4Bundle.message("error.cancelled-task"));
             }
             return value;
         } finally {
@@ -193,10 +194,10 @@ public class VcsSettableFuture<T> implements VcsFuture<T>, VcsFutureSetter<T> {
     public T getImmediately() throws VcsException, CancellationException {
         if (!isDone()) {
             cancel(true);
-            throw new CancellationException("Not completed in time");
+            throw new CancellationException(P4Bundle.message("error.cancelled-timeout"));
         }
         if (isCancelled()) {
-            throw new CancellationException("Cancelled task");
+            throw new CancellationException(P4Bundle.message("error.cancelled-task"));
         }
         return get();
     }

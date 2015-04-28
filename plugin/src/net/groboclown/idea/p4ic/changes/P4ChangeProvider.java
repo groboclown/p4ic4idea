@@ -20,6 +20,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.history.P4ContentRevision;
@@ -60,7 +61,7 @@ public class P4ChangeProvider implements ChangeProvider {
             return;
         }
         if (dirtyScope.getVcs() != vcs) {
-            throw new VcsException("invalid dirty scope VCS");
+            throw new VcsException(P4Bundle.message("error.vcs.dirty-scope.wrong"));
         }
 
         // In the current thread, pull in all the changes from Perforce that are within the dirty scope, into

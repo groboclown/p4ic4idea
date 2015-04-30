@@ -83,7 +83,7 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
     @Override
     public StatusBarWidget copy() {
         if (project == null || myVcs == null) {
-            throw new IllegalStateException("cannot copy a disposed widget");
+            throw new IllegalStateException(P4Bundle.message("error.connect-widget.disposed"));
         }
         return new P4ConnectionWidget(myVcs, project);
     }

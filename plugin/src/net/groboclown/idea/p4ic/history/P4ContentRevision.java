@@ -19,6 +19,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.IFileRevisionData;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
@@ -68,7 +69,7 @@ public class P4ContentRevision implements ContentRevision {
         // This can run in the EDT!
         Client client = P4Vcs.getInstance(myProject).getClientFor(p4file.getPath());
         if (client == null) {
-            throw new P4FileException("unknown Perforce controlled file " + p4file);
+            throw new P4FileException(P4Bundle.message("error.filespec.no-client", p4file));
         }
         return client.getServer().loadFileAsString(p4file, rev.getValue());
     }

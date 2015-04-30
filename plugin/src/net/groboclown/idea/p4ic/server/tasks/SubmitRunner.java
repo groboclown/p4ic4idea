@@ -19,6 +19,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.P4Exec;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.P4Job;
@@ -75,13 +76,13 @@ public class SubmitRunner extends ServerTask<List<P4StatusMessage>> {
     public List<P4StatusMessage> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
         IChangelist changelist = exec.getChangelist(project, changelistId);
         if (changelist == null) {
-            throw new P4Exception("changelist does not exist: " + changelistId);
+            throw new P4Exception(P4Bundle.message("error.changelist.does-not-exist", changelistId));
         }
         //if (! changelist.getUsername().equals(exec.getOwnerName())) {
         //    throw new P4Exception("changelist not owned by client");
         //}
         if (changelist.getStatus() == ChangelistStatus.SUBMITTED) {
-            throw new P4Exception("changelist is already submitted");
+            throw new P4Exception(P4Bundle.message("error.changelist.submitted"));
         }
         // Should do host check, too, to ensure the client host matches.
 

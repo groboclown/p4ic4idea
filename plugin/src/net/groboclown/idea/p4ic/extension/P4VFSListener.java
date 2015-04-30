@@ -468,11 +468,11 @@ public class P4VFSListener extends VcsVFSListener {
                     if (entry.srcClient.isWorkingOnline()) {
                         final List<P4FileInfo> srcPath = entry.srcClient.getServer().getFilePathInfo(Collections.singletonList(entry.srcFilePath));
                         if (srcPath.size() != 1) {
-                            throw new VcsException("invalid server path for " + entry.srcFilePath);
+                            throw new VcsException(P4Bundle.message("error.filespec.no-client", entry.srcFilePath));
                         }
                         FilePath tgt = entry.tgtFilePath;
                         if (tgt == null) {
-                            throw new VcsException("no target? source is " + entry.srcFilePath);
+                            throw new VcsException(P4Bundle.message("error.move.no-target", entry.srcFilePath));
                         }
                         ret.put(srcPath.get(0), tgt);
                     }

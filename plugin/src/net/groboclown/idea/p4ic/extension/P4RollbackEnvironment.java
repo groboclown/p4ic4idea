@@ -128,7 +128,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
     @Override
     public void rollbackMissingFileDeletion(List<FilePath> files, List<VcsException> exceptions, RollbackProgressListener listener) {
         // TODO check if this is the right behavior
-        throw new UnsupportedOperationException("Missing file delete is not reported by Perforce.");
+        throw new UnsupportedOperationException(P4Bundle.message("error.rollback.missing-delete"));
     }
 
     @Override

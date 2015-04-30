@@ -20,6 +20,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import org.jetbrains.annotations.NotNull;
@@ -52,17 +53,17 @@ public class FileSpecUtil {
     static IFileSpec getOneSpec(@NotNull String path) throws P4Exception {
         VirtualFile f = LocalFileSystem.getInstance().findFileByPath(path.replace(File.separatorChar, '/'));
         if (f != null && f.isDirectory()) {
-            throw new P4FileException("Cannot load Perforce information for a directory", f);
+            throw new P4FileException(P4Bundle.message("error.filespec.directory"), f);
         }
         // Can't help out the user on a null filespec conversion.
 
         List<IFileSpec> ret = FileSpecBuilder.makeFileSpecList(escapeToP4Path(path));
         if (ret.size() != 1) {
-            throw new IllegalStateException("expected 1 filespec, found " + ret);
+            throw new IllegalStateException(P4Bundle.message("error.annotate.multiple-files", path, ret));
         }
         IFileSpec spec = ret.get(0);
         if (spec == null) {
-            throw new IllegalStateException(path + " has null filespec");
+            throw new IllegalStateException(P4Bundle.message("error.filespec.null", path));
         }
         return spec;
     }
@@ -71,7 +72,7 @@ public class FileSpecUtil {
     @NotNull
     static IFileSpec getOneSpecWithRev(@NotNull FilePath file, int rev) throws P4Exception {
         if (file.isDirectory()) {
-            throw new P4FileException("Cannot load Perforce information for a directory", file);
+            throw new P4FileException(P4Bundle.message("error.filespec.directory"), file);
         }
         // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
         // use this instead: getIOFile().getAbsolutePath()
@@ -82,7 +83,7 @@ public class FileSpecUtil {
         }
         final List<IFileSpec> spec = FileSpecBuilder.makeFileSpecList(path);
         if (spec.size() != 1) {
-            throw new P4Exception("Generated multiple specs (or 0) from " + path + ": " + spec);
+            throw new P4Exception(P4Bundle.message("error.annotate.multiple-files", path, spec));
         }
         IFileSpec ret = spec.get(0);
         //if (rev > 0) {
@@ -120,7 +121,7 @@ public class FileSpecUtil {
                         path += File.separator + "...";
                     }
                 } else {
-                    throw new P4FileException("Cannot load Perforce information for a directory", fp);
+                    throw new P4FileException(P4Bundle.message("error.filespec.directory"), fp);
                 }
             }
             path += revisionPart;
@@ -147,7 +148,7 @@ public class FileSpecUtil {
                         path += File.separator + "...";
                     }
                 } else {
-                    throw new P4FileException("Cannot load Perforce information for a directory", vf);
+                    throw new P4FileException(P4Bundle.message("error.filespec.directory"), vf);
                 }
             }
             path += revisionPart;
@@ -184,11 +185,11 @@ public class FileSpecUtil {
         String escapedPath = espec.getMovedFile();
         List<IFileSpec> ret = FileSpecBuilder.makeFileSpecList(escapedPath);
         if (ret.size() != 1) {
-            throw new IllegalStateException("expected 1 filespec, found " + ret);
+            throw new IllegalStateException(P4Bundle.message("error.annotate.multiple-files", escapedPath, ret));
         }
         IFileSpec spec = ret.get(0);
         if (spec == null) {
-            throw new IllegalStateException(escapedPath + " has null filespec");
+            throw new IllegalStateException(P4Bundle.message("error.filespec.null", escapedPath));
         }
         return spec;
     }
@@ -196,7 +197,7 @@ public class FileSpecUtil {
 
     private static String escapeToP4Path(@NotNull String path) throws P4Exception {
         if (path.contains("...")) {
-            throw new P4FileException("Perforce cannot handle files with names that contain ellipsis ('...'): " + path);
+            throw new P4FileException(P4Bundle.message("error.filespec.elipses", path));
         }
         StringBuilder ret = new StringBuilder(path.length() * 3 / 2);
         for (char c: path.toCharArray()) {

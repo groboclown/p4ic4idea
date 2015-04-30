@@ -21,6 +21,7 @@ import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
@@ -45,12 +46,12 @@ public class P4AnnotationProvider implements AnnotationProvider {
         // Use the "have" revision, not the "head" revision
         Client client = vcs.getClientFor(VcsUtil.getFilePath(file));
         if (client == null) {
-            throw new P4InvalidConfigException("no valid p4 config for " + file);
+            throw new P4InvalidConfigException(P4Bundle.message("error.filespec.no-client", file));
         }
         ServerExecutor exec = client.getServer();
         List<P4FileInfo> p4files = exec.getVirtualFileInfo(Collections.singletonList(file));
         if (p4files.size() != 1) {
-            throw new P4FileException("incorrect file info for " + file + ": " + p4files);
+            throw new P4FileException(P4Bundle.message("error.filespec.incorrect", file, p4files));
         }
         String contents = exec.loadFileAsString(p4files.get(0), p4files.get(0).getHaveRev());
         return createAnnotation(file, exec.getAnnotationsFor(file, p4files.get(0).getHaveRev()),
@@ -62,11 +63,11 @@ public class P4AnnotationProvider implements AnnotationProvider {
         FilePath filePath = VcsUtil.getFilePath(file);
         Client client = vcs.getClientFor(filePath);
         if (client == null) {
-            throw new P4InvalidConfigException("no valid p4 config for " + file);
+            throw new P4InvalidConfigException(P4Bundle.message("error.filespec.no-client", file));
         }
         VcsRevisionNumber rev = revision.getRevisionNumber();
         if (! (rev instanceof VcsRevisionNumber.Int)) {
-            throw new P4Exception("Bad revision: " + rev);
+            throw new P4Exception(P4Bundle.message("error.diff.bad-revision", rev));
         }
         ServerExecutor exec = client.getServer();
         String contents = exec.loadFileAsString(filePath,

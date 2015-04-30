@@ -21,6 +21,7 @@ import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.history.P4AnnotatedLine;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4Exec;
@@ -76,8 +77,7 @@ public class AnnotateFileTask extends ServerTask<List<P4AnnotatedLine>> {
                 List<P4FileInfo> p4files = exec.loadFileInfo(project,
                         FileSpecBuilder.makeFileSpecList(ann.getDepotPath()));
                 if (p4files.size() != 1) {
-                    throw new P4FileException("Should have 1 spec for " + ann.getDepotPath() +
-                            ", but received " + p4files);
+                    throw new P4FileException(P4Bundle.message("error.annotate.multiple-files", ann.getDepotPath(), p4files));
                 }
                 p4file = p4files.get(0);
                 fileInfo.put(ann.getDepotPath(), p4file);
@@ -115,11 +115,11 @@ public class AnnotateFileTask extends ServerTask<List<P4AnnotatedLine>> {
             // it can return empty values for a server message
             if (ret != null && ! ret.isEmpty()) {
                 if (ret.size() != 1) {
-                    throw new P4FileException("Invalid return value for 1 revision of " + depotRev + ": returned " + ret);
+                    throw new P4FileException(P4Bundle.message("error.annotate.revision", depotRev, ret));
                 }
                 return ret.get(0);
             }
         }
-        throw new P4FileException("No history for " + depotRev);
+        throw new P4FileException(P4Bundle.message("error.annotate.no-revision", depotRev));
     }
 }

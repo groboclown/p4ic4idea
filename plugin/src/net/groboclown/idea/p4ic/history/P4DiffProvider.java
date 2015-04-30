@@ -26,6 +26,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.IFileRevisionData;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
@@ -96,7 +97,7 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
     public ContentRevision createFileContent(final VcsRevisionNumber revisionNumber, VirtualFile selectedFile) {
         final FilePath file = VcsUtil.getFilePath(selectedFile);
         if (! (revisionNumber instanceof VcsRevisionNumber.Int)) {
-            throw new IllegalArgumentException("invalid revision number: " + revisionNumber);
+            throw new IllegalArgumentException(P4Bundle.message("error.diff.bad-revision", revisionNumber));
         }
         return new P4ContentRevision(file, (VcsRevisionNumber.Int) revisionNumber);
     }
@@ -125,7 +126,7 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
         try {
             history = client.getServer().getRevisionHistory(fileInfo, 1);
         } catch (VcsException e) {
-            ErrorDialog.logError(project, "Get history for " + file, e);
+            ErrorDialog.logError(project, P4Bundle.message("error.diff.history.title", file), e);
             return new P4RevisionDescription(null);
         }
 
@@ -169,7 +170,7 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
         try {
             files = client.getServer().getVirtualFileInfo(Collections.singletonList(file));
         } catch (VcsException e) {
-            ErrorDialog.logError(project, "Get current revision for " + file, e);
+            ErrorDialog.logError(project, P4Bundle.message("error.diff.current-revision.title", file), e);
             return null;
         }
         if (files.isEmpty()) {
@@ -209,14 +210,14 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
             }
 
             if (project.isDisposed()) {
-                throw new P4Exception("Project is invalid");
+                throw new P4Exception(P4Bundle.message("exception.disposed"));
             }
             Client client = P4Vcs.getInstance(project).getClientFor(file);
             if (client == null) {
-                throw new P4InvalidClientException("No client for " + file);
+                throw new P4InvalidClientException(P4Bundle.message("error.filespec.no-client", file));
             }
             if (client.isWorkingOffline()) {
-                throw new P4DisconnectedException("disconnected from server");
+                throw new P4DisconnectedException(P4Bundle.message("error.config.disconnected"));
             }
             String ret = client.getServer().loadFileAsString(file, revisionNumber.getValue());
             if (ret == null) {

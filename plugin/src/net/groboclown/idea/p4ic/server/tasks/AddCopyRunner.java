@@ -17,6 +17,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4Exec;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
@@ -195,7 +196,7 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
         for (VirtualFile vf: files) {
             P4FileInfo info = allMappings.get(vf);
             if (info == null) {
-                throw new P4Exception("No retrieved mapping for " + vf);
+                throw new P4Exception(P4Bundle.message("error.copy.no-mapping", vf));
             }
             ret.put(vf, info);
         }
@@ -211,7 +212,7 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
             // make sure we have the correct name and path separators so it matches up with the FilePath value.
             String path = (new File(vf.getPath())).getAbsolutePath();
             if (reverseLookup.containsKey(path)) {
-                throw new IllegalArgumentException("duplicate file " + path);
+                throw new IllegalArgumentException(P4Bundle.message("error.move.duplicate", path));
             }
             reverseLookup.put(path, vf);
         }

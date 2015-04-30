@@ -6,7 +6,7 @@
 
 ### Overview
 
-* Started work on internationalizing the exception messages.
+* Internationalized the exception messages.
 * Bug fixes
 
 ### Details

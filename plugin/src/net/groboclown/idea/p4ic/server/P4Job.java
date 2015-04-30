@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.server;
 
 import com.perforce.p4java.core.IJob;
+import net.groboclown.idea.p4ic.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -27,7 +28,7 @@ public class P4Job implements Comparable<P4Job> {
 
     public P4Job(@NotNull IJob job) {
         if (job.getId() == null) {
-            throw new NullPointerException("null job id");
+            throw new NullPointerException(P4Bundle.message("error.job.null"));
         }
         this.jobId = job.getId();
         this.description = job.getDescription() == null

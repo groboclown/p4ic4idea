@@ -18,6 +18,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.P4Exec;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
@@ -48,7 +49,7 @@ public class DeleteChangelistTask extends ServerTask<Void> {
         // we need to cancel, because it's up to the user
         // to handle the shelved changes.
         if (current.isShelved()) {
-            throw new P4Exception("Perforce changelist is shelved");
+            throw new P4Exception(P4Bundle.message("error.changelist.delete.shelved", current.getId()));
         }
 
         List<IFileSpec> files = exec.getFileSpecsInChangelist(project, current.getId());

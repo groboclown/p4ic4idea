@@ -159,6 +159,6 @@ public class P4StatusMessage {
         if (msg.isError()) {
             return new VcsException(msg.toString());
         }
-        throw new IllegalArgumentException("not an error message: " + msg);
+        throw new IllegalArgumentException(P4Bundle.message("error.not-error", msg));
     }
 }

@@ -18,6 +18,7 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.env.PerforceEnvironment;
 import com.perforce.p4java.server.IServerAddress;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -262,7 +263,7 @@ public class P4ConfigUtil {
             boolean searchRootParents) {
         Map<VirtualFile, P4Config> ret = new HashMap<VirtualFile, P4Config>();
         if (! rootSearchPath.isDirectory() || ! rootSearchPath.exists()) {
-            throw new IllegalArgumentException("root is not directory: " + rootSearchPath);
+            throw new IllegalArgumentException(P4Bundle.message("error.roots.not-directory", rootSearchPath));
         }
         List<Iterator<VirtualFile>> depthStack = new ArrayList<Iterator<VirtualFile>>();
         depthStack.add(Arrays.asList(rootSearchPath.getChildren()).iterator());

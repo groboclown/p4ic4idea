@@ -23,6 +23,7 @@ import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.history.P4AnnotatedLine;
@@ -200,7 +201,7 @@ public class RawServerExecutor {
             @Nullable List<FilePath> actualFiles, @Nullable Collection<P4Job> jobs, String jobStatus, int changelistId)
             throws VcsException, CancellationException {
         if (changelistId <= 0) {
-            throw new VcsException("Invalid changelist ID " + changelistId);
+            throw new VcsException(P4Bundle.message("error.changelist.submit", changelistId));
         }
         return performAction(project, new SubmitRunner(project, actualFiles, jobs, jobStatus, changelistId));
     }
@@ -223,7 +224,7 @@ public class RawServerExecutor {
             public List<P4FileInfo> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
                 List<P4FileInfo> ret = exec.loadFileInfo(project, FileSpecUtil.getFromFilePaths(fps));
                 if (ret.size() != fps.size()) {
-                    P4ApiException e = new P4ApiException("Did not fetch same number of files as requested");
+                    P4ApiException e = new P4ApiException(P4Bundle.message("error.file-fetch.count"));
                     LOG.info("Requested " + fps + "; retrieved " + ret, e);
                     //throw e;
                 }
@@ -267,7 +268,7 @@ public class RawServerExecutor {
                 IClientSummary client = exec.getClient(project);
                 FilePath clientFp = VcsUtil.getFilePath(client.getRoot());
                 if (clientFp == null) {
-                    throw new P4Exception("No client root found for client " + clientName + " (" + client.getRoot() + ")");
+                    throw new P4Exception(P4Bundle.message("error.roots.not-found", clientName, client.getRoot()));
                 } else if (requestedRoots == null) {
                     return Collections.singletonList(clientFp.getVirtualFile());
                 } else {
@@ -275,10 +276,10 @@ public class RawServerExecutor {
                     Set<VirtualFile> ret = new HashSet<VirtualFile>();
                     for (VirtualFile root: requestedRoots) {
                         if (root == null) {
-                            throw new P4Exception("null root");
+                            throw new P4Exception(P4Bundle.message("error.roots.null"));
                         }
                         if (! root.exists() || ! root.isDirectory()) {
-                            throw new P4Exception("invalid root directory " + root);
+                            throw new P4Exception(P4Bundle.message("error.roots.invalid", root));
                         }
                         FilePath fp = VcsUtil.getFilePath(root);
                         if (clientFp.isUnder(fp, false)) {
@@ -295,8 +296,7 @@ public class RawServerExecutor {
                         if (ret.isEmpty()) {
                             // TODO clean up this message, and localize it.
                             // This is user facing!
-                            P4InvalidConfigException ex = new P4InvalidConfigException("Roots (" + missed + ") are not under the client root (" + clientFp +
-                                    ") or are not the parent of the client root.  Is the P4CONFIG file referencing the wrong client, or in the wrong directory?");
+                            P4InvalidConfigException ex = new P4InvalidConfigException(P4Bundle.message("error.roots.mismatch", missed, clientFp));
                             project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).
                                     configurationProblem(project, new ManualP4Config(config.getConfig(), clientName), ex);
                             throw ex;

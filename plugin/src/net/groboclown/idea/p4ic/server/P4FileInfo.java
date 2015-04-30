@@ -25,6 +25,7 @@ import com.perforce.p4java.core.file.*;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.server.IOptionsServer;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -185,7 +186,7 @@ public class P4FileInfo {
     @NotNull
     public IFileSpec toClientSpec() throws P4Exception {
         if (!inClientView) {
-            throw new IllegalStateException("not in client view: " + this);
+            throw new IllegalStateException(P4Bundle.message("error.fileinfo.not-in-client", this));
         }
         // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
         // use this instead: getIOFile().getAbsolutePath()
@@ -198,7 +199,7 @@ public class P4FileInfo {
         if (spec != null && spec.getDepotPathString() != null) {
             return FileSpecUtil.getOneSpec(spec.getDepotPathString());
         }
-        throw new IllegalStateException("not in depot view: " + this);
+        throw new IllegalStateException(P4Bundle.message("error.fileinfo.not-in-depot", this));
     }
 
 
@@ -796,7 +797,7 @@ public class P4FileInfo {
         String real = path.getIOFile().getAbsolutePath();
         if (real.startsWith("//") ||
                 real.startsWith("\\\\")) {
-            throw new IllegalArgumentException("incorrect path format: " + real);
+            throw new IllegalArgumentException(P4Bundle.message("error.fileinfo.invalid-format", real));
         }
     }
 }

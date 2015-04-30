@@ -131,11 +131,11 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @NotNull
     public static P4Vcs getInstance(Project project) {
         if (project == null || project.isDisposed()) {
-            throw new NullPointerException("No active project");
+            throw new NullPointerException(P4Bundle.message("error.no-active-project"));
         }
         P4Vcs ret = (P4Vcs) ProjectLevelVcsManager.getInstance(project).findVcsByName(VCS_NAME);
         if (ret == null) {
-            throw new NullPointerException("No active project");
+            throw new NullPointerException(P4Bundle.message("error.no-active-project"));
         }
         return ret;
     }
@@ -321,7 +321,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         //if (ret == null || ! (ret instanceof P4CheckinEnvironment)) {
         if (ret == null) {
             // really yikes!
-            throw new IllegalStateException("created null CheckinEnvironment");
+            throw new IllegalStateException(P4Bundle.message("error.checkin-env.null"));
         }
         return ret;
     }

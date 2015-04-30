@@ -18,6 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4Exec;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
@@ -184,7 +185,7 @@ public class MoveRunner extends ServerTask<List<P4StatusMessage>> {
             // use this instead: getIOFile().getAbsolutePath()
             String path = fp.getIOFile().getAbsolutePath();
             if (reverseLookup.containsKey(path)) {
-                throw new IllegalArgumentException("duplicate file " + path);
+                throw new IllegalArgumentException(P4Bundle.message("error.move.duplicate", path));
             }
             reverseLookup.put(path, fp);
         }
@@ -214,7 +215,6 @@ public class MoveRunner extends ServerTask<List<P4StatusMessage>> {
             P4FileInfo info = allMappings.get(vf);
             if (info == null) {
                 log("No retrieved mapping for " + vf + ": it's probably not under source control");
-                //throw new P4Exception("No retrieved mapping for " + vf);
             } else {
                 ret.put(vf, info);
             }

@@ -1,14 +1,14 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.5.0</version>
+    <version>0.5.1</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
             <li><em>0.5.1</em>
                 <ol>
-                    <li>Started work on internationalizing the exception messages.</li>
+                    <li>Internationalized the exception messages.</li>
                     <li>Bug fixes.</li>
                 </ol>
             </li>

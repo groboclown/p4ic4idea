@@ -11,6 +11,8 @@
 
 ### Details
 
+* Internationalized the exception messages.  Exceptions can be
+    reported to the user, and so they need I18N support.
 * Bug fixes
     * 
 

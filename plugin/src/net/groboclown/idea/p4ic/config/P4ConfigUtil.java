@@ -267,6 +267,8 @@ public class P4ConfigUtil {
         }
         List<Iterator<VirtualFile>> depthStack = new ArrayList<Iterator<VirtualFile>>();
         depthStack.add(Arrays.asList(rootSearchPath.getChildren()).iterator());
+        // bug #32 - make sure to add in the root directory, too.
+        depthStack.add(Collections.singleton(rootSearchPath).iterator());
         while (! depthStack.isEmpty()) {
             Iterator<VirtualFile> iter = depthStack.remove(depthStack.size() - 1);
             if (iter.hasNext()) {

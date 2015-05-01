@@ -215,7 +215,8 @@ public class P4ConfigPanel {
             }
         }
 
-        refreshResolvedProperties();
+        //refreshResolvedProperties();
+        resetResolvedProperties();
     }
 
     protected void saveSettingsToConfig(@NotNull ManualP4Config config) {
@@ -331,6 +332,7 @@ public class P4ConfigPanel {
         int currentSelectedIndex = myConnectionChoice.getSelectedIndex();
         ConnectionPanel selected = (ConnectionPanel) myConnectionChoice.getItemAt(currentSelectedIndex);
         showConnectionPanel(selected);
+        resetResolvedProperties();
     }
 
 
@@ -436,12 +438,20 @@ public class P4ConfigPanel {
             } else {
                 display.append("\n");
             }
-            display = display.append(key).append('=').append(props.get(key));
+            String val = props.get(key);
+            if (val == null) {
+                val = P4Bundle.getString("config.display.key.no-value");
+            }
+            display.append(P4Bundle.message("config.display.property-line", key, val));
         }
 
         myResolvedValuesField.setText(display.toString());
     }
 
+
+    private void resetResolvedProperties() {
+        myResolvedValuesField.setText(P4Bundle.message("config.display.properties.refresh"));
+    }
 
     // ----------------------------------------------------------------------------
     // Relative path methods
@@ -481,6 +491,8 @@ public class P4ConfigPanel {
     @Nullable
     private Map<String, P4Config> loadRelativeConfigPaths() {
         final ConnectionPanel connection = getSelectedConnection();
+        // TODO Should be connection.getConnectionMethod().isRelativeToPath(), but
+        // we are reaching into the panel to grab its path.
         if (connection instanceof RelativeConfigConnectionPanel) {
             final String configFile = ((RelativeConfigConnectionPanel) connection).getConfigFileName();
             if (configFile != null) {

@@ -596,7 +596,16 @@ public class P4Exec {
                 if (changelist == null) {
                     return null;
                 }
-                final List<IJob> jobs = changelist.getJobs();
+                final List<IJob> jobs;
+                try {
+                    jobs = changelist.getJobs();
+                } catch (RequestException e) {
+                    // FIXME there's bugs in the job fetching.
+                    // Bug #33
+                    // Need to replace with a correct implementation.
+                    LOG.warn("Problem fetching jobs for changelist " + changelistId, e);
+                    return null;
+                }
                 if (jobs == null) {
                     return null;
                 }

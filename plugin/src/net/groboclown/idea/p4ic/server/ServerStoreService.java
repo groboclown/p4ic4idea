@@ -60,7 +60,7 @@ public class ServerStoreService implements ApplicationComponent {
             throws P4InvalidConfigException {
         if (! isConfigValid(config)) {
             // TODO report the actual problems
-            P4InvalidConfigException ex = new P4InvalidConfigException();
+            P4InvalidConfigException ex = new P4InvalidConfigException(config);
             project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project,
                     new ManualP4Config(config, null), ex);
             throw ex;

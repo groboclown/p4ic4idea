@@ -14,7 +14,11 @@
 * Internationalized the exception messages.  Exceptions can be
     reported to the user, and so they need I18N support.
 * Bug fixes
-    * 
+    * Not finding P4CONFIG in the hierarchy (#32)
+    * Partial fix for incorrect parsing of P4Java API issue with fetching jobs (#33) 
+    * Config "resolved values" should better reflect if it has been loaded (#34)
+    * Reports of invalid configuration now better describe the source of the issue.
+
 
 
 ## ::v0.5.0::

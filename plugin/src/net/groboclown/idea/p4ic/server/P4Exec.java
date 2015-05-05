@@ -634,27 +634,26 @@ public class P4Exec {
 
 
     private P4Job getJobWithServer(@NotNull final String jobId, @NotNull final IOptionsServer server)
-            throws ConnectionException, AccessException {
-        IJob job;
-        try {
-            // Bug #33
-            //job = server.getJob(jobId);
-            if (server instanceof Server) {
-                job = customGetJob((Server) server, jobId);
-            } else {
-                job = server.getJob(jobId);
+            throws ConnectionException, AccessException, RequestException {
+        P4Job job = null;
+        // Bug #33
+        //job = server.getJob(jobId);
+        if (server instanceof Server) {
+            job = customGetJob((Server) server, jobId);
+        } else {
+            IJob iJob;
+            try {
+                iJob = server.getJob(jobId);
+                job = iJob == null ? null : new P4Job(iJob);
+            } catch (RequestException re) {
+                // Bug #33
+                LOG.warn(re);
+                if (re.getMessage().contains("Syntax error in")) {
+                    job = new P4Job(jobId, P4Bundle.message("error.job.parse", jobId, re.getMessage()));
+                }
             }
-        } catch (RequestException e) {
-            // FIXME there's bugs in the job fetching.
-            // Bug #33
-            // Need to replace with a correct implementation.
-            LOG.warn("Problem fetching job " + jobId, e);
-            job = null;
         }
-        if (job == null) {
-            return null;
-        }
-        return new P4Job(job);
+        return job;
     }
 
 
@@ -1023,7 +1022,7 @@ public class P4Exec {
 
 
 
-    private static IJob customGetJob(@NotNull final Server server, @NotNull final String jobId) throws ConnectionException, AccessException {
+    private static P4Job customGetJob(@NotNull final Server server, @NotNull final String jobId) throws ConnectionException, AccessException {
         List<Map<String, Object>> resultMaps = server.execMapCmdList(CmdSpec.JOB, new String[]{"-o", jobId}, null);
         if (resultMaps != null) {
             for (final Map<String, Object> resultMap : resultMaps) {
@@ -1032,13 +1031,15 @@ public class P4Exec {
                     if (server.isAuthFail(errStr)) {
                         throw new AccessException(errStr);
                     } else {
-                        LOG.error(P4Bundle.message("error.job.parse", jobId, resultMap.get("code0")));
+                        final String errorMessage = P4Bundle.message("error.job.parse", jobId, resultMap.get("code0"));
+                        LOG.error(errorMessage);
                         LOG.warn("Problem parsing job " + jobId + " with result maps: " + resultMaps);
-                        return null;
+                        // Still create the job, because it exists
+                        return new P4Job(jobId, errorMessage);
                     }
                 }
                 if (!server.isInfoMessage(resultMap)) {
-                    return new Job(server, resultMap);
+                    return new P4Job(new Job(server, resultMap));
                 }
             }
         }

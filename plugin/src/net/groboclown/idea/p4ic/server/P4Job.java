@@ -17,6 +17,7 @@ package net.groboclown.idea.p4ic.server;
 import com.perforce.p4java.core.IJob;
 import net.groboclown.idea.p4ic.P4Bundle;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.Map;
@@ -31,22 +32,29 @@ public class P4Job implements Comparable<P4Job> {
             throw new NullPointerException(P4Bundle.message("error.job.null"));
         }
         this.jobId = job.getId();
-        this.description = job.getDescription() == null
-                ? null
-                : job.getDescription();
+        this.description = job.getDescription();
         this.rawFields = job.getRawFields() == null
                 ? Collections.<String, Object>emptyMap()
                 : Collections.unmodifiableMap(job.getRawFields());
     }
 
+    public P4Job(@NotNull final String jobId, @Nullable final String errorMessage) {
+        this.jobId = jobId;
+        this.description = errorMessage;
+        this.rawFields = Collections.emptyMap();
+    }
+
+    @NotNull
     public String getJobId() {
         return jobId;
     }
 
+    @Nullable
     public String getDescription() {
         return description;
     }
 
+    @NotNull
     public Map<String, Object> getRawFields() {
         return rawFields;
     }

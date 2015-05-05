@@ -65,6 +65,9 @@ import static net.groboclown.idea.p4ic.server.P4StatusMessage.getErrors;
 public class P4Exec {
     private static final Logger LOG = Logger.getInstance(P4Exec.class);
 
+    // TODO this should be a user setting
+    private static final int MAX_JOBS_RETURNED = 100;
+
     // Default list of status, in case of a problem.
     public static final List<String> DEFAULT_JOB_STATUS = Arrays.asList(
             "open", "suspended", "closed"
@@ -590,8 +593,23 @@ public class P4Exec {
     }
 
 
+    /**
+     *
+     * @param project project
+     * @param changelistId Perforce changelist id
+     * @return null if there is no such changelist.
+     * @throws VcsException
+     * @throws CancellationException
+     */
     @Nullable
     public Collection<P4Job> getJobsForChangelist(final Project project, final int changelistId) throws VcsException, CancellationException {
+        if (changelistId <= IChangelist.DEFAULT) {
+            // These changelists can never have a job associated with them.
+            // Additionally, actually inquiring about the jobs will result
+            // in returning *every job in Perforce*, which could potentially
+            // be HUGE.
+            return Collections.emptyList();
+        }
         return runWithServer(project, new WithServer<List<P4Job>>() {
             @Override
             public List<P4Job> run(@NotNull final IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
@@ -605,10 +623,14 @@ public class P4Exec {
                 // directly.  This is what you need to do in p4 cli
                 // anyway, so it's probably what the API is doing
                 // as well.
-                // jobs = changelist.getJobs();
                 final List<String> jobIds = changelist.getJobIds();
+                LOG.info("Changelist " + changelistId + " has " + jobIds.size() + " jobs");
                 final List<P4Job> jobs = new ArrayList<P4Job>(jobIds.size());
                 for (String jobId: jobIds) {
+                    if (jobs.size() > MAX_JOBS_RETURNED) {
+                        LOG.warn(changelistId + " exceeded number of jobs to return; capping at " + MAX_JOBS_RETURNED);
+                        break;
+                    }
                     P4Job job = getJobWithServer(jobId, server);
                     if (job != null) {
                         jobs.add(job);
@@ -636,11 +658,13 @@ public class P4Exec {
     private P4Job getJobWithServer(@NotNull final String jobId, @NotNull final IOptionsServer server)
             throws ConnectionException, AccessException, RequestException {
         P4Job job = null;
+        LOG.info("Loading information for job " + jobId);
         // Bug #33
         //job = server.getJob(jobId);
-        if (server instanceof Server) {
-            job = customGetJob((Server) server, jobId);
-        } else {
+        //if (server instanceof Server) {
+        //    job = customGetJob((Server) server, jobId);
+        //} else {
+        {
             IJob iJob;
             try {
                 iJob = server.getJob(jobId);
@@ -1022,7 +1046,7 @@ public class P4Exec {
 
 
 
-    private static P4Job customGetJob(@NotNull final Server server, @NotNull final String jobId) throws ConnectionException, AccessException {
+    private synchronized P4Job customGetJob(@NotNull final Server server, @NotNull final String jobId) throws ConnectionException, AccessException {
         List<Map<String, Object>> resultMaps = server.execMapCmdList(CmdSpec.JOB, new String[]{"-o", jobId}, null);
         if (resultMaps != null) {
             for (final Map<String, Object> resultMap : resultMaps) {

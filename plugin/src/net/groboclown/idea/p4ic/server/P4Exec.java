@@ -26,12 +26,15 @@ import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.impl.generic.core.Changelist;
+import com.perforce.p4java.impl.generic.core.Job;
 import com.perforce.p4java.impl.generic.core.file.FilePath;
+import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
 import com.perforce.p4java.option.server.GetFileContentsOptions;
+import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -591,45 +594,67 @@ public class P4Exec {
     public Collection<P4Job> getJobsForChangelist(final Project project, final int changelistId) throws VcsException, CancellationException {
         return runWithServer(project, new WithServer<List<P4Job>>() {
             @Override
-            public List<P4Job> run(@NotNull final IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public List<P4Job> run(@NotNull final IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
                 final IChangelist changelist = server.getChangelist(changelistId);
                 if (changelist == null) {
                     return null;
                 }
-                final List<IJob> jobs;
-                try {
-                    jobs = changelist.getJobs();
-                } catch (RequestException e) {
-                    // FIXME there's bugs in the job fetching.
-                    // Bug #33
-                    // Need to replace with a correct implementation.
-                    LOG.warn("Problem fetching jobs for changelist " + changelistId, e);
-                    return null;
+
+                // Bug #33: this can cause issues.  Instead, go the
+                // indirect route by querying the underyling jobs
+                // directly.  This is what you need to do in p4 cli
+                // anyway, so it's probably what the API is doing
+                // as well.
+                // jobs = changelist.getJobs();
+                final List<String> jobIds = changelist.getJobIds();
+                final List<P4Job> jobs = new ArrayList<P4Job>(jobIds.size());
+                for (String jobId: jobIds) {
+                    P4Job job = getJobWithServer(jobId, server);
+                    if (job != null) {
+                        jobs.add(job);
+                    } else {
+                        LOG.warn("Changelist " + changelistId + " contains non-existent or invalid job id " + jobId);
+                    }
                 }
-                if (jobs == null) {
-                    return null;
-                }
-                List<P4Job> ret = new ArrayList<P4Job>(jobs.size());
-                for (IJob job: jobs) {
-                    ret.add(new P4Job(job));
-                }
-                return ret;
+                return jobs;
             }
         });
     }
 
     @Nullable
-    public P4Job getJobForId(final Project project, final String jobId) throws VcsException, CancellationException {
+    public P4Job getJobForId(@NotNull final Project project, @NotNull final String jobId) throws VcsException, CancellationException {
         return runWithServer(project, new WithServer<P4Job>() {
             @Override
             public P4Job run(@NotNull final IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
-                final IJob job = server.getJob(jobId);
-                if (job == null) {
-                    return null;
-                }
-                return new P4Job(job);
+                return getJobWithServer(jobId, server);
             }
         });
+    }
+
+
+
+    private P4Job getJobWithServer(@NotNull final String jobId, @NotNull final IOptionsServer server)
+            throws ConnectionException, AccessException {
+        IJob job;
+        try {
+            // Bug #33
+            //job = server.getJob(jobId);
+            if (server instanceof Server) {
+                job = customGetJob((Server) server, jobId);
+            } else {
+                job = server.getJob(jobId);
+            }
+        } catch (RequestException e) {
+            // FIXME there's bugs in the job fetching.
+            // Bug #33
+            // Need to replace with a correct implementation.
+            LOG.warn("Problem fetching job " + jobId, e);
+            job = null;
+        }
+        if (job == null) {
+            return null;
+        }
+        return new P4Job(job);
     }
 
 
@@ -994,6 +1019,30 @@ public class P4Exec {
         return (message != null &&
                 (message.contains("Your session has expired, please login again.")
                         || message.contains("Perforce password (P4PASSWD) invalid or unset.")));
+    }
+
+
+
+    private static IJob customGetJob(@NotNull final Server server, @NotNull final String jobId) throws ConnectionException, AccessException {
+        List<Map<String, Object>> resultMaps = server.execMapCmdList(CmdSpec.JOB, new String[]{"-o", jobId}, null);
+        if (resultMaps != null) {
+            for (final Map<String, Object> resultMap : resultMaps) {
+                String errStr = server.getErrorStr(resultMap);
+                if (errStr != null) {
+                    if (server.isAuthFail(errStr)) {
+                        throw new AccessException(errStr);
+                    } else {
+                        LOG.error(P4Bundle.message("error.job.parse", jobId, resultMap.get("code0")));
+                        LOG.warn("Problem parsing job " + jobId + " with result maps: " + resultMaps);
+                        return null;
+                    }
+                }
+                if (!server.isInfoMessage(resultMap)) {
+                    return new Job(server, resultMap);
+                }
+            }
+        }
+        return null;
     }
 
 

@@ -31,10 +31,6 @@ public class P4InvalidConfigException extends P4DisconnectedException {
         super(e);
     }
 
-    //public P4InvalidConfigException() {
-    //    this(P4Bundle.message("exception.invalid.config"));
-    //}
-
     public P4InvalidConfigException(URISyntaxException e) {
         super(e);
     }

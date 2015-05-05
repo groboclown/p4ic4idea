@@ -9,7 +9,11 @@
             <li><em>0.5.1</em>
                 <ol>
                     <li>Internationalized the exception messages.</li>
-                    <li>Bug fixes.</li>
+                    <li>Fixed: Not finding P4CONFIG in the hierarchy</li>
+                    <li>Partial fix for incorrect parsing of P4Java API issue with fetching jobs</li>
+                    <li>Fixed: Config "resolved values" should better reflect if it has been loaded</li>
+                    <li>Fixed: Reports of invalid configuration now better describe the source of the issue.</li>
+                    <li>Fixed: "Add file" while disconnected causes NPE</li>
                 </ol>
             </li>
             <li><em>0.5.0</em>

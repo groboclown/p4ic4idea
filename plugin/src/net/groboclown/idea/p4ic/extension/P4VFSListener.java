@@ -173,6 +173,10 @@ public class P4VFSListener extends VcsVFSListener {
                 List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
                 synchronized (vfsSync) {
                     for (Client client: clients) {
+                        // Bug #35
+                        if (client == null) {
+
+                        }
                         if (client.isWorkingOnline()) {
                             // For the copy operation, there can not be
                             // any way to integrate a file between clients, so we

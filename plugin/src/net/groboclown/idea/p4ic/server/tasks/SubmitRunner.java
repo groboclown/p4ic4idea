@@ -20,10 +20,7 @@ import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.server.P4Exec;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
-import net.groboclown.idea.p4ic.server.P4Job;
-import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import net.groboclown.idea.p4ic.server.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,13 +44,16 @@ public class SubmitRunner extends ServerTask<List<P4StatusMessage>> {
     @Nullable
     private final String jobStatus;
 
+    private final FileInfoCache fileInfoCache;
+
     private final int changelistId;
 
     public SubmitRunner(
             @NotNull Project project, @Nullable List<FilePath> actualFiles,
             @Nullable Collection<P4Job> jobs,
             @Nullable String jobStatus,
-            int changelistId) {
+            int changelistId,
+            @NotNull FileInfoCache fileInfoCache) {
         this.project = project;
         if (actualFiles == null) {
             actualFiles = Collections.emptyList();
@@ -69,6 +69,7 @@ public class SubmitRunner extends ServerTask<List<P4StatusMessage>> {
         }
         this.jobStatus = jobStatus;
         this.changelistId = changelistId;
+        this.fileInfoCache = fileInfoCache;
         assert changelistId > 0;
     }
 
@@ -94,7 +95,7 @@ public class SubmitRunner extends ServerTask<List<P4StatusMessage>> {
         // files into changelists, and putting default changelists into
         // real changelists, is the responsibility of the caller.
 
-        List<P4FileInfo> files = exec.getFilesInChangelist(project, changelistId);
+        List<P4FileInfo> files = exec.getFilesInChangelist(project, changelistId, fileInfoCache);
         if (files != null) {
             // Add the missing files to the changelist
             List<IFileSpec> toMoveFiles = new ArrayList<IFileSpec>();

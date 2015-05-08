@@ -100,8 +100,8 @@ public class P4ChangeProvider implements ChangeProvider {
                 P4ChangeListCache.getInstance().reloadCachesFor(vcs.getClients());
 
         final Map<LocalChangeList, Map<Client, P4ChangeList>> known = vcs.getChangeListMapping().cleanMappings();
-        LOG.info("pending changelists: " + pendingChangelists);
-        LOG.info("known changelists: " + known);
+        LOG.debug("pending changelists: " + pendingChangelists);
+        LOG.debug("known changelists: " + known);
 
         progress.setFraction(0.2);
 
@@ -218,9 +218,9 @@ public class P4ChangeProvider implements ChangeProvider {
                 P4ChangeList cl = en.getValue();
                 if (cl != null) {
                     associatedP4clIds.add(cl.getId());
-                    LOG.info("mapped client " + en.getKey() + " to changelist " + cl.getId());
+                    LOG.debug("mapped client " + en.getKey() + " to changelist " + cl.getId());
                 } else {
-                    LOG.info("mapped client " + en.getKey() + " to null changelist");
+                    LOG.debug("mapped client " + en.getKey() + " to null changelist");
                 }
             }
         }
@@ -255,7 +255,7 @@ public class P4ChangeProvider implements ChangeProvider {
                         // Perforce default changelist.  Note that this is
                         // independent of the matchers.
 
-                        LOG.info("Associating " + client.getClientName() + " default changelist to IDEA changelist " +
+                        LOG.debug("Associating " + client.getClientName() + " default changelist to IDEA changelist " +
                                 P4ChangeListMapping.DEFAULT_CHANGE_NAME);
                         addGate.findOrCreateList(P4ChangeListMapping.DEFAULT_CHANGE_NAME, "");
                         associatedP4clIds.add(p4cl.getId());
@@ -267,7 +267,7 @@ public class P4ChangeProvider implements ChangeProvider {
                         LocalChangeList match = matcher.match(p4cl, splitNameComment(p4cl), unusedIdeaChangeLists);
 
                         if (match != null) {
-                            LOG.info("Associating " + p4cl.getId() + " to IDEA changelist " + match);
+                            LOG.debug("Associating " + p4cl.getId() + " to IDEA changelist " + match);
 
                             // Ensure the name matches the changelist, with a unique name
                             setUniqueName(match, p4cl, allIdeaChangeLists);
@@ -306,7 +306,7 @@ public class P4ChangeProvider implements ChangeProvider {
     // This matches with createUniqueChangeList
     private void setUniqueName(LocalChangeList changeList, P4ChangeList cls, List<LocalChangeList> existingIdeaChangeLists) {
         String[] desc = splitNameComment(cls);
-        LOG.info("Mapped @" + cls.getId() + " to " + changeList.getName());
+        LOG.debug("Mapped @" + cls.getId() + " to " + changeList.getName());
         String name = desc[0];
         int count = -1;
         findLoop:
@@ -331,7 +331,11 @@ public class P4ChangeProvider implements ChangeProvider {
     private LocalChangeList createUniqueChangeList(ChangeListManagerGate addGate, P4ChangeList cls,
             List<LocalChangeList> allIdeaChangeLists) {
         String[] desc = splitNameComment(cls);
-        String name = desc[0];
+        String baseDesc = desc[0];
+        if (baseDesc == null || baseDesc.length() <= 0) {
+            baseDesc = '@' + Integer.toString(cls.getId().getChangeListId());
+        }
+        String name = baseDesc;
         int count = -1;
         findLoop:
         while (true) {
@@ -340,14 +344,16 @@ public class P4ChangeProvider implements ChangeProvider {
             for (LocalChangeList lcl : allIdeaChangeLists) {
                 if (lcl.getName().equals(name)) {
                     // the new name collides with an existing change (not the same change)
-                    name = desc[0] + " (" + (++count) + ")";
+                    name = baseDesc + " (" + (++count) + ")";
                     continue findLoop;
                 }
             }
 
             // it's a unique name!
-            LOG.info("Mapped " + cls.getId() + " to new IDEA change " + name);
-            LocalChangeList ret = addGate.addChangeList(name, desc[1]);
+            LOG.debug("Mapped " + cls.getId() + " to new IDEA change " + name);
+            // This can sometimes cause an assertion error, so don't let that
+            // happen - use "findOrCreateList" instead of "addList".
+            LocalChangeList ret = addGate.findOrCreateList(name, desc[1]);
             allIdeaChangeLists.add(ret);
             return ret;
         }
@@ -385,7 +391,7 @@ public class P4ChangeProvider implements ChangeProvider {
      */
     private List<P4FileInfo> moveDirtyFilesIntoIdeaChangeLists(Client client, ChangelistBuilder builder,
             ProgressIndicator progress, Collection<FilePath> filePaths) throws VcsException {
-        LOG.info("processing incoming files " + new ArrayList<FilePath>(filePaths));
+        LOG.debug("processing incoming files " + new ArrayList<FilePath>(filePaths));
         final List<P4FileInfo> files = client.getServer().getFilePathInfo(filePaths);
         progress.setFraction(0.1);
 
@@ -396,12 +402,12 @@ public class P4ChangeProvider implements ChangeProvider {
 
         for (P4FileInfo file : files) {
             VirtualFile vf = file.getPath().getVirtualFile();
-            LOG.info("processing " + file);
+            LOG.debug("processing " + file);
 
             // VirtualFile can be null.  That means the file is deleted.
 
             if (file.isOpenInClient()) {
-                LOG.info("already open in a changelist on the server");
+                LOG.debug("already open in a changelist on the server");
 
                 LocalChangeList changeList = vcs.getChangeListMapping().getLocalChangelist(client, file.getChangelist());
                 if (changeList == null) {
@@ -420,7 +426,7 @@ public class P4ChangeProvider implements ChangeProvider {
                 Change change = createChange(file);
                 builder.processChange(change, P4Vcs.getKey());
 
-                LOG.info("added to local changelist " + changeList + ": " + file);
+                LOG.debug("added to local changelist " + changeList + ": " + file);
                 builder.processChangeInList(change, changeList, P4Vcs.getKey());
             } else if (file.isInDepot()) {
                 if (vf == null) {
@@ -434,7 +440,7 @@ public class P4ChangeProvider implements ChangeProvider {
                 LOG.info("marked as locally added");
                 builder.processUnversionedFile(vf);
             } else {
-                LOG.info("marked as ignored");
+                LOG.debug("marked as ignored");
                 builder.processIgnoredFile(vf);
             }
         }
@@ -444,18 +450,18 @@ public class P4ChangeProvider implements ChangeProvider {
     private void moveP4FilesIntoIdeaChangeLists(Client client, ChangelistBuilder builder, List<P4FileInfo> files) throws VcsException {
         // go through the changelist cache, because it should be fresh.
         Collection<P4FileInfo> opened = P4ChangeListCache.getInstance().getOpenedFiles(client);
-        LOG.info("opened files: " + opened);
+        LOG.debug("opened files: " + opened);
         // remove files not already handled
         opened.removeAll(files);
-        LOG.info("opened but not passed into this method: " + opened);
+        LOG.debug("opened but not passed into this method: " + opened);
 
         for (P4FileInfo file : opened) {
-            LOG.info("looks like " + file + " is in changelist " + file.getChangelist());
+            LOG.debug("looks like " + file + " is in changelist " + file.getChangelist());
             Change change = createChange(file);
             builder.processChange(change, P4Vcs.getKey());
 
             LocalChangeList changeList = vcs.getChangeListMapping().getLocalChangelist(client, file.getChangelist());
-            LOG.info("Putting " + file + " into local change " + changeList);
+            LOG.debug("Putting " + file + " into local change " + changeList);
             builder.processChangeInList(change,
                     changeList,
                     P4Vcs.getKey());

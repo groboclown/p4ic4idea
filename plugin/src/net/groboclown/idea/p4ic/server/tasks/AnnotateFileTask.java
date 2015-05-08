@@ -23,6 +23,7 @@ import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.history.P4AnnotatedLine;
+import net.groboclown.idea.p4ic.server.FileInfoCache;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4Exec;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
@@ -38,11 +39,13 @@ public class AnnotateFileTask extends ServerTask<List<P4AnnotatedLine>> {
     private final Project project;
     private final VirtualFile file;
     private final String revStr;
+    private final FileInfoCache fileInfoCache;
 
-    public AnnotateFileTask(@NotNull Project project, @NotNull VirtualFile file, @NotNull String revStr) {
+    public AnnotateFileTask(@NotNull Project project, @NotNull VirtualFile file, @NotNull String revStr, @NotNull FileInfoCache fileInfoCache) {
         this.project = project;
         this.file = file;
         this.revStr = revStr;
+        this.fileInfoCache = fileInfoCache;
     }
 
 
@@ -75,7 +78,7 @@ public class AnnotateFileTask extends ServerTask<List<P4AnnotatedLine>> {
             if (p4file == null) {
                 // depot path, so it's already escaped
                 List<P4FileInfo> p4files = exec.loadFileInfo(project,
-                        FileSpecBuilder.makeFileSpecList(ann.getDepotPath()));
+                        FileSpecBuilder.makeFileSpecList(ann.getDepotPath()), fileInfoCache);
                 if (p4files.size() != 1) {
                     throw new P4FileException(P4Bundle.message("error.annotate.multiple-files", ann.getDepotPath(), p4files));
                 }

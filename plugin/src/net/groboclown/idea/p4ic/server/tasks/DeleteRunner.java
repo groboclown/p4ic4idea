@@ -17,10 +17,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.idea.p4ic.server.FileSpecUtil;
-import net.groboclown.idea.p4ic.server.P4Exec;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
-import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import net.groboclown.idea.p4ic.server.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,13 +31,15 @@ public class DeleteRunner extends ServerTask<List<P4StatusMessage>> {
     private final Project project;
     private final Collection<FilePath> deletedFiles;
     private final int destination;
+    private final FileInfoCache fileInfoCache;
 
     public DeleteRunner(
             @NotNull Project project, @NotNull Collection<FilePath> deletedFiles,
-            int destination) {
+            int destination, @NotNull FileInfoCache fileInfoCache) {
         this.project = project;
         this.deletedFiles = deletedFiles;
         this.destination = destination;
+        this.fileInfoCache = fileInfoCache;
     }
 
     @NotNull
@@ -51,7 +50,7 @@ public class DeleteRunner extends ServerTask<List<P4StatusMessage>> {
             changelistId = destination;
         }
 
-        List<P4FileInfo> specs = exec.loadFileInfo(project, FileSpecUtil.getFromFilePaths(deletedFiles));
+        List<P4FileInfo> specs = exec.loadFileInfo(project, FileSpecUtil.getFromFilePaths(deletedFiles), fileInfoCache);
 
         List<IFileSpec> deleted = new ArrayList<IFileSpec>();
         List<IFileSpec> reverted = new ArrayList<IFileSpec>();

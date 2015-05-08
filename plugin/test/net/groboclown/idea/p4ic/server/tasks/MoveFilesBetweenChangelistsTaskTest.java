@@ -3,6 +3,7 @@ package net.groboclown.idea.p4ic.server.tasks;
 import com.intellij.openapi.vcs.FilePath;
 import com.perforce.p4java.core.IChangelist;
 import net.groboclown.idea.p4ic.ProjectRule;
+import net.groboclown.idea.p4ic.server.FileInfoCache;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -20,7 +21,8 @@ public class MoveFilesBetweenChangelistsTaskTest {
             new MoveFilesBetweenChangelistsTask(
                     projectFixture.getProject(),
                     IChangelist.DEFAULT,
-                    Collections.<FilePath>emptyList());
+                    Collections.<FilePath>emptyList(),
+                    new FileInfoCache());
             fail("did not throw IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             // pass

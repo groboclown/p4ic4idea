@@ -46,6 +46,7 @@ import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import org.jetbrains.annotations.NotNull;
@@ -56,7 +57,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class P4ChangeListCache implements ApplicationComponent {
-    private static final Logger LOG = Logger.getInstance(P4ChangeListMapping.class);
+    private static final Logger LOG = Logger.getInstance(P4ChangeListCache.class);
 
     public static final int P4_DEFAULT = IChangelist.DEFAULT;
     public static final int P4_UNKNOWN = IChangelist.UNKNOWN;
@@ -115,20 +116,6 @@ public class P4ChangeListCache implements ApplicationComponent {
 
 
     @Nullable
-    public P4ChangeList getChangeListFor(@NotNull Client client, @NotNull P4ChangeListId p4id) throws VcsException {
-        final List<P4ChangeList> res = getCachedChangeListsFor(client);
-        if (res != null) {
-            for (P4ChangeList p4cl : res) {
-                if (p4cl.getId().equals(p4id)) {
-                    return p4cl;
-                }
-            }
-        }
-        return null;
-    }
-
-
-    @Nullable
     public P4ChangeList getChangeListForFile(@NotNull Client client, @NotNull P4FileInfo file) throws VcsException {
         final List<P4ChangeList> res = getCachedChangeListsFor(client);
         if (res != null) {
@@ -155,6 +142,9 @@ public class P4ChangeListCache implements ApplicationComponent {
 
     @NotNull
     public List<P4ChangeList> reloadCache(final Client client) throws VcsException {
+        // Reloading the changelists will mean reloading the cached server objects.
+        client.getServer().invalidateCache();
+
         final List<P4ChangeList> serverCache = new ArrayList<P4ChangeList>();
         final Set<P4FileInfo> files = new HashSet<P4FileInfo>(
                 client.getServer().loadOpenFiles(client.getRoots().toArray(new VirtualFile[client.getRoots().size()])));
@@ -262,6 +252,38 @@ public class P4ChangeListCache implements ApplicationComponent {
         reloadChangeList(client, changeList);
 
         return messages;
+    }
+
+
+    /**
+     * Called when the server is removed.
+     *
+     * @param serverConfig server config that was removed
+     */
+    public void invalidateServerCache(final @NotNull ServerConfig serverConfig) {
+        lock.writeLock().lock();
+        try {
+            // None of this touches the Perforce server, so put it inside the lock
+            // without an issue.
+            Set<String> clientServerIds = new HashSet<String>();
+            for (String key: numberedCache.keySet()) {
+                if (isClientServerIdForServer(key, serverConfig)) {
+                    clientServerIds.add(key);
+                }
+            }
+            for (String key: defaultCache.keySet()) {
+                if (isClientServerIdForServer(key, serverConfig)) {
+                    clientServerIds.add(key);
+                }
+            }
+
+            for (String key: clientServerIds) {
+                numberedCache.remove(key);
+                defaultCache.remove(key);
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
 
@@ -392,6 +414,11 @@ public class P4ChangeListCache implements ApplicationComponent {
     }
 
 
+    private static boolean isClientServerIdForServer(@NotNull String clientServerId, @NotNull ServerConfig server) {
+        return clientServerId.startsWith(server.getServiceName() + ((char) 1));
+    }
+
+
     @Nullable
     private List<P4ChangeList> getCachedChangeListsFor(@NotNull Client client) {
         final String serviceName = getClientServerId(client);
@@ -414,11 +441,11 @@ public class P4ChangeListCache implements ApplicationComponent {
                 res = new ArrayList<P4ChangeList>();
             }
             res.add(defaultChange);
-            LOG.info(client + ": default change has " + defaultChange.getFiles().size() + " files");
+            LOG.debug(client + ": default change has " + defaultChange.getFiles().size() + " files");
         } else if (res != null) {
             LOG.error("No default changelist for " + client);
         }
-        LOG.info("cached changes for " + client + " are " + res + " (" + (res == null ? -1 : res.size()) + ")");
+        LOG.debug("cached changes for " + client + " are " + res + " (" + (res == null ? -1 : res.size()) + ")");
 
         return res;
     }

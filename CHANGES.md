@@ -2,6 +2,25 @@
 
 
 
+## ::v0.5.2::
+
+### Overview
+
+* Reduced the number of server calls.
+* Bug fixes.
+
+### Details
+
+* Reduced the number of server calls. (#38)
+    * Cached the files open for edit on Perforce.  This list is reloaded on "version control" panel refresh,
+      and when the files are considered out of sync.
+    * Cached the jobs loaded from the server.
+    * Added a monitor to track the number of actual server calls.
+* Bug fixes.
+    * Reduced the amount of log messages.
+    * Eliminated NPE related to changelist caching.
+
+
 ## ::v0.5.1::
 
 ### Overview

@@ -19,10 +19,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.idea.p4ic.server.FileSpecUtil;
-import net.groboclown.idea.p4ic.server.P4Exec;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
-import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import net.groboclown.idea.p4ic.server.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -43,23 +40,26 @@ public class MoveFilesBetweenChangelistsTask extends ServerTask<List<P4StatusMes
     private final Project project;
     private final int target;
     private final List<FilePath> files;
+    private final FileInfoCache fileInfoCache;
 
     public MoveFilesBetweenChangelistsTask(
             @NotNull Project project, int target,
-            @NotNull List<FilePath> files) {
+            @NotNull List<FilePath> files,
+            @NotNull FileInfoCache fileInfoCache) {
         this.project = project;
         if (target <= 0) {
             target = IChangelist.DEFAULT;
         }
         this.target = target;
         this.files = files;
+        this.fileInfoCache = fileInfoCache;
     }
 
     @Override
     public List<P4StatusMessage> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
         log("moving to change " + target);
 
-        List<P4FileInfo> expectedFiles = exec.loadFileInfo(project, FileSpecUtil.getFromFilePaths(files));
+        List<P4FileInfo> expectedFiles = exec.loadFileInfo(project, FileSpecUtil.getFromFilePaths(files), fileInfoCache);
 
         // If a moved/renamed file is moved into another changelist, move
         // its pair there, too.
@@ -71,7 +71,7 @@ public class MoveFilesBetweenChangelistsTask extends ServerTask<List<P4StatusMes
             }
         }
         if (! openedPairs.isEmpty()) {
-            expectedFiles.addAll(exec.loadFileInfo(project, openedPairs));
+            expectedFiles.addAll(exec.loadFileInfo(project, openedPairs, fileInfoCache));
         }
 
         Iterator<P4FileInfo> infoIter = expectedFiles.iterator();

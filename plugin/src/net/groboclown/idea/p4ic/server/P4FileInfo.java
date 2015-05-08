@@ -26,6 +26,7 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.server.FileInfoCache.Loader;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -497,18 +498,21 @@ public class P4FileInfo {
 
     static class FstatLoadSpecs implements P4Exec.WithClient<List<P4FileInfo>> {
         private final List<IFileSpec> specs;
+        private final FileInfoCache fileInfoCache;
 
-        FstatLoadSpecs(List<IFileSpec> specs) {
+        FstatLoadSpecs(@NotNull List<IFileSpec> specs, @NotNull FileInfoCache fileInfoCache) {
             this.specs = specs;
+            this.fileInfoCache = fileInfoCache;
         }
 
         @Override
-        public List<P4FileInfo> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException {
+        public List<P4FileInfo> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull P4Exec.ServerCount count) throws P4JavaException {
             if (specs.isEmpty()) {
                 return Collections.emptyList();
             }
             List<P4FileInfo> ret = new ArrayList<P4FileInfo>(specs.size());
             List<IFileSpec> remaining = new ArrayList<IFileSpec>(specs);
+            count.invoke("getExtendedFiles");
             List<IExtendedFileSpec> mapped = server.getExtendedFiles(remaining,
                     -1, -1, -1,
                     //new FileStatOutputOptions(true, true, true, true, true, true),
@@ -532,40 +536,69 @@ public class P4FileInfo {
 
                 removeFrom(spec, remaining);
                 if (spec.getLocalPathString() == null) {
-                    if (spec.getClientPathString() != null && !spec.getClientPathString().startsWith("//")) {
-                        // unescape name
-                        FilePath path = VcsUtil.getFilePath(FileSpecUtil.unescapeP4Path(spec.getClientPathString()), false);
-                        ret.add(new P4FileInfo(path, spec));
-                    } else {
-                        // This state seems to indicate that the file is
-                        // not in the current client view.  Because this
-                        // came from an IFileSpec, we won't be able to
-                        // discover any more information about it.
-                        // TODO this could cause potential issues, as it
-                        // still creates a FilePath, but this is the only
-                        // case where the p4 file info will have a non-local
-                        // file path; the other code that this affects may need
-                        // extra protection for non-local file paths.
-                        LOG.info("Extended file information seems to indicate that it was on another client: " +
-                                spec.getDepotPathString());
-                        ret.add(new P4FileInfo(VcsUtil.getFilePathOnNonLocal(
-                                spec.getDepotPathString(), false)));
+                    if (spec.getClientPathString() != null) {
+                        P4FileInfo fileInfo = fileInfoCache.get(spec.getClientPathString(), spec, new Loader() {
+                            @NotNull
+                            @Override
+                            public P4FileInfo create(@NotNull final String path, @NotNull final IFileSpec spec) {
+                                if (path.startsWith("//")) {
+                                    // unescape name
+                                    FilePath fpath = VcsUtil.getFilePath(FileSpecUtil.unescapeP4Path(spec.getClientPathString()), false);
+                                    return new P4FileInfo(fpath, (IExtendedFileSpec) spec);
+                                } else {
+                                    // This state seems to indicate that the file is
+                                    // not in the current client view.  Because this
+                                    // came from an IFileSpec, we won't be able to
+                                    // discover any more information about it.
+                                    // TODO this could cause potential issues, as it
+                                    // still creates a FilePath, but this is the only
+                                    // case where the p4 file info will have a non-local
+                                    // file path; the other code that this affects may need
+                                    // extra protection for non-local file paths.
+                                    LOG.info("Extended file information seems to indicate that it was on another client: " +
+                                            spec.getDepotPathString());
+                                    return new P4FileInfo(VcsUtil.getFilePathOnNonLocal(
+                                            spec.getDepotPathString(), false));
+                                }
+                            }
+                        });
+                        ret.add(fileInfo);
                     }
                     // else some commands return an empty last file spec; it's the
-                    // status message..
+                    // status message.
                 } else {
-                    // unescape name
-                    FilePath path = VcsUtil.getFilePath(FileSpecUtil.unescapeP4Path(spec.getLocalPathString()), false);
-                    ret.add(new P4FileInfo(path, spec));
+                    P4FileInfo fileInfo = fileInfoCache.get(spec.getLocalPathString(), spec, new Loader() {
+                        @NotNull
+                        @Override
+                        public P4FileInfo create(@NotNull final String path, @NotNull final IFileSpec spec) {
+                            // unescape name
+                            FilePath fpath = VcsUtil.getFilePath(FileSpecUtil.unescapeP4Path(path), false);
+                            return new P4FileInfo(fpath, (IExtendedFileSpec) spec);
+                        }
+                    });
+                    ret.add(fileInfo);
                 }
             }
-            if (! remaining.isEmpty()) {
+
+
+            // See if we have any cached responses for the remaining specs
+            final Iterator<IFileSpec> remainingIterator = remaining.iterator();
+            while (remainingIterator.hasNext()) {
+                P4FileInfo fileInfo = fileInfoCache.get(remainingIterator.next());
+                if (fileInfo != null) {
+                    ret.add(fileInfo);
+                    remainingIterator.remove();
+                }
+            }
+
+            if (!remaining.isEmpty()) {
                 // Try client "where" command, as these files are not known by
                 // the server.
 
                 // Where cannot take a # or @ specification on the files.
                 stripSpecification(remaining);
 
+                count.invoke("where");
                 List<IFileSpec> opened = client.where(remaining);
                 for (IFileSpec spec : opened) {
                     if (P4StatusMessage.isErrorStatus(spec)) {
@@ -582,13 +615,27 @@ public class P4FileInfo {
 
                     removeFrom(spec, remaining);
                     if (spec.getLocalPathString() != null) {
-                        // unescape name
-                        FilePath path = VcsUtil.getFilePath(FileSpecUtil.unescapeP4Path(spec.getLocalPathString()));
-                        ret.add(new P4FileInfo(path, spec, 1));
+                        P4FileInfo fileInfo = fileInfoCache.get(spec.getLocalPathString(), spec, new Loader() {
+                            @NotNull
+                            @Override
+                            public P4FileInfo create(@NotNull final String path, @NotNull final IFileSpec spec) {
+                                // unescape name
+                                FilePath fpath = VcsUtil.getFilePath(FileSpecUtil.unescapeP4Path(path));
+                                return new P4FileInfo(fpath, spec, 1);
+                            }
+                        });
+                        ret.add(fileInfo);
                     } else if (spec.getOriginalPathString() != null) {
-                        // unescape name
-                        FilePath path = VcsUtil.getFilePath(FileSpecUtil.unescapeP4Path(spec.getOriginalPathString()));
-                        ret.add(new P4FileInfo(path, spec, 1));
+                        P4FileInfo fileInfo = fileInfoCache.get(spec.getOriginalPathString(), spec, new Loader() {
+                            @NotNull
+                            @Override
+                            public P4FileInfo create(@NotNull final String path, @NotNull final IFileSpec spec) {
+                                // unescape name
+                                FilePath fpath = VcsUtil.getFilePath(FileSpecUtil.unescapeP4Path(path));
+                                return new P4FileInfo(fpath, spec, 1);
+                            }
+                        });
+                        ret.add(fileInfo);
                     } else {
                         LOG.info("don't know what this is: " + spec);
                     }
@@ -616,19 +663,27 @@ public class P4FileInfo {
         while (iter.hasNext()) {
             IFileSpec spec = iter.next();
             String path = spec.getAnnotatedPreferredPathString();
-            int pos1 = path.indexOf('@');
-            int pos2 = path.indexOf('#');
-            if (pos1 < 0 && pos2 < 0) {
-                path = spec.toString();
-                pos1 = path.indexOf('@');
-                pos2 = path.indexOf('#');
+            if (path == null) {
+                path = spec.getDepotPathString();
             }
-            pos1 = (pos1 < 0 ? path.length() : pos1);
-            pos2 = (pos2 < 0 ? path.length() : pos2);
-            int pos = Math.min(pos1, pos2);
-            if (pos >= 0 && pos < path.length()) {
-                path = path.substring(0, pos);
-                replaced.add(path);
+            if (path != null) {
+                int pos1 = path.indexOf('@');
+                int pos2 = path.indexOf('#');
+                if (pos1 < 0 && pos2 < 0) {
+                    path = spec.toString();
+                    pos1 = path.indexOf('@');
+                    pos2 = path.indexOf('#');
+                }
+                pos1 = (pos1 < 0 ? path.length() : pos1);
+                pos2 = (pos2 < 0 ? path.length() : pos2);
+                int pos = Math.min(pos1, pos2);
+                if (pos >= 0 && pos < path.length()) {
+                    path = path.substring(0, pos);
+                    replaced.add(path);
+                    iter.remove();
+                }
+            } else {
+                LOG.info("Found spec with null path; ignoring: " + spec);
                 iter.remove();
             }
         }
@@ -637,16 +692,19 @@ public class P4FileInfo {
 
     static class OpenedSpecs implements P4Exec.WithClient<List<P4FileInfo>> {
         private final List<IFileSpec> specs;
+        private final FileInfoCache fileInfoCache;
 
-        OpenedSpecs(@NotNull List<IFileSpec> specs) {
+        OpenedSpecs(@NotNull List<IFileSpec> specs, @NotNull FileInfoCache fileInfoCache) {
             this.specs = specs;
+            this.fileInfoCache = fileInfoCache;
         }
 
         @Override
-        public List<P4FileInfo> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4Exception, P4JavaException {
+        public List<P4FileInfo> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull P4Exec.ServerCount count) throws P4Exception, P4JavaException {
             if (specs.isEmpty()) {
                 return Collections.emptyList();
             }
+            count.invoke("openedFiles");
             List<IFileSpec> files = client.openedFiles(
                     specs,
                     0, IChangelist.UNKNOWN);
@@ -655,19 +713,32 @@ public class P4FileInfo {
             for (IFileSpec spec : files) {
                 if (P4StatusMessage.isErrorStatus(spec)) {
                     P4Exception e = new P4Exception(new P4StatusMessage(spec).toString());
-                    e.printStackTrace();
                     throw e;
                 }
                 if (spec instanceof IExtendedFileSpec) {
-                    // unescape name
-                    FilePath path = VcsUtil.getFilePath(FileSpecUtil.unescapeP4Path(spec.getLocalPathString()), false);
-                    ret.add(new P4FileInfo(path, (IExtendedFileSpec) spec));
+                    P4FileInfo fileInfo = fileInfoCache.get(spec.getLocalPathString(), spec, new Loader() {
+                        @NotNull
+                        @Override
+                        public P4FileInfo create(@NotNull final String path, @NotNull final IFileSpec spec) {
+                            // unescape name
+                            FilePath fpath = VcsUtil.getFilePath(FileSpecUtil.unescapeP4Path(path), false);
+                            return new P4FileInfo(fpath, (IExtendedFileSpec) spec);
+                        }
+                    });
+                    ret.add(fileInfo);
                 } else if (spec.getDepotPathString() != null && spec.getClientPathString() != null &&
                         spec.getLocalPathString() != null) {
                     // looks like it's already loaded up.
-                    // unescape name
-                    FilePath path = VcsUtil.getFilePath(FileSpecUtil.unescapeP4Path(spec.getLocalPathString()), false);
-                    ret.add(new P4FileInfo(path, spec, true));
+                    P4FileInfo fileInfo = fileInfoCache.get(spec.getLocalPathString(), spec, new Loader() {
+                        @NotNull
+                        @Override
+                        public P4FileInfo create(@NotNull final String path, @NotNull final IFileSpec spec) {
+                            // unescape name
+                            FilePath fpath = VcsUtil.getFilePath(FileSpecUtil.unescapeP4Path(spec.getLocalPathString()), false);
+                            return new P4FileInfo(fpath, spec, true);
+                        }
+                    });
+                    ret.add(fileInfo);
                 } else if (spec.getDepotPathString() != null || spec.getClientPathString() != null ||
                         spec.getLocalPathString() != null || spec.getOriginalPathString() != null) {
                     if (fromAction(spec.getAction()).isAdd()) {
@@ -701,17 +772,17 @@ public class P4FileInfo {
                     // Throwing an exception will hide the stack trace.
                     LOG.info(e);
                     throw e;
-                    //} else {
-                    // This is a null spec, which usually means it was a blank
-                    // info line that came back from the server.
-                    // P4JavaException e = new P4JavaException("could not map spec: "
-                    // e.printStackTrace();
-                    // throw e;
+                //} else {
+                // This is a null spec, which usually means it was a blank
+                // info line that came back from the server.
+                // P4JavaException e = new P4JavaException("could not map spec: "
+                // e.printStackTrace();
+                // throw e;
                 }
             }
             if (! clientFiles.isEmpty()) {
                 LOG.info("Loading " + clientFiles.size() + " files through fstat due to 'opened' only giving us information for " + ret.size() + " files");
-                ret.addAll(new FstatLoadSpecs(clientFiles).run(server, client));
+                ret.addAll(new FstatLoadSpecs(clientFiles, fileInfoCache).run(server, client, count));
             }
 
             return ret;

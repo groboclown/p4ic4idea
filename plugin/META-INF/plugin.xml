@@ -1,11 +1,19 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.5.1</version>
+    <version>0.5.2</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.5.2</em>
+                <ol>
+                    <li>Reduced the number of server calls.</li>
+                    <li>Added a monitor to track the number of actual server calls.</li>
+                    <li>Reduced the amount of log messages.</li>
+                    <li>Eliminated NPE related to changelist caching.</li>
+                </ol>
+            </li>
             <li><em>0.5.1</em>
                 <ol>
                     <li>Internationalized the exception messages.</li>
@@ -14,24 +22,6 @@
                     <li>Fixed: Config "resolved values" should better reflect if it has been loaded</li>
                     <li>Fixed: Reports of invalid configuration now better describe the source of the issue.</li>
                     <li>Fixed: "Add file" while disconnected causes NPE</li>
-                </ol>
-            </li>
-            <li><em>0.5.0</em>
-                <ol>
-                    <li>Added support for IntelliJ on JDK 1.6.</li>
-                    <li>Added job support to check-ins.
-                    Experimental: the list of acceptable job status values are pulled
-                    from the server.  If these are inaccessible, then the default
-                    list is shown.</li>
-                    <li>Fixed: adding files (Ctrl+Alt+A) would sometimes call an unimplemented function.</li>
-                    <li>Fixed: Multiple clients per project would label a file as being under the wrong client.</li>
-                    <li>Fixed: Submitting a changelist which causes an error incorrectly reports the submit as successful.</li>
-                    <li>Fixed: Deleted files would not be submitted.</li>
-                    <li>Fixed: Annotated file can encounter null depot file path, which causes an error.</li>
-                    <li>Fixed: File history can cause an error when one file in the path was removed.</li>
-                    <li>Fixed: Files would move incorrectly from the correct changelist into the default changelist.</li>
-                    <li>Fixed: Move file across clients should use integrate when clients share a server</li>
-                    <li>Fixed: Revert a moved file does not refresh status</li>
                 </ol>
             </li>
         </ol>

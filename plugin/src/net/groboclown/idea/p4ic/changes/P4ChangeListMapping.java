@@ -118,7 +118,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
             }
         }
         this.state = newState;
-        LOG.info("Loaded state: " + this.state.perforceToIdea + " ; " + this.state.ideaToPerforce);
+        LOG.debug("Loaded state: " + this.state.perforceToIdea + " ; " + this.state.ideaToPerforce);
     }
 
     private static class State {
@@ -376,58 +376,6 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
         }
         return ret.values();
     }
-
-
-    /*
-     * Updates the internal mapping for the given list of changes.
-     * This should be implicitly called by the
-     * {@link net.groboclown.idea.p4ic.server.RawServerExecutor} during
-     * requests from the server for a list of all the pending changelists.
-    public void updatePendingP4ChangeLists(@NotNull ServerConfig sc, @NotNull List<IChangelistSummary> changes) {
-        synchronized (sync) {
-            Set<P4ChangeListId> current = new HashSet<P4ChangeListId>(state.perforceToIdea.keySet());
-            for (IChangelistSummary summary: changes) {
-                if (summary != null) {
-                    P4ChangeListId p4id = new P4ClId(sc, summary);
-                    if (summary.getStatus() == ChangelistStatus.SUBMITTED) {
-                        LOG.info("Remove mapping for P4 changelist " + summary.getId() + "; it is now submitted");
-                        removePerforceMapping(p4id);
-                    }
-                    current.remove(p4id);
-                }
-            }
-            // Anything left in the current list isn't valid anymore - it could
-            // have been deleted.
-            for (P4ChangeListId p4: current) {
-                LOG.info("Remove mapping for P4 changelist " + p4 + "; it is now deleted");
-                removePerforceMapping(p4);
-            }
-        }
-    }
-     */
-
-
-    /*
-     * Updates the internal mapping for the changelist that was retrieved
-     * from the server.  This should be implicitly called by the
-     * {@link net.groboclown.idea.p4ic.server.RawServerExecutor} when single
-     * changelists are fetched.
-     *
-     * @param changelistId changelist ID that was fetched
-     * @param change summary retrieved by the server.
-    public void updateP4Changelist(@NotNull Client client, int changelistId, @Nullable IChangelistSummary change) {
-        if (change == null) {
-            // deleted
-            removePerforceMapping(new P4ClId(client, changelistId));
-        } else if (change.getStatus() == ChangelistStatus.SUBMITTED) {
-            if (change.getId() != changelistId) {
-                LOG.warn("Fetched changelist id " + changelistId + ", but received changelist " + change.getId() +
-                        " (" + change.getDescription() + ")");
-            }
-            removePerforceMapping(new P4ClId(client, changelistId));
-        }
-    }
-     */
 
 
     /**

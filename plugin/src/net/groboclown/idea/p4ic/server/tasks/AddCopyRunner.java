@@ -18,10 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.server.FileSpecUtil;
-import net.groboclown.idea.p4ic.server.P4Exec;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
-import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import net.groboclown.idea.p4ic.server.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,17 +32,20 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
     private final Project project;
     private final Collection<VirtualFile> addedFiles;
     private final Map<VirtualFile, VirtualFile> copiedFiles;
+    private final FileInfoCache fileInfoCache;
     private final int destination;
 
     public AddCopyRunner(
             @NotNull Project project,
             @NotNull Collection<VirtualFile> addedFiles,
             @NotNull Map<VirtualFile, VirtualFile> copiedFiles,
-            int destination) {
+            int destination,
+            @NotNull FileInfoCache fileInfoCache) {
         this.project = project;
         this.addedFiles = addedFiles;
         this.copiedFiles = copiedFiles;
         this.destination = destination;
+        this.fileInfoCache = fileInfoCache;
     }
 
 
@@ -218,7 +218,7 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
         }
 
         Map<VirtualFile, P4FileInfo> ret = new HashMap<VirtualFile, P4FileInfo>();
-        for (P4FileInfo file : exec.loadFileInfo(project, FileSpecUtil.getFromVirtualFiles(reverseLookup.values()))) {
+        for (P4FileInfo file : exec.loadFileInfo(project, FileSpecUtil.getFromVirtualFiles(reverseLookup.values()), fileInfoCache)) {
             // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
             // use this instead: getIOFile().getAbsolutePath()
             VirtualFile vf = reverseLookup.remove(file.getPath().getIOFile().getAbsolutePath());

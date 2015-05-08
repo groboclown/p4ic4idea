@@ -18,10 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.idea.p4ic.server.FileSpecUtil;
-import net.groboclown.idea.p4ic.server.P4Exec;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
-import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import net.groboclown.idea.p4ic.server.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -35,13 +32,16 @@ public class EditRunner extends ServerTask<List<P4StatusMessage>> {
     private final Project project;
     private final Collection<VirtualFile> editedFiles;
     private final int destination;
+    private final FileInfoCache fileInfoCache;
+
 
     public EditRunner(
             @NotNull Project project, @NotNull Collection<VirtualFile> editedFiles,
-            int destination) {
+            int destination, @NotNull FileInfoCache fileInfoCache) {
         this.project = project;
         this.editedFiles = editedFiles;
         this.destination = destination;
+        this.fileInfoCache = fileInfoCache;
     }
 
     @NotNull
@@ -52,7 +52,7 @@ public class EditRunner extends ServerTask<List<P4StatusMessage>> {
             changelistId = destination;
         }
 
-        List<P4FileInfo> specs = exec.loadFileInfo(project, FileSpecUtil.getFromVirtualFiles(editedFiles));
+        List<P4FileInfo> specs = exec.loadFileInfo(project, FileSpecUtil.getFromVirtualFiles(editedFiles), fileInfoCache);
 
         log("edit request for " + specs);
         List<IFileSpec> reverted = new ArrayList<IFileSpec>();

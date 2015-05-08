@@ -19,6 +19,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.history.P4FileRevision;
+import net.groboclown.idea.p4ic.server.FileInfoCache;
 import net.groboclown.idea.p4ic.server.P4Exec;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
 import org.jetbrains.annotations.NotNull;
@@ -32,11 +33,13 @@ public class GetRevisionHistoryTask extends ServerTask<List<P4FileRevision>> {
     private final Project project;
     private final P4FileInfo file;
     private final int maxRevs;
+    private final FileInfoCache fileInfoCache;
 
-    public GetRevisionHistoryTask(Project project, @NotNull P4FileInfo file, int maxRevs) {
+    public GetRevisionHistoryTask(Project project, @NotNull P4FileInfo file, int maxRevs, @NotNull FileInfoCache fileInfoCache) {
         this.project = project;
         this.file = file;
         this.maxRevs = maxRevs;
+        this.fileInfoCache = fileInfoCache;
     }
 
     @Override
@@ -65,7 +68,7 @@ public class GetRevisionHistoryTask extends ServerTask<List<P4FileRevision>> {
         // TODO this doesn't quite do the right thing.  If a file was deleted,
         // the file doesn't show up quite right.  Likewise, if it was moved
         // from outside the current client, it will fail.
-        List<P4FileInfo> files = new ArrayList<P4FileInfo>(exec.loadFileInfo(project, findFiles));
+        List<P4FileInfo> files = new ArrayList<P4FileInfo>(exec.loadFileInfo(project, findFiles, fileInfoCache));
         files.add(file);
 
         List<P4FileRevision> ret = new ArrayList<P4FileRevision>();

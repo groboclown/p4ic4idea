@@ -65,13 +65,12 @@ import static net.groboclown.idea.p4ic.server.P4StatusMessage.getErrors;
 public class P4Exec {
     private static final Logger LOG = Logger.getInstance(P4Exec.class);
 
-    // TODO this should be a user setting
-    private static final int MAX_JOBS_RETURNED = 100;
-
     // Default list of status, in case of a problem.
     public static final List<String> DEFAULT_JOB_STATUS = Arrays.asList(
             "open", "suspended", "closed"
     );
+
+    private static final AllServerCount SERVER_COUNT = new AllServerCount();
 
     private final Object sync = new Object();
 
@@ -128,7 +127,8 @@ public class P4Exec {
         try {
             return runWithServer(project, new WithServer<List<IClientSummary>>() {
                 @Override
-                public List<IClientSummary> run(@NotNull IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+                public List<IClientSummary> run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+                    count.invoke("getClients");
                     List<IClientSummary> ret = server.getClients(serverStatus.getConfig().getUsername(), null, 0);
                     assert ret != null;
                     return ret;
@@ -146,7 +146,7 @@ public class P4Exec {
     public IClientSummary getClient(@NotNull Project project) throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<IClientSummary>() {
             @Override
-            public IClientSummary run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public IClientSummary run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 client.setServer(null);
                 return client;
             }
@@ -159,7 +159,8 @@ public class P4Exec {
             throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<IChangelist>() {
             @Override
-            public IChangelist run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public IChangelist run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                count.invoke("getChangelist");
                 IChangelist cl = server.getChangelist(id);
                 if (id != cl.getId()) {
                     LOG.warn("Perforce Java API error: returned changelist with id " + cl.getId() + " when requested " + id);
@@ -180,21 +181,21 @@ public class P4Exec {
 
 
     @NotNull
-    public List<P4FileInfo> loadFileInfo(@NotNull Project project, @NotNull List<IFileSpec> fileSpecs)
+    public List<P4FileInfo> loadFileInfo(@NotNull Project project, @NotNull List<IFileSpec> fileSpecs, @NotNull FileInfoCache fileInfoCache)
             throws VcsException, CancellationException {
         // Avoid the dreaded "Usage: fstat ..." error.
         if (! fileSpecs.isEmpty()) {
-            return runWithClient(project, new P4FileInfo.FstatLoadSpecs(fileSpecs));
+            return runWithClient(project, new P4FileInfo.FstatLoadSpecs(fileSpecs, fileInfoCache));
         }
         return Collections.emptyList();
     }
 
 
     @NotNull
-    public List<P4FileInfo> loadOpenedFiles(@NotNull Project project, @NotNull List<IFileSpec> openedSpecs)
+    public List<P4FileInfo> loadOpenedFiles(@NotNull Project project, @NotNull List<IFileSpec> openedSpecs, @NotNull FileInfoCache fileInfoCache)
             throws VcsException, CancellationException {
-        LOG.info("loading open files " + openedSpecs);
-        return runWithClient(project, new P4FileInfo.OpenedSpecs(openedSpecs));
+        LOG.debug("loading open files " + openedSpecs);
+        return runWithClient(project, new P4FileInfo.OpenedSpecs(openedSpecs, fileInfoCache));
     }
 
 
@@ -206,7 +207,8 @@ public class P4Exec {
         }
         return runWithClient(project, new WithClient<List<P4StatusMessage>>() {
             @Override
-            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+                count.invoke("revertFiles");
                 List<IFileSpec> ret = client.revertFiles(files, false, -1, false, false);
                 return getErrors(ret);
             }
@@ -220,8 +222,9 @@ public class P4Exec {
             throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<List<P4StatusMessage>>() {
             @Override
-            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 List<IFileSpec> ret = new ArrayList<IFileSpec>();
+                count.invoke("integrateFiles");
                 ret.addAll(client.integrateFiles(
                         src, target,
                         null,
@@ -290,8 +293,9 @@ public class P4Exec {
 
         return runWithClient(project, new WithClient<List<P4StatusMessage>>() {
             @Override
-            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 List<IFileSpec> ret = new ArrayList<IFileSpec>();
+                count.invoke("addFiles");
                 ret.addAll(client.addFiles(unescapedFiles, false, changelistId, null,
                         // Use wildcards = true to allow file names that contain wildcards
                         true));
@@ -306,10 +310,11 @@ public class P4Exec {
             final int changelistId) throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<List<P4StatusMessage>>() {
             @Override
-            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 List<IFileSpec> ret = new ArrayList<IFileSpec>();
                 // this allows for wildcard characters (*, #, @) in the file name,
                 // if they were properly escaped.
+                count.invoke("editFiles");
                 ret.addAll(client.editFiles(files,
                     false, false, changelistId, null));
                 return getErrors(ret);
@@ -322,14 +327,16 @@ public class P4Exec {
             @NotNull final String description) throws VcsException, CancellationException {
         runWithClient(project, new WithClient<Void>() {
             @Override
-            public Void run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+            public Void run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
                 // Note that, because the server connection can be closed after an
                 // invocation, we must perform all the changelist updates within this
                 // call, and we can't go outside this method.
 
+                count.invoke("getChangelist");
                 IChangelist changelist = server.getChangelist(changelistId);
                 if (changelist != null && changelist.getStatus() == ChangelistStatus.PENDING) {
                     changelist.setDescription(description);
+                    count.invoke("changelist.update");
                     changelist.update();
                 }
                 return null;
@@ -343,7 +350,8 @@ public class P4Exec {
             throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<List<IChangelistSummary>>() {
             @Override
-            public List<IChangelistSummary> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException {
+            public List<IChangelistSummary> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException {
+                count.invoke("getChangelists");
                 return server.getChangelists(0,
                         Collections.<IFileSpec>emptyList(),
                         client.getName(), null, false, false, true, true);
@@ -357,12 +365,13 @@ public class P4Exec {
             throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<IChangelist>() {
             @Override
-            public IChangelist run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public IChangelist run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 Changelist newChange = new Changelist();
                 newChange.setUsername(serverStatus.getConfig().getUsername());
                 newChange.setClientId(client.getName());
                 newChange.setDescription(comment);
 
+                count.invoke("createChangelist");
                 IChangelist ret = client.createChangelist(newChange);
                 if (ret.getId() <= 0) {
                     throw new P4Exception(P4Bundle.message("error.changelist.add.invalid-id", newChange.getId()));
@@ -378,7 +387,7 @@ public class P4Exec {
 
 
     @Nullable
-    public List<P4FileInfo> getFilesInChangelist(@NotNull Project project, final int id)
+    public List<P4FileInfo> getFilesInChangelist(@NotNull Project project, final int id, @NotNull FileInfoCache fileInfoCache)
             throws VcsException, CancellationException {
         final List<IFileSpec> files = getFileSpecsInChangelist(project, id);
         if (files == null) {
@@ -388,7 +397,7 @@ public class P4Exec {
             return Collections.emptyList();
         }
 
-        return runWithClient(project, new P4FileInfo.FstatLoadSpecs(files));
+        return runWithClient(project, new P4FileInfo.FstatLoadSpecs(files, fileInfoCache));
     }
 
 
@@ -397,11 +406,13 @@ public class P4Exec {
             throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<List<IFileSpec>>() {
             @Override
-            public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                count.invoke("getChangelist");
                 IChangelist cl = server.getChangelist(id);
                 if (cl == null) {
                     return null;
                 }
+                count.invoke("changelist.getFiles");
                 return cl.getFiles(false);
             }
         });
@@ -413,7 +424,8 @@ public class P4Exec {
             final int newChangelistId, @Nullable final String newFileType) throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<List<P4StatusMessage>>() {
             @Override
-            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                count.invoke("reopenFiles");
                 return getErrors(client.reopenFiles(files, newChangelistId, newFileType));
             }
         });
@@ -425,7 +437,8 @@ public class P4Exec {
             throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<String>() {
             @Override
-            public String run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public String run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                count.invoke("deletePendingChangelist");
                 return server.deletePendingChangelist(changelistId);
             }
         });
@@ -436,7 +449,8 @@ public class P4Exec {
             final int changelistId, final boolean deleteLocalFiles) throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<List<P4StatusMessage>>() {
             @Override
-            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                count.invoke("deleteFiles");
                 return getErrors(client.deleteFiles(deleted, changelistId, deleteLocalFiles));
             }
         });
@@ -449,11 +463,12 @@ public class P4Exec {
 
         return runWithClient(project, new WithClient<byte[]>() {
             @Override
-            public byte[] run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public byte[] run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 GetFileContentsOptions fileContentsOptions = new GetFileContentsOptions(false, true);
                 // setting "don't annotate files" to true means we ignore the revision
                 fileContentsOptions.setDontAnnotateFiles(false);
+                count.invoke("getFileContents");
                 InputStream inp = server.getFileContents(Collections.singletonList(spec),
                         fileContentsOptions);
 
@@ -479,7 +494,8 @@ public class P4Exec {
             throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<Map<IFileSpec, List<IFileRevisionData>>>() {
             @Override
-            public Map<IFileSpec, List<IFileRevisionData>> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public Map<IFileSpec, List<IFileRevisionData>> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                count.invoke("getRevisionHistory");
                 return server.getRevisionHistory(depotFiles, maxRevisions, false, true, true, false);
             }
         });
@@ -492,7 +508,8 @@ public class P4Exec {
             throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<List<P4StatusMessage>>() {
             @Override
-            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                count.invoke("moveFile");
                 return getErrors(server.moveFile(changelistId, false, leaveLocalFiles, null,
                         source, target));
             }
@@ -504,7 +521,8 @@ public class P4Exec {
             throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<List<IFileSpec>>() {
             @Override
-            public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                count.invoke("sync");
                 final List<IFileSpec> ret = client.sync(files, new SyncOptions(false, false, false, false, true));
                 if (ret == null) {
                     return Collections.emptyList();
@@ -519,7 +537,8 @@ public class P4Exec {
             throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<List<IFileAnnotation>>() {
             @Override
-            public List<IFileAnnotation> run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public List<IFileAnnotation> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                count.invoke("getFileAnnotations");
                 return server.getFileAnnotations(specs,
                         new GetFileAnnotationsOptions(
                                 false, // allResults
@@ -537,7 +556,8 @@ public class P4Exec {
     public void getServerInfo(@NotNull Project project) throws VcsException, CancellationException {
         runWithServer(project, new WithServer<Void>() {
             @Override
-            public Void run(@NotNull IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public Void run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                count.invoke("getServerInfo");
                 server.getServerInfo();
                 return null;
             }
@@ -550,14 +570,15 @@ public class P4Exec {
             @Nullable final String jobStatus) throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<List<P4StatusMessage>>() {
             @Override
-            public List<P4StatusMessage> run(@NotNull final IOptionsServer server, @NotNull final IClient client)
-                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public List<P4StatusMessage> run(@NotNull final IOptionsServer server, @NotNull final IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                count.invoke("getChangelist");
                 final IChangelist changelist = server.getChangelist(changelistId);
                 SubmitOptions options = new SubmitOptions();
                 options.setJobIds(jobIds);
                 if (jobStatus != null) {
                     options.setJobStatus(jobStatus);
                 }
+                count.invoke("submit");
                 return getErrors(changelist.submit(options));
             }
         });
@@ -576,7 +597,8 @@ public class P4Exec {
         try {
             return runWithServer(project, new WithServer<List<String>>() {
                 @Override
-                public List<String> run(@NotNull final IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                public List<String> run(@NotNull final IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                    count.invoke("getJobSpec");
                     final IJobSpec spec = server.getJobSpec();
                     final Map<String, List<String>> values = spec.getValues();
                     if (values != null && values.containsKey("Status")) {
@@ -602,7 +624,7 @@ public class P4Exec {
      * @throws CancellationException
      */
     @Nullable
-    public Collection<P4Job> getJobsForChangelist(final Project project, final int changelistId) throws VcsException, CancellationException {
+    public Collection<String> getJobIdsForChangelist(final Project project, final int changelistId) throws VcsException, CancellationException {
         if (changelistId <= IChangelist.DEFAULT) {
             // These changelists can never have a job associated with them.
             // Additionally, actually inquiring about the jobs will result
@@ -610,74 +632,46 @@ public class P4Exec {
             // be HUGE.
             return Collections.emptyList();
         }
-        return runWithServer(project, new WithServer<List<P4Job>>() {
+        return runWithServer(project, new WithServer<List<String>>() {
             @Override
-            public List<P4Job> run(@NotNull final IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+            public List<String> run(@NotNull final IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+                count.invoke("getChangelist");
                 final IChangelist changelist = server.getChangelist(changelistId);
                 if (changelist == null) {
                     return null;
                 }
 
-                // Bug #33: this can cause issues.  Instead, go the
-                // indirect route by querying the underyling jobs
-                // directly.  This is what you need to do in p4 cli
-                // anyway, so it's probably what the API is doing
-                // as well.
+                count.invoke("getJobIds");
                 final List<String> jobIds = changelist.getJobIds();
-                LOG.info("Changelist " + changelistId + " has " + jobIds.size() + " jobs");
-                final List<P4Job> jobs = new ArrayList<P4Job>(jobIds.size());
-                for (String jobId: jobIds) {
-                    if (jobs.size() > MAX_JOBS_RETURNED) {
-                        LOG.warn(changelistId + " exceeded number of jobs to return; capping at " + MAX_JOBS_RETURNED);
-                        break;
-                    }
-                    P4Job job = getJobWithServer(jobId, server);
-                    if (job != null) {
-                        jobs.add(job);
-                    } else {
-                        LOG.warn("Changelist " + changelistId + " contains non-existent or invalid job id " + jobId);
-                    }
-                }
-                return jobs;
+                LOG.debug("Changelist " + changelistId + " has " + jobIds.size() + " jobs");
+                return jobIds;
             }
         });
     }
+
 
     @Nullable
     public P4Job getJobForId(@NotNull final Project project, @NotNull final String jobId) throws VcsException, CancellationException {
         return runWithServer(project, new WithServer<P4Job>() {
             @Override
-            public P4Job run(@NotNull final IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
-                return getJobWithServer(jobId, server);
+            public P4Job run(@NotNull final IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                P4Job job = null;
+                LOG.debug("Loading information for job " + jobId);
+                IJob iJob;
+                count.invoke("getJob");
+                try {
+                    iJob = server.getJob(jobId);
+                    job = iJob == null ? null : new P4Job(iJob);
+                } catch (RequestException re) {
+                    // Bug #33
+                    LOG.warn(re);
+                    if (re.getMessage().contains("Syntax error in")) {
+                        job = new P4Job(jobId, P4Bundle.message("error.job.parse", jobId, re.getMessage()));
+                    }
+                }
+                return job;
             }
         });
-    }
-
-
-
-    private P4Job getJobWithServer(@NotNull final String jobId, @NotNull final IOptionsServer server)
-            throws ConnectionException, AccessException, RequestException {
-        P4Job job = null;
-        LOG.info("Loading information for job " + jobId);
-        // Bug #33
-        //job = server.getJob(jobId);
-        //if (server instanceof Server) {
-        //    job = customGetJob((Server) server, jobId);
-        //} else {
-        {
-            IJob iJob;
-            try {
-                iJob = server.getJob(jobId);
-                job = iJob == null ? null : new P4Job(iJob);
-            } catch (RequestException re) {
-                // Bug #33
-                LOG.warn(re);
-                if (re.getMessage().contains("Syntax error in")) {
-                    job = new P4Job(jobId, P4Bundle.message("error.job.parse", jobId, re.getMessage()));
-                }
-            }
-        }
-        return job;
     }
 
 
@@ -695,7 +689,7 @@ public class P4Exec {
                 }
 
                 // disconnect happens as a separate activity.
-                return runner.run(server, client);
+                return runner.run(server, client, new WithClientCount(serverStatus.getConfig().getServiceName(), clientName));
             }
         });
     }
@@ -713,7 +707,7 @@ public class P4Exec {
             @Override
             public T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 // disconnect happens as a separate activity.
-                return runner.run(connectServer(getTempDir(project)));
+                return runner.run(connectServer(getTempDir(project)), new WithClientCount(serverStatus.getConfig().getServiceName()));
             }
         });
     }
@@ -982,7 +976,8 @@ public class P4Exec {
                 try {
                     boolean res = runWithServer(project, new WithServer<Boolean>() {
                         @Override
-                        public Boolean run(@NotNull IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+                        public Boolean run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+                            count.invoke("forcedAuthentication");
                             return connectionHandler.forcedAuthentication(server, serverStatus.getConfig(), password);
                         }
                     }, true);
@@ -999,7 +994,8 @@ public class P4Exec {
                 try {
                     runWithServer(project, new WithServer<Boolean>() {
                         @Override
-                        public Boolean run(@NotNull IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+                        public Boolean run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+                            count.invoke("defaultAuthentication");
                             connectionHandler.defaultAuthentication(server, serverStatus.getConfig(), password);
                             return null;
                         }
@@ -1077,11 +1073,61 @@ public class P4Exec {
 
 
     static interface WithServer<T> {
-        T run(@NotNull IOptionsServer server) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception;
+        T run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception;
     }
 
 
     static interface WithClient<T> {
-        T run(@NotNull IOptionsServer server, @NotNull IClient client) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception;
+        T run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception;
     }
+
+
+
+    static interface ServerCount {
+        void invoke(@NotNull String operation);
+    }
+
+
+    // TODO in the future, this can be a source for analytical information
+    // regarding the activity of the plugin with the different servers, including
+    // rate of invocations, number of invocations for different calls, and so on.
+    private static class AllServerCount {
+        final Map<String, Map<String, Integer>> callCounts = new HashMap<String, Map<String, Integer>>();
+
+        synchronized void invoke(@NotNull String operation, @NotNull String serverId, @NotNull String clientId) {
+            Map<String, Integer> clientCount = callCounts.get(serverId);
+            if (clientCount == null) {
+                clientCount = new HashMap<String, Integer>();
+                callCounts.put(serverId, clientCount);
+            }
+            Integer count = clientCount.get(clientId);
+            if (count == null) {
+                count = 0;
+            }
+            clientCount.put(clientId, count + 1);
+            if (count + 1 % 100 == 0) {
+                LOG.info("Invocations against " + serverId + " " + clientId + " = " + (count + 1));
+            }
+        }
+    }
+
+    private static class WithClientCount implements ServerCount {
+        private final String serverId;
+        private final String clientId;
+
+        private WithClientCount(final String serverId) {
+            this(serverId, "");
+        }
+
+        private WithClientCount(final String serverId, final String clientId) {
+            this.serverId = serverId;
+            this.clientId = clientId;
+        }
+
+        @Override
+        public void invoke(@NotNull final String operation) {
+            SERVER_COUNT.invoke(operation, serverId, clientId);
+        }
+    }
+
 }

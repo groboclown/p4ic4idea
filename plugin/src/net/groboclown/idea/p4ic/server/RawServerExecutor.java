@@ -55,6 +55,8 @@ public class RawServerExecutor {
     private final Object poolSync = new Object();
     private boolean disposed = false;
 
+    private final FileInfoCache fileInfoCache = new FileInfoCache();
+
 
     /**
      *
@@ -76,6 +78,11 @@ public class RawServerExecutor {
     }
 
 
+    public void invalidateFileInfoCache() {
+        fileInfoCache.invalidateCache();
+    }
+
+
     public void dispose() {
         // This doesn't handle the in-progress connections that are running.
         // Instead, those dispose their P4Exec when they complete, rather
@@ -84,6 +91,7 @@ public class RawServerExecutor {
         // be active connections running.
         synchronized (poolSync) {
             wentOffline();
+            invalidateFileInfoCache();
             disposed = true;
         }
     }
@@ -155,7 +163,7 @@ public class RawServerExecutor {
             Map<VirtualFile, VirtualFile> copiedFiles, int changelist)
             throws VcsException, CancellationException {
         List<P4StatusMessage> ret = performAction(project,
-                new AddCopyRunner(project, addFiles, copiedFiles, changelist));
+                new AddCopyRunner(project, addFiles, copiedFiles, changelist, fileInfoCache));
         assert ret != null;
         return ret;
     }
@@ -164,7 +172,7 @@ public class RawServerExecutor {
     public List<P4StatusMessage> moveFiles(@NotNull Project project,
             @NotNull Map<FilePath, FilePath> movedFiles, int changelist)
             throws VcsException, CancellationException {
-        return performAction(project, new MoveRunner(project, movedFiles, changelist));
+        return performAction(project, new MoveRunner(project, movedFiles, changelist, fileInfoCache));
     }
 
     @NotNull
@@ -173,7 +181,7 @@ public class RawServerExecutor {
         if (files.isEmpty()) {
             return Collections.emptyList();
         }
-        return performAction(project, new DeleteRunner(project, files, changelist));
+        return performAction(project, new DeleteRunner(project, files, changelist, fileInfoCache));
     }
 
     @NotNull
@@ -182,7 +190,7 @@ public class RawServerExecutor {
         if (files.isEmpty()) {
             return Collections.emptyList();
         }
-        return performAction(project, new EditRunner(project, files, changelist));
+        return performAction(project, new EditRunner(project, files, changelist, fileInfoCache));
     }
 
     @NotNull
@@ -203,7 +211,7 @@ public class RawServerExecutor {
         if (changelistId <= 0) {
             throw new VcsException(P4Bundle.message("error.changelist.submit", changelistId));
         }
-        return performAction(project, new SubmitRunner(project, actualFiles, jobs, jobStatus, changelistId));
+        return performAction(project, new SubmitRunner(project, actualFiles, jobs, jobStatus, changelistId, fileInfoCache));
     }
 
     @NotNull
@@ -222,7 +230,7 @@ public class RawServerExecutor {
         return performAction(project, new ServerTask<List<P4FileInfo>>() {
             @Override
             public List<P4FileInfo> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
-                List<P4FileInfo> ret = exec.loadFileInfo(project, FileSpecUtil.getFromFilePaths(fps));
+                List<P4FileInfo> ret = exec.loadFileInfo(project, FileSpecUtil.getFromFilePaths(fps), fileInfoCache);
                 if (ret.size() != fps.size()) {
                     P4ApiException e = new P4ApiException(P4Bundle.message("error.file-fetch.count"));
                     LOG.info("Requested " + fps + "; retrieved " + ret, e);
@@ -249,7 +257,7 @@ public class RawServerExecutor {
         return performAction(project, new ServerTask<List<P4FileInfo>>() {
             @Override
             public List<P4FileInfo> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
-                List<P4FileInfo> ret = exec.loadFileInfo(project, FileSpecUtil.getFromVirtualFiles(vfs));
+                List<P4FileInfo> ret = exec.loadFileInfo(project, FileSpecUtil.getFromVirtualFiles(vfs), fileInfoCache);
                 if (ret.size() != vfs.size()) {
                     P4ApiException e = new P4ApiException("Did not fetch same number of files as requested");
                     LOG.info("Requested " + vfs + "; retrieved " + ret, e);
@@ -321,7 +329,7 @@ public class RawServerExecutor {
         return performAction(project, new ServerTask<List<P4FileInfo>>() {
             @Override
             public List<P4FileInfo> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
-                return exec.loadOpenedFiles(project, specs);
+                return exec.loadOpenedFiles(project, specs, fileInfoCache);
             }
         });
     }
@@ -340,7 +348,7 @@ public class RawServerExecutor {
         return performAction(project, new ServerTask<List<P4FileInfo>>() {
             @Override
             public List<P4FileInfo> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
-                return exec.getFilesInChangelist(project, changelistId);
+                return exec.getFilesInChangelist(project, changelistId, fileInfoCache);
             }
         });
     }
@@ -421,7 +429,7 @@ public class RawServerExecutor {
     public List<P4FileRevision> getRevisionHistory(@NotNull Project project,
             @NotNull P4FileInfo files, int maxRevs)
             throws VcsException, CancellationException {
-        return performAction(project, new GetRevisionHistoryTask(project, files, maxRevs));
+        return performAction(project, new GetRevisionHistoryTask(project, files, maxRevs, fileInfoCache));
     }
 
 
@@ -439,7 +447,7 @@ public class RawServerExecutor {
             filesToMove = Collections.emptyList();
         }
         return performAction(project,
-                new MoveFilesBetweenChangelistsTask(project, targetChangelist, filesToMove));
+                new MoveFilesBetweenChangelistsTask(project, targetChangelist, filesToMove, fileInfoCache));
     }
 
 
@@ -495,7 +503,7 @@ public class RawServerExecutor {
             @Override
             public List<P4FileInfo> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
                 return exec.loadFileInfo(project, FileSpecUtil.getFromFilePathsAt(
-                        files, "#head", true));
+                        files, "#head", true), fileInfoCache);
             }
         });
     }
@@ -507,7 +515,7 @@ public class RawServerExecutor {
         if (rev >= 0) {
             revStr = "#" + Integer.toString(rev);
         }
-        return performAction(project, new AnnotateFileTask(project, file, revStr));
+        return performAction(project, new AnnotateFileTask(project, file, revStr, fileInfoCache));
     }
 
     @NotNull
@@ -548,7 +556,7 @@ public class RawServerExecutor {
 
                 final List<IFileSpec> nonErrors = P4StatusMessage.getNonErrors(results);
                 LOG.info("Synchronized " + nonErrors);
-                return exec.loadFileInfo(project, nonErrors);
+                return exec.loadFileInfo(project, nonErrors, fileInfoCache);
             }
         });
     }
@@ -600,12 +608,22 @@ public class RawServerExecutor {
         }
     }
 
+    //@Nullable
+    //public Collection<P4Job> getJobsForChangelist(@NotNull final Project project, final int changelistId) throws VcsException, CancellationException {
+    //    return performAction(project, new ServerTask<Collection<P4Job>>() {
+    //        @Override
+    //        public Collection<P4Job> run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
+    //            return exec.getJobsForChangelist(project, changelistId);
+    //        }
+    //    });
+    //}
+
     @Nullable
-    public Collection<P4Job> getJobsForChangelist(@NotNull final Project project, final int changelistId) throws VcsException, CancellationException {
-        return performAction(project, new ServerTask<Collection<P4Job>>() {
+    public Collection<String> getJobIdsForChangelist(@NotNull final Project project, final int changelistId) throws VcsException, CancellationException {
+        return performAction(project, new ServerTask<Collection<String>>() {
             @Override
-            public Collection<P4Job> run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
-                return exec.getJobsForChangelist(project, changelistId);
+            public Collection<String> run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
+                return exec.getJobIdsForChangelist(project, changelistId);
             }
         });
     }

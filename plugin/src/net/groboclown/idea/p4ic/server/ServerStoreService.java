@@ -20,6 +20,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.idea.p4ic.background.VcsSettableFuture;
+import net.groboclown.idea.p4ic.changes.P4ChangeListCache;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
@@ -91,6 +92,7 @@ public class ServerStoreService implements ApplicationComponent {
             if (data != null) {
                 if (data.deregister(project)) {
                     data.forceDisconnect();
+                    P4ChangeListCache.getInstance().invalidateServerCache(serverConfig);
                     servers.remove(serverConfig);
                 }
             }
@@ -243,7 +245,10 @@ public class ServerStoreService implements ApplicationComponent {
         @Override
         public void changeClientName(@NotNull String oldClientName, @NotNull String newClientName) {
             synchronized (clientSync) {
-                clientExec.remove(oldClientName);
+                final RawServerExecutor oldServer = clientExec.remove(oldClientName);
+                if (oldServer != null) {
+                    oldServer.dispose();
+                }
 
                 // No need to add a new one for the new client; it is implicitly done on the get method.
             }

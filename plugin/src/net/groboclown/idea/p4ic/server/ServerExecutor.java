@@ -33,16 +33,24 @@ import java.util.concurrent.CancellationException;
 public class ServerExecutor {
     private final Project project;
     private final RawServerExecutor exec;
+    private final JobCache jobCache;
 
 
     public ServerExecutor(Project project, RawServerExecutor exec) {
         this.project = project;
         this.exec = exec;
+        this.jobCache = new JobCache(project, exec);
     }
 
 
     public boolean isWorkingOnline() {
         return exec.isWorkingOnline();
+    }
+
+
+    public void invalidateCache() {
+        exec.invalidateFileInfoCache();
+        jobCache.invalidateCache();
     }
 
 
@@ -220,22 +228,25 @@ public class ServerExecutor {
 
     @NotNull
     public Collection<P4StatusMessage> integrateFiles(@NotNull final P4FileInfo src, @NotNull final FilePath tgt,
-            @NotNull final int changeListId) throws VcsException, CancellationException {
+            final int changeListId) throws VcsException, CancellationException {
         return exec.integrateFiles(project, src, tgt, changeListId);
     }
 
     @NotNull
     public List<String> getJobStatusValues() throws VcsException, CancellationException {
-        return exec.getJobStatusValues(project);
+        //return exec.getJobStatusValues(project);
+        return jobCache.getJobStatusValues();
     }
 
     @Nullable
     public Collection<P4Job> getJobsForChangelist(final int id) throws VcsException, CancellationException {
-        return exec.getJobsForChangelist(project, id);
+        //return exec.getJobsForChangelist(project, id);
+        return jobCache.getJobsForChangelist(id);
     }
 
     @Nullable
     public P4Job getJobForId(final String jobId) throws VcsException, CancellationException {
-        return exec.getJobForId(project, jobId);
+        //return exec.getJobForId(project, jobId);
+        return jobCache.getJob(jobId);
     }
 }

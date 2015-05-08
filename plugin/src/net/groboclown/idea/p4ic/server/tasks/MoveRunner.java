@@ -19,10 +19,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.server.FileSpecUtil;
-import net.groboclown.idea.p4ic.server.P4Exec;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
-import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import net.groboclown.idea.p4ic.server.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,12 +32,14 @@ public class MoveRunner extends ServerTask<List<P4StatusMessage>> {
     private final Project project;
     private final Map<FilePath, FilePath> movedFiles;
     private final int destination;
+    private final FileInfoCache fileInfoCache;
 
     public MoveRunner(Project project, @NotNull Map<FilePath, FilePath> movedFiles,
-                      int destination) {
+                      int destination, @NotNull FileInfoCache fileInfoCache) {
         this.project = project;
         this.movedFiles = movedFiles;
         this.destination = destination;
+        this.fileInfoCache = fileInfoCache;
     }
 
     @NotNull
@@ -191,7 +190,7 @@ public class MoveRunner extends ServerTask<List<P4StatusMessage>> {
         }
 
         Map<FilePath, P4FileInfo> ret = new HashMap<FilePath, P4FileInfo>();
-        for (P4FileInfo file : exec.loadFileInfo(project, FileSpecUtil.getFromFilePaths(reverseLookup.values()))) {
+        for (P4FileInfo file : exec.loadFileInfo(project, FileSpecUtil.getFromFilePaths(reverseLookup.values()), fileInfoCache)) {
             // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
             // use this instead: getIOFile().getAbsolutePath()
             FilePath fp = reverseLookup.remove(file.getPath().getIOFile().getAbsolutePath());

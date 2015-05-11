@@ -15,6 +15,7 @@ package net.groboclown.idea.p4ic.changes;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangesViewRefresher;
@@ -24,6 +25,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 
 public class P4ChangesViewRefresher implements ChangesViewRefresher {
+    private static final Logger LOG = Logger.getInstance(ChangesViewRefresher.class);
 
     @Override
     public void refresh(@NotNull final Project project) {
@@ -33,19 +35,18 @@ public class P4ChangesViewRefresher implements ChangesViewRefresher {
 
 
     public static void refreshLater(@NotNull final Project project) {
+        // TODO switch to debug
+        LOG.info("Refreshing changelist view", new Throwable());
+
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             @Override
             public void run() {
                 ChangeListManager.getInstance(project).invokeAfterUpdate(new Runnable() {
                         @Override
                         public void run() {
+                            // This will perform all the right logic to refresh the
+                            // change lists and refresh the UI.
                             RefreshAction.doRefresh(project);
-                            // Taken from com.intellij.openapi.vcs.actions.RefreshStatuses
-                            //VcsDirtyScopeManager.getInstance(project).markEverythingDirty();
-
-                            // This "ensureUpToDate" will invoke schedule refresh.
-                            //ChangeListManager.getInstance(project).ensureUpToDate(true);
-                            //ChangesViewManager.getInstance(project).scheduleRefresh();
                         }
                     }, InvokeAfterUpdateMode.BACKGROUND_CANCELLABLE,
                     P4Bundle.getString("change.view.refresh.title"),

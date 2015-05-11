@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.server.tasks;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.ChangelistStatus;
@@ -28,6 +29,8 @@ import java.util.List;
 import java.util.concurrent.CancellationException;
 
 public class DeleteChangelistTask extends ServerTask<Void> {
+    private static final Logger LOG = Logger.getInstance(DeleteChangelistTask.class);
+
     private final Project project;
     private final int changelistId;
 
@@ -61,7 +64,7 @@ public class DeleteChangelistTask extends ServerTask<Void> {
         }
 
         String res = exec.deletePendingChangelist(project, current.getId());
-        log("deletePendingChangelist: returned [" + res + "]");
+        LOG.debug("deletePendingChangelist: returned [" + res + "]");
         // This is usually in the form "Change X deleted".  Can't really
         // parse errors with this.
 

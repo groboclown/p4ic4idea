@@ -54,7 +54,7 @@ public class EditRunner extends ServerTask<List<P4StatusMessage>> {
 
         List<P4FileInfo> specs = exec.loadFileInfo(project, FileSpecUtil.getFromVirtualFiles(editedFiles), fileInfoCache);
 
-        log("edit request for " + specs);
+        LOG.debug("edit request for " + specs);
         List<IFileSpec> reverted = new ArrayList<IFileSpec>();
         List<IFileSpec> edited = new ArrayList<IFileSpec>();
         List<IFileSpec> added = new ArrayList<IFileSpec>();
@@ -62,25 +62,25 @@ public class EditRunner extends ServerTask<List<P4StatusMessage>> {
         for (P4FileInfo spec: specs) {
             if (spec.isInDepot()) {
                 if (spec.isDeletedInDepot()) {
-                    log("Edit; open for add (deleted in depot) " + spec);
+                    LOG.debug("Edit; open for add (deleted in depot) " + spec);
                     added.add(spec.toClientSpec());
                 } else if (! spec.isOpenInClient()) {
-                    log("Edit: open for edit " + spec);
+                    LOG.debug("Edit: open for edit " + spec);
                     edited.add(spec.toClientSpec());
                 } else if (spec.isOpenForDelete()) {
                     // revert then edit; no need to check if added, because
                     // to be deleted means that it exists in the depot.
-                    log("Edit: revert for delete then edit " + spec);
+                    LOG.debug("Edit: revert for delete then edit " + spec);
                     reverted.add(spec.toDepotSpec());
                     edited.add(spec.toDepotSpec());
                 } else {
-                    log("Edit: already open for edit " + spec);
+                    LOG.debug("Edit: already open for edit " + spec);
                 }
             } else if (spec.isInClientView()) {
-                log("Edit: open for add " + spec.toClientSpec());
+                LOG.debug("Edit: open for add " + spec.toClientSpec());
                 added.add(spec.toClientSpec());
             } else {
-                log("Edit: not in client " + spec);
+                LOG.debug("Edit: not in client " + spec);
             }
         }
 
@@ -101,6 +101,7 @@ public class EditRunner extends ServerTask<List<P4StatusMessage>> {
             ret.addAll(exec.addFiles(project, added, changelistId));
             LOG.debug("Edit after added: " + ret);
         }
+
         return ret;
     }
 }

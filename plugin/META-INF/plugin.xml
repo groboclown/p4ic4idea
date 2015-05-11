@@ -8,7 +8,7 @@
         <ol>
             <li><em>0.5.2</em>
                 <ol>
-                    <li>Reduced the number of server calls.</li>
+                    <li>Reduced the number of server calls and simultaneous connections.</li>
                     <li>Added a monitor to track the number of actual server calls.</li>
                     <li>Reduced the amount of log messages.</li>
                     <li>Eliminated NPE related to changelist caching.</li>

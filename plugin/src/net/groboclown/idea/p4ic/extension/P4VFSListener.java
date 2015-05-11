@@ -25,6 +25,8 @@ import com.intellij.vcsUtil.VcsFileUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.Background;
+import net.groboclown.idea.p4ic.changes.P4ChangeListCache;
+import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
@@ -76,8 +78,12 @@ public class P4VFSListener extends VcsVFSListener {
                     for (Map.Entry<Client, List<FilePath>> en : clientMap.entrySet()) {
                         Client client = en.getKey();
                         if (client.isWorkingOnline()) {
+                            final P4ChangeListId changelist = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client);
                             messages.addAll(client.getServer().deleteFiles(en.getValue(),
-                                    vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client).getChangeListId()));
+                                    changelist.getChangeListId()));
+
+                            // TODO see if this can be directly moved into the changelist without a reload.
+                            P4ChangeListCache.getInstance().reloadChangeList(client, changelist);
                         }
                     }
                 }
@@ -107,7 +113,8 @@ public class P4VFSListener extends VcsVFSListener {
                 synchronized (vfsSync) {
                     for (Client client: split.getClients()) {
                         if (client.isWorkingOnline()) {
-                            int changeListId = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client).getChangeListId();
+                            final P4ChangeListId changelist = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client);
+                            int changeListId = changelist.getChangeListId();
                             messages.addAll(client.getServer().moveFiles(
                                     split.getFilePathMatch(client), changeListId));
 
@@ -134,6 +141,9 @@ public class P4VFSListener extends VcsVFSListener {
 
                             // We don't need to tell the user about this as an error message; it should be the
                             // normal, expected operation.
+
+                            // TODO see if this can be directly moved into the changelist without a reload.
+                            P4ChangeListCache.getInstance().reloadChangeList(client, changelist);
                         }
                     }
                 }
@@ -175,18 +185,19 @@ public class P4VFSListener extends VcsVFSListener {
                     for (Client client: clients) {
                         // Bug #35
                         if (client == null) {
-
+                            LOG.error("Found null client");
+                            continue;
                         }
                         if (client.isWorkingOnline()) {
                             // For the copy operation, there can not be
-                            // any way to integrate a file between clients, so we
-                            // change a cross-client copy to be just an add.
-                            // This can also happen if a file is copied from outside
-                            // Perforce control.
+                            // any way to integrate a file between servers.
 
-                            // TODO we can integrate between clients if the servers are the same.
-                            // TODO A bit of care is necessary, in case the user of the target client doesn't
-                            // have read access in the source client.
+                            // TODO in the future, when the option to select "useIntegrate"
+                            // is added to AddCopyRunner, we need to support
+                            // checking if the copy is cross-client but same server,
+                            // because that will indicate an integration operation
+                            // (but only if the destination client has permissions to
+                            // read the source file).
 
                             List<VirtualFile> added = new ArrayList<VirtualFile>(splitClient.getCrossTargetVirtualFilesFor(client));
                             List<VirtualFile> explicitAdd = clientAddedMap.get(client);
@@ -194,8 +205,14 @@ public class P4VFSListener extends VcsVFSListener {
                                 added.addAll(explicitAdd);
                             }
                             Map<VirtualFile, VirtualFile> copied = splitClient.getVirtualFileMatch(client);
+
+                            final P4ChangeListId changelist = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client);
+
                             messages.addAll(client.getServer().addOrCopyFiles(added, copied,
-                                    vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client).getChangeListId()));
+                                    changelist.getChangeListId()));
+
+                            // TODO see if this can be directly moved into the changelist without a reload.
+                            P4ChangeListCache.getInstance().reloadChangeList(client, changelist);
                         }
                     }
                 }
@@ -219,7 +236,7 @@ public class P4VFSListener extends VcsVFSListener {
     protected void beforeContentsChange(@NotNull VirtualFileEvent event, @NotNull final VirtualFile file) {
         // check that the file is considered "under my vcs"
         if (event.isFromSave() && vcs.fileIsUnderVcs(VcsUtil.getFilePath(file))) {
-            LOG.info("edit request on " + file);
+            LOG.debug("edit request on " + file);
 
             Background.runInBackground(project, P4EditFileProvider.EDIT, vcs.getConfiguration().getEditOption(), new Background.ER() {
                 @Override
@@ -227,11 +244,27 @@ public class P4VFSListener extends VcsVFSListener {
                     List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
                     Client client = vcs.getClientFor(file);
                     if (client != null) {
+                        // Determine if the file is already opened for edit.
+                        // If it's not, or opened for add, then we still need to
+                        // perform this operation.
+                        P4FileInfo fileInfo = P4ChangeListCache.getInstance().getFileInChangelist(client, VcsUtil.getFilePath(file));
+                        if (fileInfo != null && (fileInfo.getClientAction().isEdit() ||
+                                (fileInfo.getClientAction().isAdd() && !
+                                    fileInfo.getClientAction().isIntegrate()))) {
+                            LOG.info("Already open for edit; skipping edit for " + file);
+                            return;
+                        }
+
+                        final P4ChangeListId changelist = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client);
+
                         synchronized (vfsSync) {
                             messages.addAll(client.getServer().editFiles(
                                     Collections.singletonList(file),
-                                    vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client).getChangeListId()));
+                                    changelist.getChangeListId()));
                         }
+
+                        // TODO see if this can be directly moved into the changelist without a reload.
+                        P4ChangeListCache.getInstance().reloadChangeList(client, changelist);
                     }
                     P4StatusMessage.throwIfError(messages, true);
                 }
@@ -415,7 +448,7 @@ public class P4VFSListener extends VcsVFSListener {
 
         @NotNull
         public List<FilePath> getCrossSourceFilePathsFor(@NotNull Client client) {
-            // FIXME same-server, different client is not being correctly
+            // FIXME same-server, different client is not always correctly
             // picked up here.  A cross-client move shows the destination
             // as correctly integrated, and deletes the source locally,
             // but p4 is not told of the source deletion.  Sometimes it works?

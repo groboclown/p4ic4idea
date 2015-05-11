@@ -80,7 +80,7 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
         for (Map.Entry<VirtualFile, P4FileInfo> e: clientCopyTarget.entrySet()) {
             P4FileInfo target = e.getValue();
             P4FileInfo source = clientCopySource.get(copiedFiles.get(e.getKey()));
-            log("Copying " + source + " to " + target);
+            LOG.info("Copying " + source + " to " + target);
 
             if (target.isInClientView()) {
                 // For copy, we could perform an integrate to
@@ -93,53 +93,53 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
                 if (target.isOpenForDelete()) {
                     // Need to revert the delete first, so that the
                     // copy can happen
-                    log("Copy: revert deleted target " + target);
+                    LOG.debug("Copy: revert deleted target " + target);
                     reverted.add(target);
                 } else if (target.isOpenForEditOrAdd()) {
                     if (useIntegrate) {
                         // we can't have an existing open for add when
                         // we're going to integrate over it.
-                        log("Copy: revert edit/add target " + target);
+                        LOG.debug("Copy: revert edit/add target " + target);
                         reverted.add(target);
                     } else if (target.getClientAction().isIntegrate()) {
                         // This is an existing integrate or move.  Need
                         // to revert this to allow for the copy.
-                        log("Copy: revert edit/add target " + target);
+                        LOG.debug("Copy: revert edit/add target " + target);
                         reverted.add(target);
                     } else {
                         // The target is already open for
                         // add or edit, so there's nothing
                         // additional to do.
-                        log("Copy: target already open for add/edit: " + target);
+                        LOG.debug("Copy: target already open for add/edit: " + target);
                         continue;
                     }
                 } else if (target.isOpenInClient()) {
                     // Some other behavior that we don't know about.
                     // Assume it's not right.
-                    log("Copy: revert unknown state (" + target.getClientAction() + ") target " + target);
+                    LOG.debug("Copy: revert unknown state (" + target.getClientAction() + ") target " + target);
                     reverted.add(target);
                 }
 
 
                 if (source.isInDepot()) {
                     if (useIntegrate) {
-                        log("Copy: integrate " + source + " to " + target);
+                        LOG.debug("Copy: integrate " + source + " to " + target);
                         integrated.put(source, target);
                         added.remove(target);
                     } else if (target.isInDepot()) {
-                        log("Copy: marking the target as edited because integration is disabled");
+                        LOG.debug("Copy: marking the target as edited because integration is disabled");
                         edited.add(target);
                         added.remove(target);
                     } else {
-                        log("Copy: marking the target as added because integration is disabled");
+                        LOG.debug("Copy: marking the target as added because integration is disabled");
                         added.add(target);
                     }
                 } else {
-                    log("Copy: adding target since source is not in depot (client or depot) " + target);
+                    LOG.debug("Copy: adding target since source is not in depot (client or depot) " + target);
                     added.add(target);
                 }
             } else {
-                log("Copy: Ignoring target outside client " + target);
+                LOG.debug("Copy: Ignoring target outside client " + target);
             }
         }
 
@@ -150,12 +150,12 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
         }
 
         if (! added.isEmpty()) {
-            log("Adding " + added);
+            LOG.debug("Adding " + added);
             ret.addAll(exec.addFiles(project, P4FileInfo.toClientList(added), changelistId));
         }
 
         if (!edited.isEmpty()) {
-            log("Editing " + added);
+            LOG.debug("Editing " + added);
             ret.addAll(exec.editFiles(project, P4FileInfo.toClientList(edited), changelistId));
         }
 
@@ -232,7 +232,7 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
 
         if (!reverseLookup.isEmpty()) {
             // This is a correct LOG.info statement.
-            log("No p4 files found for " + reverseLookup.values());
+            LOG.info("No p4 files found for " + reverseLookup.values());
         }
 
         return ret;

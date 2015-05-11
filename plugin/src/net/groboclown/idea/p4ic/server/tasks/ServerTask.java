@@ -24,14 +24,6 @@ import java.util.concurrent.CancellationException;
  * Higher level actions on Perforce objects.
  */
 public abstract class ServerTask<T> {
-    private final Logger LOG = Logger.getInstance(getClass());
-
     public abstract T run(@NotNull P4Exec exec)
             throws VcsException, CancellationException;
-
-
-    protected void log(String message) {
-        LOG.info(message);
-        //System.out.println(getClass().getSimpleName() + ": " + message);
-    }
 }

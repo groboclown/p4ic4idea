@@ -47,7 +47,11 @@ import java.util.regex.Pattern;
 public class P4ChangeProvider implements ChangeProvider {
     private static final Logger LOG = Logger.getInstance(P4ChangeProvider.class);
 
+    // TODO make configurable
+    private static final long MIN_REFRESH_INTERVAL_MILLIS = 1000;
+
     private final P4Vcs vcs;
+    private long lastRefreshTime = 0L;
 
     public P4ChangeProvider(@NotNull P4Vcs vcs) {
         this.vcs = vcs;
@@ -56,13 +60,21 @@ public class P4ChangeProvider implements ChangeProvider {
     @Override
     public void getChanges(VcsDirtyScope dirtyScope, ChangelistBuilder builder, ProgressIndicator progress,
                            ChangeListManagerGate addGate) throws VcsException {
-        LOG.debug("enter");
         if (vcs.getProject().isDisposed()) {
             return;
         }
         if (dirtyScope.getVcs() != vcs) {
             throw new VcsException(P4Bundle.message("error.vcs.dirty-scope.wrong"));
         }
+
+        // TODO change back to debug
+        LOG.info("start changelist refresh", new Throwable());
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastRefreshTime < MIN_REFRESH_INTERVAL_MILLIS) {
+            LOG.info("skipping changelist refresh; previous refresh was too soon");
+            return;
+        }
+        lastRefreshTime = currentTime;
 
         // In the current thread, pull in all the changes from Perforce that are within the dirty scope, into
         // the addGate.

@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.server.tasks;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -28,6 +29,8 @@ import java.util.List;
 import java.util.concurrent.CancellationException;
 
 public class DeleteRunner extends ServerTask<List<P4StatusMessage>> {
+    private static final Logger LOG = Logger.getInstance(DeleteRunner.class);
+
     private final Project project;
     private final Collection<FilePath> deletedFiles;
     private final int destination;
@@ -56,19 +59,19 @@ public class DeleteRunner extends ServerTask<List<P4StatusMessage>> {
         List<IFileSpec> reverted = new ArrayList<IFileSpec>();
         for (P4FileInfo spec: specs) {
             if (spec.isOpenForDelete()) {
-                log("delete: ignoring already open for delete " + spec);
+                LOG.debug("delete: ignoring already open for delete " + spec);
             } else if (spec.isOpenInClient()) {
                 reverted.add(spec.toClientSpec());
-                log("delete: revert " + spec);
+                LOG.debug("delete: revert " + spec);
                 if (spec.isInDepot()) {
                     deleted.add(spec.toDepotSpec());
-                    log("delete: delete " + spec);
+                    LOG.debug("delete: delete " + spec);
                 }
             } else if (spec.isInDepot()) {
                 deleted.add(spec.toDepotSpec());
-                log("delete: delete " + spec);
+                LOG.debug("delete: delete " + spec);
             } else {
-                log("delete: ignoring " + spec);
+                LOG.debug("delete: ignoring " + spec);
             }
         }
         List<P4StatusMessage> ret = new ArrayList<P4StatusMessage>();
@@ -89,7 +92,7 @@ public class DeleteRunner extends ServerTask<List<P4StatusMessage>> {
             // So explicitly delete the files when we're done.
             for (P4FileInfo file: specs) {
                 if (file.getPath().getVirtualFile() != null) {
-                    log("+ forcing file delete for " + file.getPath().getVirtualFile());
+                    LOG.debug("+ forcing file delete for " + file.getPath().getVirtualFile());
                     try {
                         file.getPath().getVirtualFile().delete(this);
                     } catch (IOException e) {

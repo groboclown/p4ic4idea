@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.server.tasks;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -37,6 +38,8 @@ import java.util.concurrent.CancellationException;
  * from the source changelist into the target.
  */
 public class MoveFilesBetweenChangelistsTask extends ServerTask<List<P4StatusMessage>> {
+    private static final Logger LOG = Logger.getInstance(MoveFilesBetweenChangelistsTask.class);
+
     private final Project project;
     private final int target;
     private final List<FilePath> files;
@@ -57,7 +60,7 @@ public class MoveFilesBetweenChangelistsTask extends ServerTask<List<P4StatusMes
 
     @Override
     public List<P4StatusMessage> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
-        log("moving to change " + target);
+        LOG.debug("moving to change " + target);
 
         List<P4FileInfo> expectedFiles = exec.loadFileInfo(project, FileSpecUtil.getFromFilePaths(files), fileInfoCache);
 
@@ -78,10 +81,10 @@ public class MoveFilesBetweenChangelistsTask extends ServerTask<List<P4StatusMes
         while (infoIter.hasNext()) {
             P4FileInfo file = infoIter.next();
             if (! file.isOpenInClient() || file.getChangelist() == target) {
-                log("Skipping " + file + ": either not open in client, or is already in the correct changelist");
+                LOG.debug("Skipping " + file + ": either not open in client, or is already in the correct changelist");
                 infoIter.remove();
             } else {
-                log("Allowing movement of " + file + "@" + file.getChangelist() + "; opened with " + file.getClientAction());
+                LOG.debug("Allowing movement of " + file + "@" + file.getChangelist() + "; opened with " + file.getClientAction());
             }
         }
         if (expectedFiles.isEmpty()) {
@@ -102,7 +105,7 @@ public class MoveFilesBetweenChangelistsTask extends ServerTask<List<P4StatusMes
         List<P4StatusMessage> ret = new ArrayList<P4StatusMessage>();
         if (sourceFiles != null && ! sourceFiles.isEmpty()) {
             // need to move the files into the default changelist.
-            log("Reopening files in changelist " + targetCl.getId());
+            LOG.debug("Reopening files in changelist " + targetCl.getId());
             ret.addAll(exec.reopenFiles(project, sourceFiles, targetCl.getId(), null));
         }
 

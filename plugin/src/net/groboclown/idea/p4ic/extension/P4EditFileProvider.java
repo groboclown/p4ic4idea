@@ -30,8 +30,7 @@ import java.util.*;
 
 /**
  * This is only called when the file is changed from
- * read-only to writable.  It can also be called when a file
- * is simply edited.
+ * read-only to writable.
  */
 public class P4EditFileProvider implements EditFileProvider {
     private static final Logger LOG = Logger.getInstance(P4EditFileProvider.class);

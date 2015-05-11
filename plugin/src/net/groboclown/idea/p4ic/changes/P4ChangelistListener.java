@@ -235,11 +235,9 @@ public class P4ChangelistListener implements ChangeListListener {
         }
 
 
-        // TODO this if block doesn't look right.
-        // Especially since the changeListRemoved ignores delete on
-        // default change list.
         if (P4ChangeListMapping.DEFAULT_CHANGE_NAME.equals(list.getName())) {
-            changeListRemoved(list);
+            // changeListRemoved ignores delete on default change list.
+            //changeListRemoved(list);
             return;
         }
 

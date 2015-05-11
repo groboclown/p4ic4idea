@@ -542,8 +542,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             }
         }
 
-        // TODO debugging - remove
-        LOG.info("client-file mapping: " + ret);
+        LOG.debug("client-file mapping: " + ret);
 
         return ret;
     }
@@ -595,8 +594,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             }
         }
 
-        // TODO debugging - remove
-        LOG.info("client-file mapping: " + ret);
+        LOG.debug("client-file mapping: " + ret);
 
         // Related to bug #35
         if (ret.containsKey(null)) {

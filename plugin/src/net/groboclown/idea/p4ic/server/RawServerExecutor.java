@@ -29,6 +29,7 @@ import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.history.P4AnnotatedLine;
 import net.groboclown.idea.p4ic.history.P4FileRevision;
 import net.groboclown.idea.p4ic.server.exceptions.P4ApiException;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.server.tasks.*;
@@ -44,6 +45,8 @@ import java.util.concurrent.CancellationException;
  */
 public class RawServerExecutor {
     private static final Logger LOG = Logger.getInstance(RawServerExecutor.class);
+    private static final int MAX_CONNECTIONS = 2;
+    private static final int MAX_CONNECTION_WAIT_TIME = 30 * 1000;
 
     private final ServerStatus config;
     private final String clientName;
@@ -54,6 +57,7 @@ public class RawServerExecutor {
     private final List<P4Exec> closingPool = new ArrayList<P4Exec>();
     private final Object poolSync = new Object();
     private boolean disposed = false;
+    private boolean closed = false;
 
     private final FileInfoCache fileInfoCache = new FileInfoCache();
 
@@ -78,7 +82,7 @@ public class RawServerExecutor {
     }
 
 
-    public void invalidateFileInfoCache() {
+    void invalidateFileInfoCache() {
         fileInfoCache.invalidateCache();
     }
 
@@ -100,12 +104,14 @@ public class RawServerExecutor {
     private <T> T performAction(@NotNull Project project, @NotNull ServerTask<T> runner)
             throws VcsException, CancellationException {
         // This is a suggestion, but there are some solid reasons why this should
-        // be in the AWT (specifically, edit)
+        // be in the AWT (specifically, edit operations are expected to run in EDT)
         //final Application appManager = ApplicationManager.getApplication();
         //if (appManager.isDispatchThread()) {
         //    //LOG.info("Should not ever run P4 commands in the EDT");
         //    throw new IllegalStateException("Must not ever run P4 commands in the EDT");
         //}
+
+        /* Infinite simultaneous connection logic
         P4Exec exec;
         synchronized (poolSync) {
             if (idlePool.isEmpty()) {
@@ -128,6 +134,58 @@ public class RawServerExecutor {
                     activePool.remove(exec);
                     idlePool.add(exec);
                 }
+            }
+        }
+        */
+
+        // This call indicates an attempt to reconnect to the server.
+        closed = false;
+
+        P4Exec exec = null;
+        long startTime = System.currentTimeMillis();
+        synchronized (poolSync) {
+            while (exec == null) {
+                if (closed || disposed) {
+                    // went offline during the connection attempts
+                    throw new P4DisconnectedException();
+                } else if (! idlePool.isEmpty()) {
+                    exec = idlePool.remove(idlePool.size() - 1);
+                } else if (activePool.size() < MAX_CONNECTIONS) {
+                    exec = new P4Exec(config, clientName, connectionHandler,
+                            new OnServerConfigurationProblem.WithMessageBus(project));
+                } else if (System.currentTimeMillis() - startTime > MAX_CONNECTION_WAIT_TIME) {
+                    throw new P4DisconnectedException(P4Bundle.message("connection.timeout"));
+                } else {
+                    // wait for the pool to open up
+                    LOG.info(config.getConfig().getServiceName() + "/" + clientName +
+                            ": Too many active connections; waiting for one to free up.");
+                    try {
+                        poolSync.wait(MAX_CONNECTION_WAIT_TIME);
+                    } catch (InterruptedException e) {
+                        throw new CancellationException();
+                    }
+                }
+            }
+            activePool.add(exec);
+
+            LOG.debug(config.getConfig().getServiceName() + "/" + clientName +
+                    ": number of active connections: " + activePool.size() +
+                    "; idle connections: " + idlePool.size());
+        }
+
+        try {
+            return runner.run(exec);
+        } finally {
+            synchronized (poolSync) {
+                if (disposed || isOffline() || closingPool.contains(exec) || closed) {
+                    exec.dispose();
+                    closingPool.remove(exec);
+                    // do not put back into any pool.
+                } else {
+                    activePool.remove(exec);
+                    idlePool.add(exec);
+                }
+                poolSync.notifyAll();
             }
         }
     }
@@ -644,12 +702,14 @@ public class RawServerExecutor {
 
     void wentOffline() {
         synchronized (poolSync) {
+            closed = true;
             for (P4Exec exec : idlePool) {
                 exec.dispose();
             }
             closingPool.addAll(activePool);
             activePool.clear();
             idlePool.clear();
+            poolSync.notifyAll();
         }
     }
 }

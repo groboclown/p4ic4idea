@@ -80,7 +80,7 @@ public class MoveRunner extends ServerTask<List<P4StatusMessage>> {
         for (Map.Entry<FilePath, P4FileInfo> e : clientMoveSource.entrySet()) {
             P4FileInfo source = e.getValue();
             P4FileInfo target = clientMoveTarget.get(movedFiles.get(e.getKey()));
-            log("Moving " + source + " to " + target);
+            LOG.info("Moving " + source + " to " + target);
             if (target.isInClientView()) {
                 if (source.isInDepot() || source.isOpenInClient()) {
                     boolean moveClientFiles = true;
@@ -91,12 +91,12 @@ public class MoveRunner extends ServerTask<List<P4StatusMessage>> {
                     // the client.
                     if (source.isOpenForDelete()) {
                         // The source is open for delete, which isn't allowed.
-                        log("Move: revert delete on " + source);
+                        LOG.debug("Move: revert delete on " + source);
                         reverted.add(target.toClientSpec());
                     } else
                     if (! source.isOpenInClient()) {
                         // The source must be open for edit or add.
-                        log("Move: open for edit " + source);
+                        LOG.debug("Move: open for edit " + source);
                         edited.add(source.toDepotSpec());
                     }
 
@@ -112,45 +112,45 @@ public class MoveRunner extends ServerTask<List<P4StatusMessage>> {
 
                     // The target can't be already open.
                     if (target.isOpenInClient()) {
-                        log("Move: revert target " + target);
+                        LOG.debug("Move: revert target " + target);
                         reverted.add(target.toClientSpec());
                     }
 
                     // Move the file
-                    log("Move: move " + source + " to " + target);
+                    LOG.debug("Move: move " + source + " to " + target);
                     moved.add(new MoveData(source, target, moveClientFiles));
                 } else {
                     // Source file is not in the depot or open in the client
                     if (target.isInDepot()) {
                         if (! target.isOpenInClient()) {
-                            log("Move: edit " + target);
+                            LOG.debug("Move: edit " + target);
                             edited.add(target.toDepotSpec());
                         } else if (target.isOpenForDelete()) {
-                            log("Move: revert for delete " + target);
+                            LOG.debug("Move: revert for delete " + target);
                             reverted.add(target.toClientSpec());
                             edited.add(target.toDepotSpec());
                         } else {
-                            log("Move: no need to re-edit " + target);
+                            LOG.debug("Move: no need to re-edit " + target);
                         }
                     } else if (! target.isOpenInClient()) {
-                        log("Move: add " + target);
+                        LOG.debug("Move: add " + target);
                         added.add(target.toClientSpec());
                     } else {
-                        log("Move: no need to re-add " + target);
+                        LOG.debug("Move: no need to re-add " + target);
                     }
                 }
             } else {
                 // It's moved to outside the depot.  No need to inspect target.
                 if (source.isOpenInClient()) {
                     // revert the file
-                    log("Move: revert add or edit " + source);
+                    LOG.debug("Move: revert add or edit " + source);
                     reverted.add(source.toClientSpec());
                 }
                 if (source.isInDepot()) {
-                    log("Move: delete " + source);
+                    LOG.debug("Move: delete " + source);
                     deleted.add(source.toDepotSpec());
                 } else {
-                    log("Move: not in depot yet: " + source);
+                    LOG.debug("Move: not in depot yet: " + source);
                 }
             }
         }
@@ -202,7 +202,7 @@ public class MoveRunner extends ServerTask<List<P4StatusMessage>> {
         }
 
         if (!reverseLookup.isEmpty()) {
-            LOG.error("no p4 found for " + reverseLookup.values());
+            LOG.error("no p4 file found for " + reverseLookup.values());
         }
 
         return ret;
@@ -213,7 +213,7 @@ public class MoveRunner extends ServerTask<List<P4StatusMessage>> {
         for (FilePath vf : files) {
             P4FileInfo info = allMappings.get(vf);
             if (info == null) {
-                log("No retrieved mapping for " + vf + ": it's probably not under source control");
+                LOG.info("No retrieved mapping for " + vf + ": it's probably not under source control");
             } else {
                 ret.put(vf, info);
             }

@@ -136,6 +136,6 @@ class P4ChangeListIdImpl implements P4ChangeListId {
 
     @Override
     public String toString() {
-        return getServerConfigId() + "+" + getClientName() + "@" + getChangeListId();
+        return getServerConfigId() + "/" + getClientName() + "@" + getChangeListId();
     }
 }

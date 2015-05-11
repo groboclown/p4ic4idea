@@ -116,13 +116,30 @@ public class P4ChangeListCache implements ApplicationComponent {
 
 
     @Nullable
-    public P4ChangeList getChangeListForFile(@NotNull Client client, @NotNull P4FileInfo file) throws VcsException {
+    public P4ChangeList getChangeListForFile(@NotNull Client client, @NotNull FilePath file) throws VcsException {
         final List<P4ChangeList> res = getCachedChangeListsFor(client);
         if (res != null) {
-            int changeId = file.getChangelist();
+            for (P4ChangeList p4cl: res) {
+                for (P4FileInfo fileInfo: p4cl.getFiles()) {
+                    if (file.equals(fileInfo.getPath())) {
+                        return p4cl;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+
+    @Nullable
+    public P4FileInfo getFileInChangelist(@NotNull Client client, @NotNull FilePath file) {
+        final List<P4ChangeList> res = getCachedChangeListsFor(client);
+        if (res != null) {
             for (P4ChangeList p4cl : res) {
-                if (p4cl.getId().getChangeListId() == changeId) {
-                    return p4cl;
+                for (P4FileInfo fileInfo : p4cl.getFiles()) {
+                    if (file.equals(fileInfo.getPath())) {
+                        return fileInfo;
+                    }
                 }
             }
         }
@@ -248,8 +265,20 @@ public class P4ChangeListCache implements ApplicationComponent {
         final List<P4StatusMessage> messages =
                 client.getServer().moveFilesToChangelist(
                         changeList == null ? P4_DEFAULT : changeList.getChangeListId(), affected);
+        // We can't run just this one reload, because the from-changelist needs
+        // to be reloaded as well.
 
-        reloadChangeList(client, changeList);
+        Set<P4ChangeListId> updatedChangelists = new HashSet<P4ChangeListId>();
+        updatedChangelists.add(changeList);
+        for (FilePath fp: affected) {
+            P4ChangeList change = getChangeListForFile(client, fp);
+            if (change != null) {
+                updatedChangelists.add(change.getId());
+            }
+        }
+        for (P4ChangeListId p4id: updatedChangelists) {
+            reloadChangeList(client, p4id);
+        }
 
         return messages;
     }

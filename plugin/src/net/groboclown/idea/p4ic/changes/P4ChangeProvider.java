@@ -48,7 +48,7 @@ public class P4ChangeProvider implements ChangeProvider {
     private static final Logger LOG = Logger.getInstance(P4ChangeProvider.class);
 
     // TODO make configurable
-    private static final long MIN_REFRESH_INTERVAL_MILLIS = 1000;
+    private static final long MIN_REFRESH_INTERVAL_MILLIS = 2000;
 
     private final P4Vcs vcs;
     private long lastRefreshTime = 0L;
@@ -68,13 +68,15 @@ public class P4ChangeProvider implements ChangeProvider {
         }
 
         // TODO change back to debug
-        LOG.info("start changelist refresh", new Throwable());
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastRefreshTime < MIN_REFRESH_INTERVAL_MILLIS) {
             LOG.info("skipping changelist refresh; previous refresh was too soon");
             return;
         }
         lastRefreshTime = currentTime;
+
+        //LOG.info("start changelist refresh", new Throwable());
+        LOG.info("start changelist refresh");
 
         // In the current thread, pull in all the changes from Perforce that are within the dirty scope, into
         // the addGate.

@@ -17,7 +17,7 @@
     * Cached the jobs loaded from the server.
     * Added a monitor to track the number of actual server calls.
     * Capped the number of simultaneous connections to the same server/workspace (2).
-    * Capped the frequency at which changelists will be refreshed (one per second).
+    * Capped the frequency at which changelists will be refreshed (once every two seconds).
       This is due to editing files triggering a changelist refresh, which can become quite noisy.
 * Bug fixes.
     * Reduced the amount of log messages.

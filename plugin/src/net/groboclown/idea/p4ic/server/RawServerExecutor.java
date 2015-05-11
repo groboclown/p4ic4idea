@@ -45,6 +45,8 @@ import java.util.concurrent.CancellationException;
  */
 public class RawServerExecutor {
     private static final Logger LOG = Logger.getInstance(RawServerExecutor.class);
+
+    // TODO make these configurable
     private static final int MAX_CONNECTIONS = 2;
     private static final int MAX_CONNECTION_WAIT_TIME = 30 * 1000;
 
@@ -103,40 +105,9 @@ public class RawServerExecutor {
 
     private <T> T performAction(@NotNull Project project, @NotNull ServerTask<T> runner)
             throws VcsException, CancellationException {
-        // This is a suggestion, but there are some solid reasons why this should
-        // be in the AWT (specifically, edit operations are expected to run in EDT)
-        //final Application appManager = ApplicationManager.getApplication();
-        //if (appManager.isDispatchThread()) {
-        //    //LOG.info("Should not ever run P4 commands in the EDT");
-        //    throw new IllegalStateException("Must not ever run P4 commands in the EDT");
-        //}
-
-        /* Infinite simultaneous connection logic
-        P4Exec exec;
-        synchronized (poolSync) {
-            if (idlePool.isEmpty()) {
-                LOG.info("Creating a new Perforce connection object");
-                exec = new P4Exec(config, clientName, connectionHandler,
-                        new OnServerConfigurationProblem.WithMessageBus(project));
-            } else {
-                exec = idlePool.remove(idlePool.size() - 1);
-            }
-        }
-        try {
-            return runner.run(exec);
-        } finally {
-            synchronized (poolSync) {
-                if (disposed || isOffline() || closingPool.contains(exec)) {
-                    exec.dispose();
-                    closingPool.remove(exec);
-                    // do not put back into any pool.
-                } else {
-                    activePool.remove(exec);
-                    idlePool.add(exec);
-                }
-            }
-        }
-        */
+        // The actions should not run in the dispatch thread,
+        // but there are some solid reasons why this sometimes can run
+        // in the AWT (specifically, edit operations are expected to run in EDT)
 
         // This call indicates an attempt to reconnect to the server.
         closed = false;

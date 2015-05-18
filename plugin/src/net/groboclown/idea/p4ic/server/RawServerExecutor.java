@@ -550,7 +550,7 @@ public class RawServerExecutor {
     @NotNull
     public List<P4FileInfo> synchronizeFiles(@NotNull final Project project,
             @NotNull final Collection<FilePath> files, final int revision, final int changelist,
-            @NotNull final Collection<VcsException> errorsOutput)
+            final boolean forceSync, @NotNull final Collection<VcsException> errorsOutput)
             throws VcsException, CancellationException {
         if (files.isEmpty()) {
             return Collections.emptyList();
@@ -566,7 +566,7 @@ public class RawServerExecutor {
                 } else {
                     specs = FileSpecUtil.getFromFilePathsAt(files, "#head", true);
                 }
-                final List<IFileSpec> results = exec.synchronizeFiles(project, specs);
+                final List<IFileSpec> results = exec.synchronizeFiles(project, specs, forceSync);
 
                 // Explicitly loop through the results to find which error
                 // messages are valid.
@@ -607,6 +607,31 @@ public class RawServerExecutor {
             }
         });
     }
+
+    @NotNull
+    public Collection<P4FileInfo> revertUnchangedFilesInChangelist(final Project project, final int changeListId,
+            @NotNull final List<P4StatusMessage> errors)
+            throws VcsException, CancellationException {
+        return performAction(project, new ServerTask<Collection<P4FileInfo>>() {
+            @Override
+            public Collection<P4FileInfo> run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
+                return exec.revertUnchangedFiles(project, FileSpecUtil.getP4RootFileSpec(), changeListId, errors, fileInfoCache);
+            }
+        });
+    }
+
+
+    @NotNull
+    public Collection<P4FileInfo> revertUnchangedFiles(final Project project, @NotNull final List<FilePath> filePaths,
+            @NotNull final List<P4StatusMessage> errors) throws VcsException {
+        return performAction(project, new ServerTask<Collection<P4FileInfo>>() {
+            @Override
+            public Collection<P4FileInfo> run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
+                return exec.revertUnchangedFiles(project, FileSpecUtil.getFromFilePaths(filePaths), -1, errors, fileInfoCache);
+            }
+        });
+    }
+
 
     @NotNull
     public List<String> getJobStatusValues(@NotNull final Project project) throws VcsException, CancellationException {
@@ -656,6 +681,7 @@ public class RawServerExecutor {
             }
         });
     }
+
 
     @Nullable
     public P4Job getJobForId(final Project project, final String jobId) throws VcsException, CancellationException {

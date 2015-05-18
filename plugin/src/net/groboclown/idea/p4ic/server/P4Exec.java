@@ -31,6 +31,7 @@ import com.perforce.p4java.impl.generic.core.file.FilePath;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
+import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
 import com.perforce.p4java.option.server.GetFileContentsOptions;
@@ -517,13 +518,14 @@ public class P4Exec {
     }
 
     @NotNull
-    public List<IFileSpec> synchronizeFiles(@NotNull Project project, @NotNull final List<IFileSpec> files)
+    public List<IFileSpec> synchronizeFiles(@NotNull Project project, @NotNull final List<IFileSpec> files,
+            final boolean forceSync)
             throws VcsException, CancellationException {
         return runWithClient(project, new WithClient<List<IFileSpec>>() {
             @Override
             public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 count.invoke("sync");
-                final List<IFileSpec> ret = client.sync(files, new SyncOptions(false, false, false, false, true));
+                final List<IFileSpec> ret = client.sync(files, new SyncOptions(forceSync, false, false, false, true));
                 if (ret == null) {
                     return Collections.emptyList();
                 }
@@ -582,6 +584,37 @@ public class P4Exec {
                 return getErrors(changelist.submit(options));
             }
         });
+    }
+
+    @NotNull
+    public Collection<P4FileInfo> revertUnchangedFiles(final Project project,
+            @NotNull final List<IFileSpec> fileSpecs, final int changeListId,
+            @NotNull final List<P4StatusMessage> errors, @NotNull FileInfoCache fileInfoCache)
+            throws VcsException, CancellationException {
+        final List<IFileSpec> reverted = runWithClient(project, new WithClient<List<IFileSpec>>() {
+            @Override
+            public List<IFileSpec> run(@NotNull final IOptionsServer server, @NotNull final IClient client, @NotNull final ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                RevertFilesOptions options = new RevertFilesOptions(false, changeListId, true, false);
+                count.invoke("revertFiles");
+                final List<IFileSpec> results = client.revertFiles(fileSpecs, options);
+                List<IFileSpec> reverted = new ArrayList<IFileSpec>(results.size());
+                for (IFileSpec spec : results) {
+                    if (P4StatusMessage.isErrorStatus(spec)) {
+                        final P4StatusMessage msg = new P4StatusMessage(spec);
+                        if (!msg.isFileNotFoundError()) {
+                            errors.add(msg);
+                        }
+                    } else {
+                        LOG.info("Revert for spec " + spec + ": action " + spec.getAction());
+                        reverted.add(spec);
+                    }
+                }
+                LOG.info("reverted specs: " + reverted);
+                LOG.info("reverted errors: " + errors);
+                return reverted;
+            }
+        });
+        return runWithClient(project, new P4FileInfo.FstatLoadSpecs(reverted, fileInfoCache));
     }
 
 
@@ -1067,23 +1100,23 @@ public class P4Exec {
     }
 
 
-    static interface P4Runner<T> {
+    interface P4Runner<T> {
         T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception;
     }
 
 
-    static interface WithServer<T> {
+    interface WithServer<T> {
         T run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception;
     }
 
 
-    static interface WithClient<T> {
+    interface WithClient<T> {
         T run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception;
     }
 
 
 
-    static interface ServerCount {
+    interface ServerCount {
         void invoke(@NotNull String operation);
     }
 

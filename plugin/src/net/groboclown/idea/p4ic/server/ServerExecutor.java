@@ -221,15 +221,28 @@ public class ServerExecutor {
 
     @NotNull
     public List<P4FileInfo> synchronizeFiles(@NotNull final Collection<FilePath> path, final int revision,
-            final int changelist, @NotNull final Collection<VcsException> errorsOutput)
+            final int changelist, boolean forceSync, @NotNull final Collection<VcsException> errorsOutput)
             throws VcsException, CancellationException {
-        return exec.synchronizeFiles(project, path, revision, changelist, errorsOutput);
+        return exec.synchronizeFiles(project, path, revision, changelist, forceSync, errorsOutput);
     }
 
     @NotNull
     public Collection<P4StatusMessage> integrateFiles(@NotNull final P4FileInfo src, @NotNull final FilePath tgt,
             final int changeListId) throws VcsException, CancellationException {
         return exec.integrateFiles(project, src, tgt, changeListId);
+    }
+
+    @NotNull
+    public Collection<P4FileInfo> revertUnchangedFilesInChangelist(final int changeListId,
+            @NotNull final List<P4StatusMessage> errors)
+            throws VcsException, CancellationException {
+        return exec.revertUnchangedFilesInChangelist(project, changeListId, errors);
+    }
+
+    @NotNull
+    public Collection<P4FileInfo> revertUnchangedFiles(@NotNull List<FilePath> filePaths,
+            @NotNull final List<P4StatusMessage> errors) throws VcsException {
+        return exec.revertUnchangedFiles(project, filePaths, errors);
     }
 
     @NotNull

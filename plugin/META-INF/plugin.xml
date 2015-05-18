@@ -1,27 +1,24 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.5.2</version>
+    <version>0.5.3</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.5.3</em>
+                <ol>
+                    <li>Added "Update files" to file context menu to allow easy synchronization with depot.</li>
+                    <li>Added "Revert unchanged files" to file context menu and changelist context menu.</li>
+                    <li>Improved support for rollback of files that aren't explicitly checked out by Perforce.</li>
+                </ol>
+            </li>
             <li><em>0.5.2</em>
                 <ol>
                     <li>Reduced the number of server calls and simultaneous connections.</li>
                     <li>Added a monitor to track the number of actual server calls.</li>
                     <li>Reduced the amount of log messages.</li>
                     <li>Eliminated NPE related to changelist caching.</li>
-                </ol>
-            </li>
-            <li><em>0.5.1</em>
-                <ol>
-                    <li>Internationalized the exception messages.</li>
-                    <li>Fixed: Not finding P4CONFIG in the hierarchy</li>
-                    <li>Partial fix for incorrect parsing of P4Java API issue with fetching jobs</li>
-                    <li>Fixed: Config "resolved values" should better reflect if it has been loaded</li>
-                    <li>Fixed: Reports of invalid configuration now better describe the source of the issue.</li>
-                    <li>Fixed: "Add file" while disconnected causes NPE</li>
                 </ol>
             </li>
         </ol>
@@ -40,13 +37,13 @@
       <p>
       Once you install the plugin, you can associate a project directory
       with Perforce in the project settings (<b>File</b> - <b>Settings...</b>
-      or <en>Alt+Ctrl+S</alt>, and navigating to the Version Control panel.
+      or <en>Ctrl+Alt+S</alt>, and navigating to the Version Control panel.
       Make sure to edit the Perforce configuration.
       </p>
       <p>
       The plugin will keep Your client's open changelists
       synchronized with the IDEA backed changelists, viewable
-      under the "Changes" view (<em>Alt-9</em>).  If the changelists become
+      under the "Changes" view (<em>Alt+9</em>).  If the changelists become
       out of sync, you can force the plugin to re-examine the
       mappings by pressing the refresh button in the changes view.
       </p>
@@ -74,12 +71,27 @@
                     text="Work offline"/>
         </group>
 
+        <group id="P4ExtendedActions">
+            <action id="P4.RevertUnchanged" class="net.groboclown.idea.p4ic.actions.P4RevertUnchanged"
+                    text="Revert unchanged"
+                    description="Revert files that are checked out but not different from the server version."
+                    />
+
+
+            <!-- Add the revert unchanged to the changelist menu -->
+            <add-to-group group-id="ChangesViewPopupMenu"
+                          anchor="after" relative-to-action="ChangesView.Edit"/>
+        </group>
+
+
         <group id="P4FileActions">
             <reference ref="CheckinFiles"/>
             <action id="P4.Edit" class="net.groboclown.idea.p4ic.actions.P4Edit"
                     text="Add or edit" icon="AllIcons.Actions.Edit"
                     use-shortcut-of="ChangesView.AddUnversioned"/>
             <reference ref="ChangesView.Revert"/>
+            <reference ref="UpdateFiles" />
+            <reference ref="P4.RevertUnchanged"/>
             <separator/>
             <reference ref="Annotate"/>
             <reference ref="Show.Current.Revision"/>
@@ -92,8 +104,6 @@
             <separator/>
             <action id="P4.ResolveConflicts" class="net.groboclown.idea.p4ic.actions.P4ResolveConflictsAction"
                     text="Resolve Conflicts..."/>
-            <action id="P4.Sync" class="net.groboclown.idea.p4ic.actions.P4SyncAction"
-                    text="Sync to latest version"/>
             <separator/>
             -->
 
@@ -117,6 +127,12 @@
 
             <add-to-group group-id="VcsGroup" anchor="last"/>
         </group>
+
+
+        <!-- TODO find the right way to extend a group -->
+        <!-- This was ripped from VcsActions.xml -->
+
+
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">

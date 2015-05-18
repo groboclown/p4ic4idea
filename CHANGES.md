@@ -2,6 +2,31 @@
 
 
 
+## ::v0.5.3::
+
+### Overview
+
+* Added "Update files" to file context menu to allow easy synchronization with depot.
+* Added "Revert unchanged files" to file context menu and changelist context menu.
+* Bug fixes.
+
+### Details
+
+* Added "Update files" to file context menu to allow easy synchronization with depot.
+    * Right click on the Project view file or directory, select the **P4** sub-menu,
+      and the **Update files...** option will synchronize to the head revision.
+* Added "Revert unchanged files" to file context menu and changelist context menu.
+    * Right click on a changelist in the **Version Control** view, and select "Revert unchanged".
+      All files in the changelist, for all clients, will be reverted if they have not
+      been altered from the depot version.
+    * Right click on selected files in the project view, and select "Revert unchanged".
+      All files in the changelist, for all clients, will be reverted if they have not
+      been altered from the depot version.
+* Bug fixes.
+    * Improved support for rollback of files that aren't explicitly checked out by Perforce.
+
+
+
 ## ::v0.5.2::
 
 ### Overview

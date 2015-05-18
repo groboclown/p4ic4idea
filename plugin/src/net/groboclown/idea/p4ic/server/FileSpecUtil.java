@@ -195,6 +195,12 @@ public class FileSpecUtil {
     }
 
 
+    @NotNull
+    static List<IFileSpec> getP4RootFileSpec() {
+        return FileSpecBuilder.makeFileSpecList("//...");
+    }
+
+
     private static String escapeToP4Path(@NotNull String path) throws P4Exception {
         if (path.contains("...")) {
             throw new P4FileException(P4Bundle.message("error.filespec.elipses", path));

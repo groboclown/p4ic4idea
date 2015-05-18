@@ -22,14 +22,18 @@ import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.*;
+import java.util.Map.Entry;
 
 public class P4RollbackEnvironment implements RollbackEnvironment {
     private static final Logger LOG = Logger.getInstance(P4RollbackEnvironment.class);
@@ -127,21 +131,80 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
 
     @Override
     public void rollbackMissingFileDeletion(List<FilePath> files, List<VcsException> exceptions, RollbackProgressListener listener) {
-        // TODO check if this is the right behavior
-        throw new UnsupportedOperationException(P4Bundle.message("error.rollback.missing-delete"));
+        forceSync(files, exceptions, listener);
     }
 
     @Override
     public void rollbackModifiedWithoutCheckout(List<VirtualFile> files, List<VcsException> exceptions, RollbackProgressListener listener) {
-        // No-op operation?
-        // TODO check if this should inspect the depot to see if it is
-        // under the dpeot, and should just be force synched.
-        LOG.info("rollbackModifiedWithoutCheckout: not implemented " + files);
+        List<FilePath> paths = new ArrayList<FilePath>(files.size());
+        for (VirtualFile vf: files) {
+            paths.add(VcsUtil.getFilePath(vf));
+        }
+        forceSync(paths, exceptions, listener);
     }
+
+    private void forceSync(List<FilePath> files, List<VcsException> exceptions, RollbackProgressListener listener) {
+        if (vcs.getProject().isDisposed()) {
+            return;
+        }
+
+        final Map<Client, List<FilePath>> clientFiles;
+        try {
+            clientFiles = vcs.mapFilePathToClient(files);
+        } catch (P4InvalidConfigException e) {
+            LOG.warn(e);
+            return;
+        }
+
+        for (Entry<Client, List<FilePath>> entry: clientFiles.entrySet()) {
+            listener.checkCanceled();
+            listener.accept(entry.getValue());
+            try {
+                entry.getKey().getServer().synchronizeFiles(entry.getValue(), -1, -1, true, exceptions);
+            } catch (VcsException e) {
+                exceptions.add(e);
+            }
+        }
+    }
+
 
     @Override
     public void rollbackIfUnchanged(VirtualFile file) {
-        // TODO remove from change list
-        LOG.info("rollbackIfUnchanged: not implemented " + file);
+        if (file == null || vcs.getProject().isDisposed()) {
+            return;
+        }
+
+        FilePath fp = VcsUtil.getFilePath(file);
+        final Client client = vcs.getClientFor(fp);
+        if (client == null) {
+            LOG.debug("No client for file " + file);
+            return;
+        }
+
+        if (client.isWorkingOffline()) {
+            LOG.debug("Client working offline");
+            return;
+        }
+
+        final List<P4StatusMessage> errors = new ArrayList<P4StatusMessage>();
+        final Collection<P4FileInfo> reverted;
+        synchronized (vfsSync) {
+            try {
+                reverted = client.getServer().revertUnchangedFiles(Collections.singletonList(fp), errors);
+            } catch (VcsException e) {
+                if (! errors.isEmpty()) {
+                    LOG.info(errors.toString());
+                }
+                LOG.warn(e);
+                return;
+            }
+        }
+        if (! errors.isEmpty()) {
+            LOG.info(errors.toString());
+        }
+
+        if (! reverted.isEmpty()) {
+            P4ChangesViewRefresher.refreshLater(vcs.getProject());
+        }
     }
 }

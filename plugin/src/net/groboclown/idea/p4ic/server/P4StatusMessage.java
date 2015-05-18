@@ -42,7 +42,8 @@ public class P4StatusMessage {
 
     public boolean isFileNotFoundError() {
         return isError() &&
-                (getUniqueCode() == 6520);
+                (getUniqueCode() == 6520 ||
+                 getUniqueCode() == 6526);
     }
 
     public int getErrorCode() {
@@ -80,10 +81,10 @@ public class P4StatusMessage {
         return P4Bundle.message("status.message",
                 spec.getStatusMessage(),
                 spec.getGenericCode(),
-                "." + spec.getSubCode(),
-                "." + spec.getUniqueCode(),
-                "." + spec.getRawCode(),
-                "." + spec.getSeverityCode());
+                spec.getSubCode(),
+                spec.getUniqueCode(),
+                spec.getRawCode(),
+                spec.getSeverityCode());
     }
 
 
@@ -111,12 +112,18 @@ public class P4StatusMessage {
 
     @NotNull
     public static List<? extends VcsException> messagesAsErrors(@Nullable List<P4StatusMessage> p4StatusMessages) {
+        return messagesAsErrors(p4StatusMessages, false);
+    }
+
+
+    @NotNull
+    public static List<? extends VcsException> messagesAsErrors(@Nullable List<P4StatusMessage> p4StatusMessages, boolean ignoreFileNotFoundErrors) {
         if (p4StatusMessages == null || p4StatusMessages.isEmpty()) {
             return Collections.emptyList();
         }
         List<VcsException> ret = new ArrayList<VcsException>(p4StatusMessages.size());
         for (P4StatusMessage msg: p4StatusMessages) {
-            if (msg.isError() && msg.toString().length() > 0) {
+            if (msg.isError() && msg.toString().length() > 0 && (!ignoreFileNotFoundErrors || !msg.isFileNotFoundError())) {
                 ret.add(new VcsException(msg.toString()));
             }
         }

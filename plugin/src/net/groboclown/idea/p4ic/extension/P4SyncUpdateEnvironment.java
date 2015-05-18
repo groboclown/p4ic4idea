@@ -85,7 +85,9 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
             Client client = entry.getKey();
             try {
                 // TODO get the revision or changelist from the Configurable that the user wants to sync to.
-                final List<P4FileInfo> results = client.getServer().synchronizeFiles(entry.getValue(), -1, -1, session.exceptions);
+                // For changelist browsing, we can limit the number of changes returned, and have a paging
+                // mechanism - "p4 changes -m 10 ...@<(last changelist number)"
+                final List<P4FileInfo> results = client.getServer().synchronizeFiles(entry.getValue(), -1, -1, false, session.exceptions);
                 for (P4FileInfo file: results) {
                     addToGroup(file, groups);
                 }

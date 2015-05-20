@@ -24,6 +24,7 @@
       been altered from the depot version.
 * Bug fixes.
     * Improved support for rollback of files that aren't explicitly checked out by Perforce.
+    * Add missing tooltips on UI elements (#43)
 
 
 

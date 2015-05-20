@@ -11,6 +11,7 @@
                     <li>Added "Update files" to file context menu to allow easy synchronization with depot.</li>
                     <li>Added "Revert unchanged files" to file context menu and changelist context menu.</li>
                     <li>Improved support for rollback of files that aren't explicitly checked out by Perforce.</li>
+                    <li>Added missing tooltips on UI elements.</li>
                 </ol>
             </li>
             <li><em>0.5.2</em>

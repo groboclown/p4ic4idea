@@ -138,7 +138,7 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
 
 
 
-    private static class ClientImpl implements Client {
+    static class ClientImpl implements Client {
         private final Project project;
         private final P4Config sourceConfig;
         private final ServerConfig config;
@@ -150,7 +150,7 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
         private List<VirtualFile> roots;
         private List<FilePath> fpRoots;
 
-        private ClientImpl(@NotNull Project project, @NotNull P4Config config, @NotNull List<VirtualFile> roots)
+        ClientImpl(@NotNull Project project, @NotNull P4Config config, @NotNull List<VirtualFile> roots)
                 throws P4InvalidConfigException, P4InvalidClientException {
             this.project = project;
             this.sourceConfig = config;

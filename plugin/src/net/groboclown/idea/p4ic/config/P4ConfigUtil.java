@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.config;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -28,6 +29,8 @@ import java.io.IOException;
 import java.util.*;
 
 public class P4ConfigUtil {
+    private static final Logger LOG = Logger.getInstance(P4ConfigUtil.class);
+
     public static final String PROTOCOL_SEP = "://";
 
 
@@ -280,6 +283,7 @@ public class P4ConfigUtil {
                     if (file.isDirectory()) {
                         depthStack.add(Arrays.asList(file.getChildren()).iterator());
                     } else if (file.getName().equals(configFileName)) {
+                        LOG.info("Found config file " + file);
                         ManualP4Config config = new ManualP4Config();
                         config.setConfigFile(file.getPath());
                         ret.put(file.getParent(), loadCmdP4Config(config));
@@ -293,6 +297,7 @@ public class P4ConfigUtil {
             while (parent != null) {
                 VirtualFile configFile = parent.findChild(configFileName);
                 if (configFile != null) {
+                    LOG.info("Found config file " + configFile + ", but registering it as root of " + rootSearchPath);
                     ManualP4Config config = new ManualP4Config();
                     config.setConfigFile(configFile.getPath());
 

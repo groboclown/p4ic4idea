@@ -34,7 +34,7 @@ public class P4Util {
      *
      * @return
      */
-    static IOptionsServer connect() throws P4JavaException, URISyntaxException {
+    public static IOptionsServer connect() throws P4JavaException, URISyntaxException {
         final Properties properties = new Properties();
         properties.setProperty(PropertyDefs.PROG_NAME_KEY, "IntelliJ Perforce Community Plugin");
         properties.setProperty(PropertyDefs.PROG_VERSION_KEY, "1");
@@ -54,7 +54,7 @@ public class P4Util {
     }
 
 
-    static IClient loadClient(IOptionsServer server) throws ConnectionException, AccessException, RequestException {
+    public static IClient loadClient(IOptionsServer server) throws ConnectionException, AccessException, RequestException {
         IClient ret = server.getClient("user_client");
         server.setCurrentClient(ret);
         return ret;

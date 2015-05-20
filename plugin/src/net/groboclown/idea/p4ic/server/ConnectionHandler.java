@@ -14,16 +14,19 @@
 package net.groboclown.idea.p4ic.server;
 
 import com.perforce.p4java.PropertyDefs;
-import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.server.ServerFactory;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.connection.AuthTicketConnectionHandler;
 import net.groboclown.idea.p4ic.server.connection.ClientPasswordConnectionHandler;
 import net.groboclown.idea.p4ic.server.connection.EnvConnectionHandler;
+import net.groboclown.idea.p4ic.server.connection.TestConnectionHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.URISyntaxException;
 import java.util.Properties;
 
 public abstract class ConnectionHandler {
@@ -40,6 +43,9 @@ public abstract class ConnectionHandler {
             case P4CONFIG:
             case DEFAULT:
                 return EnvConnectionHandler.INSTANCE;
+            case UNIT_TEST_MULTIPLE:
+            case UNIT_TEST_SINGLE:
+                return TestConnectionHandler.INSTANCE;
             default:
                 throw new IllegalStateException(
                         "Unknown connection method: " + config.getConnectionMethod());
@@ -62,6 +68,12 @@ public abstract class ConnectionHandler {
     public String createUrl(@NotNull ServerConfig config) {
         // Trim the config port.  See bug #23
         return config.getProtocol().toString() + "://" + config.getPort().trim();
+    }
+
+
+    @NotNull
+    public IOptionsServer getOptionsServer(@NotNull String serverUriString, @NotNull Properties props) throws URISyntaxException, ConnectionException, NoSuchObjectException, ConfigException, ResourceException {
+        return ServerFactory.getOptionsServer(serverUriString, props);
     }
 
 

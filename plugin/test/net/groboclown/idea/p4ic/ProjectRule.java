@@ -21,6 +21,7 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeListManagerImpl;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TempDirTestFixture;
@@ -66,8 +67,22 @@ public class ProjectRule extends ExternalResource {
         when(ret.getPath()).thenReturn(path);
         when(ret.getIOFile()).thenReturn(file);
         when(ret.isDirectory()).thenReturn(isDirectory);
-        //when(ret.getVirtualFile(), );
-        throw new NullPointerException();
+        when(ret.isNonLocal()).thenReturn(false);
+        when(ret.getName()).thenReturn(file.getName());
+        when(ret.getVirtualFile()).thenReturn(createVirtualFile(path, exists, isDirectory));
+        return ret;
+    }
+
+
+    public VirtualFile createVirtualFile(String path, boolean exists, boolean isDirectory) {
+        File file = new File(path);
+        VirtualFile ret = mock(VirtualFile.class);
+        when(ret.getName()).thenReturn(file.getName());
+        when(ret.isDirectory()).thenReturn(isDirectory);
+        when(ret.exists()).thenReturn(exists);
+        when(ret.getPath()).thenReturn(path);
+        when(ret.getUrl()).thenReturn(file.toURI().toString());
+        return ret;
     }
 
 

@@ -36,6 +36,8 @@ public interface P4Config {
         P4CONFIG(false),
         REL_P4CONFIG(true),
         SSO(false),
+        UNIT_TEST_SINGLE(false),
+        UNIT_TEST_MULTIPLE(true),
         DEFAULT(false);
 
         private final boolean isRelative;

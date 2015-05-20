@@ -14,6 +14,7 @@
 package net.groboclown.idea.p4ic.ui;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task.Backgroundable;
@@ -43,6 +44,8 @@ import java.util.List;
 import java.util.Map.Entry;
 
 public class P4ConfigPanel {
+    private static final Logger LOG = Logger.getInstance(P4ConfigPanel.class);
+
     private JPanel myMainPanel;
     private JComboBox/*<ConnectionPanel>*/ myConnectionChoice; // JDK 1.6 does not have generic combo box
     private JButton myRefreshClientList;
@@ -418,9 +421,11 @@ public class P4ConfigPanel {
                 : null;
 
         if (configPath != null) {
+            LOG.info("using config path " + configPath);
             config = getConfigForRelativeConfigPath(configPath.toString());
         }
         if (config == null) {
+            LOG.info("Using cmd style config loading");
             ManualP4Config manualConfig = new ManualP4Config();
             saveSettingsToConfig(manualConfig);
             config = P4ConfigUtil.loadCmdP4Config(manualConfig);
@@ -491,8 +496,9 @@ public class P4ConfigPanel {
     @Nullable
     private Map<String, P4Config> loadRelativeConfigPaths() {
         final ConnectionPanel connection = getSelectedConnection();
-        // TODO Should be connection.getConnectionMethod().isRelativeToPath(), but
-        // we are reaching into the panel to grab its path.
+        // Should be connection.getConnectionMethod().isRelativeToPath(), but
+        // we are reaching into the panel to grab its path.  This is at least a bit more
+        // abstracted out.
         if (connection instanceof RelativeConfigConnectionPanel) {
             final String configFile = ((RelativeConfigConnectionPanel) connection).getConfigFileName();
             if (configFile != null) {
@@ -510,6 +516,7 @@ public class P4ConfigPanel {
                 return configMap;
             }
         }
+        LOG.info("No config file name set; not returning any configs");
         clearRelativeConfigPaths();
         return Collections.emptyMap();
     }
@@ -723,9 +730,7 @@ public class P4ConfigPanel {
                 setToolTipText("");
             } else {
                 setText(value.getName());
-
-                // TODO add a tool tip
-                setToolTipText("");
+                setToolTipText(P4Bundle.message("connection.choice"));
             }
         }
     }

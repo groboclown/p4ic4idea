@@ -37,7 +37,6 @@ import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
 import com.perforce.p4java.option.server.GetFileContentsOptions;
 import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.VcsFuture;
 import net.groboclown.idea.p4ic.background.VcsSettableFuture;
@@ -786,7 +785,8 @@ public class P4Exec {
                 url = connectionHandler.createUrl(serverStatus.getConfig());
                 LOG.info("Opening connection to " + url + " with " + serverStatus.getConfig().getUsername());
 
-                server = ServerFactory.getOptionsServer(url, properties);
+                // Use the ConnectionHandler so that mock objects can work better
+                server = connectionHandler.getOptionsServer(url, properties);
 
                 // for debugging
                 //server = new P4ServerProxy(server);

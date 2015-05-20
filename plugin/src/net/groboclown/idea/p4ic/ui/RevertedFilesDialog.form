@@ -61,7 +61,9 @@
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="reverted.files.reverted.tooltip"/>
+            </properties>
             <border type="none"/>
             <children>
               <component id="c427a" class="javax.swing.JList" binding="myRevertedFilesList" custom-create="true">
@@ -92,7 +94,9 @@
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="reverted.files.errors.tooltip"/>
+            </properties>
             <border type="none"/>
             <children>
               <component id="cb074" class="javax.swing.JList" binding="myErrorsList" custom-create="true">

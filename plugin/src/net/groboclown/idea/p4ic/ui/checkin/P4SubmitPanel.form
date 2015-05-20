@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="net.groboclown.idea.p4ic.ui.checkin.P4SubmitPanel">
-  <grid id="27dc6" binding="myRootPanel" layout-manager="GridLayoutManager" row-count="4" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="27dc6" binding="myRootPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
       <xy x="20" y="20" width="548" height="207"/>
@@ -11,7 +11,7 @@
       <grid id="61412" binding="myExpandedPanel" layout-manager="GridLayoutManager" row-count="3" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="1" column="0" row-span="1" col-span="5" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <visible value="true"/>
@@ -52,7 +52,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="job.id"/>
+            </properties>
           </component>
           <component id="257b3" class="javax.swing.JButton" binding="myAddJobButton">
             <constraints>
@@ -61,6 +63,7 @@
             <properties>
               <enabled value="false"/>
               <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="submit.job.add.button"/>
+              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="job.panel.add"/>
             </properties>
           </component>
           <component id="abf22" class="javax.swing.JButton" binding="myBrowseButton">
@@ -70,6 +73,7 @@
             <properties>
               <enabled value="false"/>
               <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="submit.job.browse.button"/>
+              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="job.panel.browse"/>
             </properties>
           </component>
           <component id="a5536" class="javax.swing.JButton" binding="myRemoveButton">
@@ -79,6 +83,7 @@
             <properties>
               <enabled value="false"/>
               <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="submit.job.remove.button"/>
+              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="job.panel.remove"/>
             </properties>
           </component>
           <component id="fd8a0" class="javax.swing.JComboBox" binding="myJobStatus" custom-create="true">
@@ -104,6 +109,7 @@
         </constraints>
         <properties>
           <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="submit.job.title"/>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="associate.jobs.expand"/>
         </properties>
       </component>
       <vspacer id="c087a">
@@ -113,7 +119,7 @@
       </vspacer>
       <component id="f4c57" class="javax.swing.JLabel" binding="myJobsDisabledLabel">
         <constraints>
-          <grid row="2" column="0" row-span="1" col-span="5" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <foreground color="-65536"/>

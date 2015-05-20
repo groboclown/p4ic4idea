@@ -188,6 +188,7 @@
             </constraints>
             <properties>
               <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="connection.password.save"/>
+              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="config.panel.save_passwords.tooltip"/>
             </properties>
           </component>
           <hspacer id="3775d">
@@ -220,6 +221,7 @@
             </constraints>
             <properties>
               <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.autoconnect"/>
+              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.panel.silent.tooltip"/>
             </properties>
           </component>
         </children>

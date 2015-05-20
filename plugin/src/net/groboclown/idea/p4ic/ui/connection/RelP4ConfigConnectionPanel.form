@@ -23,7 +23,9 @@
             <preferred-size width="150" height="-1"/>
           </grid>
         </constraints>
-        <properties/>
+        <properties>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="config.rel.path.tooltip"/>
+        </properties>
       </component>
     </children>
   </grid>

@@ -210,6 +210,7 @@ public class P4ConfigConnectionPanel implements ConnectionPanel {
         this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.p4config"));
         panel1.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myP4ConfigFile = new TextFieldWithBrowseButton();
+        myP4ConfigFile.setText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("config.file.location.tooltip"));
         myP4ConfigFile.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.p4config.chooser"));
         panel1.add(myP4ConfigFile, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myFileMessage = new JLabel();

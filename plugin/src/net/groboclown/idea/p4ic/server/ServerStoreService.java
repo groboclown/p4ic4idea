@@ -21,7 +21,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.idea.p4ic.background.VcsSettableFuture;
 import net.groboclown.idea.p4ic.changes.P4ChangeListCache;
-import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.config.ServerConfig;
@@ -50,22 +49,10 @@ public class ServerStoreService implements ApplicationComponent {
     }
 
 
-    public static boolean isConfigValid(@NotNull ServerConfig config) {
-        ConnectionHandler handler = ConnectionHandler.getHandlerFor(config);
-        return handler.isConfigValid(config);
-    }
-
-
     @NotNull
     public ServerStatus getServerStatus(@NotNull Project project, @NotNull ServerConfig config)
             throws P4InvalidConfigException {
-        if (! isConfigValid(config)) {
-            // TODO report the actual problems
-            P4InvalidConfigException ex = new P4InvalidConfigException(config);
-            project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project,
-                    new ManualP4Config(config, null), ex);
-            throw ex;
-        }
+        ConnectionHandler.getHandlerFor(config).validateConfiguration(project, config);
         ServerData ret;
         synchronized (sync) {
             ret = servers.get(config);

@@ -17,12 +17,16 @@ import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.server.ConfigurationProblem;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 public class AuthTicketConnectionHandler extends ConnectionHandler {
@@ -44,13 +48,6 @@ public class AuthTicketConnectionHandler extends ConnectionHandler {
     }
 
     @Override
-    public boolean isConfigValid(@NotNull ServerConfig config) {
-        return (
-            // password can be empty or null
-            config.getAuthTicket() != null);
-    }
-
-    @Override
     public void defaultAuthentication(@NotNull IOptionsServer server, @NotNull ServerConfig config, @NotNull char[] password) throws P4JavaException {
         // no need to login - assume the ticket is valid.
     }
@@ -69,5 +66,15 @@ public class AuthTicketConnectionHandler extends ConnectionHandler {
         } finally {
             Arrays.fill(password, (char) 0);
         }
+    }
+
+    @NotNull
+    @Override
+    public List<ConfigurationProblem> getConfigProblems(@NotNull final ServerConfig config) {
+        List<ConfigurationProblem> problems = new ArrayList<ConfigurationProblem>();
+        if (config.getAuthTicket() == null) {
+            problems.add(new ConfigurationProblem(P4Bundle.message("configuration.problem.authticket")));
+        }
+        return problems;
     }
 }

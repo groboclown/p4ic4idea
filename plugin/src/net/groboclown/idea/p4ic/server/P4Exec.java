@@ -99,9 +99,7 @@ public class P4Exec {
         this.clientName = clientName;
         this.connectionHandler = connectionHandler;
         this.onServerProblem = onServerProblem;
-        if (! connectionHandler.isConfigValid(serverStatus.getConfig())) {
-            throw new P4InvalidConfigException(serverStatus.getConfig());
-        }
+        connectionHandler.validateConfiguration(null, serverStatus.getConfig());
     }
 
 

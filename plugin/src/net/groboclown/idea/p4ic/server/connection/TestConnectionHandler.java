@@ -17,14 +17,13 @@ package net.groboclown.idea.p4ic.server.connection;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.server.ConfigurationProblem;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.URISyntaxException;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 
 /**
@@ -73,8 +72,9 @@ public class TestConnectionHandler extends ConnectionHandler {
         return false;
     }
 
+    @NotNull
     @Override
-    public boolean isConfigValid(@NotNull final ServerConfig config) {
-        return true;
+    public List<ConfigurationProblem> getConfigProblems(@NotNull final ServerConfig config) {
+        return Collections.emptyList();
     }
 }

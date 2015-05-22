@@ -16,11 +16,13 @@ package net.groboclown.idea.p4ic.server.connection;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.server.ConfigurationProblem;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -52,9 +54,10 @@ public class EnvConnectionHandler extends ConnectionHandler {
         return discoverConnectionMethod(config).forcedAuthentication(server, config, password);
     }
 
+    @NotNull
     @Override
-    public boolean isConfigValid(@NotNull ServerConfig config) {
-        return discoverConnectionMethod(config).isConfigValid(config);
+    public List<ConfigurationProblem> getConfigProblems(@NotNull ServerConfig config) {
+        return discoverConnectionMethod(config).getConfigProblems(config);
     }
 
 

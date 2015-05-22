@@ -19,10 +19,13 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.server.ConfigurationProblem;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -55,13 +58,6 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
     }
 
     @Override
-    public boolean isConfigValid(@NotNull ServerConfig config) {
-        // This config only uses the fields that are required in the
-        // server config.  No additional checks are needed.
-        return true;
-    }
-
-    @Override
     public void defaultAuthentication(@NotNull IOptionsServer server, @NotNull ServerConfig config, char[] password)
             throws P4JavaException {
         if (password != null && password.length > 0) {
@@ -90,5 +86,13 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
         } else {
             return false;
         }
+    }
+
+    @NotNull
+    @Override
+    public List<ConfigurationProblem> getConfigProblems(@NotNull final ServerConfig config) {
+        // This config only uses the fields that are required in the
+        // server config.  No additional checks are needed.
+        return Collections.emptyList();
     }
 }

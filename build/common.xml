@@ -103,6 +103,12 @@
         <include name="mockito/1.9.5/mockito-all-1.9.5.jar"/>
       </fileset>
     </path>
+    <path id="unittest-runtime.classpath">
+        <fileset dir="${rootdir}/lib">
+            <include name="picocontainer/1.2/picocontainer.jar"/>
+            <include name="trove4j/trove4j.jar"/>
+        </fileset>
+    </path>
 
     <property name="idea.lowest.classpath" value="idea135.classpath"/>
 

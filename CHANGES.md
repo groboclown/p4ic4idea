@@ -2,6 +2,19 @@
 
 
 
+## ::v0.5.4::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    *  Changelists refresh event may be incorrectly skipped (#45)
+
+
+
 ## ::v0.5.3::
 
 ### Overview

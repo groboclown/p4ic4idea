@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-// TODO make a project service
 public class ClientManager {
     private static final Logger LOG = Logger.getInstance(ClientManager.class);
 

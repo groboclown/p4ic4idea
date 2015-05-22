@@ -13,20 +13,25 @@
  */
 package net.groboclown.idea.p4ic.server;
 
+import com.intellij.openapi.project.Project;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
+import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.connection.AuthTicketConnectionHandler;
 import net.groboclown.idea.p4ic.server.connection.ClientPasswordConnectionHandler;
 import net.groboclown.idea.p4ic.server.connection.EnvConnectionHandler;
 import net.groboclown.idea.p4ic.server.connection.TestConnectionHandler;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Properties;
 
 public abstract class ConnectionHandler {
@@ -58,10 +63,6 @@ public abstract class ConnectionHandler {
 
     public static String createUrlFor(@NotNull ServerConfig config) {
         return getHandlerFor(config).createUrl(config);
-    }
-
-    public static boolean isConfigValidFor(@NotNull ServerConfig config) {
-        return getHandlerFor(config).isConfigValid(config);
     }
 
 
@@ -99,11 +100,34 @@ public abstract class ConnectionHandler {
     public abstract boolean forcedAuthentication(@NotNull IOptionsServer server, @NotNull ServerConfig config, char[] password) throws P4JavaException;
 
 
-    // server configs are required to have all values set in a pretty
-    // solid valid config.
-    // TODO allow for this to return the actual problems with the
-    // configuration.
-    public abstract boolean isConfigValid(@NotNull ServerConfig config);
+    /**
+     * server configs are required to have all values set in a pretty
+     * solid valid config.
+     */
+    @NotNull
+    public abstract List<ConfigurationProblem> getConfigProblems(@NotNull ServerConfig config);
+
+
+    /**
+     * Perform the correct validation of the configuration, which includes correctly sending
+     * events to the message bus if there is a problem.
+     *
+     * @param project project
+     * @param config config to check
+     * @throws P4InvalidConfigException
+     */
+    public void validateConfiguration(@Nullable Project project, @NotNull ServerConfig config)
+            throws P4InvalidConfigException {
+        final List<ConfigurationProblem> problems = getConfigProblems(config);
+        if (! problems.isEmpty()) {
+            P4InvalidConfigException ex = new P4InvalidConfigException(config, problems);
+            if (project != null) {
+                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project,
+                        new ManualP4Config(config, null), ex);
+            }
+            throw ex;
+        }
+    }
 
 
     protected Properties initializeConnectionProperties(@NotNull ServerConfig config) {

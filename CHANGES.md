@@ -12,6 +12,12 @@
 
 * Bug fixes.
     *  Changelists refresh event may be incorrectly skipped (#45)
+       This fix keeps the timeout, but changes it to a cache expiration concept.
+       IntelliJ can call the changelist refresh multiple times very quickly, so
+       this addition will maintain a short-lived cache that will be reused as
+       long as IntelliJ indicates that no IDE-managed files need updates.
+       When the cache expires (currently set at 10 seconds), the server
+       will be queried at the next refresh time.
 
 
 

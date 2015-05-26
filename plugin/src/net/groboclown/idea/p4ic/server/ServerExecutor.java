@@ -141,6 +141,7 @@ public class ServerExecutor {
      * @return
      * @throws VcsException
      */
+    @NotNull
     public List<P4StatusMessage> moveFilesToChangelist(int targetChangelistId, List<FilePath> affected)
             throws VcsException {
         return exec.moveFilesToChangelist(project, targetChangelistId, affected);
@@ -156,41 +157,58 @@ public class ServerExecutor {
      * @return pending changelists
      * @throws VcsException
      */
+    @NotNull
     public List<IChangelistSummary> getPendingClientChangelists() throws VcsException {
         return exec.getPendingClientChangelists(project);
     }
 
+    @NotNull
     public List<P4FileInfo> getFilePathInfo(@NotNull Collection<FilePath> filePaths) throws VcsException {
         return exec.getFilePathInfo(project, filePaths);
     }
 
 
+    @NotNull
     public Collection<VirtualFile> findRoots(@Nullable final Collection<VirtualFile> requestedRoots) throws VcsException, CancellationException {
         return exec.findRoots(project, requestedRoots);
     }
 
+    @NotNull
     public List<P4FileInfo> loadOpenFiles(@Nullable VirtualFile[] roots) throws VcsException {
         return exec.loadOpenFiles(project, roots);
     }
 
+    @NotNull
     public List<P4FileRevision> getRevisionHistory(@NotNull P4FileInfo file, int maxRevs)
             throws VcsException {
         return exec.getRevisionHistory(project, file, maxRevs);
     }
 
+    @NotNull
     public List<P4StatusMessage> revertFiles(@NotNull List<FilePath> filePaths) throws VcsException {
         return exec.revertFiles(project, filePaths);
     }
 
+    @NotNull
     public List<P4FileInfo> getVirtualFileInfo(@NotNull Collection<VirtualFile> virtualFiles) throws VcsException {
         return exec.getVirtualFileInfo(project, virtualFiles);
     }
 
+    @NotNull
     public List<P4StatusMessage> submitChangelist(@NotNull List<FilePath> files, @NotNull Collection<P4Job> jobs,
             String jobStatus, int changelistId) throws VcsException {
         return exec.submitChangelist(project, files, jobs, jobStatus, changelistId);
     }
 
+    /**
+     *
+     * @param file file to load contents
+     * @param rev file revision
+     * @return null if the file revision is 0; else not null
+     * @throws VcsException
+     * @throws CancellationException
+     */
+    @Nullable
     public byte[] loadFileAsBytes(@NotNull FilePath file, int rev) throws VcsException, CancellationException {
         return exec.loadFileAsBytes(project, file, rev);
     }

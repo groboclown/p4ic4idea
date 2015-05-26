@@ -298,6 +298,7 @@ public class RawServerExecutor {
     }
 
 
+    @NotNull
     public Collection<VirtualFile> findRoots(@NotNull final Project project, @Nullable final Collection<VirtualFile> requestedRoots) throws VcsException, CancellationException {
         return performAction(project, new ServerTask<Collection<VirtualFile>>() {
             @Override
@@ -435,6 +436,7 @@ public class RawServerExecutor {
         return null;
     }
 
+    @Nullable
     public byte[] loadFileAsBytes(@NotNull final Project project, @NotNull FilePath file, int rev)
                 throws VcsException, CancellationException {
         if (rev == 0) {
@@ -455,6 +457,7 @@ public class RawServerExecutor {
     }
 
 
+    @NotNull
     public List<P4FileRevision> getRevisionHistory(@NotNull Project project,
             @NotNull P4FileInfo files, int maxRevs)
             throws VcsException, CancellationException {
@@ -470,6 +473,7 @@ public class RawServerExecutor {
         performAction(project, new DeleteChangelistTask(project, changelistId));
     }
 
+    @NotNull
     public List<P4StatusMessage> moveFilesToChangelist(@NotNull Project project, final int targetChangelist,
             @Nullable List<FilePath> filesToMove) throws VcsException, CancellationException {
         if (filesToMove == null) {

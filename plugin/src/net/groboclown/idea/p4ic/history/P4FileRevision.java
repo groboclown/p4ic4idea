@@ -87,6 +87,10 @@ public class P4FileRevision implements VcsFileRevision {
         return revision;
     }
 
+    public int getRev() {
+        return revision.getValue();
+    }
+
     @Override
     public Date getRevisionDate() {
         return date;

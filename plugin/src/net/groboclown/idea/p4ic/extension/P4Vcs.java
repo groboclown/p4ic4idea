@@ -125,6 +125,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     private final ClientManager clients;
 
+    private final P4RevisionSelector revisionSelector;
+
     private boolean autoOffline = false;
 
 
@@ -159,6 +161,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         annotationProvider = new P4AnnotationProvider(this);
         committedChangesProvider = new P4CommittedChangesProvider();
         clients = new ClientManager(project, configProject);
+        revisionSelector = new P4RevisionSelector(this);
         tempFileWatchDog = new TempFileWatchDog();
     }
 
@@ -430,9 +433,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     }
 
 
-    // TODO implement these
-
-
     /**
      * Returns the interface for selecting file version numbers.
      *
@@ -442,8 +442,11 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @Override
     @Nullable
     public RevisionSelector getRevisionSelector() {
-        return null;
+        return revisionSelector;
     }
+
+
+    // TODO implement these
 
 
     /**
@@ -506,6 +509,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
      */
     public Map<Client, List<FilePath>> mapFilePathToClient(Collection<FilePath> filePaths)
             throws P4InvalidConfigException {
+        // TODO handle p4ignore
+
         // There can  be situations where one client is buried under another client
         // path.  This needs to be able to handle that situation.
 

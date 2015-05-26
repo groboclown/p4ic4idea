@@ -1,22 +1,19 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.5.4</version>
+    <version>0.5.5</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.5.5</em>
+                <ol>
+                    <li>Stuff</li>
+                </ol>
+            </li>
             <li><em>0.5.4</em>
                 <ol>
                     <li>Fixed: changelists refresh event may be incorrectly skipped</li>
-                </ol>
-            </li>
-            <li><em>0.5.3</em>
-                <ol>
-                    <li>Added "Update files" to file context menu to allow easy synchronization with depot.</li>
-                    <li>Added "Revert unchanged files" to file context menu and changelist context menu.</li>
-                    <li>Improved support for rollback of files that aren't explicitly checked out by Perforce.</li>
-                    <li>Added missing tooltips on UI elements.</li>
                 </ol>
             </li>
         </ol>

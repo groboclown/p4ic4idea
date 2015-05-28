@@ -19,6 +19,9 @@ import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.text.DateFormatUtil;
+import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.extension.P4RevisionNumber;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,11 +31,13 @@ import java.util.*;
 public class P4FileAnnotation extends FileAnnotation {
     private final Project project;
     private final VirtualFile file;
-    private final VcsRevisionNumber.Int fileRev;
+    private final P4RevisionNumber fileRev;
     private final List<P4AnnotatedLine> annotations;
     private final String content;
+    private final ServerConfig serverConfig;
+    private final String clientName;
 
-    private final LineAnnotationAspect[] aspects = new LineAnnotationAspect[] {
+    private final LineAnnotationAspect[] aspects = new LineAnnotationAspect[]{
             new P4LineAnnotationAspect(LineAnnotationAspect.AUTHOR, true) {
                 @Override
                 String getValue(@NotNull P4AnnotatedLine ann) {
@@ -49,21 +54,22 @@ public class P4FileAnnotation extends FileAnnotation {
             new P4LineAnnotationAspect(LineAnnotationAspect.REVISION, true) {
                 @Override
                 String getValue(@NotNull P4AnnotatedLine ann) {
-                    return '#' + Integer.toString(ann.getRev().getValue());
+                    return '#' + Integer.toString(ann.getRev().getRev());
                 }
             }
     };
 
 
-
-
-    public P4FileAnnotation(@NotNull Project project, @NotNull VirtualFile file, @NotNull VcsRevisionNumber.Int fileRev, @NotNull List<P4AnnotatedLine> annotations, @NotNull String content) {
+    public P4FileAnnotation(@NotNull Project project, @NotNull Client client, @NotNull VirtualFile file,
+            @NotNull P4RevisionNumber fileRev, @NotNull List<P4AnnotatedLine> annotations, @NotNull String content) {
         super(project);
         this.project = project;
         this.file = file;
         this.fileRev = fileRev;
         this.annotations = annotations;
         this.content = content;
+        this.serverConfig = client.getConfig();
+        this.clientName = client.getClientName();
     }
 
     /**
@@ -178,9 +184,10 @@ public class P4FileAnnotation extends FileAnnotation {
     @Override
     public List<VcsFileRevision> getRevisions() {
         Set<VcsFileRevision> revs = new HashSet<VcsFileRevision>();
-        for (P4AnnotatedLine line: annotations) {
+        for (P4AnnotatedLine line : annotations) {
             if (line != null) {
-                P4FileRevision fileRev = new P4FileRevision(project, line.getFile(), line.getRevisionData());
+                P4FileRevision fileRev = new P4FileRevision(project, serverConfig, clientName,
+                        this.fileRev.getDepotPath(), line);
                 revs.add(fileRev);
             }
         }
@@ -192,7 +199,7 @@ public class P4FileAnnotation extends FileAnnotation {
         // TODO this is a slow implementation.  There should be
         // some easy speed-up opportunities here.
         List<VcsFileRevision> revs = getRevisions();
-        return revs != null && ! revs.isEmpty();
+        return revs != null && !revs.isEmpty();
     }
 
     @Nullable
@@ -222,7 +229,6 @@ public class P4FileAnnotation extends FileAnnotation {
         }
         return null;
     }
-
 
 
     private abstract class P4LineAnnotationAspect extends LineAnnotationAspectAdapter {

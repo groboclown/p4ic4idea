@@ -41,6 +41,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.VcsFuture;
 import net.groboclown.idea.p4ic.background.VcsSettableFuture;
 import net.groboclown.idea.p4ic.config.PasswordStore;
+import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.*;
 import org.jetbrains.annotations.NotNull;
@@ -100,6 +101,18 @@ public class P4Exec {
         this.connectionHandler = connectionHandler;
         this.onServerProblem = onServerProblem;
         connectionHandler.validateConfiguration(null, serverStatus.getConfig());
+    }
+
+
+    @Nullable
+    public String getClientName() {
+        return clientName;
+    }
+
+
+    @NotNull
+    public ServerConfig getServerConfig() {
+        return serverStatus.getConfig();
     }
 
 
@@ -494,6 +507,7 @@ public class P4Exec {
             @Override
             public Map<IFileSpec, List<IFileRevisionData>> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 count.invoke("getRevisionHistory");
+
                 return server.getRevisionHistory(depotFiles, maxRevisions, false, true, true, false);
             }
         });

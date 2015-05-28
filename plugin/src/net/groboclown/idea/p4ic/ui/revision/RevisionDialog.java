@@ -1,108 +1,156 @@
-/* *************************************************************************
- * (c) Copyright 2015 Zilliant Inc. All rights reserved.                   *
- * *************************************************************************
- *                                                                         *
- * THIS MATERIAL IS PROVIDED "AS IS." ZILLIANT INC. DISCLAIMS ALL          *
- * WARRANTIES OF ANY KIND WITH REGARD TO THIS MATERIAL, INCLUDING,         *
- * BUT NOT LIMITED TO ANY IMPLIED WARRANTIES OF NONINFRINGEMENT,           *
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.                   *
- *                                                                         *
- * Zilliant Inc. shall not be liable for errors contained herein           *
- * or for incidental or consequential damages in connection with the       *
- * furnishing, performance, or use of this material.                       *
- *                                                                         *
- * Zilliant Inc. assumes no responsibility for the use or reliability      *
- * of interconnected equipment that is not furnished by Zilliant Inc,      *
- * or the use of Zilliant software with such equipment.                    *
- *                                                                         *
- * This document or software contains trade secrets of Zilliant Inc. as    *
- * well as proprietary information which is protected by copyright.        *
- * All rights are reserved.  No part of this document or software may be   *
- * photocopied, reproduced, modified or translated to another language     *
- * prior written consent of Zilliant Inc.                                  *
- *                                                                         *
- * ANY USE OF THIS SOFTWARE IS SUBJECT TO THE TERMS AND CONDITIONS         *
- * OF A SEPARATE LICENSE AGREEMENT.                                        *
- *                                                                         *
- * The information contained herein has been prepared by Zilliant Inc.     *
- * solely for use by Zilliant Inc., its employees, agents and customers.   *
- * Dissemination of the information and/or concepts contained herein to    *
- * other parties is prohibited without the prior written consent of        *
- * Zilliant Inc..                                                          *
- *                                                                         *
- * (c) Copyright 2015 Zilliant Inc. All rights reserved.                   *
- *                                                                         *
- * *************************************************************************/
-
 package net.groboclown.idea.p4ic.ui.revision;
 
-import com.intellij.openapi.ui.DialogWrapper;
-import com.intellij.openapi.ui.ValidationInfo;
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.util.AsyncResult;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.history.P4FileRevision;
+import net.groboclown.idea.p4ic.ui.revision.RevisionList.RevisionSelectedListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
 
-public class RevisionDialog extends DialogWrapper {
-    private final RevisionList revisionList;
-    private final VirtualFile file;
+public class RevisionDialog extends JDialog {
+    private JPanel contentPane;
+    private JButton buttonOK;
+    private JButton buttonCancel;
+    private RevisionList revisionList;
+    private AsyncResult<P4FileRevision> result = new AsyncResult<P4FileRevision>();
+
+    public RevisionDialog(@Nullable Frame owner, @NotNull P4Vcs vcs, @NotNull VirtualFile file) {
+        super(owner, file.getCanonicalPath());
+        contentPane = new JPanel();
+        setContentPane(contentPane);
+        contentPane.setLayout(new BorderLayout());
+
+        final JPanel buttonPanel = new JPanel();
+        contentPane.add(buttonPanel, BorderLayout.SOUTH);
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
+        buttonPanel.add(Box.createHorizontalGlue());
+
+        buttonCancel = new JButton();
+        buttonPanel.add(buttonCancel);
+        buttonCancel.setText(P4Bundle.getString("ui.Cancel"));
+        buttonCancel.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onCancel();
+            }
+        });
+
+        buttonPanel.add(Box.createRigidArea(new Dimension(5, 0)));
+
+        buttonOK = new JButton();
+        buttonPanel.add(buttonOK);
+        buttonOK.setText(P4Bundle.getString("ui.OK"));
+        buttonOK.setEnabled(false);
+        buttonOK.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onOK();
+            }
+        });
+
+        revisionList = new RevisionList(vcs, file);
+        contentPane.add(revisionList, BorderLayout.NORTH);
+        revisionList.addRevisionSelectedListener(new RevisionSelectedListener() {
+            @Override
+            public void revisionSelected(@Nullable final P4FileRevision rev) {
+                buttonOK.setEnabled(rev != null);
+            }
+        });
+
+        setModal(true);
+        getRootPane().setDefaultButton(buttonOK);
+
+        if (! revisionList.isValid()) {
+            // initial validation problem
+            getRootPane().setDefaultButton(buttonCancel);
+        }
+
+        // call onCancel() when cross is clicked
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                onCancel();
+            }
+        });
+
+        // call onCancel() on ESCAPE
+        contentPane.registerKeyboardAction(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onCancel();
+            }
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+    }
 
 
-    public RevisionDialog(@NotNull P4Vcs vcs, @NotNull VirtualFile file) {
-        super(vcs.getProject(), true, IdeModalityType.PROJECT);
-        this.file = file;
-        this.revisionList = new RevisionList(file, vcs);
+    public AsyncResult<P4FileRevision> showAndGet() {
+        pack();
+        //final Dimension bounds = getSize();
+        //final Rectangle parentBounds = getOwner().getBounds();
+        //setLocation(parentBounds.x + (parentBounds.width - bounds.width) / 2,
+        //        parentBounds.y + (parentBounds.height - bounds.height) / 2);
+        setVisible(true);
+        return result;
     }
 
 
     @Nullable
-    public static VcsRevisionNumber requestRevision(@NotNull P4Vcs vcs, @NotNull VirtualFile file) {
+    public static P4FileRevision requestRevision(@NotNull P4Vcs vcs, @NotNull VirtualFile file) {
         if (vcs.getProject().isDisposed()) {
             return null;
         }
+        ensureEventDispatchThread();
 
-        final RevisionDialog dialog = new RevisionDialog(vcs, file);
-        if (dialog.showAndGet()) {
-            return dialog.getSelectedRevision();
-        } else {
-            return null;
-        }
+        // TODO get real parent window
+        final RevisionDialog dialog = new RevisionDialog(null, vcs, file);
+        return dialog.showAndGet().getResult();
+    }
+
+
+    private void onOK() {
+        result.setDone(revisionList.getSelectedRevision());
+
+        dispose();
+    }
+
+    private void onCancel() {
+        result.setDone(null);
+
+        dispose();
     }
 
     /**
-     * Validates user input and returns <code>null</code> if everything is fine
-     * or validation description with component where problem has been found.
+     * Ensure that dialog is used from even dispatch thread.
      *
-     * @return <code>null</code> if everything is OK or validation descriptor
+     * @throws IllegalStateException if the dialog is invoked not on the event dispatch thread
      */
-    @Nullable
-    protected ValidationInfo doValidate() {
-        return revisionList.validate();
-    }
-
-    @Nullable
-    protected JComponent createTitlePane() {
-        return new JLabel(file.getCanonicalPath());
-    }
-
-
-    @Nullable
-    @Override
-    protected JComponent createNorthPanel() {
-        return revisionList.getRootPanel();
+    private static void ensureEventDispatchThread() {
+        if (!EventQueue.isDispatchThread()) {
+            throw new IllegalStateException(
+                    "The DialogWrapper can only be used in event dispatch thread. Current thread: " + Thread
+                            .currentThread());
+        }
     }
 
 
-    @Nullable
-    @Override
-    protected JComponent createCenterPanel() {
-        return null;
+    /**
+     * Method generated by IntelliJ IDEA GUI Designer
+     * >>> IMPORTANT!! <<<
+     * DO NOT edit this method OR call it in your code!
+     *
+     * @noinspection ALL
+     */
+    private void $$$setupUI$$$() {
     }
 
-    private VcsRevisionNumber getSelectedRevision() {
-        return revisionList.getSelectedRevision();
+    /**
+     * @noinspection ALL
+     */
+    public JComponent $$$getRootComponent$$$() {
+        return contentPane;
     }
 }

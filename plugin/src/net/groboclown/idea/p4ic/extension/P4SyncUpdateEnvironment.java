@@ -43,9 +43,9 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.update.*;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.extension.P4RevisionNumber.RevType;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.P4FileInfo.ClientAction;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
@@ -105,9 +105,8 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
         if (groupId != null) {
             final FileGroup group = groups.get(groupId);
             if (group != null) {
-                final int rev = file.getHaveRev();
                 group.add(file.getPath().getIOFile().getAbsolutePath(),
-                        P4Vcs.getKey(), new VcsRevisionNumber.Int(rev));
+                        P4Vcs.getKey(), new P4RevisionNumber(file.getDepotPath(), file, RevType.HAVE));
             } else {
                 LOG.warn("Unknown group " + groupId + " for action " + file.getClientAction() +
                         "; caused by synchronizing " + file.getPath());

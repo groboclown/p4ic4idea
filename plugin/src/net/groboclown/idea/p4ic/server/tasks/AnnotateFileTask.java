@@ -95,9 +95,11 @@ public class AnnotateFileTask extends ServerTask<List<P4AnnotatedLine>> {
                 }
                 ret.add(new P4AnnotatedLine(lineNumber++, p4file, ann, data));
             } else if (ann.getUpper() == 0) {
+                // TODO this is the source of "null" rev data
                 ret.add(new P4AnnotatedLine(lineNumber++, p4file, ann, null));
                 //LOG.info("deleted file");
             } else {
+                // TODO this is the source of "null" rev data
                 ret.add(new P4AnnotatedLine(lineNumber++, p4file, ann, null));
                 //LOG.info("current revision");
             }

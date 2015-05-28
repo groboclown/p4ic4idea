@@ -28,10 +28,12 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.extension.P4RevisionNumber;
+import net.groboclown.idea.p4ic.extension.P4RevisionNumber.RevType;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.ui.ErrorDialog;
 import org.jetbrains.annotations.NotNull;
@@ -62,7 +64,7 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
 
         // NOTE: have vs. head!
         if (fileInfo.getHaveRev() >= 0) {
-            return new VcsRevisionNumber.Int(fileInfo.getHaveRev());
+            return new P4RevisionNumber(fileInfo.getDepotPath(), fileInfo, RevType.HAVE);
         }
         return null;
     }
@@ -88,7 +90,7 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
             return null;
         }
 
-        return new ItemLatestState(new VcsRevisionNumber.Int(fileInfo.getHeadRev()),
+        return new ItemLatestState(new P4RevisionNumber(fileInfo.getDepotPath(), fileInfo, RevType.HEAD),
                 !fileInfo.isDeletedInDepot() && fileInfo.isInDepot(), false);
     }
 
@@ -96,10 +98,10 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
     @Override
     public ContentRevision createFileContent(final VcsRevisionNumber revisionNumber, VirtualFile selectedFile) {
         final FilePath file = VcsUtil.getFilePath(selectedFile);
-        if (! (revisionNumber instanceof VcsRevisionNumber.Int)) {
+        if (! (revisionNumber instanceof P4RevisionNumber)) {
             throw new IllegalArgumentException(P4Bundle.message("error.diff.bad-revision", revisionNumber));
         }
-        return new P4ContentRevision(file, (VcsRevisionNumber.Int) revisionNumber);
+        return new P4ContentRevision(file, (P4RevisionNumber) revisionNumber);
     }
 
     @Nullable
@@ -117,8 +119,9 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
         if (fileInfo == null) {
             return null;
         }
+        final String requestedPath = fileInfo.getDepotPath();
         if (fileInfo.getHaveRev() <= 0) {
-            return new P4RevisionDescription(null);
+            return new P4RevisionDescription(requestedPath, null);
         }
 
         // TODO this is really bad in terms of performance.
@@ -127,7 +130,7 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
             history = client.getServer().getRevisionHistory(fileInfo, 1);
         } catch (VcsException e) {
             ErrorDialog.logError(project, P4Bundle.message("error.diff.history.title", file), e);
-            return new P4RevisionDescription(null);
+            return new P4RevisionDescription(requestedPath, null);
         }
 
         /*
@@ -139,9 +142,9 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
 
         // just choose the top one
         if (history.isEmpty()) {
-            return new P4RevisionDescription(null);
+            return new P4RevisionDescription(requestedPath, null);
         } else {
-            return new P4RevisionDescription(history.get(0).getRevisionData());
+            return new P4RevisionDescription(requestedPath, history.get(0).getRevisionData());
         }
     }
 
@@ -189,10 +192,10 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
 
     private class P4ContentRevision implements ContentRevision {
         private final FilePath file;
-        private final VcsRevisionNumber.Int revisionNumber;
+        private final P4RevisionNumber revisionNumber;
         private Reference<String> previous = null;
 
-        public P4ContentRevision(FilePath file, VcsRevisionNumber.Int revisionNumber) {
+        public P4ContentRevision(FilePath file, P4RevisionNumber revisionNumber) {
             this.file = file;
             this.revisionNumber = revisionNumber;
         }
@@ -219,7 +222,7 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
             if (client.isWorkingOffline()) {
                 throw new P4DisconnectedException(P4Bundle.message("error.config.disconnected"));
             }
-            String ret = client.getServer().loadFileAsString(file, revisionNumber.getValue());
+            String ret = revisionNumber.loadContentAsString(client, file);
             if (ret == null) {
                 // cache the null value as an empty string, so we
                 // don't need to go through this again.
@@ -244,15 +247,21 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
 
 
     private static class P4RevisionDescription implements VcsRevisionDescription {
+        private final String requestedPath;
         private final IFileRevisionData rev;
 
-        private P4RevisionDescription(@Nullable IFileRevisionData rev) {
+        private P4RevisionDescription(@Nullable final String requestedPath, @Nullable IFileRevisionData rev) {
+            this.requestedPath = requestedPath;
             this.rev = rev;
         }
 
         @Override
         public VcsRevisionNumber getRevisionNumber() {
-            return new VcsRevisionNumber.Int(rev == null ? 0 : rev.getRevision());
+            if (rev == null) {
+                // TODO how to eliminate this special case?
+                return new P4RevisionNumber(requestedPath, (String) null, 0);
+            }
+            return new P4RevisionNumber(requestedPath, rev);
         }
 
         @Override

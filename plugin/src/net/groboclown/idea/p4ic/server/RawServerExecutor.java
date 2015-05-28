@@ -428,13 +428,32 @@ public class RawServerExecutor {
     public String loadFileAsString(@NotNull final Project project, @NotNull FilePath file, int rev)
             throws VcsException, CancellationException {
         byte[] bytes = loadFileAsBytes(project, file, rev);
-
-        // TODO encode the file correctly
-        if (bytes != null) {
-            return new String(bytes);
-        }
-        return null;
+        return encodeFileBytes(project, bytes);
     }
+
+    /**
+     * @param file file info to load contents
+     * @return null if the file revision is 0; else not null
+     * @throws VcsException
+     * @throws CancellationException
+     */
+    @Nullable
+    public String loadFileAsString(@NotNull final Project project, @NotNull IFileSpec file) throws VcsException, CancellationException {
+        byte[] bytes = loadFileAsBytes(project, file);
+        return encodeFileBytes(project, bytes);
+    }
+
+
+    public String encodeFileBytes(@NotNull final Project project, @Nullable final byte[] bytes) {
+        if (bytes == null) {
+            return null;
+        }
+
+        // TODO encode correctly based upon the client settings, and the file information
+
+        return new String(bytes);
+    }
+
 
     @Nullable
     public byte[] loadFileAsBytes(@NotNull final Project project, @NotNull FilePath file, int rev)
@@ -443,7 +462,12 @@ public class RawServerExecutor {
             return null;
         }
         final IFileSpec spec = FileSpecUtil.getOneSpecWithRev(file, rev);
+        return loadFileAsBytes(project, spec);
+    }
 
+    @Nullable
+    public byte[] loadFileAsBytes(@NotNull final Project project, @NotNull final IFileSpec spec)
+            throws VcsException, CancellationException {
         return performAction(project, new ServerTask<byte[]>() {
             @Override
             public byte[] run(@NotNull P4Exec exec) throws VcsException, CancellationException {
@@ -461,7 +485,7 @@ public class RawServerExecutor {
     public List<P4FileRevision> getRevisionHistory(@NotNull Project project,
             @NotNull P4FileInfo files, int maxRevs)
             throws VcsException, CancellationException {
-        return performAction(project, new GetRevisionHistoryTask(project, files, maxRevs, fileInfoCache));
+        return performAction(project, new GetRevisionHistoryTask(project, files, maxRevs));
     }
 
 

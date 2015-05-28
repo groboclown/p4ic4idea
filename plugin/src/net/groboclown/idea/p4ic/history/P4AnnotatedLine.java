@@ -13,9 +13,9 @@
  */
 package net.groboclown.idea.p4ic.history;
 
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileRevisionData;
+import net.groboclown.idea.p4ic.extension.P4RevisionNumber;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,26 +37,33 @@ public class P4AnnotatedLine {
         this.revisionData = data;
     }
 
-    public VcsRevisionNumber.Int getRev() {
-        return new VcsRevisionNumber.Int(ann.getUpper());
+    @NotNull
+    public P4RevisionNumber getRev() {
+        // TODO eliminate potential NPE
+        return new P4RevisionNumber(file.getDepotPath(), ann);
     }
 
+    @Nullable
     public String getAuthor() {
         return revisionData == null ? null : revisionData.getUserName();
     }
 
+    @Nullable
     public Date getDate() {
         return revisionData == null ? null : revisionData.getDate();
     }
 
+    @Nullable
     public String getComment() {
         return revisionData == null ? null : revisionData.getDescription();
     }
 
+    @NotNull
     public P4FileInfo getFile() {
         return file;
     }
 
+    @Nullable
     public IFileRevisionData getRevisionData() {
         return revisionData;
     }

@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="p4ic4idea" default="main">
     <target name="all" depends="main"/>
+    <target name="clean">
+        <ant antfile="idea-compat/build.xml" target="clean"
+            inheritrefs="false" inheritall="false"/>
+        <ant antfile="idea135/build.xml" target="clean"
+            inheritrefs="false" inheritall="false"/>
+        <ant antfile="idea140/build.xml" target="clean"
+            inheritrefs="false" inheritall="false"/>
+        <ant antfile="plugin/build.xml" target="clean"
+            inheritrefs="false" inheritall="false"/>
+        <delete file="p4ic4idea.zip"/>
+    </target>
     <target name="main">
         <ant antfile="idea-compat/build.xml" target="all"
             inheritrefs="false" inheritall="false"/>

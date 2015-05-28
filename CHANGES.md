@@ -6,11 +6,15 @@
 
 ### Overview
 
+* Full file history support.
 * Bug fixes.
 
 ### Details
 
-* Stuff
+* Full file history support.
+    * File history used to not show branching history if it went outside the current client.  Now, it will show
+      a full history of the file, and allow for diffing against any part of the depot in which the user has
+      read access.
 
 
 ## ::v0.5.4::

@@ -22,6 +22,7 @@ import com.intellij.openapi.vcs.versionBrowser.CommittedChangeListImpl;
 import com.intellij.openapi.vcs.versionBrowser.VcsRevisionNumberAware;
 import com.perforce.p4java.core.IChangelist;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.extension.P4ChangelistNumber;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.history.P4ContentRevision;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
@@ -38,9 +39,7 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
     @NotNull
     private final P4Vcs myVcs;
     @NotNull
-    private final VcsRevisionNumber.Int myRevision;
-    @NotNull
-    private final Client myClient;
+    private final P4ChangelistNumber myRevision;
 
     public P4CommittedChangeList(@NotNull P4Vcs vcs, @NotNull Client client, @NotNull IChangelist changelist) throws VcsException {
         super(changelist.getId() + ": " + changelist.getDescription(),
@@ -50,14 +49,9 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
                 changelist.getDate(),
                 createChanges(vcs, client, changelist.getId()));
         myVcs = vcs;
-        myRevision = new VcsRevisionNumber.Int(changelist.getId());
-        myClient = client;
-    }
 
-
-    @NotNull
-    public VcsRevisionNumber.Int getRevision() {
-        return myRevision;
+        // Does not use the P4RevisionNumber, because this is for changelist
+        myRevision = new P4ChangelistNumber(changelist);
     }
 
     @Override

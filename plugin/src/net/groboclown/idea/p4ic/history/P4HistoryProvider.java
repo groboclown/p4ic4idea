@@ -24,6 +24,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.ColumnInfo;
 import net.groboclown.idea.p4ic.compat.HistoryCompat;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.extension.P4RevisionNumber;
+import net.groboclown.idea.p4ic.extension.P4RevisionNumber.RevType;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.ServerExecutor;
@@ -119,8 +121,10 @@ public class P4HistoryProvider implements VcsHistoryProvider {
                     Client client = P4Vcs.getInstance(project).getClientFor(path);
                     if (client != null) {
                         List<P4FileInfo> infoList = client.getServer().getFilePathInfo(Collections.singletonList(path));
+                        // check for head rev > 0 because otherwise it's been deleted, which we should
+                        // return "null" for.
                         if (! infoList.isEmpty() && infoList.get(0).getHeadRev() > 0) {
-                            return new VcsRevisionNumber.Int(infoList.get(0).getHeadRev());
+                            return new P4RevisionNumber(infoList.get(0).getDepotPath(), infoList.get(0), RevType.HEAD);
                         }
                     }
                     return null;

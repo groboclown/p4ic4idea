@@ -23,6 +23,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.extension.P4RevisionNumber;
+import net.groboclown.idea.p4ic.extension.P4RevisionNumber.RevType;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.ServerExecutor;
@@ -53,9 +55,14 @@ public class P4AnnotationProvider implements AnnotationProvider {
         if (p4files.size() != 1) {
             throw new P4FileException(P4Bundle.message("error.filespec.incorrect", file, p4files));
         }
-        String contents = exec.loadFileAsString(p4files.get(0), p4files.get(0).getHaveRev());
-        return createAnnotation(file, exec.getAnnotationsFor(file, p4files.get(0).getHaveRev()),
-                new VcsRevisionNumber.Int(p4files.get(0).getHaveRev()), contents);
+        P4RevisionNumber rev = new P4RevisionNumber(p4files.get(0).getDepotPath(), p4files.get(0), RevType.HAVE);
+        String contents = rev.loadContentAsString(client, p4files.get(0));
+        if (contents == null) {
+            // TODO right way to handle this?
+            contents = "";
+        }
+        return createAnnotation(client, file, exec.getAnnotationsFor(file, p4files.get(0).getHaveRev()),
+                rev, contents);
     }
 
     @Override
@@ -66,15 +73,17 @@ public class P4AnnotationProvider implements AnnotationProvider {
             throw new P4InvalidConfigException(P4Bundle.message("error.filespec.no-client", file));
         }
         VcsRevisionNumber rev = revision.getRevisionNumber();
-        if (! (rev instanceof VcsRevisionNumber.Int)) {
+        if (!(rev instanceof P4RevisionNumber)) {
             throw new P4Exception(P4Bundle.message("error.diff.bad-revision", rev));
         }
         ServerExecutor exec = client.getServer();
+
+        // TODO look at how to crawl down into branching.
         String contents = exec.loadFileAsString(filePath,
-                ((VcsRevisionNumber.Int) rev).getValue());
-        return createAnnotation(file, exec.getAnnotationsFor(file,
-                ((VcsRevisionNumber.Int) rev).getValue()),
-                (VcsRevisionNumber.Int) rev, contents);
+                ((P4RevisionNumber) rev).getRev());
+        return createAnnotation(client, file, exec.getAnnotationsFor(file,
+                        ((P4RevisionNumber) rev).getRev()),
+                (P4RevisionNumber) rev, contents);
     }
 
     /**
@@ -86,20 +95,20 @@ public class P4AnnotationProvider implements AnnotationProvider {
      */
     @Override
     public boolean isAnnotationValid(VcsFileRevision rev) {
-        if (! (rev instanceof P4FileRevision)) {
+        if (!(rev instanceof P4FileRevision)) {
             return false;
         }
         VcsRevisionNumber revNum = rev.getRevisionNumber();
-        if (! (revNum instanceof VcsRevisionNumber.Int)) {
+        if (!(revNum instanceof P4RevisionNumber)) {
             return false;
         }
-        return ((VcsRevisionNumber.Int) revNum).getValue() > 0;
+        return ((P4RevisionNumber) revNum).getRev() > 0;
     }
 
 
-    private P4FileAnnotation createAnnotation(@NotNull VirtualFile file, @NotNull List<P4AnnotatedLine> annList,
-            @NotNull VcsRevisionNumber.Int fileRev, @NotNull String content)
+    private P4FileAnnotation createAnnotation(@NotNull Client client, @NotNull VirtualFile file,
+            @NotNull List<P4AnnotatedLine> annList, @NotNull P4RevisionNumber fileRev, @NotNull String content)
             throws VcsException {
-        return new P4FileAnnotation(vcs.getProject(), file, fileRev, annList, content);
+        return new P4FileAnnotation(vcs.getProject(), client, file, fileRev, annList, content);
     }
 }

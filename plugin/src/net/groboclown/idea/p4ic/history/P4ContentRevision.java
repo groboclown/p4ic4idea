@@ -18,9 +18,10 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
-import com.perforce.p4java.core.file.IFileRevisionData;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.extension.P4RevisionNumber;
+import net.groboclown.idea.p4ic.extension.P4RevisionNumber.RevType;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
@@ -33,12 +34,12 @@ import org.jetbrains.annotations.Nullable;
 public class P4ContentRevision implements ContentRevision {
     private final Project myProject;
     private final P4FileInfo p4file;
-    private final VcsRevisionNumber.Int rev;
+    private final P4RevisionNumber rev;
 
     @Nullable
     private final P4FileInfo.ClientAction action;
 
-    public P4ContentRevision(@NotNull Project myProject, @NotNull P4FileInfo p4file, @NotNull VcsRevisionNumber.Int rev) {
+    public P4ContentRevision(@NotNull Project myProject, @NotNull P4FileInfo p4file, @NotNull P4RevisionNumber rev) {
         this.myProject = myProject;
         this.p4file = p4file;
         this.rev = rev;
@@ -48,19 +49,12 @@ public class P4ContentRevision implements ContentRevision {
     public P4ContentRevision(@NotNull Project myProject, @NotNull P4FileInfo p4file) {
         this.myProject = myProject;
         this.p4file = p4file;
-        this.rev = new VcsRevisionNumber.Int(p4file.getHeadRev());
+        this.rev = new P4RevisionNumber(p4file.getDepotPath(), p4file, RevType.HEAD);
         action = null;
     }
 
-    public P4ContentRevision(@NotNull Project myProject, @NotNull P4FileInfo p4file, IFileRevisionData data) {
-        this.myProject = myProject;
-        this.p4file = p4file;
-        this.action = P4FileInfo.fromAction(data.getAction());
-        this.rev = new VcsRevisionNumber.Int(data.getRevision());
-    }
-
-    public P4ContentRevision(Project project, P4FileInfo p4file, int rev) {
-        this(project, p4file, new VcsRevisionNumber.Int(rev));
+    public P4ContentRevision(@NotNull Project project, @NotNull P4FileInfo p4file, int rev) {
+        this(project, p4file, new P4RevisionNumber(p4file.getDepotPath(), p4file, rev));
     }
 
     @Nullable
@@ -71,7 +65,7 @@ public class P4ContentRevision implements ContentRevision {
         if (client == null) {
             throw new P4FileException(P4Bundle.message("error.filespec.no-client", p4file));
         }
-        return client.getServer().loadFileAsString(p4file, rev.getValue());
+        return rev.loadContentAsString(client, p4file);
     }
 
     @NotNull

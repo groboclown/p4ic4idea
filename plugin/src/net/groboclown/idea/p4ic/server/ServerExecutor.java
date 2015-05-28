@@ -19,6 +19,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
+import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.history.P4AnnotatedLine;
 import net.groboclown.idea.p4ic.history.P4FileRevision;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
@@ -69,6 +70,12 @@ public class ServerExecutor {
     public String loadFileAsString(@NotNull FilePath file, int rev)
             throws VcsException, CancellationException {
         return exec.loadFileAsString(project, file, rev);
+    }
+
+
+    public String loadFileAsString(@NotNull IFileSpec file)
+            throws VcsException, CancellationException {
+        return exec.loadFileAsString(project, file);
     }
 
 
@@ -201,9 +208,8 @@ public class ServerExecutor {
     }
 
     /**
-     *
      * @param file file to load contents
-     * @param rev file revision
+     * @param rev  file revision
      * @return null if the file revision is 0; else not null
      * @throws VcsException
      * @throws CancellationException
@@ -211,6 +217,18 @@ public class ServerExecutor {
     @Nullable
     public byte[] loadFileAsBytes(@NotNull FilePath file, int rev) throws VcsException, CancellationException {
         return exec.loadFileAsBytes(project, file, rev);
+    }
+
+    /**
+     *
+     * @param file file info to load contents
+     * @return null if the file revision is 0; else not null
+     * @throws VcsException
+     * @throws CancellationException
+     */
+    @Nullable
+    public byte[] loadFileAsBytes(@NotNull IFileSpec file) throws VcsException, CancellationException {
+        return exec.loadFileAsBytes(project, file);
     }
 
     /**

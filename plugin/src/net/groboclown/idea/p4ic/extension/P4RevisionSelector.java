@@ -40,6 +40,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.diff.RevisionSelector;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.idea.p4ic.history.P4FileRevision;
 import net.groboclown.idea.p4ic.ui.revision.RevisionDialog;
 import org.jetbrains.annotations.Nullable;
 
@@ -54,7 +55,12 @@ public class P4RevisionSelector implements RevisionSelector {
     @Nullable
     @Override
     public VcsRevisionNumber selectNumber(final VirtualFile file) {
-        return RevisionDialog.requestRevision(vcs, file);
+        LOG.info("Selecting version for file " + file);
+        final P4FileRevision rev = RevisionDialog.requestRevision(vcs, file);
+        if (rev == null) {
+            return null;
+        }
+        return rev.getRevisionNumber();
     }
 
 }

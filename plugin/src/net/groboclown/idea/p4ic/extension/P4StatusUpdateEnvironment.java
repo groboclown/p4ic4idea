@@ -20,9 +20,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.update.*;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.extension.P4RevisionNumber.RevType;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.ServerExecutor;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
@@ -96,7 +96,7 @@ public class P4StatusUpdateEnvironment implements UpdateEnvironment {
                     filePos += 1.0;
                     FileGroup group = updatedFiles.getGroupById(info.getClientAction().getFileGroupId());
                     group.add(info.getPath().getIOFile().getAbsolutePath(),
-                            P4Vcs.getKey(), new VcsRevisionNumber.Int(info.getHeadRev()));
+                            P4Vcs.getKey(), new P4RevisionNumber(info.getDepotPath(), info, RevType.HEAD));
                 }
             } catch (VcsException ex) {
                 session.exceptions.add(ex);

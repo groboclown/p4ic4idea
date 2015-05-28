@@ -93,6 +93,21 @@ public class FileSpecUtil {
         return spec.get(0);
     }
 
+
+    @NotNull
+    public static IFileSpec getFromDepotPath(@NotNull final String depotPath, int rev) throws P4Exception {
+        String path = escapeToP4Path(depotPath);
+        if (rev > 0) {
+            path = path + '#' + Integer.toString(rev);
+        }
+        final List<IFileSpec> list = FileSpecBuilder.makeFileSpecList(path);
+        if (list.size() != 1) {
+            throw new P4Exception(P4Bundle.message("error.annotate.multiple-files", path, list));
+        }
+        return list.get(0);
+    }
+
+
     @NotNull
     public static List<IFileSpec> getFromFilePaths(@NotNull Collection<FilePath> files) throws P4Exception {
         return getFromFilePathsAt(files, "", false);

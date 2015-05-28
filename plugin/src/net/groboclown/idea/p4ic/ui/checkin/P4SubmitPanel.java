@@ -327,10 +327,18 @@ public class P4SubmitPanel {
         myExpandedPanel = new JPanel();
         myExpandedPanel.setLayout(new GridLayoutManager(3, 4, new Insets(0, 0, 0, 0), -1, -1));
         myExpandedPanel.setVisible(true);
-        myRootPanel.add(myExpandedPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_NORTH, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        myRootPanel.add(myExpandedPanel,
+                new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_NORTH, GridConstraints.FILL_HORIZONTAL,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
+                        0, false));
         myExpandedPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), null));
         final JScrollPane scrollPane1 = new JScrollPane();
-        myExpandedPanel.add(scrollPane1, new GridConstraints(0, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        myExpandedPanel.add(scrollPane1,
+                new GridConstraints(0, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null,
+                        0, false));
         myJobTable.setCellSelectionEnabled(false);
         myJobTable.setColumnSelectionAllowed(false);
         myJobTable.setFillsViewportHeight(true);
@@ -338,40 +346,81 @@ public class P4SubmitPanel {
         myJobTable.setSurrendersFocusOnKeystroke(true);
         scrollPane1.setViewportView(myJobTable);
         final JLabel label1 = new JLabel();
-        this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.id"));
-        myExpandedPanel.add(label1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        this.$$$loadLabelText$$$(label1,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.id"));
+        myExpandedPanel.add(label1,
+                new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         myJobIdField = new JTextField();
         myJobIdField.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("job.id"));
-        myExpandedPanel.add(myJobIdField, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        myExpandedPanel.add(myJobIdField,
+                new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
+                        new Dimension(150, -1), null, 0, false));
         myAddJobButton = new JButton();
         myAddJobButton.setEnabled(false);
-        this.$$$loadButtonText$$$(myAddJobButton, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.add.button"));
-        myAddJobButton.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("job.panel.add"));
-        myExpandedPanel.add(myAddJobButton, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        this.$$$loadButtonText$$$(myAddJobButton,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.add.button"));
+        myAddJobButton.setToolTipText(
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("job.panel.add"));
+        myExpandedPanel.add(myAddJobButton,
+                new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myBrowseButton = new JButton();
         myBrowseButton.setEnabled(false);
-        this.$$$loadButtonText$$$(myBrowseButton, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.browse.button"));
-        myBrowseButton.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("job.panel.browse"));
-        myExpandedPanel.add(myBrowseButton, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        this.$$$loadButtonText$$$(myBrowseButton,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.browse.button"));
+        myBrowseButton.setToolTipText(
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("job.panel.browse"));
+        myExpandedPanel.add(myBrowseButton,
+                new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myRemoveButton = new JButton();
         myRemoveButton.setEnabled(false);
-        this.$$$loadButtonText$$$(myRemoveButton, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.remove.button"));
-        myRemoveButton.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("job.panel.remove"));
-        myExpandedPanel.add(myRemoveButton, new GridConstraints(2, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        myExpandedPanel.add(myJobStatus, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        this.$$$loadButtonText$$$(myRemoveButton,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.remove.button"));
+        myRemoveButton.setToolTipText(
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("job.panel.remove"));
+        myExpandedPanel.add(myRemoveButton,
+                new GridConstraints(2, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myExpandedPanel.add(myJobStatus,
+                new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         final JLabel label2 = new JLabel();
-        this.$$$loadLabelText$$$(label2, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.status"));
-        myExpandedPanel.add(label2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        this.$$$loadLabelText$$$(label2,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.status"));
+        myExpandedPanel.add(label2,
+                new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         myAssociateJobExpander = new JLabel();
-        this.$$$loadLabelText$$$(myAssociateJobExpander, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.title"));
-        myAssociateJobExpander.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("associate.jobs.expand"));
-        myRootPanel.add(myAssociateJobExpander, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        this.$$$loadLabelText$$$(myAssociateJobExpander,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.title"));
+        myAssociateJobExpander.setToolTipText(
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("associate.jobs.expand"));
+        myRootPanel.add(myAssociateJobExpander,
+                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         final Spacer spacer1 = new Spacer();
-        myRootPanel.add(spacer1, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        myRootPanel.add(spacer1,
+                new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
+                        0, false));
         myJobsDisabledLabel = new JLabel();
         myJobsDisabledLabel.setForeground(new Color(-65536));
-        this.$$$loadLabelText$$$(myJobsDisabledLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.not-enabled"));
-        myRootPanel.add(myJobsDisabledLabel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        this.$$$loadLabelText$$$(myJobsDisabledLabel,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("submit.job.not-enabled"));
+        myRootPanel.add(myJobsDisabledLabel,
+                new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         label1.setLabelFor(myJobIdField);
         label2.setLabelFor(myJobStatus);
     }
@@ -387,7 +436,9 @@ public class P4SubmitPanel {
         for (int i = 0; i < text.length(); i++) {
             if (text.charAt(i) == '&') {
                 i++;
-                if (i == text.length()) break;
+                if (i == text.length()) {
+                    break;
+                }
                 if (!haveMnemonic && text.charAt(i) != '&') {
                     haveMnemonic = true;
                     mnemonic = text.charAt(i);
@@ -414,7 +465,9 @@ public class P4SubmitPanel {
         for (int i = 0; i < text.length(); i++) {
             if (text.charAt(i) == '&') {
                 i++;
-                if (i == text.length()) break;
+                if (i == text.length()) {
+                    break;
+                }
                 if (!haveMnemonic && text.charAt(i) != '&') {
                     haveMnemonic = true;
                     mnemonic = text.charAt(i);

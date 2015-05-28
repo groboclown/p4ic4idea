@@ -1,14 +1,14 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.5.5</version>
+    <version>0.5.4.5</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
             <li><em>0.5.5</em>
                 <ol>
-                    <li>Stuff</li>
+                    <li>Full file history support.</li>
                 </ol>
             </li>
             <li><em>0.5.4</em>
@@ -93,6 +93,9 @@
             <reference ref="Compare.SameVersion"/>
             <reference ref="Compare.LastVersion"/>
             <reference ref="Compare.Selected"/>
+            <!-- this uses the custom P4RevisionSelector, which isn't quite right.
+            <reference ref="Compare.Specified"/>
+            -->
             <reference ref="Vcs.ShowTabbedFileHistory"/>
             <reference ref="Vcs.ShowHistoryForBlock"/>
             <!--

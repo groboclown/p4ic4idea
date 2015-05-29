@@ -37,7 +37,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-// TODO add cancel checks
 public class P4ChangelistListener implements ChangeListListener {
     private final static Logger LOG = Logger.getInstance(P4ChangelistListener.class);
 
@@ -45,7 +44,7 @@ public class P4ChangelistListener implements ChangeListListener {
     public static final String CHANGELIST_REMOVED = P4Bundle.getString("changelist.synchronize.changelist.removed");
     public static final String CHANGELIST_RENAMED = P4Bundle.getString("changelist.synchronize.changelist.renamed");
     public static final String CHANGES_ADDED = P4Bundle.getString("changelist.synchronize.change.add");
-    public static final String CHANGES_REMOVED = P4Bundle.getString("changelist.synchronize.change.removed");
+    //public static final String CHANGES_REMOVED = P4Bundle.getString("changelist.synchronize.change.removed");
     public static final String CHANGES_MOVED = P4Bundle.getString("changelist.synchronize.change.moved");
     //public static final String CHANGES_COMMENT = P4Bundle.getString("changelist.synchronize.change.comments");
 
@@ -62,8 +61,8 @@ public class P4ChangelistListener implements ChangeListListener {
         // Adding a changelist does not automatically create a corresponding
         // Perforce changelist.  It must have files added to it that are
         // Perforce-backed in order for it to become one.
-        LOG.info("changeListAdded: " + list.getName() + "; [" + list.getComment() + "]; " + list.getClass()
-                                                                                                .getSimpleName());
+        LOG.info("changeListAdded: " + list.getName() + "; [" + list.getComment() + "]; " +
+                list.getClass().getSimpleName());
     }
 
     @Override
@@ -71,7 +70,6 @@ public class P4ChangelistListener implements ChangeListListener {
         LOG.info("changeListRemoved: " + list.getName() + "; [" + list.getComment() + "]; " + list.getClass()
                                                                                                   .getSimpleName());
 
-        // TODO try eliminating the default check
         if (list instanceof LocalChangeList && ! P4ChangeListMapping.isDefaultChangelist((LocalChangeList) list)) {
             Background.runInBackground(myProject, CHANGELIST_REMOVED,
                     myVcs.getConfiguration().getUpdateOption(), new Background.ER() {
@@ -127,8 +125,6 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void changesAdded(@NotNull final Collection<Change> changes, @NotNull final ChangeList toList) {
-        // TODO this can be simplified; put into the move operation
-
         LOG.info("changesAdded: changes " + changes);
         LOG.info("changesAdded: changelist " + toList.getName() + "; [" + toList.getComment() + "]");
 

@@ -35,7 +35,8 @@ import java.util.Set;
 
 /**
  * TODO this overlaps with {@link P4CheckinEnvironment} - need to discover
- * the where and how.
+ * the where and how.  This one only seems to be used as a validation for the checkin.
+ * All the other elements of it seem to be ignored.
  */
 public class P4CheckinHandler extends CheckinHandler {
     private static final Logger LOG = Logger.getInstance(P4CheckinHandler.class);

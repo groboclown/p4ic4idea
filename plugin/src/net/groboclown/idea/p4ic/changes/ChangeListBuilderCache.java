@@ -157,8 +157,7 @@ public class ChangeListBuilderCache {
                     return true;
                 }
 
-                // TODO check to make sure the change hasn't moved to a different changelist
-                boolean found = false;
+                // check to make sure the change hasn't moved to a different changelist
                 for (LocalChangeList list : listsCopy) {
                     if (list.getChanges().contains(change)) {
                         if (! list.getName().equals(processedChange.listName)) {
@@ -166,7 +165,6 @@ public class ChangeListBuilderCache {
                                 processedChange.listName + " to " + list.getName());
                             return true;
                         }
-                        found = true;
                         break;
                     }
                 }

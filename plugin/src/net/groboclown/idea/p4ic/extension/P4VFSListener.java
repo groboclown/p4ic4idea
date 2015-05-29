@@ -448,7 +448,7 @@ public class P4VFSListener extends VcsVFSListener {
 
         @NotNull
         public List<FilePath> getCrossSourceFilePathsFor(@NotNull Client client) {
-            // FIXME same-server, different client is not always correctly
+            // TODO same-server, different client is not always correctly
             // picked up here.  A cross-client move shows the destination
             // as correctly integrated, and deletes the source locally,
             // but p4 is not told of the source deletion.  Sometimes it works?

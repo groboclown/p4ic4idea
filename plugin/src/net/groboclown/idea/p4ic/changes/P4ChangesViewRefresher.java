@@ -35,7 +35,6 @@ public class P4ChangesViewRefresher implements ChangesViewRefresher {
 
 
     public static void refreshLater(@NotNull final Project project) {
-        // TODO switch to debug
         LOG.debug("Refreshing changelist view", new Throwable());
 
         ApplicationManager.getApplication().invokeLater(new Runnable() {

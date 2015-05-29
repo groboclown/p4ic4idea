@@ -360,8 +360,7 @@ public class P4ConfigUtil {
                 P4Config configFile = new FileP4Config(cf);
                 hierarchy.add(configFile);
             } catch (IOException e) {
-                // TODO properly handle exception - UI prompt?
-                e.printStackTrace();
+                LOG.error(P4Bundle.message("exception.config.file.load", cf), e);
             }
         }
     }

@@ -41,25 +41,14 @@ public class P4RevisionNumber implements VcsRevisionNumber {
             public int getRev(P4FileInfo info) {
                 return info.getHeadRev();
             }
-
-            public int getChangelist(P4FileInfo info) {
-                // TODO is there a way to distinguish these?
-                return info.getChangelist();
-            }
         },
         HAVE() {
             public int getRev(P4FileInfo info) {
                 return info.getHaveRev();
             }
-
-            public int getChangelist(P4FileInfo info) {
-                // TODO is there a way to distinguish these?
-                return info.getChangelist();
-            }
         };
 
         public abstract int getRev(P4FileInfo info);
-        public abstract int getChangelist(P4FileInfo info);
     }
 
 
@@ -92,7 +81,10 @@ public class P4RevisionNumber implements VcsRevisionNumber {
     public P4RevisionNumber(@Nullable String requestedDepotPath, @NotNull final P4FileInfo info, @NotNull RevType revType) {
         this.depotPath = info.getDepotPath();
         this.rev = revType.getRev(info);
-        this.changelist = revType.getChangelist(info);
+
+        // There is no way to really tell the changelist this belongs to without performing a file history search.
+        this.changelist = -1;
+
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
 
@@ -110,8 +102,8 @@ public class P4RevisionNumber implements VcsRevisionNumber {
         this.depotPath = info.getDepotPath();
         this.rev = rev;
 
-        // TODO is there a way to get the correct changelist?
-        this.changelist = info.getChangelist();
+        // There is no way to really tell the changelist this belongs to without performing a file history search.
+        this.changelist = -1;
 
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
@@ -238,13 +230,7 @@ public class P4RevisionNumber implements VcsRevisionNumber {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        }
-        if (obj == null || ! (obj instanceof VcsRevisionNumber)) {
-            return false;
-        }
-        return compareTo((VcsRevisionNumber) obj) == 0;
+        return obj == this || (obj != null && (obj instanceof VcsRevisionNumber) && compareTo((VcsRevisionNumber) obj) == 0);
     }
 
     @Override

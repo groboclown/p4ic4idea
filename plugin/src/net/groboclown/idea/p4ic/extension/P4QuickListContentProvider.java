@@ -41,14 +41,13 @@ public class P4QuickListContentProvider implements VcsQuickListContentProvider {
         add("CheckinProject", manager, actions);
         add("CheckinFiles", manager, actions);
         add("ChangesView.Revert", manager, actions);
+        add("UpdateFiles", manager, actions);
 
         addSeparator(actions);
         add("Vcs.ShowTabbedFileHistory", manager, actions);
         add("Annotate", manager, actions);
         add("Compare.SameVersion", manager, actions);
-
-        // TODO add submit
-        // TODO add synchronize
+        add("Compare.Selected", manager, actions);
 
         /*
         addSeparator(actions);

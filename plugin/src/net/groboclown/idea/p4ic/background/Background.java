@@ -28,34 +28,20 @@ import org.jetbrains.annotations.NotNull;
 public class Background {
     private Background() {}
 
+    // TODO this is no longer needed.  The IntelliJ threading model is setup so that the commands are (generally)
+    // run in the correct thread.  It's a rare need to have something be explicitly pushed off into another
+    // thread.
     public static void runInBackground(@NotNull final Project project, @NotNull final String title, @NotNull PerformInBackgroundOption option,
                                        @NotNull final ER runner) {
-        // TEST see if just using what threading IDEA gives us
-        // causes us to do the right thing.
-        /*
-        if (ApplicationManager.getApplication().isDispatchThread()) {
-            ProgressManager.getInstance().run(new Task.Backgroundable(project, title, true, option) {
-                @Override
-                public void run(@NotNull ProgressIndicator indicator) {
-                    try {
-                        runner.run(indicator);
-                    } catch (Exception e) {
-                        ErrorDialog.logError(project, title, e);
-                    }
-                }
-            });
-        } else {
-        */
-            ProgressIndicator indicator = UICompat.getInstance().getGlobalProgressIndicator();
-            if (indicator == null) {
-                indicator = new DelegatingProgressIndicator();
-            }
-            try {
-                runner.run(indicator);
-            } catch (Exception e) {
-                ErrorDialog.logError(project, title, e);
-            }
-        //}
+        ProgressIndicator indicator = UICompat.getInstance().getGlobalProgressIndicator();
+        if (indicator == null) {
+            indicator = new DelegatingProgressIndicator();
+        }
+        try {
+            runner.run(indicator);
+        } catch (Exception e) {
+            ErrorDialog.logError(project, title, e);
+        }
     }
 
 

@@ -16,13 +16,11 @@ package net.groboclown.idea.p4ic.compat;
 
 public class IncompatibleApiVersionException extends IllegalStateException {
     public IncompatibleApiVersionException(String apiVersion) {
-        // TODO make internationalized
-        // Can't use P4Bundle, because it's in a child project.
-        super("IDE version " + apiVersion + " not compatible with the P4 plugin");
+        super(CompatBundle.message("incompatible.api-version", apiVersion));
     }
 
 
     public IncompatibleApiVersionException(String firstVersion, String secondVersion, Exception source) {
-        super("Invalid IDEA version number (" + firstVersion + " vs " + secondVersion + ")", source);
+        super(CompatBundle.message("invalid.ide.version", firstVersion, secondVersion), source);
     }
 }

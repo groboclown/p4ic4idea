@@ -16,114 +16,64 @@ package net.groboclown.idea.p4ic.ui.revision;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.ValidationInfo;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.components.JBScrollPane;
-import com.intellij.ui.treeStructure.treetable.TreeTable;
-import com.intellij.ui.treeStructure.treetable.TreeTableModel;
+import com.intellij.ui.components.JBList;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.history.P4FileRevision;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TreeModelListener;
-import javax.swing.tree.TreePath;
+import javax.swing.event.ListDataListener;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 public class RevisionList extends JPanel {
     private static final Logger LOG = Logger.getInstance(RevisionList.class);
-
-
-    public interface RevisionSelectedListener {
-        void revisionSelected(@Nullable P4FileRevision rev);
-    }
-
-
-    // TODO make configurable
-    private static final int REVISION_PAGE_SIZE = 1000;
+    private final RevisionListModel model;
 
 
     private String error;
-    private TreeTable tree;
+    private JBList list;
     private RevisionSelectedListener listener;
 
     public RevisionList(final @NotNull P4Vcs vcs, final @NotNull VirtualFile file) {
-        final Client client = vcs.getClientFor(file);
+        setLayout(new BorderLayout());
+        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        List<PathRevs> revisions = new ArrayList<PathRevs>();
-        String errs = null;
-        if (client == null || client.isWorkingOffline()) {
-            errs = P4Bundle.getString("revision.list.notconnected");
+        PathRevsSet revsSet = PathRevsSet.create(vcs, file);
+
+        error = revsSet.getError();
+
+        if (error != null) {
+            LOG.info("Errors in retrieving revisions: " + error);
+            JLabel label = new JLabel(P4Bundle.message("revision.list.error", error));
+            add(label, BorderLayout.NORTH);
+            model = null;
         } else {
-            try {
-                final List<P4FileInfo> p4infoList = client.getServer().getVirtualFileInfo(Collections.singleton(file));
-                if (p4infoList.isEmpty()) {
-                    // can't find file
-                    errs = P4Bundle.getString("revision.list.nosuchfile");
-                } else {
-                    final P4FileInfo fileInfo = p4infoList.get(0);
-                    LOG.info("diff file depot: " + fileInfo.getDepotPath());
-                    List<P4FileRevision> fileRevs = new ArrayList<P4FileRevision>();
-                    String location = null;
-                    for (P4FileRevision rev : client.getServer().getRevisionHistory(fileInfo, REVISION_PAGE_SIZE)) {
-                        String depotPath = rev.getRevisionDepotPath();
-                        LOG.info("history: " + depotPath + "#" + rev.getRevisionNumber());
-                        if (depotPath != null) {
-                            if (location == null) {
-                                location = depotPath;
-                            }
-                            if (depotPath.equals(location)) {
-                                fileRevs.add(rev);
-                            } else {
-                                if (!fileRevs.isEmpty()) {
-                                    LOG.info(location + " " + fileRevs.size());
-                                    revisions.add(new PathRevs(location, fileRevs));
-                                }
-                                location = depotPath;
-                                fileRevs = new ArrayList<P4FileRevision>();
-                            }
-                        }
-                    }
-                    if (location != null && !fileRevs.isEmpty()) {
-                        LOG.info(location + " " + fileRevs.size());
-                        revisions.add(new PathRevs(location, fileRevs));
-                    }
-
-                    if (revisions.isEmpty()) {
-                        errs = P4Bundle.message("revision.list.no-revs", file);
-                    }
+            // FIXME this isn't being rendered correctly.  Why?
+            LOG.info("Found " + revsSet.getPathRevs().size() + " revision branches");
+            String text = "<html>Revisions:<br>";
+            for (PathRevs revs : revsSet.getPathRevs()) {
+                text = text + revs.getDepotPath() + "<br>";
+                for (P4FileRevision rev : revs.getRevisions()) {
+                    text = text + '#' + rev.getRev() + "<br>";
                 }
-            } catch (VcsException e) {
-                // TODO fix
-                e.printStackTrace();
-                errs = e.getMessage();
             }
-        }
+            add(new JLabel(text), BorderLayout.NORTH);
+            model = null;
 
-        error = errs;
-
-        if (errs != null) {
-            add(new JLabel(errs));
-        } else {
-            setLayout(new BorderLayout());
-            RevisionListModel model = new RevisionListModel(revisions);
-            tree = new TreeTable(model);
-            add(new JBScrollPane(tree, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+            /*
+            model = new RevisionListModel(revsSet.getPathRevs());
+            list = new JBList(model);
+            add(new JBScrollPane(list, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                     JScrollPane.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
-            tree.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-            tree.setRowSelectionAllowed(true);
-            tree.setColumnSelectionAllowed(false);
-            tree.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            add(list, BorderLayout.CENTER);
+            list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
                 @Override
                 public void valueChanged(final ListSelectionEvent e) {
                     if (e.getValueIsAdjusting()) {
@@ -138,6 +88,7 @@ public class RevisionList extends JPanel {
                     }
                 }
             });
+            */
         }
     }
 
@@ -157,20 +108,15 @@ public class RevisionList extends JPanel {
         if (!isValid()) {
             return null;
         }
-        int row = tree.getSelectedRow();
+        int row = list.getSelectedIndex();
         return getRevAt(row);
     }
 
 
     @Nullable
     private P4FileRevision getRevAt(int index) {
-        final TreePath path = tree.getTree().getPathForRow(index);
-        if (path == null) {
-            return null;
-        }
-        final Object obj = path.getLastPathComponent();
-        if (obj instanceof P4FileRevision) {
-            return (P4FileRevision) obj;
+        if (model != null) {
+            return model.getRevAt(index);
         }
         return null;
     }
@@ -197,184 +143,71 @@ public class RevisionList extends JPanel {
     private static final int COL_COMMENT = 3;
     private static final int COL_COUNT = 4;
 
-    private static class RevisionListModel implements TreeTableModel {
-        private final List<PathRevs> revisions;
-        private JTree tree;
+    private static class RevisionListModel implements ListModel {
+        private final List<CellData> revisions;
 
         private RevisionListModel(final List<PathRevs> revisions) {
-            this.revisions = revisions;
-        }
-
-        @Override
-        public int getColumnCount() {
-            return COL_COUNT;
-        }
-
-        @Override
-        public String getColumnName(final int column) {
-            switch (column) {
-                case COL_REV:
-                    return P4Bundle.getString("revision.list.rev");
-                case COL_DATE:
-                    return P4Bundle.getString("revision.list.datetime");
-                case COL_AUTH:
-                    return P4Bundle.getString("revision.list.author");
-                case COL_COMMENT:
-                    return P4Bundle.getString("revision.list.comment");
-                default:
-                    throw new IllegalArgumentException("invalid column " + column);
-            }
-        }
-
-        @Override
-        public Class getColumnClass(final int column) {
-            switch (column) {
-                case COL_REV:
-                    return Integer.class;
-                case COL_DATE:
-                    return Date.class;
-                case COL_AUTH:
-                    return String.class;
-                case COL_COMMENT:
-                    return String.class;
-                default:
-                    throw new IllegalArgumentException("invalid column " + column);
-            }
-        }
-
-        @Override
-        public Object getValueAt(final Object node, final int columnIndex) {
-            if (node == null) {
-                return "";
-            }
-            if (node instanceof P4FileRevision) {
-                final P4FileRevision rev = (P4FileRevision) node;
-                switch (columnIndex) {
-                    case COL_REV:
-                        return rev.getRev();
-                    case COL_DATE:
-                        return rev.getRevisionDate();
-                    case COL_AUTH:
-                        return rev.getAuthor();
-                    case COL_COMMENT:
-                        return rev.getCommitMessage();
-                    default:
-                        return "";
+            List<CellData> revs = new ArrayList<CellData>();
+            for (PathRevs rev : revisions) {
+                for (P4FileRevision frev : rev.getRevisions()) {
+                    revs.add(new CellData(frev));
                 }
             }
-
-            // TODO if not all revisions were loaded, add an extra "..." row.
-
-            LOG.info("unknown getValueAt model call: " + node);
-            return null;
+            this.revisions = Collections.unmodifiableList(revs);
         }
 
-        @Override
-        public Object getChild(final Object parent, final int index) {
-            final PathRevs node = lookupNode(parent);
-            if (node != null && index >= 0 && index < node.revs.size()) {
-                return node.revs.get(index);
+        P4FileRevision getRevAt(int row) {
+            if (row >= 0 && row < revisions.size()) {
+                CellData data = revisions.get(row);
+                if (! data.isPath()) {
+                    return data.rev;
+                }
             }
             return null;
         }
 
         @Override
-        public int getChildCount(final Object parent) {
-            final PathRevs node = lookupNode(parent);
-            if (node != null) {
-                return node.revs.size();
-            }
-            // unknown node, so no children
-            return 0;
+        public int getSize() {
+            return revisions.size();
         }
 
         @Override
-        public boolean isLeaf(final Object node) {
-            return node != null && (node instanceof P4FileRevision);
-        }
-
-        @Override
-        public int getIndexOfChild(final Object parent, final Object child) {
-            if (parent == null || child == null) {
-                return -1;
-            }
-            if (!(child instanceof P4FileRevision)) {
-                // not a valid child object.
-                return -1;
-            }
-            final PathRevs node = lookupNode(parent);
-            if (node != null) {
-                for (int i = 0; i < node.revs.size(); ++i) {
-                    if (child.equals(node.revs.get(i))) {
-                        return i;
-                    }
-                }
-            }
-            // parent not in list
-            return -1;
-        }
-
-
-        @Nullable
-        private PathRevs lookupNode(final Object parent) {
-            if (parent == null || !(parent instanceof String)) {
+        public Object getElementAt(final int index) {
+            if (index < 0 || index >= revisions.size()) {
                 return null;
             }
-            for (PathRevs pr : revisions) {
-                if (parent.equals(pr.depotPath)) {
-                    return pr;
-                }
-            }
-            return null;
-        }
-
-
-        @Override
-        public boolean isCellEditable(final Object node, final int column) {
-            return false;
+            CellData data = revisions.get(index);
+            return '#' + Integer.toString(data.rev.getRev());
         }
 
         @Override
-        public void valueForPathChanged(final TreePath path, final Object newValue) {
-            // ignore
+        public void addListDataListener(final ListDataListener l) {
+
         }
 
         @Override
-        public Object getRoot() {
-            // No single root
-            return null;
-        }
+        public void removeListDataListener(final ListDataListener l) {
 
-        @Override
-        public void setValueAt(final Object aValue, final Object node, final int column) {
-            // do nothing
-        }
-
-        @Override
-        public void setTree(final JTree tree) {
-            this.tree = tree;
-        }
-
-        @Override
-        public void addTreeModelListener(final TreeModelListener l) {
-            // Unmodifiable right now (can't load more), so ignore
-        }
-
-        @Override
-        public void removeTreeModelListener(final TreeModelListener l) {
-            // Unmodifiable right now (can't load more), so ignore
         }
     }
 
 
-    private static final class PathRevs {
+    private static final class CellData {
         final String depotPath;
-        final List<P4FileRevision> revs;
+        final P4FileRevision rev;
 
-        private PathRevs(final String depotPath, final List<P4FileRevision> revs) {
+        CellData(@NotNull final String depotPath) {
             this.depotPath = depotPath;
-            this.revs = Collections.unmodifiableList(revs);
+            this.rev = null;
+        }
+
+        private CellData(@NotNull final P4FileRevision rev) {
+            this.depotPath = null;
+            this.rev = rev;
+        }
+
+        boolean isPath() {
+            return depotPath != null;
         }
     }
-
 }

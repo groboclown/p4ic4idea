@@ -6,15 +6,19 @@
 
 ### Overview
 
-* Full file history support.
+* Full file history support (#47).
 * Bug fixes.
 
 ### Details
 
-* Full file history support.
+* Full file history support (#47).
     * File history used to not show branching history if it went outside the current client.  Now, it will show
       a full history of the file, and allow for diffing against any part of the depot in which the user has
       read access.
+* Bug fixes.
+    * Fixed error when handling deletion of files not owned by Perforce.
+    * Fixed a lag issue related to saving files when working offline.
+    * Minor code cleanups.
 
 
 ## ::v0.5.4::

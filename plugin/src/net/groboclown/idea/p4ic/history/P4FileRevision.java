@@ -175,4 +175,10 @@ public class P4FileRevision implements VcsFileRevision {
     public IFileRevisionData getRevisionData() {
         return revisionData;
     }
+
+    @NotNull
+    @Override
+    public String toString() {
+        return "#" + getRev();
+    }
 }

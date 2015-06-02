@@ -445,12 +445,14 @@ public class ChangeListSync {
                     LOG.info("marked as locally modified without edit");
                     data.processModifiedWithoutCheckout(vf);
                 }
-            } else if (file.isInClientView()) {
+            } else if (file.isInClientView() && vf != null) {
                 LOG.info("marked as locally added");
                 data.processUnversionedFile(vf);
-            } else {
+            } else if (vf != null) {
                 LOG.debug("marked as ignored");
                 data.processIgnoredFile(vf);
+            } else {
+                LOG.debug("not in depot but deleted " + vf);
             }
         }
         return files;

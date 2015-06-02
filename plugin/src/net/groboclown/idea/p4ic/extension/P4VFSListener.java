@@ -243,7 +243,7 @@ public class P4VFSListener extends VcsVFSListener {
                 public void run(@NotNull ProgressIndicator indicator) throws Exception {
                     List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
                     Client client = vcs.getClientFor(file);
-                    if (client != null) {
+                    if (client != null && client.isWorkingOnline()) {
                         // Determine if the file is already opened for edit.
                         // If it's not, or opened for add, then we still need to
                         // perform this operation.

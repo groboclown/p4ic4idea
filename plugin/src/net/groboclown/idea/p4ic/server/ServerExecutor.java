@@ -132,6 +132,11 @@ public class ServerExecutor {
     }
 
     @NotNull
+    public List<P4StatusMessage> addOrEditFiles(List<VirtualFile> edited, int changelistId) throws VcsException {
+        return exec.addOrEditFiles(project, edited, changelistId);
+    }
+
+    @NotNull
     public List<P4StatusMessage> editFiles(List<VirtualFile> edited, int changelistId) throws VcsException {
         return exec.editFiles(project, edited, changelistId);
     }
@@ -257,7 +262,7 @@ public class ServerExecutor {
 
     @NotNull
     public List<P4FileInfo> synchronizeFiles(@NotNull final Collection<FilePath> path, final int revision,
-            final int changelist, boolean forceSync, @NotNull final Collection<VcsException> errorsOutput)
+            @Nullable final String changelist, boolean forceSync, @NotNull final Collection<VcsException> errorsOutput)
             throws VcsException, CancellationException {
         return exec.synchronizeFiles(project, path, revision, changelist, forceSync, errorsOutput);
     }

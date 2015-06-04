@@ -25,12 +25,14 @@ import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.history.P4ContentRevision;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
+import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.SubProgressIndicator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -110,7 +112,7 @@ public class ChangeListSync {
         progress.setFraction(0.2);
 
         SubProgressIndicator sub = new SubProgressIndicator(progress, 0.2, 0.5);
-        loadUnmappedP4ChangeListsToExitingIdea(addGate, pendingChangelists, known, sub);
+        loadUnmappedP4ChangeListsToExistingIdea(addGate, pendingChangelists, known, sub);
 
         progress.setFraction(0.5);
 
@@ -122,13 +124,17 @@ public class ChangeListSync {
                     0.5 + 0.5 * (clientIndex / (double) clients.size()),
                     0.5 + 0.5 * ((clientIndex + 1.0) / (double) clients.size()));
             clientIndex += 1.0;
-            List<P4FileInfo> files = moveDirtyFilesIntoIdeaChangeLists(client, builder,
-                    sub, getFilesUnderClient(client, filePaths));
-            sub.setFraction(0.9);
-            moveP4FilesIntoIdeaChangeLists(client, builder, files);
-            for (P4FileInfo f : files) {
-                filePaths.remove(f.getPath());
-                ensureOnlyIn(builder, client, f);
+            if (client.isWorkingOnline()) {
+                List<P4FileInfo> files = moveDirtyFilesIntoIdeaChangeLists(client, builder,
+                        sub, getFilesUnderClient(client, filePaths));
+                sub.setFraction(0.9);
+                moveP4FilesIntoIdeaChangeLists(client, builder, files);
+                for (P4FileInfo f : files) {
+                    filePaths.remove(f.getPath());
+                    ensureOnlyIn(builder, client, f);
+                }
+            } else {
+                LOG.info("not refreshing changelists for " + client + ": working offline");
             }
             sub.setFraction(1.0);
         }
@@ -209,7 +215,7 @@ public class ChangeListSync {
      * @param prog               progress bar
      * @throws VcsException
      */
-    private void loadUnmappedP4ChangeListsToExitingIdea(
+    private void loadUnmappedP4ChangeListsToExistingIdea(
             @NotNull final ChangeListManagerGate addGate,
             @NotNull Map<Client, List<P4ChangeList>> pendingChangelists,
             @NotNull Map<LocalChangeList, Map<Client, P4ChangeList>> known,
@@ -438,24 +444,56 @@ public class ChangeListSync {
                 Change change = createChange(file);
                 data.processChange(change, changeList);
             } else if (file.isInDepot()) {
-                if (vf == null) {
-                    LOG.info("marked as locally deleted");
+                if (vf == null || ! vf.exists()) {
+                    LOG.info("marked as locally deleted: " + file);
                     data.processLocallyDeletedFile(file.getPath());
                 } else {
-                    LOG.info("marked as locally modified without edit");
-                    data.processModifiedWithoutCheckout(vf);
+                    // See bug #49
+                    //  Changelists show files that are unchanged as locally
+                    //  modified without checkout.
+
+                    if (isServerAndLocalEqual(client, file, vf)) {
+                        LOG.info("marked as locally modified without edit: " + vf);
+                        data.processModifiedWithoutCheckout(vf);
+                    } else {
+                        LOG.info("idea thinks is locally modified without checkout, but it's the same: " + vf);
+                        file.getPath().hardRefresh();
+                    }
                 }
             } else if (file.isInClientView() && vf != null) {
-                LOG.info("marked as locally added");
+                LOG.info("marked as locally added: " + vf);
                 data.processUnversionedFile(vf);
             } else if (vf != null) {
-                LOG.debug("marked as ignored");
+                LOG.debug("marked as ignored: " + vf);
                 data.processIgnoredFile(vf);
             } else {
-                LOG.debug("not in depot but deleted " + vf);
+                LOG.debug("not in depot but deleted: " + vf);
             }
         }
         return files;
+    }
+
+    private boolean isServerAndLocalEqual(@NotNull final Client client, @NotNull final P4FileInfo file,
+            @NotNull VirtualFile vf)
+            throws VcsException {
+        byte[] src = client.getServer().loadFileAsBytes(file.getPath(), file.getHaveRev());
+        if (src == null) {
+            return false;
+        }
+        try {
+            byte[] tgt = vf.contentsToByteArray();
+            if (src.length != tgt.length) {
+                return false;
+            }
+            for (int pos = 0; pos < src.length; ++pos) {
+                if (src[pos] != tgt[pos]) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (IOException e) {
+            throw new P4FileException(e);
+        }
     }
 
     private void moveP4FilesIntoIdeaChangeLists(
@@ -473,8 +511,13 @@ public class ChangeListSync {
             Change change = createChange(file);
 
             LocalChangeList changeList = vcs.getChangeListMapping().getLocalChangelist(client, file.getChangelist());
-            LOG.debug("Putting " + file + " into local change " + changeList);
-            data.processChange(change, changeList);
+            if (changeList != null) {
+                LOG.debug("Putting " + file + " into local change " + changeList);
+                data.processChange(change, changeList);
+            } else {
+                LOG.error("Could not put " + file + " into local change (null changelist for " +
+                        file.getChangelist() + ")");
+            }
 
             // Any way to use this call?
             //builder.reportChangesOutsideProject() ?

@@ -37,6 +37,8 @@ import java.util.*;
 public class P4FileInfo {
     private static final Logger LOG = Logger.getInstance(P4FileInfo.class);
 
+    // TODO add merge problem status (#30)
+
     public enum ClientAction {
         ADD(FileStatus.ADDED, true, false, false, false, FileGroup.CREATED_ID),
         DELETE(FileStatus.DELETED, false, true, false, false, FileGroup.REMOVED_FROM_REPOSITORY_ID),
@@ -45,6 +47,7 @@ public class P4FileInfo {
         ADD_INTEGRATE(FileStatus.ADDED, true, false, false, true, FileGroup.CREATED_ID),
         DELETE_INTEGRATE(FileStatus.DELETED, false, true, false, true, FileGroup.REMOVED_FROM_REPOSITORY_ID),
         EDIT_INTEGRATE(FileStatus.MERGE, false, false, true, true, FileGroup.MERGED_ID),
+        RESOLVE_INTEGRATE(FileStatus.MERGED_WITH_CONFLICTS, false, false, true, true, FileGroup.MERGED_WITH_CONFLICT_ID),
 
         NONE(FileStatus.NOT_CHANGED, false, false, false, false, FileGroup.SKIPPED_ID);
 
@@ -227,7 +230,7 @@ public class P4FileInfo {
         this.headRev = extendedSpec.getHeadRev();
         this.inClientView = true;
         this.isDeletedInDepot = extendedSpec.getHeadRev() == 0;
-        this.clientAction = fromAction(
+        this.clientAction = fromAction(extendedSpec,
                 extendedSpec.getOpenAction() == null ?
                         extendedSpec.getAction() : extendedSpec.getOpenAction());
         //this.inChangelist = extendedSpec.getOpenChangelistId();
@@ -256,7 +259,7 @@ public class P4FileInfo {
         this.headRev = -1;
         this.inClientView = true;
         this.isDeletedInDepot = false;
-        this.clientAction = fromAction(spec.getAction());
+        this.clientAction = fromAction(spec, spec.getAction());
         this.inChangelist = spec.getChangelistId();
 
         this.name = spec.getDepotPathString() + "#new";
@@ -281,7 +284,7 @@ public class P4FileInfo {
         this.headRev = -1;
         this.inClientView = true;
         this.isDeletedInDepot = false;
-        this.clientAction = fromAction(spec.getAction());
+        this.clientAction = fromAction(spec, spec.getAction());
         this.inChangelist = -100;
 
         this.name = spec.getDepotPathString() + "#view";
@@ -390,7 +393,7 @@ public class P4FileInfo {
     }
 
 
-    public static ClientAction fromAction(FileAction action) {
+    public static ClientAction fromAction(@NotNull IFileSpec spec, @Nullable FileAction action) {
         if (action == null) {
             return ClientAction.NONE;
         }
@@ -405,6 +408,12 @@ public class P4FileInfo {
             case IMPORT:
                 return ClientAction.ADD_INTEGRATE;
 
+            // integrate with no merge conflicts
+            case RESOLVED:
+            case EDIT_IGNORED:
+                return ClientAction.EDIT_INTEGRATE;
+
+            // possible merge conflicts
             case BRANCH:
             case INTEGRATE:
             case UPDATED:
@@ -412,12 +421,12 @@ public class P4FileInfo {
             case REPLACED:
             case IGNORED:
             case ABANDONED:
-            case RESOLVED:
             case UNRESOLVED:
             case MERGE_FROM:
-            case EDIT_IGNORED:
             case EDIT_FROM:
-                return ClientAction.EDIT_INTEGRATE;
+                return (spec.getBaseRev() > 0)
+                        ? ClientAction.RESOLVE_INTEGRATE
+                        : ClientAction.EDIT_INTEGRATE;
 
             case EDIT:
                 return ClientAction.EDIT;
@@ -511,7 +520,19 @@ public class P4FileInfo {
                 return Collections.emptyList();
             }
             List<P4FileInfo> ret = new ArrayList<P4FileInfo>(specs.size());
-            List<IFileSpec> remaining = new ArrayList<IFileSpec>(specs);
+            List<IFileSpec> remaining = new ArrayList<IFileSpec>(specs.size());
+            for (IFileSpec spec: specs) {
+                // Filter out any error or info messages.
+                if (spec != null) {
+                    if (spec.getAnnotatedPreferredPathString() == null) {
+                        // No source.
+                        LOG.info("fstat ignoring spec " + spec + " (" + spec.getStatusMessage() + ")");
+                    } else {
+                        remaining.add(spec);
+                    }
+                }
+            }
+
             count.invoke("getExtendedFiles");
             List<IExtendedFileSpec> mapped = server.getExtendedFiles(remaining,
                     -1, -1, -1,
@@ -529,7 +550,7 @@ public class P4FileInfo {
                         LOG.debug("a not-known-by-server file: " + message.getMessage());
                         continue;
                     } else {
-                        LOG.info("fstat reported error '" + message + "' for files " + specs);
+                        LOG.info("fstat reported error '" + message + "' for files " + remaining);
                         throw new P4JavaException(message.toString());
                     }
                 }
@@ -741,7 +762,7 @@ public class P4FileInfo {
                     ret.add(fileInfo);
                 } else if (spec.getDepotPathString() != null || spec.getClientPathString() != null ||
                         spec.getLocalPathString() != null || spec.getOriginalPathString() != null) {
-                    if (fromAction(spec.getAction()).isAdd()) {
+                    if (fromAction(spec, spec.getAction()).isAdd()) {
                         // The spec can have the annotation (revision) set, but
                         // on add, that can cause a failure on fstat.
                         String path = spec.getDepotPathString();

@@ -89,7 +89,7 @@ public class P4Edit extends BasicAction {
             int changelistId = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client).getChangeListId();
             //indicator.setFraction(0.2);
             try {
-                List<P4StatusMessage> messages = client.getServer().editFiles(files, changelistId);
+                List<P4StatusMessage> messages = client.getServer().addOrEditFiles(files, changelistId);
                 //indicator.setFraction(0.8);
                 P4StatusMessage.throwIfError(messages, true);
                 //indicator.setFraction(0.85);

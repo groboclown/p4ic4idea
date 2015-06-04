@@ -165,6 +165,9 @@ public class P4VFSListener extends VcsVFSListener {
             @NotNull final Collection<VirtualFile> addedFiles,
             @NotNull final Map<VirtualFile, VirtualFile> copyFromMap) {
         // IDEA 140.2110.5 changed the markFilesDirty API to just take FilePath objects.
+
+        LOG.info("Adding files " + addedFiles);
+
         List<FilePath> dirtyFilePaths = new ArrayList<FilePath>(addedFiles.size());
         for (VirtualFile vf: addedFiles) {
             dirtyFilePaths.add(VcsUtil.getFilePath(vf));
@@ -236,11 +239,21 @@ public class P4VFSListener extends VcsVFSListener {
     protected void beforeContentsChange(@NotNull VirtualFileEvent event, @NotNull final VirtualFile file) {
         // check that the file is considered "under my vcs"
         if (event.isFromSave() && vcs.fileIsUnderVcs(VcsUtil.getFilePath(file))) {
-            LOG.debug("edit request on " + file);
+            LOG.info("edit request on " + file);
 
             Background.runInBackground(project, P4EditFileProvider.EDIT, vcs.getConfiguration().getEditOption(), new Background.ER() {
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) throws Exception {
+                    // Bug #6
+                    //   Add/Edit without adding to Perforce incorrectly
+                    //   then adds the file to Perforce
+                    // This method is called when a save happens, which can be
+                    // at any time.  If the save is called on a file which is
+                    // marked as locally updated but not checked out, this will
+                    // still be called.  This method should never *add* a file
+                    // into Perforce - only open for edit.
+
+
                     List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
                     Client client = vcs.getClientFor(file);
                     if (client != null && client.isWorkingOnline()) {
@@ -248,10 +261,12 @@ public class P4VFSListener extends VcsVFSListener {
                         // If it's not, or opened for add, then we still need to
                         // perform this operation.
                         P4FileInfo fileInfo = P4ChangeListCache.getInstance().getFileInChangelist(client, VcsUtil.getFilePath(file));
-                        if (fileInfo != null && (fileInfo.getClientAction().isEdit() ||
+
+                        if (fileInfo != null && (
+                                fileInfo.getClientAction().isEdit() ||
                                 (fileInfo.getClientAction().isAdd() && !
                                     fileInfo.getClientAction().isIntegrate()))) {
-                            LOG.info("Already open for edit; skipping edit for " + file);
+                            LOG.info("Already open for edit or not in depot; skipping edit for " + file);
                             return;
                         }
 

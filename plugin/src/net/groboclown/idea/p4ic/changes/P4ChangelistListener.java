@@ -61,14 +61,14 @@ public class P4ChangelistListener implements ChangeListListener {
         // Adding a changelist does not automatically create a corresponding
         // Perforce changelist.  It must have files added to it that are
         // Perforce-backed in order for it to become one.
-        LOG.info("changeListAdded: " + list.getName() + "; [" + list.getComment() + "]; " +
+        LOG.debug("changeListAdded: " + list.getName() + "; [" + list.getComment() + "]; " +
                 list.getClass().getSimpleName());
     }
 
     @Override
     public void changeListRemoved(@NotNull final ChangeList list) {
-        LOG.info("changeListRemoved: " + list.getName() + "; [" + list.getComment() + "]; " + list.getClass()
-                                                                                                  .getSimpleName());
+        LOG.debug("changeListRemoved: " + list.getName() + "; [" + list.getComment() + "]; " + list.getClass()
+                .getSimpleName());
 
         if (list instanceof LocalChangeList && ! P4ChangeListMapping.isDefaultChangelist((LocalChangeList) list)) {
             Background.runInBackground(myProject, CHANGELIST_REMOVED,
@@ -112,21 +112,21 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void changesRemoved(@NotNull final Collection<Change> changes, @NotNull final ChangeList fromList) {
-        LOG.info("changesRemoved: changes " + changes);
-        LOG.info("changesRemoved: changelist " + fromList.getName() + "; [" + fromList.getComment() + "]; " + fromList
+        LOG.debug("changesRemoved: changes " + changes);
+        LOG.debug("changesRemoved: changelist " + fromList.getName() + "; [" + fromList.getComment() + "]; " + fromList
                 .getClass().getSimpleName());
 
         // This method doesn't do what it seems to say it does.
         // It is called when part of a change is removed.  Only
-        // changelist removed will perform the move to default
+        // changeListRemoved will perform the move to default
         // changelist.  A revert will move it out of the changelist.
     }
 
 
     @Override
     public void changesAdded(@NotNull final Collection<Change> changes, @NotNull final ChangeList toList) {
-        LOG.info("changesAdded: changes " + changes);
-        LOG.info("changesAdded: changelist " + toList.getName() + "; [" + toList.getComment() + "]");
+        LOG.debug("changesAdded: changes " + changes);
+        LOG.debug("changesAdded: changelist " + toList.getName() + "; [" + toList.getComment() + "]");
 
         if (toList instanceof LocalChangeList) {
             final List<FilePath> paths = getPathsFromChanges(changes);
@@ -261,7 +261,7 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void changeListCommentChanged(final ChangeList list, final String oldComment) {
-        LOG.info("changeListCommentChanged: " + list);
+        LOG.debug("changeListCommentChanged: " + list);
 
         // This is the same logic as with the name change.
         changeListRenamed(list, list.getName() + "x");
@@ -269,7 +269,7 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void changesMoved(final Collection<Change> changes, final ChangeList fromList, final ChangeList toList) {
-        LOG.info("changesMoved: " + fromList + " to " + toList);
+        LOG.debug("changesMoved: " + fromList + " to " + toList);
 
         // This is just like a "changes added" command,
         // in the sense that the old list doesn't matter too much.
@@ -278,17 +278,17 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void defaultListChanged(final ChangeList oldDefaultList, final ChangeList newDefaultList) {
-        LOG.info("defaultListChanged: " + oldDefaultList + " to " + newDefaultList);
+        LOG.debug("defaultListChanged: " + oldDefaultList + " to " + newDefaultList);
     }
 
     @Override
     public void unchangedFileStatusChanged() {
-        LOG.info("unchangedFileStatusChanged");
+        LOG.debug("unchangedFileStatusChanged");
     }
 
     @Override
     public void changeListUpdateDone() {
-        LOG.info("changeListUpdateDone");
+        LOG.debug("changeListUpdateDone");
     }
 
     private boolean isUnderVcs(final FilePath path) {

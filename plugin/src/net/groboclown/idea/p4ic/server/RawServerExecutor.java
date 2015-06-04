@@ -22,16 +22,14 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
+import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.history.P4AnnotatedLine;
 import net.groboclown.idea.p4ic.history.P4FileRevision;
-import net.groboclown.idea.p4ic.server.exceptions.P4ApiException;
-import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
-import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.server.exceptions.*;
 import net.groboclown.idea.p4ic.server.tasks.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -214,12 +212,21 @@ public class RawServerExecutor {
     }
 
     @NotNull
+    public List<P4StatusMessage> addOrEditFiles(@NotNull Project project, @NotNull List<VirtualFile> files, int changelist)
+            throws VcsException, CancellationException {
+        if (files.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return performAction(project, new EditRunner(project, files, changelist, true, fileInfoCache));
+    }
+
+    @NotNull
     public List<P4StatusMessage> editFiles(@NotNull Project project, @NotNull List<VirtualFile> files, int changelist)
             throws VcsException, CancellationException {
         if (files.isEmpty()) {
             return Collections.emptyList();
         }
-        return performAction(project, new EditRunner(project, files, changelist, fileInfoCache));
+        return performAction(project, new EditRunner(project, files, changelist, false, fileInfoCache));
     }
 
     @NotNull
@@ -577,7 +584,7 @@ public class RawServerExecutor {
 
     @NotNull
     public List<P4FileInfo> synchronizeFiles(@NotNull final Project project,
-            @NotNull final Collection<FilePath> files, final int revision, final int changelist,
+            @NotNull final Collection<FilePath> files, final int revision, @Nullable final String changelist,
             final boolean forceSync, @NotNull final Collection<VcsException> errorsOutput)
             throws VcsException, CancellationException {
         if (files.isEmpty()) {
@@ -587,12 +594,17 @@ public class RawServerExecutor {
             @Override
             public List<P4FileInfo> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
                 List<IFileSpec> specs;
-                if (revision >= 0) {
+                if (revision == 0) {
+                    specs = FileSpecUtil.getFromFilePathsAt(files, "#none", true);
+                } else if (revision > 0) {
                     specs = FileSpecUtil.getFromFilePathsAt(files, "#" + Integer.toString(revision), true);
-                } else if (changelist >= 0) {
-                    specs = FileSpecUtil.getFromFilePathsAt(files, "@" + Integer.toString(changelist), true);
+                } else if (changelist != null) {
+                    specs = FileSpecUtil.getFromFilePathsAt(files, "@" + changelist, true);
                 } else {
                     specs = FileSpecUtil.getFromFilePathsAt(files, "#head", true);
+                }
+                for (IFileSpec spec: specs) {
+                    LOG.info("Synchronizing " + spec.getAnnotatedPreferredPathString());
                 }
                 final List<IFileSpec> results = exec.synchronizeFiles(project, specs, forceSync);
 
@@ -607,7 +619,14 @@ public class RawServerExecutor {
                         if (msg.getErrorCode() != 17) {
                             LOG.info(msg + ": error code " + msg.getErrorCode());
                             errorsOutput.add(P4StatusMessage.messageAsError(msg));
+                        } else {
+                            LOG.info(msg + ": ignored");
                         }
+                    } else if (spec.getOpStatus() == FileSpecOpStatus.INFO) {
+                        // INFO messages don't have a source, unfortunately.
+                        // So we need to extract the path information.
+                        LOG.info("info message: " + spec.getStatusMessage());
+                        errorsOutput.add(new P4UpdateFileWarning(spec));
                     }
                 }
 

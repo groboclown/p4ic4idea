@@ -301,6 +301,8 @@ public class P4Exec {
             unescapedFiles.add(file);
         }
 
+        // debug for issue #6
+        //LOG.info("Opening for add: " + unescapedFiles, new Throwable());
 
         return runWithClient(project, new WithClient<List<P4StatusMessage>>() {
             @Override

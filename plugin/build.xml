@@ -107,7 +107,7 @@
     <property name="plugin.jar" value="${rootdir}/p4ic4idea.zip"/>
 
     <!-- Build archive for plugin 'p4ic4idea' -->
-    <target name="package" depends="compile"
+    <target name="package" depends="compile.production"
             description="Build plugin archive for module &#39;p4ic4idea&#39;">
         <property name="base.tmp.dir.p4ic4idea" location="${basedir}/work/temp"/>
         <property name="tmp.dir.p4ic4idea" location="${base.tmp.dir.p4ic4idea}/p4ic4idea"/>
@@ -143,7 +143,7 @@
         <zip destfile="${plugin.jar}">
             <fileset dir="${base.tmp.dir.p4ic4idea}"/>
         </zip>
-        <delete dir="${base.tmp.dir.p4ic4idea}"/>
+        <!-- <delete dir="${base.tmp.dir.p4ic4idea}"/> -->
     </target>
 
 

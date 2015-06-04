@@ -175,7 +175,6 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
         // TODO make this a user preference at the project level
 
         return false;
-
     }
 
     private static Set<P4FileInfo> sortSet(Map<VirtualFile, P4FileInfo> allMappings, Collection<VirtualFile> files) throws P4Exception {

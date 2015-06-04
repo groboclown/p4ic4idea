@@ -49,6 +49,7 @@ import net.groboclown.idea.p4ic.extension.P4RevisionNumber.RevType;
 import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.P4FileInfo.ClientAction;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.ui.sync.SyncOptionConfigurable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,6 +60,8 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
     private static final Logger LOG = Logger.getInstance(P4SyncUpdateEnvironment.class);
 
     private final P4Vcs vcs;
+
+    private final SyncOptionConfigurable syncOptions = new SyncOptionConfigurable();
 
     public P4SyncUpdateEnvironment(final P4Vcs vcs) {
         this.vcs = vcs;
@@ -77,6 +80,8 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
         // Run the Perforce operation in the current thread, because that's the context in which this operation
         // is expected to run.
 
+        LOG.info("updateDirectories: sync options are " + syncOptions.getCurrentOptions());
+
         final SyncUpdateSession session = new SyncUpdateSession();
         final Map<String, FileGroup> groups = sortByFileGroupId(updatedFiles.getTopLevelGroups(), null);
         final Map<Client, List<FilePath>> clientRoots = findClientRoots(contentRoots, session);
@@ -84,11 +89,14 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
         for (Entry<Client, List<FilePath>> entry: clientRoots.entrySet()) {
             Client client = entry.getKey();
             try {
-                // TODO get the revision or changelist from the Configurable that the user wants to sync to.
-                // For changelist browsing, we can limit the number of changes returned, and have a paging
-                // mechanism - "p4 changes -m 10 ...@<(last changelist number)"
-                final List<P4FileInfo> results = client.getServer().synchronizeFiles(entry.getValue(), -1, -1, false, session.exceptions);
+                // Get the revision or changelist from the Configurable that the user wants to sync to.
+                final List<P4FileInfo> results = client.getServer().synchronizeFiles(
+                        entry.getValue(),
+                        syncOptions.getRevision(),
+                        syncOptions.getChangelist(),
+                        syncOptions.isForceSync(), session.exceptions);
                 for (P4FileInfo file: results) {
+                    updateFileInfo(file);
                     addToGroup(file, groups);
                 }
             } catch (VcsException e) {
@@ -97,6 +105,20 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
         }
 
         return session;
+    }
+
+
+    /**
+     * File was synchronized, so we need to inform Idea that the file state
+     * needs to be refreshed.
+     *
+     * @param file p4 file information
+     */
+    private void updateFileInfo(@Nullable final P4FileInfo file) {
+        if (file != null) {
+            final FilePath path = file.getPath();
+            path.hardRefresh();
+        }
     }
 
     private void addToGroup(@Nullable final P4FileInfo file,
@@ -130,17 +152,16 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
     @Nullable
     @Override
     public Configurable createConfigurable(final Collection<FilePath> files) {
-        // Currently no UI for synchronizing changes.
-        // TODO this will need to be created to allow synchronizing on things other than #head.
-
-        return null;
+        // Allow for the user to select the right revision for synchronizing
+        return syncOptions;
     }
 
     @Override
     public boolean validateOptions(final Collection<FilePath> roots) {
-        // TODO better understand what's required with this method.
-        // It seems to want a check against the user options, server options, and the files.
-        // Perhaps this is for read-only checks?
+        // This checks to make sure the selected files allow for this option to be shown.
+        // We allow update on any file or directory that's under a client root.
+
+        // To make this option easy and fast, just return true.
 
         return true;
     }
@@ -230,4 +251,6 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
             return cancelled;
         }
     }
+
+
 }

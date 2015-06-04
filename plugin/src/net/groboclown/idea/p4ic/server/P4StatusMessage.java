@@ -153,7 +153,8 @@ public class P4StatusMessage {
         List<T> ret = new ArrayList<T>();
         if (specs != null) {
             for (T spec: specs) {
-                if (!P4StatusMessage.isErrorStatus(spec)) {
+                if (spec != null &&
+                        !P4StatusMessage.isErrorStatus(spec) && spec.getOpStatus() != FileSpecOpStatus.INFO) {
                     ret.add(spec);
                 }
             }

@@ -2,6 +2,32 @@
 
 
 
+## ::v0.6.0::
+
+### Overview
+
+* Allow selecting the revision or changelist to sync to.
+* Synchronizing on a checked-out file does not report future merge problem.
+* Bug fixes.
+* Code cleanup.
+
+### Details
+
+* Allow selecting the revision or changelist to sync to (#29).
+    * Now the menu option "Update files..." brings up a dialog that allows the
+      user to select which revision to sync to (head, revision `#` value,
+      changelist etc. `@` value), as well as whether to force the sync.
+* Synchronizing on a checked-out file does not report future merge problem (#30).
+    * If a synchronize will cause a future merge issue, you will now see an
+      error reported with the details.  The sync will still happen.
+* Bug fixes.
+    * Add/Edit without adding to Perforce incorrectly then adds the file to Perforce (#6).
+    * Changelists show files that are unchanged as locally modified without checkout (#49).
+    * Fixed NPE that can happen if synchronizing files causes a merge issue.
+* Code cleanup.
+    * Reduced logging.
+
+
 ## ::v0.5.5::
 
 ### Overview

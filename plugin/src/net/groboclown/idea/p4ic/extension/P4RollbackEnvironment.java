@@ -160,7 +160,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             listener.checkCanceled();
             listener.accept(entry.getValue());
             try {
-                entry.getKey().getServer().synchronizeFiles(entry.getValue(), -1, -1, true, exceptions);
+                entry.getKey().getServer().synchronizeFiles(entry.getValue(), -1, null, true, exceptions);
             } catch (VcsException e) {
                 exceptions.add(e);
             }

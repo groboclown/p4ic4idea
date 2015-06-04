@@ -68,7 +68,7 @@ public class P4EditFileProvider implements EditFileProvider {
             final Client client = en.getKey();
             final List<VirtualFile> files = en.getValue();
             if (client.isWorkingOnline()) {
-                LOG.info("EditFileProvider (" + client + ") edit " + files);
+                LOG.debug("EditFileProvider (" + client + ") edit " + files);
                 unhandledFiles.removeAll(files);
 
                 // file editing is always run from within the AWT event
@@ -78,7 +78,7 @@ public class P4EditFileProvider implements EditFileProvider {
                 // This, however, may call back into the EDT, which will cause a
                 // deadlock if we perform a "startAndWait".
                 synchronized (vfsSync) {
-                    messages.addAll(client.getServer().editFiles(files,
+                    messages.addAll(client.getServer().addOrEditFiles(files,
                             vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client).getChangeListId()));
                 }
             }
@@ -109,7 +109,9 @@ public class P4EditFileProvider implements EditFileProvider {
             }
         }
 
-        LOG.info("messages: " + messages);
+        if (! messages.isEmpty()) {
+            LOG.info("edit file messages: " + messages);
+        }
 
         P4StatusMessage.throwIfError(messages, true);
     }

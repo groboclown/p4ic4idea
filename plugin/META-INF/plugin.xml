@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.5.5</version>
+    <version>0.5.6</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.6.0</em>
+                <ol>
+                    <li>Stuff.</li>
+                </ol>
+            </li>
             <li><em>0.5.5</em>
                 <ol>
                     <li>Full file history support across branches.</li>
@@ -14,15 +19,13 @@
                     <li>Minor code cleanups.</li>
                 </ol>
             </li>
-            <li><em>0.5.4</em>
-                <ol>
-                    <li>Fixed: changelists refresh event may be incorrectly skipped</li>
-                </ol>
-            </li>
         </ol>
     ]]></change-notes>
     <description><![CDATA[
-      Adds Perforce to IDEA version control.
+      <a href="https://github.com/groboclown/p4ic4idea">Github</a> | <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue">Open Issues</a>
+      <p>
+      Associate your IDEA project with Perforce through the built-in version control.
+      </p>
       <p>
       Limitations:
       </p>
@@ -35,8 +38,9 @@
       <p>
       Once you install the plugin, you can associate a project directory
       with Perforce in the project settings (<b>File</b> - <b>Settings...</b>
-      or <en>Ctrl+Alt+S</alt>, and navigating to the Version Control panel.
-      Make sure to edit the Perforce configuration.
+      or <em>Ctrl+Alt+S</em>, then navigate to the <b>Version Control</b> panel).
+      Make sure to edit the Perforce configuration to set the proper server
+      connection settings.
       </p>
       <p>
       The plugin will keep Your client's open changelists
@@ -49,7 +53,9 @@
       Modifying a file, moving a file, copying a file, refactoring
       a file, and deleting a file will perform the correct Perforce
       operations, and put the changes into the currently selected
-      IDEA changelist.
+      IDEA changelist.  Per-file history allows for comparing
+      against the depot versions, even against the inherited file
+      history.
       </p>
       <p>
       Please visit the GitHub project

@@ -31,16 +31,19 @@ public class EditRunner extends ServerTask<List<P4StatusMessage>> {
 
     private final Project project;
     private final Collection<VirtualFile> editedFiles;
-    private final int destination;
+    private final int destinationChangelist;
+    private final boolean allowAdds;
     private final FileInfoCache fileInfoCache;
 
 
     public EditRunner(
             @NotNull Project project, @NotNull Collection<VirtualFile> editedFiles,
-            int destination, @NotNull FileInfoCache fileInfoCache) {
+            int destinationChangelist, boolean allowAdds,
+            @NotNull FileInfoCache fileInfoCache) {
         this.project = project;
         this.editedFiles = editedFiles;
-        this.destination = destination;
+        this.destinationChangelist = destinationChangelist;
+        this.allowAdds = allowAdds;
         this.fileInfoCache = fileInfoCache;
     }
 
@@ -48,8 +51,8 @@ public class EditRunner extends ServerTask<List<P4StatusMessage>> {
     @Override
     public List<P4StatusMessage> run(@NotNull P4Exec exec) throws VcsException, CancellationException {
         int changelistId = -1;
-        if (destination > 0) {
-            changelistId = destination;
+        if (destinationChangelist > 0) {
+            changelistId = destinationChangelist;
         }
 
         List<P4FileInfo> specs = exec.loadFileInfo(project, FileSpecUtil.getFromVirtualFiles(editedFiles), fileInfoCache);
@@ -98,8 +101,12 @@ public class EditRunner extends ServerTask<List<P4StatusMessage>> {
         }
 
         if (! added.isEmpty()) {
-            ret.addAll(exec.addFiles(project, added, changelistId));
-            LOG.debug("Edit after added: " + ret);
+            if (allowAdds) {
+                ret.addAll(exec.addFiles(project, added, changelistId));
+                LOG.debug("Edit after added: " + ret);
+            } else {
+                LOG.info("Ignored add on edit because it's not in Perforce: " + added);
+            }
         }
 
         return ret;

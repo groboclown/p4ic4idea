@@ -281,7 +281,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
             return null;
         }
         LocalChangeList cl = clm.getChangeList(id);
-        LOG.info("Mapped p4 changelist " + p4id + " to " + cl);
+        LOG.debug("Mapped p4 changelist " + p4id + " to " + cl);
         return cl;
     }
 

@@ -8,7 +8,12 @@
         <ol>
             <li><em>0.6.0</em>
                 <ol>
-                    <li>Stuff.</li>
+                    <li>Allow selecting the revision or changelist to sync to.</li>
+                    <li>Synchronizing on a checked-out file does not report future merge problem.</li>
+                    <li>Fixed: Add/Edit without adding to Perforce incorrectly then adds the file to Perforce.</li>
+                    <li>Fixed: Changelists show files that are unchanged as locally modified without checkout.</li>
+                    <li>Fixed NPE that can happen if synchronizing files causes a merge issue.</li>
+                    <li>Reduced logging.</li>
                 </ol>
             </li>
             <li><em>0.5.5</em>
@@ -33,6 +38,7 @@
         <li>Does not indicate to the user whether a file is
         synchronized to the head revision or not.</li>
         <li>No repository browsing.</li>
+        <li>No resolving merge conflicts.</li>
       </ul>
       <p><strong>Getting Started</strong></p>
       <p>

@@ -27,7 +27,7 @@
         </ol>
     ]]></change-notes>
     <description><![CDATA[
-      <a href="https://github.com/groboclown/p4ic4idea">Github</a> | <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue">Open Issues</a>
+      <a href="https://github.com/groboclown/p4ic4idea">[ Github ]</a> | <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue">[ Open Issues ]</a>
       <p>
       Associate your IDEA project with Perforce through the built-in version control.
       </p>

@@ -21,6 +21,7 @@ import net.groboclown.idea.p4ic.ProjectRule;
 import net.groboclown.idea.p4ic.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.MockP4ConfigProject;
+import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -38,7 +39,8 @@ public class P4VcsTest {
         final Project project = projectRule.getProject();
         MockP4ConfigProject.Setup setup1 = MockP4ConfigProject.mkSetup(project.getBaseDir());
         MockP4ConfigProject config = new MockP4ConfigProject(project, setup1);
-        P4Vcs vcs = new P4Vcs(project, config, new P4ChangeListMapping(project));
+        P4Vcs vcs = new P4Vcs(project, config, new P4ChangeListMapping(project),
+                new UserProjectPreferences());
         final Map<Client, List<FilePath>> mapping = vcs.mapFilePathToClient(Arrays.asList(
                 VcsUtil.getFilePath(project.getBaseDir())));
 

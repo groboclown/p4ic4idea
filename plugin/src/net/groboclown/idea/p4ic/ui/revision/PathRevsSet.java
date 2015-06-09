@@ -83,7 +83,6 @@ public class PathRevsSet {
                     return new PathRevsSet(revisions);
                 }
             } catch (VcsException e) {
-                // TODO fix
                 LOG.warn(e);
                 return new PathRevsSet(e.getMessage());
             }

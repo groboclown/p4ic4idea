@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.ui;
+package net.groboclown.idea.p4ic.ui.config;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -72,8 +72,17 @@ public class UserClientsLoader {
 
     private void checkAllConfigFiles() {
         assert config.getConnectionMethod() == P4Config.ConnectionMethod.REL_P4CONFIG;
+        final String configFile = config.getConfigFile();
+        if (configFile == null || project == null) {
+            Messages.showMessageDialog(project,
+                    P4Bundle.message("configuration.error.no-p4config-found",
+                            config.getConfigFile(), project.getBaseDir()),
+                    P4Bundle.message("configuration.check-connection"),
+                    Messages.getErrorIcon());
+            return;
+        }
         Map<VirtualFile, P4Config> configsMap = P4ConfigUtil.loadProjectP4Configs(project,
-                config.getConfigFile(), true);
+                configFile, true);
         if (configsMap.isEmpty()) {
             Messages.showMessageDialog(project,
                     P4Bundle.message("configuration.error.no-p4config-found",

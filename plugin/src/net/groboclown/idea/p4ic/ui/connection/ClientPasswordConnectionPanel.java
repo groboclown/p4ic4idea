@@ -30,6 +30,8 @@ public class ClientPasswordConnectionPanel implements ConnectionPanel {
     private JTextField myPort;
     private JTextField myUsername;
     private JPanel myRootPanel;
+    private JTextField myTrustFingerprint;
+    private JLabel myTrustFingerprintLabel;
 
 
     @Override
@@ -77,14 +79,6 @@ public class ClientPasswordConnectionPanel implements ConnectionPanel {
         config.setProtocol(P4ConfigUtil.getProtocolFromPort(myPort.getText()));
         config.setPort(P4ConfigUtil.getSimplePortFromPort(myPort.getText()));
     }
-
-    /*
-    @Nullable
-    @Override
-    public P4Config loadChildConfig(@NotNull P4Config config) throws P4DisconnectedException {
-        return null;
-    }
-    */
 
 
     private String getUsername() {

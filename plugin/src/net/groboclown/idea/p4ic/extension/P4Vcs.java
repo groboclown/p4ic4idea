@@ -58,7 +58,7 @@ import net.groboclown.idea.p4ic.server.OnServerDisconnectListener;
 import net.groboclown.idea.p4ic.server.ServerStoreService;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.P4ConnectionWidget;
-import net.groboclown.idea.p4ic.ui.P4ProjectConfigurable;
+import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -111,6 +111,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     private final P4ChangeProvider changeProvider;
 
+    private final UserProjectPreferences userPreferences;
+
     private final DiffProvider diffProvider;
 
     @NotNull
@@ -145,12 +147,13 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     public P4Vcs(
             @NotNull Project project,
             @NotNull P4ConfigProject configProject,
-            @NotNull P4ChangeListMapping changeListMapping) {
+            @NotNull P4ChangeListMapping changeListMapping,
+            @NotNull UserProjectPreferences preferences) {
         super(project, VCS_NAME);
 
         this.changeListMapping = changeListMapping;
+        this.userPreferences = preferences;
         myConfigurable = new P4ProjectConfigurable(project);
-        //commitExecutor = new P4CommitExecutor();
         changelistListener = new P4ChangelistListener(project, this);
         changeProvider = new P4ChangeProvider(this);
         historyProvider = new P4HistoryProvider(project);
@@ -476,6 +479,13 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     // ---------------------------------------------------------------------------
     // Specialized P4Vcs methods
+
+
+    @NotNull
+    public UserProjectPreferences getUserPreferences() {
+        return userPreferences;
+    }
+
 
     @NotNull
     public File getTempDir() {

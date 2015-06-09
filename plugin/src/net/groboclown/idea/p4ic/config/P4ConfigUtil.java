@@ -360,7 +360,7 @@ public class P4ConfigUtil {
                 P4Config configFile = new FileP4Config(cf);
                 hierarchy.add(configFile);
             } catch (IOException e) {
-                LOG.error(P4Bundle.message("exception.config.file.load", cf), e);
+                LOG.error(P4Bundle.message("exception.config.file.load", cf.getAbsolutePath()), e);
             }
         }
     }

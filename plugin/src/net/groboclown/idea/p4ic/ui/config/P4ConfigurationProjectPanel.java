@@ -11,10 +11,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.ui;
+package net.groboclown.idea.p4ic.ui.config;
 
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
+import net.groboclown.idea.p4ic.config.P4ConfigProject;
+import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -22,45 +24,47 @@ import javax.swing.*;
 public class P4ConfigurationProjectPanel {
 
     private final Project project;
-    private P4ConfigPanel myMainPanel;
+    private P4SettingsPanel myMainPanel;
     private volatile boolean isInitialized = false;
 
     public P4ConfigurationProjectPanel(@NotNull Project project) {
         this.project = project;
     }
 
-    public boolean isModified(@NotNull ManualP4Config myConfig) {
+    public boolean isModified(@NotNull ManualP4Config myConfig, @NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
             return false;
         }
 
-        return myMainPanel.isModified(myConfig);
+        return myMainPanel.isModified(myConfig, preferences);
     }
 
-    public void saveSettings(@NotNull ManualP4Config myConfig) {
+    public void saveSettings(@NotNull P4ConfigProject config, @NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
             // nothing to do
             return;
         }
-
-        myMainPanel.saveSettingsToConfig(myConfig);
+        ManualP4Config saved = new ManualP4Config();
+        myMainPanel.saveSettingsToConfig(saved, preferences);
+        config.loadState(saved);
     }
 
-    public void loadSettings(@NotNull ManualP4Config myConfig) {
+    public void loadSettings(@NotNull ManualP4Config config, @NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
-            getPanel(myConfig);
+            getPanel(config, preferences);
             return;
         }
 
-        myMainPanel.loadSettingsIntoGUI(myConfig);
+        myMainPanel.loadSettingsIntoGUI(config, preferences);
     }
 
-    public synchronized JPanel getPanel(@NotNull ManualP4Config config) {
+    public synchronized JPanel getPanel(@NotNull ManualP4Config config, @NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
-            myMainPanel = new P4ConfigPanel(project);
+            myMainPanel = new P4SettingsPanel();
+            myMainPanel.initialize(project);
             isInitialized = true;
         }
-        loadSettings(config);
+        loadSettings(config, preferences);
         return myMainPanel.getPanel();
     }
 

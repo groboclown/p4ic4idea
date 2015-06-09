@@ -11,14 +11,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.ui;
+package net.groboclown.idea.p4ic.ui.config;
 
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigProject;
+import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
@@ -49,26 +49,23 @@ public class P4ProjectConfigurable implements SearchableConfigurable {
 
     @Override
     public JComponent createComponent() {
-        //return myPanel.getPanel(loadConfig().getConfig(), new EnvP4Config());
-        return myPanel.getPanel(loadConfig().getBaseConfig());
+        return myPanel.getPanel(loadConfig().getBaseConfig(), loadPreferences());
     }
 
     @Override
     public boolean isModified() {
-       return myPanel.isModified(loadConfig().getBaseConfig());
+       return myPanel.isModified(loadConfig().getBaseConfig(), loadPreferences());
     }
 
     @Override
     public void apply() throws ConfigurationException {
-        ManualP4Config saved = new ManualP4Config();
-        myPanel.saveSettings(saved);
-        loadConfig().loadState(saved);
+        myPanel.saveSettings(loadConfig(), loadPreferences());
     }
 
     @Override
     public void reset() {
         P4ConfigProject config = P4ConfigProject.getInstance(myProject);
-        myPanel.loadSettings(config.getBaseConfig());
+        myPanel.loadSettings(config.getBaseConfig(), loadPreferences());
     }
 
     @Override
@@ -87,9 +84,13 @@ public class P4ProjectConfigurable implements SearchableConfigurable {
         return null;
     }
 
+    @NotNull
     private P4ConfigProject loadConfig() {
-        P4ConfigProject project = P4ConfigProject.getInstance(myProject);
-        assert project != null;
-        return project;
+        return P4ConfigProject.getInstance(myProject);
+    }
+
+    @NotNull
+    private UserProjectPreferences loadPreferences() {
+        return UserProjectPreferences.getInstance(myProject);
     }
 }

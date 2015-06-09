@@ -39,6 +39,8 @@ public class AuthTicketConnectionPanel implements ConnectionPanel {
     private TextFieldWithBrowseButton myAuthTicket;
     private JPanel myRootPanel;
     private JLabel myAuthTicketMessage;
+    private JLabel myTrustFingerprintLabel;
+    private JTextField myTrustFingerprint;
 
     public AuthTicketConnectionPanel() {
         myAuthTicket.addActionListener(new ActionListener() {

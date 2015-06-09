@@ -112,6 +112,7 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
         return config;
     }
 
+
     @Override
     public ManualP4Config getState() {
         P4Config real = new ManualP4Config(config);

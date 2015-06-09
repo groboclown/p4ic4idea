@@ -27,6 +27,8 @@ import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
+import net.groboclown.idea.p4ic.config.UserProjectPreferences;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.history.P4AnnotatedLine;
 import net.groboclown.idea.p4ic.history.P4FileRevision;
 import net.groboclown.idea.p4ic.server.exceptions.*;
@@ -43,10 +45,6 @@ import java.util.concurrent.CancellationException;
  */
 public class RawServerExecutor {
     private static final Logger LOG = Logger.getInstance(RawServerExecutor.class);
-
-    // TODO make these configurable
-    private static final int MAX_CONNECTIONS = 2;
-    private static final int MAX_CONNECTION_WAIT_TIME = 30 * 1000;
 
     private final ServerStatus config;
     private final String clientName;
@@ -107,6 +105,9 @@ public class RawServerExecutor {
         // but there are some solid reasons why this sometimes can run
         // in the AWT (specifically, edit operations are expected to run in EDT)
 
+        final UserProjectPreferences userPreferences =
+                P4Vcs.getInstance(project).getUserPreferences();
+
         // This call indicates an attempt to reconnect to the server.
         closed = false;
 
@@ -119,17 +120,17 @@ public class RawServerExecutor {
                     throw new P4DisconnectedException();
                 } else if (! idlePool.isEmpty()) {
                     exec = idlePool.remove(idlePool.size() - 1);
-                } else if (activePool.size() < MAX_CONNECTIONS) {
+                } else if (activePool.size() < userPreferences.getMaxServerConnections()) {
                     exec = new P4Exec(config, clientName, connectionHandler,
                             new OnServerConfigurationProblem.WithMessageBus(project));
-                } else if (System.currentTimeMillis() - startTime > MAX_CONNECTION_WAIT_TIME) {
+                } else if (System.currentTimeMillis() - startTime > userPreferences.getMaxConnectionWaitTimeMillis()) {
                     throw new P4DisconnectedException(P4Bundle.message("connection.timeout"));
                 } else {
                     // wait for the pool to open up
                     LOG.info(config.getConfig().getServiceName() + "/" + clientName +
                             ": Too many active connections; waiting for one to free up.");
                     try {
-                        poolSync.wait(MAX_CONNECTION_WAIT_TIME);
+                        poolSync.wait(userPreferences.getMaxConnectionWaitTimeMillis());
                     } catch (InterruptedException e) {
                         throw new CancellationException();
                     }
@@ -339,8 +340,6 @@ public class RawServerExecutor {
                     }
                     if (! missed.isEmpty()) {
                         if (ret.isEmpty()) {
-                            // TODO clean up this message, and localize it.
-                            // This is user facing!
                             P4InvalidConfigException ex = new P4InvalidConfigException(P4Bundle.message("error.roots.mismatch", missed, clientFp));
                             project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).
                                     configurationProblem(project, new ManualP4Config(config.getConfig(), clientName), ex);

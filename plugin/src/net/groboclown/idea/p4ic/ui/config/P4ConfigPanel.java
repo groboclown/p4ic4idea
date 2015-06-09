@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.ui;
+package net.groboclown.idea.p4ic.ui.config;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -71,13 +71,12 @@ public class P4ConfigPanel {
     private final Object relativeConfigPathMapSync = new Object();
     private Map<String, P4Config> relativeConfigPathMap;
 
-    private final Project myProject;
+    private Project myProject;
 
-    public P4ConfigPanel(@NotNull Project myProject) {
-        this.myProject = myProject;
-
+    public P4ConfigPanel() {
         // Initialize GUI constant values
         $$$setupUI$$$();
+
         myConnectionChoice.setRenderer(new AuthenticationMethodRenderer());
         myConnectionChoice.setEditable(false);
         // Could add checks to ensure that there is 1 and only 1 connection panel for
@@ -86,7 +85,10 @@ public class P4ConfigPanel {
         myConnectionChoice.addItem(myRelP4ConfigPanel);
         myConnectionChoice.addItem(myClientPasswordConnectionPanel);
         myConnectionChoice.addItem(authTicketConnectionPanel);
-        myConnectionChoice.addItem(mySSOConnectionPanel);
+
+        // Not supported yet
+        //myConnectionChoice.addItem(mySSOConnectionPanel);
+
         myConnectionChoice.addItem(myEnvConnectionPanel);
 
         // an initial value for connection choice
@@ -133,6 +135,11 @@ public class P4ConfigPanel {
                 refreshConfigPaths();
             }
         });
+    }
+
+
+    void initialize(@NotNull Project project) {
+        this.myProject = project;
     }
 
 
@@ -424,6 +431,9 @@ public class P4ConfigPanel {
         if (configPath != null) {
             LOG.info("using config path " + configPath);
             config = getConfigForRelativeConfigPath(configPath.toString());
+        } else if (useRelativePathConfig()) {
+            myResolvedValuesField.setText(P4Bundle.message("config.display.properties.no_path"));
+            return;
         }
         if (config == null) {
             LOG.info("Using cmd style config loading");
@@ -502,7 +512,7 @@ public class P4ConfigPanel {
         // abstracted out.
         if (connection instanceof RelativeConfigConnectionPanel) {
             final String configFile = ((RelativeConfigConnectionPanel) connection).getConfigFileName();
-            if (configFile != null) {
+            if (configFile != null && myProject != null) {
                 final Map<VirtualFile, P4Config> allConfigs =
                         P4ConfigUtil.loadProjectP4Configs(myProject, configFile, true);
 

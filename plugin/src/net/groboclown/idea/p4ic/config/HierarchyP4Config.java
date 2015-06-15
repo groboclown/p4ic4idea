@@ -15,6 +15,7 @@ package net.groboclown.idea.p4ic.config;
 
 import com.perforce.p4java.server.IServerAddress;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Manages the configuration of the Perforce setup.  It should handle the normal method
@@ -188,6 +189,27 @@ public class HierarchyP4Config implements P4Config {
         for (P4Config config : parents) {
             if (config.hasUsernameSet()) {
                 return config.getTrustTicketPath();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean hasServerFingerprintSet() {
+        for (P4Config config : parents) {
+            if (config.hasServerFingerprintSet()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public String getServerFingerprint() {
+        for (P4Config config : parents) {
+            if (config.hasServerFingerprintSet()) {
+                return getServerFingerprint();
             }
         }
         return null;

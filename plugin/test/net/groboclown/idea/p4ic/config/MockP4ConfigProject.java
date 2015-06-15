@@ -189,6 +189,17 @@ public class MockP4ConfigProject extends P4ConfigProject {
             return null;
         }
 
+        @Override
+        public boolean hasServerFingerprintSet() {
+            return false;
+        }
+
+        @Nullable
+        @Override
+        public String getServerFingerprint() {
+            return null;
+        }
+
         @Nullable
         @Override
         public String getConfigFile() {

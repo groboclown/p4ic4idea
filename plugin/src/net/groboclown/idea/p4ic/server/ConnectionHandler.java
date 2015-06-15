@@ -61,11 +61,6 @@ public abstract class ConnectionHandler {
     public abstract Properties getConnectionProperties(@NotNull ServerConfig config, @Nullable String clientName);
 
 
-    public static String createUrlFor(@NotNull ServerConfig config) {
-        return getHandlerFor(config).createUrl(config);
-    }
-
-
     public String createUrl(@NotNull ServerConfig config) {
         // Trim the config port.  See bug #23
         return config.getProtocol().toString() + "://" + config.getPort().trim();
@@ -83,7 +78,7 @@ public abstract class ConnectionHandler {
      *
      * @param server server connection
      * @param config configuration
-     * @param password
+     * @param password user-provided password
      * @throws P4JavaException
      */
     public abstract void defaultAuthentication(@NotNull IOptionsServer server, @NotNull ServerConfig config, char[] password) throws P4JavaException;
@@ -156,7 +151,7 @@ public abstract class ConnectionHandler {
         //ret.setProperty(PropertyDefs.ENABLE_TRACKING, "0");
         //ret.setProperty(PropertyDefs.NON_CHECKED_SYNC, "0");
 
-        if (config.hasTrustTicket()) {
+        if (config.hasTrustTicket() && config.getTrustTicket() != null) {
             ret.setProperty(PropertyDefs.TRUST_PATH_KEY, config.getTrustTicket().getAbsolutePath());
         }
 

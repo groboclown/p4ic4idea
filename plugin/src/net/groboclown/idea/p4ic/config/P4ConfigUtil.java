@@ -127,7 +127,12 @@ public class P4ConfigUtil {
         String[] ret = new String[] { null, port };
         if (port != null) {
             int splitter = port.indexOf(PROTOCOL_SEP);
-            if (splitter >= 0) {
+            if (splitter >= port.length() - 1) {
+                // ':' is on the last character, which is invalid
+                // set the value to an invalid setting, but not null
+                // to avoid an NPE.
+                ret[1] = ":";
+            } else if (splitter >= 0) {
                 ret[0] = port.substring(0, splitter);
                 ret[1] = port.substring(splitter + PROTOCOL_SEP.length());
             } else {
@@ -160,12 +165,30 @@ public class P4ConfigUtil {
      * @return the default ticket file, which is OS dependent.
      */
     @NotNull
+    public static File getDefaultTrustTicketFile() {
+        // Windows check
+        String userprofile = System.getenv("USERPROFILE");
+        if (userprofile != null) {
+            return new File(userprofile +
+                File.separator + "p4trust.txt");
+        }
+        return new File(System.getenv("HOME") + File.separator + ".p4trust");
+    }
+
+
+    /**
+     * See <a href="http://www.perforce.com/perforce/doc.current/manuals/cmdref/P4TICKETS.html">P4TICKETS environment
+     * variable help</a>
+     *
+     * @return the default ticket file, which is OS dependent.
+     */
+    @NotNull
     public static File getDefaultTicketFile() {
         // Windows check
         String userprofile = System.getenv("USERPROFILE");
         if (userprofile != null) {
             return new File(userprofile +
-                File.separator + "p4tickets.txt");
+                    File.separator + "p4tickets.txt");
         }
         return new File(System.getenv("HOME") + File.separator + ".p4tickets");
     }

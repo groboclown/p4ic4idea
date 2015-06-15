@@ -91,6 +91,12 @@ public interface P4Config {
     @Nullable
     public String getTrustTicketPath();
 
+    public boolean hasServerFingerprintSet();
+
+    @Nullable
+    public String getServerFingerprint();
+
+
     @Nullable
     public String getConfigFile();
 

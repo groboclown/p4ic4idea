@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.config;
 import com.perforce.p4java.server.IServerAddress;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileReader;
@@ -201,6 +202,17 @@ public class FileP4Config implements P4Config {
     @Override
     public String getTrustTicketPath() {
         return trust;
+    }
+
+    @Override
+    public boolean hasServerFingerprintSet() {
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public String getServerFingerprint() {
+        return null;
     }
 
     @Override

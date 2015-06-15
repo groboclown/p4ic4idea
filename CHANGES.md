@@ -2,6 +2,37 @@
 
 
 
+## ::v0.6.1::
+
+### Overview
+
+* Add user preferences.
+* Begin SSL support.  Requires installing the unlimited strength JCE package for the IDE's JRE
+    in order to use.
+* Bug fixes.
+
+### Details
+
+* Add user preferences (#39)
+    * User preferences are available on the Perforce configuration
+      panel, in a new tab.  The current options are for setting the maximum
+      number of open connections to each server, and the maximum timeout
+      for waiting on those connections.
+* Begin SSL support.
+    * Standard Java does not support the 256-bit encryption level ciphers required by the
+      Perforce server.  You must download and install the unlimited strength JCE package
+      for the IDE's JRE in order to connect to an SSL-enabled Perforce server.
+    * Added support for specifying the Perforce server SSL fingerprint.
+    * Start of trust support for server connections.  Still needs correct
+      wiring to allow the user to be notified of fingerprint changes, and
+      for correct authenticating of the fingerprints.
+* Bug fixes.
+    * (In progress) Submit enabled even with Empty commit message (#52)
+    * (In progress) Client selection drop-down is disabled (#53)
+    * (In progress) NPE in Authorization Ticket connection when selecting the file chooser (#54)
+
+
+
 ## ::v0.6.0::
 
 ### Overview

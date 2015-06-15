@@ -88,6 +88,8 @@
             <properties>
               <editable value="false"/>
               <enabled value="false"/>
+              <text value=""/>
+              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.fingerprint.tooltip"/>
             </properties>
           </component>
         </children>

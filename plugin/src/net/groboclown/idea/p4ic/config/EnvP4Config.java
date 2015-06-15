@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.config;
 import com.perforce.p4java.server.IServerAddress;
 import com.perforce.p4java.env.PerforceEnvironment;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Manages the configuration of the Perforce setup.  It should handle the normal method
@@ -140,6 +141,17 @@ public class EnvP4Config implements P4Config {
     @Override
     public String getTrustTicketPath() {
         return trustTicket;
+    }
+
+    @Override
+    public boolean hasServerFingerprintSet() {
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public String getServerFingerprint() {
+        return null;
     }
 
     @Override

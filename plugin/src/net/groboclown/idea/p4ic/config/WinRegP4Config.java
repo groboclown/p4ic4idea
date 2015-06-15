@@ -18,6 +18,7 @@ import com.perforce.p4java.env.PerforceEnvironment;
 import com.perforce.p4java.server.IServerAddress;
 import net.groboclown.idea.p4ic.config.win.PreferencesWinRegistry;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -151,6 +152,17 @@ public class WinRegP4Config implements P4Config {
     @Override
     public String getTrustTicketPath() {
         return trustTicket;
+    }
+
+    @Override
+    public boolean hasServerFingerprintSet() {
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public String getServerFingerprint() {
+        return null;
     }
 
     @Override

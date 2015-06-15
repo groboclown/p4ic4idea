@@ -802,9 +802,6 @@ public class P4Exec {
                 // Use the ConnectionHandler so that mock objects can work better
                 server = connectionHandler.getOptionsServer(url, properties);
 
-                // for debugging
-                //server = new P4ServerProxy(server);
-
                 // These seem to cause issues.
                 //server.registerCallback(new LoggingCommandCallback());
                 //server.registerProgressCallback(new LoggingProgressCallback());
@@ -934,6 +931,12 @@ public class P4Exec {
             } catch (ConnectionException e) {
                 LOG.info("Connection problem", e);
                 invalidateCache();
+
+                if (isSSLHandshakeProblem(e)) {
+                    // SSL extensions are not installed.
+                    throw new P4JavaSSLStrengthException(e);
+                }
+
                 // Ask the user if it should be a real disconnect, or if we should
                 // retry.
                 if (! serverStatus.onDisconnect()) {
@@ -1087,6 +1090,12 @@ public class P4Exec {
                         || message.contains("Perforce password (P4PASSWD) invalid or unset.")));
     }
 
+
+    private boolean isSSLHandshakeProblem(@NotNull final ConnectionException e) {
+        String message = e.getMessage();
+        return message != null &&
+            message.contains("invalid SSL session");
+    }
 
 
     private synchronized P4Job customGetJob(@NotNull final Server server, @NotNull final String jobId) throws ConnectionException, AccessException {

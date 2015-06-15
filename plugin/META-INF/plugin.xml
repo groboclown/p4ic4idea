@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.6.0</version>
+    <version>0.6.1</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.6.1</em>
+                <ol>
+                    <li>Minor code cleanups.</li>
+                </ol>
+            </li>
             <li><em>0.6.0</em>
                 <ol>
                     <li>Allow selecting the revision or changelist to sync to.</li>
@@ -14,14 +19,6 @@
                     <li>Fixed: Changelists show files that are unchanged as locally modified without checkout.</li>
                     <li>Fixed NPE that can happen if synchronizing files causes a merge issue.</li>
                     <li>Reduced logging.</li>
-                </ol>
-            </li>
-            <li><em>0.5.5</em>
-                <ol>
-                    <li>Full file history support across branches.</li>
-                    <li>Fixed error when handling deletion of files not owned by Perforce.</li>
-                    <li>Fixed a lag issue related to saving files when working offline.</li>
-                    <li>Minor code cleanups.</li>
                 </ol>
             </li>
         </ol>

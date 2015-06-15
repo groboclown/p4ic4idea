@@ -89,6 +89,10 @@ public abstract class ServerConfig {
     @Nullable
     public abstract File getTrustTicket();
 
+    @Nullable
+    public abstract String getServerFingerprint();
+
+
     public boolean hasAuthTicket() {
         return getAuthTicket() != null;
     }

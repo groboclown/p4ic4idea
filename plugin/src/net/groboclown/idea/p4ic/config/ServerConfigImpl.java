@@ -26,27 +26,29 @@ public class ServerConfigImpl extends ServerConfig {
     private final P4Config.ConnectionMethod connectionMethod;
     private final File authTicket;
     private final File trustTicket;
+    private final String serverFingerprint;
     private final boolean storePasswordLocally;
 
 
-    ServerConfigImpl(P4Config proxy) {
+    ServerConfigImpl(@NotNull P4Config proxy) {
         this(proxy.getPort(), proxy.getProtocol(), proxy.getUsername(), proxy.getConnectionMethod(),
                 proxy.getAuthTicketPath() == null ? null : new File(proxy.getAuthTicketPath()),
                 proxy.getTrustTicketPath() == null ? null : new File(proxy.getTrustTicketPath()),
-                proxy.isPasswordStoredLocally());
+                proxy.getServerFingerprint(), proxy.isPasswordStoredLocally());
     }
 
 
     ServerConfigImpl(@NotNull String port, @NotNull IServerAddress.Protocol protocol,
             @NotNull String username, @NotNull P4Config.ConnectionMethod connectionMethod,
             @Nullable File authTicket, @Nullable File trustTicket,
-            boolean storePasswordLocally) {
+            @Nullable String serverFingerprint, boolean storePasswordLocally) {
         this.port = port;
         this.protocol = protocol;
         this.username = username;
         this.connectionMethod = connectionMethod;
         this.authTicket = authTicket;
         this.trustTicket = trustTicket;
+        this.serverFingerprint = serverFingerprint;
         this.storePasswordLocally = storePasswordLocally;
     }
 
@@ -86,11 +88,20 @@ public class ServerConfigImpl extends ServerConfig {
         return trustTicket;
     }
 
+    @Nullable
+    @Override
+    public String getServerFingerprint() {
+        return serverFingerprint;
+    }
+
     @Override
     public boolean storePasswordLocally() {
         return storePasswordLocally;
     }
 
+    // equals only cares about the information that connects
+    // to the server, not the individual server setup.  Note that
+    // this might have the potential to lose information.
     @Override
     public boolean equals(Object other) {
         if (other == null) {

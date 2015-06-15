@@ -39,6 +39,8 @@ public class ManualP4Config implements P4Config {
     @Nullable
     private String trustTicket;
     @Nullable
+    private String serverFingerprint;
+    @Nullable
     private String configFile;
     @NotNull
     private ConnectionMethod connectionMethod =
@@ -47,6 +49,7 @@ public class ManualP4Config implements P4Config {
     @Nullable
     private String password;
     private boolean storePassword;
+
 
     public ManualP4Config() {
         // do nothing
@@ -59,6 +62,7 @@ public class ManualP4Config implements P4Config {
         this.username = copy.getUsername();
         this.authTicket = copy.getAuthTicketPath();
         this.trustTicket = copy.getTrustTicketPath();
+        this.serverFingerprint = copy.getServerFingerprint();
         this.configFile = copy.getConfigFile();
         this.connectionMethod = copy.getConnectionMethod();
         this.autoOffline = copy.isAutoOffline();
@@ -203,6 +207,22 @@ public class ManualP4Config implements P4Config {
     public void setTrustTicketPath(@Nullable String trustTicket) {
         this.trustTicket = trustTicket;
     }
+
+    @Override
+    public boolean hasServerFingerprintSet() {
+        return serverFingerprint != null;
+    }
+
+    @Nullable
+    @Override
+    public String getServerFingerprint() {
+        return serverFingerprint;
+    }
+
+    public void setServerFingerprint(@Nullable String fingerprint) {
+        this.serverFingerprint = fingerprint;
+    }
+
 
     @Nullable
     @Override

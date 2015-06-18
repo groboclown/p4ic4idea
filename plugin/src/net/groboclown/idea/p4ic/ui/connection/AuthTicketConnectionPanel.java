@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.ui.connection;
 
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -40,7 +41,6 @@ public class AuthTicketConnectionPanel implements ConnectionPanel {
     private JTextField myUsername;
     private TextFieldWithBrowseButton myAuthTicket;
     private JPanel myRootPanel;
-    private JLabel myAuthTicketMessage;
     private JLabel myTrustFingerprintLabel;
     private JTextField myTrustFingerprint;
 
@@ -48,9 +48,13 @@ public class AuthTicketConnectionPanel implements ConnectionPanel {
         myAuthTicket.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                validateAuthTicket();
+                //validateAuthTicket();
             }
         });
+        myAuthTicket.addBrowseFolderListener(
+                P4Bundle.message("configuration.connection-choice.picker.authticket"),
+                P4Bundle.message("configuration.authticket.chooser"),
+                null, new FileChooserDescriptor(true, false, false, false, false, false));
         myTrustFingerprintLabel.setEnabled(false);
         myTrustFingerprint.setEnabled(false);
         myTrustFingerprint.setEditable(false);
@@ -157,7 +161,7 @@ public class AuthTicketConnectionPanel implements ConnectionPanel {
             ticket = P4ConfigUtil.getDefaultTicketFile().getAbsolutePath();
         }
         myAuthTicket.setText(ticket);
-        validateAuthTicket();
+        //validateAuthTicket();
     }
 
 
@@ -190,39 +194,6 @@ public class AuthTicketConnectionPanel implements ConnectionPanel {
             }
         }
         return null;
-    }
-
-
-    private void validateAuthTicket() {
-        String ticket = getAuthTicket();
-        boolean existingMessage = myAuthTicketMessage.getText().length() > 0;
-        boolean givenMessage = false;
-        if (ticket == null) {
-            myAuthTicketMessage.setText(P4Bundle.message("configuration.authticket.none"));
-            givenMessage = true;
-        } else {
-            File f = new File(ticket);
-            if (f.exists()) {
-                if (f.isDirectory()) {
-                    myAuthTicketMessage.setText(P4Bundle.message("configuration.authticket.is-dir"));
-                    givenMessage = true;
-                } else if (!f.canRead()) {
-                    myAuthTicketMessage.setText(P4Bundle.message("configuration.authticket.cant-read"));
-                    givenMessage = true;
-                }
-            } else {
-                myAuthTicketMessage.setText(P4Bundle.message("configuration.authticket.not-exist"));
-                givenMessage = true;
-            }
-        }
-
-        if (!givenMessage) {
-            myAuthTicketMessage.setText("");
-        }
-        if (givenMessage != existingMessage) {
-            myAuthTicketMessage.setVisible(givenMessage);
-            myRootPanel.validate();
-        }
     }
 
 

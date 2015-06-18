@@ -21,6 +21,7 @@ import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.ConfigurationProblem;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -47,5 +48,9 @@ public class P4InvalidConfigException extends P4DisconnectedException {
 
     public P4InvalidConfigException(@NotNull final ServerConfig config, @NotNull final List<ConfigurationProblem> problems) {
         super(P4Bundle.message("error.config.setup.problems", config, problems));
+    }
+
+    public P4InvalidConfigException(final IOException e) {
+        super(e);
     }
 }

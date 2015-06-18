@@ -514,9 +514,15 @@ public class ChangeListSync {
             if (changeList != null) {
                 LOG.debug("Putting " + file + " into local change " + changeList);
                 data.processChange(change, changeList);
+            } else if (client.isWorkingOffline()) {
+                // Probably was disconnected during the call.
+                LOG.warn("Disconnected while processing changes.");
+                if (file.getPath().getVirtualFile() != null) {
+                    data.processModifiedWithoutCheckout(file.getPath().getVirtualFile());
+                }
             } else {
                 LOG.error("Could not put " + file + " into local change (null changelist for " +
-                        file.getChangelist() + ")");
+                        file.getChangelist() + ").");
             }
 
             // Any way to use this call?

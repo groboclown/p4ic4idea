@@ -33,6 +33,7 @@ import com.intellij.openapi.wm.impl.status.StatusBarUtil;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.popup.PopupFactoryImpl;
 import com.intellij.util.Consumer;
+import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.actions.P4WorkOfflineAction;
@@ -66,6 +67,8 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
     @Nullable
     private Project project;
 
+    private MessageBusConnection messageBus;
+
     @Nullable
     private StatusBar statusBar;
 
@@ -76,8 +79,9 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
         myVcs = vcs;
         this.project = project;
         setValues();
-        project.getMessageBus().connect().subscribe(P4RemoteConnectionStateListener.TOPIC, this);
-        project.getMessageBus().connect().subscribe(P4ClientsReloadedListener.TOPIC, this);
+        messageBus = project.getMessageBus().connect();
+        messageBus.subscribe(P4RemoteConnectionStateListener.TOPIC, this);
+        messageBus.subscribe(P4ClientsReloadedListener.TOPIC, this);
     }
 
     @Override
@@ -208,6 +212,10 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
         StatusBar statusBar = WindowManager.getInstance().getStatusBar(project);
         if (statusBar != null) {
             statusBar.removeWidget(ID());
+        }
+        if (messageBus != null) {
+            messageBus.disconnect();
+            messageBus = null;
         }
     }
 

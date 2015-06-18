@@ -30,7 +30,9 @@ import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.config.P4Config.ConnectionMethod;
 import net.groboclown.idea.p4ic.config.P4ConfigUtil;
+import net.groboclown.idea.p4ic.ui.ErrorDialog;
 import net.groboclown.idea.p4ic.ui.connection.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +41,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.util.*;
 import java.util.List;
 import java.util.Map.Entry;
@@ -140,6 +143,7 @@ public class P4ConfigPanel {
 
     void initialize(@NotNull Project project) {
         this.myProject = project;
+        myP4ConfigConnectionPanel.initialize(project);
     }
 
 
@@ -178,38 +182,11 @@ public class P4ConfigPanel {
         // ----------------------------------------------------------------
         // non-connection values
 
-        // Client name
-        if (config.hasClientnameSet()) {
-            myReuseEnvValueCheckBox.setSelected(false);
-            myClientList.setEnabled(true);
-            myRefreshClientList.setEnabled(true);
 
-            String client = config.getClientname();
-            assert client != null;
+        initializeClientAndPathSelection(
+                config.hasClientnameSet() ? config.getClientname() : null,
+                config.getConnectionMethod());
 
-            // If the client is in the list, don't re-add it.  Otherwise, we need to add it.
-            if (!client.equals(myClientList.getSelectedItem())) {
-                findClient:
-                do {
-                    for (int i = 0; i < myClientList.getItemCount(); i++) {
-                        Object value = myClientList.getSelectedItem();
-                        if (client.equals(value)) {
-                            myClientList.setSelectedIndex(i);
-                            break findClient;
-                        }
-                    }
-
-                    // Wasn't found - add it
-                    myClientList.addItem(client);
-                    // and select it
-                    myClientList.setSelectedItem(client);
-                } while (false);
-            } // else the current client is already selected
-        } else {
-            myReuseEnvValueCheckBox.setSelected(true);
-            myClientList.setEnabled(false);
-            myRefreshClientList.setEnabled(false);
-        }
         mySilentlyGoOfflineOnCheckBox.setSelected(config.isAutoOffline());
         mySavePasswordsCheckBox.setSelected(config.isPasswordStoredLocally());
 
@@ -271,6 +248,10 @@ public class P4ConfigPanel {
 
     @Nullable
     private String getSelectedClient() {
+        if (getSelectedConnection().getConnectionMethod().isRelativeToPath()) {
+            // These connections can never declare a client
+            return null;
+        }
         Object selected = myClientList.getSelectedItem();
         String selectedClient = null;
         if (selected != null) {
@@ -284,7 +265,7 @@ public class P4ConfigPanel {
 
 
     @Nullable
-    private P4Config createConnectionConfig() {
+    private P4Config createConnectionConfig() throws IOException {
         ManualP4Config partial = new ManualP4Config();
         saveSettingsToConfig(partial);
         return P4ConfigUtil.loadCmdP4Config(partial);
@@ -295,19 +276,35 @@ public class P4ConfigPanel {
     // UI callbacks
 
     private void checkConnection() {
-        List<String> clients = new UserClientsLoader(
-                myProject, createConnectionConfig()).loadClients();
-        if (clients != null) {
-            Messages.showMessageDialog(myProject,
-                    P4Bundle.message("configuration.dialog.valid-connection.message"),
-                    P4Bundle.message("configuration.dialog.valid-connection.title"),
-                    Messages.getInformationIcon());
+        try {
+            final P4Config config = createConnectionConfig();
+            List<String> clients = new UserClientsLoader(
+                    myProject, config).loadClients();
+            if (clients != null) {
+                Messages.showMessageDialog(myProject,
+                        P4Bundle.message("configuration.dialog.valid-connection.message"),
+                        P4Bundle.message("configuration.dialog.valid-connection.title"),
+                        Messages.getInformationIcon());
+            }
+        } catch (IOException e) {
+            ErrorDialog.logError(myProject,
+                    P4Bundle.message("configuration.check.io-error"),
+                    e);
         }
     }
 
     private void loadClientList() {
-        List<String> clients = new UserClientsLoader(
-                myProject, createConnectionConfig()).loadClients();
+        final List<String> clients;
+        try {
+            final P4Config config = createConnectionConfig();
+            clients = new UserClientsLoader(
+                    myProject, config).loadClients();
+        } catch (IOException e) {
+            ErrorDialog.logError(myProject,
+                    P4Bundle.message("configuration.check.io-error"),
+                    e);
+            return;
+        }
         if (clients == null) {
             // Don't need a status update or any updates; the user should have
             // seen error dialogs.
@@ -342,7 +339,44 @@ public class P4ConfigPanel {
         int currentSelectedIndex = myConnectionChoice.getSelectedIndex();
         ConnectionPanel selected = (ConnectionPanel) myConnectionChoice.getItemAt(currentSelectedIndex);
         showConnectionPanel(selected);
-        resetResolvedProperties();
+    }
+
+    private void initializeClientAndPathSelection(@Nullable String currentClientName,
+            @NotNull final ConnectionMethod connectionMethod) {
+        if (connectionMethod.isRelativeToPath()) {
+            myReuseEnvValueCheckBox.setSelected(true);
+            myReuseEnvValueCheckBox.setEnabled(false);
+            myClientList.setEnabled(false);
+            myClientList.removeAllItems();
+            myRefreshClientList.setEnabled(false);
+            myResolvePathLabel.setEnabled(true);
+            myResolvePath.setEnabled(true);
+
+            refreshConfigPaths();
+            resetResolvedProperties();
+        } else {
+            myReuseEnvValueCheckBox.setEnabled(true);
+            myResolvePathLabel.setEnabled(false);
+            myResolvePath.setEnabled(false);
+            myClientList.removeAllItems();
+
+            if (currentClientName != null) {
+                myReuseEnvValueCheckBox.setSelected(false);
+                myRefreshClientList.setEnabled(true);
+                myClientList.setEnabled(true);
+
+                // Currently selected client name needs to be added
+                myClientList.addItem(currentClientName);
+                // and select it
+                myClientList.setSelectedItem(currentClientName);
+            } else {
+                myReuseEnvValueCheckBox.setSelected(true);
+                myRefreshClientList.setEnabled(false);
+                myClientList.setEnabled(false);
+            }
+
+            refreshResolvedProperties();
+        }
     }
 
 
@@ -352,28 +386,13 @@ public class P4ConfigPanel {
                 myConnectionTypeContainerPanel,
                 panel.getConnectionMethod().name());
 
-        // Relative p4config files MUST define their own client name.
-        if (useRelativePathConfig(panel)) {
-            myReuseEnvValueCheckBox.setSelected(true);
-            myReuseEnvValueCheckBox.setEnabled(false);
-            myRefreshClientList.setEnabled(false);
-            myResolvePathLabel.setEnabled(true);
-            myResolvePath.setEnabled(true);
-            refreshConfigPaths();
-        } else {
-            myReuseEnvValueCheckBox.setEnabled(true);
-            myRefreshClientList.setEnabled(myReuseEnvValueCheckBox.isSelected());
-            myResolvePathLabel.setEnabled(false);
-            myResolvePath.setEnabled(false);
-            refreshResolvedProperties();
-        }
-
+        initializeClientAndPathSelection(getSelectedClient(), panel.getConnectionMethod());
     }
 
 
     private void createUIComponents() {
         // Add custom component construction here.
-        myP4ConfigConnectionPanel = new P4ConfigConnectionPanel(myProject);
+        myP4ConfigConnectionPanel = new P4ConfigConnectionPanel();
     }
 
 
@@ -422,6 +441,7 @@ public class P4ConfigPanel {
      * Refresh just the list of resolved properties.
      */
     private void refreshResolvedProperties() {
+        final StringBuilder display = new StringBuilder();
         P4Config config = null;
 
         Object configPath = useRelativePathConfig()
@@ -439,10 +459,14 @@ public class P4ConfigPanel {
             LOG.info("Using cmd style config loading");
             ManualP4Config manualConfig = new ManualP4Config();
             saveSettingsToConfig(manualConfig);
-            config = P4ConfigUtil.loadCmdP4Config(manualConfig);
+            try {
+                config = P4ConfigUtil.loadCmdP4Config(manualConfig);
+            } catch (IOException e) {
+                display.append(P4Bundle.message("configuration.resolved.file-not-found",
+                        manualConfig.getConfigFile()));
+            }
         }
 
-        StringBuilder display = new StringBuilder();
 
         final Map<String, String> props = P4ConfigUtil.getProperties(config);
         List<String> keys = new ArrayList<String>(props.keySet());

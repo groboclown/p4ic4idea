@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CancellationException;
 
@@ -90,7 +91,12 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
                 ret.add(client);
             }
         } else {
-            P4Config fullConfig = P4ConfigUtil.loadCmdP4Config(base);
+            P4Config fullConfig = null;
+            try {
+                fullConfig = P4ConfigUtil.loadCmdP4Config(base);
+            } catch (IOException e) {
+                throw new P4InvalidConfigException(e);
+            }
             List<VirtualFile> roots = P4ConfigUtil.getVcsRootFiles(project);
             // Not necessary: the roots for the client should only be based on the VCS roots.
             //roots.add(project.getBaseDir());

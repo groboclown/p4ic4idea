@@ -15,6 +15,7 @@ package net.groboclown.idea.p4ic.server;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
@@ -32,6 +33,7 @@ public class ClientManager {
     private final P4ConfigProject configProject;
     private final ReadWriteLock clientAccess;
     private boolean initialized = false;
+    private MessageBusConnection projectMessageBus;
 
     // The clients list is an unmodifiable list, that is wholly replaced
     // inside a write lock.  This allows reads to always just return
@@ -70,7 +72,8 @@ public class ClientManager {
             if (!initialized) {
                 //ApplicationManager.getApplication().getMessageBus().connect().subscribe(
                 //        P4ConfigListener.TOPIC, new ConfigListener());
-                project.getMessageBus().connect().subscribe(P4ConfigListener.TOPIC, new ConfigListener());
+                projectMessageBus = project.getMessageBus().connect();
+                projectMessageBus.subscribe(P4ConfigListener.TOPIC, new ConfigListener());
                 loadConfig();
                 initialized = true;
             }
@@ -88,6 +91,10 @@ public class ClientManager {
             clients = Collections.emptyList();
         } finally {
             clientAccess.writeLock().unlock();
+        }
+        if (projectMessageBus != null) {
+            projectMessageBus.disconnect();
+            projectMessageBus = null;
         }
     }
 

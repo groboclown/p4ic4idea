@@ -25,11 +25,17 @@
     * Added support for specifying the Perforce server SSL fingerprint.
     * Start of trust support for server connections.  Still needs correct
       wiring to allow the user to be notified of fingerprint changes, and
-      for correct authenticating of the fingerprints.
+      for correct authenticating of the fingerprints.  It will reuse
+      the SSL trust ticket if the user has already authenticated (with "p4 trust")
+      the connection.
 * Bug fixes.
     * (In progress) Submit enabled even with Empty commit message (#52)
-    * (In progress) Client selection drop-down is disabled (#53)
-    * (In progress) NPE in Authorization Ticket connection when selecting the file chooser (#54)
+    * Client selection drop-down is disabled (#53)
+    * NPE in Authorization Ticket connection when selecting the file chooser (#54)
+    * Bad display of P4PORT text field tooltip.
+    * Fixed error if the client is disconnected while refreshing the changelist view.
+    * Fixed error when choosing "Specific P4CONFIG file" related to incorrect widget
+      initialization.
 
 
 

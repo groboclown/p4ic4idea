@@ -20,6 +20,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
@@ -36,6 +37,7 @@ import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
+import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.TempFileWatchDog;
@@ -97,6 +99,10 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     private final P4CommittedChangesProvider committedChangesProvider;
 
     private final TempFileWatchDog tempFileWatchDog;
+
+    private MessageBusConnection projectMessageBusConnection;
+
+    private MessageBusConnection appMessageBusConnection;
 
     private P4ConnectionWidget connectionWidget;
 
@@ -232,11 +238,12 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             }
         }
 
-        myProject.getMessageBus().connect().subscribe(OnServerConfigurationProblem.TOPIC, problemListener);
-        //ApplicationManager.getApplication().getMessageBus().connect().subscribe(
-        //        P4ConfigListener.TOPIC, problemListener);
-        myProject.getMessageBus().connect().subscribe(P4ConfigListener.TOPIC, problemListener);
-        ApplicationManager.getApplication().getMessageBus().connect().subscribe(OnServerDisconnectListener.TOPIC, disconnectListener);
+        projectMessageBusConnection = myProject.getMessageBus().connect();
+        projectMessageBusConnection.subscribe(OnServerConfigurationProblem.TOPIC, problemListener);
+        projectMessageBusConnection.subscribe(P4ConfigListener.TOPIC, problemListener);
+        appMessageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
+        //appMessageBusConnection.subscribe(P4ConfigListener.TOPIC, problemListener);
+        appMessageBusConnection.subscribe(OnServerDisconnectListener.TOPIC, disconnectListener);
 
         clients.initialize();
 
@@ -254,15 +261,42 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @Override
     public void deactivate() {
         clients.dispose();
+        myConfigurable.disposeUIResources();
 
         ChangeListManager.getInstance(myProject).removeChangeListListener(changelistListener);
-        if (connectionWidget != null) {
-            connectionWidget.deactivate();
-            connectionWidget = null;
-        }
 
         tempFileWatchDog.stop();
         tempFileWatchDog.cleanUpTempDir();
+
+        if (connectionWidget != null && !ApplicationManager.getApplication().isHeadlessEnvironment()) {
+            final StatusBar statusBar = WindowManager.getInstance().getStatusBar(myProject);
+            if (statusBar != null) {
+                connectionWidget = new P4ConnectionWidget(this, myProject);
+                ApplicationManager.getApplication().invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        statusBar.removeWidget(connectionWidget.ID());
+                        connectionWidget.deactivate();
+                    }
+                }, ModalityState.NON_MODAL);
+            }
+        }
+
+        if (myVFSListener != null) {
+            Disposer.dispose(myVFSListener);
+            myVFSListener = null;
+        }
+
+        if (projectMessageBusConnection != null) {
+            projectMessageBusConnection.disconnect();
+            projectMessageBusConnection = null;
+        }
+        if (appMessageBusConnection != null) {
+            appMessageBusConnection.disconnect();
+            appMessageBusConnection = null;
+        }
+
+        super.deactivate();
     }
 
     @Override
@@ -730,17 +764,26 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
         @Override
         public void configChanges(@NotNull Project project, @NotNull P4Config original, @NotNull P4Config config) {
+            if (project.isDisposed()) {
+                return;
+            }
             autoOffline = config.isAutoOffline();
         }
 
         @Override
         public void configurationProblem(@NotNull Project project, @NotNull P4Config config, @NotNull P4InvalidConfigException ex) {
+            if (project.isDisposed()) {
+                return;
+            }
             onInvalidConfiguration(VcsSettableFuture.<Boolean>create(), null, ex.getMessage());
         }
 
         @Override
         public void onInvalidConfiguration(@NotNull final VcsFutureSetter<Boolean> future,
                 @Nullable ServerConfig config, @Nullable final String message) {
+            if (myProject.isDisposed()) {
+                return;
+            }
             if (future.isDone()) {
                 // already handled
                 return;
@@ -778,6 +821,9 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         @Override
         public void onDisconnect(@NotNull ServerConfig config, @NotNull final VcsFutureSetter<OnDisconnectAction> retry) {
             LOG.warn("Disconnected from Perforce server");
+            if (myProject.isDisposed()) {
+                return;
+            }
             if (retry.isDone()) {
                 // already handled
                 return;
@@ -819,5 +865,4 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         }
 
     }
-
 }

@@ -19,6 +19,7 @@ import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.background.VcsSettableFuture;
 import net.groboclown.idea.p4ic.changes.P4ChangeListCache;
 import net.groboclown.idea.p4ic.config.P4Config;
@@ -43,6 +44,7 @@ public class ServerStoreService implements ApplicationComponent {
     private final Object sync = new Object();
     private final Map<ServerConfig, ServerData> servers = new HashMap<ServerConfig, ServerData>();
     private final MyConfigChangedListener configChangedListener = new MyConfigChangedListener();
+    private MessageBusConnection appMessageBus;
 
     public static ServerStoreService getInstance() {
         return ServiceManager.getService(ServerStoreService.class);
@@ -89,7 +91,8 @@ public class ServerStoreService implements ApplicationComponent {
 
     @Override
     public void initComponent() {
-        ApplicationManager.getApplication().getMessageBus().connect().subscribe(
+        appMessageBus = ApplicationManager.getApplication().getMessageBus().connect();
+        appMessageBus.subscribe(
                 P4ConfigListener.TOPIC, configChangedListener);
     }
 
@@ -99,6 +102,10 @@ public class ServerStoreService implements ApplicationComponent {
             for (ServerData data: servers.values()) {
                 data.forceDisconnect();
             }
+        }
+        if (appMessageBus != null) {
+            appMessageBus.disconnect();
+            appMessageBus = null;
         }
     }
 

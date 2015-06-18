@@ -83,7 +83,6 @@ public class P4ChangeProvider implements ChangeProvider {
 
                 // See if the cached changes are still valid
                 if (! cachedChanges.hasChanged(dirtyScope, addGate)) {
-
                     LOG.info("Loading changelists through the cache");
                     cachedChanges.applyCache(builder);
                     return;

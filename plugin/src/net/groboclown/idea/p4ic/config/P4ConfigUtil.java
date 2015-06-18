@@ -309,7 +309,12 @@ public class P4ConfigUtil {
                         LOG.info("Found config file " + file);
                         ManualP4Config config = new ManualP4Config();
                         config.setConfigFile(file.getPath());
-                        ret.put(file.getParent(), loadCmdP4Config(config));
+                        try {
+                            final P4Config loadedConfig = loadCmdP4Config(config);
+                            ret.put(file.getParent(), loadedConfig);
+                        } catch (IOException e) {
+                            LOG.error("Could not find or read config file " + file.getPath(), e);
+                        }
                     }
                 }
             }
@@ -327,7 +332,12 @@ public class P4ConfigUtil {
                     // Set the rootSearchPath as the owner for this
                     // config, even though technically it's at a
                     // higher position.
-                    ret.put(rootSearchPath, loadCmdP4Config(config));
+                    try {
+                        final P4Config loadedConfig = loadCmdP4Config(config);
+                        ret.put(rootSearchPath, loadedConfig);
+                    } catch (IOException e) {
+                        LOG.error("Could not find or read config file " + configFile.getPath(), e);
+                    }
                     break;
                 }
                 parent = parent.getParent();
@@ -349,7 +359,7 @@ public class P4ConfigUtil {
      * @return cmd-based P4 configuration
      */
     @NotNull
-    public static P4Config loadCmdP4Config(@Nullable P4Config overrideConfig) {
+    public static P4Config loadCmdP4Config(@Nullable P4Config overrideConfig) throws IOException {
         List<P4Config> hierarchy = new ArrayList<P4Config>();
 
         // override config is by default always first.
@@ -376,15 +386,11 @@ public class P4ConfigUtil {
         return new HierarchyP4Config(hierarchy.toArray(new P4Config[hierarchy.size()]));
     }
 
-    private static void addConfigFile(@Nullable String source, @NotNull List<P4Config> hierarchy) {
+    private static void addConfigFile(@Nullable String source, @NotNull List<P4Config> hierarchy) throws IOException {
         if (source != null) {
             File cf = new File(source);
-            try {
-                P4Config configFile = new FileP4Config(cf);
-                hierarchy.add(configFile);
-            } catch (IOException e) {
-                LOG.error(P4Bundle.message("exception.config.file.load", cf.getAbsolutePath()), e);
-            }
+            P4Config configFile = new FileP4Config(cf);
+            hierarchy.add(configFile);
         }
     }
 

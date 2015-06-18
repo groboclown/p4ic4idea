@@ -9,6 +9,7 @@
             <li><em>0.6.1</em>
                 <ol>
                     <li>Minor code cleanups.</li>
+                    <li>FIXME</li>
                 </ol>
             </li>
             <li><em>0.6.0</em>
@@ -141,9 +142,6 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <vcs name="p4ic" vcsClass="net.groboclown.idea.p4ic.extension.P4Vcs" displayName="Perforce"/>
-        <!--
-        <vcsCheckinHandlerFactory implementation="net.groboclown.idea.p4ic.extension.P4CheckinHandlerFactory"/>
-        -->
         <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
         <vcsPopupProvider implementation="net.groboclown.idea.p4ic.extension.P4QuickListContentProvider"/>
 

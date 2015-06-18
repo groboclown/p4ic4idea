@@ -352,6 +352,14 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             this.dataConsumer = additionalDataConsumer;
             this.context = new SubmitContext(vcs, panel.getSelectedChanges());
             this.panel = new P4SubmitPanel(context);
+
+
+
+            // TODO set the ok action as enabled/disabled depending upon
+            // whether the comment is empty or not (bug #52).  Probably
+            // should just set a warning, though, but that doesn't do anything.
+            // We will also need a notification for when the comment is changed,
+            // which will require a poll thread, which isn't ideal.
         }
 
         @Override

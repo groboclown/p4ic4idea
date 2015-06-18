@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.ui.connection;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
@@ -26,6 +27,7 @@ import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4Config.ConnectionMethod;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -36,39 +38,30 @@ import java.io.IOException;
 import java.util.ResourceBundle;
 
 public class P4ConfigConnectionPanel implements ConnectionPanel {
+    private static final Logger LOG = Logger.getInstance(P4ConfigConnectionPanel.class);
     private static final String DEFAULT_P4CONFIG_NAME = ".p4config";
 
-    private final Project project;
+    private Project project;
     private TextFieldWithBrowseButton myP4ConfigFile;
     private JLabel myFileMessage;
     private JPanel myRootPanel;
 
-    public P4ConfigConnectionPanel(Project project) {
-        this.project = project;
+    public P4ConfigConnectionPanel() {
         setConfigFileText(null);
         myP4ConfigFile.addBrowseFolderListener(
                 P4Bundle.message("configuration.connection-choice.picker.p4config"),
                 P4Bundle.message("configuration.p4config.chooser"),
-                project, new FileChooserDescriptor(true, false, false, false, false, false));
+                null, new FileChooserDescriptor(true, false, false, false, false, false));
 
-        // This component doesn't respond as normal
-        //myP4ConfigFile.getTextField().addKeyListener(new KeyAdapter() {
-        //    @Override
-        //    public void keyTyped(KeyEvent e) {
-        //        if (e.getKeyChar() == '\n' || e.getKeyChar() == '\r' || e.getKeyChar() == '\t') {
-        //            validateConfigFile();
-        //        }
-        //    }
-        //});
-        //myP4ConfigFile.getTextField().addFocusListener(new FocusAdapter() {
-        //    @Override
-        //    public void focusLost(FocusEvent e) {
-        //        validateConfigFile();
-        //    }
-        //});
         myP4ConfigFile.addActionListener(new FileActionListener());
         myP4ConfigFile.getTextField().addActionListener(new FileActionListener());
     }
+
+
+    public void initialize(@NotNull final Project project) {
+        this.project = project;
+    }
+
 
     private void createUIComponents() {
         // place custom component creation code here
@@ -123,40 +116,19 @@ public class P4ConfigConnectionPanel implements ConnectionPanel {
         }
     }
 
-    /*
-    @Nullable
-    @Override
-    public P4Config loadChildConfig(@NotNull P4Config config) throws P4DisconnectedException {
-        String filePath = config.getConfigFile();
-        if (filePath == null) {
-            P4InvalidConfigException e = new P4InvalidConfigException(
-                    P4Bundle.message("configuration.p4config.no-file"));
-            setTextMessage(P4Bundle.message("configuration.p4config.bad-file", e.getMessage()));
-            throw e;
-        }
-        try {
-            P4Config ret = P4ConfigUtil.loadP4ConfigFile(new File(config.getConfigFile()));
-            setTextMessage("");
-            return ret;
-        } catch (IOException e) {
-            setTextMessage(
-                    P4Bundle.message("configuration.p4config.bad-file", e.getMessage()));
-            throw new P4InvalidConfigException(
-                    P4Bundle.message("configuration.p4config.file-load-error",
-                            config.getConfigFile(), e.getMessage()));
-        }
-    }
-    */
 
-    void setConfigFileText(String text) {
+    void setConfigFileText(@Nullable String text) {
         if (text == null || text.length() <= 0) {
             if (project == null || project.getBaseDir() == null) {
                 // This can happen when the user edits the default settings.
+                // It can also happen if there are multiple project roots.
                 // See bug #21.
-                text = new File(".", DEFAULT_P4CONFIG_NAME).getAbsolutePath();
+                //text = new File(".", DEFAULT_P4CONFIG_NAME).getAbsolutePath();
+                text = DEFAULT_P4CONFIG_NAME;
             } else {
                 text = (new File(project.getBaseDir().getPath(), DEFAULT_P4CONFIG_NAME)).getAbsolutePath();
             }
+            LOG.info("Config file set to [" + text + "]");
         }
         myP4ConfigFile.setText(text);
     }

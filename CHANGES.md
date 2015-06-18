@@ -9,7 +9,7 @@
 * Add user preferences.
 * Begin SSL support.  Requires installing the unlimited strength JCE package for the IDE's JRE
     in order to use.
-* Bug fixes.
+* Many bug fixes.
 
 ### Details
 
@@ -29,13 +29,13 @@
       the SSL trust ticket if the user has already authenticated (with "p4 trust")
       the connection.
 * Bug fixes.
-    * (In progress) Submit enabled even with Empty commit message (#52)
     * Client selection drop-down is disabled (#53)
     * NPE in Authorization Ticket connection when selecting the file chooser (#54)
     * Bad display of P4PORT text field tooltip.
     * Fixed error if the client is disconnected while refreshing the changelist view.
     * Fixed error when choosing "Specific P4CONFIG file" related to incorrect widget
       initialization.
+    * De-register VCS module on project close (#55)
 
 
 

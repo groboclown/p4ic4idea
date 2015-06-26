@@ -124,6 +124,8 @@ public class P4ConfigConnectionPanel implements ConnectionPanel {
                 // It can also happen if there are multiple project roots.
                 // See bug #21.
                 //text = new File(".", DEFAULT_P4CONFIG_NAME).getAbsolutePath();
+                LOG.info("Using default config file name (null project? " +
+                        (project == null) + ")");
                 text = DEFAULT_P4CONFIG_NAME;
             } else {
                 text = (new File(project.getBaseDir().getPath(), DEFAULT_P4CONFIG_NAME)).getAbsolutePath();
@@ -142,7 +144,6 @@ public class P4ConfigConnectionPanel implements ConnectionPanel {
             P4InvalidConfigException e = new P4InvalidConfigException(
                     P4Bundle.message("configuration.p4config.no-file"));
             setTextMessage(P4Bundle.message("configuration.p4config.bad-file", e.getMessage()));
-            //throw e;
             return;
         }
         try {
@@ -150,10 +151,7 @@ public class P4ConfigConnectionPanel implements ConnectionPanel {
             setTextMessage("");
         } catch (IOException e) {
             setTextMessage(
-                    P4Bundle.message("configuration.p4config.bad-file", e.getMessage()));
-            //throw new P4InvalidConfigException(
-            //        P4Bundle.message("configuration.p4config.file-load-error",
-            //                config.getConfigFile(), e.getMessage()));
+                    P4Bundle.message("configuration.p4config.file-read-problem", config.getConfigFile(), e.getMessage()));
         }
     }
 

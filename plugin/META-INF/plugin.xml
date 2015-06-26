@@ -1,11 +1,21 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.6.1</version>
+    <version>0.6.2</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.6.2</em>
+                <ol>
+                    <li>Fixed an issue with loading config files that the user doesn't
+                        ask for (from environment or registry).</li>
+                    <li>Changed the default changelist color to be the same as a
+                        normal online changelist color.</li>
+                    <li>Fixed an issue with relative configs could still report problems on the "check config"
+                        button.</li>
+                </ol>
+            </li>
             <li><em>0.6.1</em>
                 <ol>
                     <li>Add global user preferences</li>
@@ -23,16 +33,6 @@
                     <li>Fixed error when choosing "Specific P4CONFIG file" related to incorrect widget
                     initialization.</li>
                     <li>Properly de-register VCS module on project close.</li>
-                </ol>
-            </li>
-            <li><em>0.6.0</em>
-                <ol>
-                    <li>Allow selecting the revision or changelist to sync to.</li>
-                    <li>Synchronizing on a checked-out file does not report future merge problem.</li>
-                    <li>Fixed: Add/Edit without adding to Perforce incorrectly then adds the file to Perforce.</li>
-                    <li>Fixed: Changelists show files that are unchanged as locally modified without checkout.</li>
-                    <li>Fixed NPE that can happen if synchronizing files causes a merge issue.</li>
-                    <li>Reduced logging.</li>
                 </ol>
             </li>
         </ol>
@@ -54,15 +54,15 @@
       <p><strong>Getting Started</strong></p>
       <p>
       Once you install the plugin, you can associate a project directory
-      with Perforce in the project settings (<b>File</b> - <b>Settings...</b>
-      or <em>Ctrl+Alt+S</em>, then navigate to the <b>Version Control</b> panel).
+      with Perforce in the project settings (<b>File</b> - <b>Settings...</b>,
+      then navigate to the <b>Version Control</b> panel).
       Make sure to edit the Perforce configuration to set the proper server
       connection settings.
       </p>
       <p>
       The plugin will keep Your client's open changelists
       synchronized with the IDEA backed changelists, viewable
-      under the "Changes" view (<em>Alt+9</em>).  If the changelists become
+      under the "Changes" view.  If the changelists become
       out of sync, you can force the plugin to re-examine the
       mappings by pressing the refresh button in the changes view.
       </p>

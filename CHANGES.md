@@ -2,6 +2,25 @@
 
 
 
+## ::v0.6.2::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * If the user's P4CONFIG environment variable or windows registry setting is set,
+        it can still be loaded, even if the user doesn't want to use those settings.
+        This isn't a problem unless a relative path is used, in which case a strange
+        "FileNotFoundException" will be generated.
+    * The default changelist will show up as the synthetic text font (by default, blue),
+        rather than looking like the active changelist color.  This avoids confusion
+        if the active changelist is not the default changelist.
+    * Relative configs could still report problems on the "check config" button.
+
+
 ## ::v0.6.1::
 
 ### Overview

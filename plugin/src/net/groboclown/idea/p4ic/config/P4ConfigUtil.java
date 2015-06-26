@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 
@@ -298,20 +299,25 @@ public class P4ConfigUtil {
         while (! depthStack.isEmpty()) {
             Iterator<VirtualFile> iter = depthStack.remove(depthStack.size() - 1);
             if (iter.hasNext()) {
-                VirtualFile file = iter.next();
+                VirtualFile vFile = iter.next();
                 if (iter.hasNext()) {
                     depthStack.add(iter);
                 }
-                if (file != null && file.exists()) {
+                if (vFile != null) {
+                    // Make sure we use the actual I/O file in order to avoid some
+                    // IDEA refresh issues.
+                    File file = new File(vFile.getPath());
                     if (file.isDirectory()) {
-                        depthStack.add(Arrays.asList(file.getChildren()).iterator());
+                        depthStack.add(Arrays.asList(vFile.getChildren()).iterator());
+                    } else if (! file.exists()) {
+                        LOG.info("Discovered non-existent file in IDEA cache: " + file);
                     } else if (file.getName().equals(configFileName)) {
                         LOG.info("Found config file " + file);
                         ManualP4Config config = new ManualP4Config();
-                        config.setConfigFile(file.getPath());
+                        config.setConfigFile(file.getAbsolutePath());
                         try {
                             final P4Config loadedConfig = loadCmdP4Config(config);
-                            ret.put(file.getParent(), loadedConfig);
+                            ret.put(vFile.getParent(), loadedConfig);
                         } catch (IOException e) {
                             LOG.error("Could not find or read config file " + file.getPath(), e);
                         }
@@ -325,20 +331,25 @@ public class P4ConfigUtil {
             while (parent != null) {
                 VirtualFile configFile = parent.findChild(configFileName);
                 if (configFile != null) {
-                    LOG.info("Found config file " + configFile + ", but registering it as root of " + rootSearchPath);
-                    ManualP4Config config = new ManualP4Config();
-                    config.setConfigFile(configFile.getPath());
+                    File file = new File(configFile.getPath());
+                    if (file.exists() && file.isFile()) {
+                        LOG.info("Found config file " + configFile.getPath() +
+                                ", but registering it as root of " + rootSearchPath);
+                        ManualP4Config config = new ManualP4Config();
+                        config.setConfigFile(file.getAbsolutePath());
 
-                    // Set the rootSearchPath as the owner for this
-                    // config, even though technically it's at a
-                    // higher position.
-                    try {
-                        final P4Config loadedConfig = loadCmdP4Config(config);
-                        ret.put(rootSearchPath, loadedConfig);
-                    } catch (IOException e) {
-                        LOG.error("Could not find or read config file " + configFile.getPath(), e);
+                        // Set the rootSearchPath as the owner for this
+                        // config, even though technically it's at a
+                        // higher position.
+                        try {
+                            final P4Config loadedConfig = loadCmdP4Config(config);
+                            ret.put(rootSearchPath, loadedConfig);
+                            break;
+                        } catch (IOException e) {
+                            LOG.error("Could not find or read config file " + configFile.getPath(), e);
+                            // keep going up the tree
+                        }
                     }
-                    break;
                 }
                 parent = parent.getParent();
             }
@@ -364,35 +375,59 @@ public class P4ConfigUtil {
 
         // override config is by default always first.
         // Config files area always after the config source that references them.
+        // Config files will only be used once.  This keeps us out of trouble
+        // in case something in the user's environment (environment variable or
+        // registry) is setting this value, but we want to use the IDEA version
+        // instead.
+
+        boolean usedConfig = false;
 
         if (overrideConfig != null) {
             hierarchy.add(overrideConfig);
-            addConfigFile(overrideConfig.getConfigFile(), hierarchy);
+            usedConfig = addConfigFile(overrideConfig.getConfigFile(), hierarchy, true);
         }
 
         if (WinRegP4Config.isAvailable()) {
             P4Config userWinConfig = new WinRegP4Config(true);
             hierarchy.add(userWinConfig);
-            addConfigFile(userWinConfig.getConfigFile(), hierarchy);
+            if (! usedConfig) {
+                usedConfig = addConfigFile(userWinConfig.getConfigFile(), hierarchy, false);
+            }
 
             P4Config sysWinConfig = new WinRegP4Config(false);
             hierarchy.add(sysWinConfig);
-            addConfigFile(sysWinConfig.getConfigFile(), hierarchy);
+            if (! usedConfig) {
+                usedConfig = addConfigFile(sysWinConfig.getConfigFile(), hierarchy, false);
+            }
         }
 
         P4Config envConf = new EnvP4Config();
-        addConfigFile(envConf.getConfigFile(), hierarchy);
+        if (! usedConfig) {
+            addConfigFile(envConf.getConfigFile(), hierarchy, false);
+        }
 
         return new HierarchyP4Config(hierarchy.toArray(new P4Config[hierarchy.size()]));
     }
 
-    private static void addConfigFile(@Nullable String source, @NotNull List<P4Config> hierarchy) throws IOException {
+    private static boolean addConfigFile(@Nullable String source, @NotNull List<P4Config> hierarchy, boolean required) throws IOException {
         if (source != null) {
             File cf = new File(source);
-            P4Config configFile = new FileP4Config(cf);
-            hierarchy.add(configFile);
+            if (cf.exists() && cf.isFile() && cf.canRead()) {
+                LOG.info("Using config file " + cf.getAbsolutePath());
+                P4Config configFile = new FileP4Config(cf);
+                hierarchy.add(configFile);
+                return true;
+            } else if (required) {
+                LOG.info(cf.getAbsolutePath() + ": exists? " + cf.exists() + "; directory? " +
+                    cf.isFile() + "; readable? " + cf.canRead());
+                throw new FileNotFoundException(cf.getAbsolutePath());
+            } else {
+                LOG.info("Referenced config file [" + source + "], but it was not found");
+            }
         }
+        return false;
     }
+
 
     @NotNull
     public static List<VirtualFile> getVcsRootFiles(@NotNull Project project) {

@@ -87,7 +87,7 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
 
             if (clients.size() == 1 && defaults.size() == 1) {
                 String msg = P4Bundle.message("changelist.decorator.default");
-                cellRenderer.append(msg, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
+                cellRenderer.append(msg, SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 hasOne = true;
             } else if (! defaults.isEmpty()) {
                 Iterator<Client> iter = defaults.iterator();
@@ -103,7 +103,7 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
                     sb.append(P4Bundle.message("changelist.decorator.default.middle", next.getClientName()));
                 }
                 sb.append(P4Bundle.message("changelist.decorator.default.end"));
-                cellRenderer.append(sb.toString(), SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
+                cellRenderer.append(sb.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 hasOne = true;
             }
 

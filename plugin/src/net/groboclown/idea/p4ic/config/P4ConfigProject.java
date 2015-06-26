@@ -95,7 +95,9 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             try {
                 fullConfig = P4ConfigUtil.loadCmdP4Config(base);
             } catch (IOException e) {
-                throw new P4InvalidConfigException(e);
+                P4InvalidConfigException ex = new P4InvalidConfigException(e);
+                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, base, ex);
+                throw ex;
             }
             List<VirtualFile> roots = P4ConfigUtil.getVcsRootFiles(project);
             // Not necessary: the roots for the client should only be based on the VCS roots.

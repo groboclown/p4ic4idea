@@ -40,7 +40,7 @@ public class UserClientsLoader {
     private final Project project;
     private final P4Config config;
 
-    public UserClientsLoader(Project project, P4Config config) {
+    public UserClientsLoader(@NotNull Project project, @NotNull P4Config config) {
         this.project = project;
         this.config = config;
     }
@@ -73,7 +73,7 @@ public class UserClientsLoader {
     private void checkAllConfigFiles() {
         assert config.getConnectionMethod() == P4Config.ConnectionMethod.REL_P4CONFIG;
         final String configFile = config.getConfigFile();
-        if (configFile == null || project == null) {
+        if (configFile == null) {
             Messages.showMessageDialog(project,
                     P4Bundle.message("configuration.error.no-p4config-found",
                             config.getConfigFile(), project.getBaseDir()),
@@ -129,7 +129,7 @@ public class UserClientsLoader {
                     ConnectionHandler.getHandlerFor(serverConfig), new OnServerConfigurationProblem() {
                 @Override
                 public void onInvalidConfiguration(@NotNull VcsFutureSetter<Boolean> future,
-                        @NotNull ServerConfig config, @Nullable String message) {
+                        @Nullable ServerConfig config, @Nullable String message) {
                     Messages.showMessageDialog(project,
                             P4Bundle.message("configuration.connection-problem", message),
                             P4Bundle.message("configuration.check-connection"),

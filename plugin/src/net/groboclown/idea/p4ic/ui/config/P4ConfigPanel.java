@@ -216,6 +216,7 @@ public class P4ConfigPanel {
         config.setAuthTicketPath(null);
         config.setConfigFile(null);
         config.setTrustTicketPath(null);
+        config.setServerFingerprint(null);
 
         ConnectionPanel conn = getSelectedConnection();
         conn.saveSettingsToConfig(config);
@@ -264,10 +265,14 @@ public class P4ConfigPanel {
     }
 
 
-    @Nullable
+    @NotNull
     private P4Config createConnectionConfig() throws IOException {
         ManualP4Config partial = new ManualP4Config();
         saveSettingsToConfig(partial);
+        if (useRelativePathConfig()) {
+            // we can't load all the child configs from here
+            return partial;
+        }
         return P4ConfigUtil.loadCmdP4Config(partial);
     }
 

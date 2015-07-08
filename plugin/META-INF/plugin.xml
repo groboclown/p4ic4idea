@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.6.2</version>
+    <version>0.6.3</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.6.3</em>
+                <ol>
+                    <li>()</li>
+                </ol>
+            </li>
             <li><em>0.6.2</em>
                 <ol>
                     <li>Fixed an issue with loading config files that the user doesn't
@@ -14,25 +19,6 @@
                         normal online changelist color.</li>
                     <li>Fixed an issue with relative configs could still report problems on the "check config"
                         button.</li>
-                </ol>
-            </li>
-            <li><em>0.6.1</em>
-                <ol>
-                    <li>Add global user preferences</li>
-                    <li>Begin SSL support.  Standard Java does not support the 256-bit
-                    encryption level ciphers required by the Perforce server.
-                    You must download and install the unlimited strength JCE package
-                    for the IDE's JRE in order to connect to an SSL-enabled Perforce
-                    server.  It will reuse the SSL trust ticket if the user has already
-                    authenticated (with "p4 trust") the connection, but will not
-                    (yet) trust the connection.</li>
-                    <li>Fixed client selection drop-down disabled</li>
-                    <li>Fixed NPE in Authorization Ticket connection when selecting the file chooser</li>
-                    <li>Fixed Bad display of P4PORT text field tooltip.</li>
-                    <li>Fixed error if the client is disconnected while refreshing the changelist view.</li>
-                    <li>Fixed error when choosing "Specific P4CONFIG file" related to incorrect widget
-                    initialization.</li>
-                    <li>Properly de-register VCS module on project close.</li>
                 </ol>
             </li>
         </ol>

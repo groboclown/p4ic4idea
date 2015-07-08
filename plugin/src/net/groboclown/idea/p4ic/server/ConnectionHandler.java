@@ -15,7 +15,7 @@ package net.groboclown.idea.p4ic.server;
 
 import com.intellij.openapi.project.Project;
 import com.perforce.p4java.PropertyDefs;
-import com.perforce.p4java.exception.*;
+import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
@@ -68,9 +68,15 @@ public abstract class ConnectionHandler {
 
 
     @NotNull
-    public IOptionsServer getOptionsServer(@NotNull String serverUriString, @NotNull Properties props) throws URISyntaxException, ConnectionException, NoSuchObjectException, ConfigException, ResourceException {
-        return ServerFactory.getOptionsServer(serverUriString, props);
+    public IOptionsServer getOptionsServer(@NotNull String serverUriString, @NotNull Properties props,
+            final ServerConfig config) throws URISyntaxException, P4JavaException {
+        final IOptionsServer server = ServerFactory.getOptionsServer(serverUriString, props);
+        if (config.getProtocol().isSecure() && config.hasServerFingerprint()) {
+            server.addTrust(config.getServerFingerprint());
+        }
+        return server;
     }
+
 
 
     /**

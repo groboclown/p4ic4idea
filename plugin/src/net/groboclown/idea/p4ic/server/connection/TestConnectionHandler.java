@@ -49,7 +49,8 @@ public class TestConnectionHandler extends ConnectionHandler {
 
     @NotNull
     @Override
-    public IOptionsServer getOptionsServer(@NotNull String serverUriString, @NotNull Properties props) throws URISyntaxException, ConnectionException, NoSuchObjectException, ConfigException, ResourceException {
+    public IOptionsServer getOptionsServer(@NotNull String serverUriString, @NotNull Properties props,
+            final ServerConfig config) throws URISyntaxException, ConnectionException, NoSuchObjectException, ConfigException, ResourceException {
         final IOptionsServer server = SERVERS.get(serverUriString);
         if (server == null) {
             throw new IllegalStateException("No server registered for " + serverUriString);

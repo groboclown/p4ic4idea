@@ -10,8 +10,9 @@
     <path id="production.classpath">
         <path refid="jdk.classpath"/>
         <path refid="${idea.lowest.classpath}"/>
-        <pathelement location="${lib.p4java}"/>
+        <!-- <pathelement location="${lib.p4java}"/> -->
         <pathelement location="${rootdir}/idea-compat/work/production"/>
+        <pathelement location="${rootdir}/p4java/work/production"/>
     </path>
 
     <path id="test.compile.classpath">
@@ -121,12 +122,14 @@
                 <attribute name="Manifest-Version" value="1.0"/>
             </manifest>
         </jar>
+        <!--
         <copy todir="${tmp.dir.p4ic4idea}/lib" flatten="true">
             <fileset dir="${rootdir}/lib">
                 <include name="p4java/**/*.jar"/>
                 <include name="p4java/**/*.txt"/>
             </fileset>
         </copy>
+        -->
         <copy todir="${tmp.dir.p4ic4idea}">
             <fileset dir="${rootdir}">
                 <include name="README.md"/>
@@ -134,6 +137,10 @@
                 <include name="LICENSE"/>
             </fileset>
         </copy>
+        <copy tofile="${tmp.dir.p4ic4idea}/lib/p4java-license.txt"
+            file="${rootdir}/p4java/LICENSE"/>
+        <copy todir="${tmp.dir.p4ic4idea}/lib"
+              file="${rootdir}/p4java/work/p4ic4idea.p4java.jar"/>
         <copy todir="${tmp.dir.p4ic4idea}/lib"
             file="${rootdir}/idea-compat/work/p4ic4idea.idea-compat.jar" />
         <copy todir="${tmp.dir.p4ic4idea}/lib"

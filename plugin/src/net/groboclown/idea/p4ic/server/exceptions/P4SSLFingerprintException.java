@@ -11,22 +11,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package net.groboclown.idea.p4ic.server.exceptions;
 
-import com.perforce.p4java.exception.P4JavaError;
-import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.exception.ConnectionException;
+import net.groboclown.idea.p4ic.P4Bundle;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class P4ApiException extends P4DisconnectedException {
-    public P4ApiException(@NotNull P4JavaError e) {
-        super(e);
-    }
 
-    public P4ApiException(@NotNull P4JavaException e) {
-        super(e);
-    }
+/**
+ * Indicates that the host server reported a different SSL fingerprint
+ * than the one declared by either the trust file, or the user.
+ */
+public class P4SSLFingerprintException extends P4SSLException {
 
-    public P4ApiException(String message) {
-        super(message);
+    public P4SSLFingerprintException(@Nullable final String serverFingerprint, @NotNull final ConnectionException e) {
+        super(P4Bundle.message("exception.ssl.fingerprint", serverFingerprint, e.getMessage()), e);
     }
 }

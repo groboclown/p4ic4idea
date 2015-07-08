@@ -92,6 +92,9 @@ public abstract class ServerConfig {
     @Nullable
     public abstract String getServerFingerprint();
 
+    public boolean hasServerFingerprint() {
+        return getServerFingerprint() != null && getServerFingerprint().length() > 0;
+    }
 
     public boolean hasAuthTicket() {
         return getAuthTicket() != null;

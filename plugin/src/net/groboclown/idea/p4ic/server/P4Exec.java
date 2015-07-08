@@ -800,7 +800,7 @@ public class P4Exec {
                 LOG.info("Opening connection to " + url + " with " + serverStatus.getConfig().getUsername());
 
                 // Use the ConnectionHandler so that mock objects can work better
-                server = connectionHandler.getOptionsServer(url, properties);
+                server = connectionHandler.getOptionsServer(url, properties, serverStatus.getConfig());
 
                 // These seem to cause issues.
                 //server.registerCallback(new LoggingCommandCallback());
@@ -931,6 +931,12 @@ public class P4Exec {
             } catch (ConnectionException e) {
                 LOG.info("Connection problem", e);
                 invalidateCache();
+
+                if (isSSLFingerprintProblem(e)) {
+                    // incorrect or not set trust fingerprint
+                    throw new P4SSLFingerprintException(serverStatus.getConfig().getServerFingerprint(), e);
+                }
+
 
                 if (isSSLHandshakeProblem(e)) {
                     // SSL extensions are not installed.
@@ -1095,6 +1101,13 @@ public class P4Exec {
         String message = e.getMessage();
         return message != null &&
             message.contains("invalid SSL session");
+    }
+
+
+    private boolean isSSLFingerprintProblem(@NotNull final ConnectionException e) {
+        String message = e.getMessage();
+        return message != null &&
+                message.contains("The fingerprint for the public key sent to your client is");
     }
 
 

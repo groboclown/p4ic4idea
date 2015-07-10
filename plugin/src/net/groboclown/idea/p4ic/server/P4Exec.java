@@ -934,6 +934,7 @@ public class P4Exec {
 
                 if (isSSLFingerprintProblem(e)) {
                     // incorrect or not set trust fingerprint
+                    // TODO pass the actual server fingerprint, rather than the whole message.
                     throw new P4SSLFingerprintException(serverStatus.getConfig().getServerFingerprint(), e);
                 }
 

@@ -6,11 +6,16 @@
 
 ### Overview
 
+* Switched to open source P4Java library.
+* Identified when a connection fails due to an SSL server fingerprint mismatch.
 * Bug fixes.
 
 ### Details
 
+* Switched to open source P4Java library.
 * Bug fixes.
+    * On connection check using a relative config file, you will no longer see
+        the "connection is fine" message after seeing errors with the connection.
 
 
 

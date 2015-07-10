@@ -312,7 +312,7 @@ public class P4ConfigUtil {
                     } else if (! file.exists()) {
                         LOG.info("Discovered non-existent file in IDEA cache: " + file);
                     } else if (file.getName().equals(configFileName)) {
-                        LOG.info("Found config file " + file);
+                        //LOG.info("Found config file " + file);
                         ManualP4Config config = new ManualP4Config();
                         config.setConfigFile(file.getAbsolutePath());
                         try {
@@ -413,7 +413,7 @@ public class P4ConfigUtil {
         if (source != null) {
             File cf = new File(source);
             if (cf.exists() && cf.isFile() && cf.canRead()) {
-                LOG.info("Using config file " + cf.getAbsolutePath());
+                //LOG.info("Using config file " + cf.getAbsolutePath());
                 P4Config configFile = new FileP4Config(cf);
                 hierarchy.add(configFile);
                 return true;

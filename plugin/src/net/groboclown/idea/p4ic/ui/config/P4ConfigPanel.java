@@ -313,6 +313,7 @@ public class P4ConfigPanel {
         if (clients == null) {
             // Don't need a status update or any updates; the user should have
             // seen error dialogs.
+            LOG.info("UserClientsLoader returned null");
             return;
         }
 
@@ -327,7 +328,10 @@ public class P4ConfigPanel {
         if (selected != null) {
             clients.remove(selected.toString());
             if (selected.toString().trim().length() > 0) {
+                toAdd.remove(selected.toString());
                 toAdd.add(0, selected.toString());
+            } else {
+                selected = null;
             }
         }
 
@@ -335,7 +339,7 @@ public class P4ConfigPanel {
         for (String client : toAdd) {
             myClientList.addItem(client);
         }
-        if (selected != null && selected.toString().trim().length() > 0) {
+        if (selected != null) {
             myClientList.setSelectedItem(selected);
         }
     }

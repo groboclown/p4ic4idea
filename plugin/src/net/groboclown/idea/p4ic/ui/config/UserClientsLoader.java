@@ -48,14 +48,17 @@ public class UserClientsLoader {
 
     /**
      *
-     * @return null when the connection could not be made.
+     * @return null when any connection could not be made.
      */
     @Nullable
     public List<String> loadClients() {
         if (config.getConnectionMethod() == P4Config.ConnectionMethod.REL_P4CONFIG) {
             // relative p4config files do not support this API.  However, we still need
             // to properly check them.
-            checkAllConfigFiles();
+            if (! checkAllConfigFiles()) {
+                // There was a problem in the config files, so return null.
+                return null;
+            }
             return Collections.emptyList();
         }
         ServerConfig serverConfig = ServerConfig.createNewServerConfig(config);
@@ -67,10 +70,18 @@ public class UserClientsLoader {
             return null;
         }
 
-        return loadClientsFor(null, serverConfig);
+        try {
+            return loadClientsFor(null, serverConfig);
+        } catch (VcsConnectionProblem e) {
+            Messages.showMessageDialog(project,
+                    P4Bundle.message("configuration.connection-problem", e.getMessage()),
+                    P4Bundle.message("configuration.check-connection"),
+                    Messages.getErrorIcon());
+            return null;
+        }
     }
 
-    private void checkAllConfigFiles() {
+    private boolean checkAllConfigFiles() {
         assert config.getConnectionMethod() == P4Config.ConnectionMethod.REL_P4CONFIG;
         final String configFile = config.getConfigFile();
         if (configFile == null) {
@@ -79,7 +90,7 @@ public class UserClientsLoader {
                             config.getConfigFile(), project.getBaseDir()),
                     P4Bundle.message("configuration.check-connection"),
                     Messages.getErrorIcon());
-            return;
+            return false;
         }
         Map<VirtualFile, P4Config> configsMap = P4ConfigUtil.loadProjectP4Configs(project,
                 configFile, true);
@@ -89,41 +100,55 @@ public class UserClientsLoader {
                             config.getConfigFile(), project.getBaseDir()),
                     P4Bundle.message("configuration.check-connection"),
                     Messages.getErrorIcon());
+            return false;
         } else {
+            int problemCount = 0;
             StringBuilder problems = new StringBuilder();
             for (Map.Entry<VirtualFile, P4Config> en: configsMap.entrySet()) {
                 if (en.getValue().getClientname() == null || en.getValue().getClientname().length() <= 0) {
                     problems.append(P4Bundle.message("configuration.error.no-client.one",
                             en.getKey().getPath()));
+                    problemCount++;
                     continue;
                 }
                 ServerConfig serverConfig = ServerConfig.createNewServerConfig(en.getValue());
                 if (serverConfig == null) {
                     problems.append(P4Bundle.message("configuration.error.not-fully-qualified.one",
                             en.getKey().getPath()));
+                    problemCount++;
                     continue;
                 }
-                List<String> clients = loadClientsFor(en.getKey().getPath(), serverConfig);
-                if (clients != null && ! clients.contains(en.getValue().getClientname())) {
-                    problems.append(P4Bundle.message("configuration.error.not-exist-client.one",
-                            en.getKey().getPath(), en.getValue().getUsername()));
+                final List<String> clients;
+                try {
+                    clients = loadClientsFor(en.getKey().getPath(), serverConfig);
+                    if (!clients.contains(en.getValue().getClientname())) {
+                        problems.append(P4Bundle.message("configuration.error.not-exist-client.one",
+                                en.getKey().getPath(), en.getValue().getUsername()));
+                        problemCount++;
+                    }
+                } catch (VcsConnectionProblem e) {
+                    problems.append(P4Bundle.message("configuration.error.connection-failure",
+                            en.getKey().getPath(), en.getValue().getUsername(), e.getMessage()));
+                    problemCount++;
                 }
             }
-            if (problems.length() > 0) {
+            if (problemCount > 0) {
                 Messages.showMessageDialog(project,
-                        P4Bundle.message("configuration.error.not-fully-qualified"),
+                        P4Bundle.message("configuration.error.problem-list", problemCount, problems),
                         P4Bundle.message("configuration.check-connection"),
                         Messages.getErrorIcon());
+                return false;
             }
+            return true;
         }
     }
 
-    private List<String> loadClientsFor(@Nullable String desc, @NotNull ServerConfig serverConfig) {
-
+    @NotNull
+    private List<String> loadClientsFor(@Nullable String desc, @NotNull ServerConfig serverConfig)
+            throws VcsConnectionProblem {
         // TODO should run with a progress bar
         try {
             ServerStatus serverStatus = ServerStoreService.getInstance().getServerStatus(project, serverConfig);
-            //ServerExecutor exec = serverStatus.getExecutorForClient(project, config.getClientname());
 
             P4Exec exec = new P4Exec(serverStatus, config.getClientname(),
                     ConnectionHandler.getHandlerFor(serverConfig), new OnServerConfigurationProblem() {
@@ -146,12 +171,6 @@ public class UserClientsLoader {
                 }
             }
             return ret;
-        } catch (final VcsConnectionProblem ee) {
-            Messages.showMessageDialog(project,
-                    P4Bundle.message("configuration.connection-problem", ee.getMessage()),
-                    P4Bundle.message("configuration.check-connection"),
-                    Messages.getErrorIcon());
-            return null;
         } finally {
             ServerStoreService.getInstance().removeServerConfig(project, serverConfig);
         }

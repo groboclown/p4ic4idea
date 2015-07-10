@@ -89,7 +89,7 @@ standard keys:
 * `P4TICKETS`: storage location for the Perforce ticket files.  If present,
   the plugin assumes that the connection will perform a "p4 login" and
   store the associated ticket in that file.
-* `P4TRUST`: location of the trust ticket. *Currently not supported.*
+* `P4TRUST`: location of the trust ticket.
 * `P4SSLDIR`: directory containing the SSL connection information.
   *Currently not supported.*
 * `P4CONFIG`: these settings can be loaded from a configuration file.

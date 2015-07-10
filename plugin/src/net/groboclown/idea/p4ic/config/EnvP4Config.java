@@ -50,6 +50,9 @@ public class EnvP4Config implements P4Config {
         configFile = PerforceEnvironment.getP4Config();
         authTicket = PerforceEnvironment.getP4Tickets();
         trustTicket = PerforceEnvironment.getP4Trust();
+        if (trustTicket == null) {
+            trustTicket = P4ConfigUtil.getDefaultTrustTicketFile().getAbsolutePath();
+        }
         if (password != null) {
             connectionMethod = ConnectionMethod.CLIENT;
         } else {

@@ -7,15 +7,24 @@
 ### Overview
 
 * Switched to open source P4Java library.
-* Identified when a connection fails due to an SSL server fingerprint mismatch.
+* Uses SSL fingerprint when connecting to SSL server (#56).
+* Identified when a connection fails due to an SSL server fingerprint mismatch (#56).
 * Bug fixes.
 
 ### Details
 
 * Switched to open source P4Java library.
+* Uses SSL fingerprint when connecting to SSL server (#56).
+    * Authorization ticket and password entry connection methods can specify
+      the trusted SSL fingerprint for the server.  Config file connection
+      methods will use the `P4TRUST` setting, or the default p4 trust file.
+      you will need to trust the server using the `p4 trust` command line
+      in order to manage the `P4TRUST` file's contents.
+* Identified when a connection fails due to an SSL server fingerprint mismatch.
+    * Problems due to a trust issue with the server are now clearly identified.
 * Bug fixes.
     * On connection check using a relative config file, you will no longer see
-        the "connection is fine" message after seeing errors with the connection.
+        the "connection is fine" message after seeing errors with the connection (#57).
 
 
 

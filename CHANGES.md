@@ -2,6 +2,21 @@
 
 
 
+## ::v0.6.4::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Configuration tabs need scroll pane (#59)
+    * Changelists can show a single file in multiple changelists (#58)
+    * Removed a stack overflow error with the server fingerprint.
+
+
+
 ## ::v0.6.3::
 
 ### Overview

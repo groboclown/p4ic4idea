@@ -209,7 +209,7 @@ public class HierarchyP4Config implements P4Config {
     public String getServerFingerprint() {
         for (P4Config config : parents) {
             if (config.hasServerFingerprintSet()) {
-                return getServerFingerprint();
+                return config.getServerFingerprint();
             }
         }
         return null;

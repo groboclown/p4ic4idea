@@ -19,9 +19,16 @@
             <properties/>
             <border type="none"/>
             <children>
-              <nested-form id="75cbd" form-file="net/groboclown/idea/p4ic/ui/config/P4ConfigPanel.form" binding="myP4ConfigPanel">
-                <constraints border-constraint="North"/>
-              </nested-form>
+              <scrollpane id="7d1d3">
+                <constraints border-constraint="Center"/>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <nested-form id="75cbd" form-file="net/groboclown/idea/p4ic/ui/config/P4ConfigPanel.form" binding="myP4ConfigPanel">
+                    <constraints/>
+                  </nested-form>
+                </children>
+              </scrollpane>
             </children>
           </grid>
           <grid id="1e073" layout-manager="BorderLayout" hgap="0" vgap="0">
@@ -31,9 +38,16 @@
             <properties/>
             <border type="none"/>
             <children>
-              <nested-form id="f5ab" form-file="net/groboclown/idea/p4ic/ui/config/UserPreferencesPanel.form" binding="myUserPreferencesPanel">
-                <constraints border-constraint="North"/>
-              </nested-form>
+              <scrollpane id="8e676">
+                <constraints border-constraint="Center"/>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <nested-form id="f5ab" form-file="net/groboclown/idea/p4ic/ui/config/UserPreferencesPanel.form" binding="myUserPreferencesPanel">
+                    <constraints/>
+                  </nested-form>
+                </children>
+              </scrollpane>
             </children>
           </grid>
         </children>

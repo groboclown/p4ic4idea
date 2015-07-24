@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.6.3</version>
+    <version>0.6.4</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.6.4</em>
+                <ol>
+                    <li>Added scroll pane to the configuration tabs.</li>
+                </ol>
+            </li>
             <li><em>0.6.3</em>
                 <ol>
                     <li>Switched to open source P4Java library.<li>
@@ -20,16 +25,6 @@
                     <li>Problems due to a trust issue with the server are now clearly identified.</li>
                     <li>On connection check using a relative config file, you will no longer see
                     the "connection is fine" message after seeing errors with the connection.</li>
-                </ol>
-            </li>
-            <li><em>0.6.2</em>
-                <ol>
-                    <li>Fixed an issue with loading config files that the user doesn't
-                        ask for (from environment or registry).</li>
-                    <li>Changed the default changelist color to be the same as a
-                        normal online changelist color.</li>
-                    <li>Fixed an issue with relative configs could still report problems on the "check config"
-                        button.</li>
                 </ol>
             </li>
         </ol>

@@ -9,6 +9,9 @@
             <li><em>0.6.4</em>
                 <ol>
                     <li>Added scroll pane to the configuration tabs.</li>
+                    <li>Fixed another issue with changelists showing a single file in multiple changelists.</li>
+                    <li>Removed a stack overflow error with the server fingerprint.</li>
+                    <li>Switched requests for services to requests for components.</li>
                 </ol>
             </li>
             <li><em>0.6.3</em>

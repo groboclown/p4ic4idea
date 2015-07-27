@@ -14,7 +14,7 @@
     * Configuration tabs need scroll pane (#59)
     * Changelists can show a single file in multiple changelists (#58)
     * Removed a stack overflow error with the server fingerprint.
-
+    * Switched requests for services to requests for components.
 
 
 ## ::v0.6.3::

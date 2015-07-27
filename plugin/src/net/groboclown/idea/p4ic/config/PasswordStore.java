@@ -13,7 +13,7 @@
  */
 package net.groboclown.idea.p4ic.config;
 
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -81,6 +81,6 @@ public class PasswordStore {
 
     @NotNull
     private static PasswordStoreService getService() {
-        return ServiceManager.getService(PasswordStoreService.class);
+        return ApplicationManager.getApplication().getComponent(PasswordStoreService.class);
     }
 }

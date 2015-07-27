@@ -15,7 +15,6 @@ package net.groboclown.idea.p4ic.server;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
@@ -47,7 +46,7 @@ public class ServerStoreService implements ApplicationComponent {
     private MessageBusConnection appMessageBus;
 
     public static ServerStoreService getInstance() {
-        return ServiceManager.getService(ServerStoreService.class);
+        return ApplicationManager.getApplication().getComponent(ServerStoreService.class);
     }
 
 

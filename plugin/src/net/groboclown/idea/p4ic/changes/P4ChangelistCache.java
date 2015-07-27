@@ -36,8 +36,8 @@
 
 package net.groboclown.idea.p4ic.changes;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -56,6 +56,7 @@ import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+
 public class P4ChangeListCache implements ApplicationComponent {
     private static final Logger LOG = Logger.getInstance(P4ChangeListCache.class);
 
@@ -70,7 +71,7 @@ public class P4ChangeListCache implements ApplicationComponent {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     public static P4ChangeListCache getInstance() {
-        return ServiceManager.getService(P4ChangeListCache.class);
+        return ApplicationManager.getApplication().getComponent(P4ChangeListCache.class);
     }
 
 

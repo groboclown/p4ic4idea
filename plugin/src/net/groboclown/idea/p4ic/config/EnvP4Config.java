@@ -34,6 +34,7 @@ public class EnvP4Config implements P4Config {
     private String authTicket;
     private String trustTicket;
     private String configFile;
+    private String clientHostname;
     private ConnectionMethod connectionMethod;
 
     public EnvP4Config() {
@@ -50,6 +51,7 @@ public class EnvP4Config implements P4Config {
         configFile = PerforceEnvironment.getP4Config();
         authTicket = PerforceEnvironment.getP4Tickets();
         trustTicket = PerforceEnvironment.getP4Trust();
+        clientHostname = PerforceEnvironment.getP4Host();
         if (trustTicket == null) {
             trustTicket = P4ConfigUtil.getDefaultTrustTicketFile().getAbsolutePath();
         }
@@ -165,6 +167,12 @@ public class EnvP4Config implements P4Config {
     @Override
     public boolean isPasswordStoredLocally() {
         return getPassword() == null;
+    }
+
+    @Nullable
+    @Override
+    public String getClientHostname() {
+        return clientHostname;
     }
 
 

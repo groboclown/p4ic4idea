@@ -27,6 +27,7 @@ public class ServerConfigImpl extends ServerConfig {
     private final File authTicket;
     private final File trustTicket;
     private final String serverFingerprint;
+    private final String clientHostname;
     private final boolean storePasswordLocally;
 
 
@@ -34,14 +35,16 @@ public class ServerConfigImpl extends ServerConfig {
         this(proxy.getPort(), proxy.getProtocol(), proxy.getUsername(), proxy.getConnectionMethod(),
                 proxy.getAuthTicketPath() == null ? null : new File(proxy.getAuthTicketPath()),
                 proxy.getTrustTicketPath() == null ? null : new File(proxy.getTrustTicketPath()),
-                proxy.getServerFingerprint(), proxy.isPasswordStoredLocally());
+                proxy.getServerFingerprint(), proxy.getClientHostname(),
+                proxy.isPasswordStoredLocally());
     }
 
 
     ServerConfigImpl(@NotNull String port, @NotNull IServerAddress.Protocol protocol,
             @NotNull String username, @NotNull P4Config.ConnectionMethod connectionMethod,
             @Nullable File authTicket, @Nullable File trustTicket,
-            @Nullable String serverFingerprint, boolean storePasswordLocally) {
+            @Nullable String serverFingerprint, @Nullable String clientHostname,
+            boolean storePasswordLocally) {
         this.port = port;
         this.protocol = protocol;
         this.username = username;
@@ -49,6 +52,7 @@ public class ServerConfigImpl extends ServerConfig {
         this.authTicket = authTicket;
         this.trustTicket = trustTicket;
         this.serverFingerprint = serverFingerprint;
+        this.clientHostname = clientHostname;
         this.storePasswordLocally = storePasswordLocally;
     }
 
@@ -71,9 +75,16 @@ public class ServerConfigImpl extends ServerConfig {
         return username;
     }
 
+    @NotNull
     @Override
     public P4Config.ConnectionMethod getConnectionMethod() {
         return connectionMethod;
+    }
+
+    @Nullable
+    @Override
+    public String getClientHostname() {
+        return clientHostname;
     }
 
     @Nullable

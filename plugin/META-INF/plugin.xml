@@ -1,33 +1,26 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.6.4</version>
+    <version>0.6.4.1</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.6.4.1</em>
+                <ol>
+                    <li>Added new 'P4HOST' setting that can be used in the
+                    p4config files or read from the environment.  This allows
+                    for working around an issue where the Perforce server
+                    doesn't recognize the client hostname as loaded by
+                    Java.</li>
+                </ol>
+            </li>
             <li><em>0.6.4</em>
                 <ol>
                     <li>Added scroll pane to the configuration tabs.</li>
                     <li>Fixed another issue with changelists showing a single file in multiple changelists.</li>
                     <li>Removed a stack overflow error with the server fingerprint.</li>
                     <li>Switched requests for services to requests for components.</li>
-                </ol>
-            </li>
-            <li><em>0.6.3</em>
-                <ol>
-                    <li>Switched to open source P4Java library.<li>
-                    <li>Now uses SSL fingerprint when connecting to SSL server.  Authorization
-                    ticket and password entry connection methods can specify
-                    the trusted SSL fingerprint for the server.  Config file connection
-                    methods will use the `P4TRUST` setting, or the default p4 trust file.
-                    you will need to trust the server using the `p4 trust` command line
-                    in order to manage the `P4TRUST` file's contents.</li>
-                    <li>Identified when a connection fails due to an SSL server fingerprint
-                    mismatch.</li>
-                    <li>Problems due to a trust issue with the server are now clearly identified.</li>
-                    <li>On connection check using a relative config file, you will no longer see
-                    the "connection is fine" message after seeing errors with the connection.</li>
                 </ol>
             </li>
         </ol>

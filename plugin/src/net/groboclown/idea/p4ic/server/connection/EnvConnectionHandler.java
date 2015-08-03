@@ -65,9 +65,9 @@ public class EnvConnectionHandler extends ConnectionHandler {
     private ConnectionHandler discoverConnectionMethod(@NotNull ServerConfig config) {
         // the config's given authentication method will be not helpful.
         // Instead, we must do what the native Perforce tools do.
-        if (config.getAuthTicket() != null) {
+        if (config.hasAuthTicket()) {
             File f = config.getAuthTicket();
-            if (f.exists() && f.canRead() && ! f.isDirectory()) {
+            if (f != null && f.exists() && f.canRead() && ! f.isDirectory()) {
                 return AuthTicketConnectionHandler.INSTANCE;
             }
         }

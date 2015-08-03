@@ -234,4 +234,15 @@ public class HierarchyP4Config implements P4Config {
         }
         return false;
     }
+
+    @Nullable
+    @Override
+    public String getClientHostname() {
+        for (P4Config config : parents) {
+            if (config.getClientHostname() != null) {
+                return config.getClientHostname();
+            }
+        }
+        return null;
+    }
 }

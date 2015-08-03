@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.config;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.perforce.p4java.server.IServerAddress;
 
 import org.jetbrains.annotations.NotNull;
@@ -24,10 +25,13 @@ import java.io.IOException;
 import java.util.Properties;
 
 public class FileP4Config implements P4Config {
+    private static final Logger LOG = Logger.getInstance(FileP4Config.class);
+
     private final File configFile;
     private String clientName;
     private String password;
     private String simplePort;
+    private String clientHostname;
     private IServerAddress.Protocol protocol;
     private String tickets;
     private String trust;
@@ -56,6 +60,7 @@ public class FileP4Config implements P4Config {
             tickets = null;
             trust = null;
             user = null;
+            clientHostname = null;
             connectionMethod = P4Config.ConnectionMethod.DEFAULT;
         }
     }
@@ -116,6 +121,7 @@ public class FileP4Config implements P4Config {
         tickets = props.getProperty("P4TICKETS");
         trust = props.getProperty("P4TRUST");
         user = props.getProperty("P4USER");
+        clientHostname = props.getProperty("P4HOST");
 
         // ignore P4CONFIG value
         // trust tickets are used for SSL server validation only; not authentication.
@@ -224,6 +230,12 @@ public class FileP4Config implements P4Config {
     @Override
     public boolean isPasswordStoredLocally() {
         return false;
+    }
+
+    @Nullable
+    @Override
+    public String getClientHostname() {
+        return clientHostname;
     }
 
     public File getSource() {

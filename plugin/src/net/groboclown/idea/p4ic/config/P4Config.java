@@ -102,6 +102,14 @@ public interface P4Config {
 
     public boolean isPasswordStoredLocally();
 
+    /**
+     * Allow for custom setting the client hostname.
+     *
+     * @return hostname of the client.
+     */
+    @Nullable
+    public String getClientHostname();
+
     /*
     Look at supporting these options
 

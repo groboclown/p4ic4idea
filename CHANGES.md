@@ -1,6 +1,21 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.6.4.1::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Added new 'P4HOST' setting that can be used in the
+      p4config files or read from the environment.  This allows
+      for working around an issue where the Perforce server
+      doesn't recognize the client hostname as loaded by
+      Java. (#61)
+
 
 ## ::v0.6.4::
 

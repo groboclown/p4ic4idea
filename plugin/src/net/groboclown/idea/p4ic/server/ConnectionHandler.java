@@ -13,9 +13,11 @@
  */
 package net.groboclown.idea.p4ic.server;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
@@ -30,11 +32,19 @@ import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Properties;
 
 public abstract class ConnectionHandler {
+    private static final Logger LOG = Logger.getInstance(ConnectionHandler.class);
+
+    public static final String PLUGIN_P4HOST_KEY = "P4HOST";
+    public static final String PLUGIN_LANGUAGE_KEY = "P4LANG";
+
+
+
     public static ConnectionHandler getHandlerFor(@NotNull ServerStatus status) {
         return getHandlerFor(status.getConfig());
     }
@@ -68,9 +78,41 @@ public abstract class ConnectionHandler {
 
 
     @NotNull
-    public IOptionsServer getOptionsServer(@NotNull String serverUriString, @NotNull Properties props,
+    public IOptionsServer getOptionsServer(@NotNull String serverUriString,
+            @NotNull Properties props,
             final ServerConfig config) throws URISyntaxException, P4JavaException {
-        final IOptionsServer server = ServerFactory.getOptionsServer(serverUriString, props);
+        final UsageOptions options = new UsageOptions(props);
+
+        // These are not set in the usage options via the properties, so we
+        // need to manually configure them.
+        // TODO alter the p4java API code so that it is properly loaded
+        // in the UsageOptions class.
+        {
+            String hostname = props.getProperty(PLUGIN_P4HOST_KEY, null);
+            boolean overrideHostname = false;
+            if (hostname != null) {
+                hostname = hostname.trim();
+                if (hostname.length() > 0) {
+                    options.setHostName(hostname);
+                    // TODO debug code for testing out #61 issues.
+                    LOG.info("Overriding hostname with [" + hostname + "]");
+                    overrideHostname = true;
+                }
+            }
+            if (! overrideHostname) {
+                checkDefaultHostname();
+            }
+
+
+            // Note: this one will only be added once we get the P4Java API changed
+            // such that it has the error code & parameters in the exceptions.
+            String language = props.getProperty(PLUGIN_LANGUAGE_KEY, null);
+            if (language != null) {
+                options.setTextLanguage(language);
+            }
+        }
+
+        final IOptionsServer server = ServerFactory.getOptionsServer(serverUriString, props, options);
         if (config.getProtocol().isSecure() && config.hasServerFingerprint()) {
             server.addTrust(config.getServerFingerprint());
         }
@@ -161,7 +203,23 @@ public abstract class ConnectionHandler {
             ret.setProperty(PropertyDefs.TRUST_PATH_KEY, config.getTrustTicket().getAbsolutePath());
         }
 
+        if (config.getClientHostname() != null) {
+            ret.setProperty(PLUGIN_P4HOST_KEY, config.getClientHostname());
+        }
+
         return ret;
+    }
+
+
+    private void checkDefaultHostname() {
+        final InetAddress host;
+        try {
+            host = InetAddress.getLocalHost();
+            // TODO debug code for testing out #61 issues.
+            LOG.warn("Default client hostname: [" + host.getHostName() + "]");
+        } catch (Exception e) {
+            LOG.error("Could not find default client hostname; try using 'P4HOST' setting.", e);
+        }
     }
 
 }

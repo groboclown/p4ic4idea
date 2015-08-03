@@ -726,7 +726,7 @@ public class P4Exec {
         return p4RunFor(project, new P4Runner<T>() {
             @Override
             public T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
-                final IOptionsServer server = connectServer(getTempDir(project));
+                final IOptionsServer server = connectServer(project, getTempDir(project));
 
                 // note: we're not caching the client
                 final IClient client = loadClient(server);
@@ -753,7 +753,7 @@ public class P4Exec {
             @Override
             public T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 // disconnect happens as a separate activity.
-                return runner.run(connectServer(getTempDir(project)), new WithClientCount(serverStatus.getConfig().getServiceName()));
+                return runner.run(connectServer(project, getTempDir(project)), new WithClientCount(serverStatus.getConfig().getServiceName()));
             }
         });
     }
@@ -785,7 +785,7 @@ public class P4Exec {
 
 
     @NotNull
-    private IOptionsServer connectServer(@NotNull File tempDir) throws P4JavaException, URISyntaxException {
+    private IOptionsServer connectServer(@NotNull final Project project, @NotNull final File tempDir) throws P4JavaException, URISyntaxException {
         synchronized (sync) {
             if (disposed) {
                 throw new ConnectionException(P4Bundle.message("error.p4exec.disposed"));
@@ -798,6 +798,14 @@ public class P4Exec {
                 properties.setProperty(PropertyDefs.P4JAVA_TMP_DIR_KEY, tempDir.getAbsolutePath());
                 url = connectionHandler.createUrl(serverStatus.getConfig());
                 LOG.info("Opening connection to " + url + " with " + serverStatus.getConfig().getUsername());
+
+                // see bug #61
+                // Hostname as used by the Java code:
+                //   Mac clients can incorrectly set the hostname.
+                //   The underlying code will use:
+                //      InetAddress.getLocalHost().getHostName()
+                //   or from the UsageOptions passed into the
+                //   server configuration `init` method.
 
                 // Use the ConnectionHandler so that mock objects can work better
                 server = connectionHandler.getOptionsServer(url, properties, serverStatus.getConfig());

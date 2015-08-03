@@ -38,12 +38,6 @@ public class ErrorDialog {
                 if (!(t instanceof VcsException) && !(t instanceof CancellationException)) {
                     LOG.warn("Something threw an invalid exception without being properly wrapped", t);
                 }
-//                if (VcsExceptionUtil.isDisconnectError(t)) {
-                    //LOG.warn("Disconnect problem: " + t.getMessage());
-                    //LOG.info("logError on disconnect", t);
-                    //P4Vcs vcs = P4Vcs.getInstance(project);
-                    //vcs.wentOffline();
-                //} else
                 if (
                         // User explicitly cancelled the operation
                         ! VcsExceptionUtil.isCancellation(t) &&
@@ -52,8 +46,13 @@ public class ErrorDialog {
                         ! (t instanceof P4WorkingOfflineException) &&
                         ! (t instanceof P4DisconnectedException)) {
                     LOG.warn(t);
+                    String message = t.getMessage();
+                    if (message != null) {
+                        // Some P4 exceptions can have trailing EOLs.
+                        message = message.trim();
+                    }
                     Messages.showMessageDialog(project,
-                            P4Bundle.message("errordialog.message", t.getMessage()),
+                            P4Bundle.message("errordialog.message", message),
                             P4Bundle.message("errordialog.title", action),
                             Messages.getErrorIcon());
                 }

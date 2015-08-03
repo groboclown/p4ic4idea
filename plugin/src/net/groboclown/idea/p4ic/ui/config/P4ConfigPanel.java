@@ -458,14 +458,14 @@ public class P4ConfigPanel {
                 : null;
 
         if (configPath != null) {
-            LOG.info("using config path " + configPath);
+            LOG.debug("using config path " + configPath);
             config = getConfigForRelativeConfigPath(configPath.toString());
         } else if (useRelativePathConfig()) {
             myResolvedValuesField.setText(P4Bundle.message("config.display.properties.no_path"));
             return;
         }
         if (config == null) {
-            LOG.info("Using cmd style config loading");
+            LOG.debug("Using cmd style config loading");
             ManualP4Config manualConfig = new ManualP4Config();
             saveSettingsToConfig(manualConfig);
             try {

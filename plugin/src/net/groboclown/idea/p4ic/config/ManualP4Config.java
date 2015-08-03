@@ -49,6 +49,8 @@ public class ManualP4Config implements P4Config {
     @Nullable
     private String password;
     private boolean storePassword;
+    @Nullable
+    private String clientHostname;
 
 
     public ManualP4Config() {
@@ -237,6 +239,16 @@ public class ManualP4Config implements P4Config {
     @Override
     public boolean isPasswordStoredLocally() {
         return storePassword;
+    }
+
+    @Nullable
+    @Override
+    public String getClientHostname() {
+        return clientHostname;
+    }
+
+    public void setClientHostname(@Nullable final String name) {
+        clientHostname = name;
     }
 
     public void setPasswordStoredLocally(boolean store) {

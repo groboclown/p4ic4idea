@@ -210,6 +210,12 @@ public class MockP4ConfigProject extends P4ConfigProject {
         public boolean isPasswordStoredLocally() {
             return false;
         }
+
+        @Nullable
+        @Override
+        public String getClientHostname() {
+            return null;
+        }
     }
 
 

@@ -209,6 +209,13 @@ public class P4ConfigUtil {
         ret.put(PerforceEnvironment.P4TRUST, config.getTrustTicketPath());
         ret.put(PerforceEnvironment.P4USER, config.getUsername());
         ret.put(PerforceEnvironment.P4TICKETS, config.getAuthTicketPath());
+
+        // Even though this is kind of a back-door item (it can only be set through
+        // environment or p4config files), it should still be
+        // present so that people can kind of discover it and realize that it's
+        // supported without looking at the documentation.
+        ret.put(PerforceEnvironment.P4HOST, config.getClientHostname());
+
         return ret;
     }
 

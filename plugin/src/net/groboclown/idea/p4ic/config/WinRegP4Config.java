@@ -40,6 +40,7 @@ public class WinRegP4Config implements P4Config {
     private String authTicketPath;
     private String trustTicket;
     private String configFile;
+    private String clientHostname;
 
 
     public static boolean isAvailable() {
@@ -70,6 +71,7 @@ public class WinRegP4Config implements P4Config {
             authTicketPath = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4TICKETS);
             trustTicket = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4TRUST);
             configFile = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4CONFIG);
+            clientHostname = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4HOST);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
@@ -173,5 +175,11 @@ public class WinRegP4Config implements P4Config {
     @Override
     public boolean isPasswordStoredLocally() {
         return false;
+    }
+
+    @Nullable
+    @Override
+    public String getClientHostname() {
+        return clientHostname;
     }
 }

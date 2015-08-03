@@ -81,7 +81,17 @@ public abstract class ServerConfig {
     @NotNull
     public abstract String getUsername();
 
+    @NotNull
     public abstract P4Config.ConnectionMethod getConnectionMethod();
+
+    /**
+     * Overrides the default method for discovering the user's client
+     * host name.  By default, the underlying P4Java API uses INetAddress.
+     *
+     * @return the overridden client hostname, nor null if not set.
+     */
+    @Nullable
+    public abstract String getClientHostname();
 
     @Nullable
     public abstract File getAuthTicket();

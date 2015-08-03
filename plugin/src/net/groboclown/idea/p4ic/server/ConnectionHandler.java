@@ -89,20 +89,15 @@ public abstract class ConnectionHandler {
         // in the UsageOptions class.
         {
             String hostname = props.getProperty(PLUGIN_P4HOST_KEY, null);
-            boolean overrideHostname = false;
-            if (hostname != null) {
+            if (hostname == null || hostname.trim().length() <= 0) {
+                hostname = getDefaultHostname();
+            } else {
                 hostname = hostname.trim();
-                if (hostname.length() > 0) {
-                    options.setHostName(hostname);
-                    // TODO debug code for testing out #61 issues.
-                    LOG.info("Overriding hostname with [" + hostname + "]");
-                    overrideHostname = true;
-                }
             }
-            if (! overrideHostname) {
-                checkDefaultHostname();
+            if (hostname != null && hostname.length() > 0) {
+                LOG.debug("Using hostname [" + hostname + "]");
+                options.setHostName(hostname);
             }
-
 
             // Note: this one will only be added once we get the P4Java API changed
             // such that it has the error code & parameters in the exceptions.
@@ -211,15 +206,30 @@ public abstract class ConnectionHandler {
     }
 
 
-    private void checkDefaultHostname() {
-        final InetAddress host;
+    // See bug #61 - some JVM implementations add the domain to the
+    // hostname, which causes a conflict between the sent host and
+    // the clientspec host.
+    @Nullable
+    private String getDefaultHostname() {
         try {
-            host = InetAddress.getLocalHost();
-            // TODO debug code for testing out #61 issues.
-            LOG.warn("Default client hostname: [" + host.getHostName() + "]");
+            String hostname = InetAddress.getLocalHost().getHostName();
+            if (hostname != null) {
+                int pos = hostname.indexOf('.');
+                if (pos >= 0) {
+                    LOG.info("Default client hostname includes domain: [" + hostname + "]");
+                    hostname = hostname.substring(0, pos);
+                }
+                hostname = hostname.trim();
+            }
+            LOG.debug("Using client hostname [" + hostname + "]");
+
+            return hostname;
         } catch (Exception e) {
             LOG.error("Could not find default client hostname; try using 'P4HOST' setting.", e);
+
+            // This exception will be thrown again, deep down in the P4Java API.
+            // for now, don't report it other than the error message.
+            return null;
         }
     }
-
 }

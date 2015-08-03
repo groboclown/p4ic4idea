@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="p4ic4idea-150" default="main">
+    <import file="../build/common.xml"/>
+
+    <property name="output.dir"
+              value="work/production"/>
+    <property name="testoutput.dir"
+              value="work/test"/>
+
+    <path id="production.classpath">
+        <path refid="jdk.classpath"/>
+        <path refid="idea150.classpath"/>
+        <pathelement location="../idea-compat/work/production"/>
+        <pathelement location="${lib.p4java}"/>
+    </path>
+
+    <path id="test.compile.classpath">
+        <path refid="production.classpath"/>
+        <pathelement location="${output.dir}"/>
+        <pathelement location="lib/mockito-all-1.9.5.jar"/>
+    </path>
+
+    <path id="test.runtime.classpath">
+        <path refid="test.compile.classpath"/>
+        <pathelement location="${testoutput.dir}"/>
+    </path>
+
+
+    <path id="production.sourcepath">
+        <dirset dir="${basedir}">
+            <include name="src"/>
+        </dirset>
+    </path>
+
+    <path id="test.sourcepath">
+        <dirset dir="${basedir}">
+            <include name="test"/>
+        </dirset>
+    </path>
+
+    <target name="all" depends="clean, main"/>
+    <target name="main" depends="compile, package"/>
+
+    <target name="compile.depends">
+        <ant dir="../idea-compat" target="compile"/>
+    </target>
+
+    <target name="compile" depends="compile.production, compile.tests"
+            description="Compile module p4ic4idea"/>
+
+    <target name="compile.production" depends="register.custom.compilers"
+            description="Compile module p4ic4idea; production classes">
+        <mkdir dir="${output.dir}"/>
+        <javac2 destdir="${output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}"
+                memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
+                includeantruntime="false">
+            <compilerarg line="${compiler.args}"/>
+            <bootclasspath refid="bootclasspath"/>
+            <classpath refid="production.classpath"/>
+            <src refid="production.sourcepath"/>
+            <patternset refid="excluded.from.compilation"/>
+        </javac2>
+
+        <copy todir="${output.dir}">
+            <fileset dir="${basedir}/src">
+                <patternset refid="compiler.resources"/>
+                <type type="file"/>
+            </fileset>
+            <fileset dir="${basedir}/resources">
+                <type type="file"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="compile.tests"
+            depends="register.custom.compilers,compile.production"
+            description="compile module p4ic4idea; test classes" unless="skip.tests">
+        <!-- no tests right now
+        <mkdir dir="${testoutput.dir}"/>
+        <javac2 destdir="${testoutput.dir}" debug="${compiler.debug}"
+                nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true"
+                executable="${jdk.bin}/javac" includeantruntime="false">
+            <compilerarg line="${compiler.args}"/>
+            <bootclasspath refid="bootclasspath"/>
+            <classpath refid="test.compile.classpath"/>
+            <src refid="test.sourcepath"/>
+            <patternset refid="excluded.from.compilation"/>
+        </javac2>
+
+        <copy todir="${testoutput.dir}">
+            <fileset dir="${basedir}/test">
+                <patternset refid="compiler.resources"/>
+                <type type="file"/>
+            </fileset>
+        </copy>
+        -->
+    </target>
+
+    <target name="clean" description="cleanup module">
+        <delete dir="${output.dir}"/>
+        <delete dir="${testoutput.dir}"/>
+        <delete dir="work"/>
+    </target>
+
+
+    <target name="package" depends="compile.production">
+        <jar file="work/p4ic4idea.idea150-compat.jar" basedir="${output.dir}">
+        </jar>
+    </target>
+
+
+    <target name="test">
+        <!-- no tests right now -->
+    </target>
+</project>

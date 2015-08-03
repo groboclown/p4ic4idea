@@ -16,13 +16,22 @@ package net.groboclown.idea.p4ic.compat.idea140;
 
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcs.log.VcsUserRegistry;
+import com.intellij.vcsUtil.VcsFileUtil;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Collection;
 
 public class VcsCompat140 extends VcsCompat {
     @Override
     public void setupPlugin(@NotNull Project project) {
         ServiceManager.getService(project, VcsUserRegistry.class); // make sure to read the registry before opening commit dialog
+    }
+
+    @Override
+    public void refreshFiles(@NotNull final Project project, final Collection<VirtualFile> affectedFiles) {
+        VcsFileUtil.refreshFiles(project, affectedFiles);
     }
 }

@@ -147,6 +147,8 @@
             file="${rootdir}/idea135/work/p4ic4idea.idea135-compat.jar"/>
         <copy todir="${tmp.dir.p4ic4idea}/lib"
             file="${rootdir}/idea140/work/p4ic4idea.idea140-compat.jar"/>
+        <copy todir="${tmp.dir.p4ic4idea}/lib"
+            file="${rootdir}/idea150/work/p4ic4idea.idea150-compat.jar"/>
         <zip destfile="${plugin.jar}">
             <fileset dir="${base.tmp.dir.p4ic4idea}"/>
         </zip>

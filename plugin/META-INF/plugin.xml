@@ -1,18 +1,19 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.6.4.1</version>
+    <version>0.6.5</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
-            <li><em>0.6.4.1</em>
+            <li><em>0.6.5</em>
                 <ol>
-                    <li>Added new 'P4HOST' setting that can be used in the
-                    p4config files or read from the environment.  This allows
-                    for working around an issue where the Perforce server
-                    doesn't recognize the client hostname as loaded by
-                    Java.</li>
+                  <li>Added new 'P4HOST' setting.</li>
+                  <li>If the JVM reports the hostname as
+                  including the full domain name, then
+                  it will be stripped down to just the hostname.</li>
+                  <li>Fixed an IDEA 15 API incompatibility issue with
+                  file refreshing.</li>
                 </ol>
             </li>
             <li><em>0.6.4</em>

@@ -1,20 +1,27 @@
 # IDEA Community VCS Integration for Perforce
 
 
-## ::v0.6.4.1::
+## ::v0.6.5::
 
 ### Overview
 
+* Added new 'P4HOST' setting.
 * Bug fixes.
 
 ### Details
 
+* Added new 'P4HOST' setting (#61).
+    * It overrides the JVM discovery of the client hostname.
+    * It will be read from the environment settings, and from the P4CONFIG
+      file (it cannot be altered if you use the "Client Password"
+      or "Authorization Ticket" connection methods).
 * Bug fixes.
-    * Added new 'P4HOST' setting that can be used in the
-      p4config files or read from the environment.  This allows
-      for working around an issue where the Perforce server
-      doesn't recognize the client hostname as loaded by
-      Java. (#61)
+    * If the JVM reports the hostname as including the full domain name, then
+      it will be stripped down to just the hostname (#61).
+    * Fixed an IDEA 15 API incompatibility issue with file refreshing.
+      The `VcsFileUtil.refreshFiles(Project, Collection<VirtualFile>)` is no
+      longer in the API.
+
 
 
 ## ::v0.6.4::

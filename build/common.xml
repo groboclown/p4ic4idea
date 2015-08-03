@@ -96,6 +96,12 @@
             <include name="*.jar"/>
         </fileset>
     </path>
+    <path id="idea150.classpath">
+        <!-- TODO eventually, we want the actual IC-150 jars, once its released -->
+        <fileset dir="${rootdir}/intellij-lib/intellij/IC-140.2285.5">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
     <path id="unittest.classpath">
       <fileset dir="${rootdir}/lib">
         <include name="junit/4.12/junit-4.12.jar"/>

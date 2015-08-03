@@ -19,7 +19,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsFileUtil;
+import net.groboclown.idea.p4ic.compat.VcsCompat;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
@@ -101,6 +101,7 @@ public class P4Edit extends BasicAction {
             //clientIndex += 1.0;
         }
         //indicator.setFraction(0.9);
-        VcsFileUtil.refreshFiles(project, affectedFiles);
+        // No longer supported in IntelliJ 15
+        VcsCompat.getInstance().refreshFiles(project, affectedFiles);
     }
 }

@@ -15,7 +15,10 @@
 package net.groboclown.idea.p4ic.compat;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Collection;
 
 public abstract class VcsCompat {
     public static final VcsCompat getInstance() {
@@ -24,4 +27,7 @@ public abstract class VcsCompat {
 
 
     public abstract void setupPlugin(@NotNull Project project);
+
+
+    public abstract void refreshFiles(@NotNull Project project, final Collection<VirtualFile> affectedFiles);
 }

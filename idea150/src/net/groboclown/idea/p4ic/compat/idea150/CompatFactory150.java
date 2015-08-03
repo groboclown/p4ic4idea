@@ -12,24 +12,28 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.compat.idea135;
+package net.groboclown.idea.p4ic.compat.idea150;
 
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsFileUtil;
-import net.groboclown.idea.p4ic.compat.VcsCompat;
+import net.groboclown.idea.p4ic.compat.CompatFactory;
+import net.groboclown.idea.p4ic.compat.CompatManager;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-
-public class VcsCompat135 extends VcsCompat {
+public class CompatFactory150 implements CompatFactory {
+    @NotNull
     @Override
-    public void setupPlugin(@NotNull Project project) {
-        // nothing to do
+    public String getMinCompatibleApiVersion() {
+        return "142.3000";
     }
 
+    @NotNull
     @Override
-    public void refreshFiles(@NotNull final Project project, final Collection<VirtualFile> affectedFiles) {
-        VcsFileUtil.refreshFiles(project, affectedFiles);
+    public String getMaxCompatibleApiVersion() {
+        return "159.99999";
+    }
+
+    @NotNull
+    @Override
+    public CompatManager createCompatManager() throws IllegalStateException {
+        return new CompatManager150();
     }
 }

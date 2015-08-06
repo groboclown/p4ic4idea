@@ -1,6 +1,18 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.6.6::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Move operations could not find the Perforce version of the locally moved file (#62).
+
+
 ## ::v0.6.5::
 
 ### Overview

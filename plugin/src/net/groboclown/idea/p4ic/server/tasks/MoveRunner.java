@@ -18,7 +18,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import org.jetbrains.annotations.NotNull;
@@ -177,34 +176,60 @@ public class MoveRunner extends ServerTask<List<P4StatusMessage>> {
     private Map<FilePath, P4FileInfo> mapFilePathsToClient(
             @NotNull Collection<FilePath> files,
             @NotNull P4Exec exec) throws VcsException {
-        // This is really slow, but allows for reuse of the invoked method
-        Map<String, FilePath> reverseLookup = new HashMap<String, FilePath>();
-        for (FilePath fp : files) {
+        final List<FilePath> fileList;
+        if (files instanceof List) {
+            fileList = (List<FilePath>) files;
+        } else {
+            fileList = new ArrayList<FilePath>(files);
+        }
+        final Map<FilePath, P4FileInfo> ret = new HashMap<FilePath, P4FileInfo>();
+        final List<P4FileInfo> fileInfoList =
+                exec.loadFileInfo(project, FileSpecUtil.getFromFilePaths(fileList), fileInfoCache);
+        if (fileInfoList.size() == fileList.size()) {
+            // Everything worked as expected.
+            for (int i = 0; i < fileInfoList.size(); i++) {
+                ret.put(fileList.get(i), fileInfoList.get(i));
+            }
+            // TODO debugging while looking at #62.
+            LOG.info("Mapped local to perforce: " + ret);
+            return ret;
+        }
+
+        // Incorrect input file mapping.  Related to #62.
+        // Include better logging for "when" it occurs again.
+        // NOTE: this seems to happen when the input file is a new
+        // file that's not in Perforce.
+        LOG.error("Could not map all input files (" + fileList + ") to Perforce depots (did find " +
+                fileInfoList + ")");
+
+        // So do the long matching process for what did work.
+        for (FilePath fp : fileList) {
+            boolean found = false;
             // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
             // use this instead: getIOFile().getAbsolutePath()
             String path = fp.getIOFile().getAbsolutePath();
-            if (reverseLookup.containsKey(path)) {
-                throw new IllegalArgumentException(P4Bundle.message("error.move.duplicate", path));
+            Iterator<P4FileInfo> iter = fileInfoList.iterator();
+            while (iter.hasNext()) {
+                P4FileInfo fileInfo = iter.next();
+                // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
+                // use this instead: getIOFile().getAbsolutePath()
+                String p4FilePath = fileInfo.getPath().getIOFile().getAbsolutePath();
+                if (p4FilePath.equals(path) || fileInfo.getPath().equals(fp)) {
+                    found = true;
+                    ret.put(fp, fileInfo);
+                    iter.remove();
+                }
             }
-            reverseLookup.put(path, fp);
-        }
-
-        Map<FilePath, P4FileInfo> ret = new HashMap<FilePath, P4FileInfo>();
-        for (P4FileInfo file : exec.loadFileInfo(project, FileSpecUtil.getFromFilePaths(reverseLookup.values()), fileInfoCache)) {
-            // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
-            // use this instead: getIOFile().getAbsolutePath()
-            FilePath fp = reverseLookup.remove(file.getPath().getIOFile().getAbsolutePath());
-            if (fp == null) {
-                LOG.error("no vf mapping for " + file);
-            } else {
-                ret.put(fp, file);
+            if (! found) {
+                LOG.warn("No P4 info match for local file " + fp);
             }
         }
 
-        if (!reverseLookup.isEmpty()) {
-            LOG.error("no p4 file found for " + reverseLookup.values());
+        if (! fileInfoList.isEmpty()) {
+            LOG.warn("No local file match for P4 files " + fileInfoList);
         }
 
+        LOG.info("Successfully mapped local to perforce: " + ret);
         return ret;
     }
 

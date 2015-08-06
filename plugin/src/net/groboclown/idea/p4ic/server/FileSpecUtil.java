@@ -118,6 +118,15 @@ public class FileSpecUtil {
         return getFromVirtualFilesAt(files, "", false);
     }
 
+    /**
+     * Must return the files in the same order in which they are passed in.
+     *
+     * @param files
+     * @param revisionPart
+     * @param allowDirectories
+     * @return
+     * @throws P4Exception
+     */
     @NotNull
     public static List<IFileSpec> getFromFilePathsAt(Collection<FilePath> files, @NotNull String revisionPart, boolean allowDirectories)
             throws P4Exception {

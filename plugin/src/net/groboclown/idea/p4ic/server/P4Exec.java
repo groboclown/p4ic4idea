@@ -191,6 +191,18 @@ public class P4Exec {
     }
 
 
+    /**
+     * Returns the information for each file spec passed in.  If the file spec list
+     * is for a precise list of files (not a wildcard), then the returned info
+     * will match the order that was passed in.
+     *
+     * @param project
+     * @param fileSpecs
+     * @param fileInfoCache
+     * @return the in-order file info related to the file specs.
+     * @throws VcsException
+     * @throws CancellationException
+     */
     @NotNull
     public List<P4FileInfo> loadFileInfo(@NotNull Project project, @NotNull List<IFileSpec> fileSpecs, @NotNull FileInfoCache fileInfoCache)
             throws VcsException, CancellationException {

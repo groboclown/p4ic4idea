@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.6.5</version>
+    <version>0.6.6</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.6.6</em>
+                <ol>
+                    <li>Fixed issues around moving files not matching to the Perforce files.</li>
+                </ol>
+            </li>
             <li><em>0.6.5</em>
                 <ol>
                   <li>Added new 'P4HOST' setting.</li>
@@ -14,14 +19,6 @@
                   it will be stripped down to just the hostname.</li>
                   <li>Fixed an IDEA 15 API incompatibility issue with
                   file refreshing.</li>
-                </ol>
-            </li>
-            <li><em>0.6.4</em>
-                <ol>
-                    <li>Added scroll pane to the configuration tabs.</li>
-                    <li>Fixed another issue with changelists showing a single file in multiple changelists.</li>
-                    <li>Removed a stack overflow error with the server fingerprint.</li>
-                    <li>Switched requests for services to requests for components.</li>
                 </ol>
             </li>
         </ol>

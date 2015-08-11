@@ -21,7 +21,6 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.history.P4ContentRevision;
@@ -63,7 +62,7 @@ public class ChangeListSync {
     /**
      * Refreshes the changes
      *
-     * @param builder  data access and storage
+     * @param builder data access and storage
      * @param progress progress bar
      * @throws VcsException
      */
@@ -71,28 +70,24 @@ public class ChangeListSync {
             @NotNull final ChangeListManagerGate addGate, @NotNull ProgressIndicator progress) throws VcsException {
         LOG.info("start changelist refresh");
 
+        // Pull in all the changes from Perforce that are within the dirty scope, into
+        // the builder.
+
         progress.setIndeterminate(false);
         progress.setFraction(0.0);
 
-        // 1. Find all the perforce files check-out state and changelist mappings.
-        // 2. Create or remove IDEA changelists as needed.
-        // 3. Put the perforce files into idea changes, while comparing them to the
-        //    dirty list (to see if something should be marked as dirty that isn't).
-        // 4. All remaining dirty files need to be correctly filed.
+        Set<FilePath> filePaths = dirtyScope.getDirtyFiles();
 
+        // Strip out non-files from the dirty files
+        Iterator<FilePath> iter = filePaths.iterator();
+        while (iter.hasNext()) {
+            FilePath next = iter.next();
+            if (next.isDirectory()) {
+                iter.remove();
+            }
+        }
 
-        // Step 1: find the perforce files and changelists
-
-        // - the reload cache reloads the changelists and the files.
-        final Map<Client, List<P4ChangeList>> pendingChangelists =
-                P4ChangeListCache.getInstance().reloadCachesFor(vcs.getClients());
-        LOG.debug("pending changelists: " + pendingChangelists);
-        progress.setFraction(0.2);
-        final Map<LocalChangeList, Map<Client, P4ChangeList>> known = vcs.getChangeListMapping().cleanMappings();
-        LOG.debug("known changelist mappings: " + known);
-
-        progress.setFraction(0.5);
-
+        progress.setFraction(0.1);
 
         /*
         reports data to ChangelistBuilder using the following methods:
@@ -107,19 +102,45 @@ public class ChangeListSync {
          */
 
 
-        // Step 2 & 3:
-        progress.setFraction(0.55);
-        SubProgressIndicator sub = new SubProgressIndicator(progress, 0.55, 0.9);
-        Set<FilePath> remainingFiles = loadP4IntoIdeaChangelists(addGate, pendingChangelists, known, sub, dirtyScope,
-                builder);
+        final Map<Client, List<P4ChangeList>> pendingChangelists =
+                P4ChangeListCache.getInstance().reloadCachesFor(vcs.getClients());
 
-        // Step 4:
-        // Pull in all the changes from Perforce that are within the dirty scope, into
-        // the builder.
-        progress.setFraction(0.9);
+        final Map<LocalChangeList, Map<Client, P4ChangeList>> known = vcs.getChangeListMapping().cleanMappings();
+        LOG.debug("pending changelists: " + pendingChangelists);
+        LOG.debug("known changelists: " + known);
+
+        progress.setFraction(0.2);
+
+        SubProgressIndicator sub = new SubProgressIndicator(progress, 0.2, 0.5);
+        loadUnmappedP4ChangeListsToExistingIdea(addGate, pendingChangelists, known, sub);
+
+        progress.setFraction(0.5);
+
+        // Update the files
+        List<Client> clients = vcs.getClients();
+        double clientIndex = 0.0;
+        for (Client client : vcs.getClients()) {
+            sub = new SubProgressIndicator(progress,
+                    0.5 + 0.5 * (clientIndex / (double) clients.size()),
+                    0.5 + 0.5 * ((clientIndex + 1.0) / (double) clients.size()));
+            clientIndex += 1.0;
+            if (client.isWorkingOnline()) {
+                List<P4FileInfo> files = moveDirtyFilesIntoIdeaChangeLists(client, builder,
+                        sub, getFilesUnderClient(client, filePaths));
+                sub.setFraction(0.9);
+                moveP4FilesIntoIdeaChangeLists(client, builder, files);
+                for (P4FileInfo f : files) {
+                    filePaths.remove(f.getPath());
+                    ensureOnlyIn(builder, client, f);
+                }
+            } else {
+                LOG.info("not refreshing changelists for " + client + ": working offline");
+            }
+            sub.setFraction(1.0);
+        }
 
         // Process the remaining dirty files
-        for (FilePath fp : remainingFiles) {
+        for (FilePath fp : filePaths) {
             VirtualFile vf = fp.getVirtualFile();
             if (vf != null) {
                 if (!vf.isDirectory()) {
@@ -133,18 +154,53 @@ public class ChangeListSync {
         }
     }
 
-    private Set<FilePath> getDirtyFiles(final VcsDirtyScope dirtyScope) {
-        Set<FilePath> filePaths = dirtyScope.getDirtyFiles();
-
-        // Strip out non-files from the dirty files
-        Iterator<FilePath> iter = filePaths.iterator();
-        while (iter.hasNext()) {
-            FilePath next = iter.next();
-            if (next.isDirectory()) {
-                iter.remove();
+    /**
+     * Ensure every file in an idea changelist is in the correct
+     * associated Perforce changelist. (bug #22 comment 3)
+     * There's a situation that can occur where a file has 2 different
+     * changes, each split across multiple change lists.  IDEA supports
+     * this, but Perforce doesn't.
+     *
+     * @param client client
+     * @param f      file
+     */
+    private void ensureOnlyIn(@NotNull ChangeListBuilderCache data, @NotNull final Client client,
+            @NotNull final P4FileInfo f) {
+        File file = f.getPath().getIOFile();
+        LocalChangeList actualLocalChange =
+                vcs.getChangeListMapping().getLocalChangelist(client, f.getChangelist());
+        if (actualLocalChange != null) {
+            List<LocalChangeList> allIdeaChangeLists = ChangeListManager.getInstance(vcs.getProject()).getChangeLists();
+            for (LocalChangeList lcl : allIdeaChangeLists) {
+                if (!lcl.equals(actualLocalChange)) {
+                    for (Change change : lcl.getChanges()) {
+                        if (change.affectsFile(file)) {
+                            LOG.info("moving to correct changelist (was double-filed): " + f);
+                            data.processChange(change, actualLocalChange);
+                        }
+                    }
+                }
             }
         }
-        return filePaths;
+    }
+
+
+    private List<FilePath> getFilesUnderClient(Client client, Collection<FilePath> files) {
+        List<FilePath> ret = new ArrayList<FilePath>(files.size());
+        for (FilePath file : files) {
+            try {
+                for (FilePath root : client.getFilePathRoots()) {
+                    if (file.isUnder(root, false)) {
+                        ret.add(file);
+                    }
+                }
+            } catch (P4InvalidConfigException e) {
+                // the thrower properly makes the call to the
+                // config error listener
+                LOG.info(e);
+            }
+        }
+        return ret;
     }
 
     /**
@@ -152,210 +208,128 @@ public class ChangeListSync {
      * changelist, map it to an existing IDEA changelist that isn't
      * mapped to a Perforce changelist.  There are a number of criteria
      * to pass here.
-     * <p/>
-     * When returned, the "known" mapping will be filled with all known p4 changelists.
      *
      * @param addGate            gate
      * @param pendingChangelists all pending changelists on all server configs.
      * @param known              the current mappings of IDEA changes to p4 changes (must be kept up to date)
      * @param prog               progress bar
-     * @param dirtyScope         dirty files
-     * @param builder            changelist builder
      * @throws VcsException
      */
-    @NotNull
-    private Set<FilePath> loadP4IntoIdeaChangelists(
+    private void loadUnmappedP4ChangeListsToExistingIdea(
             @NotNull final ChangeListManagerGate addGate,
             @NotNull Map<Client, List<P4ChangeList>> pendingChangelists,
             @NotNull Map<LocalChangeList, Map<Client, P4ChangeList>> known,
-            @NotNull SubProgressIndicator prog, final VcsDirtyScope dirtyScope, final ChangeListBuilderCache builder)
+            @NotNull SubProgressIndicator prog)
             throws VcsException {
-        Set<FilePath> dirtyFiles = getDirtyFiles(dirtyScope);
+        List<LocalChangeList> allIdeaChangeLists = ChangeListManager.getInstance(vcs.getProject()).getChangeLists();
+
         prog.setFraction(0.1);
-        Set<LocalChangeList> allIdeaChangeLists = new HashSet<LocalChangeList>(
-                ChangeListManager.getInstance(vcs.getProject()).getChangeLists());
-        prog.setFraction(0.2);
 
-
-        // FIXME set the progress.
-
-        Map<FilePath, P4FileInfo> fileInfoMap = new HashMap<FilePath, P4FileInfo>();
-        Map<File, LocalChangeList> filesToChanges = new HashMap<File, LocalChangeList>();
-        Map<LocalChangeList, Set<FilePath>> changesToFiles = new HashMap<LocalChangeList, Set<FilePath>>();
-        for (Map.Entry<Client, List<P4ChangeList>> en : pendingChangelists.entrySet()) {
-            final Client client = en.getKey();
-            for (P4ChangeList p4Change : en.getValue()) {
-                LocalChangeList local = findLocalChangeList(addGate, client, p4Change, known, allIdeaChangeLists);
-                for (P4FileInfo fileInfo : p4Change.getFiles()) {
-                    final FilePath path = fileInfo.getPath();
-                    fileInfoMap.put(path, fileInfo);
-                    if (dirtyFiles.contains(path)) {
-                        dirtyFiles.remove(path);
-                    } else {
-                        VcsUtil.markFileAsDirty(project, path);
-                    }
-                    filesToChanges.put(path.getIOFile(), local);
-                    if (!changesToFiles.containsKey(local)) {
-                        changesToFiles.put(local, new HashSet<FilePath>());
-                    }
-                    changesToFiles.get(local).add(path);
+        Set<P4ChangeListId> associatedP4clIds = new HashSet<P4ChangeListId>();
+        for (Map<Client, P4ChangeList> map : known.values()) {
+            for (Map.Entry<Client, P4ChangeList> en : map.entrySet()) {
+                // It's possible to have a client map to a null changelist.
+                P4ChangeList cl = en.getValue();
+                if (cl != null) {
+                    associatedP4clIds.add(cl.getId());
+                    LOG.debug("mapped client " + en.getKey() + " to changelist " + cl.getId());
+                } else {
+                    LOG.debug("mapped client " + en.getKey() + " to null changelist");
                 }
             }
         }
 
-        for (Map.Entry<LocalChangeList, Set<FilePath>> changeListSetEntry : changesToFiles.entrySet()) {
-            final LocalChangeList local = changeListSetEntry.getKey();
-            final Set<FilePath> fileSet = changeListSetEntry.getValue();
+        prog.setFraction(0.2);
 
-            // Ensure all the existing changes belong in the changelist.
-            changeLoop:
-            for (Change change : local.getChanges()) {
-                final ContentRevision[] revs =
-                        new ContentRevision[]{change.getBeforeRevision(), change.getAfterRevision()};
-                final List<FilePath> revFileList = new ArrayList<FilePath>();
-                for (ContentRevision rev : revs) {
-                    if (rev != null) {
-                        revFileList.add(rev.getFile());
+        // For each p4 pending changelist that isn't already associated with an
+        // IDEA changelist, find a match to any IDEA changelist that doesn't
+        // already have a p4 changelist for that specific client.
+
+        // However, the outer loop is the matchers.  This prevents aggressive
+        // consumption of changes - allow the more exact matchers to match the
+        // changelists before a looser one tries to match.
+
+        double matcherIndex = 0.0;
+        for (ClMatcher matcher : CL_MATCHERS) {
+            prog.setFraction(0.2 + 0.7 * (matcherIndex / (double) CL_MATCHERS.length));
+            matcherIndex += 1.0;
+
+            for (Map.Entry<Client, List<P4ChangeList>> pending : pendingChangelists.entrySet()) {
+                final Client client = pending.getKey();
+                final List<LocalChangeList> unusedIdeaChangeLists =
+                        filterOutUsedChangelists(allIdeaChangeLists, known, client);
+                for (P4ChangeList p4cl : pending.getValue()) {
+                    if (associatedP4clIds.contains(p4cl.getId())) {
+                        continue;
                     }
-                }
-                for (ContentRevision revision : revs) {
-                    if (revision != null) {
-                        final FilePath revFile = revision.getFile();
-                        final LocalChangeList revChangeList = filesToChanges.get(revFile.getIOFile());
-                        if (revChangeList == null) {
-                            // don't know what to do with this file.  It's not a Perforce managed file, but it's
-                            // in an IDEA changelist.
-                            final Client client = vcs.getClientFor(revFile);
-                            if (client != null) {
-                                // The file is under Perforce control, is in an IDEA changelist, but is
-                                // not marked by Perforce as being open.
-                                //openFile(change, revision, client);
-                                //builder.processChange(change, local);
-                                if (revFile.getVirtualFile() == null) {
-                                    builder.processLocallyDeletedFile(revFile);
-                                } else {
-                                    builder.processModifiedWithoutCheckout(revFile.getVirtualFile());
-                                }
-                                fileSet.removeAll(revFileList);
-                                continue changeLoop;
+
+                    if (p4cl.getId().isDefaultChangelist()) {
+                        // special default changelist handling.  The IDEA default
+                        // named changelist should always exist to correspond to the
+                        // Perforce default changelist.  Note that this is
+                        // independent of the matchers.
+
+                        LOG.debug("Associating " + client.getClientName() + " default changelist to IDEA changelist " +
+                                P4ChangeListMapping.DEFAULT_CHANGE_NAME);
+                        addGate.findOrCreateList(P4ChangeListMapping.DEFAULT_CHANGE_NAME, "");
+                        associatedP4clIds.add(p4cl.getId());
+
+                        // The mapping from default to default is implicit in the
+                        // P4ChangeListMappingNew class.
+                    } else {
+                        // it's not associated with any IDEA changelist.
+                        LocalChangeList match = matcher.match(p4cl, splitNameComment(p4cl), unusedIdeaChangeLists);
+
+                        if (match != null) {
+                            LOG.debug("Associating " + p4cl.getId() + " to IDEA changelist " + match);
+
+                            // Ensure the name matches the changelist, with a unique name
+                            setUniqueName(match, p4cl, allIdeaChangeLists);
+
+                            // Record this new association
+                            associatedP4clIds.add(p4cl.getId());
+                            if (known.containsKey(match)) {
+                                known.get(match).put(client, p4cl);
                             } else {
-                                // Leave the file in the changelist
-                                LOG.info("Non-perforce file " + revFile + " in perforce controlled IDEA change");
+                                Map<Client, P4ChangeList> km = new HashMap<Client, P4ChangeList>();
+                                km.put(client, p4cl);
+                                known.put(match, km);
                             }
-                        } else if (!local.equals(revChangeList)) {
-                            // wrongly filed change.
-                            builder.processChange(change, revChangeList);
-                            final Set<FilePath> revChangeFiles = changesToFiles.get(revChangeList);
-                            if (revChangeFiles != null) {
-                                revChangeFiles.removeAll(revFileList);
-                            } // else error; should always be non-null
-                            continue changeLoop;
-                        } else {
-                            // mark the change as being in the right place.
-                            builder.processChange(change, local);
-                            fileSet.removeAll(revFileList);
-                            continue changeLoop;
+                            vcs.getChangeListMapping().bindChangelists(match, p4cl.getId());
                         }
                     }
                 }
             }
         }
 
-        // All the remaining files in the lists are ones that don't have existing changes.
-        // We can't have this as part of the above loop, because that must process all existing
-        // changes first.
-        for (Map.Entry<LocalChangeList, Set<FilePath>> changeListSetEntry : changesToFiles.entrySet()) {
-            final LocalChangeList local = changeListSetEntry.getKey();
-            final Set<FilePath> fileSet = changeListSetEntry.getValue();
+        prog.setFraction(0.9);
 
-            for (FilePath path : fileSet) {
-                builder.processChange(createChange(fileInfoMap.get(path)), local);
-            }
-        }
-
-        return dirtyFiles;
-    }
-
-    @NotNull
-    private LocalChangeList findLocalChangeList(@NotNull final ChangeListManagerGate addGate,
-            @NotNull final Client client, @NotNull final P4ChangeList p4Change,
-            @NotNull final Map<LocalChangeList, Map<Client, P4ChangeList>> knownChanges,
-            @NotNull final Set<LocalChangeList> allChangeLists) {
-
-        // allChangeLists is a set, so that we don't accidentally add duplicates, which would just
-        // end up wasting time.
-
-        final P4ChangeListId id = p4Change.getId();
-        // Must reuse the existing all changelists, because one changelist can have multiple mappings
-        List<LocalChangeList> unmatched = new ArrayList<LocalChangeList>(allChangeLists);
-        for (Map.Entry<LocalChangeList, Map<Client, P4ChangeList>> entry : knownChanges.entrySet()) {
-            if (entry.getKey() == null) {
-                LOG.error("Internal error: null IDEA changelist mapped to perforce changes");
-                continue;
-            }
-
-            final Map<Client, P4ChangeList> clientChangeMapping = entry.getValue();
-            final P4ChangeList p4cl = clientChangeMapping.get(client);
-            if (p4cl != null) {
-                if (id.getChangeListId() == p4cl.getId().getChangeListId()) {
-                    return entry.getKey();
+        // All the remaining changelists need to be mapped to a new changelist.
+        for (Map.Entry<Client, List<P4ChangeList>> en : pendingChangelists.entrySet()) {
+            for (List<P4ChangeList> pendingChanges : pendingChangelists.values()) {
+                for (P4ChangeList p4cl : pendingChanges) {
+                    if (!associatedP4clIds.contains(p4cl.getId())) {
+                        LocalChangeList lcl = createUniqueChangeList(addGate, p4cl, allIdeaChangeLists);
+                        vcs.getChangeListMapping().bindChangelists(lcl, p4cl.getId());
+                        if (known.containsKey(lcl)) {
+                            // shouldn't happen, but just for completion
+                            known.get(lcl).put(en.getKey(), p4cl);
+                        } else {
+                            Map<Client, P4ChangeList> km = new HashMap<Client, P4ChangeList>();
+                            km.put(en.getKey(), p4cl);
+                            known.put(lcl, km);
+                        }
+                    }
                 }
-
-                // only one client can be associated with this changelist, and we just found our client's mapping
-                unmatched.remove(entry.getKey());
-                break;
             }
         }
 
-        if (id.isDefaultChangelist()) {
-            // default changelist for this client has not yet been mapped
-            final LocalChangeList ret = addGate.findOrCreateList(P4ChangeListMapping.DEFAULT_CHANGE_NAME, "");
-            if (ret == null) {
-                LOG.error("Internal API error: findOrCreateList returned null");
-            } else {
-                if (!allChangeLists.contains(ret)) {
-                    allChangeLists.add(ret);
-                }
-                if (!knownChanges.containsKey(ret)) {
-                    knownChanges.put(ret, new HashMap<Client, P4ChangeList>());
-                }
-                knownChanges.get(ret).put(client, p4Change);
-                return ret;
-            }
-        }
-
-        // attempt to match the change against existing IDEA changelists
-        for (ClMatcher matcher : CL_MATCHERS) {
-            final LocalChangeList match = matcher.match(p4Change, splitNameComment(p4Change), unmatched);
-            if (match != null) {
-                LOG.debug("Associating " + id + " to IDEA changelist " + match);
-
-                // Ensure the name matches the changelist, with a unique name
-                setUniqueName(match, p4Change, allChangeLists);
-
-                // Record this new association
-                if (!knownChanges.containsKey(match)) {
-                    knownChanges.put(match, new HashMap<Client, P4ChangeList>());
-                }
-                knownChanges.get(match).put(client, p4Change);
-                vcs.getChangeListMapping().bindChangelists(match, id);
-                return match;
-            }
-        }
-
-        // Create a new changelist
-        LocalChangeList lcl = createUniqueChangeList(addGate, p4Change, allChangeLists);
-        if (!knownChanges.containsKey(lcl)) {
-            knownChanges.put(lcl, new HashMap<Client, P4ChangeList>());
-        }
-        knownChanges.get(lcl).put(client, p4Change);
-        vcs.getChangeListMapping().bindChangelists(lcl, id);
-        return lcl;
+        prog.setFraction(1.0);
     }
 
     // This matches with createUniqueChangeList
     private void setUniqueName(LocalChangeList changeList, P4ChangeList cls,
-            Collection<LocalChangeList> existingIdeaChangeLists) {
+            List<LocalChangeList> existingIdeaChangeLists) {
         String[] desc = splitNameComment(cls);
         LOG.debug("Mapped @" + cls.getId() + " to " + changeList.getName());
         String name = desc[0];
@@ -379,9 +353,8 @@ public class ChangeListSync {
     }
 
     // This matches with setUniqueName
-    @NotNull
     private LocalChangeList createUniqueChangeList(@NotNull final ChangeListManagerGate addGate,
-            @NotNull P4ChangeList cls, @NotNull Collection<LocalChangeList> allIdeaChangeLists) {
+            @NotNull P4ChangeList cls, @NotNull List<LocalChangeList> allIdeaChangeLists) {
         String[] desc = splitNameComment(cls);
         String baseDesc = desc[0];
         if (baseDesc == null || baseDesc.length() <= 0) {
@@ -411,6 +384,161 @@ public class ChangeListSync {
         }
     }
 
+    private List<LocalChangeList> filterOutUsedChangelists(
+            List<LocalChangeList> allIdeaChangeLists,
+            Map<LocalChangeList, Map<Client, P4ChangeList>> known,
+            Client client) {
+        List<LocalChangeList> ret = new ArrayList<LocalChangeList>(allIdeaChangeLists);
+        for (Map.Entry<LocalChangeList, Map<Client, P4ChangeList>> e : known.entrySet()) {
+            if (e.getValue().containsKey(client)) {
+                ret.remove(e.getKey());
+            }
+        }
+        Iterator<LocalChangeList> iter = ret.iterator();
+        while (iter.hasNext()) {
+            if (P4ChangeListMapping.isDefaultChangelist(iter.next())) {
+                iter.remove();
+            }
+        }
+        return ret;
+    }
+
+
+    /**
+     * Put dirty IDEA files into correct IDEA changelists, as per the dirty file's associated Perforce changelist.
+     *
+     * @param client    server client owning the files
+     * @param data   changelist sync data
+     * @param progress  progress bar
+     * @param filePaths files to move
+     * @return files processed
+     * @throws VcsException
+     */
+    private List<P4FileInfo> moveDirtyFilesIntoIdeaChangeLists(
+            @NotNull Client client, @NotNull ChangeListBuilderCache data,
+            @NotNull ProgressIndicator progress, @NotNull Collection<FilePath> filePaths) throws VcsException {
+        LOG.debug("processing incoming files " + new ArrayList<FilePath>(filePaths));
+        final List<P4FileInfo> files = client.getServer().getFilePathInfo(filePaths);
+        progress.setFraction(0.1);
+
+
+        // This code looks to be too aggressive.  It is probably the
+        // root cause behind #22 (2nd comment).
+
+
+        for (P4FileInfo file : files) {
+            VirtualFile vf = file.getPath().getVirtualFile();
+            LOG.debug("processing " + file);
+
+            // VirtualFile can be null.  That means the file is deleted.
+
+            if (file.isOpenInClient()) {
+                LOG.debug("already open in a changelist on the server");
+
+                LocalChangeList changeList =
+                        vcs.getChangeListMapping().getLocalChangelist(client, file.getChangelist());
+                if (changeList == null) {
+                    // This can happen if the changelist was submitted,
+                    // and the file status hasn't been updated to be
+                    // marked as not open.
+
+                    LOG.warn("Did not map an IntelliJ changelist for Perforce changelist " + file.getChangelist() +
+                            " (file " + file + ")");
+                    continue;
+                }
+
+                // Create a new change for the file, to replace any
+                // default changes created by the CLM.
+                // (that is, don't call clm.getChange(file.getPath())
+                LOG.debug("added to local changelist " + changeList + ": " + file);
+                Change change = createChange(file);
+                data.processChange(change, changeList);
+            } else if (file.isInDepot()) {
+                if (vf == null || ! vf.exists()) {
+                    LOG.info("marked as locally deleted: " + file);
+                    data.processLocallyDeletedFile(file.getPath());
+                } else {
+                    // See bug #49
+                    //  Changelists show files that are unchanged as locally
+                    //  modified without checkout.
+
+                    if (isServerAndLocalEqual(client, file, vf)) {
+                        LOG.info("marked as locally modified without edit: " + vf);
+                        data.processModifiedWithoutCheckout(vf);
+                    } else {
+                        LOG.info("idea thinks is locally modified without checkout, but it's the same: " + vf);
+                        file.getPath().hardRefresh();
+                    }
+                }
+            } else if (file.isInClientView() && vf != null) {
+                LOG.info("marked as locally added: " + vf);
+                data.processUnversionedFile(vf);
+            } else if (vf != null) {
+                LOG.debug("marked as ignored: " + vf);
+                data.processIgnoredFile(vf);
+            } else {
+                LOG.debug("not in depot but deleted: " + vf);
+            }
+        }
+        return files;
+    }
+
+    private boolean isServerAndLocalEqual(@NotNull final Client client, @NotNull final P4FileInfo file,
+            @NotNull VirtualFile vf)
+            throws VcsException {
+        byte[] src = client.getServer().loadFileAsBytes(file.getPath(), file.getHaveRev());
+        if (src == null) {
+            return false;
+        }
+        try {
+            byte[] tgt = vf.contentsToByteArray();
+            if (src.length != tgt.length) {
+                return false;
+            }
+            for (int pos = 0; pos < src.length; ++pos) {
+                if (src[pos] != tgt[pos]) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (IOException e) {
+            throw new P4FileException(e);
+        }
+    }
+
+    private void moveP4FilesIntoIdeaChangeLists(
+            @NotNull Client client, @NotNull ChangeListBuilderCache data,
+            @NotNull List<P4FileInfo> files) throws VcsException {
+        // go through the changelist cache, because it should be fresh.
+        Collection<P4FileInfo> opened = P4ChangeListCache.getInstance().getOpenedFiles(client);
+        LOG.debug("opened files: " + opened);
+        // remove files not already handled
+        opened.removeAll(files);
+        LOG.debug("opened but not passed into this method: " + opened);
+
+        for (P4FileInfo file : opened) {
+            LOG.debug("looks like " + file + " is in changelist " + file.getChangelist());
+            Change change = createChange(file);
+
+            LocalChangeList changeList = vcs.getChangeListMapping().getLocalChangelist(client, file.getChangelist());
+            if (changeList != null) {
+                LOG.debug("Putting " + file + " into local change " + changeList);
+                data.processChange(change, changeList);
+            } else if (client.isWorkingOffline()) {
+                // Probably was disconnected during the call.
+                LOG.warn("Disconnected while processing changes.");
+                if (file.getPath().getVirtualFile() != null) {
+                    data.processModifiedWithoutCheckout(file.getPath().getVirtualFile());
+                }
+            } else {
+                LOG.error("Could not put " + file + " into local change (null changelist for " +
+                        file.getChangelist() + ").");
+            }
+
+            // Any way to use this call?
+            //builder.reportChangesOutsideProject() ?
+        }
+    }
 
     private static String[] splitNameComment(P4ChangeList p4cl) {
         String[] ret = new String[2];

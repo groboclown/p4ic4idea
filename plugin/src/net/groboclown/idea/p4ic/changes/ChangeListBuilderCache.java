@@ -94,6 +94,8 @@ public class ChangeListBuilderCache {
             }
 
             final Set<FilePath> dirtyFiles = new HashSet<FilePath>(dirtyScope.getDirtyFiles());
+            // TODO debug remove
+            LOG.info("Dirty files: " + dirtyFiles);
 
             for (VirtualFile unversionedFile : unversionedFiles) {
                 final FilePath fp = VcsUtil.getFilePath(unversionedFile);
@@ -153,8 +155,9 @@ public class ChangeListBuilderCache {
                     }
                 }
                 if (! containsFirst && ! containsSecond) {
-                    LOG.info("Changelists changed: change files no longer dirty: " + change);
-                    return true;
+                    LOG.info("Changelists changed: new files in change but not marked dirty: " + change);
+                    // This causes infinite refresh of changelists.
+                    //return true;
                 }
 
                 // check to make sure the change hasn't moved to a different changelist

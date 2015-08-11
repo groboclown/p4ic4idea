@@ -1,6 +1,18 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.6.6.1::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Fixed an infinite changelist refresh due to incorrect file mappings.
+
+
 ## ::v0.6.6::
 
 ### Overview

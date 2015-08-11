@@ -5,10 +5,11 @@
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
-        <ol>
+        <ol style="margin-left:2em;">
             <li><em>0.6.6</em>
                 <ol>
-                    <li>Fixed issues around moving files not matching to the Perforce files.</li>
+                    <li>Fixed issues around moving or copying files not matching to the Perforce files.</li>
+                    <li>Rewrote how the IDEA changelists sync up with the Perforce changelists.</li>
                 </ol>
             </li>
             <li><em>0.6.5</em>
@@ -31,7 +32,7 @@
       <p>
       Limitations:
       </p>
-      <ul>
+      <ul style="margin-left:2em;">
         <li>Does not indicate to the user whether a file is
         synchronized to the head revision or not.</li>
         <li>No repository browsing.</li>
@@ -89,6 +90,22 @@
             <add-to-group group-id="ChangesViewPopupMenu"
                           anchor="after" relative-to-action="ChangesView.Edit"/>
         </group>
+
+
+        <!-- Uncomment when ready
+        <group id="P4RollbackHistory">
+            <action id="P4.RollbackHistory" class="net.groboclown.idea.p4ic.actions.P4RollbackHistoryAction"
+                    text="Revert to version..." icon="AllIcons.Actions.Rollback"/>
+
+            <add-to-group group-id="CommittedChangesToolbar"/>
+            <add-to-group group-id="VcsHistoryActionsGroup"/>
+        </group>
+        -->
+
+        <!-- Need to add to the welcome screen.
+        To add ourself to the welcome screen ("checkout from project"), need to add an extension
+        CheckoutProvider.EXTENSION_POINT_NAME
+        -->
 
 
         <group id="P4FileActions">

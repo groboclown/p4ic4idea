@@ -15,6 +15,7 @@ package net.groboclown.idea.p4ic.server.tasks;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -22,6 +23,7 @@ import net.groboclown.idea.p4ic.server.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.CancellationException;
 
@@ -206,15 +208,15 @@ public class MoveRunner extends ServerTask<List<P4StatusMessage>> {
         for (FilePath fp : fileList) {
             boolean found = false;
             // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
-            // use this instead: getIOFile().getAbsolutePath()
-            String path = fp.getIOFile().getAbsolutePath();
+            // use this instead: getIOFile()
+            File path = fp.getIOFile();
             Iterator<P4FileInfo> iter = fileInfoList.iterator();
             while (iter.hasNext()) {
                 P4FileInfo fileInfo = iter.next();
                 // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
-                // use this instead: getIOFile().getAbsolutePath()
-                String p4FilePath = fileInfo.getPath().getIOFile().getAbsolutePath();
-                if (p4FilePath.equals(path) || fileInfo.getPath().equals(fp)) {
+                // use this instead: getIOFile()
+                File p4FilePath = fileInfo.getPath().getIOFile();
+                if (FileUtil.filesEqual(p4FilePath, path) || fileInfo.getPath().equals(fp)) {
                     found = true;
                     ret.put(fp, fileInfo);
                     iter.remove();

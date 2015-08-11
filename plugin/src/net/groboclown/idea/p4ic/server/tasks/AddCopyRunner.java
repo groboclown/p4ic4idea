@@ -15,9 +15,11 @@ package net.groboclown.idea.p4ic.server.tasks;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.server.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import org.jetbrains.annotations.NotNull;
@@ -72,7 +74,6 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
         Map<VirtualFile, P4FileInfo> clientCopySource = sortMap(allMappings, copiedFiles.values());
         Map<VirtualFile, P4FileInfo> clientCopyTarget = sortMap(allMappings, copiedFiles.keySet());
 
-
         boolean useIntegrate = isCopyAnIntegrate();
 
         List<P4StatusMessage> ret = new ArrayList<P4StatusMessage>();
@@ -120,7 +121,6 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
                     reverted.add(target);
                 }
 
-
                 if (source.isInDepot()) {
                     if (useIntegrate) {
                         LOG.debug("Copy: integrate " + source + " to " + target);
@@ -149,13 +149,14 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
             ret.addAll(exec.revertFiles(project, P4FileInfo.toClientList(reverted)));
         }
 
+        // TODO debug for testing out #62; switch these back to "debug"
         if (! added.isEmpty()) {
-            LOG.debug("Adding " + added);
+            LOG.info("Adding " + added);
             ret.addAll(exec.addFiles(project, P4FileInfo.toClientList(added), changelistId));
         }
 
         if (!edited.isEmpty()) {
-            LOG.debug("Editing " + added);
+            LOG.info("Editing " + added);
             ret.addAll(exec.editFiles(project, P4FileInfo.toClientList(edited), changelistId));
         }
 
@@ -172,9 +173,11 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
 
 
     private boolean isCopyAnIntegrate() {
-        // TODO make this a user preference at the project level
-
-        return false;
+        final UserProjectPreferences preferences = UserProjectPreferences.getInstance(project);
+        if (preferences == null) {
+            return UserProjectPreferences.DEFAULT_INTEGRATE_ON_COPY;
+        }
+        return preferences.getIntegrateOnCopy();
     }
 
     private static Set<P4FileInfo> sortSet(Map<VirtualFile, P4FileInfo> allMappings, Collection<VirtualFile> files) throws P4Exception {
@@ -182,7 +185,7 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
         for (VirtualFile vf: files) {
             P4FileInfo info = allMappings.get(vf);
             if (info == null) {
-                LOG.warn("No retrieved mapping for " + vf.getPath());
+                LOG.warn("No retrieved mapping for " + vf.getPath() + " (all mappings: " + allMappings + ")");
             } else {
                 ret.add(info);
             }
@@ -195,6 +198,7 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
         for (VirtualFile vf: files) {
             P4FileInfo info = allMappings.get(vf);
             if (info == null) {
+                LOG.warn("No retrieved mapping for " + vf.getPath() + " (all mappings: " + allMappings + ")");
                 throw new P4Exception(P4Bundle.message("error.copy.no-mapping", vf));
             }
             ret.put(vf, info);
@@ -205,35 +209,59 @@ public class AddCopyRunner extends ServerTask<List<P4StatusMessage>> {
     private Map<VirtualFile, P4FileInfo> mapVirtualFilesToClient(
             @NotNull Collection<VirtualFile> files,
             @NotNull P4Exec exec) throws VcsException {
-        // This is really slow, but allows for reuse of the invoked method
-        Map<String, VirtualFile> reverseLookup = new HashMap<String, VirtualFile>();
-        for (VirtualFile vf : files) {
-            // make sure we have the correct name and path separators so it matches up with the FilePath value.
-            String path = (new File(vf.getPath())).getAbsolutePath();
-            if (reverseLookup.containsKey(path)) {
-                throw new IllegalArgumentException(P4Bundle.message("error.move.duplicate", path));
+        final List<VirtualFile> fileList;
+        if (files instanceof List) {
+            fileList = (List<VirtualFile>) files;
+        } else {
+            fileList = new ArrayList<VirtualFile>(files);
+        }
+        final Map<VirtualFile, P4FileInfo> ret = new HashMap<VirtualFile, P4FileInfo>();
+        final List<P4FileInfo> fileInfoList =
+                exec.loadFileInfo(project, FileSpecUtil.getFromVirtualFiles(fileList), fileInfoCache);
+        if (fileInfoList.size() == fileList.size()) {
+            // Everything worked as expected.
+            for (int i = 0; i < fileInfoList.size(); i++) {
+                ret.put(fileList.get(i), fileInfoList.get(i));
             }
-            reverseLookup.put(path, vf);
+            // TODO debugging while looking at #62.
+            LOG.info("Mapped local to perforce: " + ret);
+            return ret;
         }
 
-        Map<VirtualFile, P4FileInfo> ret = new HashMap<VirtualFile, P4FileInfo>();
-        for (P4FileInfo file : exec.loadFileInfo(project, FileSpecUtil.getFromVirtualFiles(reverseLookup.values()), fileInfoCache)) {
+        // Incorrect input file mapping.  Related to #62.
+        // Include better logging for "when" it occurs again.
+        // NOTE: this seems to happen when the input file is a new
+        // file that's not in Perforce.
+        LOG.error("Could not map all input files (" + fileList + ") to Perforce depots (did find " +
+                fileInfoList + ")");
+
+        // So do the long matching process for what did work.
+        for (VirtualFile vf: fileList) {
+            boolean found = false;
             // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
-            // use this instead: getIOFile().getAbsolutePath()
-            VirtualFile vf = reverseLookup.remove(file.getPath().getIOFile().getAbsolutePath());
-            if (vf == null) {
-                // It's a soft error, because we don't expect to get files we didn't request.
-                LOG.warn("ERROR: no vf mapping for " + file);
-            } else {
-                ret.put(vf, file);
+            // use this instead: getIOFile()
+            Iterator<P4FileInfo> iter = fileInfoList.iterator();
+            while (iter.hasNext()) {
+                P4FileInfo fileInfo = iter.next();
+                // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
+                // use this instead: getIOFile()
+                File p4vf = fileInfo.getPath().getIOFile();
+                if (FileUtil.filesEqual(p4vf, new File(vf.getCanonicalPath())) || fileInfo.getPath().equals(vf)) {
+                    found = true;
+                    ret.put(vf, fileInfo);
+                    iter.remove();
+                }
+            }
+            if (!found) {
+                LOG.warn("No P4 info match for local file " + vf);
             }
         }
 
-        if (!reverseLookup.isEmpty()) {
-            // This is a correct LOG.info statement.
-            LOG.info("No p4 files found for " + reverseLookup.values());
+        if (!fileInfoList.isEmpty()) {
+            LOG.warn("No local file match for P4 files " + fileInfoList);
         }
 
+        LOG.info("Successfully mapped local to perforce: " + ret);
         return ret;
     }
 }

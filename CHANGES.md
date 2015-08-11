@@ -5,12 +5,21 @@
 
 ### Overview
 
+* Added user preference (not available through UI yet) that allows selecting whether a copy
+  command means an integrate.
+* Started work on adding in the rollback on history view.
 * Bug fixes.
 
 ### Details
 
+* Added user preference (not available through UI yet) that allows selecting whether a copy
+  command means an integrate.
+    * UI will be available by v0.7.
 * Bug fixes.
     * Move operations could not find the Perforce version of the locally moved file (#62).
+      This also affected the copy operation.
+    * Rewrote how the IDEA changelists sync up with the Perforce changelists.  It should now
+      be more accurate and eliminate some of the null mappings that occurred before.
 
 
 ## ::v0.6.5::

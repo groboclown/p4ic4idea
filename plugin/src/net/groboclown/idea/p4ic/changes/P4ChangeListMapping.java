@@ -411,7 +411,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
             ideaIdToChange.put(lcl.getId(), lcl);
 
             // Step 3: find all the IDEA changelists that we have as a mapping, but don't exist
-            // any more.  That will be what remains in the localIdea variable after  this loop.
+            // any more.  That will be what remains in the localIdea variable after this loop.
             if (localIdea.remove(lcl.getId())) {
                 // This is a changelist that still exists and that we have in a mapping.
 

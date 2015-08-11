@@ -35,6 +35,7 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public static final int MIN_CONNECTION_WAIT_TIME_MILLIS = 500;
     public static final int MAX_CONNECTION_WAIT_TIME_MILLIS = 5 * 60 * 1000;
     public static final int DEFAULT_CONNECTION_WAIT_TIME_MILLIS = 30 * 1000;
+    public static final boolean DEFAULT_INTEGRATE_ON_COPY = false;
 
     @NotNull
     private State state = new State();
@@ -42,6 +43,7 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public static class State {
         public int maxServerConnections = DEFAULT_SERVER_CONNECTIONS;
         public int maxConnectionWaitTimeMillis = DEFAULT_CONNECTION_WAIT_TIME_MILLIS;
+        public boolean integrateOnCopy = DEFAULT_INTEGRATE_ON_COPY;
     }
 
     @Nullable
@@ -93,5 +95,15 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         state.maxConnectionWaitTimeMillis =
                 Math.max(MIN_CONNECTION_WAIT_TIME_MILLIS,
                         Math.min(MAX_CONNECTION_WAIT_TIME_MILLIS, value));
+    }
+
+
+    public boolean getIntegrateOnCopy() {
+        return state.integrateOnCopy;
+    }
+
+
+    public void setIntegrateOnCopy(boolean value) {
+        state.integrateOnCopy = value;
     }
 }

@@ -203,7 +203,7 @@ public class ChangeListSync {
             }
         }
 
-        for (Entry<LocalChangeList, Set<FilePath>> changeListSetEntry : changesToFiles.entrySet()) {
+        for (Map.Entry<LocalChangeList, Set<FilePath>> changeListSetEntry : changesToFiles.entrySet()) {
             final LocalChangeList local = changeListSetEntry.getKey();
             final Set<FilePath> fileSet = changeListSetEntry.getValue();
 
@@ -264,7 +264,7 @@ public class ChangeListSync {
         // All the remaining files in the lists are ones that don't have existing changes.
         // We can't have this as part of the above loop, because that must process all existing
         // changes first.
-        for (Entry<LocalChangeList, Set<FilePath>> changeListSetEntry : changesToFiles.entrySet()) {
+        for (Map.Entry<LocalChangeList, Set<FilePath>> changeListSetEntry : changesToFiles.entrySet()) {
             final LocalChangeList local = changeListSetEntry.getKey();
             final Set<FilePath> fileSet = changeListSetEntry.getValue();
 

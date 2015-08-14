@@ -19,6 +19,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
@@ -685,6 +686,16 @@ public class RawServerExecutor {
             @Override
             public List<String> run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
                 return exec.getJobStatusValues(project);
+            }
+        });
+    }
+
+    @NotNull
+    public IClient getClient(@NotNull final Project project) throws VcsException, CancellationException {
+        return performAction(project, new ServerTask<IClient>() {
+            @Override
+            public IClient run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
+                return exec.getClient(project);
             }
         });
     }

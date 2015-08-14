@@ -156,8 +156,7 @@ public class ChangeListBuilderCache {
                 }
                 if (! containsFirst && ! containsSecond) {
                     LOG.info("Changelists changed: new files in change but not marked dirty: " + change);
-                    // This causes infinite refresh of changelists.
-                    //return true;
+                    return true;
                 }
 
                 // check to make sure the change hasn't moved to a different changelist

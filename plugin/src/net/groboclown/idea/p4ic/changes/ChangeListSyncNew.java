@@ -128,6 +128,8 @@ public class ChangeListSyncNew {
                 builder.processLocallyDeletedFile(fp);
             }
         }
+
+        progress.setFraction(1.0);
     }
 
     private Set<FilePath> getDirtyFiles(final VcsDirtyScope dirtyScope) {
@@ -179,6 +181,7 @@ public class ChangeListSyncNew {
         Map<FilePath, P4FileInfo> fileInfoMap = new HashMap<FilePath, P4FileInfo>();
         Map<File, LocalChangeList> filesToChanges = new HashMap<File, LocalChangeList>();
         Map<LocalChangeList, Set<FilePath>> changesToFiles = new HashMap<LocalChangeList, Set<FilePath>>();
+        Set<FilePath> ensureDirty = new HashSet<FilePath>();
         for (Map.Entry<Client, List<P4ChangeList>> en : pendingChangelists.entrySet()) {
             final Client client = en.getKey();
             for (P4ChangeList p4Change : en.getValue()) {
@@ -189,7 +192,7 @@ public class ChangeListSyncNew {
                     if (dirtyFiles.contains(path)) {
                         dirtyFiles.remove(path);
                     } else {
-                        VcsUtil.markFileAsDirty(project, path);
+                        ensureDirty.add(path);
                     }
                     filesToChanges.put(path.getIOFile(), local);
                     if (!changesToFiles.containsKey(local)) {
@@ -207,11 +210,16 @@ public class ChangeListSyncNew {
             // Ensure all the existing changes belong in the changelist.
             changeLoop:
             for (Change change : local.getChanges()) {
+                // FIXME Check the destination ("after") first.
+                // Before is necessary in the case of a move.
                 final ContentRevision[] revs =
                         new ContentRevision[]{change.getBeforeRevision(), change.getAfterRevision()};
                 final List<FilePath> revFileList = new ArrayList<FilePath>();
                 for (ContentRevision rev : revs) {
                     if (rev != null) {
+                        // NOTE make sure we clear out the known files with changes.
+                        ensureDirty.remove(rev.getFile());
+
                         revFileList.add(rev.getFile());
                     }
                 }
@@ -256,14 +264,15 @@ public class ChangeListSyncNew {
                             } else {
                                 // Leave the file in the changelist
                                 LOG.info("Non-perforce file " + revFile + " in perforce controlled IDEA change");
-                                if (revFile.getVirtualFile() == null) {
-                                    builder.processLocallyDeletedFile(revFile);
-                                } else {
-                                    builder.processModifiedWithoutCheckout(revFile.getVirtualFile());
-                                }
+                                // TODO trying out only filing the things that are wrong.
+                                //if (revFile.getVirtualFile() == null) {
+                                //    builder.processLocallyDeletedFile(revFile);
+                                //} else {
+                                //    builder.processModifiedWithoutCheckout(revFile.getVirtualFile());
+                                //}
                             }
                         } else if (!local.equals(revChangeList)) {
-                            // wrongly filed change.
+                            LOG.info("Wrongly filed change " + revFileList + ": found in " + local + "; expected " + revChangeList);
                             builder.processChange(change, revChangeList);
                             final Set<FilePath> revChangeFiles = changesToFiles.get(revChangeList);
                             if (revChangeFiles != null) {
@@ -271,8 +280,10 @@ public class ChangeListSyncNew {
                             } // else error; should always be non-null
                             continue changeLoop;
                         } else {
+                            LOG.info("Correctly filed change w/ " + revFileList);
                             // mark the change as being in the right place.
-                            builder.processChange(change, local);
+                            // TODO trying out only filing the things that are wrong.
+                            // builder.processChange(change, local);
                             fileSet.removeAll(revFileList);
                             continue changeLoop;
                         }
@@ -289,11 +300,34 @@ public class ChangeListSyncNew {
             final Set<FilePath> fileSet = changeListSetEntry.getValue();
 
             for (FilePath path : fileSet) {
-                builder.processChange(createChange(fileInfoMap.get(path)), local);
+                LOG.info(path + " should be in change " + local);
+                // TODO trying out only filing the things that are wrong.
+                // dirtyFiles.remove(path);
+                // builder.processChange(createChange(fileInfoMap.get(path)), local);
+                boolean isDirty = dirtyFiles.remove(path);
+                if (ensureDirty.contains(path)) {
+                    LOG.info("Marking P4-listed changed file as dirty: " + path);
+                    VcsUtil.markFileAsDirty(project, path);
+                    isDirty = true;
+                }
+                if (isDirty || ! isFileInChangelist(local, path)) {
+                    LOG.info("Putting " + path + " into change " + local);
+                    builder.processChange(createChange(fileInfoMap.get(path)), local);
+                }
             }
         }
 
+        LOG.info("remaining dirty files: " + dirtyFiles);
         return dirtyFiles;
+    }
+
+    private boolean isFileInChangelist(final LocalChangeList local, final FilePath path) {
+        for (Change change: local.getChanges()) {
+            if (change.affectsFile(path.getIOFile())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @NotNull

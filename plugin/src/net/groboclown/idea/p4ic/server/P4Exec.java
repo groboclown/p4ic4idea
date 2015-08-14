@@ -153,11 +153,12 @@ public class P4Exec {
         }
     }
 
+
     @NotNull
-    public IClientSummary getClient(@NotNull Project project) throws VcsException, CancellationException {
-        return runWithClient(project, new WithClient<IClientSummary>() {
+    public IClient getClient(@NotNull Project project) throws VcsException, CancellationException {
+        return runWithClient(project, new WithClient<IClient>() {
             @Override
-            public IClientSummary run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public IClient run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 client.setServer(null);
                 return client;
             }

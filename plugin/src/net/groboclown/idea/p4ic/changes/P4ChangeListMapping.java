@@ -22,6 +22,7 @@ import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.perforce.p4java.core.IChangelist;
 import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.config.ServerClientIdUtil;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -483,11 +484,11 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
 
 
     private String getServerClientId(@NotNull P4ChangeListId id) {
-        return id.getServerConfigId() + ((char) 1) + id.getClientName();
+        return ServerClientIdUtil.getServerClientId(id);
     }
 
 
     private String getServerClientId(@NotNull Client client) {
-        return client.getConfig().getServiceName() + ((char) 1) + client.getClientName();
+        return ServerClientIdUtil.getServerClientId(client);
     }
 }

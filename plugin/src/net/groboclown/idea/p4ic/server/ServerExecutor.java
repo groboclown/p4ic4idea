@@ -17,6 +17,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -302,5 +303,10 @@ public class ServerExecutor {
     public P4Job getJobForId(final String jobId) throws VcsException, CancellationException {
         //return exec.getJobForId(project, jobId);
         return jobCache.getJob(jobId);
+    }
+
+    @NotNull
+    public IClient getClient() throws VcsException, CancellationException {
+        return exec.getClient(project);
     }
 }

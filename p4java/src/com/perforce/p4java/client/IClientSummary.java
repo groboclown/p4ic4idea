@@ -3,16 +3,16 @@
  */
 package com.perforce.p4java.client;
 
+import com.perforce.p4java.core.IServerResource;
+
 import java.util.Date;
 import java.util.List;
-
-import com.perforce.p4java.core.IServerResource;
 
 /**
  * Lightweight Perforce client interface that defines summary client
  * metadata and associated operations, without providing client
  * views or actual client-related operations. Corresponds closely to
- * the information retruned by a "p4 clients" command.<p>
+ * the information returned by a "p4 clients" command.<p>
  * 
  * Lightweight IClientSummary objects are typically returned from client list
  * operations such as IServer.getClientList; further use of these specs for

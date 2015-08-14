@@ -419,6 +419,8 @@ public abstract class RpcServer extends Server {
                 return MessageGenericCode.EV_NONE;
         }
 
+        // TODO change this to return a structure for easier inquiry into the
+        // actual server error.
         private String getString(Map<String, Object> map, int minimumCode ) {
                 if (map != null) {
                         int index = 0;

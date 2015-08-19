@@ -43,12 +43,13 @@ public enum FileAction {
 	EDIT_FROM,
 	PURGE,
 	IMPORT,
+	ARCHIVE,
 	
 	UNKNOWN;
 	
 	// NOTE: the following array MUST be in 1:1 correspondence
 	// with the ordering and values used above or bizarre results
-	// will occurr elsewhere...
+	// will occur elsewhere...
 	
 	private static final String[] names = {
 		"add",
@@ -75,6 +76,7 @@ public enum FileAction {
 		"edit from",
 		"purge",
 		"import",
+		"archive",
 		
 		"unknown"
 	};

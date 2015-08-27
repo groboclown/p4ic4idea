@@ -14,7 +14,6 @@
 package net.groboclown.idea.p4ic.config;
 
 import com.perforce.p4java.server.IServerAddress;
-import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,10 +25,6 @@ import org.jetbrains.annotations.Nullable;
  * @author Matt Albrecht
  */
 public interface P4Config {
-    // TODO this should be a client-side user setting
-    @NonNls
-    public static final String P4_IGNORE_FILE = ".p4ignore";
-
     enum ConnectionMethod {
         CLIENT(false),
         AUTH_TICKET(false),
@@ -51,56 +46,56 @@ public interface P4Config {
         }
     }
 
-    public boolean hasIsAutoOfflineSet();
+    boolean hasIsAutoOfflineSet();
 
-    public boolean isAutoOffline();
+    boolean isAutoOffline();
 
-    public void reload();
+    void reload();
 
-    public boolean hasPortSet();
-
-    @Nullable
-    public String getPort();
-
-    public boolean hasProtocolSet();
+    boolean hasPortSet();
 
     @Nullable
-    public IServerAddress.Protocol getProtocol();
+    String getPort();
 
-    public boolean hasClientnameSet();
-
-    @Nullable
-    public String getClientname();
-
-    public boolean hasUsernameSet();
+    boolean hasProtocolSet();
 
     @Nullable
-    public String getUsername();
+    IServerAddress.Protocol getProtocol();
+
+    boolean hasClientnameSet();
+
+    @Nullable
+    String getClientname();
+
+    boolean hasUsernameSet();
+
+    @Nullable
+    String getUsername();
 
     @NotNull
-    public ConnectionMethod getConnectionMethod();
+    ConnectionMethod getConnectionMethod();
 
     @Nullable
-    public String getPassword();
+    String getPassword();
 
     @Nullable
-    public String getAuthTicketPath();
+    String getAuthTicketPath();
 
-    public boolean hasTrustTicketPathSet();
-
-    @Nullable
-    public String getTrustTicketPath();
-
-    public boolean hasServerFingerprintSet();
+    boolean hasTrustTicketPathSet();
 
     @Nullable
-    public String getServerFingerprint();
+    String getTrustTicketPath();
+
+    boolean hasServerFingerprintSet();
+
+    @Nullable
+    String getServerFingerprint();
 
 
     @Nullable
-    public String getConfigFile();
+    String getConfigFile();
 
-    public boolean isPasswordStoredLocally();
+    boolean isPasswordStoredLocally();
 
     /**
      * Allow for custom setting the client hostname.
@@ -108,7 +103,11 @@ public interface P4Config {
      * @return hostname of the client.
      */
     @Nullable
-    public String getClientHostname();
+    String getClientHostname();
+
+
+    String getIgnoreFileName();
+
 
     /*
     Look at supporting these options

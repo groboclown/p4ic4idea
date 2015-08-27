@@ -63,6 +63,7 @@ public class FileMappingRepo {
         return new WeakIterable(files);
     }
 
+    /*
     @Nullable
     public P4ClientFileMapping getByDepot(@NotNull String depot) {
         // go directly through the filesByDepot, so we must explicitly get the internal
@@ -75,70 +76,121 @@ public class FileMappingRepo {
     public P4ClientFileMapping getByLocalFilePath(@NotNull FilePath path) {
         return cacheGet(filesByLocal, path);
     }
+    */
 
+    /**
+     * Called when the callee cannot map the location to the depot.  If the
+     * location is already registered, that registered version is returned.
+     * It's possible that the depot mapping is already registered.
+     * <p/>
+     * Because the callee doesn't know about the depot, this is not considered
+     * an "update" command.  Updates must only be done if both parts are known.
+     *
+     * @param location location on the current computer for the file.
+     * @return the mapping
+     */
+    @NotNull
+    public P4ClientFileMapping getByLocation(@NotNull FilePath location) {
+        // Discover if the location is already registered.  This includes possible cache missing
+        // computations.
+        WeakReference<P4ClientFileMapping> ref = filesByLocal.get(location);
+        P4ClientFileMapping map = null;
+        if (ref != null) {
+            map = ref.get();
+            if (map == null) {
+                // cache miss logic and cleanup
+                filesByLocal.remove(location);
+                onCacheMiss();
+            }
+            // else: the mapping still exists for this location.
+            // Because we don't know the new state of the depot path,
+            // we can ignore any possible updates that it requires.
+        }
+        if (map == null) {
+            map = new P4ClientFileMapping(null, location);
+            ref = createRef(map);
+            files.add(ref);
+            filesByLocal.put(location, ref);
+            // no depot associated with this mapping.
+        }
+        return map;
+    }
 
-    public void addLocation(@NotNull String depot, @NotNull FilePath location) {
+    /**
+     * Create or update an existing depot object with a new location.  If the
+     * new location is {@code null}, then the original location is used.
+     *
+     * @param depot the known depot location of the file.
+     * @param location the local computer location where the file is located;
+     *                 pass {@code null} if it isn't known.
+     * @return the file mapping for the depot location; it might be created by this
+     *   call.
+     */
+    @NotNull
+    public P4ClientFileMapping getByDepotLocation(@NotNull String depot, @Nullable FilePath location) {
         // Discover if the location is already registered.  This includes possible cache missing
         // computations.
         final String internalDepotPath = internalDepotPath(depot);
-        final WeakReference<P4ClientFileMapping> ref = filesByDepot.get(internalDepotPath);
+        WeakReference<P4ClientFileMapping> ref = filesByDepot.get(internalDepotPath);
+        if (ref == null && location != null) {
+            ref = filesByLocal.get(location);
+        }
         P4ClientFileMapping map = null;
         if (ref != null) {
             map = ref.get();
             if (map == null) {
                 // cache miss logic and cleanup
                 filesByDepot.remove(internalDepotPath);
+                filesByLocal.remove(location);
                 onCacheMiss();
+            } else if (location != null && ! location.equals(map.getLocalFilePath())) {
+                // This is a location update.
+                filesByLocal.remove(map.getLocalFilePath());
+                filesByLocal.put(location, ref);
+                map.updateLocalPath(location);
+            } else if (! depot.equals(map.getDepotPath())) {
+                // This is a depot update
+                // depot is always not-null
+                if (map.getDepotPath() != null) {
+                    filesByDepot.remove(internalDepotPath(map.getDepotPath()));
+                }
+                filesByDepot.put(depot, ref);
+                map.updateDepot(depot);
             }
+            // else, either the location is not known by the callee (it might be known
+            // by the cached object), or both the callee and the cache version have
+            // the same location object and depot location.  Either way, there's no need to
+            // touch the map's location or the lookups.
         }
         if (map == null) {
-            map = new P4ClientFileMapping(depot, location.getIOFile().getAbsolutePath());
-        }
-        updateLocation(map, location);
-    }
-
-    public void updateLocation(@NotNull P4ClientFileMapping mapping, @Nullable FilePath newLocation) {
-        final FilePath oldLocation = mapping.getLocalFilePath();
-        {
-            String path = null;
-            if (newLocation != null) {
-                path = newLocation.getIOFile().getAbsolutePath();
+            if (location != null) {
+                map = new P4ClientFileMapping(depot, location);
+                ref = createRef(map);
+                filesByLocal.put(location, ref);
+            } else {
+                map = new P4ClientFileMapping(depot);
+                ref = createRef(map);
+                // no local assignment
             }
-            mapping.updateLocalPath(path);
-        }
-
-        WeakReference<P4ClientFileMapping> ref = getWeakRefByDepot(mapping.getDepotPath());
-        if (newLocation != null && ! newLocation.equals(mapping.getLocalFilePath())) {
-            // Update to the file location
-            if (ref == null) {
-                // Add a new file location
-                ref = createRef(mapping);
-                files.add(ref);
-                addByDepot(mapping.getDepotPath(), ref);
-            }
-            filesByLocal.remove(oldLocation);
-            filesByLocal.put(newLocation, ref);
-        } else if (newLocation == null) {
-            // remove the file location; note that we want to keep the depot
-            // reference around, because it's potentially useful.
-            filesByLocal.remove(oldLocation);
-        } else if (ref == null) {
-            // brand new location
-            ref = createRef(mapping);
+            filesByDepot.put(internalDepotPath, ref);
             files.add(ref);
-            addByDepot(mapping.getDepotPath(), ref);
-            filesByLocal.put(newLocation, ref);
-        } // else it's an existing location that's the same location
+        }
+        return map;
     }
 
-
-    public void updateLocations(@NotNull Map<P4ClientFileMapping, FilePath> newMap) {
+    /**
+     *
+     * @param depotToLocation new mappings.  This does not strip out the existing mappings
+     *               that aren't in the passed-in list.
+     * @deprecated because it's not implemented yet
+     */
+    public void updateLocations(@NotNull Map<String, FilePath> depotToLocation) {
         // Because we're doing a potentially large operation, clean up the
-        // existing maps for old stuff.  Do this before the new updates,
-        // because
+        // existing maps for old stuff.
         flush();
 
         // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
 
@@ -147,12 +199,38 @@ public class FileMappingRepo {
      *
      * @param mappings new, fully configured mappings
      */
-    void refreshFiles(@NotNull Collection<P4ClientFileMapping> mappings) {
+    public void refreshFiles(@NotNull Collection<P4ClientFileMapping> mappings) {
         files.clear();
         filesByDepot.clear();
         filesByLocal.clear();
+        // this implicitly did a flush, so the cache misses can return to 0.
+        cacheMissCount = 0;
+
         for (P4ClientFileMapping mapping : mappings) {
             addMapping(mapping);
+        }
+    }
+
+    /**
+     * Called when the workspace view is changed, which invalidates all existing
+     * depot mappings.
+     */
+    public void clearLocations() {
+        filesByLocal.clear();
+        Iterator<WeakReference<P4ClientFileMapping>> iter = files.iterator();
+        while (iter.hasNext()) {
+            WeakReference<P4ClientFileMapping> ref = iter.next();
+            final P4ClientFileMapping map = ref.get();
+            if (map == null) {
+                iter.remove();
+                // delay the cache miss check until the end.
+                cacheMissCount++;
+            } else {
+                map.updateLocalPath(null);
+            }
+        }
+        if (cacheMissCount > CACHE_MISS_THRESHOLD) {
+            flush();
         }
     }
 
@@ -178,6 +256,9 @@ public class FileMappingRepo {
         Reference<? extends P4ClientFileMapping> ref;
         while ((ref = queue.poll()) != null) {
             refs.add(ref);
+            // The type is what was passed into the queue; so it may
+            // not be a correct object, but it should be.
+            //noinspection SuspiciousMethodCalls
             files.remove(ref);
         }
 
@@ -203,6 +284,8 @@ public class FileMappingRepo {
                 }
             }
         }
+
+        cacheMissCount = 0;
     }
 
 
@@ -219,12 +302,16 @@ public class FileMappingRepo {
         return filesByDepot.get(internalDepotPath(depot));
     }
 
-    private void addByDepot(@NotNull String depot, @NotNull WeakReference<P4ClientFileMapping> map) {
-        filesByDepot.put(internalDepotPath(depot), map);
+    private void addByDepot(@Nullable String depot, @NotNull WeakReference<P4ClientFileMapping> map) {
+        if (depot != null) {
+            filesByDepot.put(internalDepotPath(depot), map);
+        }
     }
 
-    private void removeByDepot(@NotNull String depot) {
-        filesByDepot.remove(internalDepotPath(depot));
+    private void removeByDepot(@Nullable String depot) {
+        if (depot != null) {
+            filesByDepot.remove(internalDepotPath(depot));
+        }
     }
 
     @Nullable

@@ -17,6 +17,7 @@ import com.intellij.openapi.util.SystemInfo;
 import com.perforce.p4java.env.PerforceEnvironment;
 import com.perforce.p4java.server.IServerAddress;
 import net.groboclown.idea.p4ic.config.win.PreferencesWinRegistry;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,7 +27,9 @@ import java.lang.reflect.InvocationTargetException;
  * Loads the Perforce registry entries for Windows computers.
  */
 public class WinRegP4Config implements P4Config {
+    @NonNls
     private static final String USER_KEY = "\\Software\\Perforce\\Environment";
+    @NonNls
     private static final String MACHINE_KEY = "\\SOFTWARE\\Perforce\\Environment";
 
     private final int hive;
@@ -41,6 +44,7 @@ public class WinRegP4Config implements P4Config {
     private String trustTicket;
     private String configFile;
     private String clientHostname;
+    private String ignoreFileName;
 
 
     public static boolean isAvailable() {
@@ -72,6 +76,7 @@ public class WinRegP4Config implements P4Config {
             trustTicket = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4TRUST);
             configFile = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4CONFIG);
             clientHostname = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4HOST);
+            ignoreFileName = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4IGNORE);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
@@ -181,5 +186,10 @@ public class WinRegP4Config implements P4Config {
     @Override
     public String getClientHostname() {
         return clientHostname;
+    }
+
+    @Override
+    public String getIgnoreFileName() {
+        return ignoreFileName;
     }
 }

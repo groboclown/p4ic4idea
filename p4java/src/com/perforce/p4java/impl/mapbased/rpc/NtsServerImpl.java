@@ -35,6 +35,7 @@ import com.perforce.p4java.impl.mapbased.rpc.sys.RpcOutputStream;
 import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IServerAddress.Protocol;
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.ServerStatus;
 import com.perforce.p4java.server.callback.IFilterCallback;
 import com.perforce.p4java.server.callback.IStreamingCallback;
@@ -443,7 +444,7 @@ public class NtsServerImpl extends RpcServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringStreamCmd(String, String)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringStreamCmd(String, String[], String)
 	 */
 	@Override
 	public InputStream execInputStringStreamCmd(String cmdName, String[] cmdArgs, String inString)
@@ -507,12 +508,12 @@ public class NtsServerImpl extends RpcServer {
 			if ((resultMaps != null) && (resultMaps.size() != 0)) {
 				for (Map<String, Object> map : resultMaps) {
 					if (map != null) {
-						String errStr = this.getErrorStr(map);
-						if (errStr != null) {
-							if (isAuthFail(errStr)) {
-								throw new AccessException(errStr);
+						final IServerMessage err = this.getErrorStr(map);
+						if (err != null) {
+							if (isAuthFail(err)) {
+								throw new AccessException(err);
 							} else {
-								throw new RequestException(errStr, (String) map.get("code0"));
+								throw new RequestException(err);
 							}
 						}
 					}

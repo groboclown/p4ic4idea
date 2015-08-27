@@ -4,190 +4,40 @@
 
 package com.perforce.p4java.impl.mapbased.server;
 
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.IllegalCharsetNameException;
-import java.nio.charset.UnsupportedCharsetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.perforce.p4java.CharsetDefs;
 import com.perforce.p4java.Log;
 import com.perforce.p4java.Metadata;
 import com.perforce.p4java.PropertyDefs;
-import com.perforce.p4java.admin.IDbSchema;
-import com.perforce.p4java.admin.IDiskSpace;
-import com.perforce.p4java.admin.ILogTail;
-import com.perforce.p4java.admin.IProperty;
-import com.perforce.p4java.admin.IProtectionEntry;
-import com.perforce.p4java.admin.ITriggerEntry;
-import com.perforce.p4java.admin.ServerConfigurationValue;
+import com.perforce.p4java.admin.*;
 import com.perforce.p4java.charset.PerforceCharsetProvider;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
-import com.perforce.p4java.core.IBranchSpec;
-import com.perforce.p4java.core.IBranchSpecSummary;
-import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.core.*;
 import com.perforce.p4java.core.IChangelist.Type;
-import com.perforce.p4java.core.IChangelistSummary;
-import com.perforce.p4java.core.IDepot;
-import com.perforce.p4java.core.IFileDiff;
-import com.perforce.p4java.core.IFileLineMatch;
-import com.perforce.p4java.core.IFix;
-import com.perforce.p4java.core.IJob;
-import com.perforce.p4java.core.IJobSpec;
-import com.perforce.p4java.core.ILabel;
-import com.perforce.p4java.core.ILabelSummary;
-import com.perforce.p4java.core.IReviewChangelist;
-import com.perforce.p4java.core.IServerProcess;
-import com.perforce.p4java.core.IStream;
-import com.perforce.p4java.core.IStreamIntegrationStatus;
-import com.perforce.p4java.core.IStreamSummary;
-import com.perforce.p4java.core.IUser;
-import com.perforce.p4java.core.IUserGroup;
-import com.perforce.p4java.core.IUserSummary;
-import com.perforce.p4java.core.file.DiffType;
-import com.perforce.p4java.core.file.FileDiff;
-import com.perforce.p4java.core.file.FileSpecOpStatus;
-import com.perforce.p4java.core.file.FileStatAncilliaryOptions;
-import com.perforce.p4java.core.file.FileStatOutputOptions;
-import com.perforce.p4java.core.file.IExtendedFileSpec;
-import com.perforce.p4java.core.file.IFileAnnotation;
-import com.perforce.p4java.core.file.IFileRevisionData;
-import com.perforce.p4java.core.file.IFileSize;
-import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.core.file.IObliterateResult;
+import com.perforce.p4java.core.file.*;
 import com.perforce.p4java.env.PerforceEnvironment;
 import com.perforce.p4java.env.SystemInfo;
-import com.perforce.p4java.exception.AccessException;
-import com.perforce.p4java.exception.ConfigException;
-import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.MessageGenericCode;
-import com.perforce.p4java.exception.MessageSeverityCode;
-import com.perforce.p4java.exception.NullPointerError;
-import com.perforce.p4java.exception.P4JavaError;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.RequestException;
-import com.perforce.p4java.exception.UnimplementedError;
-import com.perforce.p4java.impl.generic.admin.DbSchema;
-import com.perforce.p4java.impl.generic.admin.DiskSpace;
-import com.perforce.p4java.impl.generic.admin.LogTail;
-import com.perforce.p4java.impl.generic.admin.Property;
-import com.perforce.p4java.impl.generic.admin.ProtectionEntry;
-import com.perforce.p4java.impl.generic.admin.ProtectionsTable;
-import com.perforce.p4java.impl.generic.admin.TriggerEntry;
-import com.perforce.p4java.impl.generic.admin.TriggersTable;
-import com.perforce.p4java.impl.generic.core.BranchSpec;
-import com.perforce.p4java.impl.generic.core.BranchSpecSummary;
-import com.perforce.p4java.impl.generic.core.Changelist;
-import com.perforce.p4java.impl.generic.core.ChangelistSummary;
-import com.perforce.p4java.impl.generic.core.Depot;
-import com.perforce.p4java.impl.generic.core.FileLineMatch;
-import com.perforce.p4java.impl.generic.core.Fix;
-import com.perforce.p4java.impl.generic.core.InputMapper;
-import com.perforce.p4java.impl.generic.core.Job;
-import com.perforce.p4java.impl.generic.core.JobSpec;
-import com.perforce.p4java.impl.generic.core.Label;
-import com.perforce.p4java.impl.generic.core.LabelSummary;
-import com.perforce.p4java.impl.generic.core.ReviewChangelist;
-import com.perforce.p4java.impl.generic.core.ServerProcess;
-import com.perforce.p4java.impl.generic.core.Stream;
-import com.perforce.p4java.impl.generic.core.StreamIntegrationStatus;
-import com.perforce.p4java.impl.generic.core.StreamSummary;
-import com.perforce.p4java.impl.generic.core.User;
-import com.perforce.p4java.impl.generic.core.UserGroup;
-import com.perforce.p4java.impl.generic.core.UserSummary;
-import com.perforce.p4java.impl.generic.core.file.ExtendedFileSpec;
-import com.perforce.p4java.impl.generic.core.file.FileAnnotation;
+import com.perforce.p4java.exception.*;
+import com.perforce.p4java.impl.generic.admin.*;
+import com.perforce.p4java.impl.generic.core.*;
+import com.perforce.p4java.impl.generic.core.file.*;
 import com.perforce.p4java.impl.generic.core.file.FilePath.PathType;
-import com.perforce.p4java.impl.generic.core.file.FileRevisionData;
-import com.perforce.p4java.impl.generic.core.file.FileSize;
-import com.perforce.p4java.impl.generic.core.file.FileSpec;
-import com.perforce.p4java.impl.generic.core.file.ObliterateResult;
 import com.perforce.p4java.impl.mapbased.MapKeys;
 import com.perforce.p4java.impl.mapbased.client.Client;
 import com.perforce.p4java.impl.mapbased.client.ClientSummary;
 import com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs;
 import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey;
 import com.perforce.p4java.option.UsageOptions;
-import com.perforce.p4java.option.server.ChangelistOptions;
-import com.perforce.p4java.option.server.CounterOptions;
-import com.perforce.p4java.option.server.DeleteBranchSpecOptions;
-import com.perforce.p4java.option.server.DeleteClientOptions;
-import com.perforce.p4java.option.server.DeleteLabelOptions;
-import com.perforce.p4java.option.server.DescribeOptions;
-import com.perforce.p4java.option.server.DuplicateRevisionsOptions;
-import com.perforce.p4java.option.server.ExportRecordsOptions;
-import com.perforce.p4java.option.server.FixJobsOptions;
-import com.perforce.p4java.option.server.GetBranchSpecOptions;
-import com.perforce.p4java.option.server.GetBranchSpecsOptions;
-import com.perforce.p4java.option.server.GetChangelistDiffsOptions;
-import com.perforce.p4java.option.server.GetChangelistsOptions;
-import com.perforce.p4java.option.server.GetClientTemplateOptions;
-import com.perforce.p4java.option.server.GetClientsOptions;
-import com.perforce.p4java.option.server.GetCountersOptions;
-import com.perforce.p4java.option.server.GetDepotFilesOptions;
-import com.perforce.p4java.option.server.GetDirectoriesOptions;
-import com.perforce.p4java.option.server.GetExtendedFilesOptions;
-import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
-import com.perforce.p4java.option.server.GetFileContentsOptions;
-import com.perforce.p4java.option.server.GetFileDiffsOptions;
-import com.perforce.p4java.option.server.GetFileSizesOptions;
-import com.perforce.p4java.option.server.GetFixesOptions;
-import com.perforce.p4java.option.server.GetInterchangesOptions;
-import com.perforce.p4java.option.server.GetJobsOptions;
-import com.perforce.p4java.option.server.GetKeysOptions;
-import com.perforce.p4java.option.server.GetLabelsOptions;
-import com.perforce.p4java.option.server.GetPropertyOptions;
-import com.perforce.p4java.option.server.GetProtectionEntriesOptions;
-import com.perforce.p4java.option.server.GetReviewsOptions;
-import com.perforce.p4java.option.server.GetRevisionHistoryOptions;
-import com.perforce.p4java.option.server.GetServerProcessesOptions;
-import com.perforce.p4java.option.server.GetStreamOptions;
-import com.perforce.p4java.option.server.GetStreamsOptions;
-import com.perforce.p4java.option.server.GetSubmittedIntegrationsOptions;
-import com.perforce.p4java.option.server.GetUserGroupsOptions;
-import com.perforce.p4java.option.server.GetUsersOptions;
-import com.perforce.p4java.option.server.JournalWaitOptions;
-import com.perforce.p4java.option.server.KeyOptions;
-import com.perforce.p4java.option.server.LogTailOptions;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.option.server.MatchingLinesOptions;
-import com.perforce.p4java.option.server.MoveFileOptions;
-import com.perforce.p4java.option.server.ObliterateFilesOptions;
-import com.perforce.p4java.option.server.OpenedFilesOptions;
-import com.perforce.p4java.option.server.GetReviewChangelistsOptions;
-import com.perforce.p4java.option.server.PropertyOptions;
-import com.perforce.p4java.option.server.ReloadOptions;
-import com.perforce.p4java.option.server.SearchJobsOptions;
-import com.perforce.p4java.option.server.SetFileAttributesOptions;
-import com.perforce.p4java.option.server.StreamIntegrationStatusOptions;
-import com.perforce.p4java.option.server.StreamOptions;
-import com.perforce.p4java.option.server.SwitchClientViewOptions;
-import com.perforce.p4java.option.server.TagFilesOptions;
-import com.perforce.p4java.option.server.TrustOptions;
-import com.perforce.p4java.option.server.UnloadOptions;
-import com.perforce.p4java.option.server.UpdateClientOptions;
-import com.perforce.p4java.option.server.UpdateUserGroupOptions;
-import com.perforce.p4java.option.server.UpdateUserOptions;
-import com.perforce.p4java.option.server.VerifyFilesOptions;
-import com.perforce.p4java.server.CmdSpec;
-import com.perforce.p4java.server.Fingerprint;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerInfo;
-import com.perforce.p4java.server.PerforceCharsets;
-import com.perforce.p4java.server.ServerStatus;
-import com.perforce.p4java.server.callback.ICommandCallback;
-import com.perforce.p4java.server.callback.IFilterCallback;
-import com.perforce.p4java.server.callback.IProgressCallback;
-import com.perforce.p4java.server.callback.ISSOCallback;
-import com.perforce.p4java.server.callback.IStreamingCallback;
+import com.perforce.p4java.option.server.*;
+import com.perforce.p4java.server.*;
+import com.perforce.p4java.server.callback.*;
+
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Generic abstract superclass for implementation-specific server implementations that use a 
@@ -695,9 +545,9 @@ public abstract class Server implements IServerControl, IOptionsServer {
 
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
-				String errStr = getErrorStr(map);
-				if (errStr != null) {
-					throw new RequestException(errStr, (String) map.get("code0"));
+				final IServerMessage err = getErrorStr(map);
+				if (err != null) {
+					throw new RequestException(err);
 				}
 			}
 			return new ServerInfo(resultMaps.toArray(new HashMap[resultMaps.size()]));
@@ -732,7 +582,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -747,8 +597,11 @@ public abstract class Server implements IServerControl, IOptionsServer {
 			statusStr = getInfoStr(resultMaps.get(0));
 			if (statusStr == null) {
 				// it's probably an error message:
-				
-				statusStr = getErrorStr(resultMaps.get(0));
+
+				final IServerMessage error = getErrorStr(resultMaps.get(0));
+				if (error != null) {
+					statusStr = error.toString();
+				}
 			}
 		}
 		
@@ -865,7 +718,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -975,7 +828,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -994,11 +847,11 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		List<IClientSummary> specList = new ArrayList<IClientSummary>();
 		
-		for (Map<String, Object> map : resultMaps) {		
-			String errStr = getErrorStr(map);
+		for (Map<String, Object> map : resultMaps) {
+			final IServerMessage err = getErrorStr(map);
 			
-			if (errStr != null) {
-				throw new RequestException(errStr, (String) map.get("code0"));
+			if (err != null) {
+				throw new RequestException(err);
 			} else {
 				specList.add(new ClientSummary(map, true));
 			}
@@ -1050,12 +903,12 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getLabels(com.perforce.p4java.option.server.GetLabelsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getLabels(List, GetLabelsOptions)
 	 */
 	public List<ILabelSummary> getLabels(List<IFileSpec> fileList, GetLabelsOptions opts)
 									throws P4JavaException {
@@ -1163,7 +1016,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -1292,7 +1145,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -1313,10 +1166,10 @@ public abstract class Server implements IServerControl, IOptionsServer {
 				if (map != null) {
 					// RPC version returns info, cmd version returns error... we throw
 					// an exception in either case.
-					
-					String errStr = getErrorStr(map);
-					if (errStr != null) {
-						throw new RequestException(errStr, (String) map.get("code0"));
+
+					final IServerMessage err = getErrorStr(map);
+					if (err != null) {
+						throw new RequestException(err);
 					} else {
 						// Note that this processing depends a bit on the current
 						// ordering of tagged results back from the server; if this
@@ -1412,7 +1265,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -1494,13 +1347,16 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (this.serverVersion < MIN_SUPPORTED_SERVER) {
 			throw new RequestException(
-					"command requires a Perforce server version 2009.1 or later"
-					);
+					"command requires a Perforce server version 2009.1 or later",
+					MessageGenericCode.EV_UPGRADE,
+					MessageSeverityCode.E_FAILED);
 		}
 		
 		if ((this.serverVersion < MIN_SUPPORTED_SERVER_OPTION_K) && noClientMove) {
 			throw new RequestException(
-					"command option noClientMove requires a Perforce server version 2009.2 or later");
+					"command option noClientMove requires a Perforce server version 2009.2 or later",
+					MessageGenericCode.EV_UPGRADE,
+					MessageSeverityCode.E_FAILED);
 		}
 		
 		try {
@@ -1612,7 +1468,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -1662,7 +1518,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 
@@ -1747,7 +1603,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -1796,7 +1652,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -1949,7 +1805,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 
@@ -1967,7 +1823,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -2073,7 +1929,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -2204,7 +2060,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -2242,7 +2098,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -2354,7 +2210,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -2477,7 +2333,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -2624,7 +2480,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -2674,7 +2530,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -2874,7 +2730,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#deleteDepot(com.perforce.p4java.core.IDepot)
+	 * @see com.perforce.p4java.server.IOptionsServer#deleteDepot(String)
 	 */
 	public String deleteDepot(String name) throws P4JavaException {
 		if (name == null) {
@@ -2926,7 +2782,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 
@@ -2988,7 +2844,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -3040,7 +2896,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -3203,7 +3059,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 
@@ -3245,10 +3101,9 @@ public abstract class Server implements IServerControl, IOptionsServer {
 
 		if (resultMaps != null) {
 			for (Map<String, Object> result : resultMaps) {
-				String errStr = this.handleFileErrorStr(result);
-				if (errStr != null) {
-					FileSpec fSpec = new FileSpec(FileSpecOpStatus.ERROR, errStr,
-														(String) result.get("code0"));
+				final IServerMessage err = this.handleFileErrorStr(result);
+				if (err != null) {
+					FileSpec fSpec = new FileSpec(FileSpecOpStatus.ERROR, err);
 					String depotPath = (String) result.get("depotFile");
 					fSpec.setDepotPath(depotPath);
 					revMap.put(fSpec, null);
@@ -3292,7 +3147,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getOpenedFiles(List, com.perforce.p4java.option.server.OpenedFilesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getOpenedFiles(List, OpenedFilesOptions)
 	 */
 	public List<IFileSpec> getOpenedFiles(List<IFileSpec> fileSpecs, OpenedFilesOptions opts)
 									throws P4JavaException {
@@ -3326,7 +3181,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -3390,8 +3245,8 @@ public abstract class Server implements IServerControl, IOptionsServer {
 				// really first-class parts of the Perforce file menagerie...
 	
 				if (map != null) {
-					String errStr = handleFileErrorStr(map);
-					if (errStr == null) {
+					final IServerMessage err = handleFileErrorStr(map);
+					if (err == null) {
 						if (map.get("dirName") != null) {
 							specList.add(new FileSpec((String) map.get("dirName")));
 						} else if (map.get("dir") != null) {
@@ -3404,12 +3259,10 @@ public abstract class Server implements IServerControl, IOptionsServer {
 							} else if (map.get("dir") != null) {
 								specList.add(new FileSpec((String) map.get("dir")));
 							} else {
-								specList.add(new FileSpec(FileSpecOpStatus.INFO, errStr,
-															(String) map.get("code0")));
+								specList.add(new FileSpec(FileSpecOpStatus.INFO, err));
 							}
 						} else {
-							specList.add(new FileSpec(FileSpecOpStatus.ERROR, errStr,
-													(String) map.get("code0")));
+							specList.add(new FileSpec(FileSpecOpStatus.ERROR, err));
 						}
 					}
 				}
@@ -3435,7 +3288,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -3479,7 +3332,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -3506,7 +3359,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -3583,19 +3436,15 @@ public abstract class Server implements IServerControl, IOptionsServer {
 				// (see fstat -e documentation for this); therefore we carefully weed
 				// out any return map here that has no depot path and a "desc" field
 				// -- HR (see also job040680).
-				
-				String errStr = handleFileErrorStr(map);
+
+				final IServerMessage err = handleFileErrorStr(map);
 				ExtendedFileSpec eSpec = null;
-				if (errStr == null) {
+				if (err == null) {
 					if (map.containsKey("depotFile") && !map.containsKey("desc")) {
 						eSpec = new ExtendedFileSpec(map, this, -1);
 					}
 				} else {
-					if (isInfoMessage(map)) {
-						eSpec = new ExtendedFileSpec(FileSpecOpStatus.INFO, errStr);
-					} else {
-						eSpec = new ExtendedFileSpec(FileSpecOpStatus.ERROR, errStr);
-					}
+					eSpec = new ExtendedFileSpec(err);
 				}
 				if (eSpec != null) {
 					specList.add(eSpec);
@@ -3625,10 +3474,10 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
 				if (map != null) {
-					String errStr = getErrorStr(map);
+					final IServerMessage err = getErrorStr(map);
 					
-					if (errStr != null) {
-						throw new RequestException(errStr, (String) map.get("code0"));
+					if (err != null) {
+						throw new RequestException(err);
 					} else {
 						jobIdList.add(getInfoStr(map));
 					}
@@ -3660,7 +3509,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -3678,10 +3527,10 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
 				if (map != null) {
-					String errStr = getErrorStr(map);
+					final IServerMessage err = getErrorStr(map);
 					
-					if (errStr != null) {
-						throw new RequestException(errStr, (String) map.get("code0"));
+					if (err != null) {
+						throw new RequestException(err);
 					} else {
 						jobList.add(new Job(this, map, opts == null ? false : opts.isLongDescriptions()));
 					}
@@ -3879,12 +3728,12 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getFixList(List, com.perforce.p4java.option.server.GetFixesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getFixes(List, GetFixesOptions)
 	 */
 	public List<IFix> getFixes(List<IFileSpec> fileSpecs, GetFixesOptions opts)
 											throws P4JavaException {
@@ -3921,12 +3770,12 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#fixJobs(List, com.perforce.p4java.option.server.FixJobsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#fixJobs(List, int, FixJobsOptions)
 	 */
 	public List<IFix> fixJobs(List<String> jobIds, int changelistId, FixJobsOptions opts)
 							throws P4JavaException {
@@ -3949,10 +3798,10 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
-				String errStr = getErrorStr(map);
+				final IServerMessage err = getErrorStr(map);
 
-				if (errStr != null) {
-					throw new RequestException(errStr, (String) map.get("code0"));
+				if (err != null) {
+					throw new RequestException(err);
 				}
 
 				fixList.add(new Fix(map));
@@ -3976,7 +3825,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -4029,7 +3878,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -4071,7 +3920,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -4091,7 +3940,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -4112,13 +3961,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
-				String errStr = getErrorOrInfoStr(map);
+				final IServerMessage err = getErrorOrInfoStr(map);
 				
-				if (errStr != null) {
-					if (isAuthFail(errStr)) {
-						throw new AccessException(errStr);
+				if (err != null) {
+					if (isAuthFail(err)) {
+						throw new AccessException(err);
 					} else {
-						throw new RequestException(errStr, (String) map.get("code0"));
+						throw new RequestException(err);
 					}
 				} else {
 					try {
@@ -4148,13 +3997,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
-				String errStr = getErrorOrInfoStr(map);
+				final IServerMessage err = getErrorOrInfoStr(map);
 				
-				if (errStr != null) {
-					if (isAuthFail(errStr)) {
-						throw new AccessException(errStr);
+				if (err != null) {
+					if (isAuthFail(err)) {
+						throw new AccessException(err);
 					} else {
-						throw new RequestException(errStr, (String) map.get("code0"));
+						throw new RequestException(err);
 					}
 				} else {
 					try {
@@ -4243,13 +4092,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
-				String errStr = getErrorOrInfoStr(map);
+				final IServerMessage err = getErrorOrInfoStr(map);
 				
-				if (errStr != null) {
-					if (isAuthFail(errStr)) {
-						throw new AccessException(errStr);
+				if (err != null) {
+					if (isAuthFail(err)) {
+						throw new AccessException(err);
 					} else {
-						throw new RequestException(errStr, (String) map.get("code0"));
+						throw new RequestException(err);
 					}
 				} else {
 					try {
@@ -4280,13 +4129,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
-				String errStr = getErrorOrInfoStr(map);
+				final IServerMessage err = getErrorOrInfoStr(map);
 				
-				if (errStr != null) {
-					if (isAuthFail(errStr)) {
-						throw new AccessException(errStr);
+				if (err != null) {
+					if (isAuthFail(err)) {
+						throw new AccessException(err);
 					} else {
-						throw new RequestException(errStr, (String) map.get("code0"));
+						throw new RequestException(err);
 					}
 				} else {
 					try {
@@ -4395,7 +4244,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 
@@ -4417,10 +4266,10 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
-				String errStr = getErrorStr(map);
+				final IServerMessage err = getErrorStr(map);
 
-				if (errStr != null) {
-					throw new RequestException(errStr, (String) map.get("code0"));
+				if (err != null) {
+					throw new RequestException(err);
 				}
 
 				processList.add(new ServerProcess(map));
@@ -4474,7 +4323,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -4523,7 +4372,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -4550,14 +4399,14 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
 				if (map != null) {
-					String errStr = getErrorStr(map);
-					if (errStr != null) {
-						throw new RequestException(errStr, (String) map.get("code0"));
+					IServerMessage err = getErrorStr(map);
+					if (err != null) {
+						throw new RequestException(err);
 					}
 					// Check for info/warn message
-					errStr = getErrorOrInfoStr(map);
-					if (errStr != null) {
-						Log.info(errStr);
+					err = getErrorOrInfoStr(map);
+					if (err != null) {
+						Log.info(err);
 					} else {
 						diffs.add(new FileDiff(map));
 					}
@@ -4588,10 +4437,10 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
-				String errStr = getErrorStr(map);
+				final IServerMessage err = getErrorStr(map);
 	
-				if (errStr != null) {
-					throw new RequestException(errStr, (String) map.get("code0"));
+				if (err != null) {
+					throw new RequestException(err);
 				}
 				schemaList.add(new DbSchema(map));
 			}
@@ -4621,7 +4470,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 
@@ -4644,9 +4493,9 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
-				String errStr = getErrorStr(map);
-				if (errStr != null) {
-					throw new RequestException(errStr, (String) map.get("code0"));
+				final IServerMessage err = getErrorStr(map);
+				if (err != null) {
+					throw new RequestException(err);
 				}
 				if (map.containsKey("func")) {
 					map.remove("func");
@@ -4701,7 +4550,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#setFileAttributes(com.perforce.p4java.option.server.SetFileAttributesOptions, Map, List)
+	 * @see com.perforce.p4java.server.IOptionsServer#setFileAttributes(List, Map, SetFileAttributesOptions)
 	 */
 	public List<IFileSpec> setFileAttributes(List<IFileSpec> files, Map<String, String> attributes,
 							SetFileAttributesOptions opts) throws P4JavaException {
@@ -4774,7 +4623,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#setFileAttributes(com.perforce.p4java.option.server.SetFileAttributesOptions, InputStream, List)
+	 * @see com.perforce.p4java.server.IOptionsServer#setFileAttributes(List, String, InputStream, SetFileAttributesOptions)
 	 */
 	public List<IFileSpec> setFileAttributes(List<IFileSpec> files, String attributeName,
 					InputStream inStream, SetFileAttributesOptions opts) throws P4JavaException {
@@ -4855,9 +4704,9 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
-				String errStr = getErrorStr(map);
-				if (errStr != null) {
-					throw new RequestException(errStr, (String) map.get("code0"));
+				final IServerMessage err = getErrorStr(map);
+				if (err != null) {
+					throw new RequestException(err);
 				}
 				configList.add(new ServerConfigurationValue(map));
 			}
@@ -4890,31 +4739,33 @@ public abstract class Server implements IServerControl, IOptionsServer {
 				null);
 		
 		if (resultMaps != null) {
-			for (Map<String, Object> map : resultMaps) {				
+			for (Map<String, Object> map : resultMaps) {
 				if (map != null) {
-					String str = this.getErrorOrInfoStr(map);
-					if (str == null) {
+					// TODO this is kind of a bad implementation
+					IServerMessage errInfo = this.getErrorOrInfoStr(map);
+					String msg = errInfo == null ? null : errInfo.toString();
+					if (errInfo == null) {
 						// Handling the new message format for Perforce server
 						// version 2011.1; also maintain backward compatibility.
 						if (map.containsKey("Name")) {
 							if (map.containsKey("Action") && map.get("Action") != null) {
 								String action = (String)map.get("Action");
 								if (action.equalsIgnoreCase("set")) {
-									str = "For server '%serverName%', configuration variable '%variableName%' set to '%variableValue%'";
+									msg = "For server '%serverName%', configuration variable '%variableName%' set to '%variableValue%'";
 								} else if (action.equalsIgnoreCase("unset")) {
-									str = "For server '%serverName%', configuration variable '%variableName%' removed.";
+									msg = "For server '%serverName%', configuration variable '%variableName%' removed.";
 								}
-								if (str != null) {
-									str = str.replaceAll("%serverName%", (String)map.get("ServerName"));
-									str = str.replaceAll("%variableName%", (String)map.get("Name"));
-									str = str.replaceAll("%variableValue%", (String)map.get("Value"));
-									str += "\n";
+								if (msg != null) {
+									msg = msg.replaceAll("%serverName%", (String)map.get("ServerName"));
+									msg = msg.replaceAll("%variableName%", (String)map.get("Name"));
+									msg = msg.replaceAll("%variableValue%", (String)map.get("Value"));
+									msg += "\n";
 								}
 							}
 						}
 					}
-					if (str != null) {
-						retVal = str;
+					if (msg != null) {
+						retVal = msg;
 					}
 				}
 			}
@@ -4936,13 +4787,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
-				String errStr = getErrorOrInfoStr(map);
+				final IServerMessage err = getErrorOrInfoStr(map);
 				
-				if (errStr != null) {
-					if (isAuthFail(errStr)) {
-						throw new AccessException(errStr);
+				if (err != null) {
+					if (isAuthFail(err)) {
+						throw new AccessException(err);
 					} else {
-						throw new RequestException(errStr, (String) map.get("code0"));
+						throw new RequestException(err);
 					}
 				} else {
 					try {
@@ -4969,9 +4820,9 @@ public abstract class Server implements IServerControl, IOptionsServer {
 
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
-				String errStr = getErrorStr(map);
-				if (errStr != null) {
-					throw new RequestException(errStr, (String) map.get("code0"));
+				final IServerMessage err = getErrorStr(map);
+				if (err != null) {
+					throw new RequestException(err);
 				}
 			}
 		}
@@ -4979,14 +4830,14 @@ public abstract class Server implements IServerControl, IOptionsServer {
 
 	public boolean handleErrorStr(Map<String, Object> map)
 			throws RequestException, AccessException {
+
+		final IServerMessage err = getErrorStr(map);
 		
-		String errStr = getErrorStr(map);
-		
-		if (errStr != null) {
-			if (isAuthFail(errStr)) {
-				throw new AccessException(errStr);
+		if (err != null) {
+			if (isAuthFail(err)) {
+				throw new AccessException(err);
 			} else {
-				throw new RequestException(errStr, (String) map.get("code0"));
+				throw new RequestException(err);
 			}
 		}
 		return false;
@@ -5000,16 +4851,14 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	public IFileSpec handleFileReturn(Map<String, Object> map, IClient client)
 					throws AccessException, ConnectionException {
 		if (map != null) {
-			String errStr = handleFileErrorStr(map);
-			if (errStr == null) {
+			final IServerMessage err = handleFileErrorStr(map);
+			if (err == null) {
 				return new FileSpec(map, this, -1);
 			} else {
 				if (isInfoMessage(map)) {
-					return new FileSpec(FileSpecOpStatus.INFO, errStr,
-										(String) map.get("code0"));
+					return new FileSpec(FileSpecOpStatus.INFO, err);
 				} else {
-					return new FileSpec(FileSpecOpStatus.ERROR, errStr,
-										(String) map.get("code0"));
+					return new FileSpec(FileSpecOpStatus.ERROR, err);
 				}
 			}
 		}
@@ -5024,34 +4873,33 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	public IFileSpec handleIntegrationFileReturn(Map<String, Object> map, boolean ignoreInfo)
 							throws AccessException, ConnectionException {
 		if (map != null) {
-			String errStr = handleFileErrorStr(map);
-			if (errStr == null) {
+			final IServerMessage err = handleFileErrorStr(map);
+			if (err == null) {
 				return new FileSpec(map, this, -1);
 			} else {
 				if (isInfoMessage(map)) {
 					if (ignoreInfo) {
 						return new FileSpec(map, this, -1);
 					} else {
-						return new FileSpec(FileSpecOpStatus.INFO, errStr, (String) map.get("code0"));
+						return new FileSpec(FileSpecOpStatus.INFO, err);
 					}
 				} else {
-					return new FileSpec(FileSpecOpStatus.ERROR, errStr,
-													(String) map.get("code0"));
+					return new FileSpec(FileSpecOpStatus.ERROR, err);
 				}
 			}
 		}
 		return null;
 	}
 	
-	public String handleFileErrorStr(Map<String, Object> map)
+	public IServerMessage handleFileErrorStr(Map<String, Object> map)
 			throws ConnectionException, AccessException {
-		String errStr = getErrorOrInfoStr(map);
+		final IServerMessage err = getErrorOrInfoStr(map);
 		
-		if (errStr != null) {
-			if (isAuthFail(errStr)) {
-				throw new AccessException(errStr);
+		if (err != null) {
+			if (isAuthFail(err)) {
+				throw new AccessException(err);
 			} else {
-				return errStr.trim();
+				return err;
 			}
 		}
 		
@@ -5174,14 +5022,14 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	/**
 	 * @see com.perforce.p4java.server.IOptionsServer#getErrorStr(Map)
 	 */
-	public String getErrorStr(Map<String, Object> map) {
+	public IServerMessage getErrorStr(Map<String, Object> map) {
 		throw new UnimplementedError("called IOptionsServer.getErrorStr(map)");
 	}
 	
 	/**
 	 * @see com.perforce.p4java.server.IOptionsServer#getErrorOrInfoStr(Map)
 	 */
-	public String getErrorOrInfoStr(Map<String, Object> map) {
+	public IServerMessage getErrorOrInfoStr(Map<String, Object> map) {
 		throw new UnimplementedError("called IOptionsServer.getErrorOrInfoStr(map)");
 	}
 
@@ -5192,10 +5040,20 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		throw new UnimplementedError("called IOptionsServer.getInfoStr(map)");
 	}
 
-	abstract public boolean isAuthFail(String errStr);
+	abstract public boolean isAuthFail(IServerMessage err);
 	abstract public boolean isLoginNotRequired(String msgStr);
+
+	/** @deprecated use the IServerMessage instead */
 	abstract public boolean isInfoMessage(Map<String, Object> map);
+
+	/**
+	 * @deprecated use the IServerMessage instead
+	 */
 	protected abstract int getGenericCode(Map<String, Object> map);
+
+	/**
+	 * @deprecated use the IServerMessage instead
+	 */
 	protected abstract int getSeverityCode(Map<String, Object> map);
 	
 	/**
@@ -5259,7 +5117,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 									throws P4JavaException;
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#execInputStringStreamCmd(String, String)
+	 * @see com.perforce.p4java.server.IOptionsServer#execInputStringStreamCmd(String, String[], String)
 	 */
 	abstract public InputStream execInputStringStreamCmd(String cmdName, String[] cmdArgs, String inString)
 									throws P4JavaException;
@@ -5546,18 +5404,19 @@ public abstract class Server implements IServerControl, IOptionsServer {
 					// nested set of depot file specs inside the same map, in
 					// which case we pick the files off as best we can and then associate
 					// them with the changelist constructed as above.
+
+					final IServerMessage err = handleFileErrorStr(map);
 					
-					String errStr = handleFileErrorStr(map);
-					
-					if (errStr != null) {
+					if (err != null) {
 						// What we're doing here is weeding out the "all revision(s)
 						// already integrated" non-error error...
 						// Note that the code here may be fragile in the face of
 						// server-side changes to error messages and code changes.
 						
-						if ((getGenericCode(map) != 17) && (getSeverityCode(map) != 2) &&
-								!errStr.contains("all revision(s) already integrated")) {
-							throw new RequestException(errStr, (String) map.get("code0"));
+						if ((err.getGeneric() != 17) && (err.getSeverity() != 2) &&
+								// TODO move string to a common location
+								!err.hasMessageFragment("all revision(s) already integrated")) {
+							throw new RequestException(err);
 						}
 					} else {
 						Changelist changelist = new Changelist(new ChangelistSummary(map, true, this), this, false);
@@ -5617,7 +5476,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	 * @see com.perforce.p4java.server.IOptionsServer#getMatchingLines(List, String, List, com.perforce.p4java.option.server.MatchingLinesOptions)
 	 */
 	public List<IFileLineMatch> getMatchingLines(List<IFileSpec> fileSpecs, String pattern,
-			List<String> infoLines, MatchingLinesOptions options) throws P4JavaException {
+			List<IServerMessage> infoLines, MatchingLinesOptions options) throws P4JavaException {
 		if (fileSpecs == null) {
 			throw new NullPointerError(
 				"Null file specification list passed to IOptionsServer.getMatchingLines");
@@ -5640,10 +5499,10 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		List<IFileLineMatch> specList = new ArrayList<IFileLineMatch>();
 
 		for (Map<String, Object> map : resultMaps) {
-			String message = getErrorStr(map);
+			IServerMessage message = getErrorStr(map);
 
 			if (message != null) {
-				throw new RequestException(message, (String) map.get("code0"));
+				throw new RequestException(message);
 			} else {
 				message = getErrorOrInfoStr(map);
 				if (message == null) {
@@ -5695,9 +5554,9 @@ public abstract class Server implements IServerControl, IOptionsServer {
 				IObliterateResult result = null;
 				List<IFileSpec> fsList = new ArrayList<IFileSpec>();
 				for (Map<String, Object> map : resultMaps) {
-					String errStr = handleFileErrorStr(map);
+					final IServerMessage err = handleFileErrorStr(map);
 					FileSpec fs = null;
-					if (errStr == null) {
+					if (err == null) {
 						if (map.containsKey("purgeFile")) {
 							fs = new FileSpec();
 							fs.setDepotPath((String) map.get("purgeFile"));
@@ -5719,9 +5578,9 @@ public abstract class Server implements IServerControl, IOptionsServer {
 						}
 					} else {
 						if (isInfoMessage(map)) {
-							fs = new FileSpec(FileSpecOpStatus.INFO, errStr);
+							fs = new FileSpec(FileSpecOpStatus.INFO, err);
 						} else {
-							fs = new FileSpec(FileSpecOpStatus.ERROR,	errStr);
+							fs = new FileSpec(FileSpecOpStatus.ERROR, err);
 						}
 						fsList.add(fs);
 						result = new ObliterateResult(fsList, 0, 0, 0, 0, 0, 0, reportOnly);
@@ -5754,9 +5613,9 @@ public abstract class Server implements IServerControl, IOptionsServer {
 														null);
 		if (resultMaps != null) {
 			for (Map<String, Object> streamMap : resultMaps) {
-				String errStr = handleFileErrorStr(streamMap);
-				if (errStr != null) {
-					Log.error(errStr);
+				final IServerMessage err = handleFileErrorStr(streamMap);
+				if (err != null) {
+					Log.error(err);
 				} else {
 					streamList.add(new StreamSummary(streamMap, true));
 				}
@@ -5832,7 +5691,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptioinsServer#updateStream(com.perforce.p4java.core.IStream, com.perforce.p4java.option.server.StreamOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#updateStream(IStream, StreamOptions)
 	 */
 	public String updateStream(IStream stream, StreamOptions opts) throws P4JavaException {
 		if (stream == null) {
@@ -5934,9 +5793,9 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
 				if (map != null) {
-					String errStr = getErrorStr(map);
-					if (errStr != null) {
-						throw new RequestException(errStr, (String) map.get("code0"));
+					final IServerMessage err = getErrorStr(map);
+					if (err != null) {
+						throw new RequestException(err);
 					} else {
 						try {
 							if (map.containsKey("file")) {
@@ -5964,7 +5823,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#duplicateRevisions(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.option.DuplicateRevisionsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#duplicateRevisions(IFileSpec, IFileSpec, DuplicateRevisionsOptions)
 	 */
 	public List<IFileSpec> duplicateRevisions(IFileSpec fromFile, IFileSpec toFile,
 			DuplicateRevisionsOptions opts) throws P4JavaException {
@@ -6146,19 +6005,14 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
-				
-				String errStr = handleFileErrorStr(map);
+				final IServerMessage err = handleFileErrorStr(map);
 				ExtendedFileSpec eSpec = null;
-				if (errStr == null) {
+				if (err == null) {
 					if (map.containsKey("depotFile") && !map.containsKey("desc")) {
 						eSpec = new ExtendedFileSpec(map, this, -1);
 					}
 				} else {
-					if (isInfoMessage(map)) {
-						eSpec = new ExtendedFileSpec(FileSpecOpStatus.INFO, errStr);
-					} else {
-						eSpec = new ExtendedFileSpec(FileSpecOpStatus.ERROR, errStr);
-					}
+					eSpec = new ExtendedFileSpec(err);
 				}
 				if (eSpec != null) {
 					specList.add(eSpec);

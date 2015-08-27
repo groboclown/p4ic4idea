@@ -4,6 +4,7 @@
 package com.perforce.p4java.core.file;
 
 import com.perforce.p4java.core.IServerResource;
+import com.perforce.p4java.server.IServerMessage;
 
 /**
  * Defines the broadest operations available on file specs returned
@@ -46,7 +47,7 @@ public interface IFileOperationResult extends IServerResource {
 	 * 
 	 * @return possibly-null Perforce operation message.
 	 */
-	String getStatusMessage();
+	IServerMessage getStatusMessage();
 	
 	/**
 	 * Get the Perforce severity code associated with the operation result. Will only

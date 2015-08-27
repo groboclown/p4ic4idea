@@ -146,7 +146,7 @@ The execution of server requests is controlled by these factors:
   communications with all the servers in the project.
 * **Project Alerts** - project-wide alerts.  *These might not exist at all.*
 * **Cached Server State Synchronize** - perform the
-  (Synchronize Action)[#Synchronize Action] discussed above.  This may occur
+  [Synchronize Action](#Synchronize Action) discussed above.  This may occur
   in the background thread, or in the IDEA requested thread.  In either case,
   the Pending Updates must complete the current update execution, and wait
   to run others, while all pending synchronize actions run.
@@ -159,3 +159,33 @@ need to wait on update requests to complete before other communications run.
 The Pending Updates queue and Cached Server State Synchronize actions (when run
 in the background) can be consolidated where appropriate, much like how the
 AWT consolidates `paint` requests in the EDT.
+
+
+# Reconciling Differences
+
+There are two types of reconciliation - server reconciliation, where changes
+on the server side are loaded and must be reconciled with the local changes,
+and local reconciliation, where the local changes must be reconciled with
+the server version.
+
+Changes are managed on a per-object basis, where the objects are one of the
+following groups:
+
+* **Job** - changes to the description of the job.
+* **Workspace** - changes to the root or view mappings.  Either one of these
+  changes implies that the currently stored mappings between the depot
+  and file system must be reloaded.
+* **Changelist** - changes to the description, job association, and
+  fix state.  The files associated with changelists are handled on their own,
+  with the changelist association on those files being an indirect relationship
+  to the corresponding changelist object.
+* **File** - each file is managed on its own (note that *move* operations
+  have an implicit relationship between two files, particularly that they
+  must be in the same changelist, but that should be handled at a higher level).
+* **Ignore** - the list of file globs or regular expressions that the
+  plugin must ignore.  Changes to this ignore mean changes to the handling
+  of files.  Even though this is a client-stored file, reloads from the file
+  (or just file editing) versus UI operations to update the file need to be
+  managed; specifically, the internal cached state needs to be updated when
+  the file is updated, and UI actions on this file ("ignore file") need to
+  be pushed to the file.

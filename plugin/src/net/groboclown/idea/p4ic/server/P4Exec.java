@@ -37,6 +37,7 @@ import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
 import com.perforce.p4java.option.server.GetFileContentsOptions;
 import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.VcsFuture;
 import net.groboclown.idea.p4ic.background.VcsSettableFuture;
@@ -1137,10 +1138,10 @@ public class P4Exec {
         List<Map<String, Object>> resultMaps = server.execMapCmdList(CmdSpec.JOB, new String[]{"-o", jobId}, null);
         if (resultMaps != null) {
             for (final Map<String, Object> resultMap : resultMaps) {
-                String errStr = server.getErrorStr(resultMap);
-                if (errStr != null) {
-                    if (server.isAuthFail(errStr)) {
-                        throw new AccessException(errStr);
+                final IServerMessage err = server.getErrorStr(resultMap);
+                if (err != null) {
+                    if (server.isAuthFail(err)) {
+                        throw new AccessException(err);
                     } else {
                         final String errorMessage = P4Bundle.message("error.job.parse", jobId, resultMap.get("code0"));
                         LOG.error(errorMessage);

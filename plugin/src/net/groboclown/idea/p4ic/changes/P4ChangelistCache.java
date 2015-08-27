@@ -408,6 +408,13 @@ public class P4ChangeListCache implements ApplicationComponent {
     }
 
 
+    /**
+     *
+     *
+     * @param client
+     * @deprecated ClientServerId
+     * @return
+     */
     @NotNull
     private static String getClientServerId(@NotNull Client client)
     {
@@ -415,6 +422,13 @@ public class P4ChangeListCache implements ApplicationComponent {
     }
 
 
+    /**
+     *
+     * @param serverConfigId
+     * @param clientName
+     * @deprecated ClientServerId
+     * @return
+     */
     @NotNull
     private static String getClientServerId(@NotNull String serverConfigId, @NotNull String clientName)
     {

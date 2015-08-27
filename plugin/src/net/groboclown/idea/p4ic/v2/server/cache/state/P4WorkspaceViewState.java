@@ -14,11 +14,13 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import com.perforce.p4java.client.IClientViewMapping;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -48,16 +50,38 @@ public class P4WorkspaceViewState extends CachedState {
         }
     }
 
-    public P4WorkspaceViewState(final String name) {
+    public P4WorkspaceViewState(@NotNull final String name) {
         this.name = name;
     }
 
-    public void addRoot(@NotNull final String root) {
-        roots.add(root);
+    public void setRoots(@NotNull final List<String> roots) {
+        this.roots = new ArrayList<String>(roots);
+    }
+
+    public void setViewMappings(@NotNull final List<IClientViewMapping> newMappings) {
+        depotWorkspaceMapping.clear();
+        for (IClientViewMapping mapping : newMappings) {
+            addViewMapping(mapping.getDepotSpec(false), mapping.getClient(false));
+        }
     }
 
     public void addViewMapping(@NotNull final String depotSpec, @NotNull final String clientSpec) {
         depotWorkspaceMapping.add(new ViewMapping(depotSpec, clientSpec));
+    }
+
+    @NotNull
+    public String getName() {
+        return name;
+    }
+
+    @NotNull
+    public List<String> getRoots() {
+        return Collections.unmodifiableList(roots);
+    }
+
+    @NotNull
+    public List<ViewMapping> getViewMappings() {
+        return Collections.unmodifiableList(depotWorkspaceMapping);
     }
 
     @Override

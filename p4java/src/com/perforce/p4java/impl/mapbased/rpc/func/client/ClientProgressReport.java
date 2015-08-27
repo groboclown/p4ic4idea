@@ -3,20 +3,21 @@
  */
 package com.perforce.p4java.impl.mapbased.rpc.func.client;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.perforce.p4java.impl.mapbased.MapKeys;
 import com.perforce.p4java.impl.mapbased.rpc.CommandEnv;
 import com.perforce.p4java.impl.mapbased.rpc.RpcServer;
 import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey;
 import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionSpec;
 import com.perforce.p4java.server.CmdSpec;
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.callback.IProgressCallback;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Report the progress of the command tick by tick.
@@ -80,7 +81,8 @@ public class ClientProgressReport {
 				case CLIENT_OUTPUTTEXT:
 					return progressCallback.tick(cmdCallBackKey, tickMarker);
 				case CLIENT_MESSAGE:
-					tickMarker = server.getErrorOrInfoStr(resultsMap);
+					final IServerMessage msg = server.getErrorOrInfoStr(resultsMap);
+					tickMarker = msg == null ? null : msg.toString();
 					return progressCallback.tick(cmdCallBackKey, tickMarker);
 				default:
 					break;

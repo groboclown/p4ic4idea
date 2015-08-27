@@ -3,7 +3,7 @@
  */
 package com.perforce.p4java.exception;
 
-import com.perforce.p4java.Log;
+import com.perforce.p4java.server.IServerMessage;
 
 /**
  * An exception to be used to signal that the Perforce server has detected
@@ -31,12 +31,15 @@ import com.perforce.p4java.Log;
  * only calculated once. The setCodes method is provided to make this easy.<p>
  * 
  * See the MessageSeverityCode and MessageGenericCode definitions for suitable help
- * with those types of code.
+ * with those types of code.<p>
+ *
+ * Updated for p4ic4idea to keep an IServerMessage.
  */
 
 public class RequestException extends P4JavaException {
 	
 	private static final long serialVersionUID = 1L;
+	private IServerMessage message;
 	private int rawCode = 0;
 	private int severityCode = 0;
 	private int genericCode = 0;
@@ -44,56 +47,75 @@ public class RequestException extends P4JavaException {
 	private int subCode = 0;
 	private int subSystem = 0;
 
-	public RequestException() {
-		super();
-	}
-
-	public RequestException(String message, Throwable cause) {
-		super(message, cause);
-	}
-
-	public RequestException(String message) {
-		super(message);
-	}
-
 	public RequestException(Throwable cause) {
 		super(cause);
 	}
-	
-	public RequestException(String message, int rawCode) {
-		super(message);
-		setCodes(rawCode);
-	}
-	
-	public RequestException(String message, String codeString) {
-		super(message);
-		if (codeString != null) {
-			try {
-				setCodes(new Integer(codeString));
-			} catch (Exception exc) {
-				Log.exception(exc);
-			}
-		}
-	}
-	
+
+	/** @deprecated should be a very specific exception */
 	public RequestException(String message, int genericCode, int severityCode) {
 		super(message);
 		this.genericCode = genericCode;
 		this.severityCode = severityCode;
 	}
-	
+
+	/** @deprecated should be a different exception */
+	public RequestException(String message) {
+		super(message);
+	}
+
+	/**
+	 * @deprecated should be a different exception
+	 */
+	public RequestException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
+	/*
+
+	public RequestException() {
+		super();
+	}
+
+	public RequestException(String message, int rawCode) {
+		super(message);
+		setCodes(rawCode);
+	}
+
 	public RequestException(Throwable cause, int genericCode, int severityCode) {
 		super(cause);
 		this.genericCode = genericCode;
 		this.severityCode = severityCode;
 	}
-	
+
 	public RequestException(String message, Throwable cause, int genericCode, int severityCode) {
 		super(message, cause);
 		this.genericCode = genericCode;
 		this.severityCode = severityCode;
 	}
+	*/
 	
+	public RequestException(IServerMessage message) {
+		super(message.toString());
+		this.message = message;
+		this.rawCode = message.getRawCode();
+		this.subCode = message.getSubCode();
+		this.subSystem = message.getSubSystem();
+		this.uniqueCode = message.getUniqueCode();
+		this.genericCode = message.getGeneric();
+		this.severityCode = message.getSeverity();
+	}
+
+	public RequestException(IServerMessage message, Throwable t) {
+		super(message.toString(), t);
+		this.message = message;
+		this.rawCode = message.getRawCode();
+		this.subCode = message.getSubCode();
+		this.subSystem = message.getSubSystem();
+		this.uniqueCode = message.getUniqueCode();
+		this.genericCode = message.getGeneric();
+		this.severityCode = message.getSeverity();
+	}
+
 	/**
 	 * Set the raw code and associated subsidiary codes according to
 	 * the passed-in values. If you only have the raw code from the server,
@@ -113,15 +135,6 @@ public class RequestException extends P4JavaException {
 		return this;
 	}
 
-	public void setSeverityCode(int severityCode) {
-		this.severityCode = severityCode;
-	}
-
-
-	public void setGenericCode(int genericCode) {
-		this.genericCode = genericCode;
-	}
-	
 	public String getDisplayString() {
 		return "" + (this.genericCode != 0 ? "Generic: " + this.genericCode : "")
 				+ (this.severityCode != 0 ? " Severity: " + this.severityCode + "; " : "")
@@ -155,6 +168,10 @@ public class RequestException extends P4JavaException {
 
 	public void setSubSystem(int subSystem) {
 		this.subSystem = subSystem;
+	}
+
+	public IServerMessage getServerMessage() {
+		return message;
 	}
 
 	/**

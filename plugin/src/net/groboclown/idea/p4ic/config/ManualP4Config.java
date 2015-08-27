@@ -51,6 +51,8 @@ public class ManualP4Config implements P4Config {
     private boolean storePassword;
     @Nullable
     private String clientHostname;
+    @Nullable
+    private String ignoreFileName;
 
 
     public ManualP4Config() {
@@ -247,6 +249,15 @@ public class ManualP4Config implements P4Config {
         return clientHostname;
     }
 
+    @Override
+    public String getIgnoreFileName() {
+        return ignoreFileName;
+    }
+
+    public void setIgnoreFileName(@Nullable String fileName) {
+        ignoreFileName = fileName;
+    }
+
     public void setClientHostname(@Nullable final String name) {
         clientHostname = name;
     }
@@ -277,7 +288,9 @@ public class ManualP4Config implements P4Config {
                 Comparing.equal(authTicket, that.getAuthTicketPath()) &&
                 Comparing.equal(trustTicket, that.getTrustTicketPath()) &&
                 Comparing.equal(configFile, that.getConfigFile()) &&
-                Comparing.equal(password, that.getPassword());
+                Comparing.equal(password, that.getPassword()) &&
+                Comparing.equal(clientHostname, that.getClientname()) &&
+                Comparing.equal(ignoreFileName, that.getIgnoreFileName());
     }
 
     @Override
@@ -292,6 +305,8 @@ public class ManualP4Config implements P4Config {
                 (authTicket == null ? 8 : authTicket.hashCode()) +
                 (trustTicket == null ? 9 : trustTicket.hashCode()) +
                 (configFile == null ? 10 : configFile.hashCode()) +
-                (password == null ? 11 : password.hashCode());
+                (password == null ? 11 : password.hashCode()) +
+                (clientHostname == null ? 12 : clientHostname.hashCode()) +
+                (ignoreFileName == null ? 13 : ignoreFileName.hashCode());
     }
 }

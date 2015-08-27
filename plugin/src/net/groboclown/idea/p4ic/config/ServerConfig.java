@@ -33,7 +33,6 @@ import java.util.Map;
  */
 public abstract class ServerConfig {
 
-
     @Nullable
     public static ServerConfig createNewServerConfig(P4Config p4Config) {
         System.out.println("config: " + P4ConfigUtil.getProperties(p4Config));
@@ -113,6 +112,9 @@ public abstract class ServerConfig {
     public boolean hasTrustTicket() {
         return getTrustTicket() != null;
     }
+
+    @Nullable
+    public abstract String getIgnoreFileName();
 
     @NotNull
     public final String getServiceName() {

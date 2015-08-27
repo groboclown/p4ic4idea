@@ -3,25 +3,8 @@
  */
 package com.perforce.p4java.impl.mapbased.rpc;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.Socket;
-import java.nio.BufferOverflowException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-
 import com.perforce.p4java.Log;
-import com.perforce.p4java.exception.AccessException;
-import com.perforce.p4java.exception.ConfigException;
-import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.ConnectionNotConnectedException;
-import com.perforce.p4java.exception.P4JavaError;
-import com.perforce.p4java.exception.NullPointerError;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.RequestException;
+import com.perforce.p4java.exception.*;
 import com.perforce.p4java.impl.generic.client.ClientLineEnding;
 import com.perforce.p4java.impl.generic.core.TempFileInputStream;
 import com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection;
@@ -31,15 +14,22 @@ import com.perforce.p4java.impl.mapbased.rpc.func.proto.ProtocolCommand;
 import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacket;
 import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacketDispatcher;
 import com.perforce.p4java.impl.mapbased.rpc.stream.RpcSocketPool;
-import com.perforce.p4java.impl.mapbased.rpc.stream.RpcStreamConnection;
 import com.perforce.p4java.impl.mapbased.rpc.stream.RpcSocketPool.ShutdownHandler;
+import com.perforce.p4java.impl.mapbased.rpc.stream.RpcStreamConnection;
 import com.perforce.p4java.impl.mapbased.rpc.sys.RpcOutputStream;
 import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IServerAddress.Protocol;
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.ServerStatus;
 import com.perforce.p4java.server.callback.IFilterCallback;
 import com.perforce.p4java.server.callback.IStreamingCallback;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.Socket;
+import java.nio.BufferOverflowException;
+import java.util.*;
 
 /**
  * A one-shot (connection-per-command) version of the RPC protocol
@@ -442,7 +432,7 @@ public class OneShotServerImpl extends RpcServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringStreamCmd(String, String)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringStreamCmd(String, String[], String)
 	 */
 	@Override
 	public InputStream execInputStringStreamCmd(String cmdName, String[] cmdArgs, String inString)
@@ -512,12 +502,12 @@ public class OneShotServerImpl extends RpcServer {
 			if ((retMapList != null) && (retMapList.size() != 0)) {
 				for (Map<String, Object> map : retMapList) {
 					if (map != null) {
-						String errStr = this.getErrorStr(map);
-						if (errStr != null) {
-							if (isAuthFail(errStr)) {
-								throw new AccessException(errStr);
+						final IServerMessage err = this.getErrorStr(map);
+						if (err != null) {
+							if (isAuthFail(err)) {
+								throw new AccessException(err);
 							} else {
-								throw new RequestException(errStr, (String) map.get("code0"));
+								throw new RequestException(err);
 							}
 						}
 					}

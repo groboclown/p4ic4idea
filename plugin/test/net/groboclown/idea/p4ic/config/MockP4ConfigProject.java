@@ -216,6 +216,11 @@ public class MockP4ConfigProject extends P4ConfigProject {
         public String getClientHostname() {
             return null;
         }
+
+        @Override
+        public String getIgnoreFileName() {
+            return null;
+        }
     }
 
 

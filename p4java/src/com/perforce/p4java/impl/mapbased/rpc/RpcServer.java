@@ -3,45 +3,27 @@
  */
 package com.perforce.p4java.impl.mapbased.rpc;
 
-import java.io.IOException;
-import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-
 import com.perforce.p4java.Log;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.env.PerforceEnvironment;
-import com.perforce.p4java.exception.AccessException;
-import com.perforce.p4java.exception.ConfigException;
-import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.MessageGenericCode;
-import com.perforce.p4java.exception.MessageSeverityCode;
-import com.perforce.p4java.exception.NullPointerError;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.RequestException;
-import com.perforce.p4java.exception.TrustException;
+import com.perforce.p4java.exception.*;
 import com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection;
 import com.perforce.p4java.impl.mapbased.rpc.func.client.ClientTrust;
 import com.perforce.p4java.impl.mapbased.rpc.func.proto.PerformanceMonitor;
 import com.perforce.p4java.impl.mapbased.rpc.func.proto.ProtocolCommand;
 import com.perforce.p4java.impl.mapbased.rpc.helper.RpcUserAuthCounter;
 import com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage;
+import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
 import com.perforce.p4java.impl.mapbased.rpc.packet.helper.RpcPacketFieldRule;
 import com.perforce.p4java.impl.mapbased.rpc.stream.RpcStreamConnection;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.option.server.TrustOptions;
-import com.perforce.p4java.server.AuthTicketsHelper;
-import com.perforce.p4java.server.CmdSpec;
-import com.perforce.p4java.server.Fingerprint;
-import com.perforce.p4java.server.FingerprintsHelper;
-import com.perforce.p4java.server.IServerImplMetadata;
-import com.perforce.p4java.server.IServerInfo;
-import com.perforce.p4java.server.ServerStatus;
+import com.perforce.p4java.server.*;
+
+import java.io.IOException;
+import java.net.UnknownHostException;
+import java.util.*;
 
 /**
  * RPC-based Perforce server implementation superclass.
@@ -388,8 +370,8 @@ public abstract class RpcServer extends Server {
         /**
          * @see com.perforce.p4java.server.IOptionsServer#getErrorOrInfoStr(Map)
          */
-        public String getErrorOrInfoStr(Map<String, Object> map) {
-                return getString(map, MessageSeverityCode.E_INFO);
+        public IServerMessage getErrorOrInfoStr(Map<String, Object> map) {
+                return getServerMessage(map, MessageSeverityCode.E_INFO);
         }
 
         public boolean isInfoMessage(Map<String, Object> map) {
@@ -419,42 +401,26 @@ public abstract class RpcServer extends Server {
                 return MessageGenericCode.EV_NONE;
         }
 
-        // TODO change this to return a structure for easier inquiry into the
-        // actual server error.
-        private String getString(Map<String, Object> map, int minimumCode ) {
+        // p4ic4idea change: returning an IServerMessage instead of a string.
+        private IServerMessage getServerMessage(Map<String, Object> map, int minimumCode ) {
                 if (map != null) {
                         int index = 0;
                         String code = (String) map.get(RpcMessage.CODE + index);
 
-                        // Return if no code0 key found
-                        if (code == null) {
-                                return null;
-                        }
+                        List<ISingleServerMessage> singleMessages = new ArrayList<ISingleServerMessage>();
 
-                        boolean foundCode = false;
-                        StringBuilder codeString = new StringBuilder();
                         while (code != null) {
-                                int severity = RpcMessage.getSeverity(code);
-                                if (severity >= minimumCode) {
-                                        foundCode = true;
-                                        String fmtStr = (String) map.get(RpcMessage.FMT + index);
-                                        if (fmtStr != null) {
-                                                if (fmtStr.indexOf('%') != -1) {
-                                                        fmtStr = RpcMessage.interpolateArgs(fmtStr, map);
-                                                }
-                                                // Insert latest message at beginning of error string
-                                                // since server structures them this way
-                                                codeString.insert(0, fmtStr);
-                                                codeString.insert(fmtStr.length(), '\n');
-                                        }
-                                }
+                                singleMessages.add(new ServerMessage.SingleServerMessage(code, index, map));
                                 index++;
                                 code = (String) map.get(RpcMessage.CODE + index);
                         }
 
                         // Only return a string if at least one severity code was found
-                        if (foundCode) {
-                                return codeString.toString();
+                        if (! singleMessages.isEmpty()) {
+                                final ServerMessage msg = new ServerMessage(singleMessages, map);
+                                if (msg.getSeverity() >= minimumCode) {
+                                        return msg;
+                                }
                         }
                 }
                 return null;
@@ -470,12 +436,14 @@ public abstract class RpcServer extends Server {
          * pick up the presence of the code0 entry; if it's there, use fmt0
          * as the format and the other args as appropriate...<p>
          *
-         * FIXME: work with multiple code/fmt sets... -- HR.
+         * <p>
+         *
+         * p4ic4idea changed the return code from String to IServerMessage
          *
          * @see com.perforce.p4java.server.IOptionsServer#getErrorStr(Map)
          */
-        public String getErrorStr(Map<String, Object> map) {
-                return getString(map, MessageSeverityCode.E_FAILED);
+        public IServerMessage getErrorStr(Map<String, Object> map) {
+                return getServerMessage(map, MessageSeverityCode.E_FAILED);
         }
 
     	/**
@@ -506,13 +474,13 @@ public abstract class RpcServer extends Server {
         }
 
         /**
-         * @see com.perforce.p4java.impl.mapbased.server.Server#isAuthFail(String)
+         * @see com.perforce.p4java.impl.mapbased.server.Server#isAuthFail(IServerMessage)
          */
         @Override
-        public boolean isAuthFail(String errStr) {
-                if (errStr != null) {
+        public boolean isAuthFail(IServerMessage err) {
+                if (err != null) {
                         for (String str : accessErrMsgs) {
-                                if (errStr.contains(str)) {
+                                if (err.hasMessageFragment(str)) {
                                         return true;
                                 }
                         }
@@ -600,20 +568,19 @@ public abstract class RpcServer extends Server {
                 this.commandCallback.completedServerCommand(cmdCallBackKey, timeTaken);
                 if (resultMaps != null) {
                         for (Map<String, Object> map : resultMaps) {
-                                String str = getErrorOrInfoStr(map);
-                                if (str != null) str = str.trim();
-                                int severity = getSeverityCode(map);
-                                int generic = getGenericCode(map);
+                                final IServerMessage msg = getErrorOrInfoStr(map);
+                                if (msg != null) {
+                                        int severity = msg.getSeverity();
+                                        if (severity != MessageSeverityCode.E_EMPTY) {
+                                                this.commandCallback.receivedServerMessage(
+                                                        cmdCallBackKey, msg.getGeneric(), severity, msg);
+                                        }
 
-                                if (severity != MessageSeverityCode.E_EMPTY) {
-                                        this.commandCallback.receivedServerMessage(cmdCallBackKey, generic, severity,
-                                                                                        str);
-                                }
-
-                                if (severity == MessageSeverityCode.E_INFO) {
-                                        this.commandCallback.receivedServerInfoLine(cmdCallBackKey, str);
-                                } else if (severity >= MessageSeverityCode.E_FAILED) {
-                                        this.commandCallback.receivedServerErrorLine(cmdCallBackKey, str);
+                                        if (msg.getSeverity() == MessageSeverityCode.E_INFO) {
+                                                this.commandCallback.receivedServerInfoLine(cmdCallBackKey, msg);
+                                        } else if (severity >= MessageSeverityCode.E_FAILED) {
+                                                this.commandCallback.receivedServerErrorLine(cmdCallBackKey, msg);
+                                        }
                                 }
                         }
                 }
@@ -759,7 +726,7 @@ public abstract class RpcServer extends Server {
          * as the P4TRUST environment variable or at the OS specific default location.
          * If the fingerprint value is null then the current entry will be cleared.
          *
-         * @param rpcConnection
+         * @param serverIpPort
          * @param fingerprintValue
          * @throws ConfigException
          */

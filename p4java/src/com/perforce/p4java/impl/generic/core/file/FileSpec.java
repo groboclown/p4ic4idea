@@ -4,28 +4,11 @@
 
 package com.perforce.p4java.impl.generic.core.file;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.perforce.p4java.Log;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
-import com.perforce.p4java.core.file.DiffType;
-import com.perforce.p4java.core.file.FileAction;
-import com.perforce.p4java.core.file.IFileAnnotation;
-import com.perforce.p4java.core.file.IFileRevisionData;
-import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.core.file.FileSpecBuilder;
-import com.perforce.p4java.core.file.FileSpecOpStatus;
-import com.perforce.p4java.exception.AccessException;
-import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.P4JavaError;
-import com.perforce.p4java.exception.NullPointerError;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.RequestException;
+import com.perforce.p4java.core.file.*;
+import com.perforce.p4java.exception.*;
 import com.perforce.p4java.impl.generic.core.ServerResource;
 import com.perforce.p4java.impl.generic.core.file.FilePath.PathType;
 import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
@@ -34,6 +17,13 @@ import com.perforce.p4java.option.server.GetRevisionHistoryOptions;
 import com.perforce.p4java.option.server.MoveFileOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.server.IServerMessage;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Simple generic default implementation class for the IFileSpec
@@ -43,7 +33,7 @@ import com.perforce.p4java.server.IServer;
 public class FileSpec extends ServerResource implements IFileSpec {
 
 	protected FileSpecOpStatus opStatus = FileSpecOpStatus.VALID;
-	protected String statusMessage = null;
+	protected IServerMessage statusMessage = null;
 	protected int genericCode = 0;
 	protected int severityCode = 0;
 	protected int rawCode = 0;
@@ -154,50 +144,16 @@ public class FileSpec extends ServerResource implements IFileSpec {
 	/**
 	 * Construct a filespec from an opstatus and error message pair.
 	 */
-	
-	public FileSpec(FileSpecOpStatus status, String errStr) {
+	public FileSpec(FileSpecOpStatus status, IServerMessage err) {
 		super(false, false);
 		this.opStatus = status;
-		this.statusMessage = errStr;
-	}
-	
-	/**
-	 * Construct a FileSpec from an opstatus, error message,
-	 * Perforce generic code, and Perforce severity code.
-	 */
-	public FileSpec(FileSpecOpStatus status, String errStr,
-								int genericCode, int severityCode) {
-		super(false, false);
-		this.opStatus = status;
-		this.statusMessage = errStr;
-		this.genericCode = genericCode;
-		this.severityCode = severityCode;
-	}
-	
-	/**
-	 * Construct a new FileSpec given the op status, an error string, and a raw code
-	 * string returned from a Perforce server.
-	 */
-	public FileSpec(FileSpecOpStatus status, String errStr, String codeStr) {
-		super(false, false);
-		this.opStatus = status;
-		this.statusMessage = errStr;
-		try {
-			setCodes(new Integer(codeStr));
-		} catch (Throwable thr) {
-			Log.exception(thr);
-		}
-	}
-	
-	/**
-	 * Construct a new FileSpec given the op status, an error string, and a raw code
-	 * value returned from a Perforce server.
-	 */
-	public FileSpec(FileSpecOpStatus status, String errStr, int rawCode) {
-		super(false, false);
-		this.opStatus = status;
-		this.statusMessage = errStr;
-		setCodes(rawCode);
+		this.statusMessage = err;
+		this.genericCode = err.getGeneric();
+		this.severityCode = err.getSeverity();
+		this.rawCode = err.getRawCode();
+		this.uniqueCode = err.getUniqueCode();
+		this.subCode = err.getSubCode();
+		this.subSystem = err.getSubSystem();
 	}
 
 	/**
@@ -368,6 +324,8 @@ public class FileSpec extends ServerResource implements IFileSpec {
 	 * Set the various error codes for this FileSpec to a value returned
 	 * from the server or the RPC layer. Use this if you're hand-constructing
 	 * a new FileSpec for an error condition and you have the raw code.
+	 *
+	 * @deprecated use the IServerMessage constructor instead
 	 */
 	public FileSpec setCodes(int rawCode) {
 		this.rawCode = rawCode;
@@ -619,7 +577,7 @@ public class FileSpec extends ServerResource implements IFileSpec {
 	/**
 	 * @see com.perforce.p4java.core.file.IFileSpec#getStatusMessage()
 	 */
-	public String getStatusMessage() {
+	public IServerMessage getStatusMessage() {
 		return this.statusMessage;
 	}
 	
@@ -674,7 +632,7 @@ public class FileSpec extends ServerResource implements IFileSpec {
 		this.opStatus = opStatus;
 	}
 
-	public void setStatusMessage(String statusMessage) {
+	public void setStatusMessage(IServerMessage statusMessage) {
 		this.statusMessage = statusMessage;
 	}
 

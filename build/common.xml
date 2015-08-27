@@ -118,8 +118,6 @@
 
     <property name="idea.lowest.classpath" value="idea135.classpath"/>
 
-    <property name="lib.p4java" location="${rootdir}/lib/p4java/2014.1.965322/p4java-2014.1.965322.jar"/>
-
     <property name="project.jdk.classpath" value="jdk.classpath"/>
 
 

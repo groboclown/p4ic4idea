@@ -3,6 +3,8 @@
  */
 package com.perforce.p4java.server.callback;
 
+import com.perforce.p4java.server.IServerMessage;
+
 /**
  * Provides a simple server command and command results notification callback
  * interface for P4Java consumers.<p>
@@ -59,33 +61,45 @@ public interface ICommandCallback {
 	 * These are typically informational messages from the server that
 	 * flag files being opened for edit, etc., but they may also include
 	 * trigger output on forms submission, etc.
+	 *
+	 * <p/>
+	 *
+	 * p4ic4idea changed the {@code infoLine} to IServerMessage from String.
 	 * 
 	 * @param key -- opaque integer key as returned from the associated 
 	 * 				issuingServerCommand call.
 	 * @param infoLine non-null info message. May contain newlines.
 	 */
-	void receivedServerInfoLine(int key, String infoLine);
+	void receivedServerInfoLine(int key, IServerMessage infoLine);
 	
 	/**
 	 * Report receiving an error message result from the Perforce server.
-	 * 
-	 * @param key -- opaque integer key as returned from the associated 
+	 *
+	 * <p>
+	 *
+	 * p4ic4idea changed the {@code errorLine} to IServerMessage from String.
+	 *
+	 *  @param key -- opaque integer key as returned from the associated
 	 * 				issuingServerCommand call.
 	 * @param errorLine non-null error message. May contain newlines.
 	 */
-	void receivedServerErrorLine(int key, String errorLine);
+	void receivedServerErrorLine(int key, IServerMessage errorLine);
 	
 	/**
 	 * Report receiving a server message, which may be an error, an info message,
 	 * a warning, etc., but will not typically be an actual result.
 	 * This method can be used in place of the separate receivedServerInfoLine
 	 * and receivedServerErrorLine for more general usage.
-	 * 
+	 *
+	 * <p/>
+	 *
+	 * p4ic4idea changed the message to an IServerMessage from a string.
+	 *
 	 * @param key opaque integer key as returned from the associated 
 	 * 				issuingServerCommand call.
 	 * @param genericCode Perforce generic code, as documented in MessageGenericCode.
 	 * @param severityCode Perforce severity code, as documented in MessageSeverityCode.
 	 * @param message non-null message. May contain newlines.
 	 */
-	void receivedServerMessage(int key, int genericCode, int severityCode, String message);
+	void receivedServerMessage(int key, int genericCode, int severityCode, IServerMessage message);
 }

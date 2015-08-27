@@ -14,6 +14,7 @@
 package net.groboclown.idea.p4ic.server.exceptions;
 
 import com.intellij.openapi.vcs.VcsException;
+import com.perforce.p4java.server.IServerMessage;
 
 public class P4Exception extends VcsException {
     public P4Exception(Throwable t) {
@@ -26,5 +27,10 @@ public class P4Exception extends VcsException {
 
     public P4Exception(String msg, Throwable t) {
         super(msg, t);
+    }
+
+    public P4Exception(IServerMessage msg) {
+        // FIXME needs to be handled better.
+        super(msg.toString());
     }
 }

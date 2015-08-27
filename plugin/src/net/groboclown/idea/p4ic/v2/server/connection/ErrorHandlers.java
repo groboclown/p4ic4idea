@@ -12,24 +12,19 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.v2.state;
+package net.groboclown.idea.p4ic.v2.server.connection;
 
-import java.util.Date;
-import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
-/**
- * Very simple state representation of a Perforce client.  This is persisted locally, so that the plugin can
- * work whether it's online or offline.
- */
-public class P4ClientState implements CachedState {
-    private String clientServerId;
-    private String activeClientRoot;
-    private P4WorkspaceViewState workspace;
-    private Set<P4ChangeListState> changes;
-    private Set<P4FileState> knownHave;
-
-    @Override
-    public Date getLastUpdated() {
-        return null;
+public class ErrorHandlers {
+    /**
+     *
+     * @param sourceAction the action that caused the error
+     * @param t error to handle
+     * @param alerts alert UI manager
+     */
+    public static void handle(@NotNull String sourceAction, @NotNull Throwable t, @NotNull AlertManager alerts) {
+        // FIXME
+        throw new IllegalStateException("not implemented", t);
     }
 }

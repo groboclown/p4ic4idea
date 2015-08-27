@@ -22,8 +22,6 @@ import org.jetbrains.annotations.Nullable;
  * Manages the configuration of the Perforce setup.  It should handle the normal method
  * for looking for the configuration - the environment variables, configuration file,
  * and user overrides.
- *
- * @author Matt Albrecht
  */
 public class EnvP4Config implements P4Config {
     private IServerAddress.Protocol protocol;
@@ -35,6 +33,7 @@ public class EnvP4Config implements P4Config {
     private String trustTicket;
     private String configFile;
     private String clientHostname;
+    private String ignoreFile;
     private ConnectionMethod connectionMethod;
 
     public EnvP4Config() {
@@ -52,6 +51,7 @@ public class EnvP4Config implements P4Config {
         authTicket = PerforceEnvironment.getP4Tickets();
         trustTicket = PerforceEnvironment.getP4Trust();
         clientHostname = PerforceEnvironment.getP4Host();
+        ignoreFile = PerforceEnvironment.getP4Ignore();
         if (trustTicket == null) {
             trustTicket = P4ConfigUtil.getDefaultTrustTicketFile().getAbsolutePath();
         }
@@ -173,6 +173,11 @@ public class EnvP4Config implements P4Config {
     @Override
     public String getClientHostname() {
         return clientHostname;
+    }
+
+    @Override
+    public String getIgnoreFileName() {
+        return ignoreFile;
     }
 
 

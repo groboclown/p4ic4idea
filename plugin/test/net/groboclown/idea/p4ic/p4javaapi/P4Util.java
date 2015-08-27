@@ -23,7 +23,6 @@ import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerAddress;
 import com.perforce.p4java.server.ServerFactory;
-import net.groboclown.idea.p4ic.config.P4Config;
 
 import java.net.URISyntaxException;
 import java.util.Properties;
@@ -39,7 +38,7 @@ public class P4Util {
         properties.setProperty(PropertyDefs.PROG_NAME_KEY, "IntelliJ Perforce Community Plugin");
         properties.setProperty(PropertyDefs.PROG_VERSION_KEY, "1");
 
-        properties.setProperty(PropertyDefs.IGNORE_FILE_NAME_KEY, P4Config.P4_IGNORE_FILE);
+        properties.setProperty(PropertyDefs.IGNORE_FILE_NAME_KEY, ".p4ignore");
         properties.setProperty(PropertyDefs.ENABLE_PROGRESS, "1");
         properties.setProperty(PropertyDefs.ENABLE_TRACKING, "1");
         properties.setProperty(PropertyDefs.WRITE_IN_PLACE_KEY, "1");

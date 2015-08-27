@@ -522,7 +522,7 @@ public class Client extends ClientSummary implements IClient {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	

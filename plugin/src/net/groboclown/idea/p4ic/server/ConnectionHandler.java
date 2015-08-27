@@ -21,7 +21,6 @@ import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
-import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.connection.AuthTicketConnectionHandler;
@@ -174,7 +173,7 @@ public abstract class ConnectionHandler {
         ret.setProperty(PropertyDefs.PROG_NAME_KEY, "IntelliJ Perforce Community Plugin");
         ret.setProperty(PropertyDefs.PROG_VERSION_KEY, "1");
 
-        ret.setProperty(PropertyDefs.IGNORE_FILE_NAME_KEY, P4Config.P4_IGNORE_FILE);
+        ret.setProperty(PropertyDefs.IGNORE_FILE_NAME_KEY, config.getIgnoreFileName());
 
         //ret.setProperty(PropertyDefs.ENABLE_PROGRESS, "1");
 

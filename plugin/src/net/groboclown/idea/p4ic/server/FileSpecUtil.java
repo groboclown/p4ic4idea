@@ -185,8 +185,9 @@ public class FileSpecUtil {
         return FileSpecBuilder.makeFileSpecList(paths);
     }
 
+    /** Use with care... */
     @NotNull
-    static List<IFileSpec> makeRootFileSpecs(@Nullable VirtualFile[] roots) throws P4Exception {
+    public static List<IFileSpec> makeRootFileSpecs(@Nullable VirtualFile[] roots) throws P4Exception {
         if (roots == null) {
             return Collections.emptyList();
         }
@@ -252,8 +253,21 @@ public class FileSpecUtil {
     }
 
 
+    /**
+     * Only use if you know what you're doing; specifically, the P4Exec objects
+     */
+    @Nullable
+    public static String unescapeP4PathNullable(@Nullable String path) {
+        if (path == null) {
+            return null;
+        }
+        return unescapeP4Path(path);
+    }
+
+
+        /** Only use if you know what you're doing; specifically, the P4Exec objects */
     @NotNull
-    static String unescapeP4Path(@NotNull String path) {
+    public static String unescapeP4Path(@NotNull String path) {
         StringBuilder sb = new StringBuilder(path.length());
         char[] buff = path.toCharArray();
         int pos = 0;

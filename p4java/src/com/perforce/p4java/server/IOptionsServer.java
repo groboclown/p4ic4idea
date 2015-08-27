@@ -3,109 +3,23 @@
  */
 package com.perforce.p4java.server;
 
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-
-import com.perforce.p4java.admin.IDiskSpace;
-import com.perforce.p4java.admin.ILogTail;
-import com.perforce.p4java.admin.IProperty;
-import com.perforce.p4java.admin.IProtectionEntry;
-import com.perforce.p4java.admin.ITriggerEntry;
-import com.perforce.p4java.admin.ServerConfigurationValue;
+import com.perforce.p4java.admin.*;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
-import com.perforce.p4java.core.IBranchSpec;
-import com.perforce.p4java.core.IBranchSpecSummary;
-import com.perforce.p4java.core.IChangelist;
-import com.perforce.p4java.core.IChangelistSummary;
-import com.perforce.p4java.core.IDepot;
-import com.perforce.p4java.core.IFileDiff;
-import com.perforce.p4java.core.IFileLineMatch;
-import com.perforce.p4java.core.IFix;
-import com.perforce.p4java.core.IJob;
-import com.perforce.p4java.core.ILabelSummary;
-import com.perforce.p4java.core.IReviewChangelist;
-import com.perforce.p4java.core.IServerProcess;
-import com.perforce.p4java.core.IStream;
-import com.perforce.p4java.core.IStreamIntegrationStatus;
-import com.perforce.p4java.core.IStreamSummary;
-import com.perforce.p4java.core.IUser;
-import com.perforce.p4java.core.IUserGroup;
-import com.perforce.p4java.core.IUserSummary;
-import com.perforce.p4java.core.file.IExtendedFileSpec;
-import com.perforce.p4java.core.file.IFileAnnotation;
-import com.perforce.p4java.core.file.IFileRevisionData;
-import com.perforce.p4java.core.file.IFileSize;
-import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.core.file.IObliterateResult;
+import com.perforce.p4java.core.*;
+import com.perforce.p4java.core.file.*;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.option.UsageOptions;
-import com.perforce.p4java.option.server.ChangelistOptions;
-import com.perforce.p4java.option.server.CounterOptions;
-import com.perforce.p4java.option.server.DeleteBranchSpecOptions;
-import com.perforce.p4java.option.server.DeleteClientOptions;
-import com.perforce.p4java.option.server.DeleteLabelOptions;
-import com.perforce.p4java.option.server.DuplicateRevisionsOptions;
-import com.perforce.p4java.option.server.ExportRecordsOptions;
-import com.perforce.p4java.option.server.FixJobsOptions;
-import com.perforce.p4java.option.server.GetBranchSpecOptions;
-import com.perforce.p4java.option.server.GetBranchSpecsOptions;
-import com.perforce.p4java.option.server.GetChangelistDiffsOptions;
-import com.perforce.p4java.option.server.GetChangelistsOptions;
-import com.perforce.p4java.option.server.GetClientTemplateOptions;
-import com.perforce.p4java.option.server.GetClientsOptions;
-import com.perforce.p4java.option.server.GetCountersOptions;
-import com.perforce.p4java.option.server.GetDepotFilesOptions;
-import com.perforce.p4java.option.server.GetDirectoriesOptions;
-import com.perforce.p4java.option.server.GetExtendedFilesOptions;
-import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
-import com.perforce.p4java.option.server.GetFileContentsOptions;
-import com.perforce.p4java.option.server.GetFileDiffsOptions;
-import com.perforce.p4java.option.server.GetFileSizesOptions;
-import com.perforce.p4java.option.server.GetFixesOptions;
-import com.perforce.p4java.option.server.GetInterchangesOptions;
-import com.perforce.p4java.option.server.GetJobsOptions;
-import com.perforce.p4java.option.server.GetKeysOptions;
-import com.perforce.p4java.option.server.GetLabelsOptions;
-import com.perforce.p4java.option.server.GetPropertyOptions;
-import com.perforce.p4java.option.server.GetProtectionEntriesOptions;
-import com.perforce.p4java.option.server.GetReviewsOptions;
-import com.perforce.p4java.option.server.GetRevisionHistoryOptions;
-import com.perforce.p4java.option.server.GetServerProcessesOptions;
-import com.perforce.p4java.option.server.GetStreamOptions;
-import com.perforce.p4java.option.server.GetStreamsOptions;
-import com.perforce.p4java.option.server.GetSubmittedIntegrationsOptions;
-import com.perforce.p4java.option.server.GetUserGroupsOptions;
-import com.perforce.p4java.option.server.GetUsersOptions;
-import com.perforce.p4java.option.server.JournalWaitOptions;
-import com.perforce.p4java.option.server.KeyOptions;
-import com.perforce.p4java.option.server.LogTailOptions;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.option.server.MatchingLinesOptions;
-import com.perforce.p4java.option.server.MoveFileOptions;
-import com.perforce.p4java.option.server.ObliterateFilesOptions;
-import com.perforce.p4java.option.server.OpenedFilesOptions;
-import com.perforce.p4java.option.server.GetReviewChangelistsOptions;
-import com.perforce.p4java.option.server.PropertyOptions;
-import com.perforce.p4java.option.server.ReloadOptions;
-import com.perforce.p4java.option.server.SearchJobsOptions;
-import com.perforce.p4java.option.server.SetFileAttributesOptions;
-import com.perforce.p4java.option.server.StreamIntegrationStatusOptions;
-import com.perforce.p4java.option.server.StreamOptions;
-import com.perforce.p4java.option.server.SwitchClientViewOptions;
-import com.perforce.p4java.option.server.TagFilesOptions;
-import com.perforce.p4java.option.server.TrustOptions;
-import com.perforce.p4java.option.server.UnloadOptions;
-import com.perforce.p4java.option.server.UpdateClientOptions;
-import com.perforce.p4java.option.server.UpdateUserGroupOptions;
-import com.perforce.p4java.option.server.UpdateUserOptions;
-import com.perforce.p4java.option.server.VerifyFilesOptions;
+import com.perforce.p4java.option.server.*;
 import com.perforce.p4java.server.callback.IFilterCallback;
 import com.perforce.p4java.server.callback.IStreamingCallback;
+
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 
 /**
  * An extension of the basic IServer interface to provide Options
@@ -709,7 +623,10 @@ public interface IOptionsServer extends IServer {
 	 * This method allows the user to retrieve useful info and warning message
 	 * lines the Perforce server may generate in response to things like
 	 * encountering a too-long line, etc., by passing in a non-null infoLines
-	 * parameter.
+	 * parameter.<p>
+	 *
+	 * p4ic4idea changed the {@code infoLines} to be a list of IServerMessage
+	 * instead of String.
 	 * 
 	 * @since 2011.1
 	 * @param fileSpecs file specs to search for matching lines
@@ -723,7 +640,7 @@ public interface IOptionsServer extends IServer {
 	 */
 	
 	List<IFileLineMatch> getMatchingLines(List<IFileSpec> fileSpecs, String pattern,
-				List<String> infoLines, MatchingLinesOptions options) throws P4JavaException;
+				List<IServerMessage> infoLines, MatchingLinesOptions options) throws P4JavaException;
 	
 	/**
 	 * Create a new Perforce user on the Perforce server.
@@ -976,7 +893,7 @@ public interface IOptionsServer extends IServer {
 	 * view specs; you must call the getBranchSpec method on a specific branch to get
 	 * valid view specs for a branch.
 	 * 
-	 * @param GetBranchSpecsOptions object describing optional parameters; if null, no
+	 * @param opts object describing optional parameters; if null, no
 	 * 				options are set.
 	 * @return non-null (but possibly-empty) list of IBranchSpecSummary objects.
 	 * @throws P4JavaException if any error occurs in the processing of this method.
@@ -1453,7 +1370,7 @@ public interface IOptionsServer extends IServer {
 	/**
 	 * Mark each named job as being fixed by the changelist number given with changeListId.
 	 * 
-	 * @param jobIdList non-null non-empty list of affected job IDs.
+	 * @param jobIds non-null non-empty list of affected job IDs.
 	 * @param changelistId changelist ID for affected changelist.
 	 * @param opts FixJobsOptions object describing optional parameters; if null, no
 	 * 				options are set.
@@ -1490,7 +1407,7 @@ public interface IOptionsServer extends IServer {
 	 * @throws P4JavaException if an error occurs processing this method and its parameters.
 	 */
 	
-	InputStream getFileDiffsStream(IFileSpec file1, IFileSpec file2, String branchSpecName,
+	InputStream getFileDiffsStream(IFileSpec fromFile, IFileSpec toFile, String branchSpecName,
 							GetFileDiffsOptions opts) throws P4JavaException;
 	
 	/**
@@ -1513,7 +1430,7 @@ public interface IOptionsServer extends IServer {
 	 * @throws P4JavaException if an error occurs processing this method and its parameters.
 	 */
 	
-	List<IFileDiff> getFileDiffs(IFileSpec file1, IFileSpec file2, String branchSpecName,
+	List<IFileDiff> getFileDiffs(IFileSpec fromFile, IFileSpec toFile, String branchSpecName,
 							GetFileDiffsOptions opts) throws P4JavaException;
 	
 	/**
@@ -1863,7 +1780,7 @@ public interface IOptionsServer extends IServer {
 	 * @since 2011.2
 	 * @param streamPaths if specified, the list of streams is limited to those
 	 * 				matching the supplied list of stream paths, of the form //depotname/streamname
-	 * @param GetStreamsOptions object describing optional parameters; if null,
+	 * @param opts object describing optional parameters; if null,
 	 * 				no options are set.
 	 * @return non-null (but possibly-empty) list of IStreamSummary objects.
 	 * @throws P4JavaException if any error occurs in the processing of this method.
@@ -2018,12 +1935,15 @@ public interface IOptionsServer extends IServer {
      * 
      * Note that the code0 entry will be used to get the severity level; the fmt0
      * entry contains the message. <p>
-	 * 
+	 *
+	 * Updated for p4ic4idea to return an IServerMessage instead of a String.
+	 * <p>
+	 *
 	 * @since 2011.2
 	 * @param map Perforce command results map
 	 * @return possibly-null error/fatal string
 	 */
-	String getErrorStr(Map<String, Object> map);
+	IServerMessage getErrorStr(Map<String, Object> map);
 	
 	/**
 	 * Gets the info/warning/error/fatal message from the passed-in Perforce
@@ -2041,12 +1961,15 @@ public interface IOptionsServer extends IServer {
      * 
      * Note that the code0 entry will be used to get the severity level; the fmt0
      * entry contains the message. <p>
+	 *
+	 * Updated by p4ic4idea to return a generic message that includes the input data
+	 * that constructed the message, so that customized localization can occur.<p>
 	 * 
 	 * @since 2011.2
 	 * @param map Perforce command results map
 	 * @return possibly-null info/warning/error/fatal string
 	 */
-	String getErrorOrInfoStr(Map<String, Object> map);
+	IServerMessage getErrorOrInfoStr(Map<String, Object> map);
 	
 	/**
 	 * Gets the info message from the passed-in Perforce command results map.

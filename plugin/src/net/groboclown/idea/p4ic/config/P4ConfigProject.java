@@ -176,7 +176,7 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             this.status = ServerStoreService.getInstance().getServerStatus(project, this.config);
             this.inputRoots = roots;
             if (roots.isEmpty()) {
-                throw new P4InvalidConfigException(P4Bundle.message("error.config.no-roots"));
+                throw new P4InvalidConfigException(P4Bundle.message("error.config.no-roots", clientName));
             }
         }
 

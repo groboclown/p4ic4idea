@@ -28,6 +28,7 @@ public class ServerConfigImpl extends ServerConfig {
     private final File trustTicket;
     private final String serverFingerprint;
     private final String clientHostname;
+    private final String ignoreFileName;
     private final boolean storePasswordLocally;
 
 
@@ -35,7 +36,7 @@ public class ServerConfigImpl extends ServerConfig {
         this(proxy.getPort(), proxy.getProtocol(), proxy.getUsername(), proxy.getConnectionMethod(),
                 proxy.getAuthTicketPath() == null ? null : new File(proxy.getAuthTicketPath()),
                 proxy.getTrustTicketPath() == null ? null : new File(proxy.getTrustTicketPath()),
-                proxy.getServerFingerprint(), proxy.getClientHostname(),
+                proxy.getServerFingerprint(), proxy.getClientHostname(), proxy.getIgnoreFileName(),
                 proxy.isPasswordStoredLocally());
     }
 
@@ -44,7 +45,7 @@ public class ServerConfigImpl extends ServerConfig {
             @NotNull String username, @NotNull P4Config.ConnectionMethod connectionMethod,
             @Nullable File authTicket, @Nullable File trustTicket,
             @Nullable String serverFingerprint, @Nullable String clientHostname,
-            boolean storePasswordLocally) {
+            @Nullable String ignoreFileName, boolean storePasswordLocally) {
         this.port = port;
         this.protocol = protocol;
         this.username = username;
@@ -53,6 +54,7 @@ public class ServerConfigImpl extends ServerConfig {
         this.trustTicket = trustTicket;
         this.serverFingerprint = serverFingerprint;
         this.clientHostname = clientHostname;
+        this.ignoreFileName = ignoreFileName;
         this.storePasswordLocally = storePasswordLocally;
     }
 
@@ -105,6 +107,12 @@ public class ServerConfigImpl extends ServerConfig {
         return serverFingerprint;
     }
 
+    @Nullable
+    @Override
+    public String getIgnoreFileName() {
+        return ignoreFileName;
+    }
+
     @Override
     public boolean storePasswordLocally() {
         return storePasswordLocally;
@@ -129,7 +137,7 @@ public class ServerConfigImpl extends ServerConfig {
                 getProtocol().equals(sc.getProtocol()) &&
                 getUsername().equals(sc.getUsername()) &&
                 getConnectionMethod().equals(sc.getConnectionMethod());
-            // auth ticket & trust ticket - not part of comparison!
+            // auth ticket & trust ticket & others - not part of comparison!
     }
 
     @Override

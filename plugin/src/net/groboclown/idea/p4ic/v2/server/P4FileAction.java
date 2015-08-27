@@ -12,17 +12,22 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.v2.state;
+package net.groboclown.idea.p4ic.v2.server;
 
-import com.intellij.openapi.vcs.FilePath;
-import org.jetbrains.annotations.NotNull;
+import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
 
-public class P4ClientFile {
-    private String depotPath;
-    private FilePath localPath;
+/**
+ * The front-end view of an action on a file object.  This is a copy of the local
+ * cached version.
+ */
+public class P4FileAction {
+    private final P4FileUpdateState local;
+    private final UpdateAction action;
 
-    void refreshInternalState(@NotNull final String depotPath, @NotNull final FilePath localPath) {
-        this.depotPath = depotPath;
-        this.localPath = localPath;
+
+    public P4FileAction(final P4FileUpdateState local, final UpdateAction action) {
+        this.local = local;
+        this.action = action;
     }
 }

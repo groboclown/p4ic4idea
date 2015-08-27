@@ -677,7 +677,7 @@ public class Stream extends StreamSummary implements IStream {
 					this.extraTags = refreshedStream.getExtraTags();
 				}
 			} catch (P4JavaException exc) {
-				throw new RequestException(exc.getMessage(), exc);
+				throw new RequestException(exc);
 			}
 		}
 		updateFlags();

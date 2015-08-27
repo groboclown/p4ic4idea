@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,28 +28,44 @@ import static net.groboclown.idea.p4ic.v2.server.cache.state.CachedState.getAttr
  * work whether it's online or offline.
  */
 public class P4ClientState {
-    private final FileMappingRepo fileMappings;
     private final boolean isServerCaseInsensitive;
 
-    private final String clientServerId;
-    private final String activeClientRoot;
+    private final ClientServerId clientServerId;
     private final P4WorkspaceViewState workspace;
     private final Set<P4ChangeListState> changes = new HashSet<P4ChangeListState>();
     private final Set<P4FileSyncState> knownHave = new HashSet<P4FileSyncState>();
     private final Set<P4FileUpdateState> updatedFiles = new HashSet<P4FileUpdateState>();
 
-    public P4ClientState(final boolean isServerCaseInsensitive, @NotNull final String clientServerId,
-            @NotNull final String activeClientRoot, @NotNull final P4WorkspaceViewState workspace) {
+    public P4ClientState(final boolean isServerCaseInsensitive, @NotNull final ClientServerId clientServerId,
+            @NotNull final P4WorkspaceViewState workspace) {
         this.isServerCaseInsensitive = isServerCaseInsensitive;
         this.clientServerId = clientServerId;
-        this.activeClientRoot = activeClientRoot;
         this.workspace = workspace;
-        this.fileMappings = new FileMappingRepo(isServerCaseInsensitive);
     }
 
+    @NotNull
+    public ClientServerId getClientServerId() {
+        return clientServerId;
+    }
+
+    public boolean isServerCaseInsensitive() {
+        return isServerCaseInsensitive;
+    }
+
+    @NotNull
+    public Set<P4FileUpdateState> getUpdatedFiles() {
+        return updatedFiles;
+    }
+
+    @NotNull
+    public P4WorkspaceViewState getWorkspaceView() {
+        return workspace;
+    }
+
+
     public void serialize(@NotNull Element wrapper, @NotNull EncodeReferences refs) {
-        wrapper.setAttribute("clientServerId", clientServerId);
-        wrapper.setAttribute("activeClientRoot", activeClientRoot);
+        wrapper.setAttribute("serverConnection", clientServerId.getServerConfigId());
+        wrapper.setAttribute("clientName", clientServerId.getClientId());
         wrapper.setAttribute("isServerCaseInsensitive", Boolean.toString(isServerCaseInsensitive));
 
         {
@@ -73,19 +90,15 @@ public class P4ClientState {
             Element el = new Element("u");
             fileState.serialize(el, refs);
         }
-
-        for (P4ClientFileMapping file: fileMappings.getAllFiles()) {
-            refs.getFileMappingId(file);
-        }
     }
 
     public static P4ClientState deserialize(@NotNull Element state, @NotNull DecodeReferences refs) {
         boolean isServerCaseInsensitive = Boolean.parseBoolean(getAttribute(state, "isServerCaseInsensitive"));
-        String clientServerId = getAttribute(state, "clientServerId");
-        String activeClientRoot = getAttribute(state, "activeClientRoot");
+        String serverConnection = getAttribute(state, "serverConnection");
+        String clientName = getAttribute(state, "clientName");
 
         Element workspaceEl = state.getChild("workspace");
-        if (workspaceEl == null || clientServerId == null || activeClientRoot == null) {
+        if (workspaceEl == null || serverConnection == null || clientName == null) {
             return null;
         }
         P4WorkspaceViewState workspace = P4WorkspaceViewState.deserialize(workspaceEl, refs);
@@ -93,7 +106,8 @@ public class P4ClientState {
             return null;
         }
 
-        final P4ClientState ret = new P4ClientState(isServerCaseInsensitive, clientServerId, activeClientRoot,
+        ClientServerId clientServerId = ClientServerId.create(serverConnection, clientName);
+        final P4ClientState ret = new P4ClientState(isServerCaseInsensitive, clientServerId,
                 workspace);
 
         for (Element el: state.getChildren("ch")) {
@@ -114,8 +128,6 @@ public class P4ClientState {
                 ret.updatedFiles.add(file);
             }
         }
-
-        ret.fileMappings.refreshFiles(refs.getFileMappings());
 
         return ret;
     }

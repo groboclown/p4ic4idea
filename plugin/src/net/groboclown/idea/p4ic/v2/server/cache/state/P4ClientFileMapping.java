@@ -15,12 +15,10 @@
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FilePathImpl;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.io.File;
 
 /**
  * Maps a depot file to a local client file.  These are shared across the state.
@@ -30,40 +28,58 @@ import java.io.File;
  * workspace is updated to change the local file mapping, then this object is
  * still valid.
  * <p/>
+ * The local path can only be null if the depot path references a
+ * remote location; the depot path can be null if an operation was performed
+ * while off-line, and the depot path was not known at the time.
+ * <p/>
  * This is not a {@link CachedState} object, because it cannot reflect a server
  * state; it instead just reflects a depot file and how it relates to the local
  * file system.
  */
 public final class P4ClientFileMapping {
-    @NotNull
-    private final String depotPath;
+    //private static final Logger LOG = Logger.getInstance(P4ClientFileMapping.class);
 
     @Nullable
-    private String localPath;
+    private String depotPath;
 
-    public P4ClientFileMapping(@NotNull String depotPath, @Nullable String localPath) {
+    @Nullable
+    private FilePath localFilePath;
+
+    // called by FileMappingRepo
+    P4ClientFileMapping(@NotNull String depotPath) {
         this.depotPath = depotPath;
-        this.localPath = localPath;
+        this.localFilePath = null;
     }
 
-    @NotNull
+    // called by FileMappingRepo
+    P4ClientFileMapping(@Nullable String depotPath, @NotNull FilePath localFilePath) {
+        this.depotPath = depotPath;
+        this.localFilePath = localFilePath;
+    }
+
+    @Nullable
     public String getDepotPath() {
         return depotPath;
     }
 
     @Nullable
     public String getLocalPath() {
-        return localPath;
+        return localFilePath == null ? null : localFilePath.getIOFile().getAbsolutePath();
     }
 
     @Nullable
     public FilePath getLocalFilePath() {
-        return getFilePath(localPath);
+        return localFilePath;
     }
 
-    // called by FileMappingRepo
-    void updateLocalPath(@Nullable final String localPath) {
-        this.localPath = localPath;
+    // called by FileMappingRepo; requires local path maps to be updated
+    void updateLocalPath(@Nullable FilePath localFilePath) {
+        this.localFilePath = localFilePath;
+    }
+
+    // called by FileMappingRepo; requires depot maps to be updated
+    void updateDepot(@NotNull final String depot) {
+        this.depotPath = depot;
     }
 
     @Override
@@ -78,34 +94,40 @@ public final class P4ClientFileMapping {
             return false;
         }
         P4ClientFileMapping that = (P4ClientFileMapping) obj;
-        return that.depotPath.equals(depotPath);
+        if (depotPath != null) {
+            return depotPath.equals(that.depotPath);
+        }
+        if (that.depotPath != null) {
+            return false;
+        }
+        return (that.localFilePath != null && localFilePath != null && that.localFilePath.equals(localFilePath));
     }
 
     @Override
     public int hashCode() {
-        return depotPath.hashCode();
+        // This means that changes to the depot path or local path will cause a hash
+        // map value change!
+        return depotPath != null ? depotPath.hashCode() : (localFilePath == null ? 0 : localFilePath.hashCode());
     }
 
     protected void serialize(@NotNull Element wrapper) {
-        wrapper.setAttribute("d", depotPath);
-        wrapper.setAttribute("l", localPath == null ? "" : localPath);
+        wrapper.setAttribute("d", depotPath == null ? "" : depotPath);
+        wrapper.setAttribute("l", getLocalPath() == null ? "" : getLocalPath());
     }
 
     @Nullable
     protected static P4ClientFileMapping deserialize(@NotNull Element wrapper) {
         String depot = CachedState.getAttribute(wrapper, "d");
-        if (depot == null) {
+        String localPath = CachedState.getAttribute(wrapper, "l");
+        FilePath localFilePath = FilePathUtil.getFilePath(localPath);
+        if (depot == null && localFilePath == null) {
             return null;
         }
-        return new P4ClientFileMapping(depot, CachedState.getAttribute(wrapper, "l"));
+        if (localFilePath == null) {
+            return new P4ClientFileMapping(depot);
+        }
+        return new P4ClientFileMapping(depot, localFilePath);
     }
 
 
-    private static FilePath getFilePath(@Nullable String path) {
-        if (path == null) {
-            return null;
-        }
-        File f = new File(path);
-        return new FilePathImpl(f, f.isDirectory());
-    }
 }

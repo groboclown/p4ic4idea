@@ -3,6 +3,7 @@
  */
 package com.perforce.p4java;
 
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.callback.ILogCallback;
 import com.perforce.p4java.server.callback.ILogCallback.LogTraceLevel;
 
@@ -64,7 +65,14 @@ public class Log {
 			logCallback.internalError(errorString);
 		}
 	}
-	
+
+
+	public static void error(final IServerMessage err) {
+		if (logCallback != null) {
+			logCallback.internalError(err.toString());
+		}
+	}
+
 	/**
 	 * Report a P4Java-internal warning to the log callback (if it exists).
 	 * 
@@ -86,7 +94,18 @@ public class Log {
 			logCallback.internalInfo(infoString);
 		}
 	}
-	
+
+	/**
+	 * Report a P4Java-internal informational event to the log callback (if it exists).
+	 *
+	 * @param info non-null info message.
+	 */
+	public static void info(IServerMessage info) {
+		if (logCallback != null) {
+			logCallback.internalInfo(info.toString());
+		}
+	}
+
 	/**
 	 * Report a P4Java-internal statistics message to the log callback (if it exists).
 	 * 

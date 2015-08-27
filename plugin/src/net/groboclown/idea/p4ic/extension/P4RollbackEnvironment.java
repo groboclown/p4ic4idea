@@ -97,7 +97,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             }
             for (P4StatusMessage message : messages) {
                 if (message.isError()) {
-                    vcsExceptions.add(new VcsException(message.getMessage()));
+                    vcsExceptions.add(new VcsException(message.getMessage().toString()));
                 }
             }
         } catch (VcsException e) {

@@ -3,10 +3,6 @@
  */
 package com.perforce.p4java.impl.mapbased.rpc.func.client;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Properties;
-
 import com.perforce.p4java.CharsetDefs;
 import com.perforce.p4java.Log;
 import com.perforce.p4java.exception.ConnectionException;
@@ -23,7 +19,12 @@ import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacketDispatcher.RpcPacke
 import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacketDispatcher.RpcPacketDispatcherResult;
 import com.perforce.p4java.impl.mapbased.rpc.sys.RpcOutputStream;
 import com.perforce.p4java.server.CmdSpec;
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.callback.IProgressCallback;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Dispatch incoming client functions from the server. This may
@@ -132,14 +133,13 @@ public static final String TRACE_PREFIX = "ClientFunctionDispatcher";
 				} else if (cmdEnv.getCmdSpec().getCmdName().equalsIgnoreCase(CmdSpec.DIFF2.toString())
 							|| cmdEnv.getCmdSpec().getCmdName().equalsIgnoreCase(CmdSpec.DESCRIBE.toString())
 							|| cmdEnv.getCmdSpec().getCmdName().equalsIgnoreCase(CmdSpec.PRINT.toString())) {
-					String infoMsg = server.getErrorOrInfoStr(resultsMap);
+					IServerMessage infoMsg = server.getErrorOrInfoStr(resultsMap);
 					if (infoMsg != null) {
 						RpcOutputStream outStream = this.fileCommands.getTempOutputStream(cmdEnv);
 						if (outStream != null) {
 							String charsetName = (rpcConnection.getClientCharset() == null ?
 									CharsetDefs.DEFAULT_NAME : rpcConnection.getClientCharset().name());
 							try {
-								infoMsg += CommandEnv.LINE_SEPARATOR;
 								if (cmdEnv.getCmdSpec().getCmdName().equalsIgnoreCase(CmdSpec.DESCRIBE.toString())) {
 									outStream.write("... ".getBytes(charsetName));
 								}

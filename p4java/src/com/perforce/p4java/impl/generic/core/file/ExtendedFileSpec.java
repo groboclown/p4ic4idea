@@ -3,19 +3,17 @@
  */
 package com.perforce.p4java.impl.generic.core.file;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.perforce.p4java.Log;
 import com.perforce.p4java.core.IChangelist;
-import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IResolveRecord;
+import com.perforce.p4java.exception.MessageSeverityCode;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.server.IServerMessage;
+
+import java.util.*;
 
 /**
  * Useful generic implementation class for the IExtendedFileSpec interface. Fields
@@ -216,40 +214,28 @@ public class ExtendedFileSpec extends FileSpec implements
 		}
 	}
 
-	/**
+	/*
 	 * Construct an ExtendedFileSpec object from a status, message string pair.
 	 * See the corresponding FileSpec constructor for details -- this constructor
 	 * does not add any ExtendedFileSpec-specific semantics.
 	 *  
 	 * @param status FileSpecOpStatus status.
 	 * @param errStr error / info message string.
-	 */
 	public ExtendedFileSpec(FileSpecOpStatus status, String errStr) {
 		super(status, errStr);
 	}
-	
+	 */
+
 	/**
 	 * Construct an ExtendedFileSpec object from a status, message string,
 	 * generic code, severity code tuple. See the corresponding FileSpec
 	 * constructor for details -- this constructor does not add any
 	 * ExtendedFileSpec-specific semantics.
 	 * 
-	 * @param status FileSpecOpStatus status.
-	 * @param errStr error / info message string.
-	 * @param genericCode Perforce generic code to use
-	 * @param severityCode Perforce severity code to use.
+	 * @param message server message
 	 */
-	public ExtendedFileSpec(FileSpecOpStatus status, String errStr,
-						int genericCode, int severityCode) {
-		super(status, errStr, genericCode, severityCode);
-	}
-	
-	public ExtendedFileSpec(FileSpecOpStatus status, String errStr, String errCodeStr) {
-		super(status, errStr, errCodeStr);
-	}
-	
-	public ExtendedFileSpec(FileSpecOpStatus status, String errStr, int rawCode) {
-		super(status, errStr, rawCode);
+	public ExtendedFileSpec(IServerMessage message) {
+		super(getStatusFor(message), message);
 	}
 
 	/**
@@ -615,4 +601,12 @@ public class ExtendedFileSpec extends FileSpec implements
     public void setVerifyStatus(String verifyStatus) {
     	this.verifyStatus = verifyStatus;
     }
+
+
+	private static FileSpecOpStatus getStatusFor(IServerMessage message) {
+		if (message.getSeverity() == MessageSeverityCode.E_INFO) {
+			return FileSpecOpStatus.INFO;
+		}
+		return FileSpecOpStatus.ERROR;
+	}
 }

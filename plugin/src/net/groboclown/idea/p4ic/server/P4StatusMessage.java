@@ -17,6 +17,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IFileOperationResult;
+import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.idea.p4ic.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +29,7 @@ import java.util.List;
 
 public class P4StatusMessage {
     private static final Logger LOG = Logger.getInstance(P4StatusMessage.class);
+    public static final String P4MSG_NO_SUCH_FILE = " - no such file(s).";
 
     private final IFileOperationResult spec;
 
@@ -58,7 +60,7 @@ public class P4StatusMessage {
         return spec.getUniqueCode();
     }
 
-    public String getMessage() {
+    public IServerMessage getMessage() {
         return spec.getStatusMessage();
     }
 
@@ -73,7 +75,7 @@ public class P4StatusMessage {
         // NOTE: this may be language specific.  Parts of the
         // client may be localized and return a different message.
         return spec.getStatusMessage() != null &&
-                (spec.getStatusMessage().endsWith(" - no such file(s)."));
+                (spec.getStatusMessage().hasMessageFragment(P4MSG_NO_SUCH_FILE));
     }
 
     @Override
@@ -88,13 +90,18 @@ public class P4StatusMessage {
     }
 
 
-    public static boolean isErrorStatus(IFileOperationResult spec) {
+    public static boolean isValid(@NotNull IFileOperationResult spec) {
+        return spec.getOpStatus() == FileSpecOpStatus.VALID;
+    }
+
+
+    public static boolean isErrorStatus(@NotNull IFileOperationResult spec) {
         return spec.getOpStatus() != FileSpecOpStatus.VALID &&
                 spec.getOpStatus() != FileSpecOpStatus.INFO;
     }
 
 
-    public static void throwIfError(Collection<P4StatusMessage> msgs, boolean ignoreFileNotFoundErrors) throws VcsException {
+    public static void throwIfError(@NotNull Collection<P4StatusMessage> msgs, boolean ignoreFileNotFoundErrors) throws VcsException {
         List<String> errors = new ArrayList<String>(msgs.size());
         for (P4StatusMessage msg: msgs) {
             if (msg.isError() && (! ignoreFileNotFoundErrors || ! msg.isFileNotFoundError())) {
@@ -168,5 +175,19 @@ public class P4StatusMessage {
             return new VcsException(msg.toString());
         }
         throw new IllegalArgumentException(P4Bundle.message("error.not-error", msg));
+    }
+
+    public static boolean isNoSuchFilesMessage(@NotNull IFileOperationResult spec) {
+        // Check for "is not under root", which is something fstat
+        // returns for files that haven't been added.
+        if (spec.getUniqueCode() == 4135) {
+            LOG.info("reported as no such file: " + new P4StatusMessage(spec));
+            return true;
+        }
+
+        // NOTE: this may be language specific.  Parts of the
+        // client may be localized and return a different message.
+        return spec.getStatusMessage() != null &&
+                (spec.getStatusMessage().hasMessageFragment(P4MSG_NO_SUCH_FILE));
     }
 }

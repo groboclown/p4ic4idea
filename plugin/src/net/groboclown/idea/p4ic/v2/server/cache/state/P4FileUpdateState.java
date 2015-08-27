@@ -14,7 +14,8 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
-import com.perforce.p4java.core.file.FileAction;
+import com.intellij.openapi.vcs.FilePath;
+import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,19 +26,40 @@ import org.jetbrains.annotations.Nullable;
 public class P4FileUpdateState extends CachedState {
     @NotNull
     private final P4ClientFileMapping file;
-    /** 0 for the default changelist, &lt; 0 for a locally stored changelist (no server side number), else a numbered changelist. */
+    /** 0 for the default changelist, &lt; -1 for a locally stored changelist (no server side number),
+     * -1 for not assigned to a changelist (like what Revert operations do), else a numbered changelist. */
     private int activeChangelist;
     @NotNull
-    private FileAction action = FileAction.UNKNOWN;
+    private FileUpdateAction action;
     /** If this is an integrate, this reference sthe source of the integrate. */
     @Nullable
     private P4ClientFileMapping integrateSource;
 
 
-    public P4FileUpdateState(@NotNull final P4ClientFileMapping file) {
+    public P4FileUpdateState(@NotNull final P4ClientFileMapping file, int changelist, @NotNull FileUpdateAction action) {
         this.file = file;
+        this.activeChangelist = changelist;
+        this.action = action;
     }
 
+    @NotNull
+    public FileUpdateAction getFileUpdateAction() {
+        return action;
+    }
+
+    @Nullable
+    public String getDepotPath() {
+        return file.getDepotPath();
+    }
+
+    @Nullable
+    public FilePath getLocalFilePath() {
+        return file.getLocalFilePath();
+    }
+
+    public void setFileUpdateAction(@NotNull FileUpdateAction action) {
+        this.action = action;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -70,6 +92,11 @@ public class P4FileUpdateState extends CachedState {
         serializeDate(wrapper);
     }
 
+    @Override
+    public String toString() {
+        return file + "@" + activeChangelist + " " + action.toString().toLowerCase();
+    }
+
     @Nullable
     protected static P4FileUpdateState deserialize(@NotNull final Element wrapper,
             @NotNull final DecodeReferences refs) {
@@ -77,16 +104,19 @@ public class P4FileUpdateState extends CachedState {
         if (file == null) {
             return null;
         }
-        P4FileUpdateState ret = new P4FileUpdateState(file);
-        ret.deserializeDate(wrapper);
-        Long r = decodeLong(getAttribute(wrapper, "r"));
         Long c = decodeLong(getAttribute(wrapper, "c"));
-        ret.activeChangelist = (c == null) ? -1 : c.intValue();
-        ret.action = FileAction.UNKNOWN;
         String a = getAttribute(wrapper, "a");
-        if (a != null) {
-            ret.action = FileAction.fromString(a);
+        if (a == null) {
+            return null;
         }
+        FileUpdateAction action;
+        try {
+            action = FileUpdateAction.valueOf(a);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        P4FileUpdateState ret = new P4FileUpdateState(file, (c == null) ? -1 : c.intValue(), action);
+        ret.deserializeDate(wrapper);
         ret.integrateSource = refs.getFileMapping(getAttribute(wrapper, "s"));
         return ret;
     }

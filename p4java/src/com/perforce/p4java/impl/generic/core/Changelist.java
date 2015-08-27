@@ -3,39 +3,28 @@
  */
 package com.perforce.p4java.impl.generic.core;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.core.*;
+import com.perforce.p4java.core.file.DiffType;
+import com.perforce.p4java.core.file.FileSpecOpStatus;
+import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.exception.*;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
+import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
+import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage.SingleServerMessage;
 import com.perforce.p4java.impl.mapbased.server.Parameters;
 import com.perforce.p4java.impl.mapbased.server.Server;
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.IChangelist;
-import com.perforce.p4java.core.ChangelistStatus;
-import com.perforce.p4java.core.IChangelistSummary;
-import com.perforce.p4java.core.IFix;
-import com.perforce.p4java.core.IJob;
-import com.perforce.p4java.core.file.DiffType;
-import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.core.file.FileSpecOpStatus;
-import com.perforce.p4java.exception.AccessException;
-import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.NullPointerError;
-import com.perforce.p4java.exception.P4JavaError;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.RequestException;
-import com.perforce.p4java.exception.UnimplementedError;
 import com.perforce.p4java.option.Options;
 import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.server.ChangelistOptions;
 import com.perforce.p4java.option.server.GetChangelistDiffsOptions;
 import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.server.ISingleServerMessage;
 import com.perforce.p4java.server.callback.IStreamingCallback;
+
+import java.io.InputStream;
+import java.util.*;
 
 /**
  * Simple default generic implementation class for the IChangelist interface.
@@ -448,7 +437,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 	
@@ -470,7 +459,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 
 		List<IFileSpec> fileList = new ArrayList<IFileSpec>();
 		
-		// Note the special-casing going on below; this is an artefact of
+		// Note the special-casing going on below; this is an artifact of
 		// the way the submit returns are just different enough to have to be
 		// treated slightly differently from the normal common-and-garden
 		// server returns for file-oriented operations -- HR.
@@ -480,8 +469,13 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 				if (map.get("submittedChange") != null) {
 					this.id = new Integer((String) map.get("submittedChange"));
 					this.status = ChangelistStatus.SUBMITTED;
+
+					SingleServerMessage msg = new SingleServerMessage("Submitted as change " + this.id);
+
 					fileList.add(new FileSpec(FileSpecOpStatus.INFO,
-							"Submitted as change " + this.id));
+							new ServerMessage(
+									Collections.<ISingleServerMessage>singletonList(msg),
+									new HashMap<String, Object>())));
 				} else if (map.get("locked") != null) {
 					// disregard this message for now -- FIXME -- HR
 				} else {
@@ -663,7 +657,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
-			throw new RequestException(exc.getMessage(), exc);
+			throw new RequestException(exc);
 		}
 	}
 

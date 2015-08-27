@@ -12,7 +12,15 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.v2.server.connection;
+package net.groboclown.idea.p4ic.v2.server.cache;
 
-public class OutgoingUpdates {
+import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerUpdateAction;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Collection;
+
+public interface ServerUpdateActionFactory {
+    @NotNull
+    ServerUpdateAction create(@NotNull Collection<PendingUpdateState> states);
 }

@@ -36,6 +36,7 @@ public class FileP4Config implements P4Config {
     private String tickets;
     private String trust;
     private String user;
+    private String ignoreFile;
 
     @NotNull
     private P4Config.ConnectionMethod connectionMethod;
@@ -61,6 +62,7 @@ public class FileP4Config implements P4Config {
             trust = null;
             user = null;
             clientHostname = null;
+            ignoreFile = null;
             connectionMethod = P4Config.ConnectionMethod.DEFAULT;
         }
     }
@@ -122,6 +124,7 @@ public class FileP4Config implements P4Config {
         trust = props.getProperty("P4TRUST");
         user = props.getProperty("P4USER");
         clientHostname = props.getProperty("P4HOST");
+        ignoreFile = props.getProperty("P4IGNORE");
 
         // ignore P4CONFIG value
         // trust tickets are used for SSL server validation only; not authentication.
@@ -236,6 +239,11 @@ public class FileP4Config implements P4Config {
     @Override
     public String getClientHostname() {
         return clientHostname;
+    }
+
+    @Override
+    public String getIgnoreFileName() {
+        return ignoreFile;
     }
 
     public File getSource() {

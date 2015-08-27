@@ -245,4 +245,14 @@ public class HierarchyP4Config implements P4Config {
         }
         return null;
     }
+
+    @Override
+    public String getIgnoreFileName() {
+        for (P4Config config : parents) {
+            if (config.getIgnoreFileName() != null) {
+                return config.getIgnoreFileName();
+            }
+        }
+        return null;
+    }
 }

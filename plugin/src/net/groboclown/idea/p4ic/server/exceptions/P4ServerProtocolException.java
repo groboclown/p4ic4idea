@@ -11,20 +11,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package net.groboclown.idea.p4ic.server.exceptions;
 
-import com.intellij.openapi.vcs.VcsException;
+import com.perforce.p4java.exception.ProtocolError;
 
-public class P4Exception extends VcsException {
-    public P4Exception(Throwable t) {
-        super(t);
-    }
-
-    public P4Exception(String msg) {
-        super(msg);
-    }
-
-    public P4Exception(String msg, Throwable t) {
-        super(msg, t);
+public class P4ServerProtocolException extends P4DisconnectedException {
+    public P4ServerProtocolException(ProtocolError e) {
+        super(e);
     }
 }

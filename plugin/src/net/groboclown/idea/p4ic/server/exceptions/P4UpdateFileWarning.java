@@ -15,7 +15,7 @@ package net.groboclown.idea.p4ic.server.exceptions;
 
 import com.perforce.p4java.core.file.IFileSpec;
 
-public class P4UpdateFileWarning extends P4Exception {
+public class P4UpdateFileWarning extends P4RequestException {
     public P4UpdateFileWarning(IFileSpec spec) {
         super(spec.getStatusMessage());
     }

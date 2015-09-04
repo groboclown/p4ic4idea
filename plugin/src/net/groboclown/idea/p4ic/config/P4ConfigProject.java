@@ -27,6 +27,8 @@ import net.groboclown.idea.p4ic.server.ServerStoreService;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.server.exceptions.P4WorkingOfflineException;
+import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
+import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource.Builder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -65,6 +67,82 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
         return ServiceManager.getService(project, P4ConfigProject.class);
     }
 
+
+    public List<ProjectConfigSource> loadProjectConfigSources(@NotNull Project project)
+            throws P4InvalidConfigException {
+        // If the manual config defines a relative p4config file,
+        // then find those under the root for the project.
+        // Otherwise, just return the config.
+
+        ManualP4Config base = getBaseConfig();
+        String configFile = base.getConfigFile();
+        List<Builder> sourceBuilders;
+        if (configFile != null && configFile.indexOf('/') < 0 &&
+                configFile.indexOf('\\') < 0 &&
+                configFile.indexOf(File.separatorChar) < 0) {
+            // Relative config file
+            Map<VirtualFile, P4Config> map = P4ConfigUtil.loadProjectP4Configs(project, configFile, true);
+            if (map.isEmpty()) {
+                // FIXME use correct listener
+                P4InvalidConfigException ex = new P4InvalidConfigException(P4Bundle.message("error.config.no-file"));
+                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, base, ex);
+                throw ex;
+            }
+            // The map returns one virtual file for each config directory found (and/or VCS root directories).
+            // These may be duplicate configs, so need to add them to the matching entry, if any.
+            sourceBuilders = new ArrayList<Builder>(map.size());
+
+            for (Map.Entry<VirtualFile, P4Config> en : map.entrySet()) {
+                boolean found = false;
+                for (Builder sourceBuilder : sourceBuilders) {
+                    if (sourceBuilder.isSame(en.getValue())) {
+                        sourceBuilder.add(en.getKey());
+                        found = true;
+                        break;
+                    }
+                }
+                if (! found) {
+                    final Builder builder = new Builder(project, en.getValue());
+                    builder.add(en.getKey());
+                    sourceBuilders.add(builder);
+                }
+            }
+        } else {
+            P4Config fullConfig;
+            try {
+                fullConfig = P4ConfigUtil.loadCmdP4Config(base);
+            } catch (IOException e) {
+                // FIXME use correct listener
+                P4InvalidConfigException ex = new P4InvalidConfigException(e);
+                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, base, ex);
+                throw ex;
+            }
+            List<VirtualFile> roots = P4ConfigUtil.getVcsRootFiles(project);
+            sourceBuilders = new ArrayList<Builder>(1);
+            Builder builder = new Builder(project, fullConfig);
+            for (VirtualFile root : roots) {
+                builder.add(root);
+            }
+        }
+
+
+        List<ProjectConfigSource> ret = new ArrayList<ProjectConfigSource>(sourceBuilders.size());
+        for (Builder sourceBuilder : sourceBuilders) {
+            ret.add(sourceBuilder.create());
+        }
+
+        return ret;
+    }
+
+
+    /**
+     *
+     * @param project
+     * @return
+     * @throws P4InvalidConfigException
+     * @throws P4InvalidClientException
+     * @deprecated see #loadProjectConfigSources(Project)
+     */
     public List<Client> loadClients(@NotNull Project project) throws P4InvalidConfigException, P4InvalidClientException {
         // If the manual config defines a relative p4config file,
         // then find those under the root for the project.
@@ -244,6 +322,17 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             }
         }
 
+        @Override
+        public boolean isDisposed() {
+            return status == null;
+        }
+
+        @Override
+        public boolean isSameConfig(@NotNull final P4Config p4config) {
+            // FIXME ensure this does the right thing
+            return sourceConfig.equals(p4config);
+        }
+
 
         @Override
         public String toString() {
@@ -307,4 +396,5 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             }
         }
     }
+
 }

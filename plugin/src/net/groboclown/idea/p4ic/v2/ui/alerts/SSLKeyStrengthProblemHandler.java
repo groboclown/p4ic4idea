@@ -11,20 +11,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.server.exceptions;
 
-import com.intellij.openapi.vcs.VcsException;
+package net.groboclown.idea.p4ic.v2.ui.alerts;
 
-public class P4Exception extends VcsException {
-    public P4Exception(Throwable t) {
-        super(t);
-    }
+import net.groboclown.idea.p4ic.v2.server.connection.CriticalErrorHandler;
+import org.jetbrains.annotations.NotNull;
 
-    public P4Exception(String msg) {
-        super(msg);
-    }
+import java.util.Date;
 
-    public P4Exception(String msg, Throwable t) {
-        super(msg, t);
+public class SSLKeyStrengthProblemHandler implements CriticalErrorHandler {
+    @Override
+    public void handleError(@NotNull final Date when) {
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 }

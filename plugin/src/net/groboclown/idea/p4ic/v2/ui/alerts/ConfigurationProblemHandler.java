@@ -12,19 +12,17 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.v2.server.connection;
+package net.groboclown.idea.p4ic.v2.ui.alerts;
 
+import net.groboclown.idea.p4ic.v2.server.connection.CriticalErrorHandler;
 import org.jetbrains.annotations.NotNull;
 
-public class ErrorHandlers {
-    /**
-     *
-     * @param sourceAction the action that caused the error
-     * @param t error to handle
-     * @param alerts alert UI manager
-     */
-    public static void handle(@NotNull String sourceAction, @NotNull Throwable t, @NotNull AlertManager alerts) {
+import java.util.Date;
+
+public class ConfigurationProblemHandler implements CriticalErrorHandler {
+    @Override
+    public void handleError(@NotNull final Date when) {
         // FIXME
-        throw new IllegalStateException("not implemented", t);
+        throw new IllegalStateException("not implemented");
     }
 }

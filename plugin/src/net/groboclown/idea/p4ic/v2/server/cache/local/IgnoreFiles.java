@@ -17,7 +17,7 @@ package net.groboclown.idea.p4ic.v2.server.cache.local;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
-import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,15 +33,16 @@ import java.io.InputStreamReader;
  */
 public class IgnoreFiles {
     private static final Logger LOG = Logger.getInstance(IgnoreFiles.class);
-    private final Client client;
+
+    private final String ignoreFileName;
 
 
-    public IgnoreFiles(@NotNull final Client client) {
-        this.client = client;
+    public IgnoreFiles(@NotNull final ServerConfig config) {
+        this.ignoreFileName = config.getIgnoreFileName();
     }
 
     public String getIgnoreFileName() {
-        return client.getConfig().getIgnoreFileName();
+        return ignoreFileName;
     }
 
     public boolean isFileIgnored(@Nullable final FilePath file) {

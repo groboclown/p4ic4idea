@@ -21,58 +21,69 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+/**
+ * @deprecated see ProjectConfigSource
+ */
 public interface Client {
     /**
      *
      *
      * @return server instance that connects to this client
+     * @deprecated Switch over to the ServerConnection
      */
     @NotNull
-    public ServerExecutor getServer() throws P4InvalidConfigException;
+    ServerExecutor getServer() throws P4InvalidConfigException;
 
     /**
      *
      * @return user's client that will be used in the server connection
      */
     @NotNull
-    public String getClientName();
+    String getClientName();
 
     /**
      *
      * @return configuration used to connect to the server.
      */
     @NotNull
-    public ServerConfig getConfig();
+    ServerConfig getConfig();
 
     /**
      *
      * @return local file root that covers this client connection.
      */
     @NotNull
-    public List<VirtualFile> getRoots() throws P4InvalidConfigException;
+    List<VirtualFile> getRoots() throws P4InvalidConfigException;
 
     @NotNull
-    public List<FilePath> getFilePathRoots() throws P4InvalidConfigException;
+    List<FilePath> getFilePathRoots() throws P4InvalidConfigException;
 
     /**
      *
      * @return true if the user selected to work disconnected from the server
+     * @deprecated see ServerConnectionController
      */
-    public boolean isWorkingOffline();
+    boolean isWorkingOffline();
 
     /**
      *
      * @return true if the user is working online with the server
+     * @deprecated see ServerConnectionController
      */
-    public boolean isWorkingOnline();
+    boolean isWorkingOnline();
 
     /**
      * Force a disconnect to this server.
+     * @deprecated see ServerConnectionController
      */
-    public void forceDisconnect();
+    void forceDisconnect();
 
     /**
      * Called when the client is no longer needed.
      */
-    public void dispose();
+    void dispose();
+
+    boolean isDisposed();
+
+    boolean isSameConfig(P4Config p4config);
 }

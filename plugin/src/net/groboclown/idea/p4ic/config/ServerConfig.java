@@ -123,6 +123,8 @@ public abstract class ServerConfig {
 
     public abstract boolean storePasswordLocally();
 
+    public abstract boolean isAutoOffline();
+
     @Override
     public String toString() {
         Map<String, String> ret = new HashMap<String, String>();
@@ -135,5 +137,45 @@ public abstract class ServerConfig {
                 getAuthTicket() == null ? null :
                 getAuthTicket().toString());
         return ret.toString();
+    }
+
+
+    public boolean isSameConnectionAs(@NotNull P4Config config) {
+        // same as the equals implementation, but against a P4Config.
+        return getPort().equals(config.getPort()) &&
+                getProtocol().equals(config.getProtocol()) &&
+                getUsername().equals(config.getUsername()) &&
+                getConnectionMethod().equals(config.getConnectionMethod());
+    }
+
+
+    // equals only cares about the information that connects
+    // to the server, not the individual server setup.  Note that
+    // this might have the potential to lose information.
+    @Override
+    public boolean equals(Object other) {
+        if (other == null) {
+            return false;
+        }
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof ServerConfig)) {
+            return false;
+        }
+        ServerConfig sc = (ServerConfig) other;
+        return getPort().equals(sc.getPort()) &&
+                getProtocol().equals(sc.getProtocol()) &&
+                getUsername().equals(sc.getUsername()) &&
+                getConnectionMethod().equals(sc.getConnectionMethod());
+        // auth ticket & trust ticket & others - not part of comparison!
+    }
+
+    @Override
+    public int hashCode() {
+        return (getPort().hashCode() << 6) +
+                (getProtocol().hashCode() << 4) +
+                (getUsername().hashCode() << 2) +
+                getConnectionMethod().hashCode();
     }
 }

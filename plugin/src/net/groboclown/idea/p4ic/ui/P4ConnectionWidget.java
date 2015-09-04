@@ -81,6 +81,8 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
         setValues();
         messageBus = project.getMessageBus().connect();
         messageBus.subscribe(P4RemoteConnectionStateListener.TOPIC, this);
+
+        // FIXME must be ApplicationManager.getApplication().getMessageBus().
         messageBus.subscribe(P4ClientsReloadedListener.TOPIC, this);
     }
 

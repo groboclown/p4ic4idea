@@ -14,7 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.connection;
 
-import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.config.Client;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
@@ -24,5 +24,5 @@ import java.util.Date;
  * the EDT.
  */
 public interface CriticalErrorHandler {
-    void handleError(@NotNull Date when, @NotNull P4Server server);
+    void handleError(@NotNull Date when);
 }

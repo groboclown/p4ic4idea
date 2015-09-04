@@ -15,28 +15,47 @@ package net.groboclown.idea.p4ic.server;
 
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @deprecated should instead use a {@link ServerConfig} and {@link ServerConnectedController}.
+ */
 public interface ServerStatus {
+    /**
+     *
+     * @param project project
+     * @param clientName client name
+     * @return executor
+     * @deprecated use ServerConnection instead.
+     */
     ServerExecutor getExecutorForClient(@NotNull Project project, @NotNull String clientName);
-
-    void changeClientName(@NotNull String oldClientName, @NotNull String newCLientName);
 
     void removeClient(@NotNull String clientName);
 
     @NotNull
     ServerConfig getConfig();
 
+    /**
+     * @deprecated see ServerConnectionController
+     */
     boolean isWorkingOffline();
 
+    /**
+     *
+     * @deprecated see ServerConnectionController
+     */
     boolean isWorkingOnline();
-
-    void onReconnect();
 
     /**
      * @return true if the caller should retry to reconnect, false if not.
      */
     boolean onDisconnect();
 
+    /**
+     * @deprecated see ServerConnectionController
+     */
     void forceDisconnect();
+
+    ServerConnectedController getConnectedController();
 }

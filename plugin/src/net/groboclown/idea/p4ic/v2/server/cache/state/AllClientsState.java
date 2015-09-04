@@ -16,9 +16,7 @@ package net.groboclown.idea.p4ic.v2.server.cache.state;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.*;
-import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
-import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -38,24 +36,24 @@ import java.util.Map;
 @State(
         name = "PerforceCachedServerState",
         storages = {
-                @Storage(file = StoragePathMacros.PROJECT_CONFIG_DIR + "/perforce-state.xml")
+                @Storage(file = StoragePathMacros.APP_CONFIG + "/perforce-state.xml")
         }
 )
-public class AllClientsState implements ProjectComponent, PersistentStateComponent<Element> {
+public class AllClientsState implements ApplicationComponent, PersistentStateComponent<Element> {
     private final Map<ClientServerId, ClientLocalServerState> clientStates =
             new HashMap<ClientServerId, ClientLocalServerState>();
     private MessageBusConnection messageBus;
 
     @NotNull
-    public static AllClientsState getInstance(@NotNull Project project) {
+    public static AllClientsState getInstance() {
         // FIXME
         throw new IllegalStateException("not registered in plugin.xml");
 
-        //return project.getComponent(AllClientsState.class);
+        //return ApplicationManager.getApplication().getComponent(AllClientsState.class);
     }
 
 
-    public ClientLocalServerState getStateForClient(@NotNull Client client) {
+    public ClientLocalServerState getStateForClient(@NotNull ClientServerId clientServerId) {
         // FIXME create a new state if one doesn't exist.
         throw new IllegalStateException("not implemented");
     }
@@ -79,16 +77,6 @@ public class AllClientsState implements ProjectComponent, PersistentStateCompone
 
         // FIXME
         throw new IllegalStateException("not implemented");
-    }
-
-    @Override
-    public void projectOpened() {
-
-    }
-
-    @Override
-    public void projectClosed() {
-
     }
 
     @Override

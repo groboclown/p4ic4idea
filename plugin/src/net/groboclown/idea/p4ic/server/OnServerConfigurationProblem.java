@@ -23,6 +23,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A MessageBus handler that manages connection issues with the Perforce server
  * configuration.  It does not handle password or disconnect problems.
+ *
+ * @deprecated Should no longer be used.
  */
 public interface OnServerConfigurationProblem {
     public static final Topic<OnServerConfigurationProblem> TOPIC =
@@ -39,6 +41,9 @@ public interface OnServerConfigurationProblem {
         @Nullable ServerConfig config, @Nullable String message);
 
 
+    /**
+     * @deprecated Should no longer be used.
+     */
     public static class WithMessageBus implements OnServerConfigurationProblem {
         private final Project project;
 

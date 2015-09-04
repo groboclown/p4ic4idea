@@ -12,12 +12,14 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.v2.server.cache;
+package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.local.IgnoreFiles;
 import net.groboclown.idea.p4ic.v2.server.cache.state.ClientLocalServerState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
@@ -28,6 +30,7 @@ import net.groboclown.idea.p4ic.v2.server.connection.ServerQuery;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
@@ -35,35 +38,38 @@ import java.util.List;
  * Public front-end to the cache infrastructure.
  */
 public class ClientCacheManager {
-    private final Client client;
     private final ClientLocalServerState state;
-    private final WorkspaceView workspaceView;
-    private final FileActionsView fileActionsView;
+    private final WorkspaceServerCacheSync workspace;
+    private final FileActionsServerCacheSync fileActions;
     private final IgnoreFiles ignoreFiles;
 
-    public ClientCacheManager(@NotNull Project project, @NotNull Client client, @NotNull ClientLocalServerState state) {
-        this.client = client;
+    public ClientCacheManager(@NotNull ServerConfig config, @NotNull ClientLocalServerState state) {
         this.state = state;
 
         final CacheImpl cache = new CacheImpl();
 
-        workspaceView = new WorkspaceView(project, cache, state.getFileMappingRepo(),
+        workspace = new WorkspaceServerCacheSync(cache, state.getFileMappingRepo(),
                 state.getCachedServerState().getWorkspaceView());
-        fileActionsView = new FileActionsView(project, cache,
+        fileActions = new FileActionsServerCacheSync(cache,
                 state.getLocalClientState().getUpdatedFiles(),
                 state.getCachedServerState().getUpdatedFiles());
-        ignoreFiles = new IgnoreFiles(client);
+        ignoreFiles = new IgnoreFiles(config);
     }
 
 
     @NotNull
     public ServerQuery createWorkspaceRefreshQuery() {
-        return workspaceView.createWorkspaceRefreshQuery();
+        return workspace.createWorkspaceRefreshQuery();
+    }
+
+    @NotNull
+    public ServerQuery createFileActionsRefreshQuery() {
+        return fileActions.createFileActionsRefreshQuery();
     }
 
     @Nullable
     public PendingUpdateState editFile(@NotNull FilePath file, int changeListId) {
-        return fileActionsView.editFile(file, changeListId);
+        return fileActions.editFile(file, changeListId);
     }
 
 
@@ -71,27 +77,39 @@ public class ClientCacheManager {
 
         @NotNull
         @Override
-        public Client getClient() {
-            return client;
+        public List<VirtualFile> getClientRoots(@NotNull final Project project, @NotNull AlertManager alerts) {
+            return workspace.getClientRoots(project, alerts);
+        }
+
+        @Nullable
+        @Override
+        public VirtualFile getBestClientRoot(@NotNull final File referenceDir, @NotNull AlertManager alerts) {
+            return workspace.getBestClientRoot(referenceDir, alerts);
+        }
+
+        @NotNull
+        @Override
+        public ClientServerId getClientServerId() {
+            return state.getClientServerId();
         }
 
         @NotNull
         @Override
         public String getClientName() {
-            return client.getClientName();
+            return getClientServerId().getClientId();
         }
 
         @NotNull
         @Override
         public P4ClientFileMapping getClientMappingFor(@NotNull final FilePath file) {
-            return workspaceView.getClientMappingFor(file);
+            return workspace.getClientMappingFor(file);
         }
 
         @NotNull
         @Override
         public Collection<P4FileUpdateState> fromOpenedToAction(@NotNull final List<IFileSpec> validSpecs,
                 @NotNull final AlertManager alerts) {
-            return workspaceView.fromOpenedToAction(validSpecs, alerts);
+            return workspace.fromOpenedToAction(validSpecs, alerts);
         }
 
         @Override

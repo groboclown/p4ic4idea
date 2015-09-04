@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.v2.server.cache;
+package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -25,9 +25,11 @@ import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
+import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
-import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.cache.*;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
@@ -37,6 +39,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * Keeps track of all the file actions (files open for edit, move, etc).
@@ -44,24 +47,35 @@ import java.util.*;
  * {@link net.groboclown.idea.p4ic.v2.server.connection.ServerConnection}
  * in order to ensure correct asynchronous behavior.
  */
-public class FileActionsView extends CacheFrontEnd {
-    private static final Logger LOG = Logger.getInstance(FileActionsView.class);
+public class FileActionsServerCacheSync extends CacheFrontEnd {
+    private static final Logger LOG = Logger.getInstance(FileActionsServerCacheSync.class);
 
-    private final Project project;
     private final Cache cache;
     private final Set<P4FileUpdateState> localClientUpdatedFiles;
     private final Set<P4FileUpdateState> cachedServerUpdatedFiles;
 
 
-    public FileActionsView(@NotNull Project project, @NotNull final Cache cache,
+    public FileActionsServerCacheSync(@NotNull final Cache cache,
             @NotNull final Set<P4FileUpdateState> localClientUpdatedFiles,
             @NotNull final Set<P4FileUpdateState> cachedServerUpdatedFiles) {
-        this.project = project;
         this.cache = cache;
         this.localClientUpdatedFiles = localClientUpdatedFiles;
         this.cachedServerUpdatedFiles = cachedServerUpdatedFiles;
     }
 
+
+    ServerQuery<FileActionsServerCacheSync> createFileActionsRefreshQuery() {
+        return new ServerQuery<FileActionsServerCacheSync>() {
+            @Nullable
+            @Override
+            public FileActionsServerCacheSync query(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager cacheManager,
+                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    throws InterruptedException {
+                loadServerCache(exec, alerts);
+                return FileActionsServerCacheSync.this;
+            }
+        };
+    }
 
     /**
      * Return all the file actions.  If the executor is null, then this will work in offline mode.
@@ -75,6 +89,7 @@ public class FileActionsView extends CacheFrontEnd {
         ServerConnection.assertInServerConnection();
 
         if (exec != null) {
+            // FIXME needs to be on a timer for refresh rate.
             loadServerCache(exec, alerts);
         }
         // Get all the cached files that we know about from the server
@@ -96,8 +111,7 @@ public class FileActionsView extends CacheFrontEnd {
         MessageResult<List<IFileSpec>> results = null;
         try {
             // This is okay to run with the "-s" argument.
-            results = exec.loadOpenedFiles(project,
-                    getClientRootSpecs(), true);
+            results = exec.loadOpenedFiles(getClientRootSpecs(exec.getProject(), alerts), true);
         } catch (VcsException e) {
             alerts.addWarning(P4Bundle.message("error.load-opened", cache.getClientName()), e);
         }
@@ -118,18 +132,18 @@ public class FileActionsView extends CacheFrontEnd {
 
 
     /**
+     * Create the edit file update state.  Called whether the file needs to be edited or added.
      *
-     *
-     * @param file
-     * @param changeListId
-     * @return
+     * @param file file to edit
+     * @param changeListId P4 changelist to add the file into.
+     * @return the update state
      */
     @Nullable
     public PendingUpdateState editFile(@NotNull FilePath file, int changeListId) {
-        // First check if it is already in an action state.
-        if (cache.isFileIgnored(file)) {
-            return null;
-        }
+        // Only ignore the file if we know it's an "add" operation.  Thus, we can't
+        // determine that until we're connected.
+
+        // Check if it is already in an action state.
         P4FileUpdateState action = getCachedUpdateState(file);
         if (action != null &&
                 UpdateAction.EDIT_FILE.equals(action.getFileUpdateAction().getUpdateAction())) {
@@ -217,9 +231,11 @@ public class FileActionsView extends CacheFrontEnd {
     /**
      *
      * @return all the "..." directory specs for the roots of this client.
+     * @param project
+     * @param alerts
      */
-    private List<IFileSpec> getClientRootSpecs() throws VcsException {
-        final List<VirtualFile> roots = cache.getClient().getRoots();
+    private List<IFileSpec> getClientRootSpecs(@NotNull Project project, @NotNull AlertManager alerts) throws VcsException {
+        final List<VirtualFile> roots = cache.getClientRoots(project, alerts);
         return FileSpecUtil.makeRootFileSpecs(roots.toArray(new VirtualFile[roots.size()]));
     }
 
@@ -241,7 +257,7 @@ public class FileActionsView extends CacheFrontEnd {
     public static class AddEditFactory implements ServerUpdateActionFactory {
         @NotNull
         @Override
-        public ServerUpdateAction create(@NotNull final Collection<PendingUpdateState> states) {
+        public ServerUpdateAction create(@NotNull Collection<PendingUpdateState> states) {
             return new AddEditAction(states);
         }
     }
@@ -249,24 +265,19 @@ public class FileActionsView extends CacheFrontEnd {
 
     static class AddEditAction extends AbstractServerUpdateAction {
 
-        AddEditAction(@NotNull final Collection<PendingUpdateState> pendingUpdateState) {
+
+        AddEditAction(@NotNull Collection<PendingUpdateState> pendingUpdateState) {
             super(pendingUpdateState);
         }
 
         @NotNull
         @Override
-        protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec, @NotNull final P4Server server,
+        protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
                 @NotNull ClientCacheManager clientCacheManager, @NotNull final AlertManager alerts) {
             // Discover the current state of the files, so that we can perform the
             // appropriate actions.
             List<PendingUpdateState> updateList = new ArrayList<PendingUpdateState>(getPendingUpdateStates());
-            List<FilePath> filenames = new ArrayList<FilePath>(updateList.size());
-            for (PendingUpdateState update: updateList) {
-                String val = UpdateParameterNames.FILE.getParameterValue(update);
-                if (val != null) {
-                    filenames.add(FilePathUtil.getFilePath(val));
-                }
-            }
+            List<FilePath> filenames = getFilePaths(updateList);
             final List<IFileSpec> srcSpecs;
             try {
                 srcSpecs = FileSpecUtil.getFromFilePaths(filenames);
@@ -276,109 +287,188 @@ public class FileActionsView extends CacheFrontEnd {
             }
             final List<IExtendedFileSpec> fullSpecs;
             try {
-                fullSpecs = exec.getFileStatus(server.getProject(), srcSpecs);
+                fullSpecs = exec.getFileStatus(srcSpecs);
             } catch (VcsException e) {
                 alerts.addWarning(P4Bundle.message("error.file-status.fetch", srcSpecs), e);
                 return ExecutionStatus.FAIL;
             }
 
+            Set<FilePath> reverts = new HashSet<FilePath>();
             Map<Integer, Set<FilePath>> adds = new HashMap<Integer, Set<FilePath>>();
             Map<Integer, Set<FilePath>> edits = new HashMap<Integer, Set<FilePath>>();
             Iterator<PendingUpdateState> updatesIter = updateList.iterator();
             for (IExtendedFileSpec spec : fullSpecs) {
-                if (spec.getOpStatus() == FileSpecOpStatus.INFO ||
-                        spec.getOpStatus() == FileSpecOpStatus.CLIENT_ERROR ||
-                        spec.getOpStatus() == FileSpecOpStatus.UNKNOWN) {
+
+                if (isStatusMessage(spec)) {
                     // no corresponding file, so don't increment the update
+                    // however, it could mean that the file isn't on the server.
+                    // there's the chance that it means that the file isn't
+                    // in the client view.  Generally, that's an ERROR status.
+                    LOG.info("fstat non-valid state: " + spec.getOpStatus() + ": " + spec.getStatusMessage());
                     continue;
                 }
+
+                // Valid response.  Advance iterators
                 final PendingUpdateState update = updatesIter.next();
                 Integer changelist = UpdateParameterNames.CHANGELIST.getParameterValue(update);
                 if (changelist == null) {
                     changelist = -1;
                 }
-                if (spec.getOpStatus() == FileSpecOpStatus.ERROR) {
-                    // File not on server?
-                    // FIXME
-                    throw new IllegalStateException("not implemented");
-                }
-                FileAction action = spec.getOpenAction();
-                Set<FilePath> updateSet;
-                if (action == null) {
-                    // In perforce, not already opened.
-                    //action = spec.getAction()
-                    updateSet = edits.get(changelist);
-                    if (updateSet == null) {
-                        updateSet = new HashSet<FilePath>();
-                        edits.put(changelist, updateSet);
-                    }
-                    // FIXME
-                    throw new IllegalStateException("not implemented");
-                } else {
-                    switch (action) {
-                        case ADD:
-                        case ADDED:
-                        case EDIT:
-                        case EDIT_FROM:
-                        case MOVE_ADD:
-                            // Already in the correct state - open for add or edit.
-                            // FIXME
-                            throw new IllegalStateException("not implemented");
-                            //break;
-                        case INTEGRATE:
-                        case BRANCH:
-                            // Integrated, but not open for edit.
-                            // FIXME
-                            throw new IllegalStateException("not implemented");
-                            //break;
-                        case DELETE:
-                        case DELETED:
-                            // FIXME
-                            throw new IllegalStateException("not implemented");
-                            //break;
-                        case MOVE_DELETE:
-                            // FIXME
-                            throw new IllegalStateException("not implemented");
-                            //break;
-                        default:
-                            LOG.error("Unexpected file action " + action + " from fstat");
-                            // do nothing
-                    }
-                }
-            }
-
-
-            for (PendingUpdateState update : getPendingUpdateStates()) {
                 String filename = UpdateParameterNames.FILE.getValue(
                         update.getParameters().get(UpdateParameterNames.FILE.getKeyName()));
-                Integer changelist = UpdateParameterNames.CHANGELIST.getValue(
-                        update.getParameters().get(UpdateParameterNames.CHANGELIST.getKeyName()));
-
-                // FIXME
-                throw new IllegalStateException("not implemented");
-
-                /*
-                // The only time we need to switch an action to something other than
-                // edit is when the existing action is "delete".
-                final UpdateAction oldAction = update.getUpdateAction();
-                if (oldAction == UpdateAction.DELETE_FILE ||
-                        oldAction == FileUpdateAction.MOVE_DELETE_FILE) {
-                    action.setFileUpdateAction(FileUpdateAction.ADD_FILE);
-                } else {
-                    action.setFileUpdateAction(FileUpdateAction.EDIT_FILE);
+                FilePath filePath = FilePathUtil.getFilePath(filename);
+                if (isNotInClientView(spec)) {
+                    alerts.addNotice(P4Bundle.message("error.client.not-in-view", spec.getClientPathString()), null);
+                    // don't handle
+                    continue;
                 }
-                */
+                Map<Integer, Set<FilePath>> container = null;
+                if (isNotKnownToServer(spec)) {
+                    container = adds;
+                } else {
+                    FileAction action = spec.getOpenAction();
+                    if (action == null) {
+                        // In perforce, not already opened.
+                        container = edits;
+                    } else {
+                        switch (action) {
+                            case ADD:
+                            case ADDED:
+                            case EDIT:
+                            case EDIT_FROM:
+                            case MOVE_ADD:
+                                // Already in the correct state - open for add or edit.
+                                LOG.info("Already open for add or edit: " + filename);
+                                continue;
+                            case INTEGRATE:
+                            case BRANCH:
+                                // Integrated, but not open for edit.  Open for edit.
+
+                            case MOVE_DELETE:
+                                // On the delete side of a move.  Mark as open for edit.
+
+                                LOG.info("Marking integrated file as open for edit: " + filename);
+                                container = edits;
+                                break;
+                            case DELETE:
+                            case DELETED:
+                                // Already open for delete; need to revert the file and edit.
+                                // Because it's open for delete, that means the server knows
+                                // about it.
+
+                                LOG.info("Reverting delete and opening for edit: " + filename);
+                                reverts.add(filePath);
+                                container = edits;
+                                break;
+                            default:
+                                LOG.error("Unexpected file action " + action + " from fstat");
+                                // do nothing
+                        }
+                    }
+                }
+                if (container != null) {
+                    Set<FilePath> set = container.get(changelist);
+                    if (set == null) {
+                        set = new HashSet<FilePath>();
+                        container.put(changelist, set);
+                    }
+                    set.add(filePath);
+                }
             }
 
+            // Perform the reverts first
+            boolean hasUpdate = false;
+            if (! reverts.isEmpty()) {
+                try {
+                    final List<P4StatusMessage> msgs =
+                            exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
+                    alerts.addNotices(P4Bundle.message("warning.edit.file.revert", reverts), msgs, false);
+                    hasUpdate = true;
+                } catch (P4DisconnectedException e) {
+                    // error already handled as critical
+                    return ExecutionStatus.RETRY;
+                } catch (VcsException e) {
+                    alerts.addWarning(P4Bundle.message("error.revert", reverts), e);
+                    // cannot continue; just fail?
+                    return ExecutionStatus.FAIL;
+                }
+            }
 
-            return null;
+            ExecutionStatus returnCode = ExecutionStatus.NO_OP;
+            if (! adds.isEmpty()) {
+                for (Entry<Integer, Set<FilePath>> entry : adds.entrySet()) {
+                    try {
+                        final List<P4StatusMessage> msgs =
+                                exec.addFiles(FileSpecUtil.getFromFilePaths(entry.getValue()), entry.getKey());
+                        alerts.addNotices(P4Bundle.message("warning.edit.file.add", entry.getValue()), msgs, false);
+                        hasUpdate = true;
+                    } catch (P4DisconnectedException e) {
+                        // error already handled as critical
+                        return ExecutionStatus.RETRY;
+                    } catch (VcsException e) {
+                        alerts.addWarning(P4Bundle.message("error.add", entry.getValue()), e);
+                        returnCode = ExecutionStatus.FAIL;
+                    }
+                }
+            }
+            if (!edits.isEmpty()) {
+                for (Entry<Integer, Set<FilePath>> entry : edits.entrySet()) {
+                    try {
+                        final List<P4StatusMessage> msgs =
+                                exec.editFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
+                                        entry.getKey());
+                        alerts.addNotices(P4Bundle.message("warning.edit.file.edit", entry.getValue()), msgs, false);
+                        hasUpdate = true;
+                    } catch (P4DisconnectedException e) {
+                        // error already handled as critical
+                        return ExecutionStatus.RETRY;
+                    } catch (VcsException e) {
+                        alerts.addWarning(P4Bundle.message("error.edit", entry.getValue()), e);
+                        returnCode = ExecutionStatus.FAIL;
+                    }
+                }
+            }
+
+            if (hasUpdate && returnCode == ExecutionStatus.NO_OP) {
+                returnCode = ExecutionStatus.PASS;
+            }
+
+            return returnCode;
+        }
+
+        private boolean isNotKnownToServer(@NotNull final IExtendedFileSpec spec) {
+            return spec.getOpStatus() == FileSpecOpStatus.ERROR &&
+                    spec.getStatusMessage().hasMessageFragment(" - no such file(s).");
+        }
+
+        private boolean isNotInClientView(@NotNull final IExtendedFileSpec spec) {
+            return spec.getOpStatus() == FileSpecOpStatus.ERROR &&
+                    spec.getStatusMessage().hasMessageFragment(" is not under client's root ");
+        }
+
+        private boolean isStatusMessage(@NotNull final IExtendedFileSpec spec) {
+            return spec.getOpStatus() == FileSpecOpStatus.INFO ||
+                    spec.getOpStatus() == FileSpecOpStatus.CLIENT_ERROR ||
+                    spec.getOpStatus() == FileSpecOpStatus.UNKNOWN;
+        }
+
+        @NotNull
+        private List<FilePath> getFilePaths(@NotNull final List<PendingUpdateState> updateList) {
+            List<FilePath> filenames = new ArrayList<FilePath>(updateList.size());
+            for (PendingUpdateState update: updateList) {
+                String val = UpdateParameterNames.FILE.getParameterValue(update);
+                if (val != null) {
+                    filenames.add(FilePathUtil.getFilePath(val));
+                }
+            }
+            return filenames;
         }
 
         @Override
-        protected void updateCache(@NotNull final P4Server server, @NotNull final ClientCacheManager clientCacheManager,
+        @Nullable
+        protected ServerQuery updateCache(@NotNull final ClientCacheManager clientCacheManager,
                 @NotNull final AlertManager alerts) {
-            // FIXME
-            throw new IllegalStateException("not implemented");
+            return clientCacheManager.createFileActionsRefreshQuery();
         }
     }
 }

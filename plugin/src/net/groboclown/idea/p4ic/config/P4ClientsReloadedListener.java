@@ -20,9 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public interface P4ClientsReloadedListener {
-    public static final Topic<P4ClientsReloadedListener> TOPIC =
+    // Application topic
+    Topic<P4ClientsReloadedListener> TOPIC =
             new Topic<P4ClientsReloadedListener>("p4ic.clients.loaded", P4ClientsReloadedListener.class);
 
 
-    public void clientsLoaded(@NotNull Project project, @NotNull List<Client> clients);
+    void clientsLoaded(@NotNull Project project, @NotNull List<Client> clients);
 }

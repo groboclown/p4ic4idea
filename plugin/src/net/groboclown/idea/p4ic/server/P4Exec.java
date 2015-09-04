@@ -63,6 +63,8 @@ import static net.groboclown.idea.p4ic.server.P4StatusMessage.getErrors;
  * Runs the commands against the server/client.  Handles the reconnection and login requirements.
  * The connection will remain open (or will be retried) until a {@link #dispose()}
  * call happens.
+ *
+ * @deprecated see ServerConnection
  */
 public class P4Exec {
     private static final Logger LOG = Logger.getInstance(P4Exec.class);

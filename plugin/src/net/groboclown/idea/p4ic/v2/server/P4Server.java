@@ -15,13 +15,15 @@
 package net.groboclown.idea.p4ic.v2.server;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.VcsException;
-import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
+import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.ServerExecutor;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.state.AllClientsState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.ClientLocalServerState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -37,29 +39,26 @@ import java.util.Collection;
  * <p/>
  * The owner should also only save the state for valid server objects.
  * <p/>
- * This is a future replacement for {@link ServerExecutor}.
+ * This is a future replacement for {@link ServerExecutor}.  It connects
+ * to a {@link ServerConnection}.
  */
 public class P4Server {
     private final Project project;
-    private final Client client;
     private final ClientLocalServerState clientState;
-
+    private final ServerConnection connection;
     private final AlertManager alertManager;
 
-    private boolean valid;
+    private boolean valid = true;
 
 
-    public P4Server(@NotNull final Project project, @NotNull final Client client)
-            throws VcsException {
+    P4Server(@NotNull final Project project, @NotNull final ClientServerId clientServerId,
+            @NotNull ServerConfig config) {
         this.project = project;
-        this.client = client;
         this.alertManager = AlertManager.getInstance();
-        this.clientState = AllClientsState.getInstance(project).getStateForClient(client);
+        this.clientState = AllClientsState.getInstance().getStateForClient(clientServerId);
+        this.connection = ServerConnectionManager.getInstance().getConnectionFor(clientServerId, config);
 
-        // TODO create/get the ServerConnection (shared across servers)
-        // TODO reload the pending updates and put them into the ServerConnection
-
-        // FIXME
+        // FIXME reload the pending updates and put them into the ServerConnection
         throw new IllegalStateException("complete class initialization");
     }
 
@@ -74,18 +73,22 @@ public class P4Server {
         return valid;
     }
 
-    @NotNull
-    public Client getClient() {
-        return client;
-    }
-
     public boolean isWorkingOnline() {
-        return valid && client.isWorkingOnline();
+        return valid && connection.isWorkingOnline();
+    }
+    public boolean isWorkingOffline() {
+        return ! valid || connection.isWorkingOffline();
     }
 
-    public boolean isWorkingOffline() {
-        return ! valid || client.isWorkingOffline();
+
+    /*
+    public List<FilePath> getClientRoots() {
+        if (isWorkingOnline()) {
+            connection.query(project, clientState.);
+        }
     }
+    */
+
 
     /**
      * Return all files open for edit (or move, delete, etc) on this client.
@@ -118,5 +121,10 @@ public class P4Server {
 
     public void dispose() {
         valid = false;
+    }
+
+    @NotNull
+    public ClientServerId getClientServerId() {
+        return clientState.getClientServerId();
     }
 }

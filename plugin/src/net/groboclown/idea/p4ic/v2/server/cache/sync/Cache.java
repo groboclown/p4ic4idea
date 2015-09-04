@@ -12,17 +12,20 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.v2.server.cache;
+package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
@@ -35,7 +38,14 @@ import java.util.List;
  */
 interface Cache {
     @NotNull
-    Client getClient();
+    List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts);
+
+    @Nullable
+    VirtualFile getBestClientRoot(@NotNull File referenceDir, @NotNull AlertManager alerts);
+
+
+    @NotNull
+    ClientServerId getClientServerId();
 
     @NotNull
     String getClientName();

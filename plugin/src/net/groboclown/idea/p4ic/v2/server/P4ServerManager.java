@@ -16,13 +16,10 @@ package net.groboclown.idea.p4ic.v2.server;
 
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.util.messages.MessageBusConnection;
-import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.state.AllClientsState;
@@ -49,8 +46,7 @@ public class P4ServerManager implements ProjectComponent {
     // TODO keep track of the ServerConnection objects.
 
 
-    public P4ServerManager(@NotNull final Project project)
-            throws VcsException {
+    public P4ServerManager(@NotNull final Project project) {
         this.project = project;
         this.alertManager = AlertManager.getInstance();
         this.messageBus = project.getMessageBus().connect();
@@ -72,7 +68,7 @@ public class P4ServerManager implements ProjectComponent {
 
     @Override
     public void projectOpened() {
-
+        // intentionally empty
     }
 
     @Override
@@ -90,26 +86,28 @@ public class P4ServerManager implements ProjectComponent {
                 // Connections are potentially invalid.
                 // There may also be new connections.  This keeps it all up-to-date.
                 synchronized (servers) {
+
+                    // FIXME do not use Client class.
+
                     // client/servers that are not in the new list are marked invalid.
                     Set<ClientServerId> knownServers = new HashSet<ClientServerId>(servers.keySet());
+
+                    /*
+
                     for (Client client : P4Vcs.getInstance(project).getClients()) {
                         final ClientServerId id = ClientServerId.create(client);
                         if (knownServers.contains(id)) {
                             knownServers.remove(id);
                         } else {
-                            try {
-                                servers.put(id, new P4Server(project, client));
-                            } catch (VcsException e) {
-                                // FIXME
-                                // correct this bundle link,
-
-                                alertManager.addWarning(P4Bundle.message("server.failure"), e);
-                            }
+                            final P4Server server = new P4Server(project, client);
+                            servers.put(id, server);
                         }
                     }
                     for (ClientServerId serverId : knownServers) {
                         servers.get(serverId).setValid(false);
                     }
+
+                    */
                 }
             }
 
@@ -130,11 +128,11 @@ public class P4ServerManager implements ProjectComponent {
 
     @Override
     public void disposeComponent() {
-        final AllClientsState clientState = AllClientsState.getInstance(project);
+        final AllClientsState clientState = AllClientsState.getInstance();
         for (P4Server p4Server : servers.values()) {
             if (!p4Server.isValid()) {
                 // Remove from our cache, because the server isn't being used anymore.
-                clientState.removeClientState(ClientServerId.create(p4Server.getClient()));
+                clientState.removeClientState(p4Server.getClientServerId());
             }
             p4Server.dispose();
         }

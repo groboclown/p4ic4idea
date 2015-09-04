@@ -174,6 +174,13 @@ public class RequestException extends P4JavaException {
 		return message;
 	}
 
+	/** @deprecated use the server code instead */
+	public boolean hasMessageFragment(String fragment) {
+		return message == null
+				? (getMessage() != null && getMessage().toLowerCase().equals(fragment.toLowerCase()))
+				: message.hasMessageFragment(fragment);
+	}
+
 	/**
 	 * Get the Perforce severity code associated with this exception, if any.
 	 * See the MessageSeverityCode Javadocs for an explanation of these codes.

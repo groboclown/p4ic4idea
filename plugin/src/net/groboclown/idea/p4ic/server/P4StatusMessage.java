@@ -85,7 +85,6 @@ public class P4StatusMessage {
                 spec.getGenericCode(),
                 spec.getSubCode(),
                 spec.getUniqueCode(),
-                spec.getRawCode(),
                 spec.getSeverityCode());
     }
 

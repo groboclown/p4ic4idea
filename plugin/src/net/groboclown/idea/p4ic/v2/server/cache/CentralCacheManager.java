@@ -14,16 +14,15 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
-import net.groboclown.idea.p4ic.config.Client;
-import net.groboclown.idea.p4ic.config.P4ClientsReloadedListener;
-import net.groboclown.idea.p4ic.config.P4Config;
-import net.groboclown.idea.p4ic.config.P4ConfigListener;
+import net.groboclown.idea.p4ic.config.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.server.cache.state.AllClientsState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.ClientLocalServerState;
+import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -35,17 +34,15 @@ import java.util.concurrent.locks.ReentrantLock;
 public class CentralCacheManager {
     private static final Logger LOG = Logger.getInstance(CentralCacheManager.class);
 
-    private final Project project;
     private final AllClientsState allClientState;
     private final MessageBusConnection messageBus;
     private final Map<ClientServerId, ClientCacheManager> clientManagers = new HashMap<ClientServerId, ClientCacheManager>();
     private final Lock cacheLock = new ReentrantLock();
     private boolean disposed = false;
 
-    public CentralCacheManager(@NotNull Project project) {
-        this.project = project;
-        allClientState = AllClientsState.getInstance(project);
-        messageBus = project.getMessageBus().connect();
+    public CentralCacheManager() {
+        allClientState = AllClientsState.getInstance();
+        messageBus = ApplicationManager.getApplication().getMessageBus().connect();
         messageBus.subscribe(P4ClientsReloadedListener.TOPIC, new P4ClientsReloadedListener() {
             @Override
             public void clientsLoaded(@NotNull final Project project, @NotNull final List<Client> clients) {
@@ -102,19 +99,18 @@ public class CentralCacheManager {
 
 
     @NotNull
-    public ClientCacheManager getClientCacheManager(@NotNull Client client) {
+    public ClientCacheManager getClientCacheManager(@NotNull ClientServerId clientServerId, @NotNull ServerConfig config) {
         if (disposed) {
             // Coding error; no bundled message
             throw new IllegalStateException("disposed");
         }
-        ClientServerId clientServerId = ClientServerId.create(client);
         ClientCacheManager cacheManager;
         cacheLock.lock();
         try {
             cacheManager = clientManagers.get(clientServerId);
             if (cacheManager == null) {
-                final ClientLocalServerState state = allClientState.getStateForClient(client);
-                cacheManager = new ClientCacheManager(project, client, state);
+                final ClientLocalServerState state = allClientState.getStateForClient(clientServerId);
+                cacheManager = new ClientCacheManager(config, state);
                 clientManagers.put(clientServerId, cacheManager);
             }
         } finally {

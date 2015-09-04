@@ -30,8 +30,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class P4Edit extends BasicAction {
-    private static final Logger LOG = Logger.getInstance(P4Edit.class);
+public class P4EditOrig extends BasicAction {
+    private static final Logger LOG = Logger.getInstance(P4EditOrig.class);
 
     public static final String EDIT = "Edit files";
 
@@ -46,9 +46,6 @@ public class P4Edit extends BasicAction {
     protected boolean isEnabled(@NotNull Project project, @NotNull P4Vcs vcs, @NotNull VirtualFile... vFiles) {
         Map<Client, List<VirtualFile>> clients;
         try {
-            // TODO this isn't right - it just reports a message if a
-            // file isn't under Perforce control, and this method doesn't
-            // identify the problem.
             clients = vcs.mapVirtualFilesToClient(Arrays.asList(vFiles));
         } catch (P4InvalidConfigException e) {
             return false;

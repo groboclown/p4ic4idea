@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.server.exceptions;
 
 import com.perforce.p4java.exception.ConnectionException;
+import com.perforce.p4java.exception.TrustException;
 import net.groboclown.idea.p4ic.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,6 +26,10 @@ import org.jetbrains.annotations.Nullable;
  * than the one declared by either the trust file, or the user.
  */
 public class P4SSLFingerprintException extends P4SSLException {
+
+    public P4SSLFingerprintException(@Nullable final String serverFingerprint, @NotNull final TrustException e){
+        super(P4Bundle.message("exception.ssl.fingerprint", serverFingerprint, e.getFingerprint()), e);
+    }
 
     public P4SSLFingerprintException(@Nullable final String serverFingerprint, @NotNull final ConnectionException e) {
         super(P4Bundle.message("exception.ssl.fingerprint", serverFingerprint, e.getMessage()), e);

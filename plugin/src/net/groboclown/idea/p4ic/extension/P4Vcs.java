@@ -655,6 +655,12 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     }
 
 
+    /**
+     *
+     * @param serverConfigId
+     * @return
+     * @deprecated see ServerConnectionController
+     */
     public boolean isWorkingOffline(@NotNull String serverConfigId) {
         for (Client client: getClients()) {
             if (client.getConfig().getServiceName().equals(serverConfigId)) {
@@ -666,6 +672,12 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     }
 
 
+    /**
+     *
+     * @param config
+     * @return
+     * @deprecated see ServerConnectionController
+     */
     public boolean isWorkingOffline(@NotNull ServerConfig config) {
         try {
             return ServerStoreService.getInstance().
@@ -757,6 +769,10 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         }
         Collections.reverse(ret);
         return ret;
+    }
+
+    public boolean isAutoOffline() {
+        return autoOffline;
     }
 
 

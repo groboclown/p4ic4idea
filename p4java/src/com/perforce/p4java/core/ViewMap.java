@@ -3,12 +3,12 @@
  */
 package com.perforce.p4java.core;
 
+import com.perforce.p4java.exception.NullPointerError;
+import com.perforce.p4java.exception.P4JavaError;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import com.perforce.p4java.exception.NullPointerError;
-import com.perforce.p4java.exception.P4JavaError;
 
 /**
  * Defines the common operations to Perforce view maps. View maps are
@@ -138,7 +138,7 @@ public class ViewMap<E extends IMapEntry> implements Iterable<E> {
 			throw new NullPointerError(
 					"Null entry passed to ViewMap replaceEntry method");
 		}
-		this.entryList.get(position).setOrder(E.ORDER_UNKNOWN);
+		this.entryList.get(position).setOrder(IMapEntry.ORDER_UNKNOWN);
 		this.entryList.set(position, entry);
 		entry.setOrder(position);
 	}

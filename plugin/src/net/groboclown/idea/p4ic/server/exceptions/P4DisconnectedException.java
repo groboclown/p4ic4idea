@@ -65,7 +65,7 @@ public class P4DisconnectedException extends VcsConnectionProblem {
             ServerStatus status = ServerStoreService.getInstance().getServerStatus(project, config);
             if (status.isWorkingOnline()) {
                 if (status.onDisconnect()) {
-                    status.onReconnect();
+                    //status.onReconnect();
                     return true;
                 }
             }

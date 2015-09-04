@@ -14,7 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache;
 
-import net.groboclown.idea.p4ic.v2.server.cache.FileActionsView.AddEditFactory;
+import net.groboclown.idea.p4ic.v2.server.cache.sync.FileActionsServerCacheSync.AddEditFactory;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerUpdateAction;
 import org.jetbrains.annotations.NotNull;

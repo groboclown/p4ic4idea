@@ -17,6 +17,7 @@ package net.groboclown.idea.p4ic.v2.server.util;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FilePathImpl;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,6 +47,17 @@ public final class FilePathUtil {
             // This can happen when in unit test mode
             LOG.debug("VcsUtil.getFilePath raised an exception for " + f, ex);
             return new FilePathImpl(f, f.isDirectory());
+        }
+    }
+
+    @NotNull
+    public static FilePath getFilePath(@NotNull final VirtualFile f) {
+        try {
+            return VcsUtil.getFilePath(f);
+        } catch (Exception ex) {
+            // This can happen when in unit test mode
+            LOG.debug("VcsUtil.getFilePath raised an exception for " + f, ex);
+            return new FilePathImpl(f);
         }
     }
 }

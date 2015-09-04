@@ -45,6 +45,9 @@ public class ServerExecutor {
     }
 
 
+    /**
+     * @deprecated see ServerConnectionController
+     */
     public boolean isWorkingOnline() {
         return exec.isWorkingOnline();
     }

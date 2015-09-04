@@ -14,6 +14,7 @@
 package net.groboclown.idea.p4ic;
 
 import com.intellij.CommonBundle;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.PropertyKey;
 
@@ -32,14 +33,16 @@ public class P4Bundle {
     private P4Bundle() {
     }
 
+    @NonNls
     public static String message(
-            @NonNls
+            @Nls
             @PropertyKey(resourceBundle = BUNDLE) String key, Object... params) {
         return CommonBundle.message(getBundle(), key, params);
     }
 
+    @NonNls
     public static String getString(
-            @NonNls
+            @Nls
             @PropertyKey(resourceBundle = BUNDLE) String key) {
         return getBundle().getString(key);
     }

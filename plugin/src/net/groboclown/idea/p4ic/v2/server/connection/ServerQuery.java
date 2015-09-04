@@ -14,8 +14,9 @@
 
 package net.groboclown.idea.p4ic.v2.server.connection;
 
-import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Executes a query against the Perforce server.  Unlike the
@@ -23,16 +24,18 @@ import org.jetbrains.annotations.NotNull;
  * the implementations do not need a method for their construction
  * outside the requesting object.
  */
-public interface ServerQuery {
+public interface ServerQuery<T> {
     /**
      * Performs the action.  If the action could not be completed, but needs to
      * be, it should put itself back into the queue (via the P4Server).
      * In all cases, after this executes, it will be removed from the store.
-     *
-     * @param exec   Perforce execution object
+     *  @param exec   Perforce execution object
+     * @param cacheManager
      * @param alerts graceful error handling
      */
-    void query(@NotNull P4Exec2 exec, @NotNull P4Server server,
-            @NotNull ServerConnection connection, @NotNull AlertManager alerts);
+    @Nullable
+    T query(@NotNull P4Exec2 exec, @NotNull ClientCacheManager cacheManager,
+            @NotNull ServerConnection connection, @NotNull AlertManager alerts)
+            throws InterruptedException;
 
 }

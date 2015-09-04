@@ -25,11 +25,13 @@ import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.SoftReference;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -91,8 +93,7 @@ public class ServerStoreService implements ApplicationComponent {
     @Override
     public void initComponent() {
         appMessageBus = ApplicationManager.getApplication().getMessageBus().connect();
-        appMessageBus.subscribe(
-                P4ConfigListener.TOPIC, configChangedListener);
+        appMessageBus.subscribe(P4ConfigListener.TOPIC, configChangedListener);
     }
 
     @Override
@@ -114,6 +115,9 @@ public class ServerStoreService implements ApplicationComponent {
         return "Perforce Server Store Service";
     }
 
+    /**
+     * @deprecated see ServerConnectionController
+     */
     public void workOnline() {
         synchronized (sync) {
             for (ServerData data: servers.values())
@@ -124,7 +128,7 @@ public class ServerStoreService implements ApplicationComponent {
     }
 
 
-    private static class ServerData implements ServerStatus {
+    static class ServerData implements ServerStatus {
         private final Object connectionSync = new Object();
         private final Object changeSync = new Object();
         private final Object clientSync = new Object();
@@ -132,6 +136,7 @@ public class ServerStoreService implements ApplicationComponent {
         private final Map<String, RawServerExecutor> clientExec = new HashMap<String, RawServerExecutor>();
         private volatile boolean onlineChanging;
         private final List<SoftReference<Project>> referenceCounts = new ArrayList<SoftReference<Project>>();
+        private final DefaultConnectionController controller = new DefaultConnectionController(this);
 
         // we are online by default, until told otherwise
         private volatile boolean isOnline = true;
@@ -153,6 +158,18 @@ public class ServerStoreService implements ApplicationComponent {
                 }
             }
             return new ServerExecutor(project, exec);
+        }
+
+        @Override
+        public void removeClient(@NotNull final String clientName) {
+            synchronized (clientSync) {
+                final RawServerExecutor oldServer = clientExec.remove(clientName);
+                if (oldServer != null) {
+                    oldServer.dispose();
+                }
+
+                // No need to add a new one for the new client; it is implicitly done on the get method.
+            }
         }
 
 
@@ -235,32 +252,15 @@ public class ServerStoreService implements ApplicationComponent {
         }
 
 
-        @Override
-        public void changeClientName(@NotNull String oldClientName, @NotNull String newClientName) {
-            synchronized (clientSync) {
-                final RawServerExecutor oldServer = clientExec.remove(oldClientName);
-                if (oldServer != null) {
-                    oldServer.dispose();
-                }
-
-                // No need to add a new one for the new client; it is implicitly done on the get method.
-            }
-        }
-
-
-        @Override
-        public void removeClient(@NotNull String clientName) {
-            // This will remove the old reference
-            changeClientName(clientName, "");
-        }
-
-
         @NotNull
         @Override
         public ServerConfig getConfig() {
             return config;
         }
 
+        /**
+         * @deprecated
+         */
         @Override
         public boolean isWorkingOffline() {
             // Using volatile
@@ -272,6 +272,10 @@ public class ServerStoreService implements ApplicationComponent {
             return !isOnline;
         }
 
+
+        /**
+         * @deprecated
+         */
         @Override
         public boolean isWorkingOnline() {
             // Using volatile
@@ -284,7 +288,6 @@ public class ServerStoreService implements ApplicationComponent {
         }
 
 
-        @Override
         public void onReconnect() {
             Project someProject = getAnyProjectReference();
             if (someProject == null) {
@@ -432,6 +435,11 @@ public class ServerStoreService implements ApplicationComponent {
             }
         }
 
+        @Override
+        public ServerConnectedController getConnectedController() {
+            return controller;
+        }
+
 
         private void wentOnline() {
             synchronized (connectionSync) {
@@ -470,6 +478,53 @@ public class ServerStoreService implements ApplicationComponent {
             }
         }
     }
+
+
+    /**
+     * For now, this is part of the ServerData.  It should be moved in the future into its own top-level container,
+     * or just replace the existing {@link ServerStatus}.
+     *
+     */
+    static class DefaultConnectionController implements ServerConnectedController {
+        private final ServerData server;
+
+        DefaultConnectionController(final ServerData server) {
+            this.server = server;
+        }
+
+        @Override
+        public boolean isWorkingOnline() {
+            return server.isWorkingOnline();
+        }
+
+        @Override
+        public boolean isWorkingOffline() {
+            return server.isWorkingOffline();
+        }
+
+        @Override
+        public boolean isAutoOffline() {
+            return server.config.isAutoOffline();
+        }
+
+        @Override
+        public void disconnect() {
+            server.forceDisconnect();
+        }
+
+        @Override
+        public void connect() {
+            server.onReconnect();
+        }
+
+        @Override
+        public void waitForOnline(final long timeout, final TimeUnit unit) throws InterruptedException {
+            // FIXME
+            throw new IllegalStateException("not implemented");
+        }
+    }
+
+
 
 
     private class MyConfigChangedListener implements P4ConfigListener {

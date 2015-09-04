@@ -71,11 +71,19 @@ public class RawServerExecutor {
     }
 
 
+    /**
+     *
+     * @deprecated see ServerConnectionController
+     */
     public boolean isWorkingOnline() {
         return config.isWorkingOnline();
     }
 
 
+    /**
+     *
+     * @deprecated see ServerConnectionController
+     */
     public boolean isOffline() {
         return config.isWorkingOffline();
     }

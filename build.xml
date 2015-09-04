@@ -10,6 +10,8 @@
             inheritrefs="false" inheritall="false"/>
         <ant antfile="idea150/build.xml" target="clean"
             inheritrefs="false" inheritall="false"/>
+        <ant antfile="p4java/build.xml" target="clean"
+            inheritrefs="false" inheritall="false"/>
         <ant antfile="plugin/build.xml" target="clean"
             inheritrefs="false" inheritall="false"/>
         <delete file="p4ic4idea.zip"/>
@@ -22,6 +24,8 @@
         <ant antfile="idea140/build.xml" target="all"
             inheritrefs="false" inheritall="false"/>
         <ant antfile="idea150/build.xml" target="all"
+            inheritrefs="false" inheritall="false"/>
+        <ant antfile="p4java/build.xml" target="all"
             inheritrefs="false" inheritall="false"/>
         <ant antfile="plugin/build.xml" target="all"
             inheritrefs="false" inheritall="false"/>

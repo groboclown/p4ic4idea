@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.server;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
@@ -119,7 +120,7 @@ public class ClientManager {
         }
 
         // add notice to message bus about clients loaded.
-        project.getMessageBus().syncPublisher(P4ClientsReloadedListener.TOPIC).clientsLoaded(project, clients);
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(P4ClientsReloadedListener.TOPIC).clientsLoaded(project, clients);
     }
 
 

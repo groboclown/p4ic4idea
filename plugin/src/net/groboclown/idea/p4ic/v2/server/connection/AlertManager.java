@@ -18,10 +18,12 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.VcsException;
-import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -39,6 +41,8 @@ public class AlertManager implements ApplicationComponent {
 
     private static final long POLL_TIMEOUT = 10;
     private static final TimeUnit POLL_TIMEOUT_UNIT = TimeUnit.SECONDS;
+
+    private static ThrowableHandled throwableHandled = new ThrowableHandled();
 
     // Every error and warning added causes a new event added.
     private final List<WarningMsg> pendingWarnings = new ArrayList<WarningMsg>();
@@ -60,6 +64,10 @@ public class AlertManager implements ApplicationComponent {
 
 
     public void addWarning(@NotNull String message, @Nullable VcsException ex) {
+        if (ex != null && throwableHandled.isHandled(ex)) {
+            LOG.info("Skipped duplicate handling of " + ex);
+            return;
+        }
         eventLock.lock();
         try {
             pendingWarnings.add(new WarningMsg(message, ex));
@@ -69,18 +77,38 @@ public class AlertManager implements ApplicationComponent {
         }
     }
 
-    public void addNotice(@NotNull final String message, @Nullable final VcsException ex) {
-        // TODO this should be turned into a UI-friendly element
+    public void addNotice(@NotNull @Nls final String message, @Nullable final VcsException ex) {
+        if (ex != null && throwableHandled.isHandled(ex)) {
+            LOG.debug("Skipped duplicate handling of " + ex);
+            return;
+        }
+
+        // FIXME this should be turned into a UI-friendly element
         LOG.warn(message, ex);
     }
 
+    public void addNotices(@NotNull final String message, @NotNull final List<P4StatusMessage> msgs,
+            final boolean ignoreFileNotFound) {
+        for (P4StatusMessage msg : msgs) {
+            if (msg != null && msg.isError() && (! ignoreFileNotFound || ! msg.isFileNotFoundError())) {
+                // FIXME this should be turned into a UI-friendly element
+                LOG.warn(message, P4StatusMessage.messageAsError(msg));
+            }
+        }
+    }
 
-    public void addCriticalError(@NotNull P4Server server, @NotNull final CriticalErrorHandler error) {
+
+    public void addCriticalError(@NotNull final CriticalErrorHandler error,
+            @Nullable Throwable src) {
+        if (src != null && throwableHandled.isHandled(src)) {
+            LOG.info("Skipped duplicate handling of " + src);
+            return;
+        }
+        LOG.info("Critical error", src);
         eventLock.lock();
         try {
-            // don't use "offer"; we expect this to always work.
             criticalErrorCount++;
-            criticalErrorHandlers.add(new ErrorMsg(server, error));
+            criticalErrorHandlers.add(new ErrorMsg(error, src));
             eventPending.signal();
         } finally {
             eventLock.unlock();
@@ -89,21 +117,32 @@ public class AlertManager implements ApplicationComponent {
 
 
     /**
-     * Wait until there are no more critical errors pending, or until
-     * a timeout or a thread interruption.
+     * Wait until there are no more critical errors pending, then run a process.  If a timeout or a thread interruption
+     * happens during the wait, an {@link InterruptedException} will be thrown.  Note that after running this
+     * method, a critical error could immediately pop up, or it could pop up during the execution.
+     * This is considered acceptable, because it still allows multiple connection threads to run in parallel; they
+     * only wait to initially run while a critical error is active.
+     *
+     * @param timeout how long to wait until a timeout occurs, or negative value if it should wait
+     *                indefinitely.
      */
-    public void waitForNoCriticalErrors(long timeout, @NotNull TimeUnit unit) throws InterruptedException {
-        long now = System.currentTimeMillis();
-        long timeoutMs = unit.toMillis(timeout);
+    public void waitForNoCriticalErrors(long timeout, @NotNull TimeUnit unit)
+            throws InterruptedException {
+        long expiresMs = unit.toMillis(timeout) + System.currentTimeMillis();
         eventLock.lock();
         try {
             while (criticalErrorCount > 0) {
-                long sleepTime = timeoutMs - now;
-                if (sleepTime < 0) {
+                long sleepTime = expiresMs - System.currentTimeMillis();
+                if (sleepTime < 0 && timeout >= 0) {
                     // TODO localize the message?
                     throw new InterruptedException("timed out");
                 }
-                noPendingCriticalErrors.await(timeoutMs, TimeUnit.MILLISECONDS);
+                if (timeout < 0) {
+                    // wait indefinitely
+                    noPendingCriticalErrors.await();
+                } else {
+                    noPendingCriticalErrors.await(sleepTime, TimeUnit.MILLISECONDS);
+                }
             }
         } finally {
             eventLock.unlock();
@@ -123,7 +162,7 @@ public class AlertManager implements ApplicationComponent {
 
     @Override
     public void initComponent() {
-        handlerThread = new Thread(new MessageHandler(), "Perforce Alert Manager");
+        handlerThread = new Thread(new MessageHandler(), getComponentName());
         handlerThread.setDaemon(true);
         handlerThread.setPriority(Thread.NORM_PRIORITY + 1);
     }
@@ -162,7 +201,7 @@ public class AlertManager implements ApplicationComponent {
 
         // Critical errors are handled one at a time.
         try {
-            errorMsg.error.handleError(errorMsg.when, errorMsg.server);
+            errorMsg.runHandlerInEDT();
         } finally {
             eventLock.lock();
             try {
@@ -226,17 +265,33 @@ public class AlertManager implements ApplicationComponent {
 
     class ErrorMsg implements Runnable {
         final CriticalErrorHandler error;
-        final P4Server server;
+        //final Client client;
+        final Throwable src;
         final Date when = new Date();
 
-        ErrorMsg(@NotNull P4Server server, @NotNull final CriticalErrorHandler error) {
-            this.server = server;
+        ErrorMsg(@NotNull final CriticalErrorHandler error, final Throwable src) {
+            //this.client = client;
             this.error = error;
+            this.src = src;
         }
 
         @Override
         public void run() {
+            // This bounces between classes (in the manager, in here, in the manager, in here),
+            // but it's for general containment of responsibilities.
+            LOG.info("Handling critical error " + src);
             handleError(this);
+            LOG.info("Completed handling critical error " + src);
+        }
+
+
+        void runHandlerInEDT() {
+            ApplicationManager.getApplication().assertIsDispatchThread();
+            try {
+                error.handleError(when);
+            } catch (Exception e) {
+                LOG.warn("Error handler " + error.getClass().getSimpleName() + " caused error", e);
+            }
         }
     }
 
@@ -251,4 +306,53 @@ public class AlertManager implements ApplicationComponent {
             this.warning = warning;
         }
     }
+
+
+    /**
+     * Keeps track of all the throwables that have been handled by this class.
+     * It allows duplicates (those that were pushed up the stack but handled
+     * here) to be correctly dealt with.
+     */
+    static class ThrowableHandled {
+        // Use a weak reference; that way, when the throwable is no longer in
+        // scope (the stacks have finished dealing with it), it will be removed
+        // from the list.
+        private final List<WeakReference<Throwable>> refs = new ArrayList<WeakReference<Throwable>>();
+        private final Lock lock = new ReentrantLock();
+
+        /**
+         * Checks if the throwable has been registered; if not, it is registered.
+         * @param t throwable
+         * @return true if it is already registered, false if it is added.
+         */
+        boolean isHandled(@NotNull Throwable t) {
+            Set<Throwable> causes = new HashSet<Throwable>();
+            Throwable current = t;
+            Throwable prev = null;
+            while (current != null && current != prev) {
+                causes.add(current);
+                prev = current;
+                current = prev.getCause();
+            }
+            lock.lock();
+            try {
+                Iterator<WeakReference<Throwable>> iter = refs.iterator();
+                while (iter.hasNext()) {
+                    final WeakReference<Throwable> ref = iter.next();
+                    final Throwable that = ref.get();
+                    if (that == null) {
+                        iter.remove();
+                    } else if (causes.contains(that)) {
+                        return true;
+                    }
+                }
+                refs.add(new WeakReference<Throwable>(t));
+                return false;
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+
 }

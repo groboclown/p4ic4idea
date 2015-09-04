@@ -14,8 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.connection;
 
-import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientCacheManager;
+import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import org.jetbrains.annotations.NotNull;
@@ -43,7 +42,7 @@ public interface ServerUpdateAction {
      * @param exec Perforce execution object
      * @param alerts graceful error handling
      */
-    void perform(@NotNull P4Exec2 exec, @NotNull P4Server server,
-            @NotNull ClientCacheManager clientCacheManager,
-            @NotNull ServerConnection connection, @NotNull AlertManager alerts);
+    void perform(@NotNull P4Exec2 exec, @NotNull ClientCacheManager clientCacheManager,
+            @NotNull ServerConnection connection, @NotNull AlertManager alerts)
+            throws InterruptedException;
 }

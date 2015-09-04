@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.v2.server.cache;
+package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
@@ -23,6 +23,9 @@ import org.jetbrains.annotations.NotNull;
  * that all the front ends conform to the same API.
  */
 abstract class CacheFrontEnd {
+
+    // FIXME wrap in a timer to only load at a given maximum frequency
+
     /**
      * Reload the underlying server cache.  Only called when the client is online.
      *

@@ -29,6 +29,7 @@ public class ServerConfigImpl extends ServerConfig {
     private final String serverFingerprint;
     private final String clientHostname;
     private final String ignoreFileName;
+    private final boolean isAutoOffline;
     private final boolean storePasswordLocally;
 
 
@@ -37,7 +38,7 @@ public class ServerConfigImpl extends ServerConfig {
                 proxy.getAuthTicketPath() == null ? null : new File(proxy.getAuthTicketPath()),
                 proxy.getTrustTicketPath() == null ? null : new File(proxy.getTrustTicketPath()),
                 proxy.getServerFingerprint(), proxy.getClientHostname(), proxy.getIgnoreFileName(),
-                proxy.isPasswordStoredLocally());
+                proxy.isAutoOffline(), proxy.isPasswordStoredLocally());
     }
 
 
@@ -45,7 +46,7 @@ public class ServerConfigImpl extends ServerConfig {
             @NotNull String username, @NotNull P4Config.ConnectionMethod connectionMethod,
             @Nullable File authTicket, @Nullable File trustTicket,
             @Nullable String serverFingerprint, @Nullable String clientHostname,
-            @Nullable String ignoreFileName, boolean storePasswordLocally) {
+            @Nullable String ignoreFileName, boolean isAutoOffline, boolean storePasswordLocally) {
         this.port = port;
         this.protocol = protocol;
         this.username = username;
@@ -55,6 +56,7 @@ public class ServerConfigImpl extends ServerConfig {
         this.serverFingerprint = serverFingerprint;
         this.clientHostname = clientHostname;
         this.ignoreFileName = ignoreFileName;
+        this.isAutoOffline = isAutoOffline;
         this.storePasswordLocally = storePasswordLocally;
     }
 
@@ -118,33 +120,8 @@ public class ServerConfigImpl extends ServerConfig {
         return storePasswordLocally;
     }
 
-    // equals only cares about the information that connects
-    // to the server, not the individual server setup.  Note that
-    // this might have the potential to lose information.
     @Override
-    public boolean equals(Object other) {
-        if (other == null) {
-            return false;
-        }
-        if (this == other) {
-            return true;
-        }
-        if (! (other instanceof ServerConfig)) {
-            return false;
-        }
-        ServerConfig sc = (ServerConfig) other;
-        return getPort().equals(sc.getPort()) &&
-                getProtocol().equals(sc.getProtocol()) &&
-                getUsername().equals(sc.getUsername()) &&
-                getConnectionMethod().equals(sc.getConnectionMethod());
-            // auth ticket & trust ticket & others - not part of comparison!
-    }
-
-    @Override
-    public int hashCode() {
-        return (getPort().hashCode() << 6) +
-                (getProtocol().hashCode() << 4) +
-                (getUsername().hashCode() << 2) +
-                getConnectionMethod().hashCode();
+    public boolean isAutoOffline() {
+        return isAutoOffline;
     }
 }

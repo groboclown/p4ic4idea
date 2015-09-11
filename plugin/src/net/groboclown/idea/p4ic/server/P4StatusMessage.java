@@ -45,6 +45,7 @@ public class P4StatusMessage {
     public boolean isFileNotFoundError() {
         return isError() &&
                 (getUniqueCode() == 6520 ||
+                 getUniqueCode() == 6519 ||
                  getUniqueCode() == 6526);
     }
 

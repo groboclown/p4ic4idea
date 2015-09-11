@@ -92,7 +92,11 @@ public class ServerStoreService implements ApplicationComponent {
 
     @Override
     public void initComponent() {
+        // FIXME this is a project level event, not app level.
+
         appMessageBus = ApplicationManager.getApplication().getMessageBus().connect();
+
+        // FIXME old stuff
         appMessageBus.subscribe(P4ConfigListener.TOPIC, configChangedListener);
     }
 
@@ -135,6 +139,7 @@ public class ServerStoreService implements ApplicationComponent {
         private final ServerConfig config;
         private final Map<String, RawServerExecutor> clientExec = new HashMap<String, RawServerExecutor>();
         private volatile boolean onlineChanging;
+        // FIXME this should be a WeakReference
         private final List<SoftReference<Project>> referenceCounts = new ArrayList<SoftReference<Project>>();
         private final DefaultConnectionController controller = new DefaultConnectionController(this);
 
@@ -182,12 +187,15 @@ public class ServerStoreService implements ApplicationComponent {
                     Project p = ref.get();
                     // yes, ==
                     if (p == project) {
+                        // FIXME increment reference count
                         found = true;
                     } else if (p == null || p.isDisposed()) {
                         iter.remove();
                     }
                 }
                 if (! found) {
+                    // FIXME add message bus listener
+
                     referenceCounts.add(new SoftReference<Project>(project));
                 }
             }
@@ -225,6 +233,9 @@ public class ServerStoreService implements ApplicationComponent {
                     Project p = ref.get();
                     // yes, ==
                     if (p == null || p == project || p.isDisposed()) {
+                        // FIXME need to deregister a message bus listener if p == project
+
+
                         iter.remove();
                     }
                 }

@@ -61,12 +61,16 @@ import net.groboclown.idea.p4ic.server.ServerStoreService;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.P4ConnectionWidget;
 import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.P4ServerManager;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.*;
+import java.util.Map.Entry;
 
 public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     private static final Logger LOG = Logger.getInstance(P4Vcs.class);
@@ -132,8 +136,10 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     private final Object vfsSync = new Object();
 
     private final ClientManager clients;
+    private final P4ServerManager serverManager;
 
     private final P4RevisionSelector revisionSelector;
+
 
     private boolean autoOffline = false;
 
@@ -170,6 +176,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         annotationProvider = new P4AnnotationProvider(this);
         committedChangesProvider = new P4CommittedChangesProvider();
         clients = new ClientManager(project, configProject);
+        serverManager = new P4ServerManager(project);
         revisionSelector = new P4RevisionSelector(this);
         tempFileWatchDog = new TempFileWatchDog();
     }
@@ -239,10 +246,16 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         }
 
         projectMessageBusConnection = myProject.getMessageBus().connect();
+        appMessageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
+
+        // FIXME enable if it makes sense to handle these here.
+        //Events.appBaseConfigUpdated(projectMessageBusConnection, problemListener);
+        //Events.appConfigInvalid(projectMessageBusConnection, problemListener);
+        //Events.appServerConnectionState(appMessageBusConnection, disconnectListener);
+
+        // FIXME old stuff
         projectMessageBusConnection.subscribe(OnServerConfigurationProblem.TOPIC, problemListener);
         projectMessageBusConnection.subscribe(P4ConfigListener.TOPIC, problemListener);
-        appMessageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
-        //appMessageBusConnection.subscribe(P4ConfigListener.TOPIC, problemListener);
         appMessageBusConnection.subscribe(OnServerDisconnectListener.TOPIC, disconnectListener);
 
         clients.initialize();
@@ -594,6 +607,48 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         LOG.debug("client-file mapping: " + ret);
 
         return ret;
+    }
+
+
+    /**
+     *
+     * @param files files
+     * @return the matched mapping of files to the servers.  There might be a "null" server entry, which
+     *      contains a list of file paths that didn't map to a client.
+     */
+    @NotNull
+    public Map<P4Server, List<FilePath>> mapFilePathsToP4Server(Collection<FilePath> files) {
+        return serverManager.mapFilePathsToP4Server(files);
+    }
+
+
+    /**
+     * @param files files
+     * @return the matched mapping of files to the servers.  There might be a "null" server entry, which
+     * contains a list of file paths that didn't map to a client.
+     */
+    @NotNull
+    public Map<P4Server, List<VirtualFile>> mapVirtualFilesToP4Server(Collection<VirtualFile> files) {
+        // TODO make more efficient.  This currently just remaps.
+        Map<FilePath, VirtualFile> input = new HashMap<FilePath, VirtualFile>(files.size());
+        for (VirtualFile file : files) {
+            input.put(FilePathUtil.getFilePath(file), file);
+        }
+        final Map<P4Server, List<FilePath>> output = serverManager.mapFilePathsToP4Server(input.keySet());
+        final Map<P4Server, List<VirtualFile>> ret = new HashMap<P4Server, List<VirtualFile>>();
+        for (Entry<P4Server, List<FilePath>> entry : output.entrySet()) {
+            List<VirtualFile> vfList = new ArrayList<VirtualFile>(entry.getValue().size());
+            for (FilePath filePath : entry.getValue()) {
+                vfList.add(filePath.getVirtualFile());
+            }
+            ret.put(entry.getKey(), vfList);
+        }
+        return ret;
+    }
+
+
+    public List<P4Server> getP4Servers() {
+        return serverManager.getServers();
     }
 
 

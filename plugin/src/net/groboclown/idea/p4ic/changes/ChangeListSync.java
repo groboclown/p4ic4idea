@@ -116,7 +116,7 @@ public class ChangeListSync {
 
         progress.setFraction(0.5);
 
-        // Update the files
+        // CreateUpdate the files
         List<Client> clients = vcs.getClients();
         double clientIndex = 0.0;
         for (Client client : vcs.getClients()) {

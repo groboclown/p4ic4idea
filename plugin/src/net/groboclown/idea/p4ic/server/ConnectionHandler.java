@@ -28,6 +28,7 @@ import net.groboclown.idea.p4ic.server.connection.ClientPasswordConnectionHandle
 import net.groboclown.idea.p4ic.server.connection.EnvConnectionHandler;
 import net.groboclown.idea.p4ic.server.connection.TestConnectionHandler;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.v2.events.Events;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -159,8 +160,12 @@ public abstract class ConnectionHandler {
         if (! problems.isEmpty()) {
             P4InvalidConfigException ex = new P4InvalidConfigException(config, problems);
             if (project != null) {
+                ManualP4Config badConfig = new ManualP4Config(config, null);
+                Events.configInvalid(project, badConfig, ex);
+
+                // FIXME old stuff
                 project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project,
-                        new ManualP4Config(config, null), ex);
+                        badConfig, ex);
             }
             throw ex;
         }
@@ -173,7 +178,9 @@ public abstract class ConnectionHandler {
         ret.setProperty(PropertyDefs.PROG_NAME_KEY, "IntelliJ Perforce Community Plugin");
         ret.setProperty(PropertyDefs.PROG_VERSION_KEY, "1");
 
-        ret.setProperty(PropertyDefs.IGNORE_FILE_NAME_KEY, config.getIgnoreFileName());
+        if (config.getIgnoreFileName() != null) {
+            ret.setProperty(PropertyDefs.IGNORE_FILE_NAME_KEY, config.getIgnoreFileName());
+        }
 
         //ret.setProperty(PropertyDefs.ENABLE_PROGRESS, "1");
 

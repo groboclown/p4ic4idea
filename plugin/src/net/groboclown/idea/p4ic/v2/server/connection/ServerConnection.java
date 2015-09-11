@@ -20,14 +20,15 @@ import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.RawServerExecutor;
 import net.groboclown.idea.p4ic.server.ServerStoreService;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
-import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
+import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
+import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.ui.alerts.ConfigurationProblemHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayDeque;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +57,7 @@ public class ServerConnection {
     private final Object clientExecLock = new Object();
     private final Thread background;
     private volatile boolean disposed = false;
+    private boolean loadedPendingUpdateStates = false;
     @Nullable
     private volatile ClientExec clientExec;
 
@@ -66,6 +68,17 @@ public class ServerConnection {
             throw new IllegalStateException("Activity can only be run from within the ServerConnection action thread");
         }
     }
+
+
+    public interface CreateUpdate {
+        Collection<PendingUpdateState> create(@NotNull ClientCacheManager mgr);
+    }
+
+
+    public interface CacheQuery<T> {
+        T query(@NotNull ClientCacheManager mgr);
+    }
+
 
 
     public ServerConnection(@NotNull final AlertManager alertManager,
@@ -83,6 +96,14 @@ public class ServerConnection {
     }
 
 
+    public synchronized void postSetup(@NotNull Project project) {
+        if (! loadedPendingUpdateStates) {
+            queueUpdateActions(project, cacheManager.getCachedPendingUpdates());
+            loadedPendingUpdateStates = true;
+        }
+    }
+
+
     public void dispose() {
         disposed = true;
         background.interrupt();
@@ -93,10 +114,6 @@ public class ServerConnection {
         }
     }
 
-
-    public ClientCacheManager getCacheManager() {
-        return cacheManager;
-    }
 
 
     public void queueAction(@NotNull Project project, @NotNull ServerUpdateAction action) {
@@ -162,6 +179,65 @@ public class ServerConnection {
     }
 
 
+
+
+
+    public void queueUpdates(@NotNull Project project, @NotNull CreateUpdate update) {
+        final Collection<PendingUpdateState> updates = update.create(cacheManager);
+        List<PendingUpdateState> nonNullUpdates = new ArrayList<PendingUpdateState>(updates.size());
+        for (PendingUpdateState updateState : updates) {
+            if (updateState != null) {
+                cacheManager.addPendingUpdateState(updateState);
+                nonNullUpdates.add(updateState);
+            }
+        }
+        queueUpdateActions(project, nonNullUpdates);
+    }
+
+
+    public <T> T cacheQuery(@NotNull CacheQuery<T> q) {
+        return q.query(cacheManager);
+    }
+
+
+    P4Exec2 getExec(@NotNull Project project) throws P4InvalidConfigException {
+        // double-check locking.  This is why clientExec must be volatile.
+        if (clientExec == null) {
+            synchronized (clientExecLock) {
+                if (clientExec == null) {
+                    clientExec = new ClientExec(config, statusController, clientName);
+                }
+            }
+        }
+        return new P4Exec2(project, clientExec);
+    }
+
+
+    private void queueUpdateActions(@NotNull Project project, @NotNull Collection<PendingUpdateState> updates) {
+        UpdateGroup currentGroup = null;
+        List<PendingUpdateState> currentGroupUpdates = null;
+        for (PendingUpdateState update : updates) {
+            if (currentGroup != null && !update.getUpdateGroup().equals(currentGroup)) {
+                // new group, so add the old stuff and clear it out.
+                if (!currentGroupUpdates.isEmpty()) {
+                    queueAction(project,
+                            currentGroup.getServerUpdateActionFactory().create(currentGroupUpdates));
+                }
+                currentGroupUpdates = null;
+            }
+            currentGroup = update.getUpdateGroup();
+            if (currentGroupUpdates == null) {
+                currentGroupUpdates = new ArrayList<PendingUpdateState>();
+            }
+            currentGroupUpdates.add(update);
+        }
+        if (currentGroup != null && currentGroupUpdates != null && !currentGroupUpdates.isEmpty()) {
+            queueAction(project,
+                    currentGroup.getServerUpdateActionFactory().create(currentGroupUpdates));
+        }
+    }
+
+
     private void startImmediateAction() throws InterruptedException {
         connectionLock.lock();
         try {
@@ -177,18 +253,6 @@ public class ServerConnection {
     private void stopImmediateAction() {
         THREAD_EXECUTION_ACTIVE.remove();
         connectionLock.unlock();
-    }
-
-    P4Exec2 getExec(@NotNull Project project) throws P4InvalidConfigException {
-        // double-check locking.  This is why clientExec must be volatile.
-        if (clientExec == null) {
-            synchronized (clientExecLock) {
-                if (clientExec == null) {
-                    clientExec = new ClientExec(config, statusController, clientName);
-                }
-            }
-        }
-        return new P4Exec2(project, clientExec);
     }
 
     class QueueRunner implements Runnable {

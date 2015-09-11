@@ -34,6 +34,7 @@ import net.groboclown.idea.p4ic.history.P4AnnotatedLine;
 import net.groboclown.idea.p4ic.history.P4FileRevision;
 import net.groboclown.idea.p4ic.server.exceptions.*;
 import net.groboclown.idea.p4ic.server.tasks.*;
+import net.groboclown.idea.p4ic.v2.events.Events;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -350,8 +351,13 @@ public class RawServerExecutor {
                     if (! missed.isEmpty()) {
                         if (ret.isEmpty()) {
                             P4InvalidConfigException ex = new P4InvalidConfigException(P4Bundle.message("error.roots.mismatch", missed, clientFp));
+                            ManualP4Config badConfig = new ManualP4Config(config.getConfig(), clientName);
+                            Events.configInvalid(project, badConfig, ex);
+
+
+                            // FIXME old stuff
                             project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).
-                                    configurationProblem(project, new ManualP4Config(config.getConfig(), clientName), ex);
+                                    configurationProblem(project, badConfig, ex);
                             throw ex;
                         }
                         LOG.info("Roots (" + missed + ") are not under the client root (" + clientFp +

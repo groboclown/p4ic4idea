@@ -18,6 +18,7 @@ import com.intellij.openapi.util.Comparing;
 import com.perforce.p4java.core.IChangelistSummary;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 
 class P4ChangeListIdImpl implements P4ChangeListId {
@@ -88,6 +89,12 @@ class P4ChangeListIdImpl implements P4ChangeListId {
     @Override
     public boolean isIn(@NotNull Client client) {
         return scid.equals(client.getConfig().getServiceName()) &&
+                clientName.equals(client.getClientName());
+    }
+
+    @Override
+    public boolean isIn(@NotNull P4Server client) {
+        return scid.equals(client.getServerConfig().getServiceName()) &&
                 clientName.equals(client.getClientName());
     }
 

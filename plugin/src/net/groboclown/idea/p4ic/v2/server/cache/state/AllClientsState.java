@@ -16,14 +16,19 @@ package net.groboclown.idea.p4ic.v2.server.cache.state;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.*;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.Callable;
 
 /**
  * Top level state storage for the view of all the clients.  This is per workspace.
@@ -40,22 +45,44 @@ import java.util.Map;
         }
 )
 public class AllClientsState implements ApplicationComponent, PersistentStateComponent<Element> {
+    private static final Logger LOG = Logger.getInstance(AllClientsState.class);
+
     private final Map<ClientServerId, ClientLocalServerState> clientStates =
             new HashMap<ClientServerId, ClientLocalServerState>();
     private MessageBusConnection messageBus;
 
     @NotNull
     public static AllClientsState getInstance() {
-        // FIXME
-        throw new IllegalStateException("not registered in plugin.xml");
-
-        //return ApplicationManager.getApplication().getComponent(AllClientsState.class);
+        return ApplicationManager.getApplication().getComponent(AllClientsState.class);
     }
 
 
-    public ClientLocalServerState getStateForClient(@NotNull ClientServerId clientServerId) {
-        // FIXME create a new state if one doesn't exist.
-        throw new IllegalStateException("not implemented");
+    @NotNull
+    public ClientLocalServerState getStateForClient(@NotNull ClientServerId clientServerId,
+            Callable<Boolean> isServerCaseInsensitiveCallable) {
+        if (clientServerId.getClientId() == null) {
+            throw new IllegalArgumentException("must supply a client name");
+        }
+        synchronized (clientStates) {
+            ClientLocalServerState ret = clientStates.get(clientServerId);
+            if (ret == null) {
+                Boolean isServerCaseInsensitive = null;
+                try {
+                    isServerCaseInsensitive = isServerCaseInsensitiveCallable.call();
+                } catch (Exception e) {
+                    LOG.warn("Problem contacting Perforce server", e);
+                }
+                if (isServerCaseInsensitive == null) {
+                    isServerCaseInsensitive = SystemInfo.isWindows;
+                }
+                ret = new ClientLocalServerState(
+                        new P4ClientState(isServerCaseInsensitive, clientServerId, new P4WorkspaceViewState(clientServerId.getClientId())),
+                        new P4ClientState(isServerCaseInsensitive, clientServerId, new P4WorkspaceViewState(clientServerId.getClientId())),
+                        new ArrayList<PendingUpdateState>());
+                clientStates.put(clientServerId, ret);
+            }
+            return ret;
+        }
     }
 
     public void removeClientState(@NotNull ClientServerId client) {
@@ -67,23 +94,42 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
     @Nullable
     @Override
     public Element getState() {
-        // FIXME;
-        throw new IllegalStateException("not implemented");
+        synchronized (clientStates) {
+            Element ret = new Element("all-clients-state");
+            EncodeReferences refs = new EncodeReferences();
+            for (Entry<ClientServerId, ClientLocalServerState> entry : clientStates.entrySet()) {
+                Element child = new Element("client-state");
+                ret.addContent(child);
+                entry.getKey().serialize(child);
+                entry.getValue().serialize(child, refs);
+            }
+            refs.serialize(ret);
+            return ret;
+        }
     }
 
     @Override
-    public void loadState(final Element state) {
-        clientStates.clear();
-
-        // FIXME
-        throw new IllegalStateException("not implemented");
+    public void loadState(@NotNull final Element state) {
+        synchronized (clientStates) {
+            clientStates.clear();
+            DecodeReferences refs = DecodeReferences.deserialize(state);
+            for (Element child : state.getChildren("client-state")) {
+                ClientServerId id = ClientServerId.deserialize(state);
+                if (id != null) {
+                    ClientLocalServerState localServerState = ClientLocalServerState.deserialize(child, refs);
+                    if (localServerState != null) {
+                        clientStates.put(id, localServerState);
+                    }
+                }
+            }
+        }
     }
 
     @Override
     public void initComponent() {
         messageBus = ApplicationManager.getApplication().getMessageBus().connect();
 
-        // TODO listen to events, which trigger a simulated server update or local update.
+        // FIXME listen to events, which trigger a simulated server update or local update.
         // That's a project for the far off future; for the moment, that makes things
         // way too complicated.
     }

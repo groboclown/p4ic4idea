@@ -339,6 +339,7 @@ public class WorkspaceServerCacheSync {
                 }
             }
         }
+        LOG.info("Did not find roots matching " + referenceDir + "; roots = " + workspaceRoots);
         // no root found.
         alerts.addWarning(P4Bundle.message("error.config.invalid-roots", cache.getClientName()), invalidRootsException);
         return null;

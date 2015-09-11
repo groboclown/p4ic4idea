@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -44,10 +45,7 @@ public class ServerConnectionManager implements ApplicationComponent {
     private final Map<ServerConfig, ServerConfigStatus> serverCache = new HashMap<ServerConfig, ServerConfigStatus>();
 
     public static ServerConnectionManager getInstance() {
-        // FIXME
-        throw new IllegalStateException("not registered in plugin.xml");
-
-        // return ApplicationManager.getApplication().getComponent(ServerConnectionManager.class);
+        return ApplicationManager.getApplication().getComponent(ServerConnectionManager.class);
     }
 
     public ServerConnectionManager() {
@@ -60,6 +58,9 @@ public class ServerConnectionManager implements ApplicationComponent {
         this.alerts = alerts;
         this.messageBus = ApplicationManager.getApplication().getMessageBus().connect();
 
+        // FIXME use new handlers
+
+        // FIXME old stuff, and a bug - this is a project level event
         messageBus.subscribe(P4ConfigListener.TOPIC, new P4ConfigListener() {
             @Override
             public void configChanges(@NotNull final Project project, @NotNull final P4Config original,
@@ -225,11 +226,27 @@ public class ServerConnectionManager implements ApplicationComponent {
                 @NotNull AlertManager alerts, @NotNull CentralCacheManager cacheManager) {
             ServerConnection conn = clientNames.get(clientServer.getClientId());
             if (conn == null) {
-                conn = new ServerConnection(alerts, clientServer, cacheManager.getClientCacheManager(clientServer, config),
+                conn = new ServerConnection(alerts, clientServer,
+                        cacheManager.getClientCacheManager(clientServer, config, new CaseInsensitiveCheck(config)),
                         config, this);
                 clientNames.put(clientServer.getClientId(), conn);
             }
             return conn;
         }
     }
+
+
+    private static class CaseInsensitiveCheck implements Callable<Boolean> {
+        private final ServerConfig config;
+
+        private CaseInsensitiveCheck(final ServerConfig config) {
+            this.config = config;
+        }
+
+        @Override
+        public Boolean call() throws Exception {
+            return ! ClientExec.getServerInfo(config).isCaseSensitive();
+        }
+    }
+
 }

@@ -15,9 +15,12 @@
 package net.groboclown.idea.p4ic.v2.server.cache;
 
 
+import com.intellij.openapi.util.Comparing;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
+import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,7 +35,7 @@ public final class ClientServerId {
     }
 
     @NotNull
-    public static ClientServerId create(@NotNull ServerConfig serverConfig, @NotNull String clientName) {
+    public static ClientServerId create(@NotNull ServerConfig serverConfig, @Nullable String clientName) {
         return new ClientServerId(serverConfig.getServiceName(), clientName);
     }
 
@@ -52,7 +55,7 @@ public final class ClientServerId {
     }
 
 
-    public ClientServerId(@NotNull final String serverConfigId, @NotNull final String clientId) {
+    public ClientServerId(@NotNull final String serverConfigId, @Nullable final String clientId) {
         this.serverConfigId = serverConfigId;
         this.clientId = clientId;
     }
@@ -64,7 +67,7 @@ public final class ClientServerId {
     }
 
 
-    @NotNull
+    @Nullable
     public String getClientId() {
         return clientId;
     }
@@ -85,7 +88,8 @@ public final class ClientServerId {
         }
         if (o.getClass().equals(getClass())) {
             ClientServerId that = (ClientServerId) o;
-            return that.serverConfigId.equals(serverConfigId) && that.clientId.equals(clientId);
+            return that.serverConfigId.equals(serverConfigId) &&
+                    Comparing.equal(that.clientId, clientId);
         }
         return false;
     }
@@ -93,6 +97,22 @@ public final class ClientServerId {
 
     @Override
     public int hashCode() {
-        return (serverConfigId.hashCode() << 3) + clientId.hashCode();
+        return (serverConfigId.hashCode() << 3) +
+                (clientId == null ? 0 : clientId.hashCode());
+    }
+
+    public void serialize(@NotNull Element wrapper) {
+        wrapper.setAttribute("scid", serverConfigId);
+        wrapper.setAttribute("cid", clientId);
+    }
+
+    @Nullable
+    public static ClientServerId deserialize(@NotNull Element wrapper) {
+        String scid = CachedState.getAttribute(wrapper, "scid");
+        String cid = CachedState.getAttribute(wrapper, "cid");
+        if (scid != null) {
+            return new ClientServerId(scid, cid);
+        }
+        return null;
     }
 }

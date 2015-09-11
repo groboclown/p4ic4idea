@@ -20,6 +20,7 @@ import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.server.IServerInfo;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.PasswordStore;
 import net.groboclown.idea.p4ic.config.ServerConfig;
@@ -33,7 +34,10 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
@@ -99,6 +103,19 @@ public class ClientExec {
     protected void finalize() throws Throwable {
         dispose();
         super.finalize();
+    }
+
+
+    static IServerInfo getServerInfo(@NotNull ServerConfig config)
+            throws IOException, P4JavaException, URISyntaxException {
+        final IOptionsServer server = connectTo(null, ConnectionHandler.getHandlerFor(config), config,
+                // temp dir doesn't matter for this call.
+                File.createTempFile("x", "y"));
+        try {
+            return server.getServerInfo();
+        } finally {
+            server.disconnect();
+        }
     }
 
 
@@ -172,49 +189,56 @@ public class ClientExec {
                 throw new ConnectionException(P4Bundle.message("error.p4exec.disposed"));
             }
             if (cachedServer == null || ! cachedServer.isConnected()) {
-                final Properties properties;
-                final String url;
-                final IOptionsServer server;
-                properties = connectionHandler.getConnectionProperties(config, clientName);
-                properties.setProperty(PropertyDefs.P4JAVA_TMP_DIR_KEY, tempDir.getAbsolutePath());
-                url = connectionHandler.createUrl(config);
-                LOG.info("Opening connection to " + url + " with " + config.getUsername());
-
-                // see bug #61
-                // Hostname as used by the Java code:
-                //   Mac clients can incorrectly set the hostname.
-                //   The underlying code will use:
-                //      InetAddress.getLocalHost().getHostName()
-                //   or from the UsageOptions passed into the
-                //   server configuration `init` method.
-
-                // Use the ConnectionHandler so that mock objects can work better
-                server = connectionHandler.getOptionsServer(url, properties, config);
-
-                // These seem to cause issues.
-                //server.registerCallback(new LoggingCommandCallback());
-                //server.registerProgressCallback(new LoggingProgressCallback());
-
-                server.connect();
-
-                cachedServer = server;
-
-                // if there is a password problem, we still want
-                // to maintain our cached server, so a retry doesn't
-                // recreate the server connection again.
-                char[] password = PasswordStore.getOptionalPasswordFor(config);
-                try {
-                    connectionHandler.defaultAuthentication(server, config, password);
-                } finally {
-                    if (password != null) {
-                        Arrays.fill(password, (char) 0);
-                    }
-                }
+                cachedServer = connectTo(clientName, connectionHandler, config, tempDir);
             }
         }
 
 
         return cachedServer;
+    }
+
+
+    @NotNull
+    private static IOptionsServer connectTo(@Nullable String clientName, @NotNull ConnectionHandler connectionHandler,
+            @NotNull ServerConfig config, @NotNull File tempDir) throws P4JavaException, URISyntaxException {
+        final Properties properties;
+        final String url;
+        final IOptionsServer server;
+        properties = connectionHandler.getConnectionProperties(config, clientName);
+        properties.setProperty(PropertyDefs.P4JAVA_TMP_DIR_KEY, tempDir.getAbsolutePath());
+        url = connectionHandler.createUrl(config);
+        LOG.info("Opening connection to " + url + " with " + config.getUsername());
+
+        // see bug #61
+        // Hostname as used by the Java code:
+        //   Mac clients can incorrectly set the hostname.
+        //   The underlying code will use:
+        //      InetAddress.getLocalHost().getHostName()
+        //   or from the UsageOptions passed into the
+        //   server configuration `init` method.
+
+        // Use the ConnectionHandler so that mock objects can work better
+        server = connectionHandler.getOptionsServer(url, properties, config);
+
+        // These seem to cause issues.
+        //server.registerCallback(new LoggingCommandCallback());
+        //server.registerProgressCallback(new LoggingProgressCallback());
+
+        server.connect();
+
+        // if there is a password problem, we still want
+        // to maintain our cached server, so a retry doesn't
+        // recreate the server connection again.
+        char[] password = PasswordStore.getOptionalPasswordFor(config);
+        try {
+            connectionHandler.defaultAuthentication(server, config, password);
+        } finally {
+            if (password != null) {
+                Arrays.fill(password, (char) 0);
+            }
+        }
+
+        return server;
     }
 
 

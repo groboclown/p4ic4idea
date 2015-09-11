@@ -75,7 +75,7 @@ public abstract class CachedState {
 
 
     @Nullable
-    protected static String getAttribute(@NotNull Element el, @NotNull String name) {
+    public static String getAttribute(@NotNull Element el, @NotNull String name) {
         final Attribute attr = el.getAttribute(name);
         if (attr == null) {
             return null;

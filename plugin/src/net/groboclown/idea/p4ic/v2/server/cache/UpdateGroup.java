@@ -29,7 +29,7 @@ public enum UpdateGroup {
     /** Updates to the job description or whether the job exists */
     JOB(new NIF()), // FIXME
 
-    /** Update sto the workspace mappings or root directories; workspace existence should be
+    /** CreateUpdate sto the workspace mappings or root directories; workspace existence should be
      * handled at a higher level (connection level). */
     WORKSPACE(new NIF()), // FIXME
 

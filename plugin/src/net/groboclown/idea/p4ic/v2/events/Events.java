@@ -34,94 +34,61 @@
  *                                                                         *
  * *************************************************************************/
 
-package net.groboclown.idea.p4ic.v2.server.connection;
+package net.groboclown.idea.p4ic.v2.events;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.P4Config;
-import net.groboclown.idea.p4ic.config.P4ConfigProject;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
-import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-/**
- * Maps the specific Perforce configuration object to the corresponding Project directories it covers.
- * <p/>
- * These are created via {@link P4ConfigProject#loadProjectConfigSources(Project)}.
- */
-public class ProjectConfigSource {
-    private final Project project;
-    private final List<FilePath> projectSourceDirs;
-    private final String clientName;
-    private final ServerConfig configuration;
-    private final ClientServerId clientServerId;
-
-    public static class Builder {
-        private final Project project;
-        private final String clientName;
-        private final ServerConfig serverConfig;
-        private final P4Config baseConfig;
-        private final Set<FilePath> dirs = new HashSet<FilePath>();
-
-        public Builder(@NotNull Project project, @NotNull P4Config config) {
-            this.project = project;
-            this.baseConfig = config;
-            this.clientName = config.getClientname();
-            this.serverConfig = ServerConfig.createNewServerConfig(config);
-        }
-
-        public boolean isSame(@NotNull P4Config other) {
-            final ServerConfig newConfig = ServerConfig.createNewServerConfig(other);
-            return newConfig != null && newConfig.equals(serverConfig) && Comparing.equal(clientName, other.getClientname());
-        }
-
-        public void add(@NotNull VirtualFile dir) {
-            dirs.add(FilePathUtil.getFilePath(dir));
-        }
-
-        public ProjectConfigSource create() throws P4InvalidConfigException {
-            return new ProjectConfigSource(project, new ArrayList<FilePath>(dirs),
-                    clientName, serverConfig);
-        }
+public final class Events {
+    private Events() {
+        // utility class
     }
 
 
-    ProjectConfigSource(@NotNull Project project, @NotNull List<FilePath> projectSourceDirs,
-            @Nullable String clientName, @NotNull ServerConfig configuration) {
-        this.project = project;
-        this.projectSourceDirs = projectSourceDirs;
-        this.clientName = clientName;
-        this.configuration = configuration;
-        this.clientServerId = ClientServerId.create(configuration, clientName);
+    /* Should only be called by the {@link P4ConfigProject}
+    public static void baseConfigUpdated(@NotNull Project project, @NotNull List<ProjectConfigSource> sources) {
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(BaseConfigUpdatedListener.TOPIC).
+                configUpdated(project, sources);
+    }
+    */
+
+
+    public static void appBaseConfigUpdated(@NotNull MessageBusConnection appBus, @NotNull BaseConfigUpdatedListener listener) {
+        appBus.subscribe(BaseConfigUpdatedListener.TOPIC, listener);
     }
 
-    @NotNull
-    public Project getProject() {
-        return project;
+
+    public static void configInvalid(@NotNull Project project, @NotNull P4Config config, @NotNull P4InvalidConfigException e)
+            throws P4InvalidConfigException {
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(ConfigInvalidListener.TOPIC).
+                configurationProblem(project, config, e);
+        throw e;
     }
 
-    @Nullable
-    public String getClientName() {
-        return clientName;
+
+    public static void appConfigInvalid(@NotNull MessageBusConnection appBus, @NotNull ConfigInvalidListener listener) {
+        appBus.subscribe(ConfigInvalidListener.TOPIC, listener);
     }
 
-    @NotNull
-    public ServerConfig getServerConfig() {
-        return configuration;
+
+    public static void serverConnected(@NotNull ServerConfig config) {
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(ServerConnectionStateListener.TOPIC).
+                connected(config);
     }
 
-    @NotNull
-    public ClientServerId getClientServerId() {
-        return clientServerId;
+
+    public static void serverDisconnected(@NotNull ServerConfig config) {
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(ServerConnectionStateListener.TOPIC).
+                disconnected(config);
+    }
+
+
+    public static void appServerConnectionState(@NotNull MessageBusConnection appBus, @NotNull ServerConnectionStateListener listener) {
+        appBus.subscribe(ServerConnectionStateListener.TOPIC, listener);
     }
 }

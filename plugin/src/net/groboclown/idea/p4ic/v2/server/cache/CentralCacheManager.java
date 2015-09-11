@@ -20,14 +20,18 @@ import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
+import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.server.cache.state.AllClientsState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.ClientLocalServerState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
+import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -43,6 +47,16 @@ public class CentralCacheManager {
     public CentralCacheManager() {
         allClientState = AllClientsState.getInstance();
         messageBus = ApplicationManager.getApplication().getMessageBus().connect();
+
+        Events.appBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
+            @Override
+            public void configUpdated(@NotNull final Project project,
+                    @NotNull final List<ProjectConfigSource> sources) {
+
+            }
+        });
+
+        // FIXME use new handlers.
         messageBus.subscribe(P4ClientsReloadedListener.TOPIC, new P4ClientsReloadedListener() {
             @Override
             public void clientsLoaded(@NotNull final Project project, @NotNull final List<Client> clients) {
@@ -59,6 +73,8 @@ public class CentralCacheManager {
                 }
             }
         });
+
+        // FIXME old stuff
         messageBus.subscribe(P4ConfigListener.TOPIC, new P4ConfigListener() {
             @Override
             public void configChanges(@NotNull final Project project, @NotNull final P4Config original,
@@ -68,7 +84,7 @@ public class CentralCacheManager {
                 }
                 ClientServerId originalId = ClientServerId.create(original);
                 ClientServerId newId = ClientServerId.create(config);
-                if (! newId.equals(originalId)) {
+                if (originalId != null && ! originalId.equals(newId)) {
                     removeCache(originalId);
                 }
                 // Don't create the new one until we need it
@@ -98,8 +114,20 @@ public class CentralCacheManager {
     }
 
 
+    /**
+     *
+     * @param clientServerId client / server name
+     * @param config server configuration
+     * @param isServerCaseInsensitiveCallable if the cached version of the client is not loaded,
+     *                                        this will be called to discover whether the
+     *                                        Perforce server is case sensitive or not.
+     *                                        Errors will be reported to the log, and the local OS
+     *                                        case sensitivity will be used instead.
+     * @return the cache manager.
+     */
     @NotNull
-    public ClientCacheManager getClientCacheManager(@NotNull ClientServerId clientServerId, @NotNull ServerConfig config) {
+    public ClientCacheManager getClientCacheManager(@NotNull ClientServerId clientServerId, @NotNull ServerConfig config,
+            @NotNull  Callable<Boolean> isServerCaseInsensitiveCallable) {
         if (disposed) {
             // Coding error; no bundled message
             throw new IllegalStateException("disposed");
@@ -109,7 +137,8 @@ public class CentralCacheManager {
         try {
             cacheManager = clientManagers.get(clientServerId);
             if (cacheManager == null) {
-                final ClientLocalServerState state = allClientState.getStateForClient(clientServerId);
+                final ClientLocalServerState state = allClientState.getStateForClient(clientServerId,
+                        isServerCaseInsensitiveCallable);
                 cacheManager = new ClientCacheManager(config, state);
                 clientManagers.put(clientServerId, cacheManager);
             }

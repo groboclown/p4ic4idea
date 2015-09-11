@@ -59,7 +59,7 @@ public class ManualP4Config implements P4Config {
         // do nothing
     }
 
-    public ManualP4Config(P4Config copy) {
+    public ManualP4Config(@NotNull P4Config copy) {
         this.protocol = copy.getProtocol();
         this.port = copy.getPort();
         this.clientname = copy.getClientname();
@@ -72,6 +72,8 @@ public class ManualP4Config implements P4Config {
         this.autoOffline = copy.isAutoOffline();
         this.password = copy.getPassword();
         this.storePassword = copy.isPasswordStoredLocally();
+        this.clientHostname = copy.getClientHostname();
+        this.ignoreFileName = copy.getIgnoreFileName();
     }
 
     public ManualP4Config(@NotNull ServerConfig copy, @Nullable String clientName) {
@@ -79,14 +81,16 @@ public class ManualP4Config implements P4Config {
         this.port = copy.getPort();
         this.clientname = clientName;
         this.username = copy.getUsername();
-        this.authTicket = null;
-        this.trustTicket = null;
+        this.authTicket = copy.getAuthTicket() == null ? null : copy.getAuthTicket().getAbsolutePath();
+        this.trustTicket = copy.getTrustTicket() == null ? null : copy.getTrustTicket().getAbsolutePath();
+        this.serverFingerprint = copy.getServerFingerprint();
         this.configFile = null;
         this.connectionMethod = copy.getConnectionMethod();
-        this.autoOffline = false;
+        this.autoOffline = copy.isAutoOffline();
         this.password = null;
         this.storePassword = copy.storePasswordLocally();
-        this.clientname = clientName;
+        this.clientHostname = copy.getClientHostname();
+        this.ignoreFileName = copy.getIgnoreFileName();
     }
 
     @Override

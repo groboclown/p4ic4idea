@@ -20,6 +20,10 @@ import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
+import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
+import net.groboclown.idea.p4ic.v2.events.Events;
+import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -35,6 +39,7 @@ public class ClientManager {
     private final ReadWriteLock clientAccess;
     private boolean initialized = false;
     private MessageBusConnection projectMessageBus;
+    private MessageBusConnection appMessageBus;
 
     // The clients list is an unmodifiable list, that is wholly replaced
     // inside a write lock.  This allows reads to always just return
@@ -74,7 +79,16 @@ public class ClientManager {
                 //ApplicationManager.getApplication().getMessageBus().connect().subscribe(
                 //        P4ConfigListener.TOPIC, new ConfigListener());
                 projectMessageBus = project.getMessageBus().connect();
-                projectMessageBus.subscribe(P4ConfigListener.TOPIC, new ConfigListener());
+
+                // FIXME old stuff
+                ConfigListener listener = new ConfigListener();
+                projectMessageBus.subscribe(P4ConfigListener.TOPIC, listener);
+
+                appMessageBus = ApplicationManager.getApplication().getMessageBus().connect();
+
+                Events.appBaseConfigUpdated(appMessageBus, listener);
+                Events.appConfigInvalid(appMessageBus, listener);
+
                 loadConfig();
                 initialized = true;
             }
@@ -97,6 +111,10 @@ public class ClientManager {
             projectMessageBus.disconnect();
             projectMessageBus = null;
         }
+        if (appMessageBus != null) {
+            appMessageBus.disconnect();
+            appMessageBus = null;
+        }
     }
 
 
@@ -118,9 +136,6 @@ public class ClientManager {
         } finally {
             clientAccess.writeLock().unlock();
         }
-
-        // add notice to message bus about clients loaded.
-        ApplicationManager.getApplication().getMessageBus().syncPublisher(P4ClientsReloadedListener.TOPIC).clientsLoaded(project, clients);
     }
 
 
@@ -132,7 +147,7 @@ public class ClientManager {
     }
 
 
-    class ConfigListener implements P4ConfigListener {
+    class ConfigListener implements P4ConfigListener, BaseConfigUpdatedListener, ConfigInvalidListener {
         @Override
         public void configChanges(@NotNull Project project, @NotNull P4Config original, @NotNull P4Config config) {
             loadConfig();
@@ -141,6 +156,11 @@ public class ClientManager {
         @Override
         public void configurationProblem(@NotNull Project project, @NotNull P4Config config, @NotNull P4InvalidConfigException ex) {
             dispose();
+        }
+
+        @Override
+        public void configUpdated(@NotNull final Project project, @NotNull final List<ProjectConfigSource> sources) {
+            loadConfig();
         }
     }
 }

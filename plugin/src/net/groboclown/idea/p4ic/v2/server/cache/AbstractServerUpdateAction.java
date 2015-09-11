@@ -79,7 +79,7 @@ public abstract class AbstractServerUpdateAction implements ServerUpdateAction {
             @NotNull ClientCacheManager clientCacheManager, @NotNull AlertManager alerts);
 
     /**
-     * Update the internal cache as necessary.  This includes both the server
+     * CreateUpdate the internal cache as necessary.  This includes both the server
      * and local cache.
      *
      * @param alerts UI interactions

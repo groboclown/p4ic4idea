@@ -26,6 +26,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CreateUpdate;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerQuery;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -67,9 +68,28 @@ public class ClientCacheManager {
         return fileActions.createFileActionsRefreshQuery();
     }
 
+
+    /**
+     * Caller should be run through a {@link CreateUpdate},
+     * so that the returned {@link PendingUpdateState} is handled correctly.
+     */
     @Nullable
     public PendingUpdateState editFile(@NotNull FilePath file, int changeListId) {
         return fileActions.editFile(file, changeListId);
+    }
+
+    @NotNull
+    public List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts) {
+        return workspace.getClientRoots(project, alerts);
+    }
+
+    public void addPendingUpdateState(@NotNull final PendingUpdateState updateState) {
+        state.addPendingUpdate(updateState);
+    }
+
+    /** This method only has one use, and that's for initial setup after loading into a ServerConnection. */
+    public Collection<PendingUpdateState> getCachedPendingUpdates() {
+        return state.getPendingUpdates();
     }
 
 

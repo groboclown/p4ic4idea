@@ -60,6 +60,8 @@ public class P4ProjectConfigurable implements SearchableConfigurable {
     @Override
     public void apply() throws ConfigurationException {
         myPanel.saveSettings(loadConfig(), loadPreferences());
+
+        // Note: the "save settings" call will call P4ConfigProject.loadState(new config)
     }
 
     @Override

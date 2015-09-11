@@ -1,20 +1,19 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.6.6.1</version>
+    <version>0.7.0</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol style="margin-left:2em;">
-            <li><em>0.6.6.1</em>
+            <li><em>0.7.0</em>
                 <ol>
                   <li>Fixed infinite changelist refresh due to incorrect file mappings.</li>
                 </ol>
             </li>
-            <li><em>0.6.6</em>
+            <li><em>0.6.6.1</em>
                 <ol>
-                    <li>Fixed issues around moving or copying files not matching to the Perforce files.</li>
-                    <li>Rewrote how the IDEA changelists sync up with the Perforce changelists.</li>
+                  <li>Fixed infinite changelist refresh due to incorrect file mappings.</li>
                 </ol>
             </li>
         </ol>
@@ -105,6 +104,9 @@
 
         <group id="P4FileActions">
             <reference ref="CheckinFiles"/>
+            <action id="P4.EditOld" class="net.groboclown.idea.p4ic.actions.P4EditOrig"
+                    text="Add or edit old" icon="AllIcons.Actions.Edit"
+                    use-shortcut-of="ChangesView.AddUnversioned"/>
             <action id="P4.Edit" class="net.groboclown.idea.p4ic.actions.P4Edit"
                     text="Add or edit" icon="AllIcons.Actions.Edit"
                     use-shortcut-of="ChangesView.AddUnversioned"/>
@@ -195,6 +197,9 @@
             <option name="workspace" value="true"/>
         </component>
         -->
+        <component>
+            <implementation-class>net.groboclown.idea.p4ic.v2.server.P4ServerManager</implementation-class>
+        </component>
     </project-components>
 
     <module-components>
@@ -210,6 +215,15 @@
         </component>
         <component>
             <implementation-class>net.groboclown.idea.p4ic.changes.P4ChangeListCache</implementation-class>
+        </component>
+        <component>
+            <implementation-class>net.groboclown.idea.p4ic.v2.server.connection.AlertManager</implementation-class>
+        </component>
+        <component>
+            <implementation-class>net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager</implementation-class>
+        </component>
+        <component>
+            <implementation-class>net.groboclown.idea.p4ic.v2.server.cache.state.AllClientsState</implementation-class>
         </component>
     </application-components>
 </idea-plugin>

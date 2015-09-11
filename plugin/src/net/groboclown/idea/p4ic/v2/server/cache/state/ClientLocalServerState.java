@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -52,6 +53,18 @@ public class ClientLocalServerState {
     public P4ClientState getLocalClientState() {
         return localClientState;
     }
+
+    @NotNull
+    public List<PendingUpdateState> getPendingUpdates() {
+        return Collections.unmodifiableList(pendingUpdates);
+    }
+
+    @NotNull
+    public PendingUpdateState addPendingUpdate(@NotNull PendingUpdateState update) {
+        pendingUpdates.add(update);
+        return update;
+    }
+
 
     @NotNull
     public P4ClientState getCachedServerState() {

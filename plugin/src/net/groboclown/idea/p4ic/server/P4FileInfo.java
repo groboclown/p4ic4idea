@@ -545,7 +545,7 @@ public class P4FileInfo {
                 LOG.debug("client spec processing: " + spec + "@" + spec.getChangelistId());
                 if (P4StatusMessage.isErrorStatus(spec)) {
                     P4StatusMessage message = new P4StatusMessage(spec);
-                    if (message.isNoSuchFilesMessage()) {
+                    if (message.isNoSuchFilesMessage() || message.isFileNotFoundError()) {
                         // a purely local file
                         LOG.debug("a not-known-by-server file: " + message.getMessage());
                         continue;

@@ -24,6 +24,7 @@ import com.perforce.p4java.core.IChangelist;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.ServerClientIdUtil;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -155,6 +156,27 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
         }
         if (ret == null) {
             return new P4ChangeListIdImpl(client, P4_DEFAULT);
+        }
+        return ret;
+    }
+
+
+    /**
+     * There is always a Perforce default changelist, so this will never return null.
+     *
+     * @param client
+     * @return The Perforce changelist for the current project's default changelist, or
+     * just the Perforce default changelist.
+     */
+    @NotNull
+    public P4ChangeListId getProjectDefaultPerforceChangelist(@NotNull P4Server server) {
+        LocalChangeList change = getDefaultIdeaChangelist();
+        P4ChangeListId ret = null;
+        if (change != null) {
+            ret = getPerforceChangelistFor(server, change);
+        }
+        if (ret == null) {
+            return new P4ChangeListIdImpl(server.getServerConfig().getServiceName(), server.getClientName(), P4_DEFAULT);
         }
         return ret;
     }
@@ -329,6 +351,30 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
 
 
     /**
+     * Fetches the cached mapping from IDEA to the Perforce changelist
+     * on the given client.  This does not differentiate between a
+     * changelist that never existed, and a changelist that was deleted or
+     * submitted.
+     *
+     * @param idea idea-backed changelist
+     * @return null if the changelist mapping is not known, or if it is the
+     * default changelist, otherwise the corresponding Perforce change.
+     */
+    @Nullable
+    public P4ChangeListId getPerforceChangelistFor(@NotNull P4Server server, @NotNull LocalChangeList idea) {
+        Collection<P4ChangeListId> changelists = getInnerPerforceChangelists(idea);
+        if (changelists != null) {
+            for (P4ChangeListId clid : changelists) {
+                if (clid.isIn(server)) {
+                    return clid;
+                }
+            }
+        }
+        return null;
+    }
+
+
+    /**
      * Fetches the cached mapping from IDEA to the Perforce changelists for
      * all clients.  If
      * the Perforce changelist is committed or deleted, this will not identify
@@ -375,7 +421,8 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
         if (ret == null) {
             return null;
         }
-        return ret.values();
+        // Return a copy of the values.
+        return new ArrayList<P4ChangeListId>(ret.values());
     }
 
 

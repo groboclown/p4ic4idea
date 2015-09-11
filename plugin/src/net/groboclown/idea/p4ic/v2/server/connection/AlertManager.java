@@ -56,10 +56,7 @@ public class AlertManager implements ApplicationComponent {
 
 
     public static AlertManager getInstance() {
-        // FIXME
-        throw new IllegalStateException("needs to be registered in plugin.xml");
-
-        //return ApplicationManager.getApplication().getComponent(AlertManager.class);
+        return ApplicationManager.getApplication().getComponent(AlertManager.class);
     }
 
 

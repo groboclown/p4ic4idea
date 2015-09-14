@@ -110,7 +110,7 @@ public class ClientExec {
             throws IOException, P4JavaException, URISyntaxException {
         final IOptionsServer server = connectTo(null, ConnectionHandler.getHandlerFor(config), config,
                 // temp dir doesn't matter for this call.
-                File.createTempFile("x", "y"));
+                File.createTempFile("p4tempfile", "y"));
         try {
             return server.getServerInfo();
         } finally {

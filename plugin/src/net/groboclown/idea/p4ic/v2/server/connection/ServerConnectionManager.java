@@ -22,6 +22,10 @@ import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
+import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
+import net.groboclown.idea.p4ic.v2.events.Events;
+import net.groboclown.idea.p4ic.v2.events.ServerConnectionStateListener;
 import net.groboclown.idea.p4ic.v2.server.cache.CentralCacheManager;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jetbrains.annotations.NotNull;
@@ -57,8 +61,35 @@ public class ServerConnectionManager implements ApplicationComponent {
         this.cacheManager = cacheManager;
         this.alerts = alerts;
         this.messageBus = ApplicationManager.getApplication().getMessageBus().connect();
+    }
 
-        // FIXME use new handlers
+    @Override
+    public void initComponent() {
+        Events.appBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
+            @Override
+            public void configUpdated(@NotNull final Project project,
+                    @NotNull final List<ProjectConfigSource> sources) {
+                invalidateAllConfigs();
+            }
+        });
+        Events.appConfigInvalid(messageBus, new ConfigInvalidListener() {
+            @Override
+            public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
+                    @NotNull final P4InvalidConfigException ex) {
+                invalidateConfig(config);
+            }
+        });
+        Events.appServerConnectionState(messageBus, new ServerConnectionStateListener() {
+            @Override
+            public void connected(@NotNull final ServerConfig config) {
+                setConnectionState(config, true);
+            }
+
+            @Override
+            public void disconnected(@NotNull final ServerConfig config) {
+                setConnectionState(config, false);
+            }
+        });
 
         // FIXME old stuff, and a bug - this is a project level event
         messageBus.subscribe(P4ConfigListener.TOPIC, new P4ConfigListener() {
@@ -74,11 +105,6 @@ public class ServerConnectionManager implements ApplicationComponent {
                 invalidateConfig(config);
             }
         });
-    }
-
-    @Override
-    public void initComponent() {
-
     }
 
     @Override
@@ -147,13 +173,47 @@ public class ServerConnectionManager implements ApplicationComponent {
     }
 
 
+    void invalidateAllConfigs() {
+        serverCacheLock.lock();
+        try {
+            for (ServerConfigStatus status: serverCache.values()) {
+                status.dispose();
+            }
+            serverCache.clear();
+        } finally {
+            serverCacheLock.unlock();
+        }
+    }
+
+
+    void setConnectionState(@NotNull ServerConfig config, boolean isOnline) {
+        serverCacheLock.lock();
+        try {
+            final ServerConfigStatus status = serverCache.get(config);
+            if (status != null) {
+                // directly set the status; don't go through the events or
+                // other connection stuff.
+                if (isOnline) {
+                    status.onConnected();
+                } else {
+                    status.onDisconnected();
+                }
+            }
+        } finally {
+            serverCacheLock.unlock();
+        }
+    }
+
+
     static class ServerConfigStatus implements ServerStatusController {
         // List, not a set, so that we can have multiple registrations of the same client name;
         // especially useful for multiple projects with the same client.
         final Map<String, ServerConnection> clientNames = new HashMap<String, ServerConnection>();
         final ServerConfig config;
         boolean valid = true;
-        volatile boolean online;
+
+        // assume we're online at the start.
+        volatile boolean online = true;
 
         ServerConfigStatus(@NotNull final ServerConfig config) {
             this.config = config;
@@ -166,19 +226,21 @@ public class ServerConnectionManager implements ApplicationComponent {
 
         @Override
         public void disconnect() {
-            // FIXME
-            throw new IllegalStateException("not implemented");
+            if (setOffline()) {
+                Events.serverDisconnected(config);
+            }
         }
 
         @Override
         public void connect() {
-            // FIXME
-            throw new IllegalStateException("not implemented");
+            if (setOnline()) {
+                Events.serverConnected(config);
+            }
         }
 
         @Override
         public void waitForOnline(final long timeout, final TimeUnit unit) throws InterruptedException {
-            // FIXME
+            // FIXME implement
             throw new IllegalStateException("not implemented");
         }
 
@@ -199,20 +261,17 @@ public class ServerConnectionManager implements ApplicationComponent {
 
         @Override
         public void onConnected() {
-            // FIXME
-            throw new IllegalStateException("not implemented");
+            setOnline();
         }
 
         @Override
         public void onDisconnected() {
-            // FIXME
-            throw new IllegalStateException("not implemented");
+            setOffline();
         }
 
         @Override
         public void onConfigInvalid() {
-            // FIXME
-            throw new IllegalStateException("not implemented");
+            valid = false;
         }
 
         void dispose() {
@@ -222,7 +281,7 @@ public class ServerConnectionManager implements ApplicationComponent {
             }
         }
 
-        ServerConnection getConnectionFor(@NotNull final ClientServerId clientServer,
+        synchronized ServerConnection getConnectionFor(@NotNull final ClientServerId clientServer,
                 @NotNull AlertManager alerts, @NotNull CentralCacheManager cacheManager) {
             ServerConnection conn = clientNames.get(clientServer.getClientId());
             if (conn == null) {
@@ -232,6 +291,25 @@ public class ServerConnectionManager implements ApplicationComponent {
                 clientNames.put(clientServer.getClientId(), conn);
             }
             return conn;
+        }
+
+        synchronized boolean setOnline() {
+            if (valid) {
+                if (! online) {
+                    online = true;
+                    return true;
+                }
+                // fall through
+            }
+            return false;
+        }
+
+        synchronized boolean setOffline() {
+            if (online) {
+                online = false;
+                return valid;
+            }
+            return false;
         }
     }
 

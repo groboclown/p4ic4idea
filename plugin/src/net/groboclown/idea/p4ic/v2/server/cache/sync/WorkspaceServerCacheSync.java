@@ -29,15 +29,11 @@ import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
-import net.groboclown.idea.p4ic.v2.server.cache.state.FileMappingRepo;
-import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
-import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
-import net.groboclown.idea.p4ic.v2.server.cache.state.P4WorkspaceViewState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.*;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4WorkspaceViewState.ViewMapping;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerQuery;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import net.groboclown.idea.p4ic.v2.ui.alerts.InvalidClientHandler;
 import org.jetbrains.annotations.NotNull;
@@ -56,7 +52,7 @@ import java.util.*;
  * This isn't a CacheFrontEnd object, because it is the thing that forces
  * a cache refresh.
  */
-public class WorkspaceServerCacheSync {
+public class WorkspaceServerCacheSync extends CacheFrontEnd {
     private static final Logger LOG = Logger.getInstance(WorkspaceServerCacheSync.class);
 
     private final Cache cache;
@@ -76,10 +72,6 @@ public class WorkspaceServerCacheSync {
         this.cache = cache;
         this.fileRepo = fileRepo;
         this.cachedServerWorkspace = cachedServerWorkspace;
-    }
-
-    public ServerQuery createWorkspaceRefreshQuery() {
-        return new WorkspaceRefreshServerQuery();
     }
 
     /**
@@ -165,6 +157,7 @@ public class WorkspaceServerCacheSync {
         String relClientPath = clientPath.substring(clientPrefix.length());
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
         if (workspaceRoots.isEmpty()) {
+            LOG.info("no cached server workspace roots");
             alerts.addWarning(P4Bundle.message("error.config.invalid-roots", cache.getClientName()),
                     invalidRootsException);
             return null;
@@ -221,9 +214,13 @@ public class WorkspaceServerCacheSync {
 
     @NotNull
     List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts) {
+        LOG.info("Finding client roots for " + cachedServerWorkspace.getName());
         final List<VirtualFile> projectRoots = P4ConfigUtil.getVcsRootFiles(project);
+        LOG.info(" - project roots: " + projectRoots);
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
-        for (String workspaceRoot : workspaceRoots) {
+        LOG.info(" - workspace roots: " + workspaceRoots);
+        for (String workspaceRoot: workspaceRoots) {
+            LOG.info(" - root: " + workspaceRoot);
             // Special case for a workspace root that spans windows directories.
             if (workspaceRoot.equals("null")) {
                 // "null" mapping only matters if we're on Windows.  Otherwise, ignore it.
@@ -254,6 +251,7 @@ public class WorkspaceServerCacheSync {
                 return ret;
             }
         }
+        LOG.info(" - no client root found");
         // no root found.
         alerts.addWarning(P4Bundle.message("error.config.invalid-roots", cache.getClientName()), invalidRootsException);
         return Collections.emptyList();
@@ -345,91 +343,96 @@ public class WorkspaceServerCacheSync {
         return null;
     }
 
-
-    class WorkspaceRefreshServerQuery implements ServerQuery<WorkspaceServerCacheSync> {
-
-        @Override
-        public WorkspaceServerCacheSync query(@NotNull P4Exec2 exec, @NotNull ClientCacheManager cacheManager,
-                @NotNull ServerConnection connection, @NotNull AlertManager alerts) {
-            ServerConnection.assertInServerConnection();
-
-            final IClient client;
-            try {
-                client = exec.getClient();
-            } catch (VcsException e) {
-                alerts.addCriticalError(new InvalidClientHandler(exec.getProject(), getCachedClientName(), e.getMessage()), e);
-                return null;
-            }
-            if (! client.getName().equals(getCachedClientName())) {
-                // FIXME critical error for wrong client
-                throw new IllegalStateException("not implemented");
-            }
-            List<String> roots = new ArrayList<String>();
-            roots.add(client.getRoot());
-            for (String root : client.getAlternateRoots()) {
-                roots.add(root);
-            }
-
-            boolean doRefresh = false;
-
-            // the roots can be different; if the new roots are not a superset
-            // of the existing roots, then we trigger a refresh.
-            // Loop through the old roots, and compare to the list of new roots.
-            // If a new root doesn't match the old root, assume it's inserted,
-            // and keep searching through the new roots.  If we run out of new roots
-            // before we hit the end of the old root list, then we know that the list
-            // has changed.
-
-            Iterator<String> newRootsIter = roots.iterator();
-            oldRootLoop:
-            for (String oldRoot: cachedServerWorkspace.getRoots()) {
-                while (newRootsIter.hasNext()) {
-                    String newRoot = newRootsIter.next();
-                    if (newRoot.equals(oldRoot)) {
-                        continue oldRootLoop;
-                    }
-                }
-                // finished the new roots loop without a match to the current old root.
-                // refresh!
-                doRefresh = true;
-                break;
-            }
-            cachedServerWorkspace.setRoots(roots);
-
-
-            // The mappings need to match up exactly.
-            // There are circumstances where this doesn't need to be the case
-            // (new depot locations are added to the client that weren't there
-            // originally), but that is troublesome to detect.
-
-            final List<ViewMapping> oldMappings = cachedServerWorkspace.getViewMappings();
-            final List<IClientViewMapping> newMappings = client.getClientView().getEntryList();
-            if (oldMappings.size() != newMappings.size()) {
-                doRefresh = true;
-            } else {
-                final Iterator<IClientViewMapping> newIter = newMappings.iterator();
-                final Iterator<ViewMapping> oldIter = oldMappings.iterator();
-                while (newIter.hasNext() && oldIter.hasNext()) {
-                    final IClientViewMapping newM = newIter.next();
-                    final ViewMapping oldM = oldIter.next();
-                    if (! newM.getDepotSpec(false).equals(oldM.getDepot()) ||
-                            ! newM.getClient(false).equals(newM.getClient())) {
-                        doRefresh = true;
-                        break;
-                    }
-                }
-            }
-            cachedServerWorkspace.setViewMappings(newMappings);
-
-            // refreshed the root directories, so the exception can be different.
-            invalidRootsException = new VcsException("no valid roots");
-
-            if (doRefresh) {
-                alerts.addWarning(P4Bundle.message("warning.client.updated", getCachedClientName()), null);
-                cache.refreshServerState();
-            }
-
-            return WorkspaceServerCacheSync.this;
+    @Override
+    protected void innerLoadServerCache(@NotNull final P4Exec2 exec, @NotNull final AlertManager alerts) {
+        final IClient client;
+        try {
+            client = exec.getClient();
+        } catch (VcsException e) {
+            alerts.addCriticalError(
+                    new InvalidClientHandler(exec.getProject(), getCachedClientName(), e.getMessage()), e);
+            return;
         }
+        if (!client.getName().equals(getCachedClientName())) {
+            // FIXME critical error for wrong client
+            throw new IllegalStateException("not implemented");
+        }
+        List<String> roots = new ArrayList<String>();
+        roots.add(client.getRoot());
+        for (String root : client.getAlternateRoots()) {
+            roots.add(root);
+        }
+
+        boolean doRefresh = false;
+
+        // the roots can be different; if the new roots are not a superset
+        // of the existing roots, then we trigger a refresh.
+        // Loop through the old roots, and compare to the list of new roots.
+        // If a new root doesn't match the old root, assume it's inserted,
+        // and keep searching through the new roots.  If we run out of new roots
+        // before we hit the end of the old root list, then we know that the list
+        // has changed.
+
+        Iterator<String> newRootsIter = roots.iterator();
+        oldRootLoop:
+        for (String oldRoot : cachedServerWorkspace.getRoots()) {
+            while (newRootsIter.hasNext()) {
+                String newRoot = newRootsIter.next();
+                if (newRoot.equals(oldRoot)) {
+                    continue oldRootLoop;
+                }
+            }
+            // finished the new roots loop without a match to the current old root.
+            // refresh!
+            doRefresh = true;
+            break;
+        }
+        cachedServerWorkspace.setRoots(roots);
+
+
+        // The mappings need to match up exactly.
+        // There are circumstances where this doesn't need to be the case
+        // (new depot locations are added to the client that weren't there
+        // originally), but that is troublesome to detect.
+
+        final List<ViewMapping> oldMappings = cachedServerWorkspace.getViewMappings();
+        final List<IClientViewMapping> newMappings = client.getClientView().getEntryList();
+        if (oldMappings.size() != newMappings.size()) {
+            doRefresh = true;
+        } else {
+            final Iterator<IClientViewMapping> newIter = newMappings.iterator();
+            final Iterator<ViewMapping> oldIter = oldMappings.iterator();
+            while (newIter.hasNext() && oldIter.hasNext()) {
+                final IClientViewMapping newM = newIter.next();
+                final ViewMapping oldM = oldIter.next();
+                if (!newM.getDepotSpec(false).equals(oldM.getDepot()) ||
+                        !newM.getClient(false).equals(newM.getClient())) {
+                    doRefresh = true;
+                    break;
+                }
+            }
+        }
+        cachedServerWorkspace.setViewMappings(newMappings);
+
+        // refreshed the root directories, so the exception can be different.
+        invalidRootsException = new VcsException("no valid roots");
+
+        if (doRefresh) {
+            alerts.addWarning(P4Bundle.message("warning.client.updated", getCachedClientName()), null);
+            cache.refreshServerState(exec, alerts);
+        }
+    }
+
+
+    @Override
+    protected boolean needsRefresh() {
+        return getLastRefreshDate().equals(CachedState.NEVER_LOADED);
+    }
+
+
+    @NotNull
+    @Override
+    protected Date getLastRefreshDate() {
+        return cachedServerWorkspace.getLastUpdated();
     }
 }

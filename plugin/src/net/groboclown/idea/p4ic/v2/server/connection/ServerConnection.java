@@ -76,7 +76,7 @@ public class ServerConnection {
 
 
     public interface CacheQuery<T> {
-        T query(@NotNull ClientCacheManager mgr);
+        T query(@NotNull ClientCacheManager mgr) throws InterruptedException;
     }
 
 
@@ -195,21 +195,19 @@ public class ServerConnection {
     }
 
 
-    public <T> T cacheQuery(@NotNull CacheQuery<T> q) {
+    public <T> T cacheQuery(@NotNull CacheQuery<T> q) throws InterruptedException {
         return q.query(cacheManager);
     }
 
 
     P4Exec2 getExec(@NotNull Project project) throws P4InvalidConfigException {
         // double-check locking.  This is why clientExec must be volatile.
-        if (clientExec == null) {
-            synchronized (clientExecLock) {
-                if (clientExec == null) {
-                    clientExec = new ClientExec(config, statusController, clientName);
-                }
+        synchronized (clientExecLock) {
+            if (clientExec == null) {
+                clientExec = new ClientExec(config, statusController, clientName);
             }
+            return new P4Exec2(project, clientExec);
         }
-        return new P4Exec2(project, clientExec);
     }
 
 
@@ -234,6 +232,16 @@ public class ServerConnection {
         if (currentGroup != null && currentGroupUpdates != null && !currentGroupUpdates.isEmpty()) {
             queueAction(project,
                     currentGroup.getServerUpdateActionFactory().create(currentGroupUpdates));
+        }
+    }
+
+
+    void goOffline() {
+        synchronized (clientExecLock) {
+            if (clientExec != null) {
+                clientExec.dispose();
+                clientExec = null;
+            }
         }
     }
 

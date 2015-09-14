@@ -26,6 +26,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
+import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CreateUpdate;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerQuery;
 import org.jetbrains.annotations.NotNull;
@@ -60,12 +61,12 @@ public class ClientCacheManager {
 
     @NotNull
     public ServerQuery createWorkspaceRefreshQuery() {
-        return workspace.createWorkspaceRefreshQuery();
+        return workspace.createRefreshQuery();
     }
 
     @NotNull
     public ServerQuery createFileActionsRefreshQuery() {
-        return fileActions.createFileActionsRefreshQuery();
+        return fileActions.createRefreshQuery();
     }
 
 
@@ -116,7 +117,11 @@ public class ClientCacheManager {
         @NotNull
         @Override
         public String getClientName() {
-            return getClientServerId().getClientId();
+            String ret = getClientServerId().getClientId();
+            if (ret == null) {
+                ret = "";
+            }
+            return ret;
         }
 
         @NotNull
@@ -133,9 +138,9 @@ public class ClientCacheManager {
         }
 
         @Override
-        public void refreshServerState() {
-            // FIXME
-            throw new IllegalStateException("not implemented");
+        public void refreshServerState(@NotNull P4Exec2 exec, @NotNull AlertManager alerts) {
+            // Refresh everything except workspace, as that would cause a recursive loop.
+            fileActions.innerLoadServerCache(exec, alerts);
         }
 
         @Override
@@ -143,4 +148,5 @@ public class ClientCacheManager {
             return ignoreFiles.isFileIgnored(file);
         }
     }
+
 }

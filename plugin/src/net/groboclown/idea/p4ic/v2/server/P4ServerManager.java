@@ -99,7 +99,8 @@ public class P4ServerManager implements ProjectComponent {
      * contains a list of file paths that didn't map to a client.
      */
     @NotNull
-    public Map<P4Server, List<FilePath>> mapFilePathsToP4Server(Collection<FilePath> files) {
+    public Map<P4Server, List<FilePath>> mapFilePathsToP4Server(Collection<FilePath> files)
+            throws InterruptedException {
         LOG.info("mapping to servers: " + files);
         if (connectionsValid) {
             Map<P4Server, List<FilePath>> ret = new HashMap<P4Server, List<FilePath>>();
@@ -145,6 +146,23 @@ public class P4ServerManager implements ProjectComponent {
 
     @Override
     public void initComponent() {
+        P4ConfigProject cp = P4ConfigProject.getInstance(project);
+        try {
+            final List<ProjectConfigSource> sources = cp.loadProjectConfigSources();
+            synchronized (servers) {
+                servers.clear();
+                for (ProjectConfigSource source : sources) {
+                    final P4Server server = new P4Server(project, source);
+                    servers.put(server.getClientServerId(), server);
+                }
+            }
+        } catch (P4InvalidConfigException e) {
+            LOG.info("source load caused error", e);
+            synchronized (servers) {
+                servers.clear();
+            }
+        }
+
         Events.appBaseConfigUpdated(appMessageBus, new BaseConfigUpdatedListener() {
             @Override
             public void configUpdated(@NotNull final Project project,
@@ -190,8 +208,6 @@ public class P4ServerManager implements ProjectComponent {
                 }
             }
         });
-
-        // FIXME initialize the servers
     }
 
     @Override

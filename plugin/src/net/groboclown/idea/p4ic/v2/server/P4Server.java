@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -52,6 +53,8 @@ import java.util.List;
  * to a {@link ServerConnection}.
  */
 public class P4Server {
+    private static final Logger LOG = Logger.getInstance(P4Server.class);
+
     private final Project project;
     private final ServerConnection connection;
     private final AlertManager alertManager;
@@ -68,6 +71,9 @@ public class P4Server {
         this.connection = ServerConnectionManager.getInstance().getConnectionFor(
                 source.getClientServerId(), source.getServerConfig());
         connection.postSetup(project);
+
+        // Do not reload the caches early.
+        // TODO figure out if this is the right behavior.
     }
 
 
@@ -97,7 +103,7 @@ public class P4Server {
      * @return the directory depth at which this file is in the client.  This is the deepest depth for all
      *      the client roots.  It returns -1 if there is no match.
      */
-    public int getFilePathMatchDepth(@NotNull FilePath file) {
+    public int getFilePathMatchDepth(@NotNull FilePath file) throws InterruptedException {
 
         // FIXME return the *shallowest* depth, not the deepest depth.
 
@@ -135,10 +141,16 @@ public class P4Server {
         return deepest;
     }
 
-    public List<VirtualFile> getClientRoots() {
+    public List<VirtualFile> getClientRoots() throws InterruptedException {
         return connection.cacheQuery(new CacheQuery<List<VirtualFile>>() {
             @Override
-            public List<VirtualFile> query(@NotNull final ClientCacheManager mgr) {
+            public List<VirtualFile> query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
+                if (isWorkingOnline()) {
+                    LOG.info("working online; loading the cache");
+                    connection.query(project, mgr.createWorkspaceRefreshQuery());
+                } else {
+                    LOG.info("working offline; using cached files.");
+                }
                 // FIXME use the ProjectConfigSource as the lowest level these can be under.
                 return mgr.getClientRoots(project, alertManager);
             }

@@ -67,6 +67,8 @@ public class AlertManager implements ApplicationComponent {
         }
         eventLock.lock();
         try {
+            // FIXME make debug
+            LOG.info("adding warning " + message, ex);
             pendingWarnings.add(new WarningMsg(message, ex));
             eventPending.signal();
         } finally {
@@ -87,7 +89,8 @@ public class AlertManager implements ApplicationComponent {
     public void addNotices(@NotNull final String message, @NotNull final List<P4StatusMessage> msgs,
             final boolean ignoreFileNotFound) {
         for (P4StatusMessage msg : msgs) {
-            if (msg != null && msg.isError() && (! ignoreFileNotFound || ! msg.isFileNotFoundError())) {
+            if (msg != null && msg.isError() && (! ignoreFileNotFound ||
+                    ! (msg.isFileNotFoundError() || msg.isNoSuchFilesMessage()))) {
                 // FIXME this should be turned into a UI-friendly element
                 LOG.warn(message, P4StatusMessage.messageAsError(msg));
             }
@@ -162,6 +165,7 @@ public class AlertManager implements ApplicationComponent {
         handlerThread = new Thread(new MessageHandler(), getComponentName());
         handlerThread.setDaemon(true);
         handlerThread.setPriority(Thread.NORM_PRIORITY + 1);
+        handlerThread.start();
     }
 
     @Override

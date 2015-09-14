@@ -86,12 +86,16 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
      * @return
      * @throws P4InvalidConfigException
      */
+    @NotNull
     public List<ProjectConfigSource> loadProjectConfigSources()
             throws P4InvalidConfigException {
         if (sourceConfigEx != null) {
             P4InvalidConfigException ret = new P4InvalidConfigException(sourceConfigEx.getMessage());
             ret.initCause(sourceConfigEx);
             throw ret;
+        }
+        if (configSources == null) {
+            return Collections.emptyList();
         }
         return configSources;
     }
@@ -292,12 +296,14 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
 
     @Override
     public void loadState(@NotNull ManualP4Config state) {
+        LOG.info("Loading config state");
         final ManualP4Config original = config;
 
         // save a copy of the config
         this.config = new ManualP4Config(state);
         synchronized (this) {
             if (!original.equals(state)) {
+                LOG.info("reloading project config sources");
                 // Reload the settings and make the announcement.
                 try {
                     sourceConfigEx = null;

@@ -617,7 +617,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
      *      contains a list of file paths that didn't map to a client.
      */
     @NotNull
-    public Map<P4Server, List<FilePath>> mapFilePathsToP4Server(Collection<FilePath> files) {
+    public Map<P4Server, List<FilePath>> mapFilePathsToP4Server(Collection<FilePath> files)
+            throws InterruptedException {
         return serverManager.mapFilePathsToP4Server(files);
     }
 
@@ -628,7 +629,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
      * contains a list of file paths that didn't map to a client.
      */
     @NotNull
-    public Map<P4Server, List<VirtualFile>> mapVirtualFilesToP4Server(Collection<VirtualFile> files) {
+    public Map<P4Server, List<VirtualFile>> mapVirtualFilesToP4Server(Collection<VirtualFile> files)
+            throws InterruptedException {
         // TODO make more efficient.  This currently just remaps.
         Map<FilePath, VirtualFile> input = new HashMap<FilePath, VirtualFile>(files.size());
         for (VirtualFile file : files) {

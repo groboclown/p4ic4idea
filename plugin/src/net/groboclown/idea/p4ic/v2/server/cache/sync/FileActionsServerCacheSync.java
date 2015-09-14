@@ -31,6 +31,7 @@ import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.cache.*;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
+import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
@@ -53,6 +54,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     private final Cache cache;
     private final Set<P4FileUpdateState> localClientUpdatedFiles;
     private final Set<P4FileUpdateState> cachedServerUpdatedFiles;
+    private Date lastRefreshed;
 
 
     public FileActionsServerCacheSync(@NotNull final Cache cache,
@@ -61,21 +63,15 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         this.cache = cache;
         this.localClientUpdatedFiles = localClientUpdatedFiles;
         this.cachedServerUpdatedFiles = cachedServerUpdatedFiles;
-    }
 
-
-    ServerQuery<FileActionsServerCacheSync> createFileActionsRefreshQuery() {
-        return new ServerQuery<FileActionsServerCacheSync>() {
-            @Nullable
-            @Override
-            public FileActionsServerCacheSync query(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager cacheManager,
-                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
-                    throws InterruptedException {
-                loadServerCache(exec, alerts);
-                return FileActionsServerCacheSync.this;
+        lastRefreshed = CachedState.NEVER_LOADED;
+        for (P4FileUpdateState state: cachedServerUpdatedFiles) {
+            if (state.getLastUpdated().getTime() > lastRefreshed.getTime()) {
+                lastRefreshed = state.getLastUpdated();
             }
-        };
+        }
     }
+
 
     /**
      * Return all the file actions.  If the executor is null, then this will work in offline mode.
@@ -104,7 +100,9 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
     @Override
-    void loadServerCache(@NotNull P4Exec2 exec, @NotNull AlertManager alerts) {
+    protected void innerLoadServerCache(@NotNull P4Exec2 exec, @NotNull AlertManager alerts) {
+        lastRefreshed = new Date();
+
         // Load our cache.  Note that we only load specs that we consider to be in a
         // "valid" file action state.
 
@@ -128,6 +126,12 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             // All the locally pending changes will remain unchanged; it's up to the
             // ServerUpdateAction to correctly handle the differences.
         }
+    }
+
+    @NotNull
+    @Override
+    protected Date getLastRefreshDate() {
+        return lastRefreshed;
     }
 
 

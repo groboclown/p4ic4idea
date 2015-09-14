@@ -14,17 +14,50 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
+import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerQuery;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Date;
 
 /**
  * Package-level marker for the cache front ends.  This just enforces
  * that all the front ends conform to the same API.
  */
 abstract class CacheFrontEnd {
+    private static final Logger LOG = Logger.getInstance(CacheFrontEnd.class);
 
-    // FIXME wrap in a timer to only load at a given maximum frequency
+
+    // FIXME make this configurable
+    private static final long MIN_REFRESH_INTERVAL_MS = 1000L;
+
+
+    protected final ServerQuery<CacheFrontEnd> createRefreshQuery() {
+        LOG.info("returning refresh query");
+        return new ServerQuery<CacheFrontEnd>() {
+            @Nullable
+            @Override
+            public CacheFrontEnd query(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager cacheManager,
+                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    throws InterruptedException {
+                LOG.info("loading cache for " + CacheFrontEnd.this.getClass().getSimpleName());
+                ServerConnection.assertInServerConnection();
+                loadServerCache(exec, alerts);
+                return CacheFrontEnd.this;
+            }
+        };
+    }
+
+
+    protected final void loadServerCache(@NotNull P4Exec2 exec, @NotNull AlertManager alerts) {
+        if (needsRefresh()) {
+            innerLoadServerCache(exec, alerts);
+        }
+    }
 
     /**
      * Reload the underlying server cache.  Only called when the client is online.
@@ -32,5 +65,14 @@ abstract class CacheFrontEnd {
      * @param exec connected server API
      * @param alerts user message handler
      */
-    abstract void loadServerCache(@NotNull P4Exec2 exec, @NotNull AlertManager alerts);
+    protected abstract void innerLoadServerCache(@NotNull P4Exec2 exec, @NotNull AlertManager alerts);
+
+
+    boolean needsRefresh() {
+        return (getLastRefreshDate().getTime() + MIN_REFRESH_INTERVAL_MS < System.currentTimeMillis());
+    }
+
+
+    @NotNull
+    protected abstract Date getLastRefreshDate();
 }

@@ -21,6 +21,7 @@ import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,8 +49,13 @@ public class P4Edit extends BasicAction {
         LOG.info("Checking enabled state for files " + Arrays.asList(vFiles));
 
         boolean mapsToServer = false;
-        final Map<P4Server, List<VirtualFile>> servers =
-                vcs.mapVirtualFilesToP4Server(Arrays.asList(vFiles));
+        final Map<P4Server, List<VirtualFile>> servers;
+        try {
+            servers = vcs.mapVirtualFilesToP4Server(Arrays.asList(vFiles));
+        } catch (InterruptedException e) {
+            LOG.info(e);
+            return false;
+        }
         for (P4Server server : servers.keySet()) {
             if (server != null) {
                 if (server.isWorkingOffline()) {
@@ -69,7 +75,13 @@ public class P4Edit extends BasicAction {
             return;
         }
 
-        final Map<P4Server, List<VirtualFile>> servers = vcs.mapVirtualFilesToP4Server(affectedFiles);
+        final Map<P4Server, List<VirtualFile>> servers;
+        try {
+            servers = vcs.mapVirtualFilesToP4Server(affectedFiles);
+        } catch (InterruptedException e) {
+            exceptions.add(new P4Exception(e));
+            return;
+        }
 
         FileDocumentManager.getInstance().saveAllDocuments();
 

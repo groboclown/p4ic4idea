@@ -61,7 +61,7 @@ public class UserClientsLoader {
             }
             return Collections.emptyList();
         }
-        ServerConfig serverConfig = ServerConfig.createNewServerConfig(config);
+        ServerConfig serverConfig = ServerConfig.createNewServerConfig(project, config);
         if (serverConfig == null) {
             Messages.showMessageDialog(project,
                     P4Bundle.message("configuration.error.not-fully-qualified"),
@@ -111,7 +111,7 @@ public class UserClientsLoader {
                     problemCount++;
                     continue;
                 }
-                ServerConfig serverConfig = ServerConfig.createNewServerConfig(en.getValue());
+                ServerConfig serverConfig = ServerConfig.createNewServerConfig(project, en.getValue());
                 if (serverConfig == null) {
                     problems.append(P4Bundle.message("configuration.error.not-fully-qualified.one",
                             en.getKey().getPath()));

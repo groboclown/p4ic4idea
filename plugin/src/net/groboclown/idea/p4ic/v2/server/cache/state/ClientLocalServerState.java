@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -29,6 +30,8 @@ import java.util.List;
  * pending updates.
  */
 public class ClientLocalServerState {
+    private static final Logger LOG = Logger.getInstance(ClientLocalServerState.class);
+
     private final P4ClientState localClientState;
     private final P4ClientState cachedServerState;
     private final List<PendingUpdateState> pendingUpdates;
@@ -96,14 +99,17 @@ public class ClientLocalServerState {
 
     @Nullable
     protected static ClientLocalServerState deserialize(@NotNull final Element wrapper, @NotNull final DecodeReferences refs) {
+        LOG.info("deserializing");
         Element local = wrapper.getChild("local");
         Element server = wrapper.getChild("server");
         if (local == null || server == null) {
+            LOG.info(" - local or server workspace xml element is null");
             return null;
         }
         P4ClientState localClient = P4ClientState.deserialize(local, refs);
         P4ClientState cachedRemote = P4ClientState.deserialize(server, refs);
         if (localClient == null || cachedRemote == null) {
+            LOG.info(" - local or remote workspace deserialize is null");
             return null;
         }
         List<PendingUpdateState> pending = new ArrayList<PendingUpdateState>();

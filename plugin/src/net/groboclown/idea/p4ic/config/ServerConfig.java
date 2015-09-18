@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.config;
 
+import com.intellij.openapi.project.Project;
 import com.perforce.p4java.env.PerforceEnvironment;
 import com.perforce.p4java.server.IServerAddress;
 import org.jetbrains.annotations.NotNull;
@@ -34,32 +35,23 @@ import java.util.Map;
 public abstract class ServerConfig {
 
     @Nullable
-    public static ServerConfig createNewServerConfig(P4Config p4Config) {
+    public static ServerConfig createNewServerConfig(@NotNull Project project, @NotNull P4Config p4Config) {
         System.out.println("config: " + P4ConfigUtil.getProperties(p4Config));
         if (! isValid(p4Config)) {
             return null;
         }
-        ServerConfigImpl config = new ServerConfigImpl(p4Config);
-        String password = p4Config.getPassword();
-        if (password != null) {
-            PasswordStore.storePasswordFor(config, password.toCharArray());
-        }
-        return config;
+        return new ServerConfigImpl(p4Config);
     }
 
 
+    /** @deprecated no need to use this anymore */
     @Nullable
     public static ServerConfig createOldServerConfig(P4Config p4Config) {
         System.out.println("config: " + P4ConfigUtil.getProperties(p4Config));
         if (! isValid(p4Config)) {
             return null;
         }
-        ServerConfig config = new ServerConfigImpl(p4Config);
-        //String password = p4Config.getPassword();
-        //if (password != null) {
-        //    PasswordStore.storePasswordFor(config, password.toCharArray());
-        //}
-        return config;
+        return new ServerConfigImpl(p4Config);
     }
 
 
@@ -79,6 +71,15 @@ public abstract class ServerConfig {
 
     @NotNull
     public abstract String getUsername();
+
+    /**
+     *
+     * @return the password the user stored in plaintext, if they stored it themselves.
+     *      Should only return non-null when the user has a P4CONFIG file with this value
+     *      set, or a P4PASSWD env set.
+     */
+    @Nullable
+    public abstract String getPlaintextPassword();
 
     @NotNull
     public abstract P4Config.ConnectionMethod getConnectionMethod();
@@ -121,7 +122,7 @@ public abstract class ServerConfig {
         return getProtocol().toString() + "://" + getPort();
     }
 
-    public abstract boolean storePasswordLocally();
+    //public abstract boolean storePasswordLocally();
 
     public abstract boolean isAutoOffline();
 

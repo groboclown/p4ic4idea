@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.server.connection;
 
+import com.intellij.openapi.project.Project;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.config.ServerConfig;
@@ -64,12 +65,12 @@ public class TestConnectionHandler extends ConnectionHandler {
     }
 
     @Override
-    public void defaultAuthentication(@NotNull final IOptionsServer server, @NotNull final ServerConfig config, final char[] password) throws P4JavaException {
+    public void defaultAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config) throws P4JavaException {
         // Intentionally empty
     }
 
     @Override
-    public boolean forcedAuthentication(@NotNull final IOptionsServer server, @NotNull final ServerConfig config, final char[] password) throws P4JavaException {
+    public boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config) throws P4JavaException {
         return false;
     }
 

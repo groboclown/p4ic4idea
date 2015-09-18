@@ -13,16 +13,17 @@
  */
 package net.groboclown.idea.p4ic.config;
 
-import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.ide.passwordSafe.PasswordSafe;
+import com.intellij.ide.passwordSafe.PasswordSafeException;
+import com.intellij.ide.passwordSafe.PasswordStorage;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.VcsException;
-import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.background.VcsSettableFuture;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.concurrent.CancellationException;
+import org.jetbrains.annotations.Nullable;
 
 public class PasswordStore {
+    private static final Logger LOG = Logger.getInstance(PasswordStore.class);
+
     private PasswordStore() {
         // Static utility class
     }
@@ -33,38 +34,30 @@ public class PasswordStore {
      * @param config config with the server connection settings.
      * @return the password, or null if it isn't already stored.
      */
-    public static char[] getOptionalPasswordFor(@NotNull ServerConfig config) {
-        return getService().getPassword(getServiceNameFor(config));
-    }
-
-
-    /**
-     *
-     * @param project project for the config
-     * @param config configuration storing the password
-     * @param removeExistingPassword true if the (possibly) stored version is wrong,
-     *                               and the user needs to specify the password again.
-     * @return the password, or <tt>null</tt> if the user didn't give one.
-     */
-    public static char[] getRequiredPasswordFor(@NotNull Project project, @NotNull ServerConfig config, boolean removeExistingPassword) {
-        VcsSettableFuture<char[]> future = VcsSettableFuture.create();
-        getService().findPassword(project, getServiceNameFor(config),
-                P4Bundle.message("configuration.dialog.password.title"),
-                P4Bundle.message("configuration.dialog.password.message", config.getPort(), config.getUsername()),
-                isPersistentPassword(config), removeExistingPassword, future);
+    @Nullable
+    public static char[] getPasswordFor(@Nullable Project project, @NotNull ServerConfig config) {
+        String ret;
         try {
-            return future.get();
-        } catch (VcsException e) {
-            return null;
-        } catch (CancellationException e) {
+            ret = getService().getPassword(project, PasswordStore.class, getServiceNameFor(config));
+        } catch (PasswordSafeException e) {
+            // Password problems seem to be universally just logged
+            LOG.info(e);
             return null;
         }
+        if (ret == null) {
+            return null;
+        }
+        return ret.toCharArray();
     }
 
 
-    public static void storePasswordFor(@NotNull ServerConfig config, @NotNull char[] password) {
-        getService().setPassword(getServiceNameFor(config), password,
-                isPersistentPassword(config));
+    public static void storePasswordFor(@NotNull Project project, @NotNull ServerConfig config, @NotNull char[] password) {
+        try {
+            getService().storePassword(project, PasswordStore.class, getServiceNameFor(config), new String(password));
+        } catch (PasswordSafeException e) {
+            // Password problems seem to be universally just logged
+            LOG.info(e);
+        }
     }
 
 
@@ -74,13 +67,8 @@ public class PasswordStore {
     }
 
 
-    private static boolean isPersistentPassword(@NotNull ServerConfig config) {
-        return config.storePasswordLocally();
-    }
-
-
     @NotNull
-    private static PasswordStoreService getService() {
-        return ApplicationManager.getApplication().getComponent(PasswordStoreService.class);
+    private static PasswordStorage getService() {
+        return PasswordSafe.getInstance();
     }
 }

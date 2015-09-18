@@ -1,6 +1,25 @@
 # IDEA Community VCS Integration for Perforce
 
 
+
+## ::v0.7.0::
+
+### Overview
+
+* Major changes to the server connection logic. 
+* Passwords are now stored with better security.
+
+### Details
+
+* Major changes to the server connection logic.
+    * Allows for limited offline work.  Edit, add, delete, and move operations are
+      cached for replay after you reconnect to the server.
+* Passwords are now stored with better security.
+    * Uses the IntelliJ password storage, so you may be prompted for a
+      master password now if you setup the IDE to use that.
+    * This eliminates the "persist password locally" setting. 
+
+
 ## ::v0.6.6.1::
 
 ### Overview

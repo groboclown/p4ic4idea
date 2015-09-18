@@ -164,10 +164,10 @@ public class EnvP4Config implements P4Config {
         return configFile;
     }
 
-    @Override
-    public boolean isPasswordStoredLocally() {
-        return getPassword() == null;
-    }
+    //@Override
+    //public boolean isPasswordStoredLocally() {
+    //    return getPassword() == null;
+    //}
 
     @Nullable
     @Override

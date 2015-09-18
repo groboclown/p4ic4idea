@@ -225,15 +225,15 @@ public class HierarchyP4Config implements P4Config {
         return null;
     }
 
-    @Override
-    public boolean isPasswordStoredLocally() {
-        for (P4Config config : parents) {
-            if (config.isPasswordStoredLocally()) {
-                return true;
-            }
-        }
-        return false;
-    }
+    //@Override
+    //public boolean isPasswordStoredLocally() {
+    //    for (P4Config config : parents) {
+    //        if (config.isPasswordStoredLocally()) {
+    //            return true;
+    //        }
+    //    }
+    //    return false;
+    //}
 
     @Nullable
     @Override

@@ -82,11 +82,25 @@ public class P4StatusMessage {
     @Override
     public String toString() {
         return P4Bundle.message("status.message",
-                spec.getStatusMessage(),
+                getStringMessage(),
                 spec.getGenericCode(),
                 spec.getSubCode(),
                 spec.getUniqueCode(),
                 spec.getSeverityCode());
+    }
+
+    @NotNull
+    private String getStringMessage() {
+        IServerMessage msg = spec.getStatusMessage();
+        String ret = msg.getLocalizedMessage();
+        if (ret != null && ret.trim().length() > 0) {
+            return ret;
+        }
+        ret = msg.getMessageFormat();
+        if (ret == null || ret.trim().length() <= 0) {
+            ret = "";
+        }
+        return ret + " " + msg.getNamedArguments();
     }
 
 
@@ -147,7 +161,7 @@ public class P4StatusMessage {
                 if (P4StatusMessage.isErrorStatus(spec)) {
                     ret.add(new P4StatusMessage(spec));
                 } else if (spec.getOpStatus() == FileSpecOpStatus.INFO) {
-                    LOG.info("result: " + spec.getStatusMessage());
+                    LOG.info("result: [" + spec.getStatusMessage() + "] (" + spec + ")");
                 }
             }
         }

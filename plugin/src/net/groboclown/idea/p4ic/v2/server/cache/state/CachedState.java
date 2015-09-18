@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import com.intellij.openapi.diagnostic.Logger;
 import org.jdom.Attribute;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +23,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public abstract class CachedState {
-    public static final Date NEVER_LOADED = new Date(Long.MIN_VALUE);
+    private static final Logger LOG = Logger.getInstance(CachedState.class);
+    public static final Date NEVER_LOADED = new Date(0L);
 
     @NotNull
     Date lastUpdated = NEVER_LOADED;
@@ -52,6 +54,9 @@ public abstract class CachedState {
             Long time = decodeLong(timeStr);
             if (time != null) {
                 lastUpdated = new Date(time);
+
+                // FIXME debug
+                LOG.info("deserialized " + getClass().getSimpleName() + " date to " + lastUpdated);
             }
         }
     }

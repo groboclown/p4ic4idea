@@ -95,8 +95,6 @@ public interface P4Config {
     @Nullable
     String getConfigFile();
 
-    boolean isPasswordStoredLocally();
-
     /**
      * Allow for custom setting the client hostname.
      *

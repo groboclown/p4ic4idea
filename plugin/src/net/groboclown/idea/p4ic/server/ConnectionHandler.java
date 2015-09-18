@@ -95,7 +95,8 @@ public abstract class ConnectionHandler {
                 hostname = hostname.trim();
             }
             if (hostname != null && hostname.length() > 0) {
-                LOG.debug("Using hostname [" + hostname + "]");
+                // FIXME debug
+                LOG.info("Using hostname [" + hostname + "]");
                 options.setHostName(hostname);
             }
 
@@ -121,21 +122,19 @@ public abstract class ConnectionHandler {
      *
      * @param server server connection
      * @param config configuration
-     * @param password user-provided password
      * @throws P4JavaException
      */
-    public abstract void defaultAuthentication(@NotNull IOptionsServer server, @NotNull ServerConfig config, char[] password) throws P4JavaException;
+    public abstract void defaultAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config) throws P4JavaException;
 
     /**
      * Called when the server challenges us for authentication.
      *
      * @param server server connection
      * @param config configuration
-     * @param password new password
      * @return false if authentication could not be done, or true if it was attempted.
      * @throws P4JavaException
      */
-    public abstract boolean forcedAuthentication(@NotNull IOptionsServer server, @NotNull ServerConfig config, char[] password) throws P4JavaException;
+    public abstract boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config) throws P4JavaException;
 
 
     /**

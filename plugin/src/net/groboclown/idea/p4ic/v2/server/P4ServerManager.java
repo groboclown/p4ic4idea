@@ -125,6 +125,7 @@ public class P4ServerManager implements ProjectComponent {
                     match = new ArrayList<FilePath>();
                     ret.put(minDepthServer, match);
                 }
+                match.add(file);
             }
             return ret;
         } else {
@@ -186,8 +187,11 @@ public class P4ServerManager implements ProjectComponent {
                             servers.put(server.getClientServerId(), server);
                         }
                     }
+                    final AllClientsState clientState = AllClientsState.getInstance();
                     for (ClientServerId serverId : knownServers) {
+                        // FIXME check if this is too aggressive.
                         servers.get(serverId).setValid(false);
+                        clientState.removeClientState(serverId);
                         servers.remove(serverId);
                     }
                 }
@@ -199,11 +203,16 @@ public class P4ServerManager implements ProjectComponent {
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                     @NotNull final P4InvalidConfigException ex) {
+                final AllClientsState clientState = AllClientsState.getInstance();
+
                 // Connections are temporarily invalid.
                 connectionsValid = false;
                 synchronized (servers) {
+                    // FIXME examine whether this is appropriate
+                    // to keep calling.
                     for (P4Server server : servers.values()) {
                         server.setValid(false);
+                        clientState.removeClientState(server.getClientServerId());
                     }
                 }
             }
@@ -212,12 +221,9 @@ public class P4ServerManager implements ProjectComponent {
 
     @Override
     public void disposeComponent() {
-        final AllClientsState clientState = AllClientsState.getInstance();
         for (P4Server p4Server : servers.values()) {
-            if (!p4Server.isValid()) {
-                // Remove from our cache, because the server isn't being used anymore.
-                clientState.removeClientState(p4Server.getClientServerId());
-            }
+            // Note: don't remove the server from the cache at this point, because
+            // it can be used later
             p4Server.dispose();
         }
         if (appMessageBus != null) {

@@ -105,7 +105,7 @@ public class P4Exec2 {
         // in the future, this may clean up open connections
         synchronized (sync) {
             disposed = true;
-            exec.dispose();
+            // Note: this does NOT dispose the ClientExec; this class borrows that.
         }
     }
 

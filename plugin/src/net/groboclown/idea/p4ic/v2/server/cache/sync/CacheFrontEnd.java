@@ -44,7 +44,6 @@ abstract class CacheFrontEnd {
             public CacheFrontEnd query(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager cacheManager,
                     @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
                     throws InterruptedException {
-                LOG.info("loading cache for " + CacheFrontEnd.this.getClass().getSimpleName());
                 ServerConnection.assertInServerConnection();
                 loadServerCache(exec, alerts);
                 return CacheFrontEnd.this;
@@ -55,7 +54,10 @@ abstract class CacheFrontEnd {
 
     protected final void loadServerCache(@NotNull P4Exec2 exec, @NotNull AlertManager alerts) {
         if (needsRefresh()) {
+            LOG.info("Refreshing the cache for " + getClass().getSimpleName() + "; last refresh was " + getLastRefreshDate());
             innerLoadServerCache(exec, alerts);
+        } else if (LOG.isDebugEnabled()) {
+            LOG.debug("No need to refresh the cache for " + getClass().getSimpleName() + "; last refresh was " + getLastRefreshDate());
         }
     }
 

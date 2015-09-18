@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.server;
 
+import com.intellij.ide.passwordSafe.PasswordSafeException;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
@@ -41,7 +42,6 @@ import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.VcsFuture;
 import net.groboclown.idea.p4ic.background.VcsSettableFuture;
-import net.groboclown.idea.p4ic.config.PasswordStore;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.*;
@@ -741,7 +741,9 @@ public class P4Exec {
             throws VcsException, CancellationException {
         return p4RunFor(project, new P4Runner<T>() {
             @Override
-            public T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public T run()
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception, PasswordSafeException {
                 final IOptionsServer server = connectServer(project, getTempDir(project));
 
                 // note: we're not caching the client
@@ -767,7 +769,9 @@ public class P4Exec {
             throws VcsException, CancellationException {
         return p4RunFor(project, new P4Runner<T>() {
             @Override
-            public T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public T run()
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception, PasswordSafeException {
                 // disconnect happens as a separate activity.
                 return runner.run(connectServer(project, getTempDir(project)), new WithClientCount(serverStatus.getConfig().getServiceName()));
             }
@@ -801,7 +805,8 @@ public class P4Exec {
 
 
     @NotNull
-    private IOptionsServer connectServer(@NotNull final Project project, @NotNull final File tempDir) throws P4JavaException, URISyntaxException {
+    private IOptionsServer connectServer(@NotNull final Project project, @NotNull final File tempDir)
+            throws P4JavaException, URISyntaxException, PasswordSafeException {
         synchronized (sync) {
             if (disposed) {
                 throw new ConnectionException(P4Bundle.message("error.p4exec.disposed"));
@@ -837,14 +842,7 @@ public class P4Exec {
                 // if there is a password problem, we still want
                 // to maintain our cached server, so a retry doesn't
                 // recreate the server connection again.
-                char[] password = PasswordStore.getOptionalPasswordFor(serverStatus.getConfig());
-                try {
-                    connectionHandler.defaultAuthentication(server, serverStatus.getConfig(), password);
-                } finally {
-                    if (password != null) {
-                        Arrays.fill(password, (char) 0);
-                    }
-                }
+                connectionHandler.defaultAuthentication(project, server, serverStatus.getConfig());
             }
         }
 
@@ -868,12 +866,6 @@ public class P4Exec {
 
 
     private <T> T p4RunFor(@NotNull Project project, @NotNull P4Runner<T> runner)
-            throws VcsException, CancellationException {
-        return p4RunFor(project, runner, false);
-    }
-
-
-    private <T> T p4RunFor(@NotNull Project project, @NotNull P4Runner<T> runner, boolean triedLogin)
             throws VcsException, CancellationException {
         while (true) {
             // Must check offline status in the loop.
@@ -910,8 +902,11 @@ public class P4Exec {
             } catch (AccessException e) {
                 LOG.info("Problem accessing resources", e);
                 if (isPasswordProblem(e)) {
-                    onPasswordProblem(project, triedLogin, new P4LoginException(e));
-                    triedLogin = true;
+                    try {
+                        onPasswordProblem(project, new P4LoginException(e));
+                    } catch (PasswordSafeException e1) {
+                        throw new P4LoginException(e1);
+                    }
                 } else {
                     VcsSettableFuture<Boolean> future = VcsSettableFuture.create();
                     onServerProblem.onInvalidConfiguration(future, serverStatus.getConfig(), e.getMessage());
@@ -988,8 +983,11 @@ public class P4Exec {
             } catch (RequestException e) {
                 LOG.info("Request problem", e);
                 if (isPasswordProblem(e)) {
-                    onPasswordProblem(project, triedLogin, new P4LoginException(e));
-                    triedLogin = true;
+                    try {
+                        onPasswordProblem(project, new P4LoginException(e));
+                    } catch (PasswordSafeException e1) {
+                        throw new P4LoginException(e1);
+                    }
                 } else {
                     // Don't know what it really is
                     throw new P4Exception(e);
@@ -1049,43 +1047,18 @@ public class P4Exec {
         }
     }
 
-    private void onPasswordProblem(@NotNull Project project, boolean triedLogin, @NotNull P4LoginException e)
-            throws VcsException {
+    private void onPasswordProblem(@NotNull final Project project, @NotNull P4LoginException e)
+            throws VcsException, PasswordSafeException {
         synchronized (serverStatus) {
-            if (triedLogin) {
-                final char[] password = PasswordStore.getRequiredPasswordFor(project, serverStatus.getConfig(), true);
-                try {
-                    boolean res = runWithServer(project, new WithServer<Boolean>() {
-                        @Override
-                        public Boolean run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
-                            count.invoke("forcedAuthentication");
-                            return connectionHandler.forcedAuthentication(server, serverStatus.getConfig(), password);
-                        }
-                    }, true);
-                    if (!res) {
-                        throw e;
+            boolean res = runWithServer(project, new WithServer<Boolean>() {
+                @Override
+                public Boolean run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+                    count.invoke("forcedAuthentication");
+                    return connectionHandler.forcedAuthentication(project, server, serverStatus.getConfig());
                     }
-                } finally {
-                    if (password != null) {
-                        Arrays.fill(password, (char) 0);
-                    }
-                }
-            } else {
-                final char[] password = PasswordStore.getOptionalPasswordFor(serverStatus.getConfig());
-                try {
-                    runWithServer(project, new WithServer<Boolean>() {
-                        @Override
-                        public Boolean run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
-                            count.invoke("defaultAuthentication");
-                            connectionHandler.defaultAuthentication(server, serverStatus.getConfig(), password);
-                            return null;
-                        }
-                    }, true);
-                } finally {
-                    if (password != null) {
-                        Arrays.fill(password, (char) 0);
-                    }
-                }
+            }, true);
+            if (!res) {
+                throw e;
             }
         }
     }
@@ -1162,7 +1135,8 @@ public class P4Exec {
 
 
     interface P4Runner<T> {
-        T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception;
+        T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                P4Exception, PasswordSafeException;
     }
 
 

@@ -230,10 +230,10 @@ public class FileP4Config implements P4Config {
         return null;
     }
 
-    @Override
-    public boolean isPasswordStoredLocally() {
-        return false;
-    }
+    //@Override
+    //public boolean isPasswordStoredLocally() {
+    //    return false;
+    //}
 
     @Nullable
     @Override

@@ -82,8 +82,8 @@ public class CentralCacheManager {
                 if (disposed) {
                     return;
                 }
-                ClientServerId originalId = ClientServerId.create(original);
-                ClientServerId newId = ClientServerId.create(config);
+                ClientServerId originalId = ClientServerId.create(project, original);
+                ClientServerId newId = ClientServerId.create(project, config);
                 if (originalId != null && ! originalId.equals(newId)) {
                     removeCache(originalId);
                 }
@@ -96,7 +96,7 @@ public class CentralCacheManager {
                 if (disposed) {
                     return;
                 }
-                ClientServerId id = ClientServerId.create(config);
+                ClientServerId id = ClientServerId.create(project, config);
                 removeCache(id);
             }
         });

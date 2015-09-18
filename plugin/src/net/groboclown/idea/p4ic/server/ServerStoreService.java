@@ -543,7 +543,7 @@ public class ServerStoreService implements ApplicationComponent {
         public void configChanges(@NotNull Project project, @NotNull P4Config original, @NotNull P4Config config) {
             changeServerConfig(project,
                     ServerConfig.createOldServerConfig(original),
-                    ServerConfig.createNewServerConfig(config));
+                    ServerConfig.createNewServerConfig(project, config));
         }
 
         @Override

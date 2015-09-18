@@ -59,7 +59,7 @@ public class ServerConnection {
     private volatile boolean disposed = false;
     private boolean loadedPendingUpdateStates = false;
     @Nullable
-    private volatile ClientExec clientExec;
+    private ClientExec clientExec;
 
 
     public static void assertInServerConnection() {
@@ -93,6 +93,7 @@ public class ServerConnection {
         background = new Thread(new QueueRunner());
         background.setDaemon(false);
         background.setPriority(Thread.NORM_PRIORITY - 1);
+        background.start();
     }
 
 
@@ -110,6 +111,7 @@ public class ServerConnection {
         synchronized (clientExecLock) {
             if (clientExec != null) {
                 clientExec.dispose();
+                clientExec = null;
             }
         }
     }
@@ -117,6 +119,7 @@ public class ServerConnection {
 
 
     public void queueAction(@NotNull Project project, @NotNull ServerUpdateAction action) {
+        LOG.info("Queueing action for execution: " + action);
         pendingUpdates.add(new UpdateAction(project, action));
     }
 
@@ -201,6 +204,9 @@ public class ServerConnection {
 
 
     P4Exec2 getExec(@NotNull Project project) throws P4InvalidConfigException {
+        if (disposed) {
+            throw new IllegalStateException("connection disposed");
+        }
         // double-check locking.  This is why clientExec must be volatile.
         synchronized (clientExecLock) {
             if (clientExec == null) {
@@ -215,6 +221,9 @@ public class ServerConnection {
         UpdateGroup currentGroup = null;
         List<PendingUpdateState> currentGroupUpdates = null;
         for (PendingUpdateState update : updates) {
+            // FIXME debug
+            LOG.info("adding update state as action: " + update);
+
             if (currentGroup != null && !update.getUpdateGroup().equals(currentGroup)) {
                 // new group, so add the old stuff and clear it out.
                 if (!currentGroupUpdates.isEmpty()) {
@@ -266,92 +275,105 @@ public class ServerConnection {
     class QueueRunner implements Runnable {
         @Override
         public void run() {
-            while (! disposed) {
-                // Wait for something to do first
-                UpdateAction action;
-                redoLock.lock();
-                try {
-                    action = redo.poll();
-                } finally {
-                    redoLock.unlock();
-                }
-                if (action == null) {
+            try {
+                while (!disposed) {
+                    // Wait for something to do first
+                    UpdateAction action;
+                    redoLock.lock();
                     try {
-                        action = pendingUpdates.take();
+                        action = redo.poll();
+                    } finally {
+                        redoLock.unlock();
+                    }
+                    if (action == null) {
+                        try {
+                            // FIXME debug
+                            LOG.info("Polling pending updates for action");
+                            action = pendingUpdates.take();
+                        } catch (InterruptedException e) {
+                            // This triggers us to check for a disposed state.
+                            LOG.info(e);
+                            continue;
+                        }
+                    }
+
+                    // wait for us to come online
+                    // FIXME make configurable
+                    try {
+                        // FIXME debug
+                        LOG.info("waiting for server to come online");
+                        statusController.waitForOnline(-1, TimeUnit.SECONDS);
                     } catch (InterruptedException e) {
-                        // This triggers us to check for a disposed state.
+                        // need to reloop to check for disposed state, but first re-insert the update
                         LOG.info(e);
+                        redoLock.lock();
+                        try {
+                            redo.add(action);
+                        } finally {
+                            redoLock.unlock();
+                        }
                         continue;
                     }
-                }
 
-                // wait for us to come online
-                // FIXME make configurable
-                try {
-                    statusController.waitForOnline(-1, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    // need to reloop to check for disposed state, but first re-insert the update
-                    LOG.info(e);
-                    redoLock.lock();
+                    // Now wait for the alerts to finish up.
+                    // FIXME make the wait time configurable
+                    connectionLock.lock();
                     try {
-                        redo.add(action);
-                    } finally {
-                        redoLock.unlock();
+                        // FIXME debug
+                        LOG.info("waiting for no critical errors");
+                        alertManager.waitForNoCriticalErrors(-1, TimeUnit.MINUTES);
+                    } catch (InterruptedException e) {
+                        connectionLock.unlock();
+
+                        // need to reloop to check for disposed state, but first re-insert the update
+                        LOG.info(e);
+                        redoLock.lock();
+                        try {
+                            redo.add(action);
+                        } finally {
+                            redoLock.unlock();
+                        }
+                        continue;
                     }
-                    continue;
-                }
 
-                // Now wait for the alerts to finish up.
-                // FIXME make the wait time configurable
-                connectionLock.lock();
-                try {
-                    alertManager.waitForNoCriticalErrors(-1, TimeUnit.MINUTES);
-                } catch (InterruptedException e) {
-                    connectionLock.unlock();
 
-                    // need to reloop to check for disposed state, but first re-insert the update
-                    LOG.info(e);
-                    redoLock.lock();
+                    if (statusController.isWorkingOffline()) {
+                        // Went offline, probably due to the waited-on critical error.
+                        // need to reloop to check for disposed state, but first re-insert the update
+                        LOG.info("Went offline - retrying execution loop");
+                        redoLock.lock();
+                        try {
+                            redo.add(action);
+                        } finally {
+                            redoLock.unlock();
+                        }
+                        continue;
+                    }
+
+
+                    // We now have something to do, and we can perform the action.
+                    // Note that it's possible for another critical error to pop up in this small
+                    // window of time; that's currently considered an acceptable situation.
+                    // Even if it does, it would be because of a separate server configuration,
+                    // and thus would be unrelated to this configuration's execution; we know this
+                    // because all executions of this connection are single-threaded.
+
                     try {
-                        redo.add(action);
+                        // FIXME debug
+                        LOG.info("Performing action " + action);
+                        action.action
+                                .perform(getExec(action.project), cacheManager, ServerConnection.this, alertManager);
+                    } catch (P4InvalidConfigException e) {
+                        alertManager.addCriticalError(new ConfigurationProblemHandler(), e);
+                    } catch (InterruptedException e) {
+                        // Do not requeue the action
+                        LOG.info(e);
                     } finally {
-                        redoLock.unlock();
+                        connectionLock.unlock();
                     }
-                    continue;
                 }
-
-
-                if (statusController.isWorkingOffline()) {
-                    // Went offline, probably due to the waited-on critical error.
-                    // need to reloop to check for disposed state, but first re-insert the update
-                    LOG.info("Went offline - retrying execution loop");
-                    redoLock.lock();
-                    try {
-                        redo.add(action);
-                    } finally {
-                        redoLock.unlock();
-                    }
-                    continue;
-                }
-
-
-                // We now have something to do, and we can perform the action.
-                // Note that it's possible for another critical error to pop up in this small
-                // window of time; that's currently considered an acceptable situation.
-                // Even if it does, it would be because of a separate server configuration,
-                // and thus would be unrelated to this configuration's execution; we know this
-                // because all executions of this connection are single-threaded.
-
-                try {
-                    action.action.perform(getExec(action.project), cacheManager, ServerConnection.this, alertManager);
-                } catch (P4InvalidConfigException e) {
-                    alertManager.addCriticalError(new ConfigurationProblemHandler(), e);
-                } catch (InterruptedException e) {
-                    // Do not requeue the action
-                    LOG.info(e);
-                } finally {
-                    connectionLock.unlock();
-                }
+            } catch (Exception e) {
+                LOG.error(e);
             }
         }
     }
@@ -364,6 +386,11 @@ public class ServerConnection {
         UpdateAction(@NotNull Project project, @NotNull ServerUpdateAction action) {
             this.action = action;
             this.project = project;
+        }
+
+        @Override
+        public String toString() {
+            return "Action " + action;
         }
     }
 }

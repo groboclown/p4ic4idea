@@ -154,11 +154,14 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             LOG.info("Already opened for edit " + file);
             return null;
         }
-        // Even if the action already exists, we need to create a new one to put in our local cache.
+        // If the action already exists but isn't the right update action,
+        // we still need to create a new one to put in our local cache.
         P4FileUpdateState newAction = new P4FileUpdateState(
                 cache.getClientMappingFor(file), changeListId, FileUpdateAction.EDIT_FILE);
         localClientUpdatedFiles.add(newAction);
-        LOG.debug("Switching from " +action + " to " + newAction);
+
+        // FIXME debug
+        LOG.info("Switching from " + action + " to " + newAction);
 
         // Create the action.
         final HashMap<String, Object> params = new HashMap<String, Object>();
@@ -198,13 +201,15 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             return;
         }
         StringBuilder sb = new StringBuilder(P4Bundle.message("error.opened-action-status.invalid"));
+        String sep = "";
         for (IFileSpec spec: invalidSpecs) {
+            // TODO localize these strings
             sb
-                .append(spec.getDepotPathString() != null
-                    ? spec.getDepotPathString()
-                    : spec.getClientPathString())
-                .append(": ")
-                .append(spec.getAction());
+                .append(sep).append("[")
+                .append("depot:").append(spec.getDepotPathString())
+                .append(", client:").append(spec.getClientPathString())
+                .append(", action: ").append(spec.getAction());
+            sep = "]; ";
         }
         alerts.addNotice(sb.toString(), null);
     }
@@ -269,7 +274,6 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
     static class AddEditAction extends AbstractServerUpdateAction {
 
-
         AddEditAction(@NotNull Collection<PendingUpdateState> pendingUpdateState) {
             super(pendingUpdateState);
         }
@@ -278,10 +282,16 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         @Override
         protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
                 @NotNull ClientCacheManager clientCacheManager, @NotNull final AlertManager alerts) {
+            // FIXME debug
+            LOG.info("Running edit");
+
             // Discover the current state of the files, so that we can perform the
             // appropriate actions.
             List<PendingUpdateState> updateList = new ArrayList<PendingUpdateState>(getPendingUpdateStates());
             List<FilePath> filenames = getFilePaths(updateList);
+
+            LOG.info("Editing files: " + filenames);
+
             final List<IFileSpec> srcSpecs;
             try {
                 srcSpecs = FileSpecUtil.getFromFilePaths(filenames);
@@ -289,6 +299,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 alerts.addWarning(P4Bundle.message("error.file-spec.create", filenames), e);
                 return ExecutionStatus.FAIL;
             }
+            LOG.info("File specs: " + srcSpecs);
             final List<IExtendedFileSpec> fullSpecs;
             try {
                 fullSpecs = exec.getFileStatus(srcSpecs);
@@ -296,6 +307,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 alerts.addWarning(P4Bundle.message("error.file-status.fetch", srcSpecs), e);
                 return ExecutionStatus.FAIL;
             }
+            LOG.info("Full specs: " + fullSpecs);
 
             Set<FilePath> reverts = new HashSet<FilePath>();
             Map<Integer, Set<FilePath>> adds = new HashMap<Integer, Set<FilePath>>();
@@ -328,6 +340,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 }
                 Map<Integer, Set<FilePath>> container = null;
                 if (isNotKnownToServer(spec)) {
+                    LOG.info("Adding, because not known to server");
                     container = adds;
                 } else {
                     FileAction action = spec.getOpenAction();
@@ -421,7 +434,12 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                         final List<P4StatusMessage> msgs =
                                 exec.editFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
                                         entry.getKey());
-                        alerts.addNotices(P4Bundle.message("warning.edit.file.edit", entry.getValue()), msgs, false);
+                        // Note: any errors here will be displayed to the
+                        // user, but they do not indicate that the actual
+                        // actions were errors.  Instead, they are notifications
+                        // to the user that they must do something again
+                        // with a correction.
+                        alerts.addWarnings(P4Bundle.message("warning.edit.file.edit", entry.getValue()), msgs, false);
                         hasUpdate = true;
                     } catch (P4DisconnectedException e) {
                         // error already handled as critical
@@ -434,7 +452,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             }
 
             if (hasUpdate && returnCode == ExecutionStatus.NO_OP) {
-                returnCode = ExecutionStatus.PASS;
+                returnCode = ExecutionStatus.RELOAD_CACHE;
             }
 
             return returnCode;

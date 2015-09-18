@@ -347,7 +347,7 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
                 throws P4InvalidConfigException, P4InvalidClientException {
             this.project = project;
             this.sourceConfig = config;
-            this.config = ServerConfig.createNewServerConfig(config);
+            this.config = ServerConfig.createNewServerConfig(project, config);
             if (this.config == null) {
                 P4InvalidConfigException ex = new P4InvalidConfigException(config);
                 Events.configInvalid(project, config, ex);

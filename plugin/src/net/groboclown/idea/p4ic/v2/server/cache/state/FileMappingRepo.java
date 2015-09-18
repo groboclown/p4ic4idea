@@ -23,6 +23,8 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Manages the cache of file mappings.  These need to be owned by this object, as it keeps
@@ -30,14 +32,13 @@ import java.util.Map.Entry;
  * be updated via this class.  The primary concern of this class is to keep track
  * of the {@link P4ClientFileMapping} instances so that they can be correctly updated if
  * a client mapping changes.
- * <p/>
- * This class is not thread safe.  Need to investigate whether this needs to be
- * thread safe (probably will be).
  */
 public class FileMappingRepo {
     private static final int CACHE_MISS_THRESHOLD = 100;
 
     private final boolean serverIsCaseInsensitive;
+
+    private final Lock lock = new ReentrantLock();
 
     private final ReferenceQueue<P4ClientFileMapping> queue;
     private final Set<WeakReference<P4ClientFileMapping>> files = new HashSet<WeakReference<P4ClientFileMapping>>();
@@ -60,7 +61,12 @@ public class FileMappingRepo {
 
     @NotNull
     public Iterable<P4ClientFileMapping> getAllFiles() {
-        return new WeakIterable(files);
+        lock.lock();
+        try {
+            return new WeakIterable(files);
+        } finally {
+            lock.unlock();
+        }
     }
 
     /*
@@ -93,25 +99,31 @@ public class FileMappingRepo {
     public P4ClientFileMapping getByLocation(@NotNull FilePath location) {
         // Discover if the location is already registered.  This includes possible cache missing
         // computations.
-        WeakReference<P4ClientFileMapping> ref = filesByLocal.get(location);
         P4ClientFileMapping map = null;
-        if (ref != null) {
-            map = ref.get();
-            if (map == null) {
-                // cache miss logic and cleanup
-                filesByLocal.remove(location);
-                onCacheMiss();
+
+        lock.lock();
+        try {
+            WeakReference<P4ClientFileMapping> ref = filesByLocal.get(location);
+            if (ref != null) {
+                map = ref.get();
+                if (map == null) {
+                    // cache miss logic and cleanup
+                    filesByLocal.remove(location);
+                    onCacheMiss();
+                }
+                // else: the mapping still exists for this location.
+                // Because we don't know the new state of the depot path,
+                // we can ignore any possible updates that it requires.
             }
-            // else: the mapping still exists for this location.
-            // Because we don't know the new state of the depot path,
-            // we can ignore any possible updates that it requires.
-        }
-        if (map == null) {
-            map = new P4ClientFileMapping(null, location);
-            ref = createRef(map);
-            files.add(ref);
-            filesByLocal.put(location, ref);
-            // no depot associated with this mapping.
+            if (map == null) {
+                map = new P4ClientFileMapping(null, location);
+                ref = createRef(map);
+                files.add(ref);
+                filesByLocal.put(location, ref);
+                // no depot associated with this mapping.
+            }
+        } finally {
+            lock.unlock();
         }
         return map;
     }
@@ -130,50 +142,56 @@ public class FileMappingRepo {
     public P4ClientFileMapping getByDepotLocation(@NotNull String depot, @Nullable FilePath location) {
         // Discover if the location is already registered.  This includes possible cache missing
         // computations.
-        final String internalDepotPath = internalDepotPath(depot);
-        WeakReference<P4ClientFileMapping> ref = filesByDepot.get(internalDepotPath);
-        if (ref == null && location != null) {
-            ref = filesByLocal.get(location);
-        }
         P4ClientFileMapping map = null;
-        if (ref != null) {
-            map = ref.get();
-            if (map == null) {
-                // cache miss logic and cleanup
-                filesByDepot.remove(internalDepotPath);
-                filesByLocal.remove(location);
-                onCacheMiss();
-            } else if (location != null && ! location.equals(map.getLocalFilePath())) {
-                // This is a location update.
-                filesByLocal.remove(map.getLocalFilePath());
-                filesByLocal.put(location, ref);
-                map.updateLocalPath(location);
-            } else if (! depot.equals(map.getDepotPath())) {
-                // This is a depot update
-                // depot is always not-null
-                if (map.getDepotPath() != null) {
-                    filesByDepot.remove(internalDepotPath(map.getDepotPath()));
+
+        lock.lock();
+        try {
+            final String internalDepotPath = internalDepotPath(depot);
+            WeakReference<P4ClientFileMapping> ref = filesByDepot.get(internalDepotPath);
+            if (ref == null && location != null) {
+                ref = filesByLocal.get(location);
+            }
+            if (ref != null) {
+                map = ref.get();
+                if (map == null) {
+                    // cache miss logic and cleanup
+                    filesByDepot.remove(internalDepotPath);
+                    filesByLocal.remove(location);
+                    onCacheMiss();
+                } else if (location != null && !location.equals(map.getLocalFilePath())) {
+                    // This is a location update.
+                    filesByLocal.remove(map.getLocalFilePath());
+                    filesByLocal.put(location, ref);
+                    map.updateLocalPath(location);
+                } else if (!depot.equals(map.getDepotPath())) {
+                    // This is a depot update
+                    // depot is always not-null
+                    if (map.getDepotPath() != null) {
+                        filesByDepot.remove(internalDepotPath(map.getDepotPath()));
+                    }
+                    filesByDepot.put(depot, ref);
+                    map.updateDepot(depot);
                 }
-                filesByDepot.put(depot, ref);
-                map.updateDepot(depot);
+                // else, either the location is not known by the callee (it might be known
+                // by the cached object), or both the callee and the cache version have
+                // the same location object and depot location.  Either way, there's no need to
+                // touch the map's location or the lookups.
             }
-            // else, either the location is not known by the callee (it might be known
-            // by the cached object), or both the callee and the cache version have
-            // the same location object and depot location.  Either way, there's no need to
-            // touch the map's location or the lookups.
-        }
-        if (map == null) {
-            if (location != null) {
-                map = new P4ClientFileMapping(depot, location);
-                ref = createRef(map);
-                filesByLocal.put(location, ref);
-            } else {
-                map = new P4ClientFileMapping(depot);
-                ref = createRef(map);
-                // no local assignment
+            if (map == null) {
+                if (location != null) {
+                    map = new P4ClientFileMapping(depot, location);
+                    ref = createRef(map);
+                    filesByLocal.put(location, ref);
+                } else {
+                    map = new P4ClientFileMapping(depot);
+                    ref = createRef(map);
+                    // no local assignment
+                }
+                filesByDepot.put(internalDepotPath, ref);
+                files.add(ref);
             }
-            filesByDepot.put(internalDepotPath, ref);
-            files.add(ref);
+        } finally {
+            lock.unlock();
         }
         return map;
     }
@@ -185,12 +203,17 @@ public class FileMappingRepo {
      * @deprecated because it's not implemented yet
      */
     public void updateLocations(@NotNull Map<String, FilePath> depotToLocation) {
-        // Because we're doing a potentially large operation, clean up the
-        // existing maps for old stuff.
-        flush();
+        lock.lock();
+        try {
+            // Because we're doing a potentially large operation, clean up the
+            // existing maps for old stuff.
+            flush();
 
-        // FIXME
-        throw new IllegalStateException("not implemented");
+            // FIXME
+            throw new IllegalStateException("not implemented");
+        } finally {
+            lock.unlock();
+        }
     }
 
 
@@ -200,14 +223,19 @@ public class FileMappingRepo {
      * @param mappings new, fully configured mappings
      */
     public void refreshFiles(@NotNull Collection<P4ClientFileMapping> mappings) {
-        files.clear();
-        filesByDepot.clear();
-        filesByLocal.clear();
-        // this implicitly did a flush, so the cache misses can return to 0.
-        cacheMissCount = 0;
+        lock.lock();
+        try {
+            files.clear();
+            filesByDepot.clear();
+            filesByLocal.clear();
+            // this implicitly did a flush, so the cache misses can return to 0.
+            cacheMissCount = 0;
 
-        for (P4ClientFileMapping mapping : mappings) {
-            addMapping(mapping);
+            for (P4ClientFileMapping mapping : mappings) {
+                addMapping(mapping);
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -216,24 +244,30 @@ public class FileMappingRepo {
      * depot mappings.
      */
     public void clearLocations() {
-        filesByLocal.clear();
-        Iterator<WeakReference<P4ClientFileMapping>> iter = files.iterator();
-        while (iter.hasNext()) {
-            WeakReference<P4ClientFileMapping> ref = iter.next();
-            final P4ClientFileMapping map = ref.get();
-            if (map == null) {
-                iter.remove();
-                // delay the cache miss check until the end.
-                cacheMissCount++;
-            } else {
-                map.updateLocalPath(null);
+        lock.lock();
+        try {
+            filesByLocal.clear();
+            Iterator<WeakReference<P4ClientFileMapping>> iter = files.iterator();
+            while (iter.hasNext()) {
+                WeakReference<P4ClientFileMapping> ref = iter.next();
+                final P4ClientFileMapping map = ref.get();
+                if (map == null) {
+                    iter.remove();
+                    // delay the cache miss check until the end.
+                    cacheMissCount++;
+                } else {
+                    map.updateLocalPath(null);
+                }
             }
-        }
-        if (cacheMissCount > CACHE_MISS_THRESHOLD) {
-            flush();
+            if (cacheMissCount > CACHE_MISS_THRESHOLD) {
+                flush();
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
+    // Must be run from within a write lock.
     private void addMapping(@NotNull final P4ClientFileMapping mapping) {
         final WeakReference<P4ClientFileMapping> originalRef = filesByLocal.remove(mapping.getLocalFilePath());
         if (originalRef != null) {
@@ -251,6 +285,7 @@ public class FileMappingRepo {
     }
 
 
+    // Must be run from within a write lock.
     private void flush() {
         Set<Reference<? extends P4ClientFileMapping>> refs = new HashSet<Reference<? extends P4ClientFileMapping>>();
         Reference<? extends P4ClientFileMapping> ref;
@@ -302,18 +337,21 @@ public class FileMappingRepo {
         return filesByDepot.get(internalDepotPath(depot));
     }
 
+    // Must be run from within a write lock.
     private void addByDepot(@Nullable String depot, @NotNull WeakReference<P4ClientFileMapping> map) {
         if (depot != null) {
             filesByDepot.put(internalDepotPath(depot), map);
         }
     }
 
+    // Must be run from within a write lock.
     private void removeByDepot(@Nullable String depot) {
         if (depot != null) {
             filesByDepot.remove(internalDepotPath(depot));
         }
     }
 
+    // Must be run from within a write lock.
     @Nullable
     private <T> P4ClientFileMapping cacheGet(@NotNull Map<T, WeakReference<P4ClientFileMapping>> mapper, @NotNull T key) {
         final WeakReference<P4ClientFileMapping> ref = mapper.get(key);
@@ -348,8 +386,8 @@ public class FileMappingRepo {
     static class WeakIterable implements Iterable<P4ClientFileMapping> {
         private final Iterable<WeakReference<P4ClientFileMapping>> proxy;
 
-        WeakIterable(final Iterable<WeakReference<P4ClientFileMapping>> proxy) {
-            this.proxy = proxy;
+        WeakIterable(final Collection<WeakReference<P4ClientFileMapping>> proxy) {
+            this.proxy = new ArrayList<WeakReference<P4ClientFileMapping>>(proxy);
         }
 
         @Override

@@ -72,6 +72,7 @@ public class PendingUpdateState extends CachedState {
     @Override
     protected void serialize(@NotNull Element wrapper, @NotNull EncodeReferences refs) {
         wrapper.setAttribute("a", action.toString());
+        serializeDate(wrapper);
         for (String id: ids) {
             Element el = new Element("i");
             wrapper.addContent(el);
@@ -111,6 +112,13 @@ public class PendingUpdateState extends CachedState {
                 params.put(key, val);
             }
         }
-        return new PendingUpdateState(action, ids, params);
+        final PendingUpdateState ret = new PendingUpdateState(action, ids, params);
+        ret.deserializeDate(wrapper);
+        return ret;
+    }
+
+    @Override
+    public String toString() {
+        return "Update(" + action + ":" + ids + "; " + parameters + ")";
     }
 }

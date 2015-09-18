@@ -37,31 +37,26 @@
 package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigProject;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
-import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Maps the specific Perforce configuration object to the corresponding Project directories it covers.
  * <p/>
- * These are created via {@link P4ConfigProject#loadProjectConfigSources(Project)}.
+ * These are created via {@link P4ConfigProject#loadProjectConfigSources()}.
  */
 public class ProjectConfigSource {
     private final Project project;
-    private final List<FilePath> projectSourceDirs;
+    private final List<VirtualFile> projectSourceDirs;
     private final String clientName;
     private final ServerConfig configuration;
     private final ClientServerId clientServerId;
@@ -71,35 +66,34 @@ public class ProjectConfigSource {
         private final String clientName;
         private final ServerConfig serverConfig;
         private final P4Config baseConfig;
-        private final Set<FilePath> dirs = new HashSet<FilePath>();
+        private final Set<VirtualFile> dirs = new HashSet<VirtualFile>();
 
         public Builder(@NotNull Project project, @NotNull P4Config config) {
             this.project = project;
             this.baseConfig = config;
             this.clientName = config.getClientname();
-            this.serverConfig = ServerConfig.createNewServerConfig(config);
+            this.serverConfig = ServerConfig.createNewServerConfig(project, config);
         }
 
         public boolean isSame(@NotNull P4Config other) {
-            final ServerConfig newConfig = ServerConfig.createNewServerConfig(other);
-            return newConfig != null && newConfig.equals(serverConfig) && Comparing.equal(clientName, other.getClientname());
+            return new ManualP4Config(serverConfig, clientName).equals(other);
         }
 
         public void add(@NotNull VirtualFile dir) {
-            dirs.add(FilePathUtil.getFilePath(dir));
+            dirs.add(dir);
         }
 
         public ProjectConfigSource create() throws P4InvalidConfigException {
-            return new ProjectConfigSource(project, new ArrayList<FilePath>(dirs),
+            return new ProjectConfigSource(project, new ArrayList<VirtualFile>(dirs),
                     clientName, serverConfig);
         }
     }
 
 
-    ProjectConfigSource(@NotNull Project project, @NotNull List<FilePath> projectSourceDirs,
+    ProjectConfigSource(@NotNull Project project, @NotNull List<VirtualFile> projectSourceDirs,
             @Nullable String clientName, @NotNull ServerConfig configuration) {
         this.project = project;
-        this.projectSourceDirs = projectSourceDirs;
+        this.projectSourceDirs = Collections.unmodifiableList(projectSourceDirs);
         this.clientName = clientName;
         this.configuration = configuration;
         this.clientServerId = ClientServerId.create(configuration, clientName);
@@ -123,5 +117,10 @@ public class ProjectConfigSource {
     @NotNull
     public ClientServerId getClientServerId() {
         return clientServerId;
+    }
+
+    @NotNull
+    public List<VirtualFile> getProjectSourceDirs() {
+        return projectSourceDirs;
     }
 }

@@ -48,7 +48,7 @@ public class ManualP4Config implements P4Config {
     private boolean autoOffline = true;
     @Nullable
     private String password;
-    private boolean storePassword;
+    //private boolean storePassword;
     @Nullable
     private String clientHostname;
     @Nullable
@@ -71,7 +71,7 @@ public class ManualP4Config implements P4Config {
         this.connectionMethod = copy.getConnectionMethod();
         this.autoOffline = copy.isAutoOffline();
         this.password = copy.getPassword();
-        this.storePassword = copy.isPasswordStoredLocally();
+        //this.storePassword = copy.isPasswordStoredLocally();
         this.clientHostname = copy.getClientHostname();
         this.ignoreFileName = copy.getIgnoreFileName();
     }
@@ -88,7 +88,7 @@ public class ManualP4Config implements P4Config {
         this.connectionMethod = copy.getConnectionMethod();
         this.autoOffline = copy.isAutoOffline();
         this.password = null;
-        this.storePassword = copy.storePasswordLocally();
+        //this.storePassword = copy.storePasswordLocally();
         this.clientHostname = copy.getClientHostname();
         this.ignoreFileName = copy.getIgnoreFileName();
     }
@@ -242,10 +242,10 @@ public class ManualP4Config implements P4Config {
         this.configFile = configFile;
     }
 
-    @Override
-    public boolean isPasswordStoredLocally() {
-        return storePassword;
-    }
+    //@Override
+    //public boolean isPasswordStoredLocally() {
+    //    return storePassword;
+    //}
 
     @Nullable
     @Override
@@ -266,9 +266,9 @@ public class ManualP4Config implements P4Config {
         clientHostname = name;
     }
 
-    public void setPasswordStoredLocally(boolean store) {
-        this.storePassword = store;
-    }
+    //public void setPasswordStoredLocally(boolean store) {
+    //    this.storePassword = store;
+    //}
 
     @Override
     public boolean equals(Object o) {
@@ -285,7 +285,7 @@ public class ManualP4Config implements P4Config {
         return protocol == that.getProtocol() &&
                 connectionMethod == that.getConnectionMethod() &&
                 autoOffline == that.isAutoOffline() &&
-                storePassword == that.isPasswordStoredLocally() &&
+                //storePassword == that.isPasswordStoredLocally() &&
                 Comparing.equal(port, that.getPort()) &&
                 Comparing.equal(clientname, that.getClientname()) &&
                 Comparing.equal(username, that.getUsername()) &&
@@ -301,7 +301,7 @@ public class ManualP4Config implements P4Config {
     public int hashCode() {
         return (protocol == null ? 1 : protocol.hashCode()) +
                 (autoOffline ? 2 : 300) +
-                (storePassword ? 3 : 400) +
+                //(storePassword ? 3 : 400) +
                 connectionMethod.hashCode() +
                 (port == null ? 5 : port.hashCode()) +
                 (clientname == null ? 6 : clientname.hashCode()) +

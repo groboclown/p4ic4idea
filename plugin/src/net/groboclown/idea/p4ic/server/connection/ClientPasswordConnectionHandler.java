@@ -13,12 +13,17 @@
  */
 package net.groboclown.idea.p4ic.server.connection;
 
+import com.intellij.ide.passwordSafe.PasswordSafe;
+import com.intellij.ide.passwordSafe.PasswordSafeException;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.ConfigurationProblem;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
 import org.jetbrains.annotations.NotNull;
@@ -32,9 +37,11 @@ import java.util.Properties;
  * Does not look at the P4CONFIG.  Uses a password for authentication.
  */
 public class ClientPasswordConnectionHandler extends ConnectionHandler {
+    private static final Logger LOG = Logger.getInstance(ClientPasswordConnectionHandler.class);
+
     public static ClientPasswordConnectionHandler INSTANCE = new ClientPasswordConnectionHandler();
 
-    private ClientPasswordConnectionHandler() {
+    ClientPasswordConnectionHandler() {
         // stateless utility class
     }
 
@@ -58,16 +65,21 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
     }
 
     @Override
-    public void defaultAuthentication(@NotNull IOptionsServer server, @NotNull ServerConfig config, char[] password)
+    public void defaultAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config)
             throws P4JavaException {
-        if (password != null && password.length > 0) {
+        // Default login - use the user provided password from the config
+        String password = config.getPlaintextPassword();
+
+        if (password != null && password.length() > 0) {
             // If the password is blank, then there's no need for the
             // user to log in; in fact, that wil raise an error by Perforce
             try {
-                server.login(new String(password), new LoginOptions(false, true));
+                server.login(password, new LoginOptions(false, true));
             } catch (AccessException ex) {
+                // FIXME make based on error code
                 if (ex.getMessage().contains("'login' not necessary")) {
                     // ignore login and keep going
+                    LOG.info(config + ": User provided password, but  it is not necessary", ex);
                     // TODO tell the caller that the password should be forgotten
                 } else {
                     throw ex;
@@ -77,15 +89,20 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
     }
 
     @Override
-    public boolean forcedAuthentication(@NotNull IOptionsServer server, @NotNull ServerConfig config, char[] password) throws P4JavaException {
-        if (password != null && password.length > 0) {
-            // If the password is blank, then there's no need for the
-            // user to log in; in fact, that wil raise an error by Perforce
-            server.login(new String(password), new LoginOptions(false, true));
-            return true;
-        } else {
-            return false;
+    public boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config) throws P4JavaException {
+        try {
+            String password = PasswordSafe.getInstance().getPassword(project,
+                    P4Vcs.class, config.getServiceName());
+            if (password != null && password.length() > 0) {
+                // If the password is blank, then there's no need for the
+                // user to log in; in fact, that wil raise an error by Perforce
+                server.login(password, new LoginOptions(false, true));
+                return true;
+            }
+        } catch (PasswordSafeException e) {
+            LOG.info(e);
         }
+        return false;
     }
 
     @NotNull

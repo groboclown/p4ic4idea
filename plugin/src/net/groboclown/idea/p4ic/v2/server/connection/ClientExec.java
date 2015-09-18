@@ -22,7 +22,6 @@ import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerInfo;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.PasswordStore;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
@@ -34,7 +33,6 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -89,6 +87,8 @@ public class ClientExec {
 
 
     public void dispose() {
+        LOG.info("Disposing ClientExec");
+
         // in the future, this may clean up open connections
         synchronized (sync) {
             if (! disposed) {
@@ -108,7 +108,7 @@ public class ClientExec {
 
     static IServerInfo getServerInfo(@NotNull ServerConfig config)
             throws IOException, P4JavaException, URISyntaxException {
-        final IOptionsServer server = connectTo(null, ConnectionHandler.getHandlerFor(config), config,
+        final IOptionsServer server = connectTo(null, null, ConnectionHandler.getHandlerFor(config), config,
                 // temp dir doesn't matter for this call.
                 File.createTempFile("p4tempfile", "y"));
         try {
@@ -124,7 +124,7 @@ public class ClientExec {
         return p4RunFor(project, new P4Runner<T>() {
             @Override
             public T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
-                final IOptionsServer server = connectServer(getTempDir(project));
+                final IOptionsServer server = connectServer(project, getTempDir(project));
 
                 // note: we're not caching the client
                 final IClient client = loadClient(server);
@@ -151,7 +151,7 @@ public class ClientExec {
             @Override
             public T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 // disconnect happens as a separate activity.
-                return runner.run(connectServer(getTempDir(project)), new WithClientCount(config.getServiceName()));
+                return runner.run(connectServer(project, getTempDir(project)), new WithClientCount(config.getServiceName()));
             }
         }, 0, triedLogin ? 1 : 0);
     }
@@ -183,13 +183,14 @@ public class ClientExec {
 
 
     @NotNull
-    private IOptionsServer connectServer(@NotNull final File tempDir) throws P4JavaException, URISyntaxException {
+    private IOptionsServer connectServer(@Nullable Project project, @NotNull final File tempDir)
+            throws P4JavaException, URISyntaxException {
         synchronized (sync) {
             if (disposed) {
                 throw new ConnectionException(P4Bundle.message("error.p4exec.disposed"));
             }
             if (cachedServer == null || ! cachedServer.isConnected()) {
-                cachedServer = connectTo(clientName, connectionHandler, config, tempDir);
+                cachedServer = connectTo(project, clientName, connectionHandler, config, tempDir);
             }
         }
 
@@ -199,8 +200,10 @@ public class ClientExec {
 
 
     @NotNull
-    private static IOptionsServer connectTo(@Nullable String clientName, @NotNull ConnectionHandler connectionHandler,
-            @NotNull ServerConfig config, @NotNull File tempDir) throws P4JavaException, URISyntaxException {
+    private static IOptionsServer connectTo(@Nullable Project project,
+            @Nullable String clientName, @NotNull ConnectionHandler connectionHandler,
+            @NotNull ServerConfig config, @NotNull File tempDir)
+            throws P4JavaException, URISyntaxException {
         final Properties properties;
         final String url;
         final IOptionsServer server;
@@ -229,14 +232,7 @@ public class ClientExec {
         // if there is a password problem, we still want
         // to maintain our cached server, so a retry doesn't
         // recreate the server connection again.
-        char[] password = PasswordStore.getOptionalPasswordFor(config);
-        try {
-            connectionHandler.defaultAuthentication(server, config, password);
-        } finally {
-            if (password != null) {
-                Arrays.fill(password, (char) 0);
-            }
-        }
+        connectionHandler.defaultAuthentication(project, server, config);
 
         return server;
     }
@@ -299,14 +295,12 @@ public class ClientExec {
             throw new P4ApiException(e);
         } catch (AccessException e) {
             LOG.info("Problem accessing resources (password problem)", e);
-            if (loginCount > 1) {
+            if (loginCount >= 1) {
                 P4LoginException ex = new P4LoginException(project, getServerConfig(), e);
                 AlertManager.getInstance().addCriticalError(new LoginFailedHandler(), ex);
                 throw ex;
-            } else if (loginCount == 1) {
-                onPasswordProblem(project, true, new P4LoginException(e));
             } else {
-                onPasswordProblem(project, false, new P4LoginException(e));
+                onPasswordProblem(project, new P4LoginException(e));
             }
             return p4RunFor(project, runner, retryCount, loginCount + 1);
         } catch (ConfigException e) {
@@ -383,15 +377,13 @@ public class ClientExec {
         } catch (RequestException e) {
             LOG.info("Request problem", e);
             if (isPasswordProblem(e)) {
-                if (loginCount > 1) {
+                if (loginCount >= 1) {
                     connectedController.onConfigInvalid();
                     P4LoginException ex = new P4LoginException(project, getServerConfig(), e);
                     AlertManager.getInstance().addCriticalError(new LoginFailedHandler(), ex);
                     throw ex;
-                } else if (loginCount == 1) {
-                    onPasswordProblem(project, true, new P4LoginException(e));
                 } else {
-                    onPasswordProblem(project, false, new P4LoginException(e));
+                    onPasswordProblem(project, new P4LoginException(e));
                 }
                 return p4RunFor(project, runner, retryCount, loginCount + 1);
             } else {
@@ -458,42 +450,18 @@ public class ClientExec {
         }
     }
 
-    private void onPasswordProblem(@NotNull Project project, boolean triedLogin, @NotNull P4LoginException e)
+    private void onPasswordProblem(@NotNull final Project project, @NotNull P4LoginException e)
             throws VcsException {
-        if (triedLogin) {
-            final char[] password = PasswordStore.getRequiredPasswordFor(project, config, true);
-            try {
-                boolean res = runWithServer(project, new WithServer<Boolean>() {
-                    @Override
-                    public Boolean run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
-                        count.invoke("forcedAuthentication");
-                        return connectionHandler.forcedAuthentication(server, config, password);
-                    }
-                }, true);
-                if (!res) {
-                    throw e;
-                }
-            } finally {
-                if (password != null) {
-                    Arrays.fill(password, (char) 0);
-                }
+
+        boolean res = runWithServer(project, new WithServer<Boolean>() {
+            @Override
+            public Boolean run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+                count.invoke("forcedAuthentication");
+                return connectionHandler.forcedAuthentication(project, server, config);
             }
-        } else {
-            final char[] password = PasswordStore.getOptionalPasswordFor(config);
-            try {
-                runWithServer(project, new WithServer<Boolean>() {
-                    @Override
-                    public Boolean run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
-                        count.invoke("defaultAuthentication");
-                        connectionHandler.defaultAuthentication(server, config, password);
-                        return null;
-                    }
-                }, true);
-            } finally {
-                if (password != null) {
-                    Arrays.fill(password, (char) 0);
-                }
-            }
+        }, true);
+        if (!res) {
+            throw e;
         }
     }
 

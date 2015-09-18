@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.v2.server;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.config.ServerConfig;
@@ -33,10 +34,8 @@ import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.io.File;
+import java.util.*;
 
 /**
  * Top-level manager for handling communication with the Perforce server
@@ -100,22 +99,29 @@ public class P4Server {
      * it to be at that location, and not at its real location.
      *
      * @param file file to match against this client's root directories.
-     * @return the directory depth at which this file is in the client.  This is the deepest depth for all
+     * @return the directory depth at which this file is in the client.  This is the shallowest depth for all
      *      the client roots.  It returns -1 if there is no match.
      */
     public int getFilePathMatchDepth(@NotNull FilePath file) throws InterruptedException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Finding depth for " + file + " in " + getClientName());
+        }
 
-        // FIXME return the *shallowest* depth, not the deepest depth.
+        final List<File> inputParts = getPathParts(file);
 
-
-        int deepest = -1;
-        for (VirtualFile root: getClientRoots()) {
-            final List<FilePath> inputParts = getPathParts(file);
-            final List<FilePath> rootParts = getPathParts(FilePathUtil.getFilePath(root));
+        boolean hadMatch = false;
+        int shallowest = Integer.MAX_VALUE;
+        for (List<File> rootParts: getRoots()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("- checking " + rootParts.get(rootParts.size() - 1));
+            }
 
             if (inputParts.size() < rootParts.size()) {
                 // input is at a higher ancestor level than the root parts,
                 // so there's no way it could be in this root.
+
+                LOG.debug("-- input is parent of root");
+
                 continue;
             }
 
@@ -123,25 +129,103 @@ public class P4Server {
             // We should be able to just call input.isUnder(configRoot), but
             // that seems to be buggy - it reported that "/a/b/c" was under "/a/b/d".
 
-            final FilePath sameRootDepth = inputParts.get(rootParts.size() - 1);
-            if (sameRootDepth.equals(root)) {
+            final File sameRootDepth = inputParts.get(rootParts.size() - 1);
+            if (FileUtil.filesEqual(sameRootDepth, rootParts.get(rootParts.size() - 1))) {
+                LOG.debug("-- matched");
+
                 // it's a match.  The input file ancestor path that is
                 // at the same directory depth as the config root is the same
                 // path.
-                if (deepest < rootParts.size()) {
-                    deepest = rootParts.size();
+                if (shallowest > rootParts.size()) {
+                    shallowest = rootParts.size();
+                    LOG.debug("--- shallowest");
+                    hadMatch = true;
                 }
 
                 // Redundant - no code after this if block
                 //continue;
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug("-- not matched " + rootParts.get(rootParts.size() - 1) + " vs " + file + " (" + sameRootDepth + ")");
             }
 
             // Not under the same path, so it's not a match.  Advance to next root.
         }
-        return deepest;
+        return hadMatch ? shallowest : -1;
     }
 
-    public List<VirtualFile> getClientRoots() throws InterruptedException {
+    /**
+     * The root directories that this perforce client covers in this project.
+     * It starts with the client workspace directories, then those are stripped
+     * down to just the files in the project, then those are limited by the
+     * location of the perforce config directory.
+     *
+     * @return the actual client root directories used by the workspace,
+     *      split by parent directories.
+     * @throws InterruptedException
+     */
+    public List<List<File>> getRoots() throws InterruptedException {
+        // use the ProjectConfigSource as the lowest level these can be under.
+        final Set<List<File>> ret = new HashSet<List<File>>();
+        final List<VirtualFile> projectRoots = source.getProjectSourceDirs();
+        List<List<File>> projectRootsParts = new ArrayList<List<File>>(projectRoots.size());
+        for (VirtualFile projectRoot: projectRoots) {
+            projectRootsParts.add(getPathParts(FilePathUtil.getFilePath(projectRoot)));
+        }
+
+        LOG.debug("- project roots: " + projectRoots);
+        LOG.debug("- client roots: " + getProjectClientRoots());
+
+        // VfsUtilCore.isAncestor seems to bug out at times.
+        // Use the File, File version instead.
+
+        for (VirtualFile root : getProjectClientRoots()) {
+            final List<File> rootParts = getPathParts(FilePathUtil.getFilePath(root));
+            for (List<File> projectRootParts : projectRootsParts) {
+                if (projectRootParts.size() >= rootParts.size()) {
+                    // projectRoot could be a child of (or is) root
+                    if (FileUtil.filesEqual(
+                            projectRootParts.get(rootParts.size() - 1),
+                            rootParts.get(rootParts.size() - 1))) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("-- projectRoot " + projectRootParts.get(projectRootParts.size() - 1) +
+                                    " child of " + root + ", so using the project root");
+                        }
+                        ret.add(projectRootParts);
+                    }
+                } else if (rootParts.size() >= projectRootParts.size()) {
+                    // root could be a child of (or is) projectRoot
+                    if (FileUtil.filesEqual(
+                            projectRootParts.get(projectRootParts.size() - 1),
+                            rootParts.get(projectRootParts.size() - 1))) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("-- root " + root +
+                                    " child of " + projectRootParts
+                                    .get(projectRootParts.size() - 1) + ", so using the root");
+                        }
+                        ret.add(rootParts);
+                    }
+                }
+            }
+
+            // If it is not in any project root, then ignore it.
+        }
+
+        // The list could be further simplified, but this should
+        // be sufficient.  (Simplification: remove directories that
+        // are children of existing directories in the list)
+
+        return new ArrayList<List<File>>(ret);
+    }
+
+
+    /**
+     * Returns the client workspace roots limited to the project.  These may be
+     * wider than what should be used.
+     *
+     * @return project-based roots
+     * @throws InterruptedException
+     */
+    private List<VirtualFile> getProjectClientRoots() throws InterruptedException {
         return connection.cacheQuery(new CacheQuery<List<VirtualFile>>() {
             @Override
             public List<VirtualFile> query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
@@ -151,7 +235,6 @@ public class P4Server {
                 } else {
                     LOG.info("working offline; using cached files.");
                 }
-                // FIXME use the ProjectConfigSource as the lowest level these can be under.
                 return mgr.getClientRoots(project, alertManager);
             }
         });
@@ -181,6 +264,7 @@ public class P4Server {
      * @param changelistId
      */
     public void addOrEditFiles(@NotNull final List<VirtualFile> files, final int changelistId) {
+        LOG.info("Add or edit to " + changelistId + " files " + files);
         connection.queueUpdates(project, new CreateUpdate() {
             @Override
             public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
@@ -188,7 +272,10 @@ public class P4Server {
                 for (VirtualFile file : files) {
                     final PendingUpdateState update = mgr.editFile(FilePathUtil.getFilePath(file), changelistId);
                     if (update != null) {
+                        LOG.info("add pending update " + update);
                         updates.add(update);
+                    } else {
+                        LOG.info("add/edit caused no update: " + file);
                     }
                 }
                 return updates;
@@ -227,11 +314,11 @@ public class P4Server {
     }
 
     @NotNull
-    private List<FilePath> getPathParts(@NotNull final FilePath child) {
-        List<FilePath> ret = new ArrayList<FilePath>();
+    private List<File> getPathParts(@NotNull final FilePath child) {
+        List<File> ret = new ArrayList<File>();
         FilePath next = child;
         while (next != null) {
-            ret.add(next);
+            ret.add(next.getIOFile());
             next = next.getParentPath();
         }
         Collections.reverse(ret);

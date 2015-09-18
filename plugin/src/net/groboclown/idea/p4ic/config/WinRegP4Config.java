@@ -177,10 +177,10 @@ public class WinRegP4Config implements P4Config {
         return configFile;
     }
 
-    @Override
-    public boolean isPasswordStoredLocally() {
-        return false;
-    }
+    //@Override
+    //public boolean isPasswordStoredLocally() {
+    //    return false;
+    //}
 
     @Nullable
     @Override

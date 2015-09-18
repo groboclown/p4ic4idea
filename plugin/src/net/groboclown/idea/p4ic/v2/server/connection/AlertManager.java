@@ -76,6 +76,22 @@ public class AlertManager implements ApplicationComponent {
         }
     }
 
+
+    public void addWarnings(@NotNull final String message, @NotNull final List<P4StatusMessage> msgs,
+            final boolean ignoreFileNotFound) {
+        List<String> statusMessages = new ArrayList<String>(msgs.size());
+        for (P4StatusMessage msg : msgs) {
+            if (msg != null && msg.isError() && (!ignoreFileNotFound ||
+                    !(msg.isFileNotFoundError() || msg.isNoSuchFilesMessage()))) {
+                statusMessages.add(msg.toString());
+            }
+        }
+        if (! statusMessages.isEmpty()) {
+            // TODO make as a local message
+            addWarning(message + ": " + statusMessages, null);
+        }
+    }
+
     public void addNotice(@NotNull @Nls final String message, @Nullable final VcsException ex) {
         if (ex != null && throwableHandled.isHandled(ex)) {
             LOG.debug("Skipped duplicate handling of " + ex);
@@ -192,7 +208,7 @@ public class AlertManager implements ApplicationComponent {
     private void handleWarnings(@NotNull final List<WarningMsg> warnings) {
         // FIXME handle all the warnings in a single UI message.
         for (WarningMsg warning : warnings) {
-            LOG.error(warning.message, warning.warning);
+            LOG.warn(warning.message, warning.warning);
         }
     }
 
@@ -289,6 +305,7 @@ public class AlertManager implements ApplicationComponent {
         void runHandlerInEDT() {
             ApplicationManager.getApplication().assertIsDispatchThread();
             try {
+                LOG.info("Handling error " + error);
                 error.handleError(when);
             } catch (Exception e) {
                 LOG.warn("Error handler " + error.getClass().getSimpleName() + " caused error", e);

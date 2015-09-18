@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.perforce.p4java.client.IClientViewMapping;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +29,8 @@ import java.util.List;
  * detect when the cached files should be thrown out and reloaded.
  */
 public class P4WorkspaceViewState extends CachedState {
+    private static final Logger LOG = Logger.getInstance(P4WorkspaceViewState.class);
+
     private final String name;
     private List<String> roots = new ArrayList<String>();
     private List<ViewMapping> depotWorkspaceMapping = new ArrayList<ViewMapping>();
@@ -122,6 +125,8 @@ public class P4WorkspaceViewState extends CachedState {
                 ret.depotWorkspaceMapping.add(new ViewMapping(d, w));
             }
         }
+        ret.deserializeDate(wrapper);
+        LOG.info("deserialized workspace " + ret.getName());
         return ret;
     }
 

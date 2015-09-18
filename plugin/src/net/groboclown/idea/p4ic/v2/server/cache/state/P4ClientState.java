@@ -65,7 +65,9 @@ public class P4ClientState {
 
     public void serialize(@NotNull Element wrapper, @NotNull EncodeReferences refs) {
         wrapper.setAttribute("serverConnection", clientServerId.getServerConfigId());
-        wrapper.setAttribute("clientName", clientServerId.getClientId());
+        if (clientServerId.getClientId() != null) {
+            wrapper.setAttribute("clientName", clientServerId.getClientId());
+        }
         wrapper.setAttribute("isServerCaseInsensitive", Boolean.toString(isServerCaseInsensitive));
 
         {

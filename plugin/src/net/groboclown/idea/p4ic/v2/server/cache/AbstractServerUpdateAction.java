@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
@@ -24,8 +25,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 
 public abstract class AbstractServerUpdateAction implements ServerUpdateAction {
+    private static final Logger LOG = Logger.getInstance(AbstractServerUpdateAction.class);
+
     public enum ExecutionStatus {
-        PASS,
+        RELOAD_CACHE,
         NO_OP,
         RETRY,
         FAIL
@@ -48,13 +51,18 @@ public abstract class AbstractServerUpdateAction implements ServerUpdateAction {
     public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
             @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
             throws InterruptedException {
+        // FIXME debug
+        LOG.info("Performing action " + getClass().getSimpleName() + " on " + pendingUpdateStates);
         final ExecutionStatus result = executeAction(exec, clientCacheManager, alerts);
-        if (result == ExecutionStatus.PASS) {
+        LOG.info("Result: " + result);
+        if (result == ExecutionStatus.RELOAD_CACHE) {
+            LOG.info("Updating the cache");
             ServerQuery query = updateCache(clientCacheManager, alerts);
             if (query != null) {
                 connection.query(exec.getProject(), query);
             }
         } else if (result == ExecutionStatus.RETRY) {
+            LOG.info("Retrying the action");
             requeue(exec.getProject(), connection, alerts);
         }
         // failure: don't retry, don't update
@@ -62,11 +70,11 @@ public abstract class AbstractServerUpdateAction implements ServerUpdateAction {
     }
 
     /**
-     * Run the action, and return PASS if it executed without an issue.
+     * Run the action, and return RELOAD_CACHE if it executed without an issue.
      *
      * @param exec server executor
      * @param alerts UI interactions
-     * @return PASS if the execution worked correctly and the cache
+     * @return RELOAD_CACHE if the execution worked correctly and the cache
      *   must be updated, FAIL if the execution did not work, the
      *   cache should not be updated, and the execution should
      *   not be rerun, and RETRY if the execution did not work,
@@ -99,5 +107,11 @@ public abstract class AbstractServerUpdateAction implements ServerUpdateAction {
             @NotNull AlertManager alerts)
     {
         connection.requeueAction(project, this);
+    }
+
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + ":" + pendingUpdateStates;
     }
 }

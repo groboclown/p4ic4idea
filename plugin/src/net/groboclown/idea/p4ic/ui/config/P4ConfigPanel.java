@@ -63,8 +63,6 @@ public class P4ConfigPanel {
     private EnvConnectionPanel myEnvConnectionPanel;
     private JPanel myConnectionTypeContainerPanel;
     private JLabel myConnectionDescriptionLabel;
-    private JCheckBox mySavePasswordsCheckBox;
-    private JLabel myPasswordWarning;
     private RelP4ConfigConnectionPanel myRelP4ConfigPanel;
     private JComboBox/*<String>*/ myResolvePath; // JDK 1.6 does not have generic combo box
     private JTextArea myResolvedValuesField;
@@ -165,9 +163,9 @@ public class P4ConfigPanel {
             return true;
         }
 
-        if (config.isPasswordStoredLocally() != mySavePasswordsCheckBox.isSelected()) {
-            return true;
-        }
+        //if (config.isPasswordStoredLocally() != mySavePasswordsCheckBox.isSelected()) {
+        //    return true;
+        //}
 
         Object selectedItem = myConnectionChoice.getSelectedItem();
         assert (selectedItem != null && (selectedItem instanceof ConnectionPanel));
@@ -188,7 +186,7 @@ public class P4ConfigPanel {
                 config.getConnectionMethod());
 
         mySilentlyGoOfflineOnCheckBox.setSelected(config.isAutoOffline());
-        mySavePasswordsCheckBox.setSelected(config.isPasswordStoredLocally());
+        //mySavePasswordsCheckBox.setSelected(config.isPasswordStoredLocally());
 
 
         // ----------------------------------------------------------------
@@ -233,7 +231,7 @@ public class P4ConfigPanel {
         }
 
         config.setAutoOffline(mySilentlyGoOfflineOnCheckBox.isSelected());
-        config.setPasswordStoredLocally(mySavePasswordsCheckBox.isSelected());
+        //config.setPasswordStoredLocally(mySavePasswordsCheckBox.isSelected());
     }
 
 
@@ -576,7 +574,7 @@ public class P4ConfigPanel {
     private void $$$setupUI$$$() {
         createUIComponents();
         myMainPanel = new JPanel();
-        myMainPanel.setLayout(new GridLayoutManager(11, 2, new Insets(0, 0, 0, 0), -1, -1));
+        myMainPanel.setLayout(new GridLayoutManager(10, 2, new Insets(0, 0, 0, 0), -1, -1));
         final JLabel label1 = new JLabel();
         label1.setHorizontalAlignment(10);
         this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
@@ -686,38 +684,8 @@ public class P4ConfigPanel {
         myConnectionDescriptionLabel.setVerticalAlignment(1);
         panel5.add(myConnectionDescriptionLabel, BorderLayout.CENTER);
         final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         myMainPanel.add(panel6,
-                new GridConstraints(6, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
-                        0, false));
-        mySavePasswordsCheckBox = new JCheckBox();
-        this.$$$loadButtonText$$$(mySavePasswordsCheckBox,
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("connection.password.save"));
-        mySavePasswordsCheckBox.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("config.panel.save_passwords.tooltip"));
-        panel6.add(mySavePasswordsCheckBox,
-                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
-                        0, false));
-        final Spacer spacer2 = new Spacer();
-        panel6.add(spacer2,
-                new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        myPasswordWarning = new JLabel();
-        myPasswordWarning.setForeground(new Color(-65536));
-        this.$$$loadLabelText$$$(myPasswordWarning, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("configuration.password-warning"));
-        panel6.add(myPasswordWarning,
-                new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
-                        2, false));
-        final JPanel panel7 = new JPanel();
-        panel7.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        myMainPanel.add(panel7,
                 new GridConstraints(5, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
@@ -727,49 +695,49 @@ public class P4ConfigPanel {
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.autoconnect"));
         mySilentlyGoOfflineOnCheckBox.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.panel.silent.tooltip"));
-        panel7.add(mySilentlyGoOfflineOnCheckBox,
+        panel6.add(mySilentlyGoOfflineOnCheckBox,
                 new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel8 = new JPanel();
-        panel8.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        myMainPanel.add(panel8,
-                new GridConstraints(7, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+        final JPanel panel7 = new JPanel();
+        panel7.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        myMainPanel.add(panel7,
+                new GridConstraints(6, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
                         0, false));
-        final JPanel panel9 = new JPanel();
-        panel9.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panel8.add(panel9, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+        final JPanel panel8 = new JPanel();
+        panel8.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel7.add(panel8, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                 GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                 GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
                 false));
         myResolvePathLabel = new JLabel();
         this.$$$loadLabelText$$$(myResolvePathLabel,
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.resolved.path"));
-        panel9.add(myResolvePathLabel,
+        panel8.add(myResolvePathLabel,
                 new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
         myResolvePath = new JComboBox();
         myResolvePath.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.resolve.configfile.tooltip"));
-        panel9.add(myResolvePath,
+        panel8.add(myResolvePath,
                 new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
                         GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
-        final Spacer spacer3 = new Spacer();
-        myMainPanel.add(spacer3,
-                new GridConstraints(10, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
+        final Spacer spacer2 = new Spacer();
+        myMainPanel.add(spacer2,
+                new GridConstraints(9, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
                         GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JLabel label4 = new JLabel();
         this.$$$loadLabelText$$$(label4, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.resolved.title"));
-        myMainPanel.add(label4, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+        myMainPanel.add(label4, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         myMainPanel.add(scrollPane1,
-                new GridConstraints(8, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                new GridConstraints(7, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null,
                         0, false));
@@ -787,7 +755,7 @@ public class P4ConfigPanel {
         this.$$$loadButtonText$$$(myRefreshResolved, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.resolve.refresh"));
         myMainPanel.add(myRefreshResolved,
-                new GridConstraints(9, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                new GridConstraints(8, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         label1.setLabelFor(myConnectionChoice);

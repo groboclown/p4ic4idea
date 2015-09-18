@@ -13,23 +13,21 @@
  */
 package net.groboclown.idea.p4ic.server.connection;
 
+import com.intellij.openapi.project.Project;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.ConfigurationProblem;
-import net.groboclown.idea.p4ic.server.ConnectionHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-public class AuthTicketConnectionHandler extends ConnectionHandler {
+public class AuthTicketConnectionHandler extends ClientPasswordConnectionHandler {
     public static AuthTicketConnectionHandler INSTANCE = new AuthTicketConnectionHandler();
 
     private AuthTicketConnectionHandler() {
@@ -38,8 +36,7 @@ public class AuthTicketConnectionHandler extends ConnectionHandler {
 
     @Override
     public Properties getConnectionProperties(@NotNull ServerConfig config, @Nullable String clientName) {
-        Properties ret = initializeConnectionProperties(config);
-        ret.setProperty(PropertyDefs.USER_NAME_KEY, config.getUsername());
+        Properties ret = super.getConnectionProperties(config, clientName);
         if (config.getAuthTicket() != null) {
             ret.setProperty(PropertyDefs.TICKET_PATH_KEY, config.getAuthTicket().getAbsolutePath());
         }
@@ -48,30 +45,14 @@ public class AuthTicketConnectionHandler extends ConnectionHandler {
     }
 
     @Override
-    public void defaultAuthentication(@NotNull IOptionsServer server, @NotNull ServerConfig config, @NotNull char[] password) throws P4JavaException {
+    public void defaultAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config) throws P4JavaException {
         // no need to login - assume the ticket is valid.
-    }
-
-    @Override
-    public boolean forcedAuthentication(@NotNull IOptionsServer server, @NotNull ServerConfig config, @NotNull char[] password) throws P4JavaException {
-        try {
-            if (password.length > 0) {
-                // If the password is blank, then there's no need for the
-                // user to log in; in fact, that wil raise an error.
-                server.login(new String(password), new LoginOptions(false, true));
-                return true;
-            } else {
-                return false;
-            }
-        } finally {
-            Arrays.fill(password, (char) 0);
-        }
     }
 
     @NotNull
     @Override
     public List<ConfigurationProblem> getConfigProblems(@NotNull final ServerConfig config) {
-        List<ConfigurationProblem> problems = new ArrayList<ConfigurationProblem>();
+        List<ConfigurationProblem> problems = new ArrayList<ConfigurationProblem>(super.getConfigProblems(config));
         if (config.getAuthTicket() == null) {
             problems.add(new ConfigurationProblem(P4Bundle.message("configuration.problem.authticket")));
         }

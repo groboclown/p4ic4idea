@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.server.connection;
 
+import com.intellij.openapi.project.Project;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.config.ServerConfig;
@@ -43,15 +44,15 @@ public class EnvConnectionHandler extends ConnectionHandler {
     }
 
     @Override
-    public void defaultAuthentication(@NotNull IOptionsServer server, @NotNull ServerConfig config, char[] password)
+    public void defaultAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config)
             throws P4JavaException {
-        discoverConnectionMethod(config).defaultAuthentication(server, config, password);
+        discoverConnectionMethod(config).defaultAuthentication(project, server, config);
     }
 
     @Override
-    public boolean forcedAuthentication(@NotNull IOptionsServer server, @NotNull ServerConfig config, char[] password)
+    public boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config)
             throws P4JavaException {
-        return discoverConnectionMethod(config).forcedAuthentication(server, config, password);
+        return discoverConnectionMethod(config).forcedAuthentication(project, server, config);
     }
 
     @NotNull

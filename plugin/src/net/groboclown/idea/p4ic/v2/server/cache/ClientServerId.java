@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.v2.server.cache;
 
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.P4Config;
@@ -45,9 +46,9 @@ public final class ClientServerId {
     }
 
     @Nullable
-    public static ClientServerId create(@NotNull P4Config config)
+    public static ClientServerId create(@NotNull Project project, @NotNull P4Config config)
             throws NullPointerException {
-        final ServerConfig serverConfig = ServerConfig.createNewServerConfig(config);
+        final ServerConfig serverConfig = ServerConfig.createNewServerConfig(project, config);
         if (serverConfig == null || config.getClientname() == null) {
             return null;
         }

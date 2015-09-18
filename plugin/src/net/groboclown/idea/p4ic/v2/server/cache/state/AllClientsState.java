@@ -17,18 +17,29 @@ package net.groboclown.idea.p4ic.v2.server.cache.state;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.*;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.messages.MessageBusConnection;
+import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
+import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
+import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+
+// FIXME the corresponding generated xml file seems to be
+// removed either when the plugin is updated, or when the IDE is upgraded.
 
 /**
  * Top level state storage for the view of all the clients.  This is per workspace.
@@ -39,9 +50,9 @@ import java.util.concurrent.Callable;
  * messaging of the objects for when the state changes.
  */
 @State(
-        name = "PerforceCachedServerState",
+        name = "PerforceCachedClientServerState",
         storages = {
-                @Storage(file = StoragePathMacros.APP_CONFIG + "/perforce-state.xml")
+                @Storage(file = StoragePathMacros.APP_CONFIG + "/perforce.xml")
         }
 )
 public class AllClientsState implements ApplicationComponent, PersistentStateComponent<Element> {
@@ -86,8 +97,22 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
     }
 
     public void removeClientState(@NotNull ClientServerId client) {
-        // FIXME Called when the client is no longer used.
-        throw new IllegalStateException("not implemented");
+        if (client.getClientId() == null) {
+            // ignore
+            return;
+        }
+
+        // FIXME it looks like this is too aggressively called.
+
+        // FIXME debug
+        LOG.info("Removing client cache " + client, new Exception("stack capture"));
+        synchronized (clientStates) {
+            final ClientLocalServerState state = clientStates.get(client);
+            if (state != null) {
+                clientStates.remove(client);
+                LOG.warn("Removing client from cache storage: " + client, new Exception());
+            }
+        }
     }
 
 
@@ -114,7 +139,7 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
             clientStates.clear();
             DecodeReferences refs = DecodeReferences.deserialize(state);
             for (Element child : state.getChildren("client-state")) {
-                ClientServerId id = ClientServerId.deserialize(state);
+                ClientServerId id = ClientServerId.deserialize(child);
                 if (id != null) {
                     ClientLocalServerState localServerState = ClientLocalServerState.deserialize(child, refs);
                     if (localServerState != null) {
@@ -129,19 +154,33 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
     public void initComponent() {
         messageBus = ApplicationManager.getApplication().getMessageBus().connect();
 
-        // FIXME listen to events, which trigger a simulated server update or local update.
-        // That's a project for the far off future; for the moment, that makes things
-        // way too complicated.
+        // TODO are these listeners necessary?
+        Events.appBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
+            @Override
+            public void configUpdated(@NotNull final Project project,
+                    @NotNull final List<ProjectConfigSource> sources) {
+                // FIXME implement
+            }
+        });
+        Events.appConfigInvalid(messageBus, new ConfigInvalidListener() {
+            @Override
+            public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
+                    @NotNull final P4InvalidConfigException ex) {
+                // FIXME implement
+            }
+        });
     }
 
     @Override
     public void disposeComponent() {
-        messageBus.disconnect();
+        if (messageBus != null) {
+            messageBus.disconnect();
+        }
     }
 
     @NotNull
     @Override
     public String getComponentName() {
-        return "p4-client-state";
+        return "PerforceCachedClientServerState";
     }
 }

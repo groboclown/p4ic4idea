@@ -29,8 +29,13 @@ public class ServerConfigImpl extends ServerConfig {
     private final String serverFingerprint;
     private final String clientHostname;
     private final String ignoreFileName;
+
+    // TODO this is a bit of a hole.
+    // It should be encrypted while in memory.
+    private final String password;
+
     private final boolean isAutoOffline;
-    private final boolean storePasswordLocally;
+    //private final boolean storePasswordLocally;
 
 
     ServerConfigImpl(@NotNull P4Config proxy) {
@@ -38,7 +43,7 @@ public class ServerConfigImpl extends ServerConfig {
                 proxy.getAuthTicketPath() == null ? null : new File(proxy.getAuthTicketPath()),
                 proxy.getTrustTicketPath() == null ? null : new File(proxy.getTrustTicketPath()),
                 proxy.getServerFingerprint(), proxy.getClientHostname(), proxy.getIgnoreFileName(),
-                proxy.isAutoOffline(), proxy.isPasswordStoredLocally());
+                proxy.isAutoOffline(), proxy.getPassword());
     }
 
 
@@ -46,7 +51,8 @@ public class ServerConfigImpl extends ServerConfig {
             @NotNull String username, @NotNull P4Config.ConnectionMethod connectionMethod,
             @Nullable File authTicket, @Nullable File trustTicket,
             @Nullable String serverFingerprint, @Nullable String clientHostname,
-            @Nullable String ignoreFileName, boolean isAutoOffline, boolean storePasswordLocally) {
+            @Nullable String ignoreFileName, boolean isAutoOffline,
+            @Nullable String password) {
         this.port = port;
         this.protocol = protocol;
         this.username = username;
@@ -57,7 +63,8 @@ public class ServerConfigImpl extends ServerConfig {
         this.clientHostname = clientHostname;
         this.ignoreFileName = ignoreFileName;
         this.isAutoOffline = isAutoOffline;
-        this.storePasswordLocally = storePasswordLocally;
+        this.password = password;
+        //this.storePasswordLocally = storePasswordLocally;
     }
 
 
@@ -77,6 +84,12 @@ public class ServerConfigImpl extends ServerConfig {
     @Override
     public String getUsername() {
         return username;
+    }
+
+    @Nullable
+    @Override
+    public String getPlaintextPassword() {
+        return password;
     }
 
     @NotNull
@@ -115,10 +128,10 @@ public class ServerConfigImpl extends ServerConfig {
         return ignoreFileName;
     }
 
-    @Override
-    public boolean storePasswordLocally() {
-        return storePasswordLocally;
-    }
+    //@Override
+    //public boolean storePasswordLocally() {
+    //    return storePasswordLocally;
+    //}
 
     @Override
     public boolean isAutoOffline() {

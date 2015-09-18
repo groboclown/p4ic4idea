@@ -8,7 +8,7 @@
         <ol style="margin-left:2em;">
             <li><em>0.7.0</em>
                 <ol>
-                  <li>Fixed infinite changelist refresh due to incorrect file mappings.</li>
+                  <li>Stuff</li>
                 </ol>
             </li>
             <li><em>0.6.6.1</em>
@@ -105,8 +105,7 @@
         <group id="P4FileActions">
             <reference ref="CheckinFiles"/>
             <action id="P4.EditOld" class="net.groboclown.idea.p4ic.actions.P4EditOrig"
-                    text="Add or edit old" icon="AllIcons.Actions.Edit"
-                    use-shortcut-of="ChangesView.AddUnversioned"/>
+                    text="Add or edit (old method)" icon="AllIcons.Actions.Edit"/>
             <action id="P4.Edit" class="net.groboclown.idea.p4ic.actions.P4Edit"
                     text="Add or edit" icon="AllIcons.Actions.Edit"
                     use-shortcut-of="ChangesView.AddUnversioned"/>
@@ -207,9 +206,6 @@
     </module-components>
 
     <application-components>
-        <component>
-            <implementation-class>net.groboclown.idea.p4ic.config.PasswordStoreService</implementation-class>
-        </component>
         <component>
             <implementation-class>net.groboclown.idea.p4ic.server.ServerStoreService</implementation-class>
         </component>

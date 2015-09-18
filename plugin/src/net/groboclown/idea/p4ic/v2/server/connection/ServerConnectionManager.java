@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -215,6 +216,10 @@ public class ServerConnectionManager implements ApplicationComponent {
         // assume we're online at the start.
         volatile boolean online = true;
 
+        private final Lock onlineStatusLock = new ReentrantLock();
+        private final Condition onlineChangedCondition = onlineStatusLock.newCondition();
+
+
         ServerConfigStatus(@NotNull final ServerConfig config) {
             this.config = config;
         }
@@ -240,8 +245,18 @@ public class ServerConnectionManager implements ApplicationComponent {
 
         @Override
         public void waitForOnline(final long timeout, final TimeUnit unit) throws InterruptedException {
-            // FIXME implement
-            throw new IllegalStateException("not implemented");
+            onlineStatusLock.lock();
+            try {
+                while (! online) {
+                    if (timeout > 0) {
+                        onlineChangedCondition.await(timeout, unit);
+                    } else {
+                        onlineChangedCondition.await();
+                    }
+                }
+            } finally {
+                onlineStatusLock.unlock();
+            }
         }
 
         public boolean removeClient(@Nullable final String clientName) {
@@ -295,9 +310,15 @@ public class ServerConnectionManager implements ApplicationComponent {
 
         synchronized boolean setOnline() {
             if (valid) {
-                if (! online) {
-                    online = true;
-                    return true;
+                onlineStatusLock.lock();
+                try {
+                    if (!online) {
+                        online = true;
+                        onlineChangedCondition.signal();
+                        return true;
+                    }
+                } finally {
+                    onlineStatusLock.unlock();
                 }
                 // fall through
             }
@@ -305,9 +326,15 @@ public class ServerConnectionManager implements ApplicationComponent {
         }
 
         synchronized boolean setOffline() {
-            if (online) {
-                online = false;
-                return valid;
+            onlineStatusLock.lock();
+            try {
+                if (online) {
+                    online = false;
+                    onlineChangedCondition.signal();
+                    return valid;
+                }
+            } finally {
+                onlineStatusLock.unlock();
             }
             return false;
         }

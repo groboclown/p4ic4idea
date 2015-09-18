@@ -208,19 +208,18 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
     }
 
     public P4ClientFileMapping getClientMappingFor(final FilePath file) {
-        ServerConnection.assertInServerConnection();
         return fileRepo.getByLocation(file);
     }
 
     @NotNull
     List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts) {
-        LOG.info("Finding client roots for " + cachedServerWorkspace.getName());
+        LOG.debug("Finding client roots for " + cachedServerWorkspace.getName());
         final List<VirtualFile> projectRoots = P4ConfigUtil.getVcsRootFiles(project);
-        LOG.info(" - project roots: " + projectRoots);
+        LOG.debug(" - project roots: " + projectRoots);
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
-        LOG.info(" - workspace roots: " + workspaceRoots);
+        LOG.debug(" - workspace roots: " + workspaceRoots);
         for (String workspaceRoot: workspaceRoots) {
-            LOG.info(" - root: " + workspaceRoot);
+            LOG.debug(" - root: " + workspaceRoot);
             // Special case for a workspace root that spans windows directories.
             if (workspaceRoot.equals("null")) {
                 // "null" mapping only matters if we're on Windows.  Otherwise, ignore it.
@@ -251,7 +250,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                 return ret;
             }
         }
-        LOG.info(" - no client root found");
+        LOG.debug(" - no client root found");
         // no root found.
         alerts.addWarning(P4Bundle.message("error.config.invalid-roots", cache.getClientName()), invalidRootsException);
         return Collections.emptyList();
@@ -337,7 +336,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                 }
             }
         }
-        LOG.info("Did not find roots matching " + referenceDir + "; roots = " + workspaceRoots);
+        LOG.debug("Did not find roots matching " + referenceDir + "; roots = " + workspaceRoots);
         // no root found.
         alerts.addWarning(P4Bundle.message("error.config.invalid-roots", cache.getClientName()), invalidRootsException);
         return null;
@@ -358,9 +357,19 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
             throw new IllegalStateException("not implemented");
         }
         List<String> roots = new ArrayList<String>();
-        roots.add(client.getRoot());
-        for (String root : client.getAlternateRoots()) {
-            roots.add(root);
+        if (client.getRoot() == null) {
+            alerts.addNotice("Perforce reports the primary client root directory is null", null);
+        } else {
+            roots.add(client.getRoot());
+        }
+       if (client.getAlternateRoots() != null) {
+            for (String root : client.getAlternateRoots()) {
+                if (root != null) {
+                    roots.add(root);
+                } else {
+                    LOG.info("null alt root in " + client.getName());
+                }
+            }
         }
 
         boolean doRefresh = false;
@@ -418,6 +427,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         invalidRootsException = new VcsException("no valid roots");
 
         if (doRefresh) {
+            cachedServerWorkspace.setUpdated();
             alerts.addWarning(P4Bundle.message("warning.client.updated", getCachedClientName()), null);
             cache.refreshServerState(exec, alerts);
         }

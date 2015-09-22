@@ -71,14 +71,18 @@ public class ChangeListBuilderCache {
             }
         }
 
+        public boolean hasChanged(@NotNull VcsDirtyScope dirtyScope, @NotNull ChangeListManagerGate addGate) {
+            return hasChanged(dirtyScope.getDirtyFiles(), addGate);
+        }
+
 
         /**
          * Checks if the cached changes contains all the dirty scoped files.
          *
-         * @param dirtyScope dirty scope
+         * @param dirtyScopeFiles dirty scope files
          * @return true if there were different files in the dirty scope than what is in the cache.
          */
-        public boolean hasChanged(@NotNull VcsDirtyScope dirtyScope, @NotNull ChangeListManagerGate addGate) {
+        public boolean hasChanged(@NotNull Set<FilePath> dirtyScopeFiles, @NotNull ChangeListManagerGate addGate) {
             // See if any of the required changelists have been altered
             final Set<String> lastListIds = new HashSet<String>(changeListIds);
             List<LocalChangeList> listsCopy = addGate.getListsCopy();
@@ -93,7 +97,7 @@ public class ChangeListBuilderCache {
                 return true;
             }
 
-            final Set<FilePath> dirtyFiles = new HashSet<FilePath>(dirtyScope.getDirtyFiles());
+            final Set<FilePath> dirtyFiles = new HashSet<FilePath>(dirtyScopeFiles);
             // TODO debug remove
             LOG.info("Dirty files: " + dirtyFiles);
 
@@ -198,12 +202,17 @@ public class ChangeListBuilderCache {
 
     public ChangeListBuilderCache(@NotNull Project project, @NotNull final ChangelistBuilder builder,
             @NotNull VcsDirtyScope dirtyScope) {
+        this(project, builder, dirtyScope.getDirtyFiles());
+    }
+
+    public ChangeListBuilderCache(@NotNull Project project, @NotNull final ChangelistBuilder builder,
+            @NotNull Set<FilePath> dirtyFiles){
         this.builder = builder;
         ChangeListManager clm = ChangeListManager.getInstance(project);
         for (LocalChangeList list: clm.getChangeLists()) {
             changes.changeListIds.add(list.getId());
         }
-        originallyDirty = new HashSet<FilePath>(dirtyScope.getDirtyFiles());
+        originallyDirty = new HashSet<FilePath>(dirtyFiles);
     }
 
     public CachedChanges getCache() {

@@ -36,6 +36,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.connection;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
@@ -55,6 +56,8 @@ import java.util.*;
  * These are created via {@link P4ConfigProject#loadProjectConfigSources()}.
  */
 public class ProjectConfigSource {
+    private static final Logger LOG = Logger.getInstance(ProjectConfigSource.class);
+
     private final Project project;
     private final List<VirtualFile> projectSourceDirs;
     private final String clientName;
@@ -75,6 +78,16 @@ public class ProjectConfigSource {
             this.serverConfig = ServerConfig.createNewServerConfig(project, config);
         }
 
+        public boolean isInvalid() {
+            return serverConfig == null;
+        }
+
+
+        public P4Config getBaseConfig() {
+            return baseConfig;
+        }
+
+
         public boolean isSame(@NotNull P4Config other) {
             return new ManualP4Config(serverConfig, clientName).equals(other);
         }
@@ -84,6 +97,9 @@ public class ProjectConfigSource {
         }
 
         public ProjectConfigSource create() throws P4InvalidConfigException {
+            if (isInvalid()) {
+                throw new IllegalStateException("must call isInvalid before calling this function");
+            }
             return new ProjectConfigSource(project, new ArrayList<VirtualFile>(dirs),
                     clientName, serverConfig);
         }
@@ -97,6 +113,9 @@ public class ProjectConfigSource {
         this.clientName = clientName;
         this.configuration = configuration;
         this.clientServerId = ClientServerId.create(configuration, clientName);
+        // FIXME it looks like the directories are incorrectly set.
+        // FIXME debug
+        LOG.info("Created new project config source " + clientServerId + " with root dirs " + projectSourceDirs);
     }
 
     @NotNull
@@ -122,5 +141,10 @@ public class ProjectConfigSource {
     @NotNull
     public List<VirtualFile> getProjectSourceDirs() {
         return projectSourceDirs;
+    }
+
+    @Override
+    public String toString() {
+        return getClientServerId() + " - " + getProjectSourceDirs();
     }
 }

@@ -55,11 +55,7 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
 
         // This property key doesn't actually seem to do anything.
         // A real login is still required.
-        //char[] password = PasswordStore.getOptionalPasswordFor(config);
-        //if (password != null && password.length > 0) {
-        //    ret.setProperty(PropertyDefs.PASSWORD_KEY, new String(password));
-        //    Arrays.fill(password, (char) 0);
-        //}
+        // ret.setProperty(PropertyDefs.PASSWORD_KEY, new String(password));
 
         return ret;
     }

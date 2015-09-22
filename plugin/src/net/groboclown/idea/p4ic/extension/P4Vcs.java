@@ -44,7 +44,6 @@ import net.groboclown.idea.p4ic.background.TempFileWatchDog;
 import net.groboclown.idea.p4ic.background.VcsFutureSetter;
 import net.groboclown.idea.p4ic.background.VcsSettableFuture;
 import net.groboclown.idea.p4ic.changes.P4ChangeListMapping;
-import net.groboclown.idea.p4ic.changes.P4ChangeProvider;
 import net.groboclown.idea.p4ic.changes.P4ChangelistListener;
 import net.groboclown.idea.p4ic.changes.P4CommittedChangeList;
 import net.groboclown.idea.p4ic.compat.CompatFactoryLoader;
@@ -61,6 +60,7 @@ import net.groboclown.idea.p4ic.server.ServerStoreService;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.P4ConnectionWidget;
 import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeProvider;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.P4ServerManager;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
@@ -72,8 +72,31 @@ import java.io.File;
 import java.util.*;
 import java.util.Map.Entry;
 
+//import net.groboclown.idea.p4ic.changes.P4ChangeProvider;
+
 public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     private static final Logger LOG = Logger.getInstance(P4Vcs.class);
+
+
+    public static final FileStatus MODIFIED_OFFLINE =
+            FileStatusFactory.getInstance().createFileStatus(
+                    "MODIFIED_OFFLINE",
+                    P4Bundle.message("filestatus.edited_offline"),
+                    FileStatus.COLOR_MODIFIED
+            );
+    public static final FileStatus DELETED_OFFLINE =
+            FileStatusFactory.getInstance().createFileStatus(
+                    "DELETED_OFFLINE",
+                    P4Bundle.message("filestatus.deleted_offline"),
+                    FileStatus.COLOR_MISSING
+            );
+    public static final FileStatus REVERTED_OFFLINE =
+            FileStatusFactory.getInstance().createFileStatus(
+                    "REVERTED_OFFLINE",
+                    P4Bundle.message("filestatus.reverted_offline"),
+                    FileStatus.COLOR_NOT_CHANGED_IMMEDIATE
+            );
+
 
     private static final FileStatus[] PREFERRED_STATUS = new FileStatus[] {
             FileStatus.ADDED,
@@ -81,7 +104,11 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             FileStatus.IGNORED,
             FileStatus.MERGE,
             FileStatus.MODIFIED,
-            FileStatus.NOT_CHANGED
+            FileStatus.NOT_CHANGED,
+
+            MODIFIED_OFFLINE,
+            DELETED_OFFLINE,
+            REVERTED_OFFLINE
     };
 
     @NonNls

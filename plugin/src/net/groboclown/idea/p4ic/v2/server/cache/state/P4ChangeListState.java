@@ -14,6 +14,8 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import com.perforce.p4java.core.IChangelistSummary;
+import com.perforce.p4java.core.IChangelistSummary.Visibility;
 import org.jdom.Element;
 import org.jdom.Text;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +34,23 @@ public class P4ChangeListState extends CachedState {
     private String comment;
     private final Set<P4JobState> jobs = new HashSet<P4JobState>();
     private String fixState;
+    private boolean isShelved = false;
+    private boolean isRestricted = false;
+
+    P4ChangeListState() {
+        // intentionally empty
+    }
+
+    public P4ChangeListState(@NotNull IChangelistSummary summary) {
+        id = summary.getId();
+        comment = summary.getDescription();
+        isRestricted = summary.getVisibility() == Visibility.RESTRICTED;
+    }
+
+    public P4ChangeListState(int dummyChangeListId) {
+        this.id = dummyChangeListId;
+    }
+
 
     public boolean isDefault() {
         return id == 0;
@@ -41,6 +60,18 @@ public class P4ChangeListState extends CachedState {
         return id >= 0;
     }
 
+    public int getChangelistId() {
+        return id;
+    }
+
+    public void addJob(@NotNull P4JobState job) {
+        this.jobs.add(job);
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
     @Override
     protected void serialize(@NotNull final Element wrapper, @NotNull final EncodeReferences refs) {
         serializeDate(wrapper);
@@ -48,6 +79,13 @@ public class P4ChangeListState extends CachedState {
         if (comment != null) {
             wrapper.addContent(new Text(comment));
         }
+        if (isShelved) {
+            wrapper.setAttribute("s", "y");
+        }
+        if (isRestricted) {
+            wrapper.setAttribute("v", "r");
+        }
+        wrapper.setAttribute("f", fixState);
         for (P4JobState job : jobs) {
             Element el = new Element("j");
             wrapper.addContent(el);
@@ -73,6 +111,15 @@ public class P4ChangeListState extends CachedState {
                 ret.jobs.add(job);
             }
         }
+        String shelved = getAttribute(wrapper, "s");
+        if (shelved != null && shelved.equals("y")) {
+            ret.isShelved = true;
+        }
+        String visibility = getAttribute(wrapper, "v");
+        if (visibility != null && visibility.equals("r")) {
+            ret.isRestricted = true;
+        }
+        ret.fixState = getAttribute(wrapper, "f");
 
         return ret;
     }

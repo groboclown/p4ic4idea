@@ -36,7 +36,6 @@ public abstract class ServerConfig {
 
     @Nullable
     public static ServerConfig createNewServerConfig(@NotNull Project project, @NotNull P4Config p4Config) {
-        System.out.println("config: " + P4ConfigUtil.getProperties(p4Config));
         if (! isValid(p4Config)) {
             return null;
         }

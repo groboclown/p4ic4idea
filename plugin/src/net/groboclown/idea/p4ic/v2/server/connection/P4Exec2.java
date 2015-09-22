@@ -443,6 +443,11 @@ public class P4Exec2 {
     @NotNull
     public List<IExtendedFileSpec> getFileStatus(@NotNull final List<IFileSpec> files)
             throws VcsException, CancellationException {
+
+        if (files.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         return exec.runWithClient(project, new ClientExec.WithClient<List<IExtendedFileSpec>>() {
             @Override
             public List<IExtendedFileSpec> run(@NotNull final IOptionsServer server,

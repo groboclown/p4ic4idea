@@ -18,6 +18,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.startup.StartupManager;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.P4Config;
@@ -45,9 +46,6 @@ public class P4ServerManager implements ProjectComponent {
     private final Map<ClientServerId, P4Server> servers = new HashMap<ClientServerId, P4Server>();
     private final AlertManager alertManager;
     private volatile boolean connectionsValid = true;
-
-
-    // TODO keep track of the ServerConnection objects.
 
 
     /** should only be created by the P4Vcs object. */
@@ -101,7 +99,8 @@ public class P4ServerManager implements ProjectComponent {
     @NotNull
     public Map<P4Server, List<FilePath>> mapFilePathsToP4Server(Collection<FilePath> files)
             throws InterruptedException {
-        LOG.info("mapping to servers: " + files);
+        // FIXME debug
+        LOG.info("mapping to servers: " + new ArrayList<FilePath>(files));
         if (connectionsValid) {
             Map<P4Server, List<FilePath>> ret = new HashMap<P4Server, List<FilePath>>();
             List<P4Server> servers = getServers();
@@ -115,11 +114,13 @@ public class P4ServerManager implements ProjectComponent {
                 P4Server minDepthServer = null;
                 for (P4Server server : servers) {
                     int depth = server.getFilePathMatchDepth(file);
+                    LOG.info(" --- server " + server + " match depth: " + depth);
                     if (depth < minDepth && depth >= 0) {
                         minDepth = depth;
                         minDepthServer = server;
                     }
                 }
+                LOG.info("Matched " + file + " to " + minDepthServer);
                 List<FilePath> match = ret.get(minDepthServer);
                 if (match == null) {
                     match = new ArrayList<FilePath>();
@@ -147,22 +148,33 @@ public class P4ServerManager implements ProjectComponent {
 
     @Override
     public void initComponent() {
-        P4ConfigProject cp = P4ConfigProject.getInstance(project);
-        try {
-            final List<ProjectConfigSource> sources = cp.loadProjectConfigSources();
-            synchronized (servers) {
-                servers.clear();
-                for (ProjectConfigSource source : sources) {
-                    final P4Server server = new P4Server(project, source);
-                    servers.put(server.getClientServerId(), server);
+
+        // The servers need to be loaded initially, but they can't be loaded
+        // at this point in time, because the file system isn't fully
+        // initialized yet.  So, register a post-startup action.
+        StartupManager.getInstance(project).registerPostStartupActivity(new Runnable() {
+            @Override
+            public void run() {
+                P4ConfigProject cp = P4ConfigProject.getInstance(project);
+                try {
+                    final List<ProjectConfigSource> sources = cp.loadProjectConfigSources();
+                    synchronized (servers) {
+                        servers.clear();
+                        for (ProjectConfigSource source : sources) {
+                            final P4Server server = new P4Server(project, source);
+                            servers.put(server.getClientServerId(), server);
+                        }
+                    }
+                } catch (P4InvalidConfigException e) {
+                    LOG.info("source load caused error", e);
+                    synchronized (servers) {
+                        servers.clear();
+                    }
                 }
             }
-        } catch (P4InvalidConfigException e) {
-            LOG.info("source load caused error", e);
-            synchronized (servers) {
-                servers.clear();
-            }
-        }
+        });
+
+        // Make sure the events are correctly registered, too.
 
         Events.appBaseConfigUpdated(appMessageBus, new BaseConfigUpdatedListener() {
             @Override
@@ -172,8 +184,6 @@ public class P4ServerManager implements ProjectComponent {
                 // valid, just mark all of the configs invalid.
                 // There may also be new connections.  This keeps it all up-to-date.
                 synchronized (servers) {
-                    servers.clear();
-
                     // client/servers that are not in the new list are marked invalid.
                     Set<ClientServerId> knownServers = new HashSet<ClientServerId>(servers.keySet());
 

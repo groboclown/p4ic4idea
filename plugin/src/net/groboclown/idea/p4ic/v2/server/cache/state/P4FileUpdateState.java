@@ -24,6 +24,10 @@ import org.jetbrains.annotations.Nullable;
  * Encompasses all the information about an update to a file (edit, add, delete, integrate, move).
  */
 public class P4FileUpdateState extends CachedState {
+
+    // FIXME include information about a cached backup file (for reverts)
+
+
     @NotNull
     private final P4ClientFileMapping file;
     /** 0 for the default changelist, &lt; -1 for a locally stored changelist (no server side number),
@@ -46,6 +50,17 @@ public class P4FileUpdateState extends CachedState {
     public FileUpdateAction getFileUpdateAction() {
         return action;
     }
+
+    public int getActiveChangelist() {
+        return activeChangelist;
+    }
+
+
+    @NotNull
+    public P4ClientFileMapping getClientFileMapping() {
+        return file;
+    }
+
 
     @Nullable
     public String getDepotPath() {

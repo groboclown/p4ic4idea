@@ -46,11 +46,27 @@ public class P4InvalidConfigException extends P4DisconnectedException {
         super(P4Bundle.message("error.config.setup", P4ConfigUtil.getProperties(config)));
     }
 
+    public P4InvalidConfigException(@NotNull final List<P4Config> configs) {
+        super(getMessageForConfigs(configs));
+        assert ! configs.isEmpty();
+    }
+
     public P4InvalidConfigException(@NotNull final ServerConfig config, @NotNull final List<ConfigurationProblem> problems) {
         super(P4Bundle.message("error.config.setup.problems", config, problems));
     }
 
     public P4InvalidConfigException(final IOException e) {
         super(e);
+    }
+
+    private static String getMessageForConfigs(final List<P4Config> configs) {
+        StringBuilder configProps = new StringBuilder();
+        String sep = "";
+        for (P4Config config : configs) {
+            configProps.append(sep).append(P4ConfigUtil.getProperties(config));
+            // FIXME make localized
+            sep = ", ";
+        }
+        return P4Bundle.message("error.config.setup", configProps.toString());
     }
 }

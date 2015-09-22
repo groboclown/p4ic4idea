@@ -19,9 +19,11 @@ import com.perforce.p4java.core.IChangelistSummary;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jetbrains.annotations.NotNull;
 
-class P4ChangeListIdImpl implements P4ChangeListId {
+// NOTE made public due to P4ChangeListValue (v2 stuff)
+public class P4ChangeListIdImpl implements P4ChangeListId {
     private final int clid;
 
     @NotNull
@@ -34,6 +36,14 @@ class P4ChangeListIdImpl implements P4ChangeListId {
         this.clid = clid;
         this.scid = serverConfigId;
         this.clientName = clientName;
+        assert clid >= P4ChangeListCache.P4_DEFAULT;
+    }
+
+    // NOTE: made public due to v2 stuff
+    public P4ChangeListIdImpl(@NotNull ClientServerId clientServerId, int clid) {
+        this.clid = clid;
+        this.scid = clientServerId.getServerConfigId();
+        this.clientName = clientServerId.getClientId();
         assert clid >= P4ChangeListCache.P4_DEFAULT;
     }
 

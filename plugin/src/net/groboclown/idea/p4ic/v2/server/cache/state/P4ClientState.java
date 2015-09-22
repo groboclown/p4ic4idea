@@ -62,6 +62,11 @@ public class P4ClientState {
         return workspace;
     }
 
+    @NotNull
+    public Set<P4ChangeListState> getChanges() {
+        return changes;
+    }
+
 
     public void serialize(@NotNull Element wrapper, @NotNull EncodeReferences refs) {
         wrapper.setAttribute("serverConnection", clientServerId.getServerConfigId());

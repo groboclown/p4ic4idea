@@ -116,4 +116,10 @@ public final class ClientServerId {
         }
         return null;
     }
+
+
+    @Override
+    public String toString() {
+        return clientId + ":" + serverConfigId;
+    }
 }

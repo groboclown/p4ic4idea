@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import net.groboclown.idea.p4ic.server.P4Job;
 import org.jdom.Element;
 import org.jdom.Text;
 import org.jetbrains.annotations.NotNull;
@@ -30,6 +31,17 @@ public class P4JobState extends CachedState {
 
     public P4JobState(@NotNull final String id) {
         this.id = id;
+    }
+
+    public P4JobState(final P4Job job) {
+        this.id = job.getJobId();
+        this.description = job.getDescription();
+        for (Map.Entry<String, Object> entry: job.getRawFields().entrySet()) {
+            if (entry.getValue() instanceof String && entry.getValue() != null &&
+                    entry.getKey() != null) {
+                details.put(entry.getKey(), entry.getValue().toString());
+            }
+        }
     }
 
     @NotNull

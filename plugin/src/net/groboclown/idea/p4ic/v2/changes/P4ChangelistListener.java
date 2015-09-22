@@ -61,6 +61,9 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void changeListRemoved(@NotNull final ChangeList list) {
+
+
+
         // FIXME
         throw new IllegalStateException("not implemented");
         /*

@@ -67,11 +67,14 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
     @Nullable
     private List<ProjectConfigSource> configSources;
     private P4InvalidConfigException sourceConfigEx;
+    boolean sourcesInitialized = false;
 
     @Nullable
     private List<Client> clients;
     private P4InvalidConfigException clientConfigEx;
     private P4InvalidClientException clientClientEx;
+    boolean clientsInitialized = false;
+    private ManualP4Config previous;
 
     public P4ConfigProject(@NotNull Project project) {
         this.project = project;
@@ -83,12 +86,13 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
 
 
     /**
-     * @return
+     * @return the project config sources
      * @throws P4InvalidConfigException
      */
     @NotNull
     public List<ProjectConfigSource> loadProjectConfigSources()
             throws P4InvalidConfigException {
+        initializeConfigSources();
         if (sourceConfigEx != null) {
             P4InvalidConfigException ret = new P4InvalidConfigException(sourceConfigEx.getMessage());
             ret.initCause(sourceConfigEx);
@@ -98,6 +102,26 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             return Collections.emptyList();
         }
         return configSources;
+    }
+
+    private void initializeConfigSources() {
+        synchronized (this) {
+            if (! sourcesInitialized) {
+                LOG.info("reloading project config sources");
+
+                // Mark as initialized first, so we don't re-enter this function.
+                sourcesInitialized = true;
+
+                try {
+                    sourceConfigEx = null;
+                    configSources = readProjectConfigSources();
+                } catch (P4InvalidConfigException e) {
+                    // ignore; already sent notifications
+                    configSources = null;
+                    sourceConfigEx = e;
+                }
+            }
+        }
     }
 
 
@@ -129,6 +153,7 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             // The map returns one virtual file for each config directory found (and/or VCS root directories).
             // These may be duplicate configs, so need to add them to the matching entry, if any.
             sourceBuilders = new ArrayList<Builder>(map.size());
+            LOG.info("config file mapping: " + map);
 
             for (Map.Entry<VirtualFile, P4Config> en : map.entrySet()) {
                 boolean found = false;
@@ -160,6 +185,7 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
 
                 throw ex;
             }
+            // FIXME this may change without an announcement
             List<VirtualFile> roots = P4ConfigUtil.getVcsRootFiles(project);
             Builder builder = new Builder(project, fullConfig);
             sourceBuilders = Collections.singletonList(builder);
@@ -170,10 +196,29 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
 
 
         List<ProjectConfigSource> ret = new ArrayList<ProjectConfigSource>(sourceBuilders.size());
+        List<P4Config> invalidConfigs = new ArrayList<P4Config>();
         for (Builder sourceBuilder : sourceBuilders) {
-            final ProjectConfigSource source = sourceBuilder.create();
-            LOG.info("Created config source " + source);
-            ret.add(source);
+            if (sourceBuilder.isInvalid()) {
+                LOG.warn("Invalid config: " +
+                        P4ConfigUtil.getProperties(sourceBuilder.getBaseConfig()));
+                invalidConfigs.add(sourceBuilder.getBaseConfig());
+            } else {
+                final ProjectConfigSource source = sourceBuilder.create();
+                LOG.info("Created config source " + source + " from " +
+                        P4ConfigUtil.getProperties(sourceBuilder.getBaseConfig()));
+                ret.add(source);
+            }
+        }
+        if (! invalidConfigs.isEmpty()) {
+            P4InvalidConfigException ex = new P4InvalidConfigException(invalidConfigs);
+            for (P4Config invalidConfig : invalidConfigs) {
+                Events.configInvalid(project, invalidConfig, new P4InvalidConfigException(invalidConfig));
+
+                // FIXME old stuff
+                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project,
+                        invalidConfig, ex);
+            }
+            throw ex;
         }
 
         ApplicationManager.getApplication().getMessageBus().syncPublisher(BaseConfigUpdatedListener.TOPIC).
@@ -192,6 +237,7 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
      */
     public List<Client> loadClients(@NotNull Project project)
             throws P4InvalidConfigException, P4InvalidClientException {
+        initializeClients();
         if (clientConfigEx != null) {
             P4InvalidConfigException ret = new P4InvalidConfigException(clientConfigEx.getMessage());
             ret.initCause(clientConfigEx);
@@ -203,6 +249,26 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             throw ret;
         }
         return clients;
+    }
+
+    private void initializeClients() {
+        synchronized (this) {
+            if (! clientsInitialized) {
+                // Mark as initialized first, so we don't re-enter this function.
+                clientsInitialized = true;
+                try {
+                    clientClientEx = null;
+                    clientConfigEx = null;
+                    clients = readClients(previous);
+                } catch (P4InvalidConfigException e) {
+                    clientConfigEx = e;
+                    clients = null;
+                } catch (P4InvalidClientException e) {
+                    clientClientEx = e;
+                    clients = null;
+                }
+            }
+        }
     }
 
     /**
@@ -271,6 +337,9 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
         ApplicationManager.getApplication().getMessageBus().syncPublisher(P4ClientsReloadedListener.TOPIC)
                 .clientsLoaded(project, ret);
         if (old != null) {
+
+            // FIXME this causes an infinite loop in this class.
+
             project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).
                     configChanges(project, old, base);
         }
@@ -303,28 +372,14 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
         this.config = new ManualP4Config(state);
         synchronized (this) {
             if (!original.equals(state)) {
-                LOG.info("reloading project config sources");
-                // Reload the settings and make the announcement.
-                try {
-                    sourceConfigEx = null;
-                    configSources = readProjectConfigSources();
-                } catch (P4InvalidConfigException e) {
-                    // ignore; already sent notifications
-                    configSources = null;
-                    sourceConfigEx = e;
-                }
-
-                try {
-                    clientClientEx = null;
-                    clientConfigEx = null;
-                    clients = readClients(original);
-                } catch (P4InvalidConfigException e) {
-                    clientConfigEx = e;
-                    clients = null;
-                } catch (P4InvalidClientException e) {
-                    clientClientEx = e;
-                    clients = null;
-                }
+                // When loaded, this can cause errors if we actually initialize
+                // the values here, because the file system for the project isn't
+                // initialized yet.  That can lead to the project view being
+                // empty.  IntelliJ 13 shows the massive amount of errors, but
+                // 15 hides it.
+                previous = original;
+                sourcesInitialized = false;
+                clientsInitialized = false;
             }
         }
     }
@@ -427,6 +482,7 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             if (status != null) {
                 status.removeClient(getClientName());
                 ServerStoreService.getInstance().removeServerConfig(project, config);
+                LOG.info("*** disposed client " + clientName + " (" + config + ")", new Exception("stack capture"));
                 status = null;
             }
         }

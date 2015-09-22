@@ -21,6 +21,7 @@ import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
+import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.connection.AuthTicketConnectionHandler;
@@ -44,13 +45,19 @@ public abstract class ConnectionHandler {
     public static final String PLUGIN_LANGUAGE_KEY = "P4LANG";
 
 
-
+    @NotNull
     public static ConnectionHandler getHandlerFor(@NotNull ServerStatus status) {
         return getHandlerFor(status.getConfig());
     }
 
+    @NotNull
     public static ConnectionHandler getHandlerFor(@NotNull ServerConfig config) {
-        switch (config.getConnectionMethod()) {
+        return getHandlerFor(config.getConnectionMethod());
+    }
+
+    @NotNull
+    public static ConnectionHandler getHandlerFor(@NotNull P4Config.ConnectionMethod method) {
+        switch (method) {
             case AUTH_TICKET:
                 return AuthTicketConnectionHandler.INSTANCE;
             case CLIENT:
@@ -63,7 +70,7 @@ public abstract class ConnectionHandler {
                 return TestConnectionHandler.INSTANCE;
             default:
                 throw new IllegalStateException(
-                        "Unknown connection method: " + config.getConnectionMethod());
+                        "Unknown connection method: " + method);
         }
     }
 

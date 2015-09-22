@@ -19,12 +19,11 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.local.IgnoreFiles;
-import net.groboclown.idea.p4ic.v2.server.cache.state.ClientLocalServerState;
-import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
-import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
-import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.*;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CreateUpdate;
@@ -43,6 +42,7 @@ public class ClientCacheManager {
     private final ClientLocalServerState state;
     private final WorkspaceServerCacheSync workspace;
     private final FileActionsServerCacheSync fileActions;
+    private final ChangeListServerCacheSync changeLists;
     private final IgnoreFiles ignoreFiles;
 
     public ClientCacheManager(@NotNull ServerConfig config, @NotNull ClientLocalServerState state) {
@@ -55,6 +55,9 @@ public class ClientCacheManager {
         fileActions = new FileActionsServerCacheSync(cache,
                 state.getLocalClientState().getUpdatedFiles(),
                 state.getCachedServerState().getUpdatedFiles());
+        changeLists = new ChangeListServerCacheSync(cache,
+                state.getLocalClientState().getChanges(),
+                state.getCachedServerState().getChanges());
         ignoreFiles = new IgnoreFiles(config);
     }
 
@@ -67,6 +70,11 @@ public class ClientCacheManager {
     @NotNull
     public ServerQuery createFileActionsRefreshQuery() {
         return fileActions.createRefreshQuery();
+    }
+
+    @NotNull
+    public ServerQuery createChangeListRefreshQuery() {
+        return changeLists.createRefreshQuery();
     }
 
 
@@ -84,13 +92,30 @@ public class ClientCacheManager {
         return workspace.getClientRoots(project, alerts);
     }
 
+    @NotNull
+    public Collection<P4ChangeListValue> getCachedOpenedChanges() {
+        return changeLists.getOpenedChangeLists();
+    }
+
+    @NotNull
+    public Collection<P4FileAction> getCachedOpenFiles() {
+        return fileActions.getOpenFiles();
+    }
+
+    /**
+     * This method only has one use, and that's for initial setup after loading into a ServerConnection.
+     */
+    @NotNull
+    public Collection<PendingUpdateState> getCachedPendingUpdates() {
+        return state.getPendingUpdates();
+    }
+
     public void addPendingUpdateState(@NotNull final PendingUpdateState updateState) {
         state.addPendingUpdate(updateState);
     }
 
-    /** This method only has one use, and that's for initial setup after loading into a ServerConnection. */
-    public Collection<PendingUpdateState> getCachedPendingUpdates() {
-        return state.getPendingUpdates();
+    public boolean isIgnored(@NotNull FilePath fp) {
+        return ignoreFiles.isFileIgnored(fp);
     }
 
 

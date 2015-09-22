@@ -66,28 +66,14 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
         lastRefreshed = CachedState.NEVER_LOADED;
         for (P4FileUpdateState state: cachedServerUpdatedFiles) {
-            if (state.getLastUpdated().getTime() > lastRefreshed.getTime()) {
+            if (state.getLastUpdated().before(lastRefreshed)) {
                 lastRefreshed = state.getLastUpdated();
             }
         }
     }
 
 
-    /**
-     * Return all the file actions.  If the executor is null, then this will work in offline mode.
-     * Must be called by the {@link net.groboclown.idea.p4ic.v2.server.connection.ServerConnection}
-     * to correctly handle the locking.
-     *
-     * @param exec server connection, or {@code null} if not connected.
-     * @return file action version actions
-     */
-    Collection<P4FileAction> getFileActions(@Nullable P4Exec2 exec, @NotNull AlertManager alerts) {
-        ServerConnection.assertInServerConnection();
-
-        if (exec != null) {
-            // FIXME needs to be on a timer for refresh rate.
-            loadServerCache(exec, alerts);
-        }
+    public Collection<P4FileAction> getOpenFiles() {
         // Get all the cached files that we know about from the server
         final Set<P4FileUpdateState> files = new HashSet<P4FileUpdateState>(cachedServerUpdatedFiles);
         // Overwrite them with the locally updated versions of them.
@@ -99,11 +85,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         return ret;
     }
 
+
     @Override
     protected void innerLoadServerCache(@NotNull P4Exec2 exec, @NotNull AlertManager alerts) {
-        lastRefreshed = new Date();
 
-        // Load our cache.  Note that we only load specs that we consider to be in a
+        // Load our server cache.  Note that we only load specs that we consider to be in a
         // "valid" file action state.
 
         MessageResult<List<IFileSpec>> results = null;
@@ -114,6 +100,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             alerts.addWarning(P4Bundle.message("error.load-opened", cache.getClientName()), e);
         }
         if (results != null && !results.isError()) {
+            lastRefreshed = new Date();
+
             // Only clear the cache once we know that we have valid results.
 
             final List<IFileSpec> validSpecs = new ArrayList<IFileSpec>(results.getResult());

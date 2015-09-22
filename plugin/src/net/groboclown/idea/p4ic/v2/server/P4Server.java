@@ -18,18 +18,22 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
+import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.ServerExecutor;
+import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
-import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
+import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CacheQuery;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CreateUpdate;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -102,7 +106,7 @@ public class P4Server {
      * @return the directory depth at which this file is in the client.  This is the shallowest depth for all
      *      the client roots.  It returns -1 if there is no match.
      */
-    public int getFilePathMatchDepth(@NotNull FilePath file) throws InterruptedException {
+    int getFilePathMatchDepth(@NotNull FilePath file) throws InterruptedException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Finding depth for " + file + " in " + getClientName());
         }
@@ -163,6 +167,7 @@ public class P4Server {
      *      split by parent directories.
      * @throws InterruptedException
      */
+    @NotNull
     public List<List<File>> getRoots() throws InterruptedException {
         // use the ProjectConfigSource as the lowest level these can be under.
         final Set<List<File>> ret = new HashSet<List<File>>();
@@ -172,8 +177,10 @@ public class P4Server {
             projectRootsParts.add(getPathParts(FilePathUtil.getFilePath(projectRoot)));
         }
 
-        LOG.debug("- project roots: " + projectRoots);
-        LOG.debug("- client roots: " + getProjectClientRoots());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("- project roots: " + projectRoots);
+            LOG.debug("- client roots: " + getProjectClientRoots());
+        }
 
         // VfsUtilCore.isAncestor seems to bug out at times.
         // Use the File, File version instead.
@@ -230,10 +237,10 @@ public class P4Server {
             @Override
             public List<VirtualFile> query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
                 if (isWorkingOnline()) {
-                    LOG.info("working online; loading the cache");
+                    LOG.debug("working online; loading the client roots cache");
                     connection.query(project, mgr.createWorkspaceRefreshQuery());
                 } else {
-                    LOG.info("working offline; using cached files.");
+                    LOG.debug("working offline; using cached files.");
                 }
                 return mgr.getClientRoots(project, alertManager);
             }
@@ -242,19 +249,98 @@ public class P4Server {
 
 
     /**
+     *
+     * @param files files to grab server status
+     * @return null if working disconnected, otherwise the server status of the files.
+     */
+    @Nullable
+    public Map<FilePath, IExtendedFileSpec> getFileStatus(@NotNull final Collection<FilePath> files)
+            throws InterruptedException {
+        if (files.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        if (isWorkingOffline()) {
+            return null;
+        }
+        List<FilePath> filePathList = new ArrayList<FilePath>(files);
+        final Iterator<FilePath> iter = filePathList.iterator();
+        while (iter.hasNext()) {
+            // Strip out directories, to ensure we have a valid mapping
+            final FilePath next = iter.next();
+            if (next.isDirectory()) {
+                iter.remove();
+            }
+        }
+
+        final List<IFileSpec> fileSpecs;
+        try {
+            fileSpecs = FileSpecUtil.getFromFilePaths(filePathList);
+        } catch (P4Exception e) {
+            alertManager.addWarning(P4Bundle.message("error.file-status.fetch", files), e);
+            return null;
+        }
+        final List<IExtendedFileSpec> extended = connection.query(project, new ServerQuery<List<IExtendedFileSpec>>() {
+            @Nullable
+            @Override
+            public List<IExtendedFileSpec> query(@NotNull final P4Exec2 exec,
+                    @NotNull final ClientCacheManager cacheManager,
+                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    throws InterruptedException {
+                try {
+                    return exec.getFileStatus(fileSpecs);
+                } catch (VcsException e) {
+                    alertManager.addWarning(P4Bundle.message("error.file-status.fetch", files), e);
+                    return null;
+                }
+            }
+        });
+        if (extended == null) {
+            return null;
+        }
+
+        // should be a 1-to-1 mapping
+        if (filePathList.size() != extended.size()) {
+            StringBuilder sb = new StringBuilder("did not match ");
+            sb.append(filePathList).append(" against [");
+            for (IExtendedFileSpec extendedFileSpec: extended) {
+                sb
+                    .append(" {")
+                    .append(extendedFileSpec.getOpStatus()).append(":")
+                    .append(extendedFileSpec.getStatusMessage()).append("::")
+                    .append(extendedFileSpec.getDepotPath())
+                    .append("} ");
+            }
+            sb.append("]");
+
+            // FIXME perform better matching
+            throw new IllegalStateException(sb.toString());
+        }
+
+        Map<FilePath, IExtendedFileSpec> ret = new HashMap<FilePath, IExtendedFileSpec>();
+        for (int i = 0; i < filePathList.size(); i++) {
+            LOG.info("Mapped " + filePathList.get(i) + " to " + extended.get(i));
+            ret.put(filePathList.get(i), extended.get(i));
+        }
+        return ret;
+    }
+
+
+    /**
      * Return all files open for edit (or move, delete, etc) on this client.
      *
      * @return opened files state
      */
-    public Collection<P4FileAction> getOpenFiles() {
-        if (isWorkingOnline()) {
-            // Fetch from the server and load up the caches.
-        } else {
-
-        }
-
-        // FIXME
-        throw new IllegalStateException("not implemented");
+    @NotNull
+    public Collection<P4FileAction> getOpenFiles() throws InterruptedException {
+        return connection.cacheQuery(new CacheQuery<Collection<P4FileAction>>() {
+            @Override
+            public Collection<P4FileAction> query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
+                if (isWorkingOnline()) {
+                    connection.query(project, mgr.createFileActionsRefreshQuery());
+                }
+                return mgr.getCachedOpenFiles();
+            }
+        });
     }
 
     /**
@@ -279,6 +365,19 @@ public class P4Server {
                     }
                 }
                 return updates;
+            }
+        });
+    }
+
+
+    public Collection<P4ChangeListValue> getOpenChangeLists() throws InterruptedException {
+        return connection.cacheQuery(new CacheQuery<Collection<P4ChangeListValue>>() {
+            @Override
+            public Collection<P4ChangeListValue> query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
+                if (isWorkingOnline()) {
+                    connection.query(project, mgr.createChangeListRefreshQuery());
+                }
+                return mgr.getCachedOpenedChanges();
             }
         });
     }
@@ -311,6 +410,24 @@ public class P4Server {
     @Nullable
     public String getClientName() {
         return source.getClientName();
+    }
+
+    /**
+     * Check if the given file is ignored by version control.
+     *
+     * @param fp file or directory to check
+     * @return true if ignored, which includes directories.
+     */
+    public boolean isIgnored(@Nullable final FilePath fp) throws InterruptedException {
+        if (fp == null || fp.isDirectory()) {
+            return true;
+        }
+        return connection.cacheQuery(new CacheQuery<Boolean>() {
+            @Override
+            public Boolean query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
+                return mgr.isIgnored(fp);
+            }
+        });
     }
 
     @NotNull

@@ -14,8 +14,16 @@
 
 package net.groboclown.idea.p4ic.v2.server;
 
+import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
+import net.groboclown.idea.p4ic.changes.P4ChangeListMapping;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The front-end view of an action on a file object.  This is a copy of the local
@@ -26,8 +34,78 @@ public class P4FileAction {
     private final UpdateAction action;
 
 
-    public P4FileAction(final P4FileUpdateState local, final UpdateAction action) {
+    public P4FileAction(@NotNull P4FileUpdateState local, @NotNull UpdateAction action) {
         this.local = local;
         this.action = action;
+    }
+
+
+    public FileUpdateAction getFileUpdateAction() {
+        return local.getFileUpdateAction();
+    }
+
+
+    public int getChangeList() {
+        return local.getActiveChangelist();
+    }
+
+
+    //public P4ClientFileMapping getP4File() {
+    //    return local.getClientFileMapping();
+    //}
+
+
+    @Nullable
+    public FilePath getFile() {
+        return local.getLocalFilePath();
+    }
+
+
+    public boolean affects(@NotNull FilePath file) {
+        final FilePath localFile = local.getLocalFilePath();
+        if (localFile == null) {
+            return false;
+        }
+        return FileUtil.filesEqual(file.getIOFile(), localFile.getIOFile());
+    }
+
+
+    @Nullable
+    public FileStatus getClientFileStatus() {
+        if (getChangeList() < P4ChangeListMapping.P4_DEFAULT) {
+            // offline
+            switch (getFileUpdateAction()) {
+                case ADD_FILE:
+                case MOVE_FILE:
+                case INTEGRATE_FILE:
+                case EDIT_FILE:
+                    return P4Vcs.MODIFIED_OFFLINE;
+                case DELETE_FILE:
+                case MOVE_DELETE_FILE:
+                    return P4Vcs.DELETED_OFFLINE;
+                case REVERT_FILE:
+                    return P4Vcs.REVERTED_OFFLINE;
+                default:
+                    return FileStatus.NOT_CHANGED;
+            }
+        }
+        switch (getFileUpdateAction()) {
+            case ADD_FILE:
+            case MOVE_FILE:
+                return FileStatus.ADDED;
+            case INTEGRATE_FILE:
+                // TODO determine if conflicts
+                return FileStatus.MERGE;
+            case EDIT_FILE:
+                return FileStatus.MODIFIED;
+            case DELETE_FILE:
+            case MOVE_DELETE_FILE:
+                return FileStatus.DELETED;
+            case REVERT_FILE:
+                // FIXME Weird status that shouldn't happen
+                return P4Vcs.REVERTED_OFFLINE;
+            default:
+                return FileStatus.NOT_CHANGED;
+        }
     }
 }

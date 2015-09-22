@@ -25,6 +25,7 @@ import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.ServerClientIdUtil;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -140,6 +141,36 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
     }
 
 
+    @Nullable
+    public LocalChangeList getIdeaChangelistFor(@NotNull P4ChangeListValue p4cl) {
+        ChangeListManager clm = ChangeListManager.getInstance(project);
+        int changeListId = p4cl.getChangeListId();
+        if (changeListId <= P4_DEFAULT) {
+            for (LocalChangeList cl : clm.getChangeLists()) {
+                if (cl.getName().equals(DEFAULT_CHANGE_NAME)) {
+                    return cl;
+                }
+            }
+            LocalChangeList cl = clm.getDefaultChangeList();
+            LOG.warn("Could not find changelist named " + DEFAULT_CHANGE_NAME + "; returning " + cl.getName());
+            return cl;
+        }
+
+        P4ChangeListId p4id = new P4ChangeListIdImpl(p4cl.getClientServerId(), changeListId);
+
+        final String id;
+        synchronized (sync) {
+            id = state.perforceToIdea.get(p4id);
+        }
+        if (id == null) {
+            return null;
+        }
+        LocalChangeList cl = clm.getChangeList(id);
+        LOG.debug("Mapped p4 changelist " + p4id + " to " + cl);
+        return cl;
+    }
+
+
     /**
      * There is always a Perforce default changelist, so this will never return null.
      *
@@ -164,7 +195,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
     /**
      * There is always a Perforce default changelist, so this will never return null.
      *
-     * @param client
+     * @param server server
      * @return The Perforce changelist for the current project's default changelist, or
      * just the Perforce default changelist.
      */
@@ -181,7 +212,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
         return ret;
     }
 
-
+    // NOTE: switched to public due to the v2 implementation
     /**
      * Creates a mapping between a local IDEA changelist and a Perforce
      * changelist.
@@ -191,7 +222,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
      * @param idea idea-backed changelist
      * @param p4id perforce-backed changelist id
      */
-    void bindChangelists(@NotNull LocalChangeList idea, @NotNull P4ChangeListId p4id) {
+    public void bindChangelists(@NotNull LocalChangeList idea, @NotNull P4ChangeListId p4id) {
         checkForInvalidMapping(idea, p4id);
         if (isDefaultChangelist(idea) && p4id.isDefaultChangelist()) {
             // this is an implicit mapping

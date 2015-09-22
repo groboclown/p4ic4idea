@@ -37,7 +37,6 @@ abstract class CacheFrontEnd {
 
 
     protected final ServerQuery<CacheFrontEnd> createRefreshQuery() {
-        LOG.info("returning refresh query");
         return new ServerQuery<CacheFrontEnd>() {
             @Nullable
             @Override

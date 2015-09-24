@@ -19,8 +19,11 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.VcsListener;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.ServerExecutor;
@@ -56,10 +59,12 @@ import java.util.concurrent.CancellationException;
         )
     }
 )
-public class P4ConfigProject implements PersistentStateComponent<ManualP4Config> {
+public class P4ConfigProject implements ProjectComponent, PersistentStateComponent<ManualP4Config> {
     private static final Logger LOG = Logger.getInstance(P4ConfigProject.class);
 
     private final Project project;
+
+    private MessageBusConnection projectMessageBus;
 
     @NotNull
     private ManualP4Config config = new ManualP4Config();
@@ -107,7 +112,8 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
     private void initializeConfigSources() {
         synchronized (this) {
             if (! sourcesInitialized) {
-                LOG.info("reloading project config sources");
+                // FIXME DEBUG
+                LOG.info("reloading project config sources", new Exception("stack capture"));
 
                 // Mark as initialized first, so we don't re-enter this function.
                 sourcesInitialized = true;
@@ -139,9 +145,11 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
                 configFile.indexOf(File.separatorChar) < 0) {
             LOG.info("Loading relative config files");
 
-            // Relative config file
-            Map<VirtualFile, P4Config> map = P4ConfigUtil.loadProjectP4Configs(project, configFile, true);
+            // Relative config file.  Make sure that we use the version
+            // that maps the correct root directory to the config file.
+            Map<VirtualFile, P4Config> map = P4ConfigUtil.loadCorrectDirectoryP4Configs(project, configFile);
             if (map.isEmpty()) {
+                LOG.info("Config invalid because no p4config files were found");
                 P4InvalidConfigException ex = new P4InvalidConfigException(P4Bundle.message("error.config.no-file"));
                 Events.configInvalid(project, getBaseConfig(), ex);
 
@@ -177,6 +185,7 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             try {
                 fullConfig = P4ConfigUtil.loadCmdP4Config(base);
             } catch (IOException e) {
+                LOG.info("Config invalid because of an IO exception", e);
                 P4InvalidConfigException ex = new P4InvalidConfigException(e);
                 Events.configInvalid(project, getBaseConfig(), ex);
 
@@ -185,13 +194,16 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
 
                 throw ex;
             }
-            // FIXME this may change without an announcement
+
+            // Note that the roots may change, which is why we register a
+            // VCS root directory change listener.
             List<VirtualFile> roots = P4ConfigUtil.getVcsRootFiles(project);
             Builder builder = new Builder(project, fullConfig);
             sourceBuilders = Collections.singletonList(builder);
             for (VirtualFile root : roots) {
                 builder.add(root);
             }
+            LOG.info("Added source builder from config " + fullConfig + " with roots " + roots);
         }
 
 
@@ -205,7 +217,8 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             } else {
                 final ProjectConfigSource source = sourceBuilder.create();
                 LOG.info("Created config source " + source + " from " +
-                        P4ConfigUtil.getProperties(sourceBuilder.getBaseConfig()));
+                        P4ConfigUtil.getProperties(sourceBuilder.getBaseConfig()) +
+                        "; config dirs = " + source.getProjectSourceDirs());
                 ret.add(source);
             }
         }
@@ -384,6 +397,59 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
         }
     }
 
+    @Override
+    public void projectOpened() {
+        // intentionally empty
+    }
+
+    @Override
+    public void projectClosed() {
+        // intentionally empty
+    }
+
+    @Override
+    public void initComponent() {
+        projectMessageBus = project.getMessageBus().connect();
+        projectMessageBus.subscribe(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED,
+                new VcsListener() {
+                    @Override
+                    public void directoryMappingChanged() {
+                        // Invalidate the current mappings.  Note that
+                        // the config isn't bad, but the underlying
+                        // file mappings need to be recomputed.
+                        // Therefore, we don't tell the user about it.
+
+                        LOG.info("VCS directory mappings changed; marking P4 configs as needing refresh.");
+
+                        P4InvalidConfigException ex = new P4InvalidConfigException(
+                                P4Bundle.message("vcs.directory.mapping.changed"));
+
+                        try {
+                            Events.configInvalid(project, config, ex);
+                        } catch (P4InvalidConfigException e) {
+                            // Ignore; don't even log.
+                        }
+
+                        // FIXME old crufty stuff
+                        project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC)
+                                .configChanges(project, config, config);
+                    }
+                });
+    }
+
+    @Override
+    public void disposeComponent() {
+        if (projectMessageBus != null) {
+            projectMessageBus.disconnect();
+            projectMessageBus = null;
+        }
+    }
+
+    @NotNull
+    @Override
+    public String getComponentName() {
+        return "P4ConfigProject";
+    }
 
 
     static class ClientImpl implements Client {
@@ -482,7 +548,8 @@ public class P4ConfigProject implements PersistentStateComponent<ManualP4Config>
             if (status != null) {
                 status.removeClient(getClientName());
                 ServerStoreService.getInstance().removeServerConfig(project, config);
-                LOG.info("*** disposed client " + clientName + " (" + config + ")", new Exception("stack capture"));
+                // FIXME DEBUG
+                LOG.info("*** disposed client " + clientName + " (" + config + ")");
                 status = null;
             }
         }

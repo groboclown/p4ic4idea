@@ -255,4 +255,9 @@ public class HierarchyP4Config implements P4Config {
         }
         return null;
     }
+
+    @Override
+    public String toString() {
+        return P4ConfigUtil.getProperties(this).toString();
+    }
 }

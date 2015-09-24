@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.v2.server.history;
+package net.groboclown.idea.p4ic.v2.history;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -21,11 +21,11 @@ import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
+import net.groboclown.idea.p4ic.v2.server.P4FileAction;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,6 +36,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class P4RevisionNumber implements VcsRevisionNumber {
 
+    /*
     public enum RevType {
         HEAD() {
             public int getRev(P4FileInfo info) {
@@ -50,6 +51,7 @@ public class P4RevisionNumber implements VcsRevisionNumber {
 
         public abstract int getRev(P4FileInfo info);
     }
+    */
 
 
     private final String depotPath;
@@ -78,6 +80,7 @@ public class P4RevisionNumber implements VcsRevisionNumber {
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
 
+    /*
     public P4RevisionNumber(@Nullable String requestedDepotPath, @NotNull final P4FileInfo info, @NotNull RevType revType) {
         this.depotPath = info.getDepotPath();
         this.rev = revType.getRev(info);
@@ -87,6 +90,7 @@ public class P4RevisionNumber implements VcsRevisionNumber {
 
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
+    */
 
     public P4RevisionNumber(@Nullable String requestedDepotPath, @NotNull final IFileAnnotation ann) {
         this.depotPath = ann.getDepotPath();
@@ -95,6 +99,15 @@ public class P4RevisionNumber implements VcsRevisionNumber {
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
 
+    @Deprecated
+    public P4RevisionNumber(@NotNull P4FileAction file) {
+        this.depotPath = file.getDepotPath();
+        this.rev = -1;
+        this.changelist = -1;
+        this.showDepotPath = false;
+    }
+
+    /*
     public P4RevisionNumber(@Nullable String requestedDepotPath, @NotNull final P4FileInfo info, final int rev) {
         if (rev < 0) {
             throw new IllegalArgumentException(P4Bundle.message("exception.revision.number.bad", rev));
@@ -107,6 +120,7 @@ public class P4RevisionNumber implements VcsRevisionNumber {
 
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
+    */
 
 
     private static boolean doShowDepotPath(@Nullable String requested, @Nullable String actual) {
@@ -131,43 +145,25 @@ public class P4RevisionNumber implements VcsRevisionNumber {
 
 
     @Nullable
-    public String loadContentAsString(@NotNull Client client, @NotNull P4FileInfo alternate)
+    public String loadContentAsString(@NotNull P4Server server, @NotNull FilePath alternate)
             throws VcsException {
         if (rev < 0) {
             return null;
         }
         if (depotPath == null) {
-            return client.getServer().loadFileAsString(alternate, rev);
+            return server.loadFileAsString(alternate, rev);
         }
         try {
-            return client.getServer().loadFileAsString(getFileSpec());
+            return server.loadFileAsString(getFileSpec());
         } catch (P4FileException e) {
             // something went wrong with the spec conversion.  Try again.
-            return client.getServer().loadFileAsString(alternate, rev);
+            return server.loadFileAsString(alternate, rev);
         }
     }
 
 
     @Nullable
-    public String loadContentAsString(@NotNull Client client, @NotNull FilePath alternate)
-            throws VcsException {
-        if (rev < 0) {
-            return null;
-        }
-        if (depotPath == null) {
-            return client.getServer().loadFileAsString(alternate, rev);
-        }
-        try {
-            return client.getServer().loadFileAsString(getFileSpec());
-        } catch (P4FileException e) {
-            // something went wrong with the spec conversion.  Try again.
-            return client.getServer().loadFileAsString(alternate, rev);
-        }
-    }
-
-
-    @Nullable
-    public byte[] loadContentAsBytes(@NotNull Client client, @Nullable FilePath alternate)
+    public byte[] loadContentAsBytes(@NotNull P4Server server, @Nullable FilePath alternate)
             throws VcsException {
         if (rev < 0) {
             return null;
@@ -176,17 +172,17 @@ public class P4RevisionNumber implements VcsRevisionNumber {
             if (alternate == null) {
                 return null;
             }
-            return client.getServer().loadFileAsBytes(alternate, rev);
+            return server.loadFileAsBytes(alternate, rev);
         }
         try {
-            return client.getServer().loadFileAsBytes(getFileSpec());
+            return server.loadFileAsBytes(getFileSpec());
         } catch (P4FileException e) {
             // something went wrong with the spec conversion.  Try again.
 
             if (alternate == null) {
                 return null;
             }
-            return client.getServer().loadFileAsBytes(alternate, rev);
+            return server.loadFileAsBytes(alternate, rev);
         }
     }
 

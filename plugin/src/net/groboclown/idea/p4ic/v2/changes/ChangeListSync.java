@@ -31,7 +31,7 @@ import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.history.P4ContentRevision;
+import net.groboclown.idea.p4ic.v2.history.P4ContentRevision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -73,8 +73,18 @@ public class ChangeListSync {
     public void syncChanges(@NotNull Set<FilePath> dirtyFiles, @NotNull ChangeListBuilderCache builder,
             @NotNull final ChangeListManagerGate addGate, @NotNull ProgressIndicator progress)
             throws VcsException, InterruptedException {
+        // TODO add in progress indicator
+
         // FIXME change all these info to debug
         LOG.info("start changelist refresh");
+
+
+        // FIXME
+        // FIXME THIS IS HORRIBLY BROKEN.
+        // FIXME   Performance is terrible.  Part of it comes from the
+        // FIXME   revision number not being implemented right.
+        // FIXME
+
 
         { // Strip out directories from the search.
             final Iterator<FilePath> iter = dirtyFiles.iterator();
@@ -110,7 +120,7 @@ public class ChangeListSync {
                 continue;
             }
 
-            // Files on the server.  This allows us to know whether  the
+            // Files on the server.  This allows us to know whether the
             // file is currently tracked by the server or not (e.g. whether
             // a change is a delete, add, or edit).
 
@@ -132,6 +142,7 @@ public class ChangeListSync {
                     // Matched this file state
                     iter.remove();
                     LocalChangeList changeList = getChangeList(action, server, mappedChanges);
+                    LOG.info(" --- mapped file " + fp + " to known change, in local changelist " + changeList);
                     ensureOnlyIn(action, changeList, builder);
                 }
             }
@@ -157,6 +168,8 @@ public class ChangeListSync {
                     final IExtendedFileSpec spec = specEntry.getValue();
                     if (spec.getOpStatus() != FileSpecOpStatus.VALID ||
                             spec.getOpenAction() == null) {
+                        LOG.info(" -- spec status: " + spec.getOpStatus());
+                        LOG.info(" -- spec open action: " + spec.getOpenAction());
                         // assume it's a file that isn't added yet.
                         if (vf == null) {
                             builder.processLocallyDeletedFile(fp);
@@ -337,8 +350,7 @@ public class ChangeListSync {
                         mapping.put(p4cl, match);
                         iter.remove();
 
-                        // TODO this line needs to be better handled to remove
-                        // all the public cruft.
+                        // TODO this line needs to be better handled to remove all the public cruft.
                         vcs.getChangeListMapping().bindChangelists(match, p4cl.getIdObject());
                     }
                 }
@@ -349,8 +361,7 @@ public class ChangeListSync {
             LocalChangeList lcl = createUniqueChangeList(addGate, p4cl, allIdeaChangeLists);
             mapping.put(p4cl, lcl);
 
-            // TODO this line needs to be better handled to remove
-            // all the public cruft.
+            // TODO this line needs to be better handled to remove all the public cruft.
             LOG.info("Binding " + p4cl.getChangeListId() + " to IDEA changelist " + lcl);
             vcs.getChangeListMapping().bindChangelists(lcl, p4cl.getIdObject());
         }
@@ -536,4 +547,5 @@ public class ChangeListSync {
             }
             return null;
         }
-    }}
+    }
+}

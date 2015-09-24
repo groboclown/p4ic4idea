@@ -100,6 +100,8 @@ public class ClientManager {
 
     public void dispose() {
         // All writes are mandatory (not interruptable, not tryLock).
+        // The connections can be redone, so don't formally mark
+        // this as disposed (where it can't be reused).
         clientAccess.writeLock().lock();
         try {
             writeLockedDispose();

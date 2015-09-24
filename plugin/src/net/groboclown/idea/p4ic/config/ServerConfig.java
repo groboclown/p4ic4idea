@@ -46,7 +46,7 @@ public abstract class ServerConfig {
     /** @deprecated no need to use this anymore */
     @Nullable
     public static ServerConfig createOldServerConfig(P4Config p4Config) {
-        System.out.println("config: " + P4ConfigUtil.getProperties(p4Config));
+        //System.out.println("config: " + p4Config);
         if (! isValid(p4Config)) {
             return null;
         }

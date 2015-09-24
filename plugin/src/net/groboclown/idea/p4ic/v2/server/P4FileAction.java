@@ -60,6 +60,10 @@ public class P4FileAction {
         return local.getLocalFilePath();
     }
 
+    @Nullable
+    public String getDepotPath() {
+        return local.getDepotPath();
+    }
 
     public boolean affects(@NotNull FilePath file) {
         final FilePath localFile = local.getLocalFilePath();
@@ -108,4 +112,5 @@ public class P4FileAction {
                 return FileStatus.NOT_CHANGED;
         }
     }
+
 }

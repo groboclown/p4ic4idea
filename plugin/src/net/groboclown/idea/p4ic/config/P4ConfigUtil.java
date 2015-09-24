@@ -248,6 +248,19 @@ public class P4ConfigUtil {
     }
 
 
+    //
+    @NotNull
+    public static Map<VirtualFile, P4Config> loadCorrectDirectoryP4Configs(
+            @NotNull Project project,
+            @NotNull String configFileName) {
+        Map<VirtualFile, P4Config> ret = new HashMap<VirtualFile, P4Config>();
+        for (VirtualFile root : getVcsRootFiles(project)) {
+            loadCorrectRootDirP4ConfigsForPath(root, configFileName, ret);
+        }
+        return ret;
+    }
+
+
     /**
      * Loads a configuration that simulates how the Perforce command-line
      * tool searches for configuration values, but searches the root
@@ -362,6 +375,91 @@ public class P4ConfigUtil {
             }
         }
         return ret;
+    }
+
+
+    /**
+     * Similar to {@link #loadProjectP4ConfigsForPath(VirtualFile, String, boolean)},
+     * but it keeps one file mapping per discovered config file.  That is, it
+     * keeps the config file found as the key, rather than truncating it at the
+     * root.
+     *
+     * @return mapping between directories and their corresponding configuration.
+     */
+    private static void loadCorrectRootDirP4ConfigsForPath(
+            @NotNull VirtualFile rootSearchPath,
+            @NotNull String configFileName,
+            @NotNull Map<VirtualFile, P4Config> mapping) {
+        if (!rootSearchPath.isDirectory() || !rootSearchPath.exists()) {
+            throw new IllegalArgumentException(P4Bundle.message("error.roots.not-directory", rootSearchPath));
+        }
+        List<Iterator<VirtualFile>> depthStack = new ArrayList<Iterator<VirtualFile>>();
+        depthStack.add(Arrays.asList(rootSearchPath.getChildren()).iterator());
+        // bug #32 - make sure to add in the root directory, too.
+        depthStack.add(Collections.singleton(rootSearchPath).iterator());
+        while (!depthStack.isEmpty()) {
+            Iterator<VirtualFile> iter = depthStack.remove(depthStack.size() - 1);
+            if (iter.hasNext()) {
+                VirtualFile vFile = iter.next();
+                if (iter.hasNext()) {
+                    depthStack.add(iter);
+                }
+                if (vFile != null) {
+                    // Make sure we use the actual I/O file in order to avoid some
+                    // IDEA refresh issues.
+                    File file = new File(vFile.getPath());
+                    if (file.isDirectory()) {
+                        depthStack.add(Arrays.asList(vFile.getChildren()).iterator());
+                    } else if (!mapping.containsKey(vFile.getParent())) {
+                        // ignore, because this specific directory has a mapping
+                        // already; don't perform the config file loading again.
+                        // FIXME DEBUG
+                        LOG.info("-- already loaded config for " + vFile.getParent());
+                    } else if (!file.exists()) {
+                        LOG.info("Discovered non-existent file in IDEA cache: " + file);
+                    } else if (file.getName().equals(configFileName)) {
+                        ManualP4Config config = new ManualP4Config();
+                        config.setConfigFile(file.getAbsolutePath());
+                        try {
+                            LOG.info("-- loading config file " + file.getAbsolutePath() + " -> " + vFile.getParent());
+                            final P4Config loadedConfig = loadCmdP4Config(config);
+                            mapping.put(vFile.getParent(), loadedConfig);
+                        } catch (IOException e) {
+                            LOG.error("Could not find or read config file " + file.getPath(), e);
+                        }
+                    }
+                }
+            }
+        }
+
+        // No matter what, search up the tree to see if there's some parent config
+        // file at a higher level.  This may be a bit inefficient, in so much as
+        // multiple calls will do this, but it guarantees results, and looking up
+        // a tree isn't too bad performance-wise.
+        VirtualFile parent = rootSearchPath.getParent();
+        while (parent != null) {
+            VirtualFile configFile = parent.findChild(configFileName);
+            if (configFile != null && !mapping.containsKey(parent)) {
+                File file = new File(configFile.getPath());
+                if (file.exists() && file.isFile()) {
+                    LOG.info("Found config file " + configFile.getPath() +
+                            ", but registering it as root of " + rootSearchPath);
+                    ManualP4Config config = new ManualP4Config();
+                    config.setConfigFile(file.getAbsolutePath());
+
+                    try {
+                        final P4Config loadedConfig = loadCmdP4Config(config);
+                        mapping.put(parent, loadedConfig);
+                        // Found the first config file before the root, so stop.
+                        break;
+                    } catch (IOException e) {
+                        LOG.error("Could not find or read config file " + configFile.getPath(), e);
+                        // keep going up the tree
+                    }
+                }
+            }
+            parent = parent.getParent();
+        }
     }
 
 

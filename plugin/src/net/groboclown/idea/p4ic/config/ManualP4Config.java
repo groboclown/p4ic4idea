@@ -313,4 +313,9 @@ public class ManualP4Config implements P4Config {
                 (clientHostname == null ? 12 : clientHostname.hashCode()) +
                 (ignoreFileName == null ? 13 : ignoreFileName.hashCode());
     }
+
+    @Override
+    public String toString() {
+        return P4ConfigUtil.getProperties(this).toString();
+    }
 }

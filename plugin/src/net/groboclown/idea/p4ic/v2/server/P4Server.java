@@ -26,7 +26,9 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.ServerExecutor;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
+import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
@@ -298,6 +300,8 @@ public class P4Server {
             return null;
         }
 
+        // FIXME perform better matching
+
         // should be a 1-to-1 mapping
         if (filePathList.size() != extended.size()) {
             StringBuilder sb = new StringBuilder("did not match ");
@@ -311,8 +315,6 @@ public class P4Server {
                     .append("} ");
             }
             sb.append("]");
-
-            // FIXME perform better matching
             throw new IllegalStateException(sb.toString());
         }
 
@@ -441,6 +443,43 @@ public class P4Server {
         Collections.reverse(ret);
         return ret;
     }
+
+    /**
+     * Fetch the file spec's contents.  If the file does not exist or is deleted,
+     * it returns null.  If the filespec is invalid or the server is not connected,
+     * an exception is thrown.
+     *
+     * @param fileSpec file spec to read
+     * @return the file contents
+     * @throws P4FileException
+     * @throws P4DisconnectedException
+     */
+    @Nullable
+    public String loadFileAsString(@NotNull IFileSpec spec)
+            throws P4FileException, P4DisconnectedException {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public String loadFileAsString(@NotNull FilePath file, final int rev)
+            throws P4FileException, P4DisconnectedException {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public byte[] loadFileAsBytes(@NotNull IFileSpec spec) {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public byte[] loadFileAsBytes(@NotNull FilePath file, final int rev) {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+    }
+
 
     @Override
     public String toString() {

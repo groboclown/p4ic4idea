@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.v2.server.history;
+package net.groboclown.idea.p4ic.v2.history;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
@@ -19,7 +19,6 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
-import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,32 +26,21 @@ import org.jetbrains.annotations.Nullable;
  * Represents a non-deleted, submitted version of the file.
  */
 public class P4ContentRevision implements ContentRevision {
-    private final Project myProject;
+    private final Project project;
     private final FilePath filePath;
-    private final P4ClientFileMapping p4file;
     private final P4RevisionNumber rev;
     private final P4FileAction fileAction;
 
+    // FIXME needs a better implementation than this, to better record the revision number.
+    @Deprecated
     public P4ContentRevision(@NotNull Project project, @NotNull P4FileAction file) {
-        myProject = project;
-        fileAction = file;
-        filePath = file.getFile();
-        // FIXME ensure filePath is not null
-
-        // FIXME needs correct implementation.
-        rev = null;
-        //p4file = file.getP4File();
-        p4file = null;
-    }
-
-    public P4ContentRevision(@NotNull Project project, @NotNull FilePath fp) {
-        myProject = project;
-        fileAction = null;
-        filePath = fp;
-
-        // FIXME needs correct implementation
-        rev = null;
-        p4file = null;
+        this.project = project;
+        this.fileAction = file;
+        this.filePath = file.getFile();
+        if (this.filePath == null) {
+            throw new IllegalArgumentException(file + " has null file path");
+        }
+        this.rev = new P4RevisionNumber(file);
     }
 
     @Nullable

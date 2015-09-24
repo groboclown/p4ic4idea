@@ -36,7 +36,6 @@
 
 package net.groboclown.idea.p4ic.v2.server.connection;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
@@ -56,7 +55,6 @@ import java.util.*;
  * These are created via {@link P4ConfigProject#loadProjectConfigSources()}.
  */
 public class ProjectConfigSource {
-    private static final Logger LOG = Logger.getInstance(ProjectConfigSource.class);
 
     private final Project project;
     private final List<VirtualFile> projectSourceDirs;
@@ -113,9 +111,6 @@ public class ProjectConfigSource {
         this.clientName = clientName;
         this.configuration = configuration;
         this.clientServerId = ClientServerId.create(configuration, clientName);
-        // FIXME it looks like the directories are incorrectly set.
-        // FIXME debug
-        LOG.info("Created new project config source " + clientServerId + " with root dirs " + projectSourceDirs);
     }
 
     @NotNull

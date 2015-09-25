@@ -119,7 +119,8 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                 String depotPath = spec.getDepotPathString();
                 FilePath clientFilePath = clientSpecToFilePath(spec, alerts);
                 if (depotPath == null || clientFilePath == null) {
-                    LOG.error("callee did not remove invalid file specs");
+                    LOG.error("callee did not remove invalid file specs: " + spec +
+                            ": depot " + depotPath + ", client: " + clientFilePath);
                 } else {
                     P4ClientFileMapping fileState = fileRepo.getByDepotLocation(depotPath, clientFilePath);
                     final FileUpdateAction action = FileUpdateAction.getFileUpdateAction(
@@ -141,7 +142,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         // no need for synchronization here
         String clientPath = spec.getClientPathString();
         if (clientPath == null) {
-            LOG.debug("File spec has no client path: " + spec);
+            LOG.error("File spec has no client path: " + spec);
             return null;
         }
         // Rare circumstances can have quotes surrounding the path.  It shouldn't, in general.
@@ -151,8 +152,11 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         String clientPathLower = clientPath.toLowerCase();
         String clientPrefix = "//" + getCachedClientName() + "/";
         if (! clientPathLower.startsWith(clientPrefix.toLowerCase())) {
-            alerts.addWarning(P4Bundle.message("error.filespec.incorrect-client", clientPath, getCachedClientName()), null);
-            return null;
+            // assume it's the actual path to the file system.
+            // FIXME debug
+            FilePath ret = FilePathUtil.getFilePath(clientPath);
+            LOG.info(" - converted " + spec + " to file " + ret);
+            return ret;
         }
         String relClientPath = clientPath.substring(clientPrefix.length());
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();

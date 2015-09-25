@@ -41,6 +41,24 @@ public class MessageResult<T> {
     }
 
 
+    public static <T extends IFileOperationResult> MessageResult<List<T>> create(List<T> specs,
+            boolean markFileNotFoundAsValid) {
+        List<T> results = new ArrayList<T>(specs.size());
+        List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
+        for (T spec : specs) {
+            if (P4StatusMessage.isValid(spec)) {
+                results.add(spec);
+            } else if (markFileNotFoundAsValid && P4StatusMessage.isFileNotFoundError(spec)) {
+                results.add(spec);
+            } else {
+                final P4StatusMessage msg = new P4StatusMessage(spec);
+                messages.add(msg);
+            }
+        }
+        return new MessageResult<List<T>>(results, messages);
+    }
+
+
     public MessageResult(final T result, final List<P4StatusMessage> messages) {
         this.result = result;
         this.messages = Collections.unmodifiableList(messages);

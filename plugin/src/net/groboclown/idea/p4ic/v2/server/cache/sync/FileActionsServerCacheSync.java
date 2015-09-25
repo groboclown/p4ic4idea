@@ -88,31 +88,32 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
     @Override
     protected void innerLoadServerCache(@NotNull P4Exec2 exec, @NotNull AlertManager alerts) {
+        ServerConnection.assertInServerConnection();
 
         // Load our server cache.  Note that we only load specs that we consider to be in a
         // "valid" file action state.
 
-        MessageResult<List<IFileSpec>> results = null;
         try {
             // This is okay to run with the "-s" argument.
-            results = exec.loadOpenedFiles(getClientRootSpecs(exec.getProject(), alerts), true);
+            final MessageResult<List<IFileSpec>> results =
+                exec.loadOpenedFiles(getClientRootSpecs(exec.getProject(), alerts), true);
+            if (!alerts.addWarnings(P4Bundle.message("error.load-opened", cache.getClientName()), results, true)) {
+                lastRefreshed = new Date();
+
+                // Only clear the cache once we know that we have valid results.
+
+                final List<IFileSpec> validSpecs = new ArrayList<IFileSpec>(results.getResult());
+                final List<IFileSpec> invalidSpecs = sortInvalidActions(validSpecs);
+                addInvalidActionAlerts(alerts, invalidSpecs);
+
+                cachedServerUpdatedFiles.clear();
+                cachedServerUpdatedFiles.addAll(cache.fromOpenedToAction(validSpecs, alerts));
+
+                // All the locally pending changes will remain unchanged; it's up to the
+                // ServerUpdateAction to correctly handle the differences.
+            }
         } catch (VcsException e) {
             alerts.addWarning(P4Bundle.message("error.load-opened", cache.getClientName()), e);
-        }
-        if (results != null && !results.isError()) {
-            lastRefreshed = new Date();
-
-            // Only clear the cache once we know that we have valid results.
-
-            final List<IFileSpec> validSpecs = new ArrayList<IFileSpec>(results.getResult());
-            final List<IFileSpec> invalidSpecs = sortInvalidActions(validSpecs);
-            addInvalidActionAlerts(alerts, invalidSpecs);
-
-            cachedServerUpdatedFiles.clear();
-            cachedServerUpdatedFiles.addAll(cache.fromOpenedToAction(validSpecs, alerts));
-
-            // All the locally pending changes will remain unchanged; it's up to the
-            // ServerUpdateAction to correctly handle the differences.
         }
     }
 
@@ -197,6 +198,9 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 .append("depot:").append(spec.getDepotPathString())
                 .append(", client:").append(spec.getClientPathString())
                 .append(", action: ").append(spec.getAction());
+            if (spec.getStatusMessage() != null) {
+                sb.append(", message: ").append(spec.getStatusMessage());
+            }
             sep = "]; ";
         }
         alerts.addNotice(sb.toString(), null);
@@ -210,6 +214,9 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             final IFileSpec next = iter.next();
             if (next != null) {
                 if (! isValidUpdateAction(next) || next.getClientPathString() == null || next.getDepotPathString() == null) {
+                    // FIXME debug
+                    LOG.info("invalid spec: " + next + ": action: " + next.getAction() + "; client path string: " +
+                        next.getClientPathString() + "; depot path string: " + next.getDepotPathString());
                     ret.add(next);
                     iter.remove();
                 }

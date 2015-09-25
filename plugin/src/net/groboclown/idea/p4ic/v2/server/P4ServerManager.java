@@ -32,6 +32,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.AllClientsState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -110,17 +111,7 @@ public class P4ServerManager implements ProjectComponent {
             }
             // Find the shallowest match.
             for (FilePath file : files) {
-                int minDepth = Integer.MAX_VALUE;
-                P4Server minDepthServer = null;
-                for (P4Server server : servers) {
-                    int depth = server.getFilePathMatchDepth(file);
-                    LOG.info(" --- server " + server + " match depth: " + depth);
-                    if (depth < minDepth && depth >= 0) {
-                        minDepth = depth;
-                        minDepthServer = server;
-                    }
-                }
-                LOG.info("Matched " + file + " to " + minDepthServer);
+                P4Server minDepthServer = getServerForPath(servers, file);
                 List<FilePath> match = ret.get(minDepthServer);
                 if (match == null) {
                     match = new ArrayList<FilePath>();
@@ -132,6 +123,17 @@ public class P4ServerManager implements ProjectComponent {
         } else {
             LOG.info("configs not valid");
             return Collections.emptyMap();
+        }
+    }
+
+
+    @Nullable
+    public P4Server getForFilePath(@NotNull FilePath fp) throws InterruptedException {
+        if (connectionsValid) {
+            return getServerForPath(getServers(), fp);
+        } else {
+            LOG.info("configs not valid");
+            return null;
         }
     }
 
@@ -245,5 +247,23 @@ public class P4ServerManager implements ProjectComponent {
     @Override
     public String getComponentName() {
         return "Perforce Server Manager";
+    }
+
+
+    @Nullable
+    private P4Server getServerForPath(@NotNull List<P4Server> servers, @NotNull FilePath file)
+            throws InterruptedException {
+        int minDepth = Integer.MAX_VALUE;
+        P4Server minDepthServer = null;
+        for (P4Server server : servers) {
+            int depth = server.getFilePathMatchDepth(file);
+            LOG.debug(" --- server " + server + " match depth: " + depth);
+            if (depth < minDepth && depth >= 0) {
+                minDepth = depth;
+                minDepthServer = server;
+            }
+        }
+        LOG.info("Matched " + file + " to " + minDepthServer);
+        return minDepthServer;
     }
 }

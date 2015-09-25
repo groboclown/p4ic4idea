@@ -681,6 +681,12 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     }
 
 
+    @Nullable
+    public P4Server getP4ServerFor(@NotNull FilePath fp) throws InterruptedException {
+        return serverManager.getForFilePath(fp);
+    }
+
+
     /**
      * @param virtualFiles paths mapped
      * @return a mapping of all the input files to the corresponding Perforce server configuration.  If a file

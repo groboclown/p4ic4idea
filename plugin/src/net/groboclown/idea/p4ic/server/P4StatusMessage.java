@@ -17,6 +17,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IFileOperationResult;
+import com.perforce.p4java.exception.MessageGenericCode;
 import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.idea.p4ic.P4Bundle;
 import org.jetbrains.annotations.NotNull;
@@ -42,13 +43,6 @@ public class P4StatusMessage {
                 spec.getOpStatus() != FileSpecOpStatus.INFO;
     }
 
-    public boolean isFileNotFoundError() {
-        return isError() &&
-                (getUniqueCode() == 6520 ||
-                 getUniqueCode() == 6519 ||
-                 getUniqueCode() == 6526);
-    }
-
     public int getErrorCode() {
         return spec.getGenericCode();
     }
@@ -65,18 +59,8 @@ public class P4StatusMessage {
         return spec.getStatusMessage();
     }
 
-    public boolean isNoSuchFilesMessage() {
-        // Check for "is not under root", which is something fstat
-        // returns for files that haven't been added.
-        if (spec.getUniqueCode() == 4135) {
-            LOG.info("reported as no such file: " + toString());
-            return true;
-        }
-
-        // NOTE: this may be language specific.  Parts of the
-        // client may be localized and return a different message.
-        return spec.getStatusMessage() != null &&
-                (spec.getStatusMessage().hasMessageFragment(P4MSG_NO_SUCH_FILE));
+    public boolean isFileNotFoundError() {
+        return isFileNotFoundError(spec);
     }
 
     @Override
@@ -191,10 +175,10 @@ public class P4StatusMessage {
         throw new IllegalArgumentException(P4Bundle.message("error.not-error", msg));
     }
 
-    public static boolean isNoSuchFilesMessage(@NotNull IFileOperationResult spec) {
+    public static boolean isFileNotFoundError(@NotNull IFileOperationResult spec) {
         // Check for "is not under root", which is something fstat
         // returns for files that haven't been added.
-        if (spec.getUniqueCode() == 4135) {
+        if (spec.getGenericCode() == MessageGenericCode.EV_EMPTY) {
             LOG.info("reported as no such file: " + new P4StatusMessage(spec));
             return true;
         }

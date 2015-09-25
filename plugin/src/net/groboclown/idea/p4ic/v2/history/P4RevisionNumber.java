@@ -144,6 +144,7 @@ public class P4RevisionNumber implements VcsRevisionNumber {
     }
 
 
+    // This can run in the EDT!
     @Nullable
     public String loadContentAsString(@NotNull P4Server server, @NotNull FilePath alternate)
             throws VcsException {

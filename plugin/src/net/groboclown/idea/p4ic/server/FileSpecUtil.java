@@ -95,14 +95,14 @@ public class FileSpecUtil {
 
 
     @NotNull
-    public static IFileSpec getFromDepotPath(@NotNull final String depotPath, int rev) throws P4Exception {
+    public static IFileSpec getFromDepotPath(@NotNull final String depotPath, int rev) throws P4FileException {
         String path = escapeToP4Path(depotPath);
         if (rev > 0) {
             path = path + '#' + Integer.toString(rev);
         }
         final List<IFileSpec> list = FileSpecBuilder.makeFileSpecList(path);
         if (list.size() != 1) {
-            throw new P4Exception(P4Bundle.message("error.annotate.multiple-files", path, list));
+            throw new P4FileException(P4Bundle.message("error.annotate.multiple-files", path, list));
         }
         return list.get(0);
     }
@@ -226,7 +226,7 @@ public class FileSpecUtil {
     }
 
 
-    private static String escapeToP4Path(@NotNull String path) throws P4Exception {
+    private static String escapeToP4Path(@NotNull String path) throws P4FileException {
         if (path.contains("...")) {
             throw new P4FileException(P4Bundle.message("error.filespec.elipses", path));
         }

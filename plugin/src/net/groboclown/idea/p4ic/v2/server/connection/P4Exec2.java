@@ -24,9 +24,11 @@ import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.exception.*;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.generic.core.file.FilePath;
+import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
@@ -37,8 +39,12 @@ import com.perforce.p4java.option.server.OpenedFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
-import net.groboclown.idea.p4ic.server.*;
-import net.groboclown.idea.p4ic.server.exceptions.*;
+import net.groboclown.idea.p4ic.server.FileSpecUtil;
+import net.groboclown.idea.p4ic.server.P4Job;
+import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
+import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
+import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -203,7 +209,11 @@ public class P4Exec2 {
                         null,
                         -1).setShortOutput(fast);
                 final List<IFileSpec> files = client.openedFiles(openedSpecs, options);
-                return MessageResult.create(files);
+                // We will need to get the full information on these files, so grab that, too.
+                // We keep a list of all the returned specs that were messages, and include the
+                // specs for the fstat results.  The result from the "opened" operation will
+                // only ever return the depot path.
+                return loadFstatForFileResult(server, files, true);
             }
         });
     }
@@ -425,6 +435,8 @@ public class P4Exec2 {
                     return null;
                 }
                 count.invoke("changelist.getFiles");
+
+                // FIXME make this get the status
                 return cl.getFiles(false);
             }
         });
@@ -780,5 +792,51 @@ public class P4Exec2 {
                 return job;
             }
         });
+    }
+
+
+    @NotNull
+    private MessageResult<List<IFileSpec>> loadFstatForFileResult(@NotNull IOptionsServer server,
+            @NotNull List<IFileSpec> files, boolean markFileNotFoundAsValid) throws P4JavaException, P4FileException {
+        // We will need to get the full information on these files, so grab that, too.
+        // We keep a list of all the returned specs that were messages, and include the
+        // specs for the fstat results.  The result from the "opened" operation will
+        // only ever return the depot path.
+        List<IFileSpec> retSpecs = new ArrayList<IFileSpec>(files.size());
+        List<IFileSpec> fstatSpecs = new ArrayList<IFileSpec>(files.size());
+        for (IFileSpec spec : files) {
+            if (spec.getDepotPathString() != null &&
+                    (P4StatusMessage.isValid(spec) || P4StatusMessage.isFileNotFoundError(spec))) {
+                // File is either in Perforce, or not in Perforce but is added for open,
+                // or something else.
+                // FIXME DEBUG
+                String oldPath = spec.getDepotPathString();
+
+                // the old path is already escaped.  just shove it into a new file spec to
+                // strip off any extra information we don't want to query.
+                spec = new FileSpec(spec.getDepotPathString(), false);
+                LOG.info(" -+- for fstat reading: mapped " + oldPath + " to " + spec.getPreferredPathString());
+
+                fstatSpecs.add(spec);
+            } else {
+                retSpecs.add(spec);
+            }
+        }
+        if (! fstatSpecs.isEmpty()) {
+            GetExtendedFilesOptions opts = new GetExtendedFilesOptions(
+                    "-m", Integer.toString(fstatSpecs.size()));
+            final List<IExtendedFileSpec> specs = server.getExtendedFiles(fstatSpecs, opts);
+
+            // Make sure the specs are unescaped on return
+            for (IExtendedFileSpec spec : specs) {
+                spec.setDepotPath(FileSpecUtil.unescapeP4PathNullable(spec.getDepotPathString()));
+                spec.setClientPath(FileSpecUtil.unescapeP4PathNullable(spec.getClientPathString()));
+                spec.setOriginalPath(FileSpecUtil.unescapeP4PathNullable(spec.getOriginalPathString()));
+                spec.setLocalPath(FileSpecUtil.unescapeP4PathNullable(spec.getLocalPathString()));
+                spec.setServer(null);
+                retSpecs.add(spec);
+            }
+        }
+        return MessageResult.create(retSpecs, markFileNotFoundAsValid);
     }
 }

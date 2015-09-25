@@ -18,7 +18,10 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
  * Represents a non-deleted, submitted version of the file.
  */
 public class P4ContentRevision implements ContentRevision {
-    private final Project project;
+    private final P4Vcs vcs;
     private final FilePath filePath;
     private final P4RevisionNumber rev;
     private final P4FileAction fileAction;
@@ -34,7 +37,7 @@ public class P4ContentRevision implements ContentRevision {
     // FIXME needs a better implementation than this, to better record the revision number.
     @Deprecated
     public P4ContentRevision(@NotNull Project project, @NotNull P4FileAction file) {
-        this.project = project;
+        this.vcs = P4Vcs.getInstance(project);
         this.fileAction = file;
         this.filePath = file.getFile();
         if (this.filePath == null) {
@@ -48,22 +51,27 @@ public class P4ContentRevision implements ContentRevision {
     public String getContent() throws VcsException {
         // This can run in the EDT!
 
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
-        // return rev.loadContentAsString(client, p4file);
+        try {
+            final P4Server server = vcs.getP4ServerFor(filePath);
+            if (server != null) {
+                return rev.loadContentAsString(server, filePath);
+            } else {
+                return null;
+            }
+        } catch (InterruptedException e) {
+            throw new VcsInterruptedException(e);
+        }
     }
 
     @NotNull
     @Override
     public FilePath getFile() {
-        // FIXME ensure in constructor that the file is not null
         return filePath;
     }
 
     @NotNull
     @Override
     public VcsRevisionNumber getRevisionNumber() {
-        // FIXME instantiate a correct object
         return rev;
     }
 }

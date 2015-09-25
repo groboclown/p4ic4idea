@@ -77,19 +77,34 @@ public class AlertManager implements ApplicationComponent {
     }
 
 
-    public void addWarnings(@NotNull final String message, @NotNull final List<P4StatusMessage> msgs,
+    public <T> boolean addWarnings(@NotNull final String message, @NotNull MessageResult<T> result,
+            boolean ignoreFileNotFound) {
+        return addWarnings(message, result.getMessages(), ignoreFileNotFound);
+    }
+
+
+    /**
+     *
+     * @param message
+     * @param msgs
+     * @param ignoreFileNotFound
+     * @return true if the messages contained an error, false if not.
+     */
+    public boolean addWarnings(@NotNull final String message, @NotNull final List<P4StatusMessage> msgs,
             final boolean ignoreFileNotFound) {
         List<String> statusMessages = new ArrayList<String>(msgs.size());
         for (P4StatusMessage msg : msgs) {
             if (msg != null && msg.isError() && (!ignoreFileNotFound ||
-                    !(msg.isFileNotFoundError() || msg.isNoSuchFilesMessage()))) {
+                    !msg.isFileNotFoundError())) {
                 statusMessages.add(msg.toString());
             }
         }
         if (! statusMessages.isEmpty()) {
             // TODO make as a local message
             addWarning(message + ": " + statusMessages, null);
+            return true;
         }
+        return false;
     }
 
     public void addNotice(@NotNull @Nls final String message, @Nullable final VcsException ex) {
@@ -106,7 +121,7 @@ public class AlertManager implements ApplicationComponent {
             final boolean ignoreFileNotFound) {
         for (P4StatusMessage msg : msgs) {
             if (msg != null && msg.isError() && (! ignoreFileNotFound ||
-                    ! (msg.isFileNotFoundError() || msg.isNoSuchFilesMessage()))) {
+                    ! msg.isFileNotFoundError())) {
                 // FIXME this should be turned into a UI-friendly element
                 LOG.warn(message, P4StatusMessage.messageAsError(msg));
             }

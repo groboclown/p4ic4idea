@@ -22,10 +22,9 @@ import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.util.List;
 
 /**
  * A hybrid local cached file.  The ignore file is stored entirely on the client (it can be in Perforce,
@@ -50,63 +49,33 @@ public class IgnoreFiles {
             return true;
         }
         final FilePath ignoreFile = findApplicableIgnoreFile(file);
-        return !(ignoreFile == null || ignoreFile.getVirtualFile() == null) && isMatch(file, ignoreFile);
+        return isMatch(file, ignoreFile);
     }
 
-    private boolean isMatch(@NotNull final FilePath file, @NotNull final FilePath ignoreFile) {
+    private boolean isMatch(@NotNull final FilePath file, @Nullable final FilePath ignoreFile) {
         LOG.debug("Checking ignore status on " + file + " against ignore file " + ignoreFile);
-        assert file.isUnder(ignoreFile, false) && ignoreFile.getVirtualFile() != null && ignoreFile.getParentPath() != null;
-
-        String subpath = ignoreFile.getParentPath().getPath().replace(File.separatorChar, '/');
-        String checkpath = file.getPath().replace(File.separatorChar, '/').substring(subpath.length());
-        while (checkpath.startsWith("/")) {
-            checkpath = checkpath.substring(1);
+        if (ignoreFile == null || ignoreFile.getVirtualFile() == null || ignoreFile.getParentPath() == null) {
+            LOG.info("Some part of the ignore file is null (" + ignoreFile + "); not a match");
+            return false;
+        }
+        if (! file.isUnder(ignoreFile.getParentPath(), false)) {
+            throw new IllegalStateException("incorrect invocation: " + ignoreFile + " is not a parent of " + file);
         }
 
+        String preparedPath = IgnoreFilePattern.preparePath(file, ignoreFile);
+        if (preparedPath == null) {
+            return false;
+        }
+
+        // TODO look at caching these ignore file results.
+        // It would mean needing to be aware of file reload events, though.
 
         try {
-            final BufferedReader lineReader =
-                    new BufferedReader(new InputStreamReader(ignoreFile.getVirtualFile().getInputStream()));
-            try {
-                // File format:
-                // (from http://ftp.perforce.com/pub/perforce/r14.1/doc/help/p4vs-html/en/HtmlHelp/p4vs_ignore.html)
-                // The syntax for ignore rules is not the same as Perforce syntax. Instead, it is similar to that used
-                // by other versioning systems:
-                //
-                // Files are specified in local syntax
-                //   # at the beginning of a line denotes a comment
-                //   ! at the beginning of a line excludes the file specification
-                //   * wildcard matches substrings
-                //
-                // For example:
-                // foo.txt 	Ignore files called "foo.txt"
-                // *.exe 	Ignore all executables
-                // !bar.exe 	Exclude bar.exe from being ignored
-
-                // This description unfortunately does not describe these circumstances:
-                //   - if a "!" is found after the matcher, is it still a match?
-                //     (does the first match force a result?)
-                //   - if a path is specified ("temp/*.tmp"), is it relative to the
-                //     ignore file?
-
-                String line;
-                while ((line = lineReader.readLine()) != null) {
-                    line = line.trim();
-                    if (line.length() <= 0 || line.charAt(0) == '#') {
-                        continue;
-                    }
-                    boolean isIgnoreMatchType = true;
-                    if (line.charAt(0) == '!' && line.length() > 1) {
-                        isIgnoreMatchType = false;
-                        line = line.substring(1).trim();
-                    }
-                    line = line.replace('\\', '/');
-                    if (globMatch(line, checkpath)) {
-                        return isIgnoreMatchType;
-                    }
+            final List<IgnoreFilePattern> patterns = IgnoreFilePattern.parseFile(ignoreFile.getVirtualFile());
+            for (IgnoreFilePattern pattern: patterns) {
+                if (pattern.matches(preparedPath)) {
+                    return pattern.isIgnoreMatchType();
                 }
-            } finally {
-                lineReader.close();
             }
         } catch (IOException e) {
             // problem reading; assume it's not ignored
@@ -114,11 +83,6 @@ public class IgnoreFiles {
             return false;
         }
         return false;
-    }
-
-    private boolean globMatch(@NotNull String line, @NotNull String checkpath) {
-        // FIXME use a real glob matcher
-        throw new IllegalStateException("not implemented");
     }
 
 

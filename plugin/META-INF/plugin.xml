@@ -104,8 +104,6 @@
 
         <group id="P4FileActions">
             <reference ref="CheckinFiles"/>
-            <action id="P4.EditOld" class="net.groboclown.idea.p4ic.actions.P4EditOrig"
-                    text="Add or edit (old method)" icon="AllIcons.Actions.Edit"/>
             <action id="P4.Edit" class="net.groboclown.idea.p4ic.actions.P4Edit"
                     text="Add or edit" icon="AllIcons.Actions.Edit"
                     use-shortcut-of="ChangesView.AddUnversioned"/>

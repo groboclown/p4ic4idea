@@ -58,7 +58,7 @@ import net.groboclown.idea.p4ic.server.OnServerConfigurationProblem;
 import net.groboclown.idea.p4ic.server.OnServerDisconnectListener;
 import net.groboclown.idea.p4ic.server.ServerStoreService;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
-import net.groboclown.idea.p4ic.ui.P4ConnectionWidget;
+import net.groboclown.idea.p4ic.ui.P4MultipleConnectionWidget;
 import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeProvider;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
@@ -135,7 +135,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     private MessageBusConnection appMessageBusConnection;
 
-    private P4ConnectionWidget connectionWidget;
+    //private P4ConnectionWidget connectionWidget;
+    private P4MultipleConnectionWidget connectionWidget;
 
     private P4VFSListener myVFSListener;
 
@@ -261,7 +262,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         if (!ApplicationManager.getApplication().isHeadlessEnvironment()) {
             final StatusBar statusBar = WindowManager.getInstance().getStatusBar(myProject);
             if (statusBar != null) {
-                connectionWidget = new P4ConnectionWidget(this, myProject);
+                connectionWidget = new P4MultipleConnectionWidget(this, myProject);
                 ApplicationManager.getApplication().invokeAndWait(new Runnable() {
                     @Override
                     public void run() {
@@ -311,7 +312,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         if (connectionWidget != null && !ApplicationManager.getApplication().isHeadlessEnvironment()) {
             final StatusBar statusBar = WindowManager.getInstance().getStatusBar(myProject);
             if (statusBar != null) {
-                connectionWidget = new P4ConnectionWidget(this, myProject);
+                connectionWidget = new P4MultipleConnectionWidget(this, myProject);
                 ApplicationManager.getApplication().invokeAndWait(new Runnable() {
                     @Override
                     public void run() {

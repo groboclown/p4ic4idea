@@ -5,8 +5,10 @@
 
 These bugs need to be handled before features.
 
-1. Need to implement `P4ContentRevision.getContent()`; but this is mostly driven by the history
-   feature (see below).
+1. Going offline for no apparent reason.  Reconnect attempts seem to be ignored.
+1. P4Edit isn't always editing the files.  Need to figure out what's going on.
+   Looks like when offline, the queued file status isn't being recognized.
+
 
 
 
@@ -16,6 +18,8 @@ There are some features that drive how the inner architecture will work.
 
 1. History, as this will dictate the necessary stored information for
    cached files and revision numbers.
+   1. Need to implement `P4ContentRevision.getContent()` correctly based
+      on the history implementation.
    
    
    
@@ -29,6 +33,7 @@ There are some features that drive how the inner architecture will work.
 ## Features Needing Migration
 
 1. `P4ChangelistListener`
+1. `P4WorkOnlineAction` and the offline one.  These are the "turn them all on/off at once" actions.
 
 
 
@@ -38,4 +43,10 @@ There are some features that drive how the inner architecture will work.
 
 1. Remove the excessive logging.  Move down to debug if necessary,
    and include "ifDebug" calls if debug is used.
+1. `AlertManager` - UI display for messages.
 
+
+## Long term features
+
+1. Keep backups of edited files, to allow for simulated reverts and limited diffs while in
+   offline mode.

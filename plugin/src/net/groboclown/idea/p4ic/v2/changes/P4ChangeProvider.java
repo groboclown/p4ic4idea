@@ -98,6 +98,8 @@ public class P4ChangeProvider implements ChangeProvider {
 
         if (cachedChanges != null) {
             // Check for cache expiration
+            // FIXME DEBUG
+            LOG.info("Has cache; checking if timeout occurred");
             if (lastRefreshRequest - lastRefreshTime <
                     TimeUnit.SECONDS.toMillis(CHANGELIST_CACHE_EXPIRES_SECONDS)) {
 

@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.P4Config;
@@ -43,6 +44,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ServerConnectionManager implements ApplicationComponent {
+    private static final Logger LOG = Logger.getInstance(ServerConnectionManager.class);
+
     private final MessageBusConnection messageBus;
     private final CentralCacheManager cacheManager;
     private final AlertManager alerts;
@@ -313,6 +316,7 @@ public class ServerConnectionManager implements ApplicationComponent {
                 onlineStatusLock.lock();
                 try {
                     if (!online) {
+                        LOG.info("** went online: " + config);
                         online = true;
                         onlineChangedCondition.signal();
                         return true;
@@ -329,6 +333,7 @@ public class ServerConnectionManager implements ApplicationComponent {
             onlineStatusLock.lock();
             try {
                 if (online) {
+                    LOG.info("** went offline: " + config);
                     online = false;
                     onlineChangedCondition.signal();
                     return valid;

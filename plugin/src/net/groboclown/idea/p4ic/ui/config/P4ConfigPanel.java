@@ -15,9 +15,6 @@ package net.groboclown.idea.p4ic.ui.config;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task.Backgroundable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Comparing;
@@ -408,39 +405,41 @@ public class P4ConfigPanel {
      * the refreshResolvedProperties
      */
     private void refreshConfigPaths() {
-        ProgressManager.getInstance()
-                .run(new Backgroundable(myProject, P4Bundle.getString("configuration.configfiles.refresh"), true) {
+        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+            @Override
+            public void run() {
+                // Load the config paths in the background thread
+                final Map<String, P4Config> mapping = loadRelativeConfigPaths();
+
+                // update the UI in the EDT
+                ApplicationManager.getApplication().invokeLater(new Runnable() {
                     @Override
-                    public void run(@NotNull final ProgressIndicator indicator) {
-                        final Map<String, P4Config> mapping = loadRelativeConfigPaths();
-                        ApplicationManager.getApplication().invokeLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                // load the drop-down list with the new values.
-                                // Make sure to maintain the existing selected item.
+                    public void run() {
+                        // load the drop-down list with the new values.
+                        // Make sure to maintain the existing selected item.
 
-                                Object current = myResolvePath.getSelectedItem();
-                                myResolvePath.removeAllItems();
-                                if (mapping != null && !mapping.isEmpty()) {
-                                    boolean found = false;
-                                    for (String s : mapping.keySet()) {
-                                        if (s.equals(current)) {
-                                            found = true;
-                                        }
-                                        myResolvePath.addItem(s);
-                                    }
-                                    if (found) {
-                                        myResolvePath.setSelectedItem(current);
-                                    } else {
-                                        myResolvePath.setSelectedIndex(0);
-                                    }
+                        Object current = myResolvePath.getSelectedItem();
+                        myResolvePath.removeAllItems();
+                        if (mapping != null && !mapping.isEmpty()) {
+                            boolean found = false;
+                            for (String s : mapping.keySet()) {
+                                if (s.equals(current)) {
+                                    found = true;
                                 }
-
-                                refreshResolvedProperties();
+                                myResolvePath.addItem(s);
                             }
-                        });
+                            if (found) {
+                                myResolvePath.setSelectedItem(current);
+                            } else {
+                                myResolvePath.setSelectedIndex(0);
+                            }
+                        }
+
+                        refreshResolvedProperties();
                     }
                 });
+            }
+        });
     }
 
 

@@ -18,6 +18,7 @@ package net.groboclown.idea.p4ic.ui;
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -38,11 +39,18 @@ import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.actions.P4WorkOfflineAction;
 import net.groboclown.idea.p4ic.actions.P4WorkOnlineAction;
-import net.groboclown.idea.p4ic.config.Client;
-import net.groboclown.idea.p4ic.config.P4ClientsReloadedListener;
+import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.P4RemoteConnectionStateListener;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.v2.actions.P4ServerWorkOfflineAction;
+import net.groboclown.idea.p4ic.v2.actions.P4ServerWorkOnlineAction;
+import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
+import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
+import net.groboclown.idea.p4ic.v2.events.Events;
+import net.groboclown.idea.p4ic.v2.events.ServerConnectionStateListener;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,13 +61,8 @@ import java.util.List;
 
 /**
  * Widget to display Perforce server connection information.
- *
- * TODO make this show for multiple server configs.
- * For now, this only shows "connected" if ALL the project
- * connections are online, otherwise disconnected.
  */
-public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
-        StatusBarWidget.Multiframe, P4RemoteConnectionStateListener, P4ClientsReloadedListener {
+public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentation, StatusBarWidget.Multiframe {
 
     @Nullable
     private P4Vcs myVcs;
@@ -67,7 +70,7 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
     @Nullable
     private Project project;
 
-    private MessageBusConnection messageBus;
+    private MessageBusConnection appMessageBus;
 
     @Nullable
     private StatusBar statusBar;
@@ -75,15 +78,20 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
     private volatile Icon icon;
     private volatile String toolTip;
 
-    public P4ConnectionWidget(@NotNull P4Vcs vcs, @NotNull Project project) {
+
+
+    public P4MultipleConnectionWidget(@NotNull P4Vcs vcs, @NotNull Project project) {
         myVcs = vcs;
         this.project = project;
         setValues();
-        messageBus = project.getMessageBus().connect();
-        messageBus.subscribe(P4RemoteConnectionStateListener.TOPIC, this);
+        appMessageBus = ApplicationManager.getApplication().getMessageBus().connect();
 
-        // FIXME must be ApplicationManager.getApplication().getMessageBus().
-        messageBus.subscribe(P4ClientsReloadedListener.TOPIC, this);
+        // FIXME note that we're not listening to old crufty stuff
+
+        ConnectionStateListener listener = new ConnectionStateListener();
+        Events.appBaseConfigUpdated(appMessageBus, listener);
+        Events.appConfigInvalid(appMessageBus, listener);
+        Events.appServerConnectionState(appMessageBus, listener);
     }
 
     @Override
@@ -91,13 +99,13 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
         if (project == null || myVcs == null) {
             throw new IllegalStateException(P4Bundle.message("error.connect-widget.disposed"));
         }
-        return new P4ConnectionWidget(myVcs, project);
+        return new P4MultipleConnectionWidget(myVcs, project);
     }
 
     @NotNull
     @Override
     public String ID() {
-        return P4ConnectionWidget.class.getName();
+        return P4MultipleConnectionWidget.class.getName();
     }
 
     @Override
@@ -113,8 +121,21 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
     @NotNull
     private ListPopup createListPopup(DataContext dataContext) {
         DefaultActionGroup connectionGroup = new DefaultActionGroup();
-        connectionGroup.add(new P4WorkOnlineAction());
-        connectionGroup.add(new P4WorkOfflineAction());
+        int groupCount = 0;
+        if (myVcs != null) {
+            for (P4Server server: myVcs.getP4Servers()) {
+                connectionGroup.add(new P4ServerWorkOnlineAction(server.getClientServerId()));
+                connectionGroup.add(new P4ServerWorkOfflineAction(server.getClientServerId()));
+                groupCount++;
+            }
+        }
+        // If there are multiple servers, allow for turning them all online or offline at once.
+        if (groupCount > 1) {
+            connectionGroup.addSeparator();
+            connectionGroup.add(new P4WorkOnlineAction());
+            connectionGroup.add(new P4WorkOfflineAction());
+        }
+        connectionGroup.addSeparator();
         connectionGroup.add(new AnAction(P4Bundle.message("statusbar.connection.popup.cancel")) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
@@ -182,7 +203,7 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
         UIUtil.invokeLaterIfNeeded(new Runnable() {
             @Override
             public void run() {
-                if ((project == null) || project.isDisposed()) {
+                if (project == null || project.isDisposed()) {
                     emptyTextAndTooltip();
                     return;
                 }
@@ -192,11 +213,33 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
     }
 
     private void setValues() {
-        if (isWorkingOnline()) {
+        int online = 0;
+        int offline = 0;
+        if (myVcs != null) {
+            for (P4Server server : myVcs.getP4Servers()) {
+                if (server.isWorkingOffline()) {
+                    offline++;
+                } else {
+                    online++;
+                }
+            }
+        }
+
+        if (online > 0 && offline <= 0) {
             toolTip = P4Bundle.message("statusbar.connection.enabled");
             icon = P4Icons.CONNECTED;
-        } else {
+        } else if (offline > 0 && online <= 0) {
             toolTip = P4Bundle.message("statusbar.connection.disabled");
+            icon = P4Icons.DISCONNECTED;
+        } else if (offline > 0 && online > 0) {
+            toolTip = P4Bundle.message("statusbar.connection.mixed");
+
+            // FIXME use a mixed-mode icon
+            icon = P4Icons.CONNECTED;
+        } else {
+            toolTip = P4Bundle.message("statusbar.connection.none");
+
+            // FIXME use a unknown server icon
             icon = P4Icons.DISCONNECTED;
         }
 
@@ -213,9 +256,9 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
         if (statusBar != null) {
             statusBar.removeWidget(ID());
         }
-        if (messageBus != null) {
-            messageBus.disconnect();
-            messageBus = null;
+        if (appMessageBus != null) {
+            appMessageBus.disconnect();
+            appMessageBus = null;
         }
     }
 
@@ -268,24 +311,7 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
         }
     }
 
-    @Override
-    public void onPerforceServerDisconnected(@NotNull ServerConfig config) {
-        update();
-        if (statusBar != null) {
-            statusBar.getComponent().repaint();
-        }
-    }
-
-    @Override
-    public void onPerforceServerConnected(@NotNull ServerConfig config) {
-        update();
-        if (statusBar != null) {
-            statusBar.getComponent().repaint();
-        }
-    }
-
-    @Override
-    public void clientsLoaded(@NotNull Project project, @NotNull List<Client> clients) {
+    private void updateUI() {
         update();
         if (statusBar != null) {
             statusBar.getComponent().repaint();
@@ -293,22 +319,29 @@ public class P4ConnectionWidget implements StatusBarWidget.IconPresentation,
     }
 
 
-    private boolean isWorkingOnline() {
-        if (myVcs == null) {
-            return false;
-        }
-        // If any one client is offline, then report offline.
-        List<Client> clients = myVcs.getClients();
-        // Likewise, if there are no clients, or it's a config problem, then report offline
-        if (clients.isEmpty()) {
-            return false;
-        }
-        for (Client client: clients) {
-            if (client.isWorkingOffline()) {
-                return false;
-            }
+    private class ConnectionStateListener implements
+            BaseConfigUpdatedListener, ServerConnectionStateListener, ConfigInvalidListener {
+
+        @Override
+        public void configUpdated(@NotNull final Project project, @NotNull final List<ProjectConfigSource> sources) {
+            updateUI();
         }
 
-        return true;
+        @Override
+        public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
+                @NotNull final P4InvalidConfigException ex) {
+            updateUI();
+        }
+
+        @Override
+        public void connected(@NotNull final ServerConfig config) {
+            updateUI();
+        }
+
+        @Override
+        public void disconnected(@NotNull final ServerConfig config) {
+            updateUI();
+        }
     }
+
 }

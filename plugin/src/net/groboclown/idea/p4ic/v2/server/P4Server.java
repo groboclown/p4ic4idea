@@ -99,6 +99,20 @@ public class P4Server {
         return ! valid || connection.isWorkingOffline();
     }
 
+
+    public void workOffline() {
+        if (valid) {
+            connection.workOffline();
+        }
+    }
+
+    public void workOnline() {
+        if (valid) {
+            connection.workOnline();
+        }
+    }
+
+
     /**
      * This does not perform link expansion (get absolute path).  We
      * assume that if you have a file under a path in a link, you want

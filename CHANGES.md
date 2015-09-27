@@ -6,18 +6,26 @@
 
 ### Overview
 
-* Major changes to the server connection logic. 
+* Major changes to the server connection logic.
+* Multiple server connection status in statusbar widget.
 * Passwords are now stored with better security.
+* Bug fixes.
 
 ### Details
 
 * Major changes to the server connection logic.
     * Allows for limited offline work.  Edit, add, delete, and move operations are
       cached for replay after you reconnect to the server.
+* Multiple server connection status in statusbar widget.
+    * The online state can now be controlled per-server through
+      the connection status widget.
 * Passwords are now stored with better security.
     * Uses the IntelliJ password storage, so you may be prompted for a
       master password now if you setup the IDE to use that.
     * This eliminates the "persist password locally" setting. 
+* Bug fixes.
+    * The configuration UI could make UI requests outside the AWT event dispatch
+      thread.
 
 
 ## ::v0.6.6.1::

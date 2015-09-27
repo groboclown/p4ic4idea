@@ -182,6 +182,15 @@ public class ServerConnection {
     }
 
 
+    public void workOffline() {
+        statusController.disconnect();
+    }
+
+
+    public void workOnline() {
+        statusController.connect();
+    }
+
 
 
 

@@ -76,7 +76,7 @@ public class ChangeListSync {
         // TODO add in progress indicator
 
         // FIXME change all these info to debug
-        LOG.info("start changelist refresh");
+        LOG.info("start changelist refresh", new Throwable("stack capture"));
 
 
         // FIXME

@@ -459,15 +459,23 @@ public class P4ChangeListCache implements ApplicationComponent {
 
         if (defaultChange != null) {
             if (res == null) {
-                LOG.error("Default change exists for " + client + " when no numbered cache exists");
+                // This can definitely happen on first load, or if there were
+                // no changes in the changelist.
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Default change exists for " + client + " when no numbered cache exists");
+                }
                 res = new ArrayList<P4ChangeList>();
             }
             res.add(defaultChange);
-            LOG.debug(client + ": default change has " + defaultChange.getFiles().size() + " files");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(client + ": default change has " + defaultChange.getFiles().size() + " files");
+            }
         } else if (res != null) {
             LOG.error("No default changelist for " + client);
         }
-        LOG.debug("cached changes for " + client + " are " + res + " (" + (res == null ? -1 : res.size()) + ")");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("cached changes for " + client + " are " + res + " (" + (res == null ? -1 : res.size()) + ")");
+        }
 
         return res;
     }

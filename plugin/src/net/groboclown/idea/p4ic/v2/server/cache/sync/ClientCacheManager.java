@@ -87,6 +87,11 @@ public class ClientCacheManager {
         return fileActions.editFile(file, changeListId);
     }
 
+    @Nullable
+    public PendingUpdateState deleteFile(@NotNull FilePath file, final int changeListId) {
+        return fileActions.deleteFile(file, changeListId);
+    }
+
     @NotNull
     public List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts) {
         return workspace.getClientRoots(project, alerts);

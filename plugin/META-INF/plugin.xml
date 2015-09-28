@@ -104,7 +104,7 @@
 
         <group id="P4FileActions">
             <reference ref="CheckinFiles"/>
-            <action id="P4.Edit" class="net.groboclown.idea.p4ic.actions.P4Edit"
+            <action id="P4.Edit" class="net.groboclown.idea.p4ic.v2.file.P4Edit"
                     text="Add or edit" icon="AllIcons.Actions.Edit"
                     use-shortcut-of="ChangesView.AddUnversioned"/>
             <reference ref="ChangesView.Revert"/>
@@ -160,10 +160,6 @@
         <vcs.fileStatusProvider
                 implementation="com.intellij.openapi.vcs.impl.VcsFileStatusProvider"/>
 
-
-        <!-- The "checkout" here should be a sync.
-        <checkoutProvider implementation="net.groboclown.idea.p4ic.extension.P4CheckoutProvider"/>
-        -->
 
         <!-- user configuration settings -->
         <projectService

@@ -19,11 +19,14 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -40,7 +43,7 @@ public class ChangeListBuilderCache {
         private final List<VirtualFile> modifiedWithoutCheckout = new ArrayList<VirtualFile>();
         private final List<VirtualFile> ignoredFiles = new ArrayList<VirtualFile>();
         private final List<ChangeToChangeList> processedChanges = new ArrayList<ChangeToChangeList>();
-        private final List<FilePath> affectedButNotDirty = new ArrayList<FilePath>();
+        private final List<File> affectedButNotDirty = new ArrayList<File>();
 
 
         /**
@@ -50,8 +53,18 @@ public class ChangeListBuilderCache {
          */
         public void applyCache(@NotNull ChangelistBuilder builder) {
             for (ChangeToChangeList processedChange: processedChanges) {
-                builder.processChange(processedChange.change, P4Vcs.getKey());
-                builder.processChangeInList(processedChange.change, processedChange.listName, P4Vcs.getKey());
+
+                // ---------------------------------------------------------------------
+                // This appears to be the source of the "refresh changelist forever"
+                // code.  If this code registers the change AND registers it with
+                // a changelist, it triggers another refresh, which makes
+                // the refresh repeat forever.
+                //
+                // Note that if we don't mark the change as being processed, the
+                // changelist view will not show the changed files.
+                // ---------------------------------------------------------------------
+
+                builder.processChangeInList(processedChange.change, processedChange.list, P4Vcs.getKey());
             }
 
             for (VirtualFile unversionedFile : unversionedFiles) {
@@ -88,87 +101,133 @@ public class ChangeListBuilderCache {
             List<LocalChangeList> listsCopy = addGate.getListsCopy();
             for (LocalChangeList list: listsCopy) {
                 if (! lastListIds.remove(list.getId())) {
-                    LOG.info("Changelists changed: new local changelist " + list.getId());
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Changelists changed: new local changelist " + list.getId());
+                    }
                     return true;
                 }
             }
             if (! lastListIds.isEmpty()) {
-                LOG.info("Changelists changed: local changelists removed: " + lastListIds);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Changelists changed: local changelists removed: " + lastListIds);
+                }
                 return true;
             }
 
-            final Set<FilePath> dirtyFiles = new HashSet<FilePath>(dirtyScopeFiles);
-            // TODO debug remove
-            LOG.info("Dirty files: " + dirtyFiles);
+            // The FilePath objects are not matching.  So, instead, we'll track the File objects.
+            final Set<File> dirtyFiles = new HashSet<File>();
+            for (FilePath file: dirtyScopeFiles) {
+                dirtyFiles.add(file.getIOFile());
+            }
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Dirty files: " + dirtyFiles);
+            }
 
             for (VirtualFile unversionedFile : unversionedFiles) {
-                final FilePath fp = VcsUtil.getFilePath(unversionedFile);
-                if (! dirtyFiles.remove(fp)) {
+                File f = new File(unversionedFile.getPath());
+                if (! dirtyFiles.remove(f)) {
                     // not in dirty list
-                    if (! affectedButNotDirty.contains(fp)) {
-                        LOG.info("Changelists changed: unversioned file no longer dirty: " + unversionedFile);
+                    if (! affectedButNotDirty.contains(f)) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Changelists changed: unversioned file no longer dirty: " + unversionedFile);
+                        }
                         return true;
                     }
+                } else if (LOG.isDebugEnabled()) {
+                    LOG.debug("Marked as previously unversioned: " + f);
                 }
             }
 
             for (FilePath locallyDeletedFile : locallyDeletedFiles) {
-                if (! dirtyFiles.remove(locallyDeletedFile)) {
+                if (! dirtyFiles.remove(locallyDeletedFile.getIOFile())) {
                     // not in dirty list
-                    if (! affectedButNotDirty.contains(locallyDeletedFile)) {
-                        LOG.info("Changelists changed: locally deleted file no longer dirty: " + locallyDeletedFile);
+                    if (! affectedButNotDirty.contains(locallyDeletedFile.getIOFile())) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Changelists changed: locally deleted file no longer dirty: " +
+                                    locallyDeletedFile);
+                        }
                         return true;
                     }
+                } else if (LOG.isDebugEnabled()) {
+                    LOG.debug("Marked as previously locally deleted: " + locallyDeletedFile);
                 }
             }
 
             for (VirtualFile modified : modifiedWithoutCheckout) {
-                final FilePath fp = VcsUtil.getFilePath(modified);
-                if (!dirtyFiles.remove(fp)) {
+                File file = new File(modified.getPath());
+                if (!dirtyFiles.remove(file)) {
                     // not in dirty list
-                    if (! affectedButNotDirty.contains(fp)) {
-                        LOG.info("Changelists changed: modified file no longer dirty: " + modified);
+                    if (! affectedButNotDirty.contains(file)) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Changelists changed: modified file no longer dirty: " + modified);
+                        }
                         return true;
                     }
+                } else if (LOG.isDebugEnabled()) {
+                    LOG.debug("Marked as previously modified without checkout: " + modified);
                 }
             }
 
             for (VirtualFile ignoredFile : ignoredFiles) {
-                final FilePath fp = VcsUtil.getFilePath(ignoredFile);
-                if (!dirtyFiles.remove(fp)) {
+                File file = new File(ignoredFile.getPath());
+                if (!dirtyFiles.remove(file)) {
                     // not in dirty list
-                    if (! affectedButNotDirty.contains(fp)) {
-                        LOG.info("Changelists changed: ignored file no longer dirty: " + ignoredFile);
+                    if (! affectedButNotDirty.contains(file)) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Changelists changed: ignored file no longer dirty: " + ignoredFile);
+                        }
                         return true;
                     }
+                } else if (LOG.isDebugEnabled()) {
+                    LOG.debug("Marked as previously ignored: " + file);
                 }
             }
 
+            // For the processed changes, it's very possible to have a file
+            // be in the list multiple times.  Therefore, this won't remove
+            // a file from the dirty list, but we'll keep track of what was
+            // listed, so that we can do a final comparison.
+
+            Set<File> changedFiles = new HashSet<File>();
             for (ChangeToChangeList processedChange : processedChanges) {
                 final Change change = processedChange.change;
                 boolean containsFirst = false;
                 if (change.getBeforeRevision() != null) {
-                    if (! dirtyFiles.remove(change.getBeforeRevision().getFile())) {
-                        containsFirst = affectedButNotDirty.contains(change.getBeforeRevision().getFile());
-                    }
+                    final File file = change.getBeforeRevision().getFile().getIOFile();
+                    changedFiles.add(file);
+                    containsFirst = dirtyFiles.contains(file) || affectedButNotDirty.contains(file);
                 }
+
                 boolean containsSecond = false;
                 if (change.getAfterRevision() != null) {
-                    if (! dirtyFiles.remove(change.getAfterRevision().getFile())) {
-                        containsSecond = affectedButNotDirty.contains(change.getAfterRevision().getFile());
-                    }
+                    final File file = change.getAfterRevision().getFile().getIOFile();
+                    changedFiles.add(file);
+                    containsSecond = dirtyFiles.contains(file) || affectedButNotDirty.contains(file);
                 }
                 if (! containsFirst && ! containsSecond) {
-                    LOG.info("Changelists changed: new files in change but not marked dirty: " + change);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Changelists changed: new files in change but not marked dirty: " + change);
+                        LOG.debug(" -- before: " + (
+                                change.getBeforeRevision() == null
+                                        ? "null"
+                                        : change.getBeforeRevision().getFile()));
+                        LOG.debug(" -- after: " + (
+                                change.getAfterRevision() == null
+                                        ? "null"
+                                        : change.getAfterRevision().getFile()));
+                    }
                     return true;
                 }
 
                 // check to make sure the change hasn't moved to a different changelist
                 for (LocalChangeList list : listsCopy) {
                     if (list.getChanges().contains(change)) {
-                        if (! list.getName().equals(processedChange.listName)) {
-                            LOG.info("Changelists changed: change files (" + change + ") moved changelists from " +
-                                processedChange.listName + " to " + list.getName());
+                        if (! list.getName().equals(processedChange.list)) {
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Changelists changed: change files (" + change + ") moved changelists from " +
+                                        processedChange.list + " to " + list.getName());
+                            }
                             return true;
                         }
                         break;
@@ -184,19 +243,31 @@ public class ChangeListBuilderCache {
             }
 
             // For Perforce, directories are ignored in terms of marking things as dirty.
-            for (FilePath dirtyFile : dirtyFiles) {
+            for (File dirtyFile : dirtyFiles) {
                 if (! dirtyFile.isDirectory()) {
-                    LOG.info("Changelists changed: new dirty file: " + dirtyFile);
-                    return true;
+                    if (! changedFiles.remove(dirtyFile)) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Changelists changed: new dirty file: " + dirtyFile);
+                        }
+                        return true;
+                    }
                 }
+            }
+            // We have now verified that all dirty files are in the list.
+            // Need a final check on the "changed" files that are not in the dirty list.
+            if (! changedFiles.isEmpty()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Changes included files that are no longer dirty: " + changedFiles);
+                }
+                return true;
             }
 
             return false;
         }
     }
 
-    private final CachedChanges changes = new CachedChanges();
-    private final Set<FilePath> originallyDirty;
+    private final CachedChanges changes;
+    private final Set<File> originallyDirty;
     private final ChangelistBuilder builder;
 
 
@@ -208,11 +279,15 @@ public class ChangeListBuilderCache {
     public ChangeListBuilderCache(@NotNull Project project, @NotNull final ChangelistBuilder builder,
             @NotNull Set<FilePath> dirtyFiles){
         this.builder = builder;
+        this.changes = new CachedChanges();
         ChangeListManager clm = ChangeListManager.getInstance(project);
         for (LocalChangeList list: clm.getChangeLists()) {
             changes.changeListIds.add(list.getId());
         }
-        originallyDirty = new HashSet<FilePath>(dirtyFiles);
+        originallyDirty = new HashSet<File>();
+        for (FilePath file: dirtyFiles) {
+            originallyDirty.add(file.getIOFile());
+        }
     }
 
     public CachedChanges getCache() {
@@ -222,34 +297,65 @@ public class ChangeListBuilderCache {
     public void processUnversionedFile(@NotNull final VirtualFile vf) {
         builder.processUnversionedFile(vf);
         changes.unversionedFiles.add(vf);
-        FilePath fp = VcsUtil.getFilePath(vf);
-        if (! originallyDirty.contains(fp)) {
-            changes.affectedButNotDirty.add(fp);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("unversionedFile: " + vf);
+        }
+
+        File file = new File(vf.getPath());
+        if (! originallyDirty.contains(file)) {
+            LOG.debug(" -*- not originally dirty");
+            changes.affectedButNotDirty.add(file);
         }
     }
 
     public void processLocallyDeletedFile(@NotNull final FilePath fp) {
         builder.processLocallyDeletedFile(fp);
         changes.locallyDeletedFiles.add(fp);
-        if (!originallyDirty.contains(fp)) {
-            changes.affectedButNotDirty.add(fp);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("locallyDeletedFile: " + fp);
+        }
+
+        if (!originallyDirty.contains(fp.getIOFile())) {
+            LOG.debug(" -*- not originally dirty");
+            changes.affectedButNotDirty.add(fp.getIOFile());
         }
     }
 
     public void processChange(@NotNull final Change change, @NotNull LocalChangeList list) {
         builder.processChange(change, P4Vcs.getKey());
         builder.processChangeInList(change, list, P4Vcs.getKey());
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("processChange: " +
+                    (change.getBeforeRevision() == null
+                            ? "null"
+                            : change.getBeforeRevision().getFile()) +
+                    " ; " +
+                    (change.getAfterRevision() == null
+                            ? "null"
+                            : change.getAfterRevision().getFile())
+            );
+        }
+
         changes.processedChanges.add(new ChangeToChangeList(change, list));
         if (change.getBeforeRevision() != null) {
             final FilePath fp = change.getBeforeRevision().getFile();
-            if (!originallyDirty.contains(fp)) {
-                changes.affectedButNotDirty.add(fp);
+            if (!originallyDirty.contains(fp.getIOFile())) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(" -*- not originally dirty: " + fp);
+                }
+                changes.affectedButNotDirty.add(fp.getIOFile());
             }
         }
         if (change.getAfterRevision() != null) {
             final FilePath fp = change.getAfterRevision().getFile();
-            if (!originallyDirty.contains(fp)) {
-                changes.affectedButNotDirty.add(fp);
+            if (!originallyDirty.contains(fp.getIOFile())) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(" -*- not originally dirty: " + fp);
+                }
+                changes.affectedButNotDirty.add(fp.getIOFile());
             }
         }
     }
@@ -257,21 +363,42 @@ public class ChangeListBuilderCache {
     public void processModifiedWithoutCheckout(@NotNull final VirtualFile vf) {
         builder.processModifiedWithoutCheckout(vf);
         changes.modifiedWithoutCheckout.add(vf);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("modifiedWithoutCheckout: " + vf);
+        }
+
+        File file = new File(vf.getPath());
+        if (!originallyDirty.contains(file)) {
+            LOG.debug(" -*- not originally dirty");
+            changes.affectedButNotDirty.add(file);
+        }
     }
 
     public void processIgnoredFile(@NotNull final VirtualFile vf) {
         builder.processIgnoredFile(vf);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("processIgnoredFile: " + vf);
+        }
+
         changes.ignoredFiles.add(vf);
+
+        File file = new File(vf.getPath());
+        if (!originallyDirty.contains(file)) {
+            LOG.debug(" -*- not originally dirty");
+            changes.affectedButNotDirty.add(file);
+        }
     }
 
     private static class ChangeToChangeList {
         final Change change;
-        final String listName;
+        final LocalChangeList list;
 
 
         private ChangeToChangeList(final Change change, final LocalChangeList list) {
             this.change = change;
-            this.listName = list.getName();
+            this.list = list;
         }
     }
 

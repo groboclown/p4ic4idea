@@ -82,7 +82,7 @@ public class P4ChangelistListener implements ChangeListListener {
                             indicator.setFraction(0.5);
                             LOG.debug("Fetched " + p4clList);
                             if (p4clList != null) {
-                                for (Client client: myVcs.getClients()) {
+                                for (Client client: myVcs.getServers()) {
                                     if (client.isWorkingOffline()) {
                                         continue;
                                     }
@@ -253,7 +253,7 @@ public class P4ChangelistListener implements ChangeListListener {
                 Background.runInBackground(myProject, CHANGELIST_RENAMED, myVcs.getConfiguration().getUpdateOption(), new Background.ER() {
                     @Override
                     public void run(@NotNull ProgressIndicator indicator) throws Exception {
-                        for (Client client: myVcs.getClients()) {
+                        for (Client client: myVcs.getServers()) {
                             for (P4ChangeListId p4id: p4idList) {
                                 if (p4id.isIn(client) && ! p4id.isDefaultChangelist()) {
                                     P4ChangeListCache.getInstance().updateComment(client, p4id, toDescription(list));

@@ -54,12 +54,13 @@ public enum UpdateAction {
     // it's considered keeping the current action but with a new changelist number.
     ADD_FILE(UpdateGroup.FILE_ADD_EDIT,
             UpdateParameterNames.DEPOT, UpdateParameterNames.FILE, UpdateParameterNames.CHANGELIST),
-    DELETE_FILE(UpdateGroup.FILE,
+    DELETE_FILE(UpdateGroup.FILE_DELETE,
             UpdateParameterNames.DEPOT, UpdateParameterNames.FILE, UpdateParameterNames.CHANGELIST),
     MOVE_FILE(UpdateGroup.FILE,
             UpdateParameterNames.DEPOT, UpdateParameterNames.DEPOT_SOURCE,
             UpdateParameterNames.FILE, UpdateParameterNames.FILE_SOURCE, UpdateParameterNames.CHANGELIST),
-    MOVE_DELETE_FILE(UpdateGroup.FILE,
+    // TODO is this the right update group?
+    MOVE_DELETE_FILE(UpdateGroup.FILE_DELETE,
             UpdateParameterNames.DEPOT, UpdateParameterNames.FILE, UpdateParameterNames.CHANGELIST),
     INTEGRATE_FILE(UpdateGroup.FILE,
             UpdateParameterNames.DEPOT, UpdateParameterNames.DEPOT_SOURCE,

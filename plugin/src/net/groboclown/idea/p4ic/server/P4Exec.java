@@ -142,7 +142,7 @@ public class P4Exec {
             return runWithServer(project, new WithServer<List<IClientSummary>>() {
                 @Override
                 public List<IClientSummary> run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
-                    count.invoke("getClients");
+                    count.invoke("getServers");
                     List<IClientSummary> ret = server.getClients(serverStatus.getConfig().getUsername(), null, 0);
                     assert ret != null;
                     return ret;

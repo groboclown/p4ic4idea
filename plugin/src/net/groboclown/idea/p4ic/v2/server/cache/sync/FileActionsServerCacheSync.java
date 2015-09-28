@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
@@ -29,7 +30,10 @@ import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
-import net.groboclown.idea.p4ic.v2.server.cache.*;
+import net.groboclown.idea.p4ic.v2.server.cache.AbstractServerUpdateAction;
+import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
+import net.groboclown.idea.p4ic.v2.server.cache.ServerUpdateActionFactory;
+import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
 import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
@@ -39,6 +43,8 @@ import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -132,25 +138,21 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
      * @return the update state
      */
     @Nullable
-    public PendingUpdateState editFile(@NotNull FilePath file, int changeListId) {
+    public PendingUpdateState editFile(@NotNull final FilePath file, int changeListId) {
         // Only ignore the file if we know it's an "add" operation.  Thus, we can't
         // determine that until we're connected.
 
-        // Check if it is already in an action state.
-        P4FileUpdateState action = getCachedUpdateState(file);
-        if (action != null &&
-                UpdateAction.EDIT_FILE.equals(action.getFileUpdateAction().getUpdateAction())) {
-            LOG.info("Already opened for edit " + file);
+        // Edit operations will need to have the file be writable.  The Perforce
+        // command may delay when the edit action actually occurs, so ensure
+        // the file is set to writable first.
+        makeWritable(file);
+
+        // Check if it is already in an action state, and create it if necessary
+        final P4FileUpdateState action = createFileUpdateState(file, FileUpdateAction.EDIT_FILE, changeListId);
+        if (action == null) {
+            // nothing to do
             return null;
         }
-        // If the action already exists but isn't the right update action,
-        // we still need to create a new one to put in our local cache.
-        P4FileUpdateState newAction = new P4FileUpdateState(
-                cache.getClientMappingFor(file), changeListId, FileUpdateAction.EDIT_FILE);
-        localClientUpdatedFiles.add(newAction);
-
-        // FIXME debug
-        LOG.info("Switching from " + action + " to " + newAction);
 
         // Create the action.
         final HashMap<String, Object> params = new HashMap<String, Object>();
@@ -159,10 +161,39 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changeListId);
 
         return new PendingUpdateState(
-                newAction.getFileUpdateAction().getUpdateAction(),
+                action.getFileUpdateAction().getUpdateAction(),
                 Collections.singleton(file.getIOFile().getAbsolutePath()),
                 params);
     }
+
+
+    @Nullable
+    public PendingUpdateState deleteFile(@NotNull FilePath file, int changeListId) {
+        // Let the IDE deal with the actual removal of the file.
+        // But just to be sure, make it writable first.
+        if (file.getIOFile().exists()) {
+            makeWritable(file);
+        }
+
+        // Check if it is already in an action state, and create it if necessary
+        final P4FileUpdateState action = createFileUpdateState(file, FileUpdateAction.DELETE_FILE, changeListId);
+        if (action == null) {
+            // nothing to do
+            return null;
+        }
+
+        // Create the action.
+        final HashMap<String, Object> params = new HashMap<String, Object>();
+        // We don't know for sure the depot path, so use the file path.
+        params.put(UpdateParameterNames.FILE.getKeyName(), file.getIOFile().getAbsolutePath());
+        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changeListId);
+
+        return new PendingUpdateState(
+                action.getFileUpdateAction().getUpdateAction(),
+                Collections.singleton(file.getIOFile().getAbsolutePath()),
+                params);
+    }
+
 
     @Nullable
     private P4FileUpdateState getCachedUpdateState(@NotNull final FilePath file) {
@@ -235,13 +266,65 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     /**
      *
      * @return all the "..." directory specs for the roots of this client.
-     * @param project
-     * @param alerts
+     * @param project project
+     * @param alerts alerts manager
      */
     private List<IFileSpec> getClientRootSpecs(@NotNull Project project, @NotNull AlertManager alerts) throws VcsException {
         final List<VirtualFile> roots = cache.getClientRoots(project, alerts);
         return FileSpecUtil.makeRootFileSpecs(roots.toArray(new VirtualFile[roots.size()]));
     }
+
+    private void makeWritable(@NotNull final FilePath file) {
+        ApplicationManager.getApplication().runWriteAction(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (file.getVirtualFile() != null) {
+                        file.getVirtualFile().setWritable(true);
+                    }
+                } catch (IOException e) {
+                    // ignore for now
+                    LOG.info(e);
+                }
+                File f = file.getIOFile();
+                if (f.exists() && f.isFile() && !f.canWrite()) {
+                    if (!f.setWritable(true)) {
+                        // FIXME get access to the alerts in a better way
+                        AlertManager.getInstance().addWarning(P4Bundle.message("error.writable.failed", file), null);
+
+                        // Keep going with the action, even though we couldn't set it to
+                        // writable...
+                    }
+                }
+            }
+        });
+    }
+
+
+    @Nullable
+    private P4FileUpdateState createFileUpdateState(@NotNull FilePath file,
+            @NotNull FileUpdateAction fileUpdateAction, int changeListId) {
+        // Check if it is already in an action state.
+        P4FileUpdateState action = getCachedUpdateState(file);
+        if (action != null && fileUpdateAction.equals(action.getFileUpdateAction())) {
+            LOG.info("Already opened for " + fileUpdateAction + " " + file);
+
+            // TODO this might be wrong - the file may need to move to a different changelist.
+
+            return null;
+        }
+        // If the action already exists but isn't the right update action,
+        // we still need to create a new one to put in our local cache.
+        P4FileUpdateState newAction = new P4FileUpdateState(
+                cache.getClientMappingFor(file), changeListId, fileUpdateAction);
+        localClientUpdatedFiles.add(newAction);
+
+        // FIXME debug
+        LOG.info("Switching from " + action + " to " + newAction);
+
+        return newAction;
+    }
+
 
     // =======================================================================
     // ACTIONS
@@ -265,7 +348,6 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             return new AddEditAction(states);
         }
     }
-
 
     static class AddEditAction extends AbstractServerUpdateAction {
 
@@ -488,4 +570,43 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             return clientCacheManager.createFileActionsRefreshQuery();
         }
     }
+
+
+    // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // Delete Action
+
+    public static class DeleteFactory implements ServerUpdateActionFactory {
+        @NotNull
+        @Override
+        public ServerUpdateAction create(@NotNull Collection<PendingUpdateState> states) {
+            return new DeleteAction(states);
+        }
+    }
+
+
+    static class DeleteAction extends AbstractServerUpdateAction {
+
+        DeleteAction(final Collection<PendingUpdateState> states) {
+            super(states);
+        }
+
+        @NotNull
+        @Override
+        protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
+                @NotNull final ClientCacheManager clientCacheManager,
+                @NotNull final AlertManager alerts) {
+            // FIXME implement
+            throw new IllegalStateException("not implemented");
+        }
+
+        @Nullable
+        @Override
+        protected ServerQuery updateCache(@NotNull final ClientCacheManager clientCacheManager,
+                @NotNull final AlertManager alerts) {
+            return clientCacheManager.createFileActionsRefreshQuery();
+        }
+    }
+
+
 }

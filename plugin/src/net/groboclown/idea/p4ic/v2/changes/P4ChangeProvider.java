@@ -26,12 +26,12 @@ import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.ChangeListBuilderCache;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -67,6 +67,9 @@ public class P4ChangeProvider implements ChangeProvider {
     @Override
     public void getChanges(VcsDirtyScope dirtyScope, ChangelistBuilder builder, ProgressIndicator progress,
             ChangeListManagerGate addGate) throws VcsException {
+        // FIXME use the progress indicator for this method
+
+
         lastRefreshRequest = System.currentTimeMillis();
         if (project.isDisposed()) {
             return;
@@ -109,6 +112,7 @@ public class P4ChangeProvider implements ChangeProvider {
                     cachedChanges.applyCache(builder);
                     return;
                 }
+                LOG.info("Dirty files are not the same as the cached changed files");
             } else {
                 LOG.info("Reloading the changelists due to cache expiration");
             }
@@ -130,11 +134,7 @@ public class P4ChangeProvider implements ChangeProvider {
             LOG.warn("sync changes caused error", e);
             throw e;
         } catch (InterruptedException e) {
-            // TODO see if this is the right handling mechanism
-
-            CancellationException ex = new CancellationException();
-            ex.initCause(e);
-            throw ex;
+            throw new VcsInterruptedException(e);
         }
         cachedChanges = cacheBuilder.getCache();
     }

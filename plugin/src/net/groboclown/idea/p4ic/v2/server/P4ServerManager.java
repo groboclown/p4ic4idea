@@ -20,6 +20,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupManager;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigProject;
@@ -31,6 +32,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.state.AllClientsState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -131,6 +133,15 @@ public class P4ServerManager implements ProjectComponent {
     public P4Server getForFilePath(@NotNull FilePath fp) throws InterruptedException {
         if (connectionsValid) {
             return getServerForPath(getServers(), fp);
+        } else {
+            LOG.info("configs not valid");
+            return null;
+        }
+    }
+
+    public P4Server getForVirtualFile(@NotNull VirtualFile vf) throws InterruptedException {
+        if (connectionsValid) {
+            return getServerForPath(getServers(), FilePathUtil.getFilePath(vf));
         } else {
             LOG.info("configs not valid");
             return null;

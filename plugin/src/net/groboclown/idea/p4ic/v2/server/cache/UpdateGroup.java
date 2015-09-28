@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.v2.server.cache;
 
 import net.groboclown.idea.p4ic.v2.server.cache.sync.FileActionsServerCacheSync.AddEditFactory;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
+import net.groboclown.idea.p4ic.v2.server.cache.sync.FileActionsServerCacheSync.DeleteFactory;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerUpdateAction;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,6 +39,9 @@ public enum UpdateGroup {
 
     /** Updates to the edit state and changelist association on files. */
     FILE_ADD_EDIT(new AddEditFactory()),
+
+    /** Updates to the delete state and changelist association on files. */
+    FILE_DELETE(new DeleteFactory()),
 
     FILE(new NIF()), // FIXME
 

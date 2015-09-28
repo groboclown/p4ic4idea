@@ -17,6 +17,7 @@ package net.groboclown.idea.p4ic.server.exceptions;
 import com.intellij.openapi.vcs.VcsException;
 import org.jetbrains.annotations.NotNull;
 
+// FIXME find cases of InterruptedException and use this instead.
 public class VcsInterruptedException extends VcsException {
     public VcsInterruptedException(@NotNull InterruptedException ex) {
         super(ex);

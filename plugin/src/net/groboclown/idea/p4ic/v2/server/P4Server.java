@@ -67,6 +67,55 @@ public class P4Server {
 
     private boolean valid = true;
 
+    /**
+     * Contains data for integrating one file to another file.
+     * It specifically has reference data for handling the
+     * situation where the source file is on another client
+     * in the same server.  It is up to the caller to discover
+     * whether the source file is on the same server or not.
+     */
+    public static final class IntegrateFile {
+        private final ClientServerId sourceClient;
+        private final FilePath sourceFile;
+        private final FilePath targetFile;
+
+        public IntegrateFile(@NotNull FilePath sourceFile, @NotNull FilePath targetFile) {
+            this(null, sourceFile, targetFile);
+        }
+
+        public IntegrateFile(@Nullable ClientServerId sourceClient, @NotNull FilePath sourceFile,
+                @NotNull FilePath targetFile) {
+            this.sourceClient = sourceClient;
+            this.sourceFile = sourceFile;
+            this.targetFile = targetFile;
+        }
+
+        @Nullable
+        public ClientServerId getSourceClient() {
+            return sourceClient;
+        }
+
+        @NotNull
+        public FilePath getSourceFile() {
+            return sourceFile;
+        }
+
+        @NotNull
+        public FilePath getTargetFile() {
+            return targetFile;
+        }
+
+        @Override
+        public String toString() {
+            return "Integrate(" + (sourceClient == null
+                    ? ""
+                    : (sourceClient + "::")
+                ) + sourceFile + " -> " + targetFile + ")";
+        }
+    }
+
+
+
 
     P4Server(@NotNull final Project project, @NotNull final ProjectConfigSource source) {
         this.project = project;
@@ -362,11 +411,16 @@ public class P4Server {
     /**
      * Needs to be run immediately.
      *
-     * @param files
-     * @param changelistId
+     * @param files files to add or  edit
+     * @param changelistId changelist id
      */
     public void addOrEditFiles(@NotNull final List<VirtualFile> files, final int changelistId) {
-        LOG.info("Add or edit to " + changelistId + " files " + files);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Add or edit to " + changelistId + " files " + files);
+        }
+        if (files.isEmpty()) {
+            return;
+        }
         connection.queueUpdates(project, new CreateUpdate() {
             @Override
             public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
@@ -383,6 +437,22 @@ public class P4Server {
                 return updates;
             }
         });
+    }
+
+    public void moveFiles(@NotNull final List<IntegrateFile> filePathMatch, final int changelistId) {
+        if (filePathMatch.isEmpty()) {
+            return;
+        }
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    public void integrateFiles(@NotNull final List<IntegrateFile> integrationFiles, final int changelistId) {
+        if (integrationFiles.isEmpty()) {
+            return;
+        }
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
     }
 
 
@@ -446,6 +516,73 @@ public class P4Server {
         });
     }
 
+    /**
+     * Fetch the file spec's contents.  If the file does not exist or is deleted,
+     * it returns null.  If the filespec is invalid or the server is not connected,
+     * an exception is thrown.
+     *
+     * @param spec file spec to read
+     * @return the file contents
+     * @throws P4FileException
+     * @throws P4DisconnectedException
+     */
+    @Nullable
+    public String loadFileAsString(@NotNull IFileSpec spec)
+            throws P4FileException, P4DisconnectedException {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public String loadFileAsString(@NotNull FilePath file, final int rev)
+            throws P4FileException, P4DisconnectedException {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public byte[] loadFileAsBytes(@NotNull IFileSpec spec) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public byte[] loadFileAsBytes(@NotNull FilePath file, final int rev) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    public void deleteFiles(@NotNull final List<FilePath> files, final int changelistId) {
+        if (files.isEmpty()) {
+            return;
+        }
+        connection.queueUpdates(project, new CreateUpdate() {
+            @NotNull
+            @Override
+            public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
+                List<PendingUpdateState> ret = new ArrayList<PendingUpdateState>(files.size());
+                for (FilePath file : files) {
+                    PendingUpdateState update = mgr.deleteFile(file, changelistId);
+                    if (update != null) {
+                        // FIXME debug
+                        LOG.info("Created delete update for " + file);
+                        ret.add(update);
+                    } else {
+                        // FIXME debug
+                        LOG.info("Ignored delete update for " + file);
+                    }
+                }
+                return ret;
+            }
+        });
+    }
+
+
+    @Override
+    public String toString() {
+        return getClientServerId().toString();
+    }
+
     @NotNull
     private List<File> getPathParts(@NotNull final FilePath child) {
         List<File> ret = new ArrayList<File>();
@@ -456,47 +593,5 @@ public class P4Server {
         }
         Collections.reverse(ret);
         return ret;
-    }
-
-    /**
-     * Fetch the file spec's contents.  If the file does not exist or is deleted,
-     * it returns null.  If the filespec is invalid or the server is not connected,
-     * an exception is thrown.
-     *
-     * @param fileSpec file spec to read
-     * @return the file contents
-     * @throws P4FileException
-     * @throws P4DisconnectedException
-     */
-    @Nullable
-    public String loadFileAsString(@NotNull IFileSpec spec)
-            throws P4FileException, P4DisconnectedException {
-        // FIXME
-        throw new IllegalStateException("not implemented");
-    }
-
-    @Nullable
-    public String loadFileAsString(@NotNull FilePath file, final int rev)
-            throws P4FileException, P4DisconnectedException {
-        // FIXME
-        throw new IllegalStateException("not implemented");
-    }
-
-    @Nullable
-    public byte[] loadFileAsBytes(@NotNull IFileSpec spec) {
-        // FIXME
-        throw new IllegalStateException("not implemented");
-    }
-
-    @Nullable
-    public byte[] loadFileAsBytes(@NotNull FilePath file, final int rev) {
-        // FIXME
-        throw new IllegalStateException("not implemented");
-    }
-
-
-    @Override
-    public String toString() {
-        return getClientServerId().toString();
     }
 }

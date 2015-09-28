@@ -61,8 +61,12 @@ import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.P4MultipleConnectionWidget;
 import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeProvider;
+import net.groboclown.idea.p4ic.v2.file.FileExtensions;
+import net.groboclown.idea.p4ic.v2.file.P4EditFileProvider;
+import net.groboclown.idea.p4ic.v2.file.P4VFSListener;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.P4ServerManager;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -140,7 +144,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     private P4VFSListener myVFSListener;
 
-    private EditFileProvider editProvider;
+    private P4EditFileProvider editProvider;
 
     // Not used
     //private final CommitExecutor commitExecutor;
@@ -161,7 +165,9 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     private final P4AnnotationProvider annotationProvider;
 
+    // FIXME remove
     private final Object vfsSync = new Object();
+    private final FileExtensions fileExtensions;
 
     private final ClientManager clients;
     private final P4ServerManager serverManager;
@@ -193,20 +199,21 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
         this.changeListMapping = changeListMapping;
         this.userPreferences = preferences;
-        myConfigurable = new P4ProjectConfigurable(project);
-        changelistListener = new P4ChangelistListener(project, this);
-        changeProvider = new P4ChangeProvider(this);
-        historyProvider = new P4HistoryProvider(project);
-        diffProvider = new P4DiffProvider(project);
-        problemListener = new ConfigListener();
-        disconnectListener = new DisconnectListener();
-        statusUpdateEnvironment = new P4StatusUpdateEnvironment(project);
-        annotationProvider = new P4AnnotationProvider(this);
-        committedChangesProvider = new P4CommittedChangesProvider();
-        clients = new ClientManager(project, configProject);
-        serverManager = new P4ServerManager(project);
-        revisionSelector = new P4RevisionSelector(this);
-        tempFileWatchDog = new TempFileWatchDog();
+        this.myConfigurable = new P4ProjectConfigurable(project);
+        this.changelistListener = new P4ChangelistListener(project, this);
+        this.changeProvider = new P4ChangeProvider(this);
+        this.historyProvider = new P4HistoryProvider(project);
+        this.diffProvider = new P4DiffProvider(project);
+        this.problemListener = new ConfigListener();
+        this.disconnectListener = new DisconnectListener();
+        this.statusUpdateEnvironment = new P4StatusUpdateEnvironment(project);
+        this.annotationProvider = new P4AnnotationProvider(this);
+        this.committedChangesProvider = new P4CommittedChangesProvider();
+        this.clients = new ClientManager(project, configProject);
+        this.serverManager = new P4ServerManager(project);
+        this.revisionSelector = new P4RevisionSelector(this);
+        this.tempFileWatchDog = new TempFileWatchDog();
+        this.fileExtensions = new FileExtensions(this, AlertManager.getInstance());
     }
 
     public static VcsKey getKey() {
@@ -253,7 +260,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         tempFileWatchDog.start();
 
         if (myVFSListener == null) {
-            myVFSListener = new P4VFSListener(myProject, this, vfsSync);
+            myVFSListener = fileExtensions.createVcsVFSListener();
         }
 
         VcsCompat.getInstance().setupPlugin(myProject);
@@ -368,7 +375,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @NotNull
     public synchronized EditFileProvider getEditFileProvider() {
         if (editProvider == null) {
-            editProvider = new P4EditFileProvider(this, vfsSync);
+            editProvider = fileExtensions.createEditFileProvider();
         }
         return editProvider;
     }
@@ -685,6 +692,11 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @Nullable
     public P4Server getP4ServerFor(@NotNull FilePath fp) throws InterruptedException {
         return serverManager.getForFilePath(fp);
+    }
+
+    @Nullable
+    public P4Server getP4ServerFor(@NotNull VirtualFile vf) throws InterruptedException {
+        return serverManager.getForVirtualFile(vf);
     }
 
 

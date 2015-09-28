@@ -71,6 +71,7 @@ public class ServerConnection {
 
 
     public interface CreateUpdate {
+        @NotNull
         Collection<PendingUpdateState> create(@NotNull ClientCacheManager mgr);
     }
 

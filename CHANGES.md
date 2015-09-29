@@ -26,6 +26,9 @@
 * Bug fixes.
     * The configuration UI could make UI requests outside the AWT event dispatch
       thread.
+    * Finally identified the source of the infinite changelist refresh issue
+      and fixed it, so that new improvements to the changelist sorting code can
+      be attempted.
 
 
 ## ::v0.6.6.1::

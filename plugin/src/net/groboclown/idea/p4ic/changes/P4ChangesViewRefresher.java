@@ -37,6 +37,9 @@ public class P4ChangesViewRefresher implements ChangesViewRefresher {
     public static void refreshLater(@NotNull final Project project) {
         LOG.debug("Refreshing changelist view", new Throwable());
 
+        // FIXME try just:
+        // ChangeListManager.getInstance(project).schedule();
+
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             @Override
             public void run() {

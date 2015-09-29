@@ -20,7 +20,6 @@ import com.intellij.openapi.vcs.VcsBundle;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
-import com.perforce.p4java.core.IChangelist;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.ServerClientIdUtil;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
@@ -57,9 +56,6 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
     private static final Logger LOG = Logger.getInstance(P4ChangeListMapping.class);
 
     public static final String DEFAULT_CHANGE_NAME = VcsBundle.message("changes.default.changelist.name");
-
-    public static final int P4_DEFAULT = IChangelist.DEFAULT;
-    public static final int P4_UNKNOWN = IChangelist.UNKNOWN;
 
     @NotNull
     private final Project project;
@@ -145,7 +141,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
     public LocalChangeList getIdeaChangelistFor(@NotNull P4ChangeListValue p4cl) {
         ChangeListManager clm = ChangeListManager.getInstance(project);
         int changeListId = p4cl.getChangeListId();
-        if (changeListId <= P4_DEFAULT) {
+        if (changeListId <= P4ChangeListCache.P4_DEFAULT) {
             for (LocalChangeList cl : clm.getChangeLists()) {
                 if (cl.getName().equals(DEFAULT_CHANGE_NAME)) {
                     return cl;
@@ -186,7 +182,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
             ret = getPerforceChangelistFor(client, change);
         }
         if (ret == null) {
-            return new P4ChangeListIdImpl(client, P4_DEFAULT);
+            return new P4ChangeListIdImpl(client, P4ChangeListCache.P4_DEFAULT);
         }
         return ret;
     }
@@ -207,7 +203,8 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
             ret = getPerforceChangelistFor(server, change);
         }
         if (ret == null) {
-            return new P4ChangeListIdImpl(server.getServerConfig().getServiceName(), server.getClientName(), P4_DEFAULT);
+            return new P4ChangeListIdImpl(server.getServerConfig().getServiceName(), server.getClientName(),
+                    P4ChangeListCache.P4_DEFAULT);
         }
         return ret;
     }
@@ -314,7 +311,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
     @Nullable
     LocalChangeList getLocalChangelist(@NotNull Client client, int changeListId) {
         ChangeListManager clm = ChangeListManager.getInstance(project);
-        if (changeListId <= P4_DEFAULT) {
+        if (changeListId <= P4ChangeListCache.P4_DEFAULT) {
             for (LocalChangeList cl: clm.getChangeLists()) {
                 if (cl.getName().equals(DEFAULT_CHANGE_NAME)) {
                     return cl;
@@ -440,7 +437,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element> {
             List<Client> clients = P4Vcs.getInstance(project).getClients();
             List<P4ChangeListId> ret = new ArrayList<P4ChangeListId>(clients.size());
             for (Client client: clients) {
-                ret.add(new P4ChangeListIdImpl(client, P4_DEFAULT));
+                ret.add(new P4ChangeListIdImpl(client, P4ChangeListCache.P4_DEFAULT));
             }
             return ret;
         }

@@ -27,11 +27,11 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.ChangeListBuilderCache;
 import net.groboclown.idea.p4ic.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.v2.history.P4ContentRevision;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.history.P4ContentRevision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -79,13 +79,6 @@ public class ChangeListSync {
         LOG.info("start changelist refresh", new Throwable("stack capture"));
 
 
-        // FIXME
-        // FIXME THIS IS HORRIBLY BROKEN.
-        // FIXME   Performance is terrible.  Part of it comes from the
-        // FIXME   revision number not being implemented right.
-        // FIXME
-
-
         { // Strip out directories from the search.
             final Iterator<FilePath> iter = dirtyFiles.iterator();
             while (iter.hasNext()) {
@@ -115,8 +108,18 @@ public class ChangeListSync {
                     if (vf != null) {
                         LOG.info(" --- marked as unversioned");
                         builder.processUnversionedFile(vf);
+                        if (! dirtyFiles.remove(fp)) {
+                            LOG.warn("Duplicate file processed (1): " + vf);
+                        }
+                    } else {
+                        LOG.info(" --- no virtual file");
+                        builder.processLocallyDeletedFile(fp);
+                        if (! dirtyFiles.remove(fp)) {
+                            LOG.warn("Duplicate file processed (2): " + fp);
+                        }
                     }
                 }
+                // don't need to put the "else" in an indention...
                 continue;
             }
 
@@ -144,9 +147,13 @@ public class ChangeListSync {
                     LocalChangeList changeList = getChangeList(action, server, mappedChanges);
                     LOG.info(" --- mapped file " + fp + " to known change, in local changelist " + changeList);
                     ensureOnlyIn(action, changeList, builder);
+                    if (!dirtyFiles.remove(fp)) {
+                        LOG.warn("Duplicate file processed (3): " + fp);
+                    }
                 }
             }
 
+            LOG.info(" --- handling unknown p4 action for " + unopenedFiles);
             final Map<FilePath, IExtendedFileSpec> status =
                     server.getFileStatus(unopenedFiles);
             if (status == null) {
@@ -156,9 +163,15 @@ public class ChangeListSync {
                     if (vf == null) {
                         LOG.info(" --- locally deleted: " + unopenedFile);
                         builder.processLocallyDeletedFile(unopenedFile);
+                        if (!dirtyFiles.remove(unopenedFile)) {
+                            LOG.warn("Duplicate file processed (4): " + unopenedFile);
+                        }
                     } else {
                         LOG.info(" --- modified without checkout: " + vf);
                         builder.processModifiedWithoutCheckout(vf);
+                        if (!dirtyFiles.remove(unopenedFile)) {
+                            LOG.warn("Duplicate file processed (5): " + unopenedFile);
+                        }
                     }
                 }
             } else {
@@ -168,20 +181,29 @@ public class ChangeListSync {
                     final IExtendedFileSpec spec = specEntry.getValue();
                     if (spec.getOpStatus() != FileSpecOpStatus.VALID ||
                             spec.getOpenAction() == null) {
-                        LOG.info(" -- spec status: " + spec.getOpStatus());
+                        LOG.info(" -- spec status: " + spec.getOpStatus() + " [" + spec.getStatusMessage() + "]");
                         LOG.info(" -- spec open action: " + spec.getOpenAction());
                         // assume it's a file that isn't added yet.
                         if (vf == null) {
                             builder.processLocallyDeletedFile(fp);
                             LOG.info(" --- invalid p4 status, locally deleted: " + fp);
+                            if (!dirtyFiles.remove(fp)) {
+                                LOG.warn("Duplicate file processed (6): " + fp);
+                            }
                         } else if (server.isIgnored(specEntry.getKey())) {
                             LOG.info(" --- in ignore file: " + vf);
                             builder.processIgnoredFile(vf);
+                            if (!dirtyFiles.remove(fp)) {
+                                LOG.warn("Duplicate file processed (7): " + fp);
+                            }
                         } else {
                             // not on server, and user did not indicate that they
                             // wanted to edit it.
                             LOG.info(" --- user didn't want to edit: " + vf);
                             builder.processUnversionedFile(vf);
+                            if (!dirtyFiles.remove(fp)) {
+                                LOG.warn("Duplicate file processed (8): " + fp);
+                            }
                         }
                     } else {
                         // FIXME do something smart
@@ -190,13 +212,25 @@ public class ChangeListSync {
                         if (vf == null) {
                             LOG.info(" --- no changelist mapping, marking as locally deleted: " + fp);
                             builder.processLocallyDeletedFile(fp);
+                            if (!dirtyFiles.remove(fp)) {
+                                LOG.warn("Duplicate file processed (9): " + fp);
+                            }
                         } else {
                             LOG.info(" --- no changelist mapping, marking as modified without checkout; " + vf);
                             builder.processModifiedWithoutCheckout(vf);
+                            if (!dirtyFiles.remove(fp)) {
+                                LOG.warn("Duplicate file processed (10): " + fp);
+                            }
                         }
                     }
                 }
             }
+        }
+
+
+        LOG.info("Remaining dirty files: " + new ArrayList<FilePath>(dirtyFiles));
+        if (! dirtyFiles.isEmpty()) {
+            throw new VcsException("Did not process all the dirty files: " + new ArrayList<FilePath>(dirtyFiles));
         }
     }
 
@@ -209,8 +243,15 @@ public class ChangeListSync {
         for (LocalChangeList cl: ChangeListManager.getInstance(project).getChangeLists()) {
             for (Change change: cl.getChanges()) {
                 if (change.affectsFile(action.getFile().getIOFile())) {
-                    LOG.info(" --- Moving " + action.getFile() + " out of " + cl + " into " + changeList);
-                    builder.processChange(change, changeList);
+                    if (changeList.equals(cl)) {
+                        LOG.info(" --- Keeping " + action.getFile() + " in " + changeList);
+                        // null changelist: setting the changelist will cause infinite
+                        // reloads, because it means that the changelist has changed.
+                        builder.processChange(change, null);
+                    } else {
+                        LOG.info(" --- Moving " + action.getFile() + " out of " + cl + " into " + changeList);
+                        builder.processChange(change, changeList);
+                    }
                     movedChange = true;
                 }
             }
@@ -231,14 +272,15 @@ public class ChangeListSync {
 
         for (Entry<P4ChangeListValue, LocalChangeList> entry: changes.entrySet()) {
             final P4ChangeListValue p4cl = entry.getKey();
-            if (p4cl.getChangeListId() == action.getChangeList() &&
-                    p4cl.getClientServerId().equals(server.getClientServerId())) {
+            // only need to check for the changelist #.  The changes are going to be
+            // in the same server.
+            if (p4cl.getChangeListId() == action.getChangeList()) {
                 return entry.getValue();
             }
         }
 
         throw new IllegalStateException("Bad setup: no matching changelist for server " + server.getClientServerId() +
-                " changelist " + action.getChangeList());
+                " changelist " + action.getChangeList() + " (known changes for server: " + changes.keySet() + ")");
     }
 
     @Nullable
@@ -252,6 +294,7 @@ public class ChangeListSync {
     }
 
     private Change createChange(@NotNull P4FileAction file) {
+        // FIXME looks like we need 2 kinds of revision classes: one for this method, one for the history methods.
         ContentRevision beforeRev = new P4ContentRevision(project, file);
         ContentRevision afterRev = new CurrentContentRevision(file.getFile());
         return new Change(beforeRev, afterRev, file.getClientFileStatus());

@@ -85,7 +85,9 @@ public class P4ChangeListState extends CachedState {
         if (isRestricted) {
             wrapper.setAttribute("v", "r");
         }
-        wrapper.setAttribute("f", fixState);
+        if (fixState != null) {
+            wrapper.setAttribute("f", fixState);
+        }
         for (P4JobState job : jobs) {
             Element el = new Element("j");
             wrapper.addContent(el);

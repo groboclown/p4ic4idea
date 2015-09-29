@@ -26,6 +26,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.P4ChangeListState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -78,6 +79,8 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
 
     @Override
     protected void innerLoadServerCache(@NotNull final P4Exec2 exec, @NotNull final AlertManager alerts) {
+        ServerConnection.assertInServerConnection();
+
         // Load our server cache.
 
         final List<IChangelistSummary> pendingChanges;
@@ -90,10 +93,15 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         }
         lastRefreshDate = new Date();
         List<P4ChangeListState> refreshed = new ArrayList<P4ChangeListState>(pendingChanges.size());
+        boolean foundDefault = false;
         for (IChangelistSummary pendingChange : pendingChanges) {
             // FIXME include job fix state
 
             P4ChangeListState state = new P4ChangeListState(pendingChange);
+            refreshed.add(state);
+            if (state.getChangelistId() == P4ChangeListCache.P4_DEFAULT) {
+                foundDefault = true;
+            }
             try {
                 final Collection<String> jobs = exec.getJobIdsForChangelist(state.getChangelistId());
                 if (jobs != null) {
@@ -106,6 +114,10 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 alerts.addNotice(P4Bundle.message("error.getJobIdsForChangelist",
                         pendingChange.getId(), exec.getClientName()), e);
             }
+        }
+        if (! foundDefault) {
+            // This generally is always entered.
+            refreshed.add(new P4ChangeListState(P4ChangeListCache.P4_DEFAULT));
         }
         cachedServerChanges.clear();
         cachedServerChanges.addAll(refreshed);

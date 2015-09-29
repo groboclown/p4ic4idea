@@ -25,6 +25,7 @@ import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
+import net.groboclown.idea.p4ic.server.P4Job;
 import net.groboclown.idea.p4ic.server.ServerExecutor;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
@@ -575,6 +576,12 @@ public class P4Server {
                 return ret;
             }
         });
+    }
+
+    public void submitChangelist(final List<FilePath> files, final List<P4Job> jobs, final String submitStatus,
+            final int changeListId) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
     }
 
 

@@ -62,6 +62,7 @@ import net.groboclown.idea.p4ic.ui.P4MultipleConnectionWidget;
 import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeProvider;
 import net.groboclown.idea.p4ic.v2.file.FileExtensions;
+import net.groboclown.idea.p4ic.v2.file.P4CheckinEnvironment;
 import net.groboclown.idea.p4ic.v2.file.P4EditFileProvider;
 import net.groboclown.idea.p4ic.v2.file.P4VFSListener;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
@@ -406,7 +407,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             ret = super.getCheckinEnvironment();
         }
         // It can return a proxy to the real environment, which is fine.
-        //if (ret == null || ! (ret instanceof P4CheckinEnvironment)) {
         if (ret == null) {
             // really yikes!
             throw new IllegalStateException(P4Bundle.message("error.checkin-env.null"));

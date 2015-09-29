@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.extension;
+package net.groboclown.idea.p4ic.v2.file;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
@@ -29,15 +29,15 @@ import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.changes.P4ChangeListCache;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
-import net.groboclown.idea.p4ic.config.Client;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.P4Job;
-import net.groboclown.idea.p4ic.server.P4StatusMessage;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
+import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.ui.checkin.P4SubmitPanel;
 import net.groboclown.idea.p4ic.ui.checkin.SubmitContext;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -77,6 +77,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         return P4Bundle.message("commit.operation.name");
     }
 
+    @SuppressWarnings("unchecked")
     @Nullable
     @Override
     public List<VcsException> commit(List<Change> changes, String preparedComment) {
@@ -90,18 +91,26 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         LOG.info("Submit to server: " + changes);
         final List<VcsException> errors = new ArrayList<VcsException>();
 
+
+        // FIXME this is still all the old crufty stuff.
+
+
         // Find all the files and their respective P4 changelists.
         // This method deals with the problem of discovering the
         // changelists to submit, and their associated P4 client.
         // The server end deals with filtering out the files that
         // aren't requested to submit.
         final ChangeListManager clm = ChangeListManager.getInstance(vcs.getProject());
-        final Map<Client, List<FilePath>> defaultChangeFiles = new HashMap<Client, List<FilePath>>();
-        final Map<Client, Map<P4ChangeListId, List<FilePath>>> pathsPerChangeList = new HashMap<Client, Map<P4ChangeListId, List<FilePath>>>();
+        final Map<P4Server, List<FilePath>> defaultChangeFiles = new HashMap<P4Server, List<FilePath>>();
+        final Map<P4Server, Map<P4ChangeListId, List<FilePath>>> pathsPerChangeList = new HashMap<P4Server, Map<P4ChangeListId, List<FilePath>>>();
         for (Change change: changes) {
             if (change != null) {
                 LocalChangeList cl = clm.getChangeList(change);
-                splitChanges(change, cl, pathsPerChangeList, defaultChangeFiles);
+                try {
+                    splitChanges(change, cl, pathsPerChangeList, defaultChangeFiles);
+                } catch (InterruptedException e) {
+                    errors.add(new VcsInterruptedException(e));
+                }
             }
         }
 
@@ -116,43 +125,35 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         LOG.info("changes in default changelists: " + defaultChangeFiles);
 
         if (! defaultChangeFiles.isEmpty()) {
-            for (Map.Entry<Client, List<FilePath>> en: defaultChangeFiles.entrySet()) {
-                Client client = en.getKey();
-                try {
-                    final P4ChangeListId changeList = P4ChangeListCache.getInstance().createChangeList(
-                            client, preparedComment);
-                    Map<P4ChangeListId, List<FilePath>> clFp = pathsPerChangeList.get(client);
-                    if (clFp == null) {
-                        clFp = new HashMap<P4ChangeListId, List<FilePath>>();
-                        pathsPerChangeList.put(client, clFp);
-                    }
-                    LOG.info("moving from default changelist in " + client + " to " + changeList + ": " + en.getValue());
-                    P4ChangeListCache.getInstance().addFilesToChangelist(client,
-                            changeList, en.getValue());
-                    clFp.put(changeList, en.getValue());
-                } catch (VcsException e) {
-                    LOG.warn("Problem sorting files into changelists for client " +
-                            client + ": " + en.getValue(), e);
-                    errors.add(e);
+            for (Entry<P4Server, List<FilePath>> en: defaultChangeFiles.entrySet()) {
+                P4Server server = en.getKey();
+                // FIXME implement
+                errors.add(new VcsException("Not implemented"));
+                /*
+                final P4ChangeListId changeList = P4ChangeListCache.getInstance().createChangeList(
+                        server, preparedComment);
+                Map<P4ChangeListId, List<FilePath>> clFp = pathsPerChangeList.get(server);
+                if (clFp == null) {
+                    clFp = new HashMap<P4ChangeListId, List<FilePath>>();
+                    pathsPerChangeList.put(server, clFp);
                 }
+                LOG.info("moving from default changelist in " + server + " to " + changeList + ": " + en.getValue());
+                P4ChangeListCache.getInstance().addFilesToChangelist(server,
+                        changeList, en.getValue());
+                clFp.put(changeList, en.getValue());
+                */
             }
         }
-        for (Map.Entry<Client, Map<P4ChangeListId, List<FilePath>>> en: pathsPerChangeList.entrySet()) {
-            final Client client = en.getKey();
-            for (Map.Entry<P4ChangeListId, List<FilePath>> clEn: en.getValue().entrySet()) {
-                LOG.info("Submit to " + client + " cl " + clEn.getValue() + " files " +
+        for (Entry<P4Server, Map<P4ChangeListId, List<FilePath>>> en: pathsPerChangeList.entrySet()) {
+            final P4Server server = en.getKey();
+            for (Entry<P4ChangeListId, List<FilePath>> clEn: en.getValue().entrySet()) {
+                LOG.info("Submit to " + server + " cl " + clEn.getValue() + " files " +
                     clEn.getValue());
-                try {
-                    List<P4StatusMessage> messages = client.getServer().submitChangelist(clEn.getValue(),
-                            getJobs(parametersHolder),
-                            getSubmitStatus(parametersHolder),
-                            clEn.getKey().getChangeListId());
-                    errors.addAll(P4StatusMessage.messagesAsErrors(messages));
-                } catch (VcsException e) {
-                    LOG.warn("Problem submitting changelist " +
-                            clEn.getKey().getChangeListId(), e);
-                    errors.add(e);
-                }
+                server.submitChangelist(clEn.getValue(),
+                        getJobs(parametersHolder),
+                        getSubmitStatus(parametersHolder),
+                        clEn.getKey().getChangeListId());
+                //errors.addAll(P4StatusMessage.messagesAsErrors(messages));
             }
         }
 
@@ -164,8 +165,8 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     }
 
     private void splitChanges(@NotNull Change change, @Nullable LocalChangeList lcl,
-            @NotNull Map<Client, Map<P4ChangeListId, List<FilePath>>> clientPathsPerChangeList,
-            @NotNull Map<Client, List<FilePath>> defaultChangeFiles) {
+            @NotNull Map<P4Server, Map<P4ChangeListId, List<FilePath>>> clientPathsPerChangeList,
+            @NotNull Map<P4Server, List<FilePath>> defaultChangeFiles) throws InterruptedException {
         final FilePath fp;
         if (change.getVirtualFile() == null) {
             // possibly deleted.
@@ -183,8 +184,8 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             return;
         }
 
-        final Client client = vcs.getClientFor(fp);
-        if (client == null) {
+        final P4Server server = vcs.getP4ServerFor(fp);
+        if (server == null) {
             // not under p4 control
             LOG.info("Tried to submit a change (" + change + " / " + fp + ") that is not under P4 control");
             return;
@@ -194,14 +195,14 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             if (p4clList != null) {
                 // find the changelist
                 for (P4ChangeListId p4cl: p4clList) {
-                    if (p4cl.isIn(client)) {
+                    if (p4cl.isIn(server)) {
                         // each IDEA changelist stores at most 1 p4 changelist per client.
                         // so we can exit once it's a client match.
                         if (p4cl.isNumberedChangelist()) {
-                            Map<P4ChangeListId, List<FilePath>> pathsPerChangeList = clientPathsPerChangeList.get(client);
+                            Map<P4ChangeListId, List<FilePath>> pathsPerChangeList = clientPathsPerChangeList.get(server);
                             if (pathsPerChangeList == null) {
                                 pathsPerChangeList = new HashMap<P4ChangeListId, List<FilePath>>();
-                                clientPathsPerChangeList.put(client, pathsPerChangeList);
+                                clientPathsPerChangeList.put(server, pathsPerChangeList);
                             }
                             List<FilePath> files = pathsPerChangeList.get(p4cl);
                             if (files == null) {
@@ -210,7 +211,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                             }
                             files.add(fp);
                         } else {
-                            addToDefaultChangeFiles(client, fp, defaultChangeFiles);
+                            addToDefaultChangeFiles(server, fp, defaultChangeFiles);
                         }
                         return;
                     }
@@ -218,16 +219,16 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             }
         } else {
             LOG.info("Not in a changelist: " + fp + "; putting in the default changelist");
-            addToDefaultChangeFiles(client, fp, defaultChangeFiles);
+            addToDefaultChangeFiles(server, fp, defaultChangeFiles);
         }
     }
 
-    private void addToDefaultChangeFiles(@NotNull Client client, @NotNull FilePath fp,
-            @NotNull Map<Client, List<FilePath>> map) {
-        List<FilePath> fpList = map.get(client);
+    private void addToDefaultChangeFiles(@NotNull P4Server server, @NotNull FilePath fp,
+            @NotNull Map<P4Server, List<FilePath>> map) {
+        List<FilePath> fpList = map.get(server);
         if (fpList == null) {
             fpList = new ArrayList<FilePath>();
-            map.put(client, fpList);
+            map.put(server, fpList);
         }
         fpList.add(fp);
     }
@@ -238,27 +239,20 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     public List<VcsException> scheduleMissingFileForDeletion(List<FilePath> files) {
         LOG.info("scheduleMissingFileForDeletion: " + files);
         final List<VcsException> ret = new ArrayList<VcsException>();
-        final Map<Client, List<FilePath>> map;
         try {
-            map = vcs.mapFilePathToClient(files);
-        } catch (P4InvalidConfigException e) {
-            ret.add(e);
-            // Can't proceed if this fails
-            return ret;
-        }
-
-        for (Entry<Client, List<FilePath>> entry : map.entrySet()) {
-            final Client client = entry.getKey();
-            final P4ChangeListId defaultChange = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client);
-            if (client.isWorkingOnline()) {
-                try {
-                    client.getServer().deleteFiles(entry.getValue(), defaultChange.getChangeListId());
-                } catch (VcsException e) {
-                    ret.add(e);
+            final Map<P4Server, List<FilePath>> fileMapping = vcs.mapFilePathsToP4Server(files);
+            for (Entry<P4Server, List<FilePath>> entry : fileMapping.entrySet()) {
+                final P4Server server = entry.getKey();
+                if (server != null) {
+                    final int changeListId = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(server).
+                            getChangeListId();
+                    server.deleteFiles(entry.getValue(), changeListId);
+                } else {
+                    ret.add(new P4FileException(P4Bundle.message("error.add.no-local-file", entry.getValue())));
                 }
-            } else {
-                ret.add(new VcsException("client is offline: " + client));
             }
+        } catch (InterruptedException e) {
+            ret.add(new VcsInterruptedException(e));
         }
 
         return ret;
@@ -270,29 +264,20 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         LOG.info("scheduleUnversionedFilesForAddition: " + files);
         final List<VcsException> ret = new ArrayList<VcsException>();
 
-        final Map<Client, List<VirtualFile>> map;
         try {
-            map = vcs.mapVirtualFilesToClient(files);
-        } catch (P4InvalidConfigException e) {
-            ret.add(e);
-            // Can't proceed if this fails
-            return ret;
-        }
-
-        for (Entry<Client, List<VirtualFile>> entry : map.entrySet()) {
-            final Client client = entry.getKey();
-            final P4ChangeListId defaultChange = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(client);
-            if (client.isWorkingOnline()) {
-                try {
-                    client.getServer().addOrCopyFiles(entry.getValue(),
-                            Collections.<VirtualFile, VirtualFile>emptyMap(),
-                            defaultChange.getChangeListId());
-                } catch (VcsException e) {
-                    ret.add(e);
+            final Map<P4Server, List<VirtualFile>> fileMapping = vcs.mapVirtualFilesToP4Server(files);
+            for (Entry<P4Server, List<VirtualFile>> entry : fileMapping.entrySet()) {
+                final P4Server server = entry.getKey();
+                if (server != null) {
+                    final int changeListId = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(server).
+                            getChangeListId();
+                    server.addOrEditFiles(entry.getValue(), changeListId);
+                } else {
+                    ret.add(new P4FileException(P4Bundle.message("error.add.no-local-file", entry.getValue())));
                 }
-            } else {
-                ret.add(new VcsException("client is offline: " + client));
             }
+        } catch (InterruptedException e) {
+            ret.add(new VcsInterruptedException(e));
         }
 
         return ret;
@@ -315,6 +300,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         dataConsumer.consume("jobIds", jobIds);
     }
 
+    @SuppressWarnings("unchecked")
     @NotNull
     private static List<P4Job> getJobs(@NotNull NullableFunction<Object, Object> dataFunc) {
         final Object ret = dataFunc.fun("jobIds");
@@ -339,7 +325,6 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
 
 
     private class P4OnCheckinPanel implements CheckinChangeListSpecificComponent {
-        private final P4Vcs vcs;
         private final CheckinProjectPanel parentPanel;
         private final PairConsumer<Object, Object> dataConsumer;
         private final SubmitContext context;
@@ -347,7 +332,6 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
 
 
         P4OnCheckinPanel(@NotNull P4Vcs vcs, @NotNull CheckinProjectPanel panel, final PairConsumer<Object, Object> additionalDataConsumer) {
-            this.vcs = vcs;
             this.parentPanel = panel;
             this.dataConsumer = additionalDataConsumer;
             this.context = new SubmitContext(vcs, panel.getSelectedChanges());

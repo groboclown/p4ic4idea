@@ -153,15 +153,15 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         String clientPrefix = "//" + getCachedClientName() + "/";
         if (! clientPathLower.startsWith(clientPrefix.toLowerCase())) {
             // assume it's the actual path to the file system.
-            // FIXME debug
             FilePath ret = FilePathUtil.getFilePath(clientPath);
-            LOG.info(" - converted " + spec + " to file " + ret);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(" - converted " + spec + " to file " + ret);
+            }
             return ret;
         }
         String relClientPath = clientPath.substring(clientPrefix.length());
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
         if (workspaceRoots.isEmpty()) {
-            LOG.info("no cached server workspace roots");
             alerts.addWarning(P4Bundle.message("error.config.invalid-roots", cache.getClientName()),
                     invalidRootsException);
             return null;
@@ -217,13 +217,17 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
 
     @NotNull
     List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts) {
-        LOG.debug("Finding client roots for " + cachedServerWorkspace.getName());
         final List<VirtualFile> projectRoots = P4ConfigUtil.getVcsRootFiles(project);
-        LOG.debug(" - project roots: " + projectRoots);
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
-        LOG.debug(" - workspace roots: " + workspaceRoots);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Finding client roots for " + cachedServerWorkspace.getName());
+            LOG.debug(" - project roots: " + projectRoots);
+            LOG.debug(" - workspace roots: " + workspaceRoots);
+        }
         for (String workspaceRoot: workspaceRoots) {
-            LOG.debug(" - root: " + workspaceRoot);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(" - root: " + workspaceRoot);
+            }
             // Special case for a workspace root that spans windows directories.
             if (workspaceRoot.equals("null")) {
                 // "null" mapping only matters if we're on Windows.  Otherwise, ignore it.
@@ -254,7 +258,6 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                 return ret;
             }
         }
-        LOG.debug(" - no client root found");
         // no root found.
         alerts.addWarning(P4Bundle.message("error.config.invalid-roots", cache.getClientName()), invalidRootsException);
         return Collections.emptyList();

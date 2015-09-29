@@ -21,6 +21,7 @@ import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -64,7 +65,11 @@ public class ChangeListBuilderCache {
                 // changelist view will not show the changed files.
                 // ---------------------------------------------------------------------
 
-                builder.processChangeInList(processedChange.change, processedChange.list, P4Vcs.getKey());
+                if (processedChange.list == null) {
+                    builder.processChange(processedChange.change, P4Vcs.getKey());
+                } else {
+                    builder.processChangeInList(processedChange.change, processedChange.list, P4Vcs.getKey());
+                }
             }
 
             for (VirtualFile unversionedFile : unversionedFiles) {
@@ -323,9 +328,12 @@ public class ChangeListBuilderCache {
         }
     }
 
-    public void processChange(@NotNull final Change change, @NotNull LocalChangeList list) {
-        builder.processChange(change, P4Vcs.getKey());
-        builder.processChangeInList(change, list, P4Vcs.getKey());
+    public void processChange(@NotNull final Change change, @Nullable LocalChangeList list) {
+        if (list == null) {
+            builder.processChange(change, P4Vcs.getKey());
+        } else {
+            builder.processChangeInList(change, list, P4Vcs.getKey());
+        }
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("processChange: " +
@@ -396,7 +404,7 @@ public class ChangeListBuilderCache {
         final LocalChangeList list;
 
 
-        private ChangeToChangeList(final Change change, final LocalChangeList list) {
+        private ChangeToChangeList(@NotNull Change change, @Nullable LocalChangeList list) {
             this.change = change;
             this.list = list;
         }

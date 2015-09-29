@@ -84,4 +84,9 @@ public class P4ChangeListValue {
         }
         return id;
     }
+
+    @Override
+    public String toString() {
+        return clientServerId + "@" + getChangeListId();
+    }
 }

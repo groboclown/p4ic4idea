@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.changes;
+package net.groboclown.idea.p4ic.v2.changes;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -21,7 +21,6 @@ import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -65,11 +64,9 @@ public class ChangeListBuilderCache {
                 // changelist view will not show the changed files.
                 // ---------------------------------------------------------------------
 
-                if (processedChange.list == null) {
-                    builder.processChange(processedChange.change, P4Vcs.getKey());
-                } else {
-                    builder.processChangeInList(processedChange.change, processedChange.list, P4Vcs.getKey());
-                }
+                // ignore the "moved" state - that only applies for the very first
+                // run.
+                builder.processChange(processedChange.change, P4Vcs.getKey());
             }
 
             for (VirtualFile unversionedFile : unversionedFiles) {
@@ -87,10 +84,6 @@ public class ChangeListBuilderCache {
             for (VirtualFile ignoredFile : ignoredFiles) {
                 builder.processIgnoredFile(ignoredFile);
             }
-        }
-
-        public boolean hasChanged(@NotNull VcsDirtyScope dirtyScope, @NotNull ChangeListManagerGate addGate) {
-            return hasChanged(dirtyScope.getDirtyFiles(), addGate);
         }
 
 
@@ -228,7 +221,7 @@ public class ChangeListBuilderCache {
                 // check to make sure the change hasn't moved to a different changelist
                 for (LocalChangeList list : listsCopy) {
                     if (list.getChanges().contains(change)) {
-                        if (! list.getName().equals(processedChange.list)) {
+                        if (! list.getId().equals(processedChange.list.getId())) {
                             if (LOG.isDebugEnabled()) {
                                 LOG.debug("Changelists changed: change files (" + change + ") moved changelists from " +
                                         processedChange.list + " to " + list.getName());
@@ -277,11 +270,6 @@ public class ChangeListBuilderCache {
 
 
     public ChangeListBuilderCache(@NotNull Project project, @NotNull final ChangelistBuilder builder,
-            @NotNull VcsDirtyScope dirtyScope) {
-        this(project, builder, dirtyScope.getDirtyFiles());
-    }
-
-    public ChangeListBuilderCache(@NotNull Project project, @NotNull final ChangelistBuilder builder,
             @NotNull Set<FilePath> dirtyFiles){
         this.builder = builder;
         this.changes = new CachedChanges();
@@ -328,11 +316,11 @@ public class ChangeListBuilderCache {
         }
     }
 
-    public void processChange(@NotNull final Change change, @Nullable LocalChangeList list) {
-        if (list == null) {
-            builder.processChange(change, P4Vcs.getKey());
-        } else {
+    public void processChange(@NotNull final Change change, @NotNull LocalChangeList list, boolean moved) {
+        if (moved) {
             builder.processChangeInList(change, list, P4Vcs.getKey());
+        } else {
+            builder.processChange(change, P4Vcs.getKey());
         }
 
         if (LOG.isDebugEnabled()) {
@@ -347,7 +335,7 @@ public class ChangeListBuilderCache {
             );
         }
 
-        changes.processedChanges.add(new ChangeToChangeList(change, list));
+        changes.processedChanges.add(new ChangeToChangeList(change, list, false));
         if (change.getBeforeRevision() != null) {
             final FilePath fp = change.getBeforeRevision().getFile();
             if (!originallyDirty.contains(fp.getIOFile())) {
@@ -402,11 +390,13 @@ public class ChangeListBuilderCache {
     private static class ChangeToChangeList {
         final Change change;
         final LocalChangeList list;
+        final boolean moved;
 
 
-        private ChangeToChangeList(@NotNull Change change, @Nullable LocalChangeList list) {
+        private ChangeToChangeList(@NotNull Change change, @NotNull LocalChangeList list, boolean moved) {
             this.change = change;
             this.list = list;
+            this.moved = moved;
         }
     }
 

@@ -83,7 +83,17 @@ public class ClientCacheManager {
      * so that the returned {@link PendingUpdateState} is handled correctly.
      */
     @Nullable
-    public PendingUpdateState editFile(@NotNull FilePath file, int changeListId) {
+    public PendingUpdateState addOrEditFile(@NotNull FilePath file, int changeListId) {
+        return fileActions.addOrEditFile(file, changeListId);
+    }
+
+
+    /**
+     * Caller should be run through a {@link CreateUpdate},
+     * so that the returned {@link PendingUpdateState} is handled correctly.
+     */
+    @Nullable
+    public PendingUpdateState editFile(@NotNull VirtualFile file, int changeListId) {
         return fileActions.editFile(file, changeListId);
     }
 

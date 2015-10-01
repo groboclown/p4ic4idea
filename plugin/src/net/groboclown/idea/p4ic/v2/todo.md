@@ -5,11 +5,32 @@
 
 These bugs need to be handled before features.
 
-1. Infinite refresh occurs on changelist sync.
-    * ChangeListManagerImpl performs the actual invocation (`invokeAfterUpdate` and `schedule()`)
-    * There's no calls to the change list refresher (`P4ChangesViewRefresher`) that's causing it.
-    * It might be that the sync is marking files as dirty.
+1. Thread deadlock:
+    * Changelist refresh thread (in AbstractIgnoredFilesHolder.cleanAndAdjustScope)
+      waiting on ApplicationImpl.runReadAction
+    * ServerConnection queue runner calling
+      FileActionsServerCacheSync.innerLoadServerCache, which calls
+      WorkspaceServerCacheSync.getClientRoots, which calls
+      ProjectLevelVcsManagerImpl.getRootsUnderVcs, waiting on
+      ApplicationImpl.runReadAction.
+    * ChangelistConflictTracker waiting on ApplicationImpl.runReadAction
+    * ide MergingUpdateQueue calling ApplicationImpl.runReadAction,
+      which is waiting on ApplicationImpl.runReadAction
+    * VcsDirtyScopeVfsListener$FileAndDirsCollector.markDirty,
+      calling VcsDirtyScopeManagerImpl.filePathsDirty,
+      waiting on ApplicationImpl.runReadAction
+    * (The big one, all the runReadAction are waiting on)
+      P4VFSListener.beforeContentsChange calling P4Vcs.getP4ServerFor
+      which deeply calls P4Server.getProjectClientRoots,
+      which calls ServerConnection.startImmediateAction,
+      which waits on its lock.  Looks like this is wrapped in a
+      WriteCommandAction.performWriteCommandAction.
+      
+    Looks like we need ServerConnection to obtain a readLock
+    before obtaining its own lock.
 1. Going offline for no apparent reason.  Reconnect attempts seem to be ignored.
+   This may be fixed now.  Was probably due to the two conflicting
+   APIs battling each other.
 1. P4Edit isn't always editing the files.  Need to figure out what's going on.
    Looks like when offline, the queued file status isn't being recognized.
 

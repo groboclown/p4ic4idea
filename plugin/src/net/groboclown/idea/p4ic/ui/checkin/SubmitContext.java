@@ -26,6 +26,7 @@ import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.P4Exec;
 import net.groboclown.idea.p4ic.server.P4Job;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.file.P4CheckinEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,6 +43,7 @@ public class SubmitContext {
     private static final Logger LOG = Logger.getInstance(SubmitContext.class);
 
     private final P4Vcs vcs;
+    private final P4ChangeListMapping changeListMapping;
     private final List<P4Job> jobs;
     private List<String> acceptableJobStates = Collections.emptyList();
     private String jobServerId;
@@ -59,6 +61,7 @@ public class SubmitContext {
         this.vcs = vcs;
         this.jobs = new ArrayList<P4Job>();
         this.currentChanges = new HashSet<P4ChangeListId>();
+        this.changeListMapping = P4ChangeListMapping.getInstance(vcs.getProject());
         refresh(ideaChanges);
     }
 
@@ -249,10 +252,7 @@ public class SubmitContext {
         Map<Change, Collection<P4ChangeListId>> ret = new HashMap<Change, Collection<P4ChangeListId>>();
         for (Change change : changes) {
             final LocalChangeList idea = ChangeListManager.getInstance(vcs.getProject()).getChangeList(change);
-            Collection<P4ChangeListId> p4Changes = vcs.getChangeListMapping().getPerforceChangelists(idea);
-            if (p4Changes == null) {
-                p4Changes = Collections.emptyList();
-            }
+            Collection<P4ChangeListId> p4Changes = changeListMapping.getAllPerforceChangelistsFor(idea);
             ret.put(change, p4Changes);
         }
         return ret;

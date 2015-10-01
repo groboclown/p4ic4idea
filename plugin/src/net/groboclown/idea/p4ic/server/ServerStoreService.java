@@ -20,7 +20,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.background.VcsSettableFuture;
-import net.groboclown.idea.p4ic.changes.P4ChangeListCache;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.config.ServerConfig;
@@ -82,7 +81,6 @@ public class ServerStoreService implements ApplicationComponent {
             if (data != null) {
                 if (data.deregister(project)) {
                     data.forceDisconnect();
-                    P4ChangeListCache.getInstance().invalidateServerCache(serverConfig);
                     servers.remove(serverConfig);
                 }
             }

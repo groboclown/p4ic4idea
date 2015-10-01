@@ -24,8 +24,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.changes.ChangeListBuilderCache;
-import net.groboclown.idea.p4ic.changes.P4ChangeListMapping;
+import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.history.P4ContentRevision;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
@@ -55,11 +54,13 @@ public class ChangeListSync {
     private final Project project;
     private final P4Vcs vcs;
     private final AlertManager alerts;
+    private final P4ChangeListMapping changeListMapping;
 
     public ChangeListSync(@NotNull final P4Vcs vcs, @NotNull AlertManager alerts) {
         this.project = vcs.getProject();
         this.vcs = vcs;
         this.alerts = alerts;
+        this.changeListMapping = P4ChangeListMapping.getInstance(project);
     }
 
 
@@ -210,6 +211,10 @@ public class ChangeListSync {
                         alerts.addWarning(P4Bundle.message("errors.changelist.mapping",
                                 fp, spec.getDepotPath()), null);
                         if (vf == null) {
+                            // CHECK if the file isn't in Perforce, then this should
+                            // be ignored!
+
+
                             LOG.info(" --- no changelist mapping, marking as locally deleted: " + fp);
                             builder.processLocallyDeletedFile(fp);
                             if (!dirtyFiles.remove(fp)) {
@@ -247,10 +252,10 @@ public class ChangeListSync {
                         LOG.info(" --- Keeping " + action.getFile() + " in " + changeList);
                         // null changelist: setting the changelist will cause infinite
                         // reloads, because it means that the changelist has changed.
-                        builder.processChange(change, null);
+                        builder.processChange(change, changeList, false);
                     } else {
                         LOG.info(" --- Moving " + action.getFile() + " out of " + cl + " into " + changeList);
-                        builder.processChange(change, changeList);
+                        builder.processChange(change, changeList, true);
                     }
                     movedChange = true;
                 }
@@ -258,7 +263,7 @@ public class ChangeListSync {
         }
         if (! movedChange) {
             LOG.info(" --- Put " + action.getFile() + " into " + changeList);
-            builder.processChange(createChange(action), changeList);
+            builder.processChange(createChange(action), changeList, true);
         }
     }
 
@@ -309,6 +314,7 @@ public class ChangeListSync {
         for (P4Server server : p4Servers) {
             if (server != null) {
                 final Collection<P4ChangeListValue> changes = server.getOpenChangeLists();
+                changeListMapping.cleanServerMapping(server.getClientServerId(), changes);
                 ret.put(server, mapIdeaChanges(addGate, changes));
             }
         }
@@ -328,7 +334,7 @@ public class ChangeListSync {
         final Map<P4ChangeListValue, LocalChangeList> ret = new HashMap<P4ChangeListValue, LocalChangeList>();
         final List<P4ChangeListValue> unmapped = new ArrayList<P4ChangeListValue>();
         for (P4ChangeListValue change: changes) {
-            LocalChangeList local = vcs.getChangeListMapping().getIdeaChangelistFor(change);
+            LocalChangeList local = changeListMapping.getIdeaChangelistFor(change);
             if (local == null) {
                 unmapped.add(change);
             } else {
@@ -375,8 +381,8 @@ public class ChangeListSync {
                     // independent of the matchers.
 
                     LOG.info("Associating " + p4cl.getClientServerId() + " default changelist to IDEA changelist " +
-                            P4ChangeListMapping.DEFAULT_CHANGE_NAME);
-                    LocalChangeList local = addGate.findOrCreateList(P4ChangeListMapping.DEFAULT_CHANGE_NAME, "");
+                            P4ChangeListId.DEFAULT_CHANGE_NAME);
+                    LocalChangeList local = addGate.findOrCreateList(P4ChangeListId.DEFAULT_CHANGE_NAME, "");
                     mapping.put(p4cl, local);
                     iter.remove();
                 } else {
@@ -393,8 +399,7 @@ public class ChangeListSync {
                         mapping.put(p4cl, match);
                         iter.remove();
 
-                        // TODO this line needs to be better handled to remove all the public cruft.
-                        vcs.getChangeListMapping().bindChangelists(match, p4cl.getIdObject());
+                        changeListMapping.bindChangelists(match, p4cl.getIdObject());
                     }
                 }
             }
@@ -404,9 +409,8 @@ public class ChangeListSync {
             LocalChangeList lcl = createUniqueChangeList(addGate, p4cl, allIdeaChangeLists);
             mapping.put(p4cl, lcl);
 
-            // TODO this line needs to be better handled to remove all the public cruft.
             LOG.info("Binding " + p4cl.getChangeListId() + " to IDEA changelist " + lcl);
-            vcs.getChangeListMapping().bindChangelists(lcl, p4cl.getIdObject());
+            changeListMapping.bindChangelists(lcl, p4cl.getIdObject());
         }
     }
 
@@ -414,7 +418,7 @@ public class ChangeListSync {
         String[] ret = new String[2];
         String desc = p4cl.getComment();
         if (p4cl.isDefaultChangelist()) {
-            ret[0] = P4ChangeListMapping.DEFAULT_CHANGE_NAME;
+            ret[0] = P4ChangeListId.DEFAULT_CHANGE_NAME;
             ret[1] = "";
         } else if (desc == null) {
             ret[0] = "";

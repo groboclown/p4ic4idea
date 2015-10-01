@@ -27,7 +27,6 @@ import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
-import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
@@ -37,7 +36,9 @@ import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.ui.checkin.P4SubmitPanel;
 import net.groboclown.idea.p4ic.ui.checkin.SubmitContext;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,9 +50,11 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     private static final Logger LOG = Logger.getInstance(P4CheckinEnvironment.class);
 
     private final P4Vcs vcs;
+    private final P4ChangeListMapping changeListMapping;
 
     public P4CheckinEnvironment(@NotNull P4Vcs vcs) {
         this.vcs = vcs;
+        this.changeListMapping = P4ChangeListMapping.getInstance(vcs.getProject());
     }
 
     @Nullable
@@ -128,7 +131,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             for (Entry<P4Server, List<FilePath>> en: defaultChangeFiles.entrySet()) {
                 P4Server server = en.getKey();
                 // FIXME implement
-                errors.add(new VcsException("Not implemented"));
+                errors.add(new VcsException("not implemented - create a new changelist"));
                 /*
                 final P4ChangeListId changeList = P4ChangeListCache.getInstance().createChangeList(
                         server, preparedComment);
@@ -177,11 +180,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                 return;
             }
         } else {
-            fp = VcsUtil.getFilePath(change.getVirtualFile());
-        }
-        if (fp == null) {
-            LOG.info("Change " + change + " had no associated file path");
-            return;
+            fp = FilePathUtil.getFilePath(change.getVirtualFile());
         }
 
         final P4Server server = vcs.getP4ServerFor(fp);
@@ -191,31 +190,29 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             return;
         }
         if (lcl != null) {
-            Collection<P4ChangeListId> p4clList = vcs.getChangeListMapping().getPerforceChangelists(lcl);
-            if (p4clList != null) {
-                // find the changelist
-                for (P4ChangeListId p4cl: p4clList) {
-                    if (p4cl.isIn(server)) {
-                        // each IDEA changelist stores at most 1 p4 changelist per client.
-                        // so we can exit once it's a client match.
-                        if (p4cl.isNumberedChangelist()) {
-                            Map<P4ChangeListId, List<FilePath>> pathsPerChangeList = clientPathsPerChangeList.get(server);
-                            if (pathsPerChangeList == null) {
-                                pathsPerChangeList = new HashMap<P4ChangeListId, List<FilePath>>();
-                                clientPathsPerChangeList.put(server, pathsPerChangeList);
-                            }
-                            List<FilePath> files = pathsPerChangeList.get(p4cl);
-                            if (files == null) {
-                                files = new ArrayList<FilePath>();
-                                pathsPerChangeList.put(p4cl, files);
-                            }
-                            files.add(fp);
-                        } else {
-                            addToDefaultChangeFiles(server, fp, defaultChangeFiles);
-                        }
-                        return;
+            final P4ChangeListId p4cl = changeListMapping.getPerforceChangelistFor(server, lcl);
+            if (p4cl != null) {
+                // each IDEA changelist stores at most 1 p4 changelist per client.
+                // so we can exit once it's a client match.
+                if (p4cl.isNumberedChangelist()) {
+                    Map<P4ChangeListId, List<FilePath>> pathsPerChangeList = clientPathsPerChangeList.get(server);
+                    if (pathsPerChangeList == null) {
+                        pathsPerChangeList = new HashMap<P4ChangeListId, List<FilePath>>();
+                        clientPathsPerChangeList.put(server, pathsPerChangeList);
                     }
+                    List<FilePath> files = pathsPerChangeList.get(p4cl);
+                    if (files == null) {
+                        files = new ArrayList<FilePath>();
+                        pathsPerChangeList.put(p4cl, files);
+                    }
+                    files.add(fp);
+                } else {
+                    addToDefaultChangeFiles(server, fp, defaultChangeFiles);
                 }
+            } else {
+                // FIXME do something smart
+                throw new IllegalStateException("No perforce changelist known for " + lcl + " at " +
+                    server.getClientServerId());
             }
         } else {
             LOG.info("Not in a changelist: " + fp + "; putting in the default changelist");
@@ -244,7 +241,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             for (Entry<P4Server, List<FilePath>> entry : fileMapping.entrySet()) {
                 final P4Server server = entry.getKey();
                 if (server != null) {
-                    final int changeListId = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(server).
+                    final int changeListId = changeListMapping.getProjectDefaultPerforceChangelist(server).
                             getChangeListId();
                     server.deleteFiles(entry.getValue(), changeListId);
                 } else {
@@ -269,7 +266,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             for (Entry<P4Server, List<VirtualFile>> entry : fileMapping.entrySet()) {
                 final P4Server server = entry.getKey();
                 if (server != null) {
-                    final int changeListId = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(server).
+                    final int changeListId = changeListMapping.getProjectDefaultPerforceChangelist(server).
                             getChangeListId();
                     server.addOrEditFiles(entry.getValue(), changeListId);
                 } else {

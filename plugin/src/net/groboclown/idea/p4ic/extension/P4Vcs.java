@@ -43,8 +43,6 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.TempFileWatchDog;
 import net.groboclown.idea.p4ic.background.VcsFutureSetter;
 import net.groboclown.idea.p4ic.background.VcsSettableFuture;
-import net.groboclown.idea.p4ic.changes.P4ChangeListMapping;
-import net.groboclown.idea.p4ic.changes.P4ChangelistListener;
 import net.groboclown.idea.p4ic.changes.P4CommittedChangeList;
 import net.groboclown.idea.p4ic.compat.CompatFactoryLoader;
 import net.groboclown.idea.p4ic.compat.UICompat;
@@ -61,6 +59,7 @@ import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.P4MultipleConnectionWidget;
 import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeProvider;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangelistListener;
 import net.groboclown.idea.p4ic.v2.file.FileExtensions;
 import net.groboclown.idea.p4ic.v2.file.P4CheckinEnvironment;
 import net.groboclown.idea.p4ic.v2.file.P4EditFileProvider;
@@ -76,8 +75,6 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.util.*;
 import java.util.Map.Entry;
-
-//import net.groboclown.idea.p4ic.changes.P4ChangeProvider;
 
 public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     private static final Logger LOG = Logger.getInstance(P4Vcs.class);
@@ -125,9 +122,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     private final Configurable myConfigurable;
 
     @NotNull
-    private final P4ChangeListMapping changeListMapping;
-
-    @NotNull
     private final P4HistoryProvider historyProvider;
 
     private final P4StatusUpdateEnvironment statusUpdateEnvironment;
@@ -166,14 +160,16 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     private final P4AnnotationProvider annotationProvider;
 
-    // FIXME remove
-    private final Object vfsSync = new Object();
     private final FileExtensions fileExtensions;
 
     private final ClientManager clients;
     private final P4ServerManager serverManager;
 
     private final P4RevisionSelector revisionSelector;
+
+    // Capture the VCS roots list.  This is necessary, because the standard call
+    // requires getting an IDE read lock, and that leads to all kinds of synchronization issues.
+    private final List<VirtualFile> vcsRootsCache;
 
 
     private boolean autoOffline = false;
@@ -194,11 +190,9 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     public P4Vcs(
             @NotNull Project project,
             @NotNull P4ConfigProject configProject,
-            @NotNull P4ChangeListMapping changeListMapping,
             @NotNull UserProjectPreferences preferences) {
         super(project, VCS_NAME);
 
-        this.changeListMapping = changeListMapping;
         this.userPreferences = preferences;
         this.myConfigurable = new P4ProjectConfigurable(project);
         this.changelistListener = new P4ChangelistListener(project, this);
@@ -215,6 +209,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         this.revisionSelector = new P4RevisionSelector(this);
         this.tempFileWatchDog = new TempFileWatchDog();
         this.fileExtensions = new FileExtensions(this, AlertManager.getInstance());
+        this.vcsRootsCache = new ArrayList<VirtualFile>();
     }
 
     public static VcsKey getKey() {
@@ -260,6 +255,12 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     protected void activate() {
         tempFileWatchDog.start();
 
+        synchronized (vcsRootsCache) {
+            vcsRootsCache.clear();
+            vcsRootsCache.addAll(Arrays.asList(
+                    ProjectLevelVcsManager.getInstance(myProject).getRootsUnderVcs(this)));
+        }
+
         if (myVFSListener == null) {
             myVFSListener = fileExtensions.createVcsVFSListener();
         }
@@ -293,6 +294,18 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         projectMessageBusConnection.subscribe(OnServerConfigurationProblem.TOPIC, problemListener);
         projectMessageBusConnection.subscribe(P4ConfigListener.TOPIC, problemListener);
         appMessageBusConnection.subscribe(OnServerDisconnectListener.TOPIC, disconnectListener);
+
+        // Keep our cache up-to-date
+        projectMessageBusConnection.subscribe(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED, new VcsListener() {
+            @Override
+            public void directoryMappingChanged() {
+                final VirtualFile[] cache = ProjectLevelVcsManager.getInstance(myProject).getRootsUnderVcs(P4Vcs.this);
+                synchronized (vcsRootsCache) {
+                    vcsRootsCache.clear();
+                    vcsRootsCache.addAll(Arrays.asList(cache));
+                }
+            }
+        });
 
         clients.initialize();
 
@@ -420,7 +433,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @Override
     @Nullable
     protected RollbackEnvironment createRollbackEnvironment() {
-        return new P4RollbackEnvironment(this, vfsSync);
+        return fileExtensions.createRollbackEnvironment();
     }
 
     @Override
@@ -574,11 +587,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         return tempFileWatchDog.getTempDir();
     }
 
-    @NotNull
-    public P4ChangeListMapping getChangeListMapping() {
-        return changeListMapping;
-    }
-
 
     @NotNull
     public List<Client> getClients() {
@@ -590,6 +598,20 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         clients.loadConfig();
     }
 
+
+    /**
+     * A thread-safe way to get the VCS roots for this VCS.  The standard call
+     * will perform an IDE-wide read lock, which can lead to massive thread
+     * deadlocking.
+     *
+     * @return the vcs roots.
+     */
+    @NotNull
+    public List<VirtualFile> getVcsRoots() {
+        synchronized (vcsRootsCache) {
+            return new ArrayList<VirtualFile>(vcsRootsCache);
+        }
+    }
 
     /**
      *

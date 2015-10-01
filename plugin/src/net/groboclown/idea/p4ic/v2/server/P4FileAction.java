@@ -17,7 +17,7 @@ package net.groboclown.idea.p4ic.v2.server;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
-import net.groboclown.idea.p4ic.changes.P4ChangeListMapping;
+import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
@@ -76,10 +76,10 @@ public class P4FileAction {
 
     @Nullable
     public FileStatus getClientFileStatus() {
-        if (getChangeList() < P4ChangeListMapping.P4_DEFAULT) {
+        if (getChangeList() < P4ChangeListId.P4_DEFAULT) {
             // offline
             switch (getFileUpdateAction()) {
-                case ADD_FILE:
+                case ADD_EDIT_FILE:
                 case MOVE_FILE:
                 case INTEGRATE_FILE:
                 case EDIT_FILE:
@@ -94,12 +94,13 @@ public class P4FileAction {
             }
         }
         switch (getFileUpdateAction()) {
-            case ADD_FILE:
             case MOVE_FILE:
                 return FileStatus.ADDED;
             case INTEGRATE_FILE:
                 // TODO determine if conflicts
                 return FileStatus.MERGE;
+            case ADD_EDIT_FILE:
+                // can't really tell here.
             case EDIT_FILE:
                 return FileStatus.MODIFIED;
             case DELETE_FILE:

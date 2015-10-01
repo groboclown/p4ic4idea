@@ -19,6 +19,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,6 +37,7 @@ public class P4EditFileProvider implements EditFileProvider {
     public static final String EDIT = "Edit files";
 
     private final P4Vcs vcs;
+    private final P4ChangeListMapping changeListMapping;
 
     /**
      * Synchronizes on VFS operations; IDEA can send requests to open for edit and move,
@@ -51,6 +53,7 @@ public class P4EditFileProvider implements EditFileProvider {
     P4EditFileProvider(@NotNull P4Vcs vcs, @NotNull Lock vfsSync) {
         this.vcs = vcs;
         this.vfsLock = vfsSync;
+        this.changeListMapping = P4ChangeListMapping.getInstance(vcs.getProject());
     }
 
 
@@ -70,7 +73,7 @@ public class P4EditFileProvider implements EditFileProvider {
                     // FIXME debug
                     LOG.info("Not assigned to server: " + entry.getValue());
                 } else {
-                    final int changelist = vcs.getChangeListMapping().
+                    final int changelist = changeListMapping.
                             getProjectDefaultPerforceChangelist(server).getChangeListId();
                     // FIXME debug
                     LOG.info("Open for edit/add on changelist " + changelist + ": " + entry.getValue());

@@ -21,7 +21,12 @@ import org.jetbrains.annotations.Nullable;
  * All UpdateGroup.FILE actions.
  */
 public enum FileUpdateAction {
-    ADD_FILE(UpdateAction.ADD_FILE),
+    // FIXME include a "pure" ADD_FILE action, so that file status can be accurate when we know what the server has.
+
+    /** Indeterminate state, for when the user requests an edit or an add, but we don't
+     * know yet if the server knows about the file. */
+    ADD_EDIT_FILE(UpdateAction.ADD_EDIT_FILE),
+
     DELETE_FILE(UpdateAction.DELETE_FILE),
     MOVE_FILE(UpdateAction.MOVE_FILE),
     MOVE_DELETE_FILE(UpdateAction.MOVE_DELETE_FILE),

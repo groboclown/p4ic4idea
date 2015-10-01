@@ -13,8 +13,11 @@
  */
 package net.groboclown.idea.p4ic.changes;
 
+import com.intellij.openapi.vcs.VcsBundle;
+import com.perforce.p4java.core.IChangelist;
 import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -22,15 +25,31 @@ import org.jetbrains.annotations.NotNull;
  * server.
  */
 public interface P4ChangeListId {
-    public int getChangeListId();
+
+    int P4_DEFAULT = IChangelist.DEFAULT;
+    int P4_UNKNOWN = IChangelist.UNKNOWN;
+
+    /**
+     * highest number for a local changelist
+     */
+    int P4_LOCAL = -1000;
+
+    /** Default changelist name (in UI) */
+    String DEFAULT_CHANGE_NAME = VcsBundle.message("changes.default.changelist.name");
+
+
+    int getChangeListId();
 
     @NotNull
-    public String getServerConfigId();
+    String getServerConfigId();
 
     @NotNull
-    public String getClientName();
+    String getClientName();
 
-    public boolean isNumberedChangelist();
+    @NotNull
+    ClientServerId getClientServerId();
+
+    boolean isNumberedChangelist();
 
     /**
      * All changelists will either return true for this call or {@link #isNumberedChangelist()},
@@ -38,7 +57,13 @@ public interface P4ChangeListId {
      *
      * @return true if this is the default changelist.
      */
-    public boolean isDefaultChangelist();
+    boolean isDefaultChangelist();
+
+    /**
+     *
+     * @return true if the changelist has not been created on the server.
+     */
+    boolean isUnsynchedChangelist();
 
     /**
      * Is this changelist in the given client?  Matches on the client name
@@ -47,7 +72,7 @@ public interface P4ChangeListId {
      * @param client client to check
      * @return true if the given client matches the server config and client name.
      */
-    public boolean isIn(@NotNull Client client);
+    boolean isIn(@NotNull Client client);
 
     /**
      * Is this changelist in the given client?  Matches on the client name
@@ -56,5 +81,5 @@ public interface P4ChangeListId {
      * @param client client to check
      * @return true if the given client matches the server config and client name.
      */
-    public boolean isIn(@NotNull P4Server client);
+    boolean isIn(@NotNull P4Server client);
 }

@@ -23,6 +23,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.P4Server.IntegrateFile;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
@@ -41,6 +42,7 @@ public class P4VFSListener extends VcsVFSListener {
 
     private final P4Vcs vcs;
     private final AlertManager alerts;
+    private final P4ChangeListMapping changeListMapping;
 
     /**
      * Synchronizes on VFS operations; IDEA can send requests to open for edit and move,
@@ -58,6 +60,7 @@ public class P4VFSListener extends VcsVFSListener {
         this.vcs = vcs;
         this.alerts = alerts;
         this.vfsLock = vfsLock;
+        this.changeListMapping = P4ChangeListMapping.getInstance(vcs.getProject());
     }
 
 
@@ -74,7 +77,7 @@ public class P4VFSListener extends VcsVFSListener {
                     // FIXME debug
                     LOG.info("deleted non-p4 server files: " + entry.getValue());
                 } else {
-                    int changelist = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(server).getChangeListId();
+                    int changelist = changeListMapping.getProjectDefaultPerforceChangelist(server).getChangeListId();
                     // FIXME debug
                     LOG.info("Opening for delete on changelist " + changelist + ": " + entry.getValue());
                     server.deleteFiles(entry.getValue(), changelist);
@@ -104,7 +107,7 @@ public class P4VFSListener extends VcsVFSListener {
         try {
             final SplitServerFileMap split = splitMap(moveMap);
             for (P4Server server : split.getServers()) {
-                int changelistId = vcs.getChangeListMapping().
+                int changelistId = changeListMapping.
                         getProjectDefaultPerforceChangelist(server).getChangeListId();
 
                 vfsLock.lock();
@@ -168,7 +171,7 @@ public class P4VFSListener extends VcsVFSListener {
                     // outside of VCS.  Ignore.
                     alerts.addNotice(P4Bundle.message("add.file.no-server", entry.getValue()), null);
                 } else {
-                    final int changelistId = vcs.getChangeListMapping().
+                    final int changelistId = changeListMapping.
                             getProjectDefaultPerforceChangelist(server).getChangeListId();
                     vfsLock.lock();
                     try {
@@ -182,7 +185,7 @@ public class P4VFSListener extends VcsVFSListener {
 
             final SplitServerFileMap split = splitMap(copyFromMap);
             for (P4Server server : split.getServers()) {
-                int changelistId = vcs.getChangeListMapping().
+                int changelistId = changeListMapping.
                         getProjectDefaultPerforceChangelist(server).getChangeListId();
 
                 vfsLock.lock();
@@ -240,7 +243,8 @@ public class P4VFSListener extends VcsVFSListener {
                     // still be called.  This method should never *add* a file
                     // into Perforce - only open for edit.
 
-                    throw new IllegalStateException("not implemented");
+                    server.onlyEditFile(file, changeListMapping.
+                            getProjectDefaultPerforceChangelist(server).getChangeListId());
                 }
             } catch (InterruptedException e) {
                 alerts.addNotice(P4Bundle.message("interrupted_exception", file),

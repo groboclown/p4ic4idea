@@ -18,7 +18,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.IChangelistSummary;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.changes.P4ChangeListCache;
+import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.server.P4Job;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
@@ -63,7 +63,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         // local changes.
 
         // Ensure the default changelist is included.  This will be
-        ret.put(P4ChangeListCache.P4_DEFAULT, new P4ChangeListValue(cache.getClientServerId(), P4ChangeListCache.P4_DEFAULT));
+        ret.put(P4ChangeListId.P4_DEFAULT, new P4ChangeListValue(cache.getClientServerId(), P4ChangeListId.P4_DEFAULT));
 
         for (P4ChangeListState change: cachedServerChanges) {
             ret.put(change.getChangelistId(), new P4ChangeListValue(cache.getClientServerId(), change));
@@ -99,7 +99,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
 
             P4ChangeListState state = new P4ChangeListState(pendingChange);
             refreshed.add(state);
-            if (state.getChangelistId() == P4ChangeListCache.P4_DEFAULT) {
+            if (state.getChangelistId() == P4ChangeListId.P4_DEFAULT) {
                 foundDefault = true;
             }
             try {
@@ -117,7 +117,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         }
         if (! foundDefault) {
             // This generally is always entered.
-            refreshed.add(new P4ChangeListState(P4ChangeListCache.P4_DEFAULT));
+            refreshed.add(new P4ChangeListState(P4ChangeListId.P4_DEFAULT));
         }
         cachedServerChanges.clear();
         cachedServerChanges.addAll(refreshed);

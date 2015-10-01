@@ -52,7 +52,7 @@ public enum UpdateAction {
 
     // Note: changing a file to a different changelist is not an independent action;
     // it's considered keeping the current action but with a new changelist number.
-    ADD_FILE(UpdateGroup.FILE_ADD_EDIT,
+    ADD_EDIT_FILE(UpdateGroup.FILE_ADD_EDIT,
             UpdateParameterNames.DEPOT, UpdateParameterNames.FILE, UpdateParameterNames.CHANGELIST),
     DELETE_FILE(UpdateGroup.FILE_DELETE,
             UpdateParameterNames.DEPOT, UpdateParameterNames.FILE, UpdateParameterNames.CHANGELIST),
@@ -236,8 +236,8 @@ public enum UpdateAction {
         // Note that the description gives a complete list of expected actions, whereas
         // the field "action" does not.
         switch (action) {
-            case ADD:
-                return ADD_FILE;
+            case ADD_EDIT:
+                return ADD_EDIT_FILE;
             case EDIT:
                 return EDIT_FILE;
             case DELETE:

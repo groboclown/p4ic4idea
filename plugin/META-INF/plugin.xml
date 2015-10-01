@@ -168,8 +168,8 @@
 
         <!-- Perforce changelist to IDEA changelist mapping -->
         <projectService
-                serviceInterface="net.groboclown.idea.p4ic.changes.P4ChangeListMapping"
-                serviceImplementation="net.groboclown.idea.p4ic.changes.P4ChangeListMapping"/>
+                serviceInterface="net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping"
+                serviceImplementation="net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping"/>
 
         <!-- User preferences -->
         <projectService
@@ -193,6 +193,10 @@
         <component>
             <implementation-class>net.groboclown.idea.p4ic.v2.server.P4ServerManager</implementation-class>
         </component>
+        <component>
+            <implementation-class>net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping</implementation-class>
+            <interface-class>net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping</interface-class>
+        </component>
     </project-components>
 
     <module-components>
@@ -202,9 +206,6 @@
     <application-components>
         <component>
             <implementation-class>net.groboclown.idea.p4ic.server.ServerStoreService</implementation-class>
-        </component>
-        <component>
-            <implementation-class>net.groboclown.idea.p4ic.changes.P4ChangeListCache</implementation-class>
         </component>
         <component>
             <implementation-class>net.groboclown.idea.p4ic.v2.server.connection.AlertManager</implementation-class>

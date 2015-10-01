@@ -23,6 +23,7 @@ import net.groboclown.idea.p4ic.actions.BasicAction;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 
@@ -86,6 +87,8 @@ public class P4Edit extends BasicAction {
 
         FileDocumentManager.getInstance().saveAllDocuments();
 
+        P4ChangeListMapping changeListMapping = P4ChangeListMapping.getInstance(project);
+
         LOG.info("adding or editing files: " + affectedFiles);
 
         //double clientIndex = 0.0;
@@ -96,7 +99,7 @@ public class P4Edit extends BasicAction {
             //        0.9 * clientIndex / (double) clients.size(),
             //        0.9 * (clientIndex + 1.0) / (double) clients.size());
             //sub.setFraction(0.0);
-            int changelistId = vcs.getChangeListMapping().getProjectDefaultPerforceChangelist(server).getChangeListId();
+            int changelistId = changeListMapping.getProjectDefaultPerforceChangelist(server).getChangeListId();
             //indicator.setFraction(0.2);
             server.addOrEditFiles(files, changelistId);
             VcsDirtyScopeManager.getInstance(project).filesDirty(files, null);

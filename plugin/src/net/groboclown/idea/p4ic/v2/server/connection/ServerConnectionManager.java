@@ -29,6 +29,7 @@ import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.events.ServerConnectionStateListener;
 import net.groboclown.idea.p4ic.v2.server.cache.CentralCacheManager;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.connection.Synchronizer.ServerSynchronizer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -145,7 +146,7 @@ public class ServerConnectionManager implements ApplicationComponent {
         try {
             ServerConfigStatus status = serverCache.get(config);
             if (status == null) {
-                status = new ServerConfigStatus(config);
+                status = new ServerConfigStatus(config, alerts.createServerSynchronizer());
                 serverCache.put(config, status);
             }
             return status.getConnectionFor(clientServerId, alerts, cacheManager);
@@ -214,6 +215,7 @@ public class ServerConnectionManager implements ApplicationComponent {
         // especially useful for multiple projects with the same client.
         final Map<String, ServerConnection> clientNames = new HashMap<String, ServerConnection>();
         final ServerConfig config;
+        final Synchronizer.ServerSynchronizer synchronizer;
         boolean valid = true;
 
         // assume we're online at the start.
@@ -223,8 +225,9 @@ public class ServerConnectionManager implements ApplicationComponent {
         private final Condition onlineChangedCondition = onlineStatusLock.newCondition();
 
 
-        ServerConfigStatus(@NotNull final ServerConfig config) {
+        ServerConfigStatus(@NotNull ServerConfig config, @NotNull ServerSynchronizer synchronizer) {
             this.config = config;
+            this.synchronizer = synchronizer;
         }
 
         @Override
@@ -305,7 +308,7 @@ public class ServerConnectionManager implements ApplicationComponent {
             if (conn == null) {
                 conn = new ServerConnection(alerts, clientServer,
                         cacheManager.getClientCacheManager(clientServer, config, new CaseInsensitiveCheck(config)),
-                        config, this);
+                        config, this, synchronizer.createConnectionSynchronizer());
                 clientNames.put(clientServer.getClientId(), conn);
             }
             return conn;

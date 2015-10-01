@@ -398,7 +398,7 @@ public class P4FileInfo {
             return ClientAction.NONE;
         }
         switch (action) {
-            case ADD:
+            case ADD_EDIT:
             case ADDED:
                 return ClientAction.ADD;
 

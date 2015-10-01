@@ -47,8 +47,8 @@ public class P4ServerWorkOnlineAction extends AnAction {
             }
         }
 
-        // Force the configurations to be reloaded.
-        //vcs.reloadConfigs();
+        // No need to force a reload of the VCS, because of the events
+        // processing from the commands.
     }
 
     /**
@@ -87,7 +87,7 @@ public class P4ServerWorkOnlineAction extends AnAction {
         }
         P4Vcs vcs = P4Vcs.getInstance(project);
         for (P4Server server : vcs.getP4Servers()) {
-            if (serverId.equals(server.getClientServerId()) && server.isWorkingOffline()) {
+            if (serverId.equals(server.getClientServerId())) {
                 return server.isWorkingOnline();
             }
         }

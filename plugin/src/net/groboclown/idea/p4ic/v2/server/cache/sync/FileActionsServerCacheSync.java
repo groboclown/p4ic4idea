@@ -31,6 +31,7 @@ import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.cache.AbstractServerUpdateAction;
+import net.groboclown.idea.p4ic.v2.server.cache.AbstractServerUpdateAction.ExecutionStatus;
 import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.ServerUpdateActionFactory;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
@@ -133,22 +134,19 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     /**
      * Create the edit file update state.  Called whether the file needs to be edited or added.
      *
-     * @param file file to edit
+     * @param file file to add or edit
      * @param changeListId P4 changelist to add the file into.
      * @return the update state
      */
     @Nullable
-    public PendingUpdateState editFile(@NotNull final FilePath file, int changeListId) {
-        // Only ignore the file if we know it's an "add" operation.  Thus, we can't
-        // determine that until we're connected.
-
+    public PendingUpdateState addOrEditFile(@NotNull final FilePath file, int changeListId) {
         // Edit operations will need to have the file be writable.  The Perforce
         // command may delay when the edit action actually occurs, so ensure
         // the file is set to writable first.
         makeWritable(file);
 
         // Check if it is already in an action state, and create it if necessary
-        final P4FileUpdateState action = createFileUpdateState(file, FileUpdateAction.EDIT_FILE, changeListId);
+        final P4FileUpdateState action = createFileUpdateState(file, FileUpdateAction.ADD_EDIT_FILE, changeListId);
         if (action == null) {
             // nothing to do
             return null;
@@ -163,6 +161,41 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         return new PendingUpdateState(
                 action.getFileUpdateAction().getUpdateAction(),
                 Collections.singleton(file.getIOFile().getAbsolutePath()),
+                params);
+    }
+
+
+    /**
+     * Create the edit file update state.  Called whether the file needs to be edited or added.
+     *
+     * @param file         file to edit
+     * @param changeListId P4 changelist to add the file into.
+     * @return the update state
+     */
+    @Nullable
+    public PendingUpdateState editFile(@NotNull final VirtualFile file, int changeListId) {
+        // Edit operations will need to have the file be writable.  The Perforce
+        // command may delay when the edit action actually occurs, so ensure
+        // the file is set to writable first.
+        FilePath fp = FilePathUtil.getFilePath(file);
+        makeWritable(fp);
+
+        // Check if it is already in an action state, and create it if necessary
+        final P4FileUpdateState action = createFileUpdateState(fp, FileUpdateAction.EDIT_FILE, changeListId);
+        if (action == null) {
+            // nothing to do
+            return null;
+        }
+
+        // Create the action.
+        final HashMap<String, Object> params = new HashMap<String, Object>();
+        // We don't know for sure the depot path, so use the file path.
+        params.put(UpdateParameterNames.FILE.getKeyName(), fp.getIOFile().getAbsolutePath());
+        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changeListId);
+
+        return new PendingUpdateState(
+                action.getFileUpdateAction().getUpdateAction(),
+                Collections.singleton(fp.getIOFile().getAbsolutePath()),
                 params);
     }
 
@@ -326,55 +359,55 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
 
-    // =======================================================================
-    // ACTIONS
-
-    // Action classes must be static so that they can be correctly referenced
-    // from the UpdateAction class.  They also must be fully executable
-    // from the passed-in arguments and the pending state value.
-
-    // The actions are also placed in here, rather than as stand-alone classes,
-    // so that they have increased access to the cache objects.
-
-
-    // -----------------------------------------------------------------------
-    // -----------------------------------------------------------------------
-    // Add/Edit Action
-
-    public static class AddEditFactory implements ServerUpdateActionFactory {
-        @NotNull
-        @Override
-        public ServerUpdateAction create(@NotNull Collection<PendingUpdateState> states) {
-            return new AddEditAction(states);
-        }
+    private static boolean isNotKnownToServer(@NotNull final IExtendedFileSpec spec) {
+        return spec.getOpStatus() == FileSpecOpStatus.ERROR &&
+                spec.getStatusMessage().hasMessageFragment(" - no such file(s).");
     }
 
-    static class AddEditAction extends AbstractServerUpdateAction {
+    private static boolean isNotInClientView(@NotNull final IExtendedFileSpec spec) {
+        return spec.getOpStatus() == FileSpecOpStatus.ERROR &&
+                spec.getStatusMessage().hasMessageFragment(" is not under client's root ");
+    }
 
-        AddEditAction(@NotNull Collection<PendingUpdateState> pendingUpdateState) {
-            super(pendingUpdateState);
+    private static boolean isStatusMessage(@NotNull final IExtendedFileSpec spec) {
+        return spec.getOpStatus() == FileSpecOpStatus.INFO ||
+                spec.getOpStatus() == FileSpecOpStatus.CLIENT_ERROR ||
+                spec.getOpStatus() == FileSpecOpStatus.UNKNOWN;
+    }
+
+    @NotNull
+    private static List<FilePath> getFilePaths(@NotNull final List<PendingUpdateState> updateList) {
+        List<FilePath> filenames = new ArrayList<FilePath>(updateList.size());
+        for (PendingUpdateState update : updateList) {
+            String val = UpdateParameterNames.FILE.getParameterValue(update);
+            if (val != null) {
+                filenames.add(FilePathUtil.getFilePath(val));
+            }
         }
+        return filenames;
+    }
 
-        @NotNull
-        @Override
-        protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
-                @NotNull ClientCacheManager clientCacheManager, @NotNull final AlertManager alerts) {
-            // FIXME debug
-            LOG.info("Running edit");
+    static class ActionSplit {
+        ExecutionStatus status;
+        final Map<Integer, Set<FilePath>> notInPerforce = new HashMap<Integer, Set<FilePath>>();
+        final Map<Integer, Set<FilePath>> notOpened = new HashMap<Integer, Set<FilePath>>();
+        final Map<Integer, Set<FilePath>> edited = new HashMap<Integer, Set<FilePath>>();
+        final Map<Integer, Set<FilePath>> deleted = new HashMap<Integer, Set<FilePath>>();
+        final Map<Integer, Set<FilePath>> integrated = new HashMap<Integer, Set<FilePath>>();
+        final Map<Integer, Set<FilePath>> move_deleted = new HashMap<Integer, Set<FilePath>>();
 
-            // Discover the current state of the files, so that we can perform the
-            // appropriate actions.
-            List<PendingUpdateState> updateList = new ArrayList<PendingUpdateState>(getPendingUpdateStates());
+        ActionSplit(@NotNull P4Exec2 exec,
+                @NotNull Collection<PendingUpdateState> pendingUpdateStates,
+                @NotNull AlertManager alerts) {
+            List<PendingUpdateState> updateList = new ArrayList<PendingUpdateState>(pendingUpdateStates);
             List<FilePath> filenames = getFilePaths(updateList);
-
-            LOG.info("Editing files: " + filenames);
-
             final List<IFileSpec> srcSpecs;
             try {
                 srcSpecs = FileSpecUtil.getFromFilePaths(filenames);
             } catch (P4Exception e) {
                 alerts.addWarning(P4Bundle.message("error.file-spec.create", filenames), e);
-                return ExecutionStatus.FAIL;
+                status = ExecutionStatus.FAIL;
+                return;
             }
             LOG.info("File specs: " + srcSpecs);
             final List<IExtendedFileSpec> fullSpecs;
@@ -382,13 +415,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 fullSpecs = exec.getFileStatus(srcSpecs);
             } catch (VcsException e) {
                 alerts.addWarning(P4Bundle.message("error.file-status.fetch", srcSpecs), e);
-                return ExecutionStatus.FAIL;
+                status = ExecutionStatus.FAIL;
+                return;
             }
             LOG.info("Full specs: " + fullSpecs);
 
-            Set<FilePath> reverts = new HashSet<FilePath>();
-            Map<Integer, Set<FilePath>> adds = new HashMap<Integer, Set<FilePath>>();
-            Map<Integer, Set<FilePath>> edits = new HashMap<Integer, Set<FilePath>>();
             Iterator<PendingUpdateState> updatesIter = updateList.iterator();
             for (IExtendedFileSpec spec : fullSpecs) {
 
@@ -417,32 +448,32 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 }
                 Map<Integer, Set<FilePath>> container = null;
                 if (isNotKnownToServer(spec)) {
-                    LOG.info("Adding, because not known to server");
-                    container = adds;
+                    //LOG.info("Adding, because not known to server");
+                    container = notInPerforce;
                 } else {
                     FileAction action = spec.getOpenAction();
                     if (action == null) {
                         // In perforce, not already opened.
-                        container = edits;
+                        container = notOpened;
                     } else {
                         switch (action) {
-                            case ADD:
+                            case ADD_EDIT:
                             case ADDED:
                             case EDIT:
                             case EDIT_FROM:
                             case MOVE_ADD:
-                                // Already in the correct state - open for add or edit.
-                                LOG.info("Already open for add or edit: " + filename);
-                                continue;
+                                // open for add or edit.
+                                container = edited;
+                                break;
                             case INTEGRATE:
                             case BRANCH:
                                 // Integrated, but not open for edit.  Open for edit.
+                                container = integrated;
+                                break;
 
                             case MOVE_DELETE:
                                 // On the delete side of a move.  Mark as open for edit.
-
-                                LOG.info("Marking integrated file as open for edit: " + filename);
-                                container = edits;
+                                container = move_deleted;
                                 break;
                             case DELETE:
                             case DELETED:
@@ -451,8 +482,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                                 // about it.
 
                                 LOG.info("Reverting delete and opening for edit: " + filename);
-                                reverts.add(filePath);
-                                container = edits;
+                                container = deleted;
                                 break;
                             default:
                                 LOG.error("Unexpected file action " + action + " from fstat");
@@ -469,10 +499,96 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     set.add(filePath);
                 }
             }
+        }
+    }
+
+    private static Map<Integer, Set<FilePath>> joinChangelistFiles(final Map<Integer, Set<FilePath>>... mList) {
+        Map<Integer, Set<FilePath>> ret = new HashMap<Integer, Set<FilePath>>();
+        for (Map<Integer, Set<FilePath>> m : mList) {
+            for (Entry<Integer, Set<FilePath>> entry : m.entrySet()) {
+                final Set<FilePath> fpSet = ret.get(entry.getKey());
+                if (fpSet == null) {
+                    ret.put(entry.getKey(), entry.getValue());
+                } else {
+                    fpSet.addAll(entry.getValue());
+                }
+            }
+        }
+        return ret;
+    }
+
+    // =======================================================================
+    // ACTIONS
+
+    // Action classes must be static so that they can be correctly referenced
+    // from the UpdateAction class.  They also must be fully executable
+    // from the passed-in arguments and the pending state value.
+
+    // The actions are also placed in here, rather than as stand-alone classes,
+    // so that they have increased access to the cache objects.
+
+
+    // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // Add/Edit Action
+
+    public static class AddEditFactory implements ServerUpdateActionFactory {
+        @NotNull
+        @Override
+        public ServerUpdateAction create(@NotNull Collection<PendingUpdateState> states) {
+            return new AddEditAction(states, true);
+        }
+    }
+
+    public static class EditFactory implements ServerUpdateActionFactory {
+        @NotNull
+        @Override
+        public ServerUpdateAction create(@NotNull Collection<PendingUpdateState> states) {
+            return new AddEditAction(states, false);
+        }
+    }
+
+    static class AddEditAction extends AbstractServerUpdateAction {
+        private final boolean allowsAdds;
+
+        AddEditAction(@NotNull Collection<PendingUpdateState> pendingUpdateState, boolean allowsAdds) {
+            super(pendingUpdateState);
+            this.allowsAdds = allowsAdds;
+        }
+
+        @NotNull
+        @Override
+        protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
+                @NotNull ClientCacheManager clientCacheManager, @NotNull final AlertManager alerts) {
+            // FIXME debug
+            LOG.info("Running edit");
+
+            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts);
+            if (split.status != null) {
+                return split.status;
+            }
+
+            // open for add, only if allowsAdd is true:
+            //     split.notInPerforce
+            // open for edit:
+            //     split.notOpened
+            // ignore (already open for edit or add)
+            //     split.edited
+            // open for edit (integrated, but not open for edit)
+            //     split.integrated
+            // on the delete side of a move; open for edit
+            //     split.move_deleted
+            // already open for delete; revert and edit
+            // (because it is open for delete, the server knows about it).
+            //     split.deleted
 
             // Perform the reverts first
             boolean hasUpdate = false;
-            if (! reverts.isEmpty()) {
+            if (! split.deleted.isEmpty()) {
+                final Set<FilePath> reverts = new HashSet<FilePath>();
+                for (Collection<FilePath> fpList : split.deleted.values()) {
+                    reverts.addAll(fpList);
+                }
                 try {
                     final List<P4StatusMessage> msgs =
                             exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
@@ -489,8 +605,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             }
 
             ExecutionStatus returnCode = ExecutionStatus.NO_OP;
-            if (! adds.isEmpty()) {
-                for (Entry<Integer, Set<FilePath>> entry : adds.entrySet()) {
+            if (! split.notInPerforce.isEmpty() && allowsAdds) {
+                for (Entry<Integer, Set<FilePath>> entry : split.notInPerforce.entrySet()) {
                     try {
                         final List<P4StatusMessage> msgs =
                                 exec.addFiles(FileSpecUtil.getFromFilePaths(entry.getValue()), entry.getKey());
@@ -504,27 +620,40 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                         returnCode = ExecutionStatus.FAIL;
                     }
                 }
+            } else if (! split.notInPerforce.isEmpty()) {
+                LOG.info("Skipping add (because command is edit-only: " + split.notInPerforce);
             }
-            if (!edits.isEmpty()) {
-                for (Entry<Integer, Set<FilePath>> entry : edits.entrySet()) {
-                    try {
-                        final List<P4StatusMessage> msgs =
-                                exec.editFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
-                                        entry.getKey());
-                        // Note: any errors here will be displayed to the
-                        // user, but they do not indicate that the actual
-                        // actions were errors.  Instead, they are notifications
-                        // to the user that they must do something again
-                        // with a correction.
-                        alerts.addWarnings(P4Bundle.message("warning.edit.file.edit", entry.getValue()), msgs, false);
-                        hasUpdate = true;
-                    } catch (P4DisconnectedException e) {
-                        // error already handled as critical
-                        return ExecutionStatus.RETRY;
-                    } catch (VcsException e) {
-                        alerts.addWarning(P4Bundle.message("error.edit", entry.getValue()), e);
-                        returnCode = ExecutionStatus.FAIL;
-                    }
+
+            // open for edit:
+            //     split.notOpened
+            // open for edit (integrated, but not open for edit)
+            //     split.integrated
+            // on the delete side of a move; open for edit
+            //     split.move_deleted
+            // already open for delete; revert and edit
+            //     split.deleted
+            @SuppressWarnings("unchecked") Map<Integer, Set<FilePath>> edits = joinChangelistFiles(
+                    split.notOpened, split.integrated, split.move_deleted, split.deleted);
+
+
+            for (Entry<Integer, Set<FilePath>> entry : edits.entrySet()) {
+                try {
+                    final List<P4StatusMessage> msgs =
+                            exec.editFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
+                                    entry.getKey());
+                    // Note: any errors here will be displayed to the
+                    // user, but they do not indicate that the actual
+                    // actions were errors.  Instead, they are notifications
+                    // to the user that they must do something again
+                    // with a correction.
+                    alerts.addWarnings(P4Bundle.message("warning.edit.file.edit", entry.getValue()), msgs, false);
+                    hasUpdate = true;
+                } catch (P4DisconnectedException e) {
+                    // error already handled as critical
+                    return ExecutionStatus.RETRY;
+                } catch (VcsException e) {
+                    alerts.addWarning(P4Bundle.message("error.edit", entry.getValue()), e);
+                    returnCode = ExecutionStatus.FAIL;
                 }
             }
 
@@ -533,34 +662,6 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             }
 
             return returnCode;
-        }
-
-        private boolean isNotKnownToServer(@NotNull final IExtendedFileSpec spec) {
-            return spec.getOpStatus() == FileSpecOpStatus.ERROR &&
-                    spec.getStatusMessage().hasMessageFragment(" - no such file(s).");
-        }
-
-        private boolean isNotInClientView(@NotNull final IExtendedFileSpec spec) {
-            return spec.getOpStatus() == FileSpecOpStatus.ERROR &&
-                    spec.getStatusMessage().hasMessageFragment(" is not under client's root ");
-        }
-
-        private boolean isStatusMessage(@NotNull final IExtendedFileSpec spec) {
-            return spec.getOpStatus() == FileSpecOpStatus.INFO ||
-                    spec.getOpStatus() == FileSpecOpStatus.CLIENT_ERROR ||
-                    spec.getOpStatus() == FileSpecOpStatus.UNKNOWN;
-        }
-
-        @NotNull
-        private List<FilePath> getFilePaths(@NotNull final List<PendingUpdateState> updateList) {
-            List<FilePath> filenames = new ArrayList<FilePath>(updateList.size());
-            for (PendingUpdateState update: updateList) {
-                String val = UpdateParameterNames.FILE.getParameterValue(update);
-                if (val != null) {
-                    filenames.add(FilePathUtil.getFilePath(val));
-                }
-            }
-            return filenames;
         }
 
         @Override
@@ -596,8 +697,83 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
                 @NotNull final ClientCacheManager clientCacheManager,
                 @NotNull final AlertManager alerts) {
-            // FIXME implement
-            throw new IllegalStateException("not implemented");
+            // FIXME debug
+            LOG.info("Running delete");
+
+            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts);
+            if (split.status != null) {
+                return split.status;
+            }
+
+            // ignore, because perforce doesn't know about it
+            //     split.notInPerforce
+            // open for delete:
+            //     split.notOpened
+            // revert and delete
+            //     split.edited
+            // revert and delete
+            //     split.integrated
+            // on the delete side of a move; ignore
+            //     split.move_deleted
+            // already open for delete; ignore
+            //     split.deleted
+
+            boolean hasUpdate = false;
+            ExecutionStatus returnCode = ExecutionStatus.NO_OP;
+
+            // Perform the reverts first
+            @SuppressWarnings("unchecked") final Map<Integer, Set<FilePath>> revertSets =
+                    joinChangelistFiles(split.edited, split.integrated);
+            if (!revertSets.isEmpty()) {
+                final Set<FilePath> reverts = new HashSet<FilePath>();
+                for (Collection<FilePath> fpList : split.deleted.values()) {
+                    reverts.addAll(fpList);
+                }
+                try {
+                    final List<P4StatusMessage> msgs =
+                            exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
+                    alerts.addNotices(P4Bundle.message("warning.edit.file.revert", reverts), msgs, false);
+                    hasUpdate = true;
+                } catch (P4DisconnectedException e) {
+                    // error already handled as critical
+                    return ExecutionStatus.RETRY;
+                } catch (VcsException e) {
+                    alerts.addWarning(P4Bundle.message("error.revert", reverts), e);
+                    // cannot continue; just fail?
+                    return ExecutionStatus.FAIL;
+                }
+            }
+
+
+            @SuppressWarnings("unchecked") Map<Integer, Set<FilePath>> deletes = joinChangelistFiles(
+                    split.notOpened, split.integrated, split.edited);
+
+            for (Entry<Integer, Set<FilePath>> entry : deletes.entrySet()) {
+                try {
+                    final List<P4StatusMessage> msgs =
+                            exec.deleteFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
+                                    entry.getKey(), true);
+                    // Note: any errors here will be displayed to the
+                    // user, but they do not indicate that the actual
+                    // actions were errors.  Instead, they are notifications
+                    // to the user that they must do something again
+                    // with a correction.
+                    alerts.addWarnings(P4Bundle.message("warning.edit.file.edit", entry.getValue()), msgs, false);
+                    hasUpdate = true;
+                } catch (P4DisconnectedException e) {
+                    // error already handled as critical
+                    return ExecutionStatus.RETRY;
+                } catch (VcsException e) {
+                    alerts.addWarning(P4Bundle.message("error.edit", entry.getValue()), e);
+                    returnCode = ExecutionStatus.FAIL;
+                }
+            }
+
+            if (hasUpdate && returnCode == ExecutionStatus.NO_OP) {
+                returnCode = ExecutionStatus.RELOAD_CACHE;
+            }
+
+            return returnCode;
         }
 
         @Nullable

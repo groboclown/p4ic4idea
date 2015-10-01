@@ -33,6 +33,7 @@ import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.RevertedFilesDialog;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -134,7 +135,8 @@ public class P4RevertUnchanged extends AbstractVcsAction {
         final ChangeList[] changes = vcsContext.getSelectedChangeLists();
         if (changes != null && changes.length > 0) {
             for (ChangeList cl: changes) {
-                if (cl instanceof LocalChangeList && vcs.getChangeListMapping().hasPerforceChangelist((LocalChangeList) cl)) {
+                if (cl instanceof LocalChangeList && P4ChangeListMapping.getInstance(project).
+                        hasPerforceChangelist((LocalChangeList) cl)) {
                     presentation.setVisible(true);
                     presentation.setEnabled(true);
                     return;
@@ -171,14 +173,20 @@ public class P4RevertUnchanged extends AbstractVcsAction {
         if (ideaChange == null || ! (ideaChange instanceof LocalChangeList)) {
             return Collections.emptyMap();
         }
+
+
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+        /*
         Map<Client, P4ChangeListId> ret = new HashMap<Client, P4ChangeListId>();
         for (Client client: vcs.getClients()) {
-            final P4ChangeListId change = vcs.getChangeListMapping().getPerforceChangelistFor(client, (LocalChangeList) ideaChange);
+            final P4ChangeListId change = P4ChangeListMapping.getInstance(vcs.getProject()).getPerforceChangelistFor(client, (LocalChangeList) ideaChange);
             if (client.isWorkingOnline() && change != null) {
                 ret.put(client, change);
             }
         }
         return ret;
+        */
     }
 
     @NotNull

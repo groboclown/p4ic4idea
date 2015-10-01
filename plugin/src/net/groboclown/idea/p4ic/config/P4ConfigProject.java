@@ -26,6 +26,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.ServerExecutor;
 import net.groboclown.idea.p4ic.server.ServerStatus;
 import net.groboclown.idea.p4ic.server.ServerStoreService;
@@ -197,7 +198,7 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
 
             // Note that the roots may change, which is why we register a
             // VCS root directory change listener.
-            List<VirtualFile> roots = P4ConfigUtil.getVcsRootFiles(project);
+            List<VirtualFile> roots = P4Vcs.getInstance(project).getVcsRoots();
             Builder builder = new Builder(project, fullConfig);
             sourceBuilders = Collections.singletonList(builder);
             for (VirtualFile root : roots) {
@@ -333,7 +334,7 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
                 project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, base, ex);
                 throw ex;
             }
-            List<VirtualFile> roots = P4ConfigUtil.getVcsRootFiles(project);
+            List<VirtualFile> roots = P4Vcs.getInstance(project).getVcsRoots();
             // Not necessary: the roots for the client should only be based on the VCS roots.
             //roots.add(project.getBaseDir());
             //for (Module module: ModuleManager.getInstance(project).getModules()) {

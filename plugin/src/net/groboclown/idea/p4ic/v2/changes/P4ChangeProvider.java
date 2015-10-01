@@ -24,7 +24,6 @@ import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.changes.ChangeListBuilderCache;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;

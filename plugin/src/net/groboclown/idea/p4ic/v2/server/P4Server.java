@@ -427,7 +427,7 @@ public class P4Server {
             public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
                 List<PendingUpdateState> updates = new ArrayList<PendingUpdateState>();
                 for (VirtualFile file : files) {
-                    final PendingUpdateState update = mgr.editFile(FilePathUtil.getFilePath(file), changelistId);
+                    final PendingUpdateState update = mgr.addOrEditFile(FilePathUtil.getFilePath(file), changelistId);
                     if (update != null) {
                         LOG.info("add pending update " + update);
                         updates.add(update);
@@ -436,6 +436,32 @@ public class P4Server {
                     }
                 }
                 return updates;
+            }
+        });
+    }
+
+    public void onlyEditFile(@NotNull final VirtualFile file, final int changelistId) {
+        // Bug #6
+        //   Add/Edit without adding to Perforce incorrectly
+        //   then adds the file to Perforce
+        // This method is called when a save happens, which can be
+        // at any time.  If the save is called on a file which is
+        // marked as locally updated but not checked out, this will
+        // still be called.  This method should never *add* a file
+        // into Perforce - only open for edit.
+
+        connection.queueUpdates(project, new CreateUpdate() {
+            @NotNull
+            @Override
+            public Collection<PendingUpdateState> create(@NotNull ClientCacheManager mgr) {
+                final PendingUpdateState update = mgr.editFile(file, changelistId);
+                if (update != null) {
+                    LOG.info("add pending update " + update);
+                    return Collections.singletonList(update);
+                } else {
+                    LOG.info("add/edit caused no update: " + file);
+                    return Collections.emptyList();
+                }
             }
         });
     }

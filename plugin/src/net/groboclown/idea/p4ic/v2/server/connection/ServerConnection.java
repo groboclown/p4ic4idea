@@ -24,6 +24,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
+import net.groboclown.idea.p4ic.v2.server.connection.Synchronizer.ActionRunner;
 import net.groboclown.idea.p4ic.v2.ui.alerts.ConfigurationProblemHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,7 +32,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -45,7 +45,6 @@ public class ServerConnection {
     private static final Logger LOG = Logger.getInstance(ServerConnection.class);
     private static final ThreadGroup CONNECTION_THREAD_GROUP = new ThreadGroup("Server Connection");
     private static final ThreadLocal<Boolean> THREAD_EXECUTION_ACTIVE = new ThreadLocal<Boolean>();
-    private final Lock connectionLock = new ReentrantLock();
     private final BlockingQueue<UpdateAction> pendingUpdates = new LinkedBlockingDeque<UpdateAction>();
     private final Queue<UpdateAction> redo = new ArrayDeque<UpdateAction>();
     private final Lock redoLock = new ReentrantLock();
@@ -56,6 +55,7 @@ public class ServerConnection {
     private final String clientName;
     private final Object clientExecLock = new Object();
     private final Thread background;
+    private final Synchronizer.ServerSynchronizer.ConnectionSynchronizer synchronizer;
     private volatile boolean disposed = false;
     private boolean loadedPendingUpdateStates = false;
     @Nullable
@@ -84,7 +84,9 @@ public class ServerConnection {
 
     public ServerConnection(@NotNull final AlertManager alertManager,
             @NotNull ClientServerId clientServerId, @NotNull ClientCacheManager cacheManager,
-            @NotNull ServerConfig config, @NotNull ServerStatusController statusController) {
+            @NotNull ServerConfig config, @NotNull ServerStatusController statusController,
+            @NotNull Synchronizer.ServerSynchronizer.ConnectionSynchronizer synchronizer) {
+        this.synchronizer = synchronizer;
         this.alertManager = alertManager;
         this.cacheManager = cacheManager;
         this.config = config;
@@ -130,29 +132,40 @@ public class ServerConnection {
      *
      * @param action action to run
      */
-    public void runImmediately(@NotNull Project project, @NotNull ServerUpdateAction action)
+    public void runImmediately(@NotNull final Project project, @NotNull final ServerUpdateAction action)
             throws InterruptedException {
-        startImmediateAction();
-        try {
-            action.perform(getExec(project), cacheManager, ServerConnection.this, alertManager);
-        } catch (P4InvalidConfigException e) {
-            alertManager.addCriticalError(new ConfigurationProblemHandler(), e);
-        } finally {
-            stopImmediateAction();
-        }
+        synchronizer.runImmediateAction(new ActionRunner<Void>() {
+            @Override
+            public Void perform() throws InterruptedException {
+                try {
+                    THREAD_EXECUTION_ACTIVE.set(Boolean.TRUE);
+                    action.perform(getExec(project), cacheManager, ServerConnection.this, alertManager);
+                } catch (P4InvalidConfigException e) {
+                    alertManager.addCriticalError(new ConfigurationProblemHandler(), e);
+                } finally {
+                    THREAD_EXECUTION_ACTIVE.remove();
+                }
+                return null;
+            }
+        });
     }
 
     @Nullable
-    public <T> T query(@NotNull Project project, @NotNull ServerQuery<T> query) throws InterruptedException {
-        startImmediateAction();
-        try {
-            return query.query(getExec(project), cacheManager, ServerConnection.this, alertManager);
-        } catch (P4InvalidConfigException e) {
-            alertManager.addCriticalError(new ConfigurationProblemHandler(), e);
-            return null;
-        } finally {
-            stopImmediateAction();
-        }
+    public <T> T query(@NotNull final Project project, @NotNull final ServerQuery<T> query) throws InterruptedException {
+        return synchronizer.runImmediateAction(new ActionRunner<T>() {
+            @Override
+            public T perform() throws InterruptedException {
+                try {
+                    THREAD_EXECUTION_ACTIVE.set(Boolean.TRUE);
+                    return query.query(getExec(project), cacheManager, ServerConnection.this, alertManager);
+                } catch (P4InvalidConfigException e) {
+                    alertManager.addCriticalError(new ConfigurationProblemHandler(), e);
+                    return null;
+                } finally {
+                    THREAD_EXECUTION_ACTIVE.remove();
+                }
+            }
+        });
     }
 
 
@@ -164,12 +177,7 @@ public class ServerConnection {
      * @param action action
      */
     public void requeueAction(@NotNull Project project, @NotNull ServerUpdateAction action) {
-        redoLock.lock();
-        try {
-            redo.add(new UpdateAction(project, action));
-        } finally {
-            redoLock.unlock();
-        }
+        pushAbortedAction(new UpdateAction(project, action));
     }
 
 
@@ -265,22 +273,32 @@ public class ServerConnection {
     }
 
 
-    private void startImmediateAction() throws InterruptedException {
-        connectionLock.lock();
+    private UpdateAction pullNextAction() throws InterruptedException {
+        UpdateAction action;
+        redoLock.lock();
         try {
-            // FIXME make timeout configurable
-            alertManager.waitForNoCriticalErrors(-1, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            connectionLock.unlock();
-            throw e;
+            action = redo.poll();
+        } finally {
+            redoLock.unlock();
         }
-        THREAD_EXECUTION_ACTIVE.set(Boolean.TRUE);
+        if (action == null) {
+            // FIXME debug
+            LOG.info("Polling pending updates for action");
+            action = pendingUpdates.take();
+        }
+        return action;
     }
 
-    private void stopImmediateAction() {
-        THREAD_EXECUTION_ACTIVE.remove();
-        connectionLock.unlock();
+
+    private void pushAbortedAction(@NotNull final UpdateAction updateAction) {
+        redoLock.lock();
+        try {
+            redo.add(updateAction);
+        } finally {
+            redoLock.unlock();
+        }
     }
+
 
     class QueueRunner implements Runnable {
         @Override
@@ -288,98 +306,37 @@ public class ServerConnection {
             try {
                 while (!disposed) {
                     // Wait for something to do first
-                    UpdateAction action;
-                    redoLock.lock();
+                    final UpdateAction action;
                     try {
-                        action = redo.poll();
-                    } finally {
-                        redoLock.unlock();
-                    }
-                    if (action == null) {
-                        try {
-                            // FIXME debug
-                            LOG.info("Polling pending updates for action");
-                            action = pendingUpdates.take();
-                        } catch (InterruptedException e) {
-                            // This triggers us to check for a disposed state.
-                            LOG.info(e);
-                            continue;
-                        }
-                    }
-
-                    // wait for us to come online
-                    // FIXME make configurable
-                    try {
-                        // FIXME debug
-                        LOG.info("waiting for server to come online");
-                        statusController.waitForOnline(-1, TimeUnit.SECONDS);
+                        action = pullNextAction();
                     } catch (InterruptedException e) {
-                        // need to reloop to check for disposed state, but first re-insert the update
+                        // this is fine.
                         LOG.info(e);
-                        redoLock.lock();
-                        try {
-                            redo.add(action);
-                        } finally {
-                            redoLock.unlock();
-                        }
-                        continue;
-                    }
-
-                    // Now wait for the alerts to finish up.
-                    // FIXME make the wait time configurable
-                    connectionLock.lock();
-                    try {
-                        // FIXME debug
-                        LOG.info("waiting for no critical errors");
-                        alertManager.waitForNoCriticalErrors(-1, TimeUnit.MINUTES);
-                    } catch (InterruptedException e) {
-                        connectionLock.unlock();
-
-                        // need to reloop to check for disposed state, but first re-insert the update
-                        LOG.info(e);
-                        redoLock.lock();
-                        try {
-                            redo.add(action);
-                        } finally {
-                            redoLock.unlock();
-                        }
                         continue;
                     }
 
 
-                    if (statusController.isWorkingOffline()) {
-                        // Went offline, probably due to the waited-on critical error.
-                        // need to reloop to check for disposed state, but first re-insert the update
-                        LOG.info("Went offline - retrying execution loop");
-                        redoLock.lock();
-                        try {
-                            redo.add(action);
-                        } finally {
-                            redoLock.unlock();
-                        }
-                        continue;
-                    }
-
-
-                    // We now have something to do, and we can perform the action.
-                    // Note that it's possible for another critical error to pop up in this small
-                    // window of time; that's currently considered an acceptable situation.
-                    // Even if it does, it would be because of a separate server configuration,
-                    // and thus would be unrelated to this configuration's execution; we know this
-                    // because all executions of this connection are single-threaded.
-
                     try {
-                        // FIXME debug
-                        LOG.info("Performing action " + action);
-                        action.action
-                                .perform(getExec(action.project), cacheManager, ServerConnection.this, alertManager);
-                    } catch (P4InvalidConfigException e) {
-                        alertManager.addCriticalError(new ConfigurationProblemHandler(), e);
+                        boolean didRun = synchronizer.runBackgroundAction(new ActionRunner<Void>() {
+                            @Override
+                            public Void perform() throws InterruptedException {
+                                try {
+                                    action.action.perform(getExec(action.project),
+                                            cacheManager, ServerConnection.this, alertManager);
+                                } catch (P4InvalidConfigException e) {
+                                    alertManager.addCriticalError(new ConfigurationProblemHandler(), e);
+                                    // do not requeue the action
+                                }
+                                return null;
+                            }
+                        });
+                        if (!didRun) {
+                            // Had to wait for the action to run, so requeue it and try again.
+                            pushAbortedAction(action);
+                        }
                     } catch (InterruptedException e) {
-                        // Do not requeue the action
+                        // do not requeue action
                         LOG.info(e);
-                    } finally {
-                        connectionLock.unlock();
                     }
                 }
             } catch (Exception e) {

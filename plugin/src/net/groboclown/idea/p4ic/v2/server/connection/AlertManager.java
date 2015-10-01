@@ -49,10 +49,11 @@ public class AlertManager implements ApplicationComponent {
     private final Deque<ErrorMsg> criticalErrorHandlers = new ArrayDeque<ErrorMsg>();
     private final Lock eventLock = new ReentrantLock();
     private final Condition eventPending = eventLock.newCondition();
-    private final Condition noPendingCriticalErrors = eventLock.newCondition();
     private Thread handlerThread;
+    private final Synchronizer synchronizer = new Synchronizer();
     private volatile int criticalErrorCount = 0;
     private volatile boolean disposed;
+
 
 
     public static AlertManager getInstance() {
@@ -85,12 +86,12 @@ public class AlertManager implements ApplicationComponent {
 
     /**
      *
-     * @param message
-     * @param msgs
-     * @param ignoreFileNotFound
+     * @param message localized message
+     * @param msgs status messages
+     * @param ignoreFileNotFound ignore "file not found" messages if true
      * @return true if the messages contained an error, false if not.
      */
-    public boolean addWarnings(@NotNull final String message, @NotNull final List<P4StatusMessage> msgs,
+    public boolean addWarnings(@Nls @NotNull final String message, @NotNull final List<P4StatusMessage> msgs,
             final boolean ignoreFileNotFound) {
         List<String> statusMessages = new ArrayList<String>(msgs.size());
         for (P4StatusMessage msg : msgs) {
@@ -139,52 +140,9 @@ public class AlertManager implements ApplicationComponent {
         eventLock.lock();
         try {
             criticalErrorCount++;
+            synchronizer.criticalErrorActive();
             criticalErrorHandlers.add(new ErrorMsg(error, src));
             eventPending.signal();
-        } finally {
-            eventLock.unlock();
-        }
-    }
-
-
-    /**
-     * Wait until there are no more critical errors pending, then run a process.  If a timeout or a thread interruption
-     * happens during the wait, an {@link InterruptedException} will be thrown.  Note that after running this
-     * method, a critical error could immediately pop up, or it could pop up during the execution.
-     * This is considered acceptable, because it still allows multiple connection threads to run in parallel; they
-     * only wait to initially run while a critical error is active.
-     *
-     * @param timeout how long to wait until a timeout occurs, or negative value if it should wait
-     *                indefinitely.
-     */
-    public void waitForNoCriticalErrors(long timeout, @NotNull TimeUnit unit)
-            throws InterruptedException {
-        long expiresMs = unit.toMillis(timeout) + System.currentTimeMillis();
-        eventLock.lock();
-        try {
-            while (criticalErrorCount > 0) {
-                long sleepTime = expiresMs - System.currentTimeMillis();
-                if (sleepTime < 0 && timeout >= 0) {
-                    // TODO localize the message?
-                    throw new InterruptedException("timed out");
-                }
-                if (timeout < 0) {
-                    // wait indefinitely
-                    noPendingCriticalErrors.await();
-                } else {
-                    noPendingCriticalErrors.await(sleepTime, TimeUnit.MILLISECONDS);
-                }
-            }
-        } finally {
-            eventLock.unlock();
-        }
-    }
-
-
-    public boolean hasCriticalErrorsPending() {
-        eventLock.lock();
-        try {
-            return criticalErrorCount > 0;
         } finally {
             eventLock.unlock();
         }
@@ -219,6 +177,12 @@ public class AlertManager implements ApplicationComponent {
         return "Perforce Alert Manager";
     }
 
+    /** Called by {@link ServerConnectionManager} */
+    @NotNull
+    Synchronizer.ServerSynchronizer createServerSynchronizer() {
+        return synchronizer.createServerSynchronizer();
+    }
+
 
     private void handleWarnings(@NotNull final List<WarningMsg> warnings) {
         // FIXME handle all the warnings in a single UI message.
@@ -238,7 +202,10 @@ public class AlertManager implements ApplicationComponent {
             eventLock.lock();
             try {
                 criticalErrorCount--;
-                noPendingCriticalErrors.signal();
+                if (criticalErrorCount <= 0) {
+                    criticalErrorCount = 0;
+                    synchronizer.criticalErrorsCleared();
+                }
             } finally {
                 eventLock.unlock();
             }

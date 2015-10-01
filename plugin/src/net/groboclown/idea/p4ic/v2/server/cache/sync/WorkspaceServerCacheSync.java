@@ -24,7 +24,7 @@ import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientViewMapping;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.P4ConfigUtil;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
@@ -217,7 +217,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
 
     @NotNull
     List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts) {
-        final List<VirtualFile> projectRoots = P4ConfigUtil.getVcsRootFiles(project);
+        final List<VirtualFile> projectRoots = P4Vcs.getInstance(project).getVcsRoots();
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
         if (LOG.isDebugEnabled()) {
             LOG.debug("Finding client roots for " + cachedServerWorkspace.getName());

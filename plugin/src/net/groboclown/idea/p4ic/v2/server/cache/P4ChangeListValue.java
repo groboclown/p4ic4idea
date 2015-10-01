@@ -15,7 +15,7 @@
 package net.groboclown.idea.p4ic.v2.server.cache;
 
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
-import net.groboclown.idea.p4ic.changes.P4ChangeListIdImpl;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ChangeListState;
 import org.jetbrains.annotations.NotNull;
 

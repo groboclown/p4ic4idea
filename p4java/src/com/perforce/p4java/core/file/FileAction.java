@@ -16,7 +16,7 @@ import com.perforce.p4java.exception.P4JavaError;
  */
 
 public enum FileAction {
-	ADD,
+	ADD_EDIT,
 	BRANCH,
 	EDIT,
 	INTEGRATE,

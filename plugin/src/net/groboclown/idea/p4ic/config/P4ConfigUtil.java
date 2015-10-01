@@ -15,7 +15,6 @@ package net.groboclown.idea.p4ic.config;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.env.PerforceEnvironment;
 import com.perforce.p4java.server.IServerAddress;
@@ -241,7 +240,7 @@ public class P4ConfigUtil {
             @NotNull String configFileName,
             boolean searchRootParents) {
         Map<VirtualFile, P4Config> ret = new HashMap<VirtualFile, P4Config>();
-        for (VirtualFile root : getVcsRootFiles(project)) {
+        for (VirtualFile root : P4Vcs.getInstance(project).getVcsRoots()) {
             ret.putAll(loadProjectP4ConfigsForPath(root, configFileName, searchRootParents));
         }
         return ret;
@@ -254,7 +253,7 @@ public class P4ConfigUtil {
             @NotNull Project project,
             @NotNull String configFileName) {
         Map<VirtualFile, P4Config> ret = new HashMap<VirtualFile, P4Config>();
-        for (VirtualFile root : getVcsRootFiles(project)) {
+        for (VirtualFile root : P4Vcs.getInstance(project).getVcsRoots()) {
             loadCorrectRootDirP4ConfigsForPath(root, configFileName, ret);
         }
         return ret;
@@ -531,14 +530,5 @@ public class P4ConfigUtil {
             }
         }
         return false;
-    }
-
-
-    @NotNull
-    public static List<VirtualFile> getVcsRootFiles(@NotNull Project project) {
-        List<VirtualFile> roots = new ArrayList<VirtualFile>();
-        roots.addAll(Arrays.asList(
-                ProjectLevelVcsManager.getInstance(project).getRootsUnderVcs(P4Vcs.getInstance(project))));
-        return roots;
     }
 }

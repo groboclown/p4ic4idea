@@ -84,7 +84,6 @@ public class ServerExecutor {
 
 
     /**
-     * Should only be called from {@link net.groboclown.idea.p4ic.changes.P4ChangeListCache}
      *
      * @param changelistId
      * @return
@@ -96,7 +95,6 @@ public class ServerExecutor {
     }
 
     /**
-     * Should only be called from {@link net.groboclown.idea.p4ic.changes.P4ChangeListCache}
      *
      * @param changelistId
      * @return
@@ -108,7 +106,6 @@ public class ServerExecutor {
     }
 
     /**
-     * Should only be called from {@link net.groboclown.idea.p4ic.changes.P4ChangeListCache}
      *
      * @param comment
      * @return
@@ -150,7 +147,6 @@ public class ServerExecutor {
     }
 
     /**
-     * Should only be called from {@link net.groboclown.idea.p4ic.changes.P4ChangeListCache}
      *
      * @param targetChangelistId
      * @param affected

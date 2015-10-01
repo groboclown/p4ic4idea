@@ -23,7 +23,7 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListListener;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.changes.P4ChangeListMapping;
+import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
 
@@ -237,7 +237,7 @@ public class P4ChangelistListener implements ChangeListListener {
         }
 
 
-        if (P4ChangeListMapping.DEFAULT_CHANGE_NAME.equals(list.getName())) {
+        if (P4ChangeListId.DEFAULT_CHANGE_NAME.equals(list.getName())) {
             // changeListRemoved ignores delete on default change list.
             //changeListRemoved(list);
             return;

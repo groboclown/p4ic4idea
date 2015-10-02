@@ -68,13 +68,15 @@ public class P4ServerManager implements ProjectComponent {
                     // This happens at startup before the system has loaded,
                     // or right after an announcement is sent out, before
                     // we had a chance to reload our server connections.
+
+                    LOG.info("No server connections known for project " + project.getName() + "; forcing an early reload");
+
                     initializeServers();
-
                     // Only the events will reload our servers.
-                    LOG.info("No server connections known for project " + project.getName());
-
                 } else {
-                    LOG.info("Found server configs "+ servers);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Found server configs " + servers);
+                    }
                 }
                 ret = new ArrayList<P4Server>(servers.size());
                 for (P4Server server: servers.values()) {
@@ -98,8 +100,9 @@ public class P4ServerManager implements ProjectComponent {
     @NotNull
     public Map<P4Server, List<FilePath>> mapFilePathsToP4Server(Collection<FilePath> files)
             throws InterruptedException {
-        // FIXME debug
-        LOG.info("mapping to servers: " + new ArrayList<FilePath>(files));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("mapping to servers: " + new ArrayList<FilePath>(files));
+        }
         if (connectionsValid) {
             Map<P4Server, List<FilePath>> ret = new HashMap<P4Server, List<FilePath>>();
             List<P4Server> servers = getServers();
@@ -219,8 +222,7 @@ public class P4ServerManager implements ProjectComponent {
                     // Connections are temporarily invalid.
                     connectionsValid = false;
                     synchronized (servers) {
-                        // FIXME examine whether this is appropriate
-                        // to keep calling.
+                        // FIXME examine whether this is appropriate to keep calling.
                         for (P4Server server : servers.values()) {
                             server.setValid(false);
                             clientState.removeClientState(server.getClientServerId());
@@ -257,13 +259,17 @@ public class P4ServerManager implements ProjectComponent {
         P4Server minDepthServer = null;
         for (P4Server server : servers) {
             int depth = server.getFilePathMatchDepth(file);
-            LOG.debug(" --- server " + server + " match depth: " + depth);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(" --- server " + server + " match depth: " + depth);
+            }
             if (depth < minDepth && depth >= 0) {
                 minDepth = depth;
                 minDepthServer = server;
             }
         }
-        LOG.info("Matched " + file + " to " + minDepthServer);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Matched " + file + " to " + minDepthServer);
+        }
         return minDepthServer;
     }
 

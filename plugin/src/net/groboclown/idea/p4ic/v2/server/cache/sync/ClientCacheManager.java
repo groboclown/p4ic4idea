@@ -207,6 +207,8 @@ public class ClientCacheManager {
         public void refreshServerState(@NotNull P4Exec2 exec, @NotNull AlertManager alerts) {
             // Refresh everything except workspace, as that would cause a recursive loop.
             fileActions.innerLoadServerCache(exec, alerts);
+            changeLists.innerLoadServerCache(exec, alerts);
+            // not refreshable, because no real server state: ignoreFiles
         }
 
         @Override

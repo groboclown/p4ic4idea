@@ -28,6 +28,9 @@ import java.util.Set;
  * This changelist only keeps information regarding the non-file aspects of the changelist.  The
  * files are handled as their own independent objects.  It should be the responsibility of the
  * wrapping object to make the connection between the file changelist and these objects.
+ * <p/>
+ * If used in a hash or set, the determining factor is the changelist number; it's up
+ * the user of the instances to ensure data isn't lost.
  */
 public class P4ChangeListState extends CachedState {
     private int id;
@@ -142,4 +145,25 @@ public class P4ChangeListState extends CachedState {
         return ret;
     }
 
+
+    @Override
+    public int hashCode() {
+        return getChangelistId();
+    }
+
+
+    @Override
+    public boolean equals(Object val) {
+        if (val == null || ! val.getClass().equals(getClass())) {
+            return false;
+        }
+        if (val == this) {
+            return true;
+        }
+        P4ChangeListState that = (P4ChangeListState) val;
+        // In terms of Set usage, this is all that matters.
+        // It's up to the user to correctly organize these so
+        // that no data is lost.
+        return that.getChangelistId() == this.getChangelistId();
+    }
 }

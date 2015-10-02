@@ -36,6 +36,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -344,6 +345,9 @@ public class ChangeListSync {
         }
 
         if (! unmapped.isEmpty()) {
+            // FIXME debug
+            LOG.info("Attempting to match p4 changelists " + unmapped + " to existing IDEA changelists " +
+                unusedLocalChanges);
             loadUnmappedChangelists(ret, unmapped, unusedLocalChanges, allLocalChanges, addGate);
         }
 
@@ -390,6 +394,7 @@ public class ChangeListSync {
                     LocalChangeList match = matcher.match(p4cl, splitNameComment(p4cl), unusedIdeaChangeLists);
 
                     if (match != null) {
+                        // FIXME debug
                         LOG.info("Associating " + p4cl.getChangeListId() + " to IDEA changelist " + match);
 
                         // Ensure the name matches the changelist, with a unique name
@@ -399,6 +404,7 @@ public class ChangeListSync {
                         mapping.put(p4cl, match);
                         iter.remove();
 
+                        // Force the binding to take effect.
                         changeListMapping.bindChangelists(match, p4cl.getIdObject());
                     }
                 }
@@ -506,7 +512,8 @@ public class ChangeListSync {
             new CasedNameMatcher(),
             new NameMatcher(),
             new NameNumberedMatcher(),
-            new NumberedMatcher()
+            new NumberedMatcher(),
+            new NumberedIndexedMatcher()
     };
 
     private static class ExactMatcher implements ClMatcher {
@@ -585,10 +592,46 @@ public class ChangeListSync {
         public LocalChangeList match(@NotNull P4ChangeListValue cls, @NotNull String[] desc,
                 @NotNull Collection<LocalChangeList> unusedIdeaChangelists) {
             // check exact match on name & comment
-            // match ignore case "[p4 name](\s+\(\d+\)\)"
+            // matches "(@1234)"
             String match = "(@" + cls.getChangeListId() + ")";
             for (LocalChangeList lcl : unusedIdeaChangelists) {
                 if (match.equals(lcl.getName().trim())) {
+                    return lcl;
+                }
+            }
+            return null;
+        }
+    }
+
+    private static class NumberedIndexedMatcher implements ClMatcher {
+        @Nullable
+        @Override
+        public LocalChangeList match(@NotNull P4ChangeListValue cls, @NotNull String[] desc,
+                @NotNull Collection<LocalChangeList> unusedIdeaChangelists) {
+            // check exact match on name & comment
+            // Matches "@1234 (212)" and "@1234"
+            Pattern pattern = Pattern.compile("^@" + cls.getChangeListId() + "(\\s+\\(\\d+\\d\\))?$");
+            for (LocalChangeList lcl : unusedIdeaChangelists) {
+                final Matcher match = pattern.matcher(lcl.getName().trim());
+                if (match.matches()) {
+                    return lcl;
+                }
+            }
+            return null;
+        }
+    }
+
+    private static class ChangedNumberMatcher implements ClMatcher {
+        @Nullable
+        @Override
+        public LocalChangeList match(@NotNull P4ChangeListValue cls, @NotNull String[] desc,
+                @NotNull Collection<LocalChangeList> unusedIdeaChangelists) {
+            // check exact match on name & comment
+            // Matches "asdf.@1234" and "x @1234 y" and so on.
+            Pattern pattern = Pattern.compile("\\W@" + cls.getChangeListId() + "(\\W|$)");
+            for (LocalChangeList lcl : unusedIdeaChangelists) {
+                final Matcher match = pattern.matcher(lcl.getName().trim());
+                if (match.matches()) {
                     return lcl;
                 }
             }

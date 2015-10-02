@@ -166,7 +166,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
             return;
         }
         lastRefreshDate = new Date();
-        List<P4ChangeListState> refreshed = new ArrayList<P4ChangeListState>(pendingChanges.size());
+        Set<P4ChangeListState> refreshed = new HashSet<P4ChangeListState>(pendingChanges.size());
         boolean foundDefault = false;
         for (IChangelistSummary pendingChange : pendingChanges) {
             // FIXME include job fix state

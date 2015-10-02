@@ -513,7 +513,8 @@ public class ChangeListSync {
             new NameMatcher(),
             new NameNumberedMatcher(),
             new NumberedMatcher(),
-            new NumberedIndexedMatcher()
+            new NumberedIndexedMatcher(),
+            new ChangedNumberMatcher()
     };
 
     private static class ExactMatcher implements ClMatcher {

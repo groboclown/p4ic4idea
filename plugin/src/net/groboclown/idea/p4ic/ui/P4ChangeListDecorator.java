@@ -37,7 +37,7 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
 
     @Override
     public void decorateChangeList(LocalChangeList changeList, ColoredTreeCellRenderer cellRenderer, boolean selected, boolean expanded, boolean hasFocus) {
-        if (project.isDisposed()) {
+        if (isProjectInvalid()) {
             return;
         }
         final P4Vcs vcs = P4Vcs.getInstance(project);
@@ -196,5 +196,10 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
     @Override
     public String getComponentName() {
         return "PerforceChangeListDecorator";
+    }
+
+
+    private boolean isProjectInvalid() {
+        return ! P4Vcs.isProjectValid(project);
     }
 }

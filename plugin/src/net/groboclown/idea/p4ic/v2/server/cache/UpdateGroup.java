@@ -39,11 +39,6 @@ public enum UpdateGroup {
     /** Updates to the add or edit state and changelist association on files. */
     FILE_ADD_EDIT(new FileActionsServerCacheSync.AddEditFactory()),
 
-    /**
-     * Updates to the edit (only) state and changelist association on files.
-     */
-    FILE_EDIT(new FileActionsServerCacheSync.EditFactory()),
-
     /** Updates to the delete state and changelist association on files. */
     FILE_DELETE(new FileActionsServerCacheSync.DeleteFactory()),
 

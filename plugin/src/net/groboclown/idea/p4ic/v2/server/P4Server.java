@@ -19,10 +19,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4Job;
@@ -30,6 +32,7 @@ import net.groboclown.idea.p4ic.server.ServerExecutor;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
@@ -175,6 +178,9 @@ public class P4Server {
     int getFilePathMatchDepth(@NotNull FilePath file) throws InterruptedException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Finding depth for " + file + " in " + getClientName());
+        }
+        if (! valid) {
+            return -1;
         }
 
         final List<File> inputParts = getPathParts(file);
@@ -495,6 +501,62 @@ public class P4Server {
         });
     }
 
+
+    public void deleteChangelist(final int changeListId) {
+        if (changeListId == P4ChangeListId.P4_DEFAULT || changeListId == P4ChangeListId.P4_UNKNOWN) {
+            return;
+        }
+        connection.queueUpdates(project, new CreateUpdate() {
+            @NotNull
+            @Override
+            public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
+                final PendingUpdateState update = mgr.deleteChangelist(changeListId);
+                if (update == null) {
+                    return Collections.emptyList();
+                }
+                return Collections.singletonList(update);
+            }
+        });
+    }
+
+    /**
+     * @param files files to move
+     * @param source used to discover which changelist will contain the files.  The changelist
+     *               ID isn't necessary to pass in, as this will do discovery in the case of the
+     * @param changeListMapping the mapping between p4 changes and the IDEA changes.
+     */
+    public void moveFilesToChange(@NotNull final List<FilePath> files, @NotNull final LocalChangeList source,
+            final P4ChangeListMapping changeListMapping) {
+        if (! files.isEmpty()) {
+            connection.queueUpdates(project, new CreateUpdate() {
+                @NotNull
+                @Override
+                public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
+                    // Because this operation can potentially create a new P4 changelist, and
+                    // because the files MUST be assigned to a real changelist number when the
+                    // edit occurs, this operation must be run as a single action.  Otherwise,
+                    // there'd be the state where a newly associated Perforce changelist number
+                    // has files that should move into it, but they still point to the old
+                    // (local) changelist number; that would require keeping invalid local
+                    // changelists around until the associated files used it, and that would be
+                    // a mess to properly detect and clean up.
+
+                    P4ChangeListId clid = changeListMapping.getPerforceChangelistFor(P4Server.this, source);
+                    if (clid == null) {
+                        clid = mgr.reserveLocalChangelistId();
+                        // make sure we create this association in the changelist mapping.
+                        P4ChangeListMapping.getInstance(project).bindChangelists(source, clid);
+                    }
+
+                    PendingUpdateState update = mgr.moveFilesToChangelist(files, source, clid.getChangeListId());
+                    if (update == null) {
+                        return Collections.emptyList();
+                    }
+                    return Collections.singletonList(update);
+                }
+            });
+        }
+    }
 
     /**
      * Set by the owning manager.

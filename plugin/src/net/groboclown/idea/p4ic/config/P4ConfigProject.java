@@ -82,6 +82,9 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
     boolean clientsInitialized = false;
     private ManualP4Config previous;
 
+    // FIXME for testing
+    private int badLoadCount = 0;
+
     public P4ConfigProject(@NotNull Project project) {
         this.project = project;
     }
@@ -100,6 +103,11 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
             throws P4InvalidConfigException {
         initializeConfigSources();
         if (sourceConfigEx != null) {
+            // FIXME for testing; the underlying error seems to get lost.
+            if ((++badLoadCount) % 10 == 0) {
+                sourcesInitialized = false;
+                return loadProjectConfigSources();
+            }
             P4InvalidConfigException ret = new P4InvalidConfigException(sourceConfigEx.getMessage());
             ret.initCause(sourceConfigEx);
             throw ret;
@@ -111,10 +119,17 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
     }
 
     private void initializeConfigSources() {
+        if (! P4Vcs.isProjectValid(project)) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Ignoring reload for invalid project " + project.getName());
+            }
+            return;
+        }
+
         synchronized (this) {
             if (! sourcesInitialized) {
                 // FIXME DEBUG
-                LOG.info("reloading project config sources", new Exception("stack capture"));
+                LOG.info("reloading project " + project.getName() + " config sources", new Throwable("stack capture"));
 
                 // Mark as initialized first, so we don't re-enter this function.
                 sourcesInitialized = true;
@@ -122,6 +137,10 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
                 try {
                     sourceConfigEx = null;
                     configSources = readProjectConfigSources();
+                    // now that the sources are reloaded, we can make the announcement
+                    ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                            BaseConfigUpdatedListener.TOPIC).
+                            configUpdated(project, configSources);
                 } catch (P4InvalidConfigException e) {
                     // ignore; already sent notifications
                     configSources = null;
@@ -132,6 +151,7 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
     }
 
 
+    @NotNull
     private List<ProjectConfigSource> readProjectConfigSources()
             throws P4InvalidConfigException {
         // If the manual config defines a relative p4config file,
@@ -140,6 +160,7 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
 
         ManualP4Config base = getBaseConfig();
         String configFile = base.getConfigFile();
+        LOG.info(project.getName() + ": Config file: " + configFile + "; base config: " + base);
         List<Builder> sourceBuilders;
         if (configFile != null && configFile.indexOf('/') < 0 &&
                 configFile.indexOf('\\') < 0 &&
@@ -235,8 +256,7 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
             throw ex;
         }
 
-        ApplicationManager.getApplication().getMessageBus().syncPublisher(BaseConfigUpdatedListener.TOPIC).
-                configUpdated(project, ret);
+        // don't call the reloaded event until we store the value.
 
         return ret;
     }
@@ -351,9 +371,6 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
         ApplicationManager.getApplication().getMessageBus().syncPublisher(P4ClientsReloadedListener.TOPIC)
                 .clientsLoaded(project, ret);
         if (old != null) {
-
-            // FIXME this causes an infinite loop in this class.
-
             project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).
                     configChanges(project, old, base);
         }

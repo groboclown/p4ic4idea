@@ -487,38 +487,50 @@ public class P4ConfigUtil {
         boolean usedConfig = false;
 
         if (overrideConfig != null) {
+            // FIXME DEBUG
+            LOG.info("adding override config: " + overrideConfig);
             hierarchy.add(overrideConfig);
             usedConfig = addConfigFile(overrideConfig.getConfigFile(), hierarchy, true);
+            LOG.info(" - " + hierarchy);
         }
 
         if (WinRegP4Config.isAvailable()) {
             P4Config userWinConfig = new WinRegP4Config(true);
+            LOG.info("adding user winreg config: " + userWinConfig);
             hierarchy.add(userWinConfig);
             if (! usedConfig) {
                 usedConfig = addConfigFile(userWinConfig.getConfigFile(), hierarchy, false);
             }
+            LOG.info(" - " + hierarchy);
 
             P4Config sysWinConfig = new WinRegP4Config(false);
+            LOG.info("adding sys winreg config: " + sysWinConfig);
             hierarchy.add(sysWinConfig);
             if (! usedConfig) {
                 usedConfig = addConfigFile(sysWinConfig.getConfigFile(), hierarchy, false);
             }
+            LOG.info(" - " + hierarchy);
         }
 
         P4Config envConf = new EnvP4Config();
+        LOG.info("adding env config: " + envConf);
         if (! usedConfig) {
             addConfigFile(envConf.getConfigFile(), hierarchy, false);
         }
+        LOG.info(" - " + hierarchy);
 
-        return new HierarchyP4Config(hierarchy.toArray(new P4Config[hierarchy.size()]));
+        P4Config ret = new HierarchyP4Config(hierarchy.toArray(new P4Config[hierarchy.size()]));
+        LOG.info(" +++ " + ret);
+        return ret;
     }
 
     private static boolean addConfigFile(@Nullable String source, @NotNull List<P4Config> hierarchy, boolean required) throws IOException {
         if (source != null) {
             File cf = new File(source);
             if (cf.exists() && cf.isFile() && cf.canRead()) {
-                //LOG.info("Using config file " + cf.getAbsolutePath());
+                LOG.info("Using config file " + cf.getAbsolutePath());
                 P4Config configFile = new FileP4Config(cf);
+                LOG.info(" - " + configFile);
                 hierarchy.add(configFile);
                 return true;
             } else if (required) {

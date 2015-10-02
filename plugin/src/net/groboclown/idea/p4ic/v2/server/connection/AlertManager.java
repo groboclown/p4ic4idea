@@ -61,7 +61,7 @@ public class AlertManager implements ApplicationComponent {
     }
 
 
-    public void addWarning(@NotNull String message, @Nullable VcsException ex) {
+    public void addWarning(@Nls @NotNull String message, @Nullable VcsException ex) {
         if (ex != null && throwableHandled.isHandled(ex)) {
             LOG.info("Skipped duplicate handling of " + ex);
             return;
@@ -78,7 +78,7 @@ public class AlertManager implements ApplicationComponent {
     }
 
 
-    public <T> boolean addWarnings(@NotNull final String message, @NotNull MessageResult<T> result,
+    public <T> boolean addWarnings(@Nls @NotNull final String message, @NotNull MessageResult<T> result,
             boolean ignoreFileNotFound) {
         return addWarnings(message, result.getMessages(), ignoreFileNotFound);
     }
@@ -118,7 +118,7 @@ public class AlertManager implements ApplicationComponent {
         LOG.warn(message, ex);
     }
 
-    public void addNotices(@NotNull final String message, @NotNull final List<P4StatusMessage> msgs,
+    public void addNotices(@Nls @NotNull final String message, @NotNull final List<P4StatusMessage> msgs,
             final boolean ignoreFileNotFound) {
         for (P4StatusMessage msg : msgs) {
             if (msg != null && msg.isError() && (! ignoreFileNotFound ||

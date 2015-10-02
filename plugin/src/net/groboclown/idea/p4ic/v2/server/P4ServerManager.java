@@ -65,20 +65,16 @@ public class P4ServerManager implements ProjectComponent {
             List<P4Server> ret;
             synchronized (servers) {
                 if (servers.isEmpty()) {
-                    // FIXME this shouldn't happen - it should be loaded correctly and automatically.
+                    // This happens at startup before the system has loaded,
+                    // or right after an announcement is sent out, before
+                    // we had a chance to reload our server connections.
+                    initializeServers();
 
-                    // Attempt to reload them.
-                    LOG.info("No servers known; attempting reload");
-                    P4ConfigProject cp = P4ConfigProject.getInstance(project);
-                    try {
-                        for (ProjectConfigSource source: cp.loadProjectConfigSources()) {
-                            final P4Server server = new P4Server(project, source);
-                            servers.put(server.getClientServerId(), server);
-                        }
-                    } catch (P4InvalidConfigException e) {
-                        LOG.info("source reload caused error", e);
-                        return Collections.emptyList();
-                    }
+                    // Only the events will reload our servers.
+                    LOG.info("No server connections known for project " + project.getName());
+
+                } else {
+                    LOG.info("Found server configs "+ servers);
                 }
                 ret = new ArrayList<P4Server>(servers.size());
                 for (P4Server server: servers.values()) {
@@ -168,22 +164,7 @@ public class P4ServerManager implements ProjectComponent {
         StartupManager.getInstance(project).registerPostStartupActivity(new Runnable() {
             @Override
             public void run() {
-                P4ConfigProject cp = P4ConfigProject.getInstance(project);
-                try {
-                    final List<ProjectConfigSource> sources = cp.loadProjectConfigSources();
-                    synchronized (servers) {
-                        servers.clear();
-                        for (ProjectConfigSource source : sources) {
-                            final P4Server server = new P4Server(project, source);
-                            servers.put(server.getClientServerId(), server);
-                        }
-                    }
-                } catch (P4InvalidConfigException e) {
-                    LOG.info("source load caused error", e);
-                    synchronized (servers) {
-                        servers.clear();
-                    }
-                }
+                initializeServers();
             }
         });
 
@@ -193,6 +174,12 @@ public class P4ServerManager implements ProjectComponent {
             @Override
             public void configUpdated(@NotNull final Project project,
                     @NotNull final List<ProjectConfigSource> sources) {
+                if (project != P4ServerManager.this.project) {
+                    // Does not affect this project
+                    return;
+                }
+
+
                 // Connections are potentially invalid.  Because the primary project config may be no longer
                 // valid, just mark all of the configs invalid.
                 // There may also be new connections.  This keeps it all up-to-date.
@@ -226,16 +213,18 @@ public class P4ServerManager implements ProjectComponent {
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                     @NotNull final P4InvalidConfigException ex) {
-                final AllClientsState clientState = AllClientsState.getInstance();
+                if (project == P4ServerManager.this.project) {
+                    final AllClientsState clientState = AllClientsState.getInstance();
 
-                // Connections are temporarily invalid.
-                connectionsValid = false;
-                synchronized (servers) {
-                    // FIXME examine whether this is appropriate
-                    // to keep calling.
-                    for (P4Server server : servers.values()) {
-                        server.setValid(false);
-                        clientState.removeClientState(server.getClientServerId());
+                    // Connections are temporarily invalid.
+                    connectionsValid = false;
+                    synchronized (servers) {
+                        // FIXME examine whether this is appropriate
+                        // to keep calling.
+                        for (P4Server server : servers.values()) {
+                            server.setValid(false);
+                            clientState.removeClientState(server.getClientServerId());
+                        }
                     }
                 }
             }
@@ -276,5 +265,25 @@ public class P4ServerManager implements ProjectComponent {
         }
         LOG.info("Matched " + file + " to " + minDepthServer);
         return minDepthServer;
+    }
+
+
+    private void initializeServers() {
+        P4ConfigProject cp = P4ConfigProject.getInstance(project);
+        try {
+            final List<ProjectConfigSource> sources = cp.loadProjectConfigSources();
+            synchronized (servers) {
+                servers.clear();
+                for (ProjectConfigSource source : sources) {
+                    final P4Server server = new P4Server(project, source);
+                    servers.put(server.getClientServerId(), server);
+                }
+            }
+        } catch (P4InvalidConfigException e) {
+            LOG.info("source load caused error", e);
+            synchronized (servers) {
+                servers.clear();
+            }
+        }
     }
 }

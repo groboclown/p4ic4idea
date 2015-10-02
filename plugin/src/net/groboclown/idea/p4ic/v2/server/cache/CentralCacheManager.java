@@ -52,7 +52,8 @@ public class CentralCacheManager {
             @Override
             public void configUpdated(@NotNull final Project project,
                     @NotNull final List<ProjectConfigSource> sources) {
-
+                // FIXME implement
+                // NOTE be project aware.
             }
         });
 

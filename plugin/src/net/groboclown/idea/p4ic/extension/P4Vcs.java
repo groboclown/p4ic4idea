@@ -187,6 +187,16 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         return ret;
     }
 
+
+    public static boolean isProjectValid(@NotNull Project project) {
+        if (project.isDisposed()) {
+            return false;
+        }
+        ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance(project);
+        return mgr.checkVcsIsActive(P4Vcs.VCS_NAME);
+    }
+
+
     public P4Vcs(
             @NotNull Project project,
             @NotNull P4ConfigProject configProject,

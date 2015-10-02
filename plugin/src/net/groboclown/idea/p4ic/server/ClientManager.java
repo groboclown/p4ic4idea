@@ -152,17 +152,23 @@ public class ClientManager {
     class ConfigListener implements P4ConfigListener, BaseConfigUpdatedListener, ConfigInvalidListener {
         @Override
         public void configChanges(@NotNull Project project, @NotNull P4Config original, @NotNull P4Config config) {
-            loadConfig();
+            if (project == ClientManager.this.project) {
+                loadConfig();
+            }
         }
 
         @Override
         public void configurationProblem(@NotNull Project project, @NotNull P4Config config, @NotNull P4InvalidConfigException ex) {
-            dispose();
+            if (project == ClientManager.this.project) {
+                dispose();
+            }
         }
 
         @Override
         public void configUpdated(@NotNull final Project project, @NotNull final List<ProjectConfigSource> sources) {
-            loadConfig();
+            if (project == ClientManager.this.project) {
+                loadConfig();
+            }
         }
     }
 }

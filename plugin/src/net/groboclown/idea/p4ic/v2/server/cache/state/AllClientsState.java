@@ -160,6 +160,7 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
             public void configUpdated(@NotNull final Project project,
                     @NotNull final List<ProjectConfigSource> sources) {
                 // FIXME implement
+                // NOTE be project aware
             }
         });
         Events.appConfigInvalid(messageBus, new ConfigInvalidListener() {
@@ -167,6 +168,7 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                     @NotNull final P4InvalidConfigException ex) {
                 // FIXME implement
+                // NOTE be project aware
             }
         });
     }

@@ -16,14 +16,20 @@ package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.local.IgnoreFiles;
-import net.groboclown.idea.p4ic.v2.server.cache.state.*;
+import net.groboclown.idea.p4ic.v2.server.cache.state.ClientLocalServerState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CreateUpdate;
@@ -102,6 +108,11 @@ public class ClientCacheManager {
         return fileActions.deleteFile(file, changeListId);
     }
 
+    @Nullable
+    public PendingUpdateState deleteChangelist(final int changeListId) {
+        return changeLists.deleteChangelist(changeListId);
+    }
+
     @NotNull
     public List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts) {
         return workspace.getClientRoots(project, alerts);
@@ -131,6 +142,21 @@ public class ClientCacheManager {
 
     public boolean isIgnored(@NotNull FilePath fp) {
         return ignoreFiles.isFileIgnored(fp);
+    }
+
+    /**
+     * Create a non-committed changelist ID.  It will still need to be created in a {@link PendingUpdateState}.
+     * @return change list ID
+     */
+    public P4ChangeListId reserveLocalChangelistId() {
+        int id = changeLists.reserveLocalChangelistId();
+        return new P4ChangeListIdImpl(state.getClientServerId(), id);
+    }
+
+    @Nullable
+    public PendingUpdateState moveFilesToChangelist(@NotNull Collection<FilePath> files,
+            @NotNull LocalChangeList source, int changeListId) {
+        return changeLists.moveFileToChangelist(files, source, changeListId);
     }
 
 

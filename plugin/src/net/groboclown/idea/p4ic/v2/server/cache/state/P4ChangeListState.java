@@ -36,6 +36,7 @@ public class P4ChangeListState extends CachedState {
     private String fixState;
     private boolean isShelved = false;
     private boolean isRestricted = false;
+    private boolean isDeleted = false;
 
     P4ChangeListState() {
         // intentionally empty
@@ -72,6 +73,14 @@ public class P4ChangeListState extends CachedState {
         return comment;
     }
 
+    public void setDeleted(final boolean deleted) {
+        this.isDeleted = deleted;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+    
     @Override
     protected void serialize(@NotNull final Element wrapper, @NotNull final EncodeReferences refs) {
         serializeDate(wrapper);
@@ -84,6 +93,9 @@ public class P4ChangeListState extends CachedState {
         }
         if (isRestricted) {
             wrapper.setAttribute("v", "r");
+        }
+        if (isDeleted) {
+            wrapper.setAttribute("d", "y");
         }
         if (fixState != null) {
             wrapper.setAttribute("f", fixState);
@@ -121,8 +133,13 @@ public class P4ChangeListState extends CachedState {
         if (visibility != null && visibility.equals("r")) {
             ret.isRestricted = true;
         }
+        String deleted = getAttribute(wrapper, "d");
+        if (deleted != null && deleted.equals("y")) {
+            ret.isDeleted = true;
+        }
         ret.fixState = getAttribute(wrapper, "f");
 
         return ret;
     }
+
 }

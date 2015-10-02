@@ -256,16 +256,21 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         StringBuilder sb = new StringBuilder(P4Bundle.message("error.opened-action-status.invalid"));
         String sep = "";
         for (IFileSpec spec: invalidSpecs) {
-            // TODO localize these strings
-            sb
-                .append(sep).append("[")
-                .append("depot:").append(spec.getDepotPathString())
-                .append(", client:").append(spec.getClientPathString())
-                .append(", action: ").append(spec.getAction());
+            sb.append(sep);
             if (spec.getStatusMessage() != null) {
-                sb.append(", message: ").append(spec.getStatusMessage());
+                P4Bundle.message("file.invalid.action.spec.message",
+                        spec.getDepotPathString(),
+                        spec.getClientPathString(),
+                        spec.getAction(),
+                        spec.getStatusMessage());
+            } else {
+                P4Bundle.message("file.invalid.action.spec.no-message",
+                        spec.getDepotPathString(),
+                        spec.getClientPathString(),
+                        spec.getAction(),
+                        spec.getStatusMessage());
             }
-            sep = "]; ";
+            sep = P4Bundle.message("file.invalid.action.spec.seperator");
         }
         alerts.addNotice(sb.toString(), null);
     }
@@ -308,29 +313,35 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
     private void makeWritable(@NotNull final FilePath file) {
-        ApplicationManager.getApplication().runWriteAction(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (file.getVirtualFile() != null) {
-                        file.getVirtualFile().setWritable(true);
+        // write actions can only be in the dispatch thread.
+        if (ApplicationManager.getApplication().isDispatchThread()) {
+            ApplicationManager.getApplication().runWriteAction(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (file.getVirtualFile() != null) {
+                            file.getVirtualFile().setWritable(true);
+                        }
+                    } catch (IOException e) {
+                        // ignore for now
+                        LOG.info(e);
                     }
-                } catch (IOException e) {
-                    // ignore for now
-                    LOG.info(e);
                 }
-                File f = file.getIOFile();
-                if (f.exists() && f.isFile() && !f.canWrite()) {
-                    if (!f.setWritable(true)) {
-                        // FIXME get access to the alerts in a better way
-                        AlertManager.getInstance().addWarning(P4Bundle.message("error.writable.failed", file), null);
+            });
+        }
 
-                        // Keep going with the action, even though we couldn't set it to
-                        // writable...
-                    }
-                }
+
+        File f = file.getIOFile();
+        if (f.exists() && f.isFile() && !f.canWrite()) {
+            if (!f.setWritable(true)) {
+                // FIXME get access to the alerts in a better way
+                AlertManager.getInstance()
+                        .addWarning(P4Bundle.message("error.writable.failed", file), null);
+
+                // Keep going with the action, even though we couldn't set it to
+                // writable...
             }
-        });
+        }
     }
 
 
@@ -378,10 +389,14 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     @NotNull
     private static List<FilePath> getFilePaths(@NotNull final List<PendingUpdateState> updateList) {
         List<FilePath> filenames = new ArrayList<FilePath>(updateList.size());
-        for (PendingUpdateState update : updateList) {
+        final Iterator<PendingUpdateState> iter = updateList.iterator();
+        while (iter.hasNext()) {
+            PendingUpdateState update = iter.next();
             String val = UpdateParameterNames.FILE.getParameterValue(update);
             if (val != null) {
                 filenames.add(FilePathUtil.getFilePath(val));
+            } else {
+                iter.remove();
             }
         }
         return filenames;
@@ -398,7 +413,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
         ActionSplit(@NotNull P4Exec2 exec,
                 @NotNull Collection<PendingUpdateState> pendingUpdateStates,
-                @NotNull AlertManager alerts) {
+                @NotNull AlertManager alerts,
+                boolean ignoreAddsIfEditOnly) {
             List<PendingUpdateState> updateList = new ArrayList<PendingUpdateState>(pendingUpdateStates);
             List<FilePath> filenames = getFilePaths(updateList);
             final List<IFileSpec> srcSpecs;
@@ -438,9 +454,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 if (changelist == null) {
                     changelist = -1;
                 }
-                String filename = UpdateParameterNames.FILE.getValue(
-                        update.getParameters().get(UpdateParameterNames.FILE.getKeyName()));
+                String filename = UpdateParameterNames.FILE.getParameterValue(update);
+                // is edit only mode is only valid for the EDIT_FILE action.
+                boolean isEditOnly = update.getUpdateAction() == UpdateAction.EDIT_FILE;
                 FilePath filePath = FilePathUtil.getFilePath(filename);
+                LOG.info(" - Checking category for " + filePath + " (from " + spec + ")");
                 if (isNotInClientView(spec)) {
                     alerts.addNotice(P4Bundle.message("error.client.not-in-view", spec.getClientPathString()), null);
                     // don't handle
@@ -448,8 +466,12 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 }
                 Map<Integer, Set<FilePath>> container = null;
                 if (isNotKnownToServer(spec)) {
-                    //LOG.info("Adding, because not known to server");
-                    container = notInPerforce;
+                    if (isEditOnly && ignoreAddsIfEditOnly) {
+                        LOG.info(" -+- Ignoring because Perforce doesn't know it, and the change is edit-only.");
+                    } else {
+                        LOG.info(" -+- not known to server");
+                        container = notInPerforce;
+                    }
                 } else {
                     FileAction action = spec.getOpenAction();
                     if (action == null) {
@@ -536,24 +558,13 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         @NotNull
         @Override
         public ServerUpdateAction create(@NotNull Collection<PendingUpdateState> states) {
-            return new AddEditAction(states, true);
-        }
-    }
-
-    public static class EditFactory implements ServerUpdateActionFactory {
-        @NotNull
-        @Override
-        public ServerUpdateAction create(@NotNull Collection<PendingUpdateState> states) {
-            return new AddEditAction(states, false);
+            return new AddEditAction(states);
         }
     }
 
     static class AddEditAction extends AbstractServerUpdateAction {
-        private final boolean allowsAdds;
-
-        AddEditAction(@NotNull Collection<PendingUpdateState> pendingUpdateState, boolean allowsAdds) {
+        AddEditAction(@NotNull Collection<PendingUpdateState> pendingUpdateState) {
             super(pendingUpdateState);
-            this.allowsAdds = allowsAdds;
         }
 
         @NotNull
@@ -563,7 +574,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             // FIXME debug
             LOG.info("Running edit");
 
-            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts);
+            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts, true);
             if (split.status != null) {
                 return split.status;
             }
@@ -605,7 +616,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             }
 
             ExecutionStatus returnCode = ExecutionStatus.NO_OP;
-            if (! split.notInPerforce.isEmpty() && allowsAdds) {
+            if (! split.notInPerforce.isEmpty()) {
                 for (Entry<Integer, Set<FilePath>> entry : split.notInPerforce.entrySet()) {
                     try {
                         final List<P4StatusMessage> msgs =
@@ -700,7 +711,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             // FIXME debug
             LOG.info("Running delete");
 
-            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts);
+            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts, false);
             if (split.status != null) {
                 return split.status;
             }

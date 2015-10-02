@@ -192,4 +192,9 @@ public class WinRegP4Config implements P4Config {
     public String getIgnoreFileName() {
         return ignoreFileName;
     }
+
+    @Override
+    public String toString() {
+        return P4ConfigUtil.getProperties(this).toString();
+    }
 }

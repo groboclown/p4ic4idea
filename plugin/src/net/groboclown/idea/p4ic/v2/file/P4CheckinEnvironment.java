@@ -133,7 +133,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                 // FIXME implement
                 errors.add(new VcsException("not implemented - create a new changelist"));
                 /*
-                final P4ChangeListId changeList = P4ChangeListCache.getInstance().createChangeList(
+                final P4ChangeListId changeList = P4ChangeListCache.getInstance().createChangelist(
                         server, preparedComment);
                 Map<P4ChangeListId, List<FilePath>> clFp = pathsPerChangeList.get(server);
                 if (clFp == null) {

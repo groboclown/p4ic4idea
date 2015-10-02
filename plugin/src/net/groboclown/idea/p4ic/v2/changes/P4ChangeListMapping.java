@@ -239,7 +239,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
      * @param idea idea-backed changelist
      * @param p4id perforce-backed changelist id
      */
-    void bindChangelists(@NotNull LocalChangeList idea, @NotNull P4ChangeListId p4id) {
+    public void bindChangelists(@NotNull LocalChangeList idea, @NotNull P4ChangeListId p4id) {
         checkForInvalidMapping(idea, p4id);
         if (isDefaultChangelist(idea) && p4id.isDefaultChangelist()) {
             // this is an implicit mapping

@@ -26,6 +26,17 @@ import java.util.List;
 /**
  * All possible update actions.  Each one maps to a specific
  * action class.
+ * <p/>
+ * A note about groups vs. actions: it seems a bit redundant to have the groups
+ * be separate, and not just have the factory instead of the group.  However,
+ * the point of the groups is to allow several pending updates to be slightly
+ * different actions, but with the same underlying operations, so that they
+ * can be run in batch together.
+ * <p/>
+ * For example, the ADD_EDIT_FILE and EDIT_FILE use the same group, so that
+ * they can run together.  They both will share the same underlying commands,
+ * so they should run together.  The actual determination if the file is
+ * able to be added or not is based upon the UpdateAction itself.
  */
 public enum UpdateAction {
     CHANGE_CHANGELIST_DESCRIPTION(UpdateGroup.CHANGELIST,
@@ -36,8 +47,9 @@ public enum UpdateAction {
             UpdateParameterNames.CHANGELIST, UpdateParameterNames.JOB),
     SET_CHANGELIST_FIX_STATE(UpdateGroup.CHANGELIST,
             UpdateParameterNames.CHANGELIST, UpdateParameterNames.FIX_STATE),
-    CREATE_CHANGELIST(UpdateGroup.CHANGELIST,
-            UpdateParameterNames.CHANGELIST),
+    // Changelists are indirectly created through the REOPEN_FILES_INTO_CHANGELIST action.
+    //CREATE_CHANGELIST(UpdateGroup.CHANGELIST,
+    //        UpdateParameterNames.CHANGELIST, UpdateParameterNames.DESCRIPTION),
     DELETE_CHANGELIST(UpdateGroup.CHANGELIST,
             UpdateParameterNames.CHANGELIST),
 
@@ -69,6 +81,12 @@ public enum UpdateAction {
             UpdateParameterNames.FILE, UpdateParameterNames.CHANGELIST),
     REVERT_FILE(UpdateGroup.FILE,
             UpdateParameterNames.DEPOT, UpdateParameterNames.FILE),
+
+    // A hybrid action, due to the nature of creating local changelists and their relationship to
+    // files moved into them.
+    REOPEN_FILES_INTO_CHANGELIST(UpdateGroup.CHANGELIST,
+            UpdateParameterNames.CHANGELIST, UpdateParameterNames.DESCRIPTION,
+            UpdateParameterNames.FIELD),
 
     ADD_IGNORE_PATTERN(UpdateGroup.IGNORE_PATTERNS,
             UpdateParameterNames.PATTERN),
@@ -107,6 +125,7 @@ public enum UpdateAction {
         CHANGELIST {
             @Nullable
             @Override
+            @SuppressWarnings("unchecked")
             public <T> T deserialize(@NotNull String value) {
                 try {
                     return (T) new Integer(value);
@@ -131,6 +150,7 @@ public enum UpdateAction {
         }
 
         @Nullable
+        @SuppressWarnings("unchecked")
         public <T> T getValue(@NotNull Object value) {
             try {
                 return (T) value;
@@ -145,6 +165,7 @@ public enum UpdateAction {
         }
 
         @Nullable
+        @SuppressWarnings("unchecked")
         public <T> T deserialize(@NotNull String value) {
             try {
                 return (T) value;
@@ -274,4 +295,5 @@ public enum UpdateAction {
                 return null;
         }
     }
+
 }

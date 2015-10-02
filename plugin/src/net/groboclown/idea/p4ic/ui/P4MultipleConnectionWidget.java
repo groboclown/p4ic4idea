@@ -324,13 +324,17 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
 
         @Override
         public void configUpdated(@NotNull final Project project, @NotNull final List<ProjectConfigSource> sources) {
-            updateUI();
+            if (project == P4MultipleConnectionWidget.this.project) {
+                updateUI();
+            }
         }
 
         @Override
         public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                 @NotNull final P4InvalidConfigException ex) {
-            updateUI();
+            if (project == P4MultipleConnectionWidget.this.project) {
+                updateUI();
+            }
         }
 
         @Override
@@ -343,5 +347,4 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
             updateUI();
         }
     }
-
 }

@@ -52,6 +52,14 @@ public class P4ChangeListValue {
         return state.getComment();
     }
 
+    public boolean isDeleted() {
+        return state.isDeleted();
+    }
+
+    public boolean isOnServer() {
+        return state.isOnServer();
+    }
+
 
     @Override
     public int hashCode() {

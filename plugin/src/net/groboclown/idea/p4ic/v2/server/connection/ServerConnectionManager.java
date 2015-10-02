@@ -74,6 +74,7 @@ public class ServerConnectionManager implements ApplicationComponent {
             @Override
             public void configUpdated(@NotNull final Project project,
                     @NotNull final List<ProjectConfigSource> sources) {
+                // FIXME update ONLY for the project.
                 invalidateAllConfigs();
             }
         });
@@ -81,6 +82,7 @@ public class ServerConnectionManager implements ApplicationComponent {
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                     @NotNull final P4InvalidConfigException ex) {
+                // because this is selective on a config, we can safely ignore the project.
                 invalidateConfig(config);
             }
         });
@@ -101,12 +103,14 @@ public class ServerConnectionManager implements ApplicationComponent {
             @Override
             public void configChanges(@NotNull final Project project, @NotNull final P4Config original,
                     @NotNull final P4Config config) {
+                // because this is selective on a config, we can safely ignore the project.
                 invalidateConfig(original);
             }
 
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                     @NotNull final P4InvalidConfigException ex) {
+                // because this is selective on a config, we can safely ignore the project.
                 invalidateConfig(config);
             }
         });

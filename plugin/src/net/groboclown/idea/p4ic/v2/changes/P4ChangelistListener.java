@@ -22,14 +22,17 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListListener;
+import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
+import java.util.Map.Entry;
 
 public class P4ChangelistListener implements ChangeListListener {
     private final static Logger LOG = Logger.getInstance(P4ChangelistListener.class);
@@ -44,10 +47,14 @@ public class P4ChangelistListener implements ChangeListListener {
 
     private final Project myProject;
     private final P4Vcs myVcs;
+    private final P4ChangeListMapping changeListMapping;
+    private final AlertManager alerts;
 
     public P4ChangelistListener(@NotNull final Project project, @NotNull final P4Vcs vcs) {
         myProject = project;
         myVcs = vcs;
+        alerts = AlertManager.getInstance();
+        changeListMapping = P4ChangeListMapping.getInstance(project);
     }
 
     @Override
@@ -61,54 +68,25 @@ public class P4ChangelistListener implements ChangeListListener {
 
     @Override
     public void changeListRemoved(@NotNull final ChangeList list) {
-
-
-
-        // FIXME
-        throw new IllegalStateException("not implemented");
-        /*
         LOG.debug("changeListRemoved: " + list.getName() + "; [" + list.getComment() + "]; " + list.getClass()
                 .getSimpleName());
 
-        if (list instanceof LocalChangeList && ! P4ChangeListMapping.isDefaultChangelist((LocalChangeList) list)) {
-            Background.runInBackground(myProject, CHANGELIST_REMOVED,
-                    myVcs.getConfiguration().getUpdateOption(), new Background.ER() {
-                        @Override
-                        public void run(@NotNull ProgressIndicator indicator) throws Exception {
-                            indicator.setFraction(0.1);
-                            LOG.debug("Fetching p4 changelist for deleted list");
-                            Collection<P4ChangeListId> p4clList = myVcs.getChangeListMapping().
-                                    getPerforceChangelists((LocalChangeList) list);
-                            indicator.setFraction(0.5);
-                            LOG.debug("Fetched " + p4clList);
-                            if (p4clList != null) {
-                                for (Client client: myVcs.getServers()) {
-                                    if (client.isWorkingOffline()) {
-                                        continue;
-                                    }
-                                    for (P4ChangeListId p4cl: p4clList) {
-                                        if (p4cl.isIn(client)) {
-                                            if (p4cl.isNumberedChangelist()) {
-                                                LOG.info("Deleted changelist " + p4cl.getChangeListId());
-                                                // Remove the mapping first, in case of a problem
-                                                myVcs.getChangeListMapping().removeMapping((LocalChangeList) list);
-
-                                                client.getServer().deleteChangelist(p4cl.getChangeListId());
-                                            } else {
-                                                // else the find call already removed the mapping, if there was one.
-                                                LOG.debug("+mapping not found; already removed");
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            indicator.setFraction(0.8);
-                        }
-                    });
-        } else {
-            LOG.debug("+ not local; is " + list.getClass().getName());
+        if (list instanceof LocalChangeList && !P4ChangeListMapping.isDefaultChangelist((LocalChangeList) list)) {
+            final List<P4ChangeListId> changelists = new ArrayList<P4ChangeListId>(
+                    changeListMapping.getAllPerforceChangelistsFor((LocalChangeList) list));
+            for (P4Server server: myVcs.getP4Servers()) {
+                final Iterator<P4ChangeListId> iter = changelists.iterator();
+                while (iter.hasNext()) {
+                    final P4ChangeListId next = iter.next();
+                    if (next.isDefaultChangelist()) {
+                        iter.remove();
+                    } else if (next.isIn(server)) {
+                        iter.remove();
+                        server.deleteChangelist(next.getChangeListId());
+                    }
+                }
+            }
         }
-        */
     }
 
     @Override
@@ -129,98 +107,26 @@ public class P4ChangelistListener implements ChangeListListener {
         LOG.debug("changesAdded: changes " + changes);
         LOG.debug("changesAdded: changelist " + toList.getName() + "; [" + toList.getComment() + "]");
 
-        // FIXME
-        throw new IllegalStateException("not implemented");
-
-        /*
         if (toList instanceof LocalChangeList) {
             final List<FilePath> paths = getPathsFromChanges(changes);
             if (paths.isEmpty()) {
                 return;
             }
 
-            final Collection<P4ChangeListId> p4idList = myVcs.getChangeListMapping().getPerforceChangelists((LocalChangeList) toList);
-            if (p4idList != null && ! p4idList.isEmpty()) {
-                Background.runInBackground(myProject, CHANGES_MOVED, myVcs.getConfiguration().getUpdateOption(), new Background.ER() {
-                    @Override
-                    public void run(@NotNull ProgressIndicator indicator) throws Exception {
-                        indicator.setFraction(0.1);
-                        Map<Client, List<FilePath>> filesByServer = myVcs.mapFilePathToClient(paths);
-                        double count = 0.0;
-                        List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
-                        for (Map.Entry<Client, List<FilePath>> e: filesByServer.entrySet()) {
-                            indicator.setFraction(0.2 + (0.8 * (count / (double) filesByServer.size())));
-                            count += 1.0;
-                            final Client client = e.getKey();
-                            if (client.isWorkingOnline()) {
-                                boolean found = false;
-                                for (P4ChangeListId p4id : p4idList) {
-                                    if (p4id.isIn(client)) {
-                                        messages.addAll(P4ChangeListCache.getInstance().addFilesToChangelist(
-                                                client, p4id, e.getValue()));
-                                        found = true;
-                                        break;
-                                    }
-                                }
-
-                                if (!found) {
-                                    // create that changelist
-                                    LOG.info("Creating P4 changelist for Idea changelist '" + toList.getName() + '\'');
-                                    P4ChangeListId p4id = P4ChangeListCache.getInstance().createChangeList(
-                                            client, toDescription(toList));
-                                    messages.addAll(P4ChangeListCache.getInstance().addFilesToChangelist(
-                                            e.getKey(), p4id, e.getValue()));
-                                    myVcs.getChangeListMapping().bindChangelists(
-                                            (LocalChangeList) toList, p4id);
-                                }
-                            }
-                        }
-                        P4StatusMessage.throwIfError(messages, true);
-
-                        // May require a screen refresh for changes
-                        P4ChangesViewRefresher.refreshLater(myProject);
-                    }
-                });
-            } else {
-                LOG.info("Need to create a new p4 changelist");
-                Background.runInBackground(myProject, CHANGES_ADDED, myVcs.getConfiguration().getUpdateOption(), new Background.ER() {
-                    @Override
-                    public void run(@NotNull ProgressIndicator indicator) throws Exception {
-                        indicator.setFraction(0.1);
-                        Map<Client, List<FilePath>> filesByServer = myVcs.mapFilePathToClient(paths);
-
-                        if (filesByServer.size() > 1) {
-                            throw new P4InvalidConfigException(P4Bundle.message("error.changelist.too-many-servers"));
-                        }
-
-                        List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
-
-                        double count = 0.0;
-                        for (Map.Entry<Client, List<FilePath>> e : filesByServer.entrySet()) {
-                            indicator.setFraction(0.2 + (0.8 * (count / (double) filesByServer.size())));
-                            count += 1.0;
-                            final Client client = e.getKey();
-
-                            final P4ChangeListId p4id = P4ChangeListCache.getInstance().createChangeList(
-                                    client, toDescription(toList));
-                            myVcs.getChangeListMapping().bindChangelists((LocalChangeList) toList, p4id);
-                            messages.addAll(P4ChangeListCache.getInstance().addFilesToChangelist(
-                                    client, p4id, paths));
-                        }
-
-                        P4StatusMessage.throwIfError(messages, true);
-
-                        // this requires a screen refresh (not resync) of the changelist,
-                        // such as toggling the file list display for the change, in order to
-                        // make the decorator draw the new change number.
-                        P4ChangesViewRefresher.refreshLater(myProject);
-                    }
-                });
+            final Map<P4Server, List<FilePath>> perServer;
+            try {
+                perServer = myVcs.mapFilePathsToP4Server(paths);
+            } catch (InterruptedException e) {
+                alerts.addWarning(P4Bundle.message("error.cancelled-timeout"), new VcsInterruptedException(e));
+                return;
             }
-        } else {
-            LOG.debug("+ not local; is " + toList.getClass().getName());
+            for (Entry<P4Server, List<FilePath>> entry : perServer.entrySet()) {
+                P4Server server = entry.getKey();
+                final P4ChangeListId changeList =
+                        changeListMapping.getPerforceChangelistFor(server, (LocalChangeList) toList);
+                server.moveFilesToChange(entry.getValue(), (LocalChangeList) toList, changeListMapping);
+            }
         }
-        */
     }
 
     @Override

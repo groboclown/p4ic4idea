@@ -15,55 +15,60 @@
 package net.groboclown.idea.p4ic.ui.revision;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
+import net.groboclown.idea.p4ic.v2.history.P4FileRevision;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class PathRevsSet {
     private static final Logger LOG = Logger.getInstance(PathRevsSet.class);
 
-
     // TODO make configurable
     private static final int REVISION_PAGE_SIZE = 1000;
-
 
     private final List<PathRevs> revs;
     private final String error;
 
     public static PathRevsSet create(final @NotNull P4Vcs vcs, final @NotNull VirtualFile file) {
-        final Client client = vcs.getClientFor(file);
-        if (client == null || client.isWorkingOffline()) {
-            return new PathRevsSet(P4Bundle.getString("revision.list.notconnected"));
-        } else {
-            try {
-                final List<P4FileInfo> p4infoList = client.getServer().getVirtualFileInfo(Collections.singleton(file));
-                if (p4infoList.isEmpty()) {
-                    // can't find file
-                    return new PathRevsSet(P4Bundle.getString("revision.list.nosuchfile"));
-                } else {
-                    final P4FileInfo fileInfo = p4infoList.get(0);
-                    LOG.info("diff file depot: " + fileInfo.getDepotPath());
-
-                    final List<PathRevs> revisions =
-                            PathRevs.getPathRevs(client.getServer().getRevisionHistory(fileInfo, REVISION_PAGE_SIZE));
-
-                    if (revisions.isEmpty()) {
-                        return new PathRevsSet(P4Bundle.message("revision.list.no-revs", file));
-                    }
-
-                    return new PathRevsSet(revisions);
+        FilePath fp = FilePathUtil.getFilePath(file);
+        final P4Server server;
+        try {
+            server = vcs.getP4ServerFor(fp);
+            if (server == null) {
+                return new PathRevsSet(P4Bundle.getString("revision.list.notconnected"));
+            } else {
+                final Map<FilePath, IExtendedFileSpec> status =
+                        server.getFileStatus(Collections.singletonList(fp));
+                if (status == null) {
+                    return new PathRevsSet(P4Bundle.getString("revision.list.notconnected"));
                 }
-            } catch (VcsException e) {
-                LOG.warn(e);
-                return new PathRevsSet(e.getMessage());
+                if (status.get(fp) == null) {
+                    return new PathRevsSet(P4Bundle.getString("revision.list.nosuchfile"));
+                }
+                final IExtendedFileSpec spec = status.get(fp);
+                LOG.info("diff file depot: " + spec.getDepotPathString());
+                final List<P4FileRevision> history =
+                        server.getRevisionHistory(spec, REVISION_PAGE_SIZE);
+                if (history == null) {
+                    return new PathRevsSet(P4Bundle.getString("revision.list.nosuchfile"));
+                }
+                final List<PathRevs> revisions = PathRevs.getPathRevs(history);
+                if (revisions.isEmpty()) {
+                    return new PathRevsSet(P4Bundle.message("revision.list.no-revs", file));
+                }
+                return new PathRevsSet(revisions);
             }
+        } catch (InterruptedException e) {
+            return new PathRevsSet(P4Bundle.getString("revision.list.timeout"));
         }
     }
 

@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.history;
+package net.groboclown.idea.p4ic.v2.history;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.diagnostic.Logger;
@@ -22,13 +22,11 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.ColumnInfo;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.compat.HistoryCompat;
-import net.groboclown.idea.p4ic.config.Client;
-import net.groboclown.idea.p4ic.extension.P4RevisionNumber;
-import net.groboclown.idea.p4ic.extension.P4RevisionNumber.RevType;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
-import net.groboclown.idea.p4ic.server.ServerExecutor;
+import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,16 +34,19 @@ import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class P4HistoryProvider implements VcsHistoryProvider {
     private static final Logger LOG = Logger.getInstance(P4HistoryProvider.class);
 
     private final Project project;
+    private final P4Vcs vcs;
     private final DiffFromHistoryHandler diffHandler;
 
-    public P4HistoryProvider(Project project) {
+    public P4HistoryProvider(@NotNull Project project, @NotNull P4Vcs vcs) {
         this.project = project;
-        diffHandler = HistoryCompat.getInstance().createDiffFromHistoryHandler();
+        this.vcs = vcs;
+        this.diffHandler = HistoryCompat.getInstance().createDiffFromHistoryHandler();
     }
 
     @Override
@@ -74,13 +75,13 @@ public class P4HistoryProvider implements VcsHistoryProvider {
     @Override
     public VcsHistorySession createSessionFor(FilePath filePath) throws VcsException {
         final List<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();
-        revisions.addAll(getHistory(filePath, project));
+        revisions.addAll(getHistory(filePath, vcs));
         return createAppendableSession(filePath, revisions, null);
     }
 
     @Override
     public void reportAppendableHistory(FilePath path, VcsAppendableHistorySessionPartner partner) throws VcsException {
-        final List<P4FileRevision> history = getHistory(path, project);
+        final List<P4FileRevision> history = getHistory(path, vcs);
         if (history.size() == 0) return;
 
         final VcsAbstractHistorySession emptySession = createAppendableSession(path, Collections.<VcsFileRevision>emptyList(), null);
@@ -117,18 +118,24 @@ public class P4HistoryProvider implements VcsHistoryProvider {
              */
             @Nullable
             protected VcsRevisionNumber calcCurrentRevisionNumber() {
+                if (project.isDisposed()) {
+                    return null;
+                }
                 try {
-                    Client client = P4Vcs.getInstance(project).getClientFor(path);
-                    if (client != null) {
-                        List<P4FileInfo> infoList = client.getServer().getFilePathInfo(Collections.singletonList(path));
-                        // check for head rev > 0 because otherwise it's been deleted, which we should
-                        // return "null" for.
-                        if (! infoList.isEmpty() && infoList.get(0).getHeadRev() > 0) {
-                            return new P4RevisionNumber(infoList.get(0).getDepotPath(), infoList.get(0), RevType.HEAD);
+                    P4Server server = vcs.getP4ServerFor(path);
+                    if (server != null) {
+                        final Map<FilePath, IExtendedFileSpec> status =
+                                server.getFileStatus(Collections.singletonList(path));
+                        if (status == null || status.get(path) == null) {
+                            LOG.info("No information for " + path);
+                            return null;
                         }
+                        final IExtendedFileSpec spec = status.get(path);
+                        return new P4RevisionNumber(spec.getDepotPathString(), spec,
+                                P4RevisionNumber.RevType.HEAD);
                     }
                     return null;
-                } catch (VcsException e) {
+                } catch (InterruptedException e) {
                     LOG.warn(e);
                     return null;
                 }
@@ -147,27 +154,27 @@ public class P4HistoryProvider implements VcsHistoryProvider {
     }
 
     @NotNull
-    private static List<P4FileRevision> getHistory(@Nullable FilePath filePath, @NotNull Project project) throws VcsException {
-        P4Vcs vcs = P4Vcs.getInstance(project);
+    private static List<P4FileRevision> getHistory(@Nullable FilePath filePath, @NotNull P4Vcs vcs) throws VcsException {
         if (filePath == null || ! vcs.fileIsUnderVcs(filePath)) {
             return Collections.emptyList();
         }
 
-        VcsConfiguration vcsConfiguration = VcsConfiguration.getInstance(project);
+        VcsConfiguration vcsConfiguration = VcsConfiguration.getInstance(vcs.getProject());
         int limit = vcsConfiguration.LIMIT_HISTORY ? vcsConfiguration.MAXIMUM_HISTORY_ROWS : -1;
 
-        Client client = vcs.getClientFor(filePath);
-        if (client != null) {
-            ServerExecutor server = client.getServer();
-            List<P4FileInfo> p4files = server.getFilePathInfo(Collections.singletonList(filePath));
-            if (p4files.isEmpty()) {
-                LOG.info("No file information for " + filePath);
-                return Collections.emptyList();
+        try {
+            P4Server server = vcs.getP4ServerFor(filePath);
+            if (server != null) {
+                final Map<FilePath, IExtendedFileSpec> specs =
+                        server.getFileStatus(Collections.singletonList(filePath));
+                if (specs == null || specs.get(filePath) == null) {
+                    LOG.info("No file information for " + filePath);
+                    return Collections.emptyList();
+                }
+                return server.getRevisionHistory(specs.get(filePath), limit);
             }
-            if (!p4files.get(0).isInDepot()) {
-                return Collections.emptyList();
-            }
-            return server.getRevisionHistory(p4files.get(0), limit);
+        } catch (InterruptedException e) {
+            throw new VcsInterruptedException(e);
         }
         return Collections.emptyList();
     }

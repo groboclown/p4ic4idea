@@ -30,8 +30,6 @@ import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.history.P4AnnotatedLine;
-import net.groboclown.idea.p4ic.history.P4FileRevision;
 import net.groboclown.idea.p4ic.server.exceptions.*;
 import net.groboclown.idea.p4ic.server.tasks.*;
 import net.groboclown.idea.p4ic.v2.events.Events;
@@ -502,12 +500,14 @@ public class RawServerExecutor {
     }
 
 
+    /*
     @NotNull
     public List<P4FileRevision> getRevisionHistory(@NotNull Project project,
             @NotNull P4FileInfo files, int maxRevs)
             throws VcsException, CancellationException {
         return performAction(project, new GetRevisionHistoryTask(project, files, maxRevs));
     }
+    */
 
 
     public void deleteChangelist(@NotNull Project project, int changelistId)
@@ -586,6 +586,7 @@ public class RawServerExecutor {
         });
     }
 
+    /*
     @NotNull
     public List<P4AnnotatedLine> getAnnotationsFor(@NotNull final Project project, @NotNull final VirtualFile file, final int rev)
             throws VcsException, CancellationException {
@@ -595,6 +596,7 @@ public class RawServerExecutor {
         }
         return performAction(project, new AnnotateFileTask(project, file, revStr, fileInfoCache));
     }
+    */
 
     @NotNull
     public List<P4FileInfo> synchronizeFiles(@NotNull final Project project,

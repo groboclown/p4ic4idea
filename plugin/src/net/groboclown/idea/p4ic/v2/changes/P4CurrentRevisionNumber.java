@@ -12,12 +12,11 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.v2.history;
+package net.groboclown.idea.p4ic.v2.changes;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
-import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -25,6 +24,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
+import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,22 +34,24 @@ import org.jetbrains.annotations.Nullable;
  * spread into the past history of the file across branches, rather than
  * limited to the current file depot location.
  */
-public class P4RevisionNumber implements VcsRevisionNumber {
+public class P4CurrentRevisionNumber implements VcsRevisionNumber {
 
+    /*
     public enum RevType {
         HEAD() {
-            public int getRev(IExtendedFileSpec info) {
+            public int getRev(P4FileInfo info) {
                 return info.getHeadRev();
             }
         },
         HAVE() {
-            public int getRev(IExtendedFileSpec info) {
+            public int getRev(P4FileInfo info) {
                 return info.getHaveRev();
             }
         };
 
-        public abstract int getRev(IExtendedFileSpec info);
+        public abstract int getRev(P4FileInfo info);
     }
+    */
 
 
     private final String depotPath;
@@ -57,7 +59,7 @@ public class P4RevisionNumber implements VcsRevisionNumber {
     private final int changelist;
     private final boolean showDepotPath;
 
-    public P4RevisionNumber(@Nullable String requestedDepotPath, @Nullable final String depotPath, final int rev) {
+    public P4CurrentRevisionNumber(@Nullable String requestedDepotPath, @Nullable final String depotPath, final int rev) {
         if (rev < 0) {
             throw new IllegalArgumentException(P4Bundle.message("exception.revision.number.bad", rev));
         }
@@ -71,9 +73,16 @@ public class P4RevisionNumber implements VcsRevisionNumber {
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
 
-    public P4RevisionNumber(@Nullable String requestedDepotPath, @NotNull final IExtendedFileSpec info,
-            @NotNull RevType revType) {
-        this.depotPath = info.getDepotPathString();
+    public P4CurrentRevisionNumber(@Nullable String requestedDepotPath, @NotNull final IFileRevisionData rev) {
+        this.depotPath = rev.getDepotFileName();
+        this.rev = rev.getRevision();
+        this.changelist = rev.getChangelistId();
+        this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
+    }
+
+    /*
+    public P4CurrentRevisionNumber(@Nullable String requestedDepotPath, @NotNull final P4FileInfo info, @NotNull RevType revType) {
+        this.depotPath = info.getDepotPath();
         this.rev = revType.getRev(info);
 
         // There is no way to really tell the changelist this belongs to without performing a file history search.
@@ -81,20 +90,38 @@ public class P4RevisionNumber implements VcsRevisionNumber {
 
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
+    */
 
-    public P4RevisionNumber(@Nullable String requestedDepotPath, @NotNull final IFileRevisionData rev) {
-        this.depotPath = rev.getDepotFileName();
-        this.rev = rev.getRevision();
-        this.changelist = rev.getChangelistId();
-        this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
-    }
-
-    public P4RevisionNumber(@Nullable String requestedDepotPath, @NotNull final IFileAnnotation ann) {
+    public P4CurrentRevisionNumber(@Nullable String requestedDepotPath, @NotNull final IFileAnnotation ann) {
         this.depotPath = ann.getDepotPath();
         this.rev = ann.getUpper();
         this.changelist = -1;
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
+
+    @Deprecated
+    public P4CurrentRevisionNumber(@NotNull P4FileAction file) {
+        this.depotPath = file.getDepotPath();
+        this.rev = -1;
+        this.changelist = -1;
+        this.showDepotPath = false;
+    }
+
+    /*
+    public P4CurrentRevisionNumber(@Nullable String requestedDepotPath, @NotNull final P4FileInfo info, final int rev) {
+        if (rev < 0) {
+            throw new IllegalArgumentException(P4Bundle.message("exception.revision.number.bad", rev));
+        }
+        this.depotPath = info.getDepotPath();
+        this.rev = rev;
+
+        // There is no way to really tell the changelist this belongs to without performing a file history search.
+        this.changelist = -1;
+
+        this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
+    }
+    */
+
 
     private static boolean doShowDepotPath(@Nullable String requested, @Nullable String actual) {
         return requested != null && ! requested.equals(actual);
@@ -117,6 +144,7 @@ public class P4RevisionNumber implements VcsRevisionNumber {
     }
 
 
+    // This can run in the EDT!
     @Nullable
     public String loadContentAsString(@NotNull P4Server server, @NotNull FilePath alternate)
             throws VcsException {
@@ -178,8 +206,8 @@ public class P4RevisionNumber implements VcsRevisionNumber {
 
     @Override
     public int compareTo(@NotNull final VcsRevisionNumber o) {
-        if (o instanceof P4RevisionNumber) {
-            P4RevisionNumber that = (P4RevisionNumber) o;
+        if (o instanceof P4CurrentRevisionNumber) {
+            P4CurrentRevisionNumber that = (P4CurrentRevisionNumber) o;
             if (this.changelist > 0 && that.changelist > 0) {
                 return this.changelist - that.changelist;
             }

@@ -18,8 +18,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.diff.RevisionSelector;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.idea.p4ic.history.P4FileRevision;
 import net.groboclown.idea.p4ic.ui.revision.RevisionDialog;
+import net.groboclown.idea.p4ic.v2.history.P4FileRevision;
 import org.jetbrains.annotations.Nullable;
 
 public class P4RevisionSelector implements RevisionSelector {

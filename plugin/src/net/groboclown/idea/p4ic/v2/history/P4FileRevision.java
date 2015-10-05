@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.history;
+package net.groboclown.idea.p4ic.v2.history;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -20,11 +20,9 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.IFileRevisionData;
-import net.groboclown.idea.p4ic.config.Client;
-import net.groboclown.idea.p4ic.config.ServerConfig;
-import net.groboclown.idea.p4ic.extension.P4RevisionNumber;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.P4Exec;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,33 +47,18 @@ public class P4FileRevision implements VcsFileRevision {
     private final String author;
     private final Date date;
     private final IFileRevisionData revisionData;
-    private final ServerConfig serverConfig;
-    private final String clientName;
-
-    /**
-     *
-     * @param project project
-     * @param exec executor (for discovering the client in the future)
-     * @param rootDepotPath file path which the original getHistory was requested.
-     * @param versionDepotPath file path for the actual file retrieved
-     * @param data revision data
-     */
-    public P4FileRevision(@NotNull Project project, @NotNull P4Exec exec, @NotNull String rootDepotPath,
-            @NotNull String versionDepotPath, @Nullable IFileRevisionData data) {
-        this(project, exec.getServerConfig(), exec.getClientName(), rootDepotPath, versionDepotPath, data);
-    }
+    private final ClientServerId clientServerId;
 
 
-    public P4FileRevision(@NotNull Project project, @NotNull ServerConfig serverConfig, @NotNull String clientName,
+    public P4FileRevision(@NotNull Project project, @NotNull ClientServerId clientServerId,
             @Nullable String rootDepotPath, @NotNull P4AnnotatedLine line) {
-        this(project, serverConfig, clientName, rootDepotPath, line.getFile().getDepotPath(), line.getRevisionData());
+        this(project, clientServerId, rootDepotPath, line.getDepotPath(), line.getRevisionData());
     }
 
-    private P4FileRevision(@NotNull Project project, @NotNull ServerConfig serverConfig, @Nullable String clientName,
+    public P4FileRevision(@NotNull Project project, @NotNull ClientServerId clientServerId,
             @Nullable String rootDepotPath, @Nullable String versionDepotPath, @Nullable IFileRevisionData data) {
         this.project = project;
-        this.serverConfig = serverConfig;
-        this.clientName = clientName;
+        this.clientServerId = clientServerId;
         this.streamName = null;
         this.revisionDepotPath = data != null
                 ? data.getDepotFileName()
@@ -117,23 +100,20 @@ public class P4FileRevision implements VcsFileRevision {
 
     @Override
     public byte[] loadContent() throws IOException, VcsException {
-        Client client = getClient();
-        if (client == null) {
+        P4Server server = getServer();
+        if (server == null) {
             return null;
         }
-        return revision.loadContentAsBytes(client, null);
+        return revision.loadContentAsBytes(server, null);
     }
 
+
     @Nullable
-    private Client getClient() {
-        if (clientName == null) {
-            return null;
-        }
-        final List<Client> clients = P4Vcs.getInstance(project).getClients();
-        for (Client client : clients) {
-            if (client.isWorkingOnline() && client.getClientName().equals(clientName) &&
-                    client.getConfig().equals(serverConfig)) {
-                return client;
+    private P4Server getServer() {
+        final List<P4Server> servers = P4Vcs.getInstance(project).getP4Servers();
+        for (P4Server server: servers) {
+            if (clientServerId.equals(server.getClientServerId())) {
+                return server;
             }
         }
         return null;

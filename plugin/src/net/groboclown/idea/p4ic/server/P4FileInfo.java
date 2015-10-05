@@ -34,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.util.*;
 
+/** @deprecated */
 public class P4FileInfo {
     private static final Logger LOG = Logger.getInstance(P4FileInfo.class);
 

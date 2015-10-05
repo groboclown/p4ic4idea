@@ -11,9 +11,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.changes;
+package net.groboclown.idea.p4ic.v2.changes;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
@@ -21,18 +20,13 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeListImpl;
 import com.intellij.openapi.vcs.versionBrowser.VcsRevisionNumberAware;
 import com.perforce.p4java.core.IChangelist;
-import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4ChangelistNumber;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.history.P4ContentRevision;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 public class P4CommittedChangeList extends CommittedChangeListImpl implements VcsRevisionNumberAware {
 
@@ -41,16 +35,16 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
     @NotNull
     private final P4ChangelistNumber myRevision;
 
-    public P4CommittedChangeList(@NotNull P4Vcs vcs, @NotNull Client client, @NotNull IChangelist changelist) throws VcsException {
+    public P4CommittedChangeList(@NotNull P4Vcs vcs, @NotNull P4Server server, @NotNull IChangelist changelist) throws VcsException {
         super(changelist.getId() + ": " + changelist.getDescription(),
                 changelist.getDescription(),
                 changelist.getUsername(),
                 changelist.getId(),
                 changelist.getDate(),
-                createChanges(vcs, client, changelist.getId()));
+                createChanges(vcs, server, changelist.getId()));
         myVcs = vcs;
 
-        // Does not use the P4RevisionNumber, because this is for changelist
+        // Does not use the P4CurrentRevisionNumber, because this is for changelist
         myRevision = new P4ChangelistNumber(changelist);
     }
 
@@ -72,14 +66,19 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
 
 
     @NotNull
-    private static Collection<Change> createChanges(@NotNull P4Vcs vcs, @NotNull Client client, int changelistId) throws VcsException {
+    private static Collection<Change> createChanges(@NotNull P4Vcs vcs, @NotNull P4Server server, int changelistId) throws VcsException {
+        /*
         List<P4FileInfo> files = client.getServer().getFilesInChangelist(changelistId);
         if (files == null) {
             return Collections.emptyList();
         }
         return createChanges(vcs.getProject(), files);
+        */
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
     }
 
+    /*
     @NotNull
     private static Collection<Change> createChanges(@NotNull Project project, @NotNull List<P4FileInfo> files) {
         List<Change> ret = new ArrayList<Change>(files.size());
@@ -102,4 +101,6 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
         }
         return ret;
     }
+    */
+
 }

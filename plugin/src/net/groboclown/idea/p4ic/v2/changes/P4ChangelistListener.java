@@ -37,14 +37,6 @@ import java.util.Map.Entry;
 public class P4ChangelistListener implements ChangeListListener {
     private final static Logger LOG = Logger.getInstance(P4ChangelistListener.class);
 
-    //public static final String CHANGELIST_ADDED = P4Bundle.getString("changelist.synchronize.changelist.add");
-    public static final String CHANGELIST_REMOVED = P4Bundle.getString("changelist.synchronize.changelist.removed");
-    public static final String CHANGELIST_RENAMED = P4Bundle.getString("changelist.synchronize.changelist.renamed");
-    public static final String CHANGES_ADDED = P4Bundle.getString("changelist.synchronize.change.add");
-    //public static final String CHANGES_REMOVED = P4Bundle.getString("changelist.synchronize.change.removed");
-    public static final String CHANGES_MOVED = P4Bundle.getString("changelist.synchronize.change.moved");
-    //public static final String CHANGES_COMMENT = P4Bundle.getString("changelist.synchronize.change.comments");
-
     private final Project myProject;
     private final P4Vcs myVcs;
     private final P4ChangeListMapping changeListMapping;
@@ -144,35 +136,20 @@ public class P4ChangelistListener implements ChangeListListener {
 
 
         if (P4ChangeListId.DEFAULT_CHANGE_NAME.equals(list.getName())) {
-            // changeListRemoved ignores delete on default change list.
-            //changeListRemoved(list);
-            return;
+            // Default changelist cannot be renamed on Perforce.
+            // FIXME What should this do?  Should it delete the old changelist, and move the files into the default one?
+            throw new IllegalStateException("not implemented");
         }
 
-        // FIXME
-        throw new IllegalStateException("not implemented");
-        /*
 
         if (list instanceof LocalChangeList) {
-            final Collection<P4ChangeListId> p4idList = myVcs.getChangeListMapping().getPerforceChangelists((LocalChangeList) list);
-            if (p4idList != null) {
-                Background.runInBackground(myProject, CHANGELIST_RENAMED, myVcs.getConfiguration().getUpdateOption(), new Background.ER() {
-                    @Override
-                    public void run(@NotNull ProgressIndicator indicator) throws Exception {
-                        for (Client client: myVcs.getServers()) {
-                            for (P4ChangeListId p4id: p4idList) {
-                                if (p4id.isIn(client) && ! p4id.isDefaultChangelist()) {
-                                    P4ChangeListCache.getInstance().updateComment(client, p4id, toDescription(list));
-                                }
-                            }
-                        }
-                    }
-                });
+            for (P4Server server: myVcs.getP4Servers()) {
+                final P4ChangeListId p4cl = changeListMapping.getPerforceChangelistFor(server, (LocalChangeList) list);
+                if (p4cl != null) {
+                    server.renameChangelist(p4cl.getChangeListId(), toDescription(list));
+                }
             }
-        } else {
-            LOG.debug("+ not local; is " + list.getClass().getName());
         }
-        */
     }
 
     @Override
@@ -241,7 +218,7 @@ public class P4ChangelistListener implements ChangeListListener {
         if (changeList.getName().length() > 0) {
             sb.append(changeList.getName());
             if (changeList.getComment() != null && changeList.getComment().length() > 0) {
-                sb.append("\n");
+                sb.append("\n\n");
             }
         }
         if (changeList.getComment() != null && changeList.getComment().length() > 0) {

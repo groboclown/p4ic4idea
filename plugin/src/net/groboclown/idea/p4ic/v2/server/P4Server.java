@@ -16,12 +16,14 @@ package net.groboclown.idea.p4ic.v2.server;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
+import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
@@ -33,6 +35,8 @@ import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
+import net.groboclown.idea.p4ic.v2.history.P4AnnotatedLine;
+import net.groboclown.idea.p4ic.v2.history.P4FileRevision;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
@@ -46,6 +50,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * Top-level manager for handling communication with the Perforce server
@@ -519,6 +524,23 @@ public class P4Server {
         });
     }
 
+    public void renameChangelist(final int changeListId, final String description) {
+        if (changeListId == P4ChangeListId.P4_DEFAULT || changeListId == P4ChangeListId.P4_UNKNOWN) {
+            return;
+        }
+        connection.queueUpdates(project, new CreateUpdate() {
+            @NotNull
+            @Override
+            public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
+                PendingUpdateState update = mgr.renameChangelist(changeListId, description);
+                if (update == null) {
+                    return Collections.emptyList();
+                }
+                return Collections.singletonList(update);
+            }
+        });
+    }
+
     /**
      * @param files files to move
      * @param source used to discover which changelist will contain the files.  The changelist
@@ -672,6 +694,90 @@ public class P4Server {
         throw new IllegalStateException("not implemented");
     }
 
+    @NotNull
+    public List<P4AnnotatedLine> getAnnotationsFor(@NotNull final IFileSpec spec, final int revNumber)
+            throws VcsException, InterruptedException {
+        if (isWorkingOffline()) {
+            throw new P4DisconnectedException();
+        }
+        final Ref<VcsException> ex = new Ref<VcsException>();
+        final List<P4AnnotatedLine> ret = connection.query(project, new ServerQuery<List<P4AnnotatedLine>>() {
+            @Nullable
+            @Override
+            public List<P4AnnotatedLine> query(@NotNull final P4Exec2 exec,
+                    @NotNull final ClientCacheManager cacheManager,
+                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    throws InterruptedException {
+                try {
+                    IFileSpec usedSpec = spec;
+                    if (revNumber > 0) {
+                        usedSpec = FileSpecUtil.getAlreadyEscapedSpec(spec.getDepotPathString() + '#' + revNumber);
+                    }
+                    return P4AnnotatedLine.loadAnnotatedLines(exec,
+                            exec.getAnnotationsFor(Collections.singletonList(usedSpec)));
+                } catch (VcsException e) {
+                    ex.set(e);
+                    return null;
+                }
+            }
+        });
+        if (! ex.isNull()) {
+            throw ex.get();
+        }
+        if (ret == null) {
+            throw new P4FileException(spec.getDepotPathString());
+        }
+        return ret;
+    }
+
+    @Nullable
+    public List<P4FileRevision> getRevisionHistory(@NotNull final IExtendedFileSpec spec,
+            final int limit) throws InterruptedException {
+        return connection.query(project, new ServerQuery<List<P4FileRevision>>() {
+            @Nullable
+            @Override
+            public List<P4FileRevision> query(@NotNull final P4Exec2 exec,
+                    @NotNull final ClientCacheManager cacheManager,
+                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    throws InterruptedException {
+
+                // FIXME there's a bug here where getting the revision for a file with a special character won't return
+                // any history.  e.g.
+                // //depot/projecta/hotfix/a/test%23one.txt returns map {null=null}
+
+                Map<IFileSpec, List<IFileRevisionData>> history;
+                try {
+                    history = exec.getRevisionHistory(Collections.<IFileSpec>singletonList(spec), limit);
+                } catch (VcsException e) {
+                    alerts.addNotice(P4Bundle.message("error.revision-history", spec.getDepotPathString()), e);
+                    return null;
+                }
+                LOG.info("history for " + spec.getDepotPathString() + ": " + history);
+
+                List<P4FileRevision> ret = new ArrayList<P4FileRevision>();
+                for (Entry<IFileSpec, List<IFileRevisionData>> entry : history.entrySet()) {
+                    if (entry.getValue() == null) {
+                        LOG.info("history for " + spec.getDepotPathString() + ": null values for " + entry.getKey());
+                    } else {
+                        for (IFileRevisionData rev : entry.getValue()) {
+                            if (rev != null) {
+                                final P4FileRevision p4rev = createRevision(entry.getKey(), rev, alerts);
+                                if (p4rev != null) {
+                                    ret.add(p4rev);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Note that these are not sorted.  Sort by date.
+                Collections.sort(ret, REV_COMPARE);
+
+                return ret;
+            }
+        });
+    }
+
 
     @Override
     public String toString() {
@@ -688,5 +794,29 @@ public class P4Server {
         }
         Collections.reverse(ret);
         return ret;
+    }
+
+
+    @Nullable
+    private P4FileRevision createRevision(@NotNull IFileSpec spec,
+            @NotNull final IFileRevisionData rev, final AlertManager alerts) {
+        if (spec.getDepotPathString() == null && rev.getDepotFileName() == null) {
+            alerts.addNotice(P4Bundle.message("error.revision-null", spec), null);
+            return null;
+        }
+        LOG.info("Finding location of " + spec);
+        // Note: check above performs the NPE checks.
+        return new P4FileRevision(project, getClientServerId(),
+                spec.getDepotPathString(), rev.getDepotFileName(), rev);
+    }
+
+    private static final RevCompare REV_COMPARE = new RevCompare();
+
+    private static class RevCompare implements Comparator<P4FileRevision> {
+        @Override
+        public int compare(final P4FileRevision o1, final P4FileRevision o2) {
+            // compare in reverse order
+            return o2.getRevisionDate().compareTo(o1.getRevisionDate());
+        }
     }
 }

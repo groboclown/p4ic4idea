@@ -159,6 +159,11 @@ public class ClientCacheManager {
         return changeLists.moveFileToChangelist(files, source, changeListId);
     }
 
+    @Nullable
+    public PendingUpdateState renameChangelist(final int changeListId, final String description) {
+        return changeLists.renameChangelist(changeListId, description);
+    }
+
 
     private class CacheImpl implements Cache {
 

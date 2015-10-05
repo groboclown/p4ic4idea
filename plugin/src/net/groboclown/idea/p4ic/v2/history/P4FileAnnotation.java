@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.history;
+package net.groboclown.idea.p4ic.v2.history;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.annotate.*;
@@ -19,10 +19,8 @@ import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.text.DateFormatUtil;
-import net.groboclown.idea.p4ic.config.Client;
-import net.groboclown.idea.p4ic.config.ServerConfig;
-import net.groboclown.idea.p4ic.extension.P4RevisionNumber;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,8 +32,7 @@ public class P4FileAnnotation extends FileAnnotation {
     private final P4RevisionNumber fileRev;
     private final List<P4AnnotatedLine> annotations;
     private final String content;
-    private final ServerConfig serverConfig;
-    private final String clientName;
+    private final ClientServerId clientServerId;
 
     private final LineAnnotationAspect[] aspects = new LineAnnotationAspect[]{
             new P4LineAnnotationAspect(LineAnnotationAspect.AUTHOR, true) {
@@ -60,7 +57,7 @@ public class P4FileAnnotation extends FileAnnotation {
     };
 
 
-    public P4FileAnnotation(@NotNull Project project, @NotNull Client client, @NotNull VirtualFile file,
+    public P4FileAnnotation(@NotNull Project project, @NotNull ClientServerId clientServerId, @NotNull VirtualFile file,
             @NotNull P4RevisionNumber fileRev, @NotNull List<P4AnnotatedLine> annotations, @NotNull String content) {
         super(project);
         this.project = project;
@@ -68,8 +65,7 @@ public class P4FileAnnotation extends FileAnnotation {
         this.fileRev = fileRev;
         this.annotations = annotations;
         this.content = content;
-        this.serverConfig = client.getConfig();
-        this.clientName = client.getClientName();
+        this.clientServerId = clientServerId;
     }
 
     /**
@@ -186,7 +182,7 @@ public class P4FileAnnotation extends FileAnnotation {
         Set<VcsFileRevision> revs = new HashSet<VcsFileRevision>();
         for (P4AnnotatedLine line : annotations) {
             if (line != null) {
-                P4FileRevision fileRev = new P4FileRevision(project, serverConfig, clientName,
+                P4FileRevision fileRev = new P4FileRevision(project, clientServerId,
                         this.fileRev.getDepotPath(), line);
                 revs.add(fileRev);
             }
@@ -196,8 +192,7 @@ public class P4FileAnnotation extends FileAnnotation {
 
     @Override
     public boolean revisionsNotEmpty() {
-        // TODO this is a slow implementation.  There should be
-        // some easy speed-up opportunities here.
+        // TODO this is a slow implementation.  There should be some easy speed-up opportunities here.
         List<VcsFileRevision> revs = getRevisions();
         return revs != null && !revs.isEmpty();
     }

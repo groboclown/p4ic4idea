@@ -15,7 +15,7 @@
 package net.groboclown.idea.p4ic.ui.revision;
 
 import com.intellij.openapi.diagnostic.Logger;
-import net.groboclown.idea.p4ic.history.P4FileRevision;
+import net.groboclown.idea.p4ic.v2.history.P4FileRevision;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

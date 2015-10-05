@@ -150,6 +150,21 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 params);
     }
 
+    @Nullable
+    public PendingUpdateState renameChangelist(final int changeListId, final String description) {
+        if (changeListId == P4ChangeListId.P4_UNKNOWN || changeListId == P4ChangeListId.P4_DEFAULT) {
+            return null;
+        }
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changeListId);
+        params.put(UpdateParameterNames.DESCRIPTION.getKeyName(), description);
+
+        return new PendingUpdateState(UpdateAction.CHANGE_CHANGELIST_DESCRIPTION,
+                Collections.singleton(Integer.toString(changeListId)),
+                params);
+    }
+
 
     @Override
     protected void innerLoadServerCache(@NotNull final P4Exec2 exec, @NotNull final AlertManager alerts) {

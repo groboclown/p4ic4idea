@@ -21,8 +21,6 @@ import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.idea.p4ic.history.P4AnnotatedLine;
-import net.groboclown.idea.p4ic.history.P4FileRevision;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -190,11 +188,13 @@ public class ServerExecutor {
         return exec.loadOpenFiles(project, roots);
     }
 
+    /*
     @NotNull
     public List<P4FileRevision> getRevisionHistory(@NotNull P4FileInfo file, int maxRevs)
             throws VcsException {
         return exec.getRevisionHistory(project, file, maxRevs);
     }
+    */
 
     @NotNull
     public List<P4StatusMessage> revertFiles(@NotNull List<FilePath> filePaths) throws VcsException {
@@ -250,11 +250,13 @@ public class ServerExecutor {
         return exec.loadDeepFileInfo(project, paths);
     }
 
+    /*
     @NotNull
     public List<P4AnnotatedLine> getAnnotationsFor(@NotNull VirtualFile file, int rev)
             throws VcsException, CancellationException {
         return exec.getAnnotationsFor(project, file, rev);
     }
+    */
 
     public void checkConnection() throws P4InvalidConfigException, CancellationException {
         exec.checkConnection(project);

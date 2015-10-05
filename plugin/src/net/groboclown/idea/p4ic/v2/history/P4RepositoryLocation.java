@@ -11,26 +11,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.history;
+package net.groboclown.idea.p4ic.v2.history;
 
 import com.intellij.openapi.vcs.RepositoryLocation;
 import com.intellij.openapi.vcs.VcsException;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
 
-public class P4SimpleRepositoryLocation implements RepositoryLocation {
-    private final String depotPath;
+public class P4RepositoryLocation implements RepositoryLocation {
+    private final IExtendedFileSpec file;
 
-    public P4SimpleRepositoryLocation(String depotPath) {
-        this.depotPath = depotPath;
+    public P4RepositoryLocation(IExtendedFileSpec file) {
+        this.file = file;
+    }
+
+    public IExtendedFileSpec getP4FileInfo() {
+        return file;
     }
 
     @Override
     public String toPresentableString() {
-        return depotPath;
+        return file.getDepotPathString();
     }
 
     @Override
     public String getKey() {
-        return depotPath;
+        return file.getDepotPathString();
     }
 
     @Override

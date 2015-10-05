@@ -26,7 +26,6 @@ import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.v2.history.P4ContentRevision;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
@@ -63,6 +62,13 @@ public class ChangeListSync {
         this.alerts = alerts;
         this.changeListMapping = P4ChangeListMapping.getInstance(project);
     }
+
+
+
+    // FIXME
+    // FIXME There's some binding issues here.  Need to dig into these.
+    // FIXME
+
 
 
     /**
@@ -301,7 +307,7 @@ public class ChangeListSync {
 
     private Change createChange(@NotNull P4FileAction file) {
         // FIXME looks like we need 2 kinds of revision classes: one for this method, one for the history methods.
-        ContentRevision beforeRev = new P4ContentRevision(project, file);
+        ContentRevision beforeRev = new P4CurrentContentRevision(project, file);
         ContentRevision afterRev = new CurrentContentRevision(file.getFile());
         return new Change(beforeRev, afterRev, file.getClientFileStatus());
     }

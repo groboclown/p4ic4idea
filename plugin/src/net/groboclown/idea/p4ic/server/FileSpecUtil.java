@@ -70,7 +70,7 @@ public class FileSpecUtil {
 
 
     @NotNull
-    static IFileSpec getOneSpecWithRev(@NotNull FilePath file, int rev) throws P4Exception {
+    public static IFileSpec getOneSpecWithRev(@NotNull FilePath file, int rev) throws P4Exception {
         if (file.isDirectory()) {
             throw new P4FileException(P4Bundle.message("error.filespec.directory"), file);
         }
@@ -90,7 +90,7 @@ public class FileSpecUtil {
         //    ret.setBaseRev(rev);
         //    ret.setWorkRev(rev);
         //}
-        return spec.get(0);
+        return ret;
     }
 
 
@@ -252,6 +252,22 @@ public class FileSpecUtil {
         return ret.toString();
     }
 
+
+    /**
+     * Use only when dealing with the depot paths returned directly from the server,
+     * where you KNOW that the value returned is already escaped.
+     *
+     * @param depotPath
+     * @return
+     */
+    @NotNull
+    public static IFileSpec getAlreadyEscapedSpec(@NotNull String depotPath) {
+        final List<IFileSpec> ret = FileSpecBuilder.makeFileSpecList(depotPath);
+        if (ret == null || ret.size() != 1 || ret.get(0) == null) {
+            throw new IllegalStateException("P4 returned " + ret + " for depot path " + depotPath);
+        }
+        return ret.get(0);
+    }
 
     /**
      * Only use if you know what you're doing; specifically, the P4Exec objects

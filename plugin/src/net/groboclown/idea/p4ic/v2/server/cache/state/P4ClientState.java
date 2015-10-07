@@ -35,12 +35,14 @@ public class P4ClientState {
     private final Set<P4ChangeListState> changes = new HashSet<P4ChangeListState>();
     private final Set<P4FileSyncState> knownHave = new HashSet<P4FileSyncState>();
     private final Set<P4FileUpdateState> updatedFiles = new HashSet<P4FileUpdateState>();
+    private final JobStatusListState jobStatusList;
 
     public P4ClientState(final boolean isServerCaseInsensitive, @NotNull final ClientServerId clientServerId,
-            @NotNull final P4WorkspaceViewState workspace) {
+            @NotNull final P4WorkspaceViewState workspace, final JobStatusListState jobStatusList) {
         this.isServerCaseInsensitive = isServerCaseInsensitive;
         this.clientServerId = clientServerId;
         this.workspace = workspace;
+        this.jobStatusList = jobStatusList;
     }
 
     @NotNull
@@ -67,6 +69,11 @@ public class P4ClientState {
         return changes;
     }
 
+    @NotNull
+    public JobStatusListState getJobStatusList() {
+        return jobStatusList;
+    }
+
 
     public void serialize(@NotNull Element wrapper, @NotNull EncodeReferences refs) {
         wrapper.setAttribute("serverConnection", clientServerId.getServerConfigId());
@@ -79,6 +86,12 @@ public class P4ClientState {
             Element el = new Element("workspace");
             wrapper.addContent(el);
             workspace.serialize(el, refs);
+        }
+
+        {
+            Element el = new Element("job-status");
+            wrapper.addContent(el);
+            jobStatusList.serialize(el, refs);
         }
 
         for (P4ChangeListState change : changes) {
@@ -113,9 +126,15 @@ public class P4ClientState {
             return null;
         }
 
+        Element jobStatusEl = state.getChild("job-status");
+        JobStatusListState jobStatusList = new JobStatusListState();
+        if (jobStatusEl != null) {
+            jobStatusList = JobStatusListState.deserialize(state, refs);
+        }
+
         ClientServerId clientServerId = ClientServerId.create(serverConnection, clientName);
         final P4ClientState ret = new P4ClientState(isServerCaseInsensitive, clientServerId,
-                workspace);
+                workspace, jobStatusList);
 
         for (Element el: state.getChildren("ch")) {
             P4ChangeListState change = P4ChangeListState.deserialize(el, refs);

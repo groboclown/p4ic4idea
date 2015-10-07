@@ -479,14 +479,15 @@ public class FileSpec extends ServerResource implements IFileSpec {
 	/**
 	 * @see com.perforce.p4java.core.file.IFileSpec#getPreferredPath()
 	 */
-	public FilePath getPreferredPath() {		
-		if (this.originalPath != null) {
+	public FilePath getPreferredPath() {
+		// groboclown: extra null checking
+		if (this.originalPath != null && this.originalPath.getPathString() != null) {
 			return this.originalPath;
-		} else if (this.depotPath != null) {
+		} else if (this.depotPath != null && this.depotPath.getPathString() != null) {
 			return this.depotPath;
-		} else if (this.clientPath != null) {
+		} else if (this.clientPath != null && this.clientPath.getPathString() != null) {
 			return this.clientPath;
-		} else if (this.localPath != null) {
+		} else if (this.localPath != null && this.localPath.getPathString() != null) {
 			return this.localPath;
 		}
 		
@@ -987,7 +988,12 @@ public class FileSpec extends ServerResource implements IFileSpec {
 	 * @see com.perforce.p4java.core.file.IFileSpec#setLocalPath(String)
 	 */
 	public void setLocalPath(String pathStr) {
-		setPath(new FilePath(PathType.LOCAL, pathStr));
+		// groboclown: fix how nulls work
+		if (pathStr == null) {
+			localPath = null;
+		} else {
+			setPath(new FilePath(PathType.LOCAL, pathStr));
+		}
 	}
 
 	/**

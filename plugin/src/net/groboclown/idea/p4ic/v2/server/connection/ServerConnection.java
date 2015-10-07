@@ -122,7 +122,7 @@ public class ServerConnection {
 
 
     public void queueAction(@NotNull Project project, @NotNull ServerUpdateAction action) {
-        LOG.info("Queueing action for execution: " + action);
+        LOG.info("Queueing action for execution: " + action, new Throwable("stack capture"));
         pendingUpdates.add(new UpdateAction(project, action));
     }
 
@@ -286,6 +286,8 @@ public class ServerConnection {
             LOG.info("Polling pending updates for action");
             action = pendingUpdates.take();
         }
+        // FIXME debug
+        LOG.info("pulled action " + action + "; pending size " + pendingUpdates.size() + "; redo size " + redo.size());
         return action;
     }
 
@@ -303,44 +305,49 @@ public class ServerConnection {
     class QueueRunner implements Runnable {
         @Override
         public void run() {
-            try {
-                while (!disposed) {
-                    // Wait for something to do first
-                    final UpdateAction action;
-                    try {
-                        action = pullNextAction();
-                    } catch (InterruptedException e) {
-                        // this is fine.
-                        LOG.info(e);
-                        continue;
-                    }
-
-
-                    try {
-                        boolean didRun = synchronizer.runBackgroundAction(new ActionRunner<Void>() {
-                            @Override
-                            public Void perform() throws InterruptedException {
-                                try {
-                                    action.action.perform(getExec(action.project),
-                                            cacheManager, ServerConnection.this, alertManager);
-                                } catch (P4InvalidConfigException e) {
-                                    alertManager.addCriticalError(new ConfigurationProblemHandler(), e);
-                                    // do not requeue the action
-                                }
-                                return null;
-                            }
-                        });
-                        if (!didRun) {
-                            // Had to wait for the action to run, so requeue it and try again.
-                            pushAbortedAction(action);
-                        }
-                    } catch (InterruptedException e) {
-                        // do not requeue action
-                        LOG.info(e);
-                    }
+            while (!disposed) {
+                // Wait for something to do first
+                final UpdateAction action;
+                try {
+                    action = pullNextAction();
+                } catch (InterruptedException e) {
+                    // this is fine.
+                    LOG.info(e);
+                    continue;
                 }
-            } catch (Exception e) {
-                LOG.error(e);
+
+
+                try {
+                    boolean didRun = synchronizer.runBackgroundAction(new ActionRunner<Void>() {
+                        @Override
+                        public Void perform() throws InterruptedException {
+                            LOG.info("Running action " + action);
+                            try {
+                                action.action.perform(getExec(action.project),
+                                        cacheManager, ServerConnection.this, alertManager);
+                                cacheManager.removePendingUpdateStates(action.action.getPendingUpdateStates());
+                            } catch (P4InvalidConfigException e) {
+                                alertManager.addCriticalError(new ConfigurationProblemHandler(), e);
+                                // do not requeue the action
+                            }
+                            return null;
+                        }
+                    });
+                    if (!didRun) {
+                        // Had to wait for the action to run, so requeue it and try again.
+                        pushAbortedAction(action);
+                    }
+                } catch (InterruptedException e) {
+                    // do not requeue action
+                    LOG.info(e);
+                } catch (ThreadDeath t) {
+                    throw t;
+                } catch (VirtualMachineError e) {
+                    throw e;
+                } catch (Throwable e) {
+                    // do not requeue action
+                    LOG.error(e);
+                }
             }
         }
     }

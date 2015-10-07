@@ -21,6 +21,7 @@ import org.jdom.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -55,6 +56,15 @@ public class P4ChangeListState extends CachedState {
         this.id = dummyChangeListId;
     }
 
+    public P4ChangeListState(@NotNull P4ChangeListState remote) {
+        this.id = remote.getChangelistId();
+        this.comment = remote.getComment();
+        this.jobs.addAll(remote.getJobs());
+        this.isShelved = remote.isShelved();
+        this.isRestricted = remote.isRestricted();
+        this.isDeleted = remote.isDeleted();
+    }
+
 
     public boolean isDefault() {
         return id == 0;
@@ -72,8 +82,17 @@ public class P4ChangeListState extends CachedState {
         this.jobs.add(job);
     }
 
+    @NotNull
+    public Set<P4JobState> getJobs() {
+        return Collections.unmodifiableSet(jobs);
+    }
+
     public String getComment() {
         return comment;
+    }
+
+    public void setComment(@NotNull String comment) {
+        this.comment = comment;
     }
 
     public void setDeleted(final boolean deleted) {
@@ -83,7 +102,15 @@ public class P4ChangeListState extends CachedState {
     public boolean isDeleted() {
         return isDeleted;
     }
-    
+
+    public boolean isShelved() {
+        return isShelved;
+    }
+
+    public boolean isRestricted() {
+        return isRestricted;
+    }
+
     @Override
     protected void serialize(@NotNull final Element wrapper, @NotNull final EncodeReferences refs) {
         serializeDate(wrapper);

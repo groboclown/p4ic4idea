@@ -37,6 +37,7 @@
 package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.ThrowableComputable;
 import org.jetbrains.annotations.NotNull;
 
@@ -54,6 +55,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * one-per-application.  However, each project has their own requirements.
  */
 class Synchronizer {
+    private static final Logger LOG = Logger.getInstance(Synchronizer.class);
+
 
     // Locks global to the application.
 
@@ -99,6 +102,7 @@ class Synchronizer {
         try {
             long expires = System.currentTimeMillis() + lockWaitTimeMillis;
             while (inCriticalError) {
+                LOG.info("Waiting for critical errors to clear");
                 waited = true;
                 if (lockWaitTimeMillis < 0) {
                     alertCriticalActiveCondition.await();
@@ -158,6 +162,7 @@ class Synchronizer {
             try {
                 long expires = System.currentTimeMillis() + lockWaitTimeMillis;
                 while (!isOnline) {
+                    LOG.info("Waiting for online status");
                     waited = true;
                     if (lockWaitTimeMillis < 0) {
                         offlineCondition.await();
@@ -178,7 +183,6 @@ class Synchronizer {
         class ConnectionSynchronizer {
             private final Lock connectionLock = new ReentrantLock();
             private long connectionWaitTimeMillis = 1000 * 15;
-
 
             <T> T runImmediateAction(@NotNull final ActionRunner<T> runner) throws InterruptedException {
                 // Acquire the IDE read lock.

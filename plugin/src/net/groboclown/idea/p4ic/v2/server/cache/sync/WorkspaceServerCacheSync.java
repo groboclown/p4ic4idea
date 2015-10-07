@@ -22,6 +22,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientViewMapping;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
@@ -87,7 +88,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
      * @return update states
      */
     @NotNull
-    public Collection<P4FileUpdateState> fromOpenedToAction(@NotNull final List<IFileSpec> fileSpecs,
+    public Collection<P4FileUpdateState> fromOpenedToAction(@NotNull final List<IExtendedFileSpec> fileSpecs,
             @NotNull AlertManager alerts) {
         ServerConnection.assertInServerConnection();
 

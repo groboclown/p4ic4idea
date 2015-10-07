@@ -50,7 +50,7 @@ public enum UpdateAction {
     // Changelists are indirectly created through the REOPEN_FILES_INTO_CHANGELIST action.
     //CREATE_CHANGELIST(UpdateGroup.CHANGELIST,
     //        UpdateParameterNames.CHANGELIST, UpdateParameterNames.DESCRIPTION),
-    DELETE_CHANGELIST(UpdateGroup.CHANGELIST,
+    DELETE_CHANGELIST(UpdateGroup.CHANGELIST_DELETE,
             UpdateParameterNames.CHANGELIST),
 
     SET_JOB_DETAIL(UpdateGroup.JOB,
@@ -84,7 +84,7 @@ public enum UpdateAction {
 
     // A hybrid action, due to the nature of creating local changelists and their relationship to
     // files moved into them.
-    REOPEN_FILES_INTO_CHANGELIST(UpdateGroup.CHANGELIST,
+    REOPEN_FILES_INTO_CHANGELIST(UpdateGroup.CHANGELIST_FILES,
             UpdateParameterNames.CHANGELIST, UpdateParameterNames.DESCRIPTION,
             UpdateParameterNames.FIELD),
 
@@ -257,6 +257,7 @@ public enum UpdateAction {
         // Note that the description gives a complete list of expected actions, whereas
         // the field "action" does not.
         switch (action) {
+            case ADD:
             case ADD_EDIT:
                 return ADD_EDIT_FILE;
             case EDIT:

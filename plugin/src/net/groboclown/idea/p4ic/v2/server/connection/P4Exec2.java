@@ -20,15 +20,13 @@ import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.*;
-import com.perforce.p4java.core.file.IExtendedFileSpec;
-import com.perforce.p4java.core.file.IFileAnnotation;
-import com.perforce.p4java.core.file.IFileRevisionData;
-import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.core.file.*;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.generic.core.Changelist;
+import com.perforce.p4java.impl.generic.core.file.ExtendedFileSpec;
 import com.perforce.p4java.impl.generic.core.file.FilePath;
-import com.perforce.p4java.impl.generic.core.file.FileSpec;
+import com.perforce.p4java.impl.generic.core.file.FilePath.PathType;
 import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
@@ -64,11 +62,6 @@ import static net.groboclown.idea.p4ic.server.P4StatusMessage.getErrors;
  */
 public class P4Exec2 {
     private static final Logger LOG = Logger.getInstance(P4Exec2.class);
-
-    // Default list of status, in case of a problem.
-    public static final List<String> DEFAULT_JOB_STATUS = Arrays.asList(
-            "open", "suspended", "closed"
-    );
 
     private final Project project;
     private final ClientExec exec;
@@ -193,12 +186,12 @@ public class P4Exec2 {
      * @throws CancellationException
      */
     @NotNull
-    public MessageResult<List<IFileSpec>> loadOpenedFiles(@NotNull final List<IFileSpec> openedSpecs, final boolean fast)
+    public MessageResult<List<IExtendedFileSpec>> loadOpenedFiles(@NotNull final List<IFileSpec> openedSpecs, final boolean fast)
             throws VcsException, CancellationException {
         LOG.debug("loading open files " + openedSpecs);
-        return exec.runWithClient(project, new ClientExec.WithClient<MessageResult<List<IFileSpec>>>() {
+        return exec.runWithClient(project, new ClientExec.WithClient<MessageResult<List<IExtendedFileSpec>>>() {
             @Override
-            public MessageResult<List<IFileSpec>> run(@NotNull final IOptionsServer server, @NotNull final IClient client,
+            public MessageResult<List<IExtendedFileSpec>> run(@NotNull final IOptionsServer server, @NotNull final IClient client,
                     @NotNull final ClientExec.ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
                     P4Exception {
@@ -469,17 +462,7 @@ public class P4Exec2 {
                 count.invoke("getFileStatus");
                 GetExtendedFilesOptions opts = new GetExtendedFilesOptions(
                     "-m", Integer.toString(files.size()));
-                final List<IExtendedFileSpec> specs = server.getExtendedFiles(files, opts);
-
-                // Make sure the specs are unescaped on return
-                for (IExtendedFileSpec spec: specs) {
-                    spec.setDepotPath(FileSpecUtil.unescapeP4PathNullable(spec.getDepotPathString()));
-                    spec.setClientPath(FileSpecUtil.unescapeP4PathNullable(spec.getClientPathString()));
-                    spec.setOriginalPath(FileSpecUtil.unescapeP4PathNullable(spec.getOriginalPathString()));
-                    spec.setLocalPath(FileSpecUtil.unescapeP4PathNullable(spec.getLocalPathString()));
-                    spec.setServer(null);
-                }
-                return specs;
+                return getExtendedFiles(files, server);
             }
         });
     }
@@ -724,12 +707,12 @@ public class P4Exec2 {
                         return values.get("Status");
                     }
                     LOG.info("No Status values listed in job spec");
-                    return DEFAULT_JOB_STATUS;
+                    return P4Job.DEFAULT_JOB_STATUS;
                 }
             });
         } catch (VcsException e) {
             LOG.info("Could not access the job spec", e);
-            return DEFAULT_JOB_STATUS;
+            return P4Job.DEFAULT_JOB_STATUS;
         }
     }
 
@@ -796,47 +779,75 @@ public class P4Exec2 {
 
 
     @NotNull
-    private MessageResult<List<IFileSpec>> loadFstatForFileResult(@NotNull IOptionsServer server,
+    private MessageResult<List<IExtendedFileSpec>> loadFstatForFileResult(@NotNull IOptionsServer server,
             @NotNull List<IFileSpec> files, boolean markFileNotFoundAsValid) throws P4JavaException, P4FileException {
         // We will need to get the full information on these files, so grab that, too.
         // We keep a list of all the returned specs that were messages, and include the
         // specs for the fstat results.  The result from the "opened" operation will
         // only ever return the depot path.
-        List<IFileSpec> retSpecs = new ArrayList<IFileSpec>(files.size());
+        List<IExtendedFileSpec> retSpecs = new ArrayList<IExtendedFileSpec>(files.size());
         List<IFileSpec> fstatSpecs = new ArrayList<IFileSpec>(files.size());
         for (IFileSpec spec : files) {
             if (spec.getDepotPathString() != null &&
                     (P4StatusMessage.isValid(spec) || P4StatusMessage.isFileNotFoundError(spec))) {
                 // File is either in Perforce, or not in Perforce but is added for open,
                 // or something else.
-                // FIXME DEBUG
-                String oldPath = spec.getDepotPathString();
-
                 // the old path is already escaped.  just shove it into a new file spec to
                 // strip off any extra information we don't want to query.
-                spec = new FileSpec(spec.getDepotPathString(), false);
-                LOG.info(" -+- for fstat reading: mapped " + oldPath + " to " + spec.getPreferredPathString());
-
+                spec = FileSpecUtil.getAlreadyEscapedSpec(spec.getDepotPathString());
                 fstatSpecs.add(spec);
             } else {
-                retSpecs.add(spec);
+                // FIXME debug
+                LOG.info("Found spec message (not going to fstat on it): " + spec.getOpStatus() + "/" + spec.getStatusMessage());
+                retSpecs.add(new ExtendedFileSpec(spec.getStatusMessage()));
             }
         }
         if (! fstatSpecs.isEmpty()) {
-            GetExtendedFilesOptions opts = new GetExtendedFilesOptions(
-                    "-m", Integer.toString(fstatSpecs.size()));
-            final List<IExtendedFileSpec> specs = server.getExtendedFiles(fstatSpecs, opts);
-
-            // Make sure the specs are unescaped on return
-            for (IExtendedFileSpec spec : specs) {
-                spec.setDepotPath(FileSpecUtil.unescapeP4PathNullable(spec.getDepotPathString()));
-                spec.setClientPath(FileSpecUtil.unescapeP4PathNullable(spec.getClientPathString()));
-                spec.setOriginalPath(FileSpecUtil.unescapeP4PathNullable(spec.getOriginalPathString()));
-                spec.setLocalPath(FileSpecUtil.unescapeP4PathNullable(spec.getLocalPathString()));
-                spec.setServer(null);
-                retSpecs.add(spec);
-            }
+            final List<IExtendedFileSpec> fstatRet = getExtendedFiles(fstatSpecs, server);
+            retSpecs.addAll(fstatRet);
         }
         return MessageResult.create(retSpecs, markFileNotFoundAsValid);
+    }
+
+
+
+    private List<IExtendedFileSpec> getExtendedFiles(@NotNull List<IFileSpec> fstatSpecs,
+            @NotNull IOptionsServer server) throws P4JavaException {
+        GetExtendedFilesOptions opts = new GetExtendedFilesOptions(
+                "-m", Integer.toString(fstatSpecs.size()));
+        final List<IExtendedFileSpec> specs = server.getExtendedFiles(fstatSpecs, opts);
+
+        // Make sure the specs are unescaped on return
+        for (IExtendedFileSpec spec : specs) {
+            //LOG.info(" >>> " + spec.getDepotPathString());
+            // this needs to be done *juuust* right, otherwise it escapes for us.
+            spec.setPath(new FilePath(PathType.DEPOT,
+                    FileSpecUtil.unescapeP4PathNullable(spec.getDepotPathString()),
+                    true));
+            // client path string is already unescaped, so don't touch it
+            //spec.setClientPath(FileSpecUtil.unescapeP4PathNullable(spec.getClientPathString()));
+
+            // original is usually messed up - it strips off the necessary escaping
+            // (e.g. if path is //a@b, this will be //a), so we make it look identical
+            // to the depot path.
+            spec.setPath(new FilePath(PathType.ORIGINAL,
+                    FileSpecUtil.unescapeP4PathNullable(spec.getDepotPathString()),
+                    true));
+
+            // local path is almost always null, so explicitly make it so
+            // spec.setLocalPath(null);
+
+            //LOG.info(" depot " + spec.getDepotPathString());
+            //LOG.info(" client: " + spec.getClientPathString());
+
+            // an "unknown" action with null head action means it's been
+            // open for add.  This looks like a weird bug with the P4Java API
+            if (spec.getAction() == FileAction.UNKNOWN && spec.getHeadAction() == null) {
+                spec.setAction(FileAction.ADD);
+            }
+
+            spec.setServer(null);
+        }
+        return specs;
     }
 }

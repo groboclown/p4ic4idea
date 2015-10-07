@@ -14,7 +14,6 @@
 
 package net.groboclown.idea.p4ic.v2.server.connection;
 
-import net.groboclown.idea.p4ic.config.Client;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;

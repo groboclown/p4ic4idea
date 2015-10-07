@@ -17,7 +17,7 @@ package net.groboclown.idea.p4ic.v2.server.cache.sync;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
@@ -56,7 +56,7 @@ interface Cache {
 
     @NotNull
     Collection<P4FileUpdateState> fromOpenedToAction(
-            @NotNull List<IFileSpec> validSpecs, @NotNull AlertManager alerts);
+            @NotNull List<IExtendedFileSpec> validSpecs, @NotNull AlertManager alerts);
 
     /**
      * Called when the server state is found to be horribly out-of-sync

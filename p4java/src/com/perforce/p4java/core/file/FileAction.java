@@ -16,6 +16,8 @@ import com.perforce.p4java.exception.P4JavaError;
  */
 
 public enum FileAction {
+	// groboclown: add ADD action
+	ADD,
 	ADD_EDIT,
 	BRANCH,
 	EDIT,

@@ -436,6 +436,12 @@ public class P4Server {
         connection.queueUpdates(project, new CreateUpdate() {
             @Override
             public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
+
+                // FIXME rollback implementation
+                // For rollback, we can use the internal IDE history to capture what to rollback to.
+                // Need to inspect their API around that.
+
+
                 List<PendingUpdateState> updates = new ArrayList<PendingUpdateState>();
                 for (VirtualFile file : files) {
                     final PendingUpdateState update = mgr.addOrEditFile(FilePathUtil.getFilePath(file), changelistId);
@@ -493,6 +499,31 @@ public class P4Server {
         throw new IllegalStateException("not implemented");
     }
 
+    public void revertFiles(@NotNull final List<FilePath> files) {
+        if (files.isEmpty()) {
+            return;
+        }
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    public void revertUnchangedFiles(@NotNull final List<FilePath> filePaths) {
+        if (filePaths.isEmpty()) {
+            return;
+        }
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+
+    public void synchronizeFiles(@NotNull final List<FilePath> files, final int revisionNumber,
+            @Nullable final String syncSpec, final boolean force, @NotNull final List<VcsException> exceptions) {
+        if (files.isEmpty()) {
+            return;
+        }
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
 
     public Collection<P4ChangeListValue> getOpenChangeLists() throws InterruptedException {
         return connection.cacheQuery(new CacheQuery<Collection<P4ChangeListValue>>() {
@@ -542,14 +573,15 @@ public class P4Server {
     }
 
     /**
-     * @param files files to move
+     * @param filePaths files to move
      * @param source used to discover which changelist will contain the files.  The changelist
      *               ID isn't necessary to pass in, as this will do discovery in the case of the
      * @param changeListMapping the mapping between p4 changes and the IDEA changes.
      */
-    public void moveFilesToChange(@NotNull final List<FilePath> files, @NotNull final LocalChangeList source,
+    public void moveFilesToChange(@NotNull List<FilePath> filePaths, @NotNull final LocalChangeList source,
             final P4ChangeListMapping changeListMapping) {
-        if (! files.isEmpty()) {
+        if (! filePaths.isEmpty()) {
+            final List<FilePath> filePathCopy = new ArrayList<FilePath>(filePaths);
             connection.queueUpdates(project, new CreateUpdate() {
                 @NotNull
                 @Override
@@ -563,14 +595,28 @@ public class P4Server {
                     // changelists around until the associated files used it, and that would be
                     // a mess to properly detect and clean up.
 
+                    // To add to the mess, this method can be called by the P4ChangelistListener
+                    // after ChangeListSync causes things to move into the correct changelist.
+                    // This can lead to all kinds of terrible performance issues.
+
                     P4ChangeListId clid = changeListMapping.getPerforceChangelistFor(P4Server.this, source);
                     if (clid == null) {
                         clid = mgr.reserveLocalChangelistId();
                         // make sure we create this association in the changelist mapping.
                         P4ChangeListMapping.getInstance(project).bindChangelists(source, clid);
+                    } else {
+                        // quick check to see if we already have that file in that changelist.
+                        final Collection<P4FileAction> opened = mgr.getCachedOpenFiles();
+                        for (P4FileAction action : opened) {
+                            if (action.getChangeList() == clid.getChangeListId() &&
+                                    filePathCopy.contains(action.getFile())) {
+                                LOG.info("Ignoring move-to-changelist " + clid + " request for " + action.getFile());
+                                filePathCopy.remove(action.getFile());
+                            }
+                        }
                     }
 
-                    PendingUpdateState update = mgr.moveFilesToChangelist(files, source, clid.getChangeListId());
+                    PendingUpdateState update = mgr.moveFilesToChangelist(filePathCopy, source, clid.getChangeListId());
                     if (update == null) {
                         return Collections.emptyList();
                     }
@@ -774,6 +820,39 @@ public class P4Server {
                 Collections.sort(ret, REV_COMPARE);
 
                 return ret;
+            }
+        });
+    }
+
+    @NotNull
+    public Collection<String> getJobStatusValues() throws InterruptedException {
+        final Collection<String> ret = connection.cacheQuery(new CacheQuery<Collection<String>>() {
+            @Override
+            public Collection<String> query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
+                if (isWorkingOnline()) {
+                    connection.query(project, mgr.createJobStatusListRefreshQuery());
+                }
+                return mgr.getCachedJobStatusList();
+            }
+        });
+        if (ret == null) {
+            return Collections.emptyList();
+        }
+        return ret;
+    }
+
+    @NotNull
+    public Map<String, P4Job> getJobsForIds(@NotNull final Collection<String> jobId) throws InterruptedException {
+        if (jobId.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return connection.cacheQuery(new CacheQuery<Map<String, P4Job>>() {
+            @Override
+            public Map<String, P4Job> query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
+                if (isWorkingOnline()) {
+                    connection.query(project, mgr.createJobRefreshQuery(jobId));
+                }
+                return mgr.getCachedJobIds(jobId);
             }
         });
     }

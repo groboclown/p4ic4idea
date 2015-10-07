@@ -38,9 +38,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
-// FIXME the corresponding generated xml file seems to be
-// removed either when the plugin is updated, or when the IDE is upgraded.
-
 /**
  * Top level state storage for the view of all the clients.  This is per workspace.
  * Now, some workspaces may share clients, but if we allow this, then the cached
@@ -87,8 +84,10 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
                     isServerCaseInsensitive = SystemInfo.isWindows;
                 }
                 ret = new ClientLocalServerState(
-                        new P4ClientState(isServerCaseInsensitive, clientServerId, new P4WorkspaceViewState(clientServerId.getClientId())),
-                        new P4ClientState(isServerCaseInsensitive, clientServerId, new P4WorkspaceViewState(clientServerId.getClientId())),
+                        new P4ClientState(isServerCaseInsensitive, clientServerId, new P4WorkspaceViewState(clientServerId.getClientId()),
+                                new JobStatusListState()),
+                        new P4ClientState(isServerCaseInsensitive, clientServerId, new P4WorkspaceViewState(clientServerId.getClientId()),
+                                new JobStatusListState()),
                         new ArrayList<PendingUpdateState>());
                 clientStates.put(clientServerId, ret);
             }

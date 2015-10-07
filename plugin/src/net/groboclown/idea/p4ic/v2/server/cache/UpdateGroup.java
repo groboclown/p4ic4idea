@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.v2.server.cache;
 
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
+import net.groboclown.idea.p4ic.v2.server.cache.sync.ChangeListServerCacheSync;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.FileActionsServerCacheSync;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerUpdateAction;
 import org.jetbrains.annotations.NotNull;
@@ -35,6 +36,12 @@ public enum UpdateGroup {
 
     /** Updates to the description, job association, fix state, and existence. */
     CHANGELIST(new NIF()), // FIXME
+
+    /** Update the file association on files. */
+    CHANGELIST_FILES(new ChangeListServerCacheSync.MoveFileFactory()),
+
+    /** Remove a changelist */
+    CHANGELIST_DELETE(new ChangeListServerCacheSync.DeleteFactory()),
 
     /** Updates to the add or edit state and changelist association on files. */
     FILE_ADD_EDIT(new FileActionsServerCacheSync.AddEditFactory()),
@@ -64,7 +71,7 @@ public enum UpdateGroup {
         @NotNull
         @Override
         public ServerUpdateAction create(@NotNull final Collection<PendingUpdateState> states) {
-            throw new IllegalStateException("Not implemented");
+            throw new IllegalStateException("Not implemented: " + states);
         }
     }
 }

@@ -38,8 +38,6 @@ import java.util.concurrent.locks.Lock;
 public class P4VFSListener extends VcsVFSListener {
     private static final Logger LOG = Logger.getInstance(VcsVFSListener.class);
 
-    public String ADD = P4Bundle.message("vfs.add.process");
-
     private final P4Vcs vcs;
     private final AlertManager alerts;
     private final P4ChangeListMapping changeListMapping;

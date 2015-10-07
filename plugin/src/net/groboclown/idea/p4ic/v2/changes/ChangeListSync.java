@@ -21,6 +21,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -30,6 +31,7 @@ import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,6 +39,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+// FIXME this needs to correctly mark open-for-edit files as dirty.
 
 /**
  * Pushes changes FROM Perforce INTO idea.  No Perforce jobs will be altered.
@@ -63,12 +67,44 @@ public class ChangeListSync {
         this.changeListMapping = P4ChangeListMapping.getInstance(project);
     }
 
+    void findNewDirtyFiles() throws InterruptedException {
+        final List<LocalChangeList> changes = ChangeListManager.getInstance(project).getChangeLists();
+        Set<FilePath> dirtyFiles = new HashSet<FilePath>();
+        for (LocalChangeList changeList: changes) {
+            for (Change change: changeList.getChanges()) {
+                if (change.getBeforeRevision() != null) {
+                    dirtyFiles.add(change.getBeforeRevision().getFile());
+                }
+                if (change.getAfterRevision() != null) {
+                    dirtyFiles.add(change.getAfterRevision().getFile());
+                }
+            }
+        }
 
+        final List<VirtualFile> roots = vcs.getVcsRoots();
 
-    // FIXME
-    // FIXME There's some binding issues here.  Need to dig into these.
-    // FIXME
+        for (P4Server server : vcs.getP4Servers()) {
+            for (P4FileAction file : server.getOpenFiles()) {
+                final FilePath filePath = file.getFile();
+                if (!dirtyFiles.contains(filePath) && inRoot(roots, filePath)) {
+                    LOG.info("Marking " + filePath + " as dirty");
+                    VcsUtil.markFileAsDirty(project, filePath);
+                }
+            }
+        }
+    }
 
+    private boolean inRoot(@NotNull List<VirtualFile> roots, @Nullable FilePath filePath) {
+        if (filePath == null) {
+            return false;
+        }
+        for (VirtualFile root : roots) {
+            if (filePath.isUnder(FilePathUtil.getFilePath(root), false)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 
     /**
@@ -95,6 +131,7 @@ public class ChangeListSync {
                 }
             }
         }
+
 
         // Load all the dirty files into the correct changelist, based on the
         // server state of the file.

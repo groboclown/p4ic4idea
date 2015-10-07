@@ -277,6 +277,33 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
         }
     }
 
+    public void replace(@NotNull P4ChangeListId oldChangeList, @NotNull P4ChangeListId newChangeList) {
+        if (! oldChangeList.getClientServerId().equals(newChangeList.getClientServerId())) {
+            throw new IllegalArgumentException("client/server must match: was " +
+                oldChangeList.getClientServerId() + ", now " + newChangeList.getClientServerId());
+        }
+        if (oldChangeList.getChangeListId() == newChangeList.getChangeListId()) {
+            return;
+        }
+        if (! oldChangeList.isUnsynchedChangelist()) {
+            throw new IllegalArgumentException("can only replace unsynchronized changelist");
+        }
+        synchronized (sync) {
+            if (state.perforceToIdea.get(newChangeList) != null) {
+                throw new IllegalArgumentException("new changelist already mapped; " + newChangeList);
+            }
+            final String idea = state.perforceToIdea.remove(oldChangeList);
+            if (idea != null) {
+                state.perforceToIdea.put(newChangeList, idea);
+                final Map<ClientServerId, P4ChangeListId> changes = state.ideaToPerforce.get(idea);
+                // A simple put should remove the old one, because the client server id are
+                // the same, but this is just to be sure.
+                changes.remove(oldChangeList.getClientServerId());
+                changes.put(newChangeList.getClientServerId(), newChangeList);
+            }
+        }
+    }
+
 
     /**
      * Fetches the cached mapping from IDEA to the Perforce changelist

@@ -61,6 +61,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     private final Cache cache;
     private final Set<P4FileUpdateState> localClientUpdatedFiles;
     private final Set<P4FileUpdateState> cachedServerUpdatedFiles;
+    private final Set<FilePath> committed = new HashSet<FilePath>();
     private Date lastRefreshed;
 
 
@@ -102,22 +103,28 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
         try {
             // This is okay to run with the "-s" argument.
-            final MessageResult<List<IFileSpec>> results =
-                exec.loadOpenedFiles(getClientRootSpecs(exec.getProject(), alerts), true);
+            final MessageResult<List<IExtendedFileSpec>> results =
+                exec.loadOpenedFiles(getClientRootSpecs(exec.getProject(), alerts), false);
             if (!alerts.addWarnings(P4Bundle.message("error.load-opened", cache.getClientName()), results, true)) {
                 lastRefreshed = new Date();
 
                 // Only clear the cache once we know that we have valid results.
 
-                final List<IFileSpec> validSpecs = new ArrayList<IFileSpec>(results.getResult());
-                final List<IFileSpec> invalidSpecs = sortInvalidActions(validSpecs);
+                final List<IExtendedFileSpec> validSpecs = new ArrayList<IExtendedFileSpec>(results.getResult());
+                final List<IExtendedFileSpec> invalidSpecs = sortInvalidActions(validSpecs);
                 addInvalidActionAlerts(alerts, invalidSpecs);
 
                 cachedServerUpdatedFiles.clear();
                 cachedServerUpdatedFiles.addAll(cache.fromOpenedToAction(validSpecs, alerts));
 
-                // All the locally pending changes will remain unchanged; it's up to the
-                // ServerUpdateAction to correctly handle the differences.
+                // Flush out the local changes that have been updated.
+                final Iterator<P4FileUpdateState> iter = localClientUpdatedFiles.iterator();
+                while (iter.hasNext()) {
+                    final P4FileUpdateState next = iter.next();
+                    if (committed.remove(next.getLocalFilePath())) {
+                        iter.remove();
+                    }
+                }
             }
         } catch (VcsException e) {
             alerts.addWarning(P4Bundle.message("error.load-opened", cache.getClientName()), e);
@@ -208,6 +215,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             makeWritable(file);
         }
 
+        // FIXME put the file in the local cache.
+
         // Check if it is already in an action state, and create it if necessary
         final P4FileUpdateState action = createFileUpdateState(file, FileUpdateAction.DELETE_FILE, changeListId);
         if (action == null) {
@@ -226,6 +235,12 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 Collections.singleton(file.getIOFile().getAbsolutePath()),
                 params);
     }
+
+
+    void markLocalFileStateAsCommitted(@NotNull FilePath file) {
+        committed.add(file);
+    }
+
 
 
     @Nullable
@@ -249,7 +264,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
 
-    private void addInvalidActionAlerts(@NotNull final AlertManager alerts, @NotNull final List<IFileSpec> invalidSpecs) {
+    private void addInvalidActionAlerts(@NotNull final AlertManager alerts, @NotNull final List<IExtendedFileSpec> invalidSpecs) {
         if (invalidSpecs.isEmpty()) {
             return;
         }
@@ -276,18 +291,25 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
     @NotNull
-    private List<IFileSpec> sortInvalidActions(@NotNull List<IFileSpec> validSpecs) {
-        List<IFileSpec> ret = new ArrayList<IFileSpec>(validSpecs.size());
-        Iterator<IFileSpec> iter = validSpecs.iterator();
+    private List<IExtendedFileSpec> sortInvalidActions(@NotNull List<IExtendedFileSpec> validSpecs) {
+        List<IExtendedFileSpec> ret = new ArrayList<IExtendedFileSpec>(validSpecs.size());
+        Iterator<IExtendedFileSpec> iter = validSpecs.iterator();
         while (iter.hasNext()) {
-            final IFileSpec next = iter.next();
+            final IExtendedFileSpec next = iter.next();
             if (next != null) {
-                if (! isValidUpdateAction(next) || next.getClientPathString() == null || next.getDepotPathString() == null) {
+                if (! isValidUpdateAction(next)) {
                     // FIXME debug
-                    LOG.info("invalid spec: " + next + ": action: " + next.getAction() + "; client path string: " +
-                        next.getClientPathString() + "; depot path string: " + next.getDepotPathString());
+                    LOG.info("invalid spec: " + next.getDepotPathString() + "; " + next.getOpStatus() + ": action: " +
+                            next.getAction() + "/" + next.getOtherAction() + "/" +
+                            next.getOpenAction() + "/" + next.getHeadAction() +
+                            "; client path string: " + next.getClientPathString());
                     ret.add(next);
                     iter.remove();
+                } else {
+                    LOG.info("valid spec: " + next.getDepotPathString() + "; " + next.getOpStatus() + ": action: " +
+                            next.getAction() + "/" + next.getOtherAction() + "/" +
+                            next.getOpenAction() + "/" + next.getHeadAction() +
+                            "; client path string: " + next.getClientPathString());
                 }
             } else {
                 iter.remove();
@@ -386,6 +408,17 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 spec.getOpStatus() == FileSpecOpStatus.UNKNOWN;
     }
 
+    private static void markUpdated(final ClientCacheManager clientCacheManager, @NotNull Set<FilePath> files,
+            @NotNull List<P4StatusMessage> msgs) {
+        Set<FilePath> updated = new HashSet<FilePath>(files);
+        for (P4StatusMessage msg: msgs) {
+            updated.remove(msg.getFilePath());
+        }
+        for (FilePath fp: updated) {
+            clientCacheManager.markLocalFileStateCommitted(fp);
+        }
+    }
+
     @NotNull
     private static List<FilePath> getFilePaths(@NotNull final List<PendingUpdateState> updateList) {
         List<FilePath> filenames = new ArrayList<FilePath>(updateList.size());
@@ -479,6 +512,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                         container = notOpened;
                     } else {
                         switch (action) {
+                            case ADD:
                             case ADD_EDIT:
                             case ADDED:
                             case EDIT:
@@ -490,6 +524,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             case INTEGRATE:
                             case BRANCH:
                                 // Integrated, but not open for edit.  Open for edit.
+                                // FIXME branch may need "add" in some cases.
                                 container = integrated;
                                 break;
 
@@ -583,7 +618,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             //     split.notInPerforce
             // open for edit:
             //     split.notOpened
-            // ignore (already open for edit or add)
+            // already open for edit or add; check for correct changelist:
             //     split.edited
             // open for edit (integrated, but not open for edit)
             //     split.integrated
@@ -622,6 +657,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                         final List<P4StatusMessage> msgs =
                                 exec.addFiles(FileSpecUtil.getFromFilePaths(entry.getValue()), entry.getKey());
                         alerts.addNotices(P4Bundle.message("warning.edit.file.add", entry.getValue()), msgs, false);
+                        markUpdated(clientCacheManager, entry.getValue(), msgs);
                         hasUpdate = true;
                     } catch (P4DisconnectedException e) {
                         // error already handled as critical
@@ -633,6 +669,30 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 }
             } else if (! split.notInPerforce.isEmpty()) {
                 LOG.info("Skipping add (because command is edit-only: " + split.notInPerforce);
+            }
+
+            // reopen:
+            //     split.edited
+            for (Entry<Integer, Set<FilePath>> entry: split.edited.entrySet()) {
+                try {
+                    final List<P4StatusMessage> msgs =
+                            exec.reopenFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
+                                    entry.getKey(), null);
+                    markUpdated(clientCacheManager, entry.getValue(), msgs);
+                    // Note: any errors here will be displayed to the
+                    // user, but they do not indicate that the actual
+                    // actions were errors.  Instead, they are notifications
+                    // to the user that they must do something again
+                    // with a correction.
+                    alerts.addWarnings(P4Bundle.message("warning.edit.file.reopen", entry.getValue()), msgs, false);
+                    hasUpdate = true;
+                } catch (P4DisconnectedException e) {
+                    // error already handled as critical
+                    return ExecutionStatus.RETRY;
+                } catch (VcsException e) {
+                    alerts.addWarning(P4Bundle.message("error.edit", entry.getValue()), e);
+                    returnCode = ExecutionStatus.FAIL;
+                }
             }
 
             // open for edit:
@@ -652,6 +712,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     final List<P4StatusMessage> msgs =
                             exec.editFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
                                     entry.getKey());
+                    markUpdated(clientCacheManager, entry.getValue(), msgs);
                     // Note: any errors here will be displayed to the
                     // user, but they do not indicate that the actual
                     // actions were errors.  Instead, they are notifications
@@ -764,6 +825,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     final List<P4StatusMessage> msgs =
                             exec.deleteFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
                                     entry.getKey(), true);
+                    markUpdated(clientCacheManager, entry.getValue(), msgs);
                     // Note: any errors here will be displayed to the
                     // user, but they do not indicate that the actual
                     // actions were errors.  Instead, they are notifications

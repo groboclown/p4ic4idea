@@ -17,7 +17,6 @@ package net.groboclown.idea.p4ic.v2.server.cache;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
-import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
@@ -38,11 +37,6 @@ public final class ClientServerId {
     @NotNull
     public static ClientServerId create(@NotNull ServerConfig serverConfig, @Nullable String clientName) {
         return new ClientServerId(serverConfig.getServiceName(), clientName);
-    }
-
-    @NotNull
-    public static ClientServerId create(@NotNull Client client) {
-        return create(client.getConfig(), client.getClientName());
     }
 
     @Nullable

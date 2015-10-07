@@ -125,6 +125,9 @@ public class AlertManager implements ApplicationComponent {
                     ! msg.isFileNotFoundError())) {
                 // FIXME this should be turned into a UI-friendly element
                 LOG.warn(message, P4StatusMessage.messageAsError(msg));
+
+                // Need a valid project to do this.
+                // VcsUtil.showStatusMessage(null, message);
             }
         }
     }

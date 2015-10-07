@@ -18,9 +18,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.server.P4Job;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
@@ -40,6 +41,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Public front-end to the cache infrastructure.
@@ -49,6 +51,7 @@ public class ClientCacheManager {
     private final WorkspaceServerCacheSync workspace;
     private final FileActionsServerCacheSync fileActions;
     private final ChangeListServerCacheSync changeLists;
+    private final JobStateServerCacheSync jobState;
     private final IgnoreFiles ignoreFiles;
 
     public ClientCacheManager(@NotNull ServerConfig config, @NotNull ClientLocalServerState state) {
@@ -64,6 +67,7 @@ public class ClientCacheManager {
         changeLists = new ChangeListServerCacheSync(cache,
                 state.getLocalClientState().getChanges(),
                 state.getCachedServerState().getChanges());
+        jobState = new JobStateServerCacheSync(state.getCachedServerState().getJobStatusList());
         ignoreFiles = new IgnoreFiles(config);
     }
 
@@ -81,6 +85,24 @@ public class ClientCacheManager {
     @NotNull
     public ServerQuery createChangeListRefreshQuery() {
         return changeLists.createRefreshQuery();
+    }
+
+    @NotNull
+    public ServerQuery createJobStatusListRefreshQuery() {
+        return jobState.createRefreshQuery();
+    }
+
+    /**
+     * Jobs are not cached like other things, because there can be potentially a huge
+     * number of jobs.  Instead, only the jobs the user asks about will be cached.
+     *
+     * @param jobIds the job IDs to refresh in the query.
+     * @return the server query
+     */
+    @NotNull
+    public ServerQuery createJobRefreshQuery(final Collection<String> jobIds) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
     }
 
 
@@ -128,6 +150,17 @@ public class ClientCacheManager {
         return fileActions.getOpenFiles();
     }
 
+    @NotNull
+    public Collection<String> getCachedJobStatusList() {
+        return jobState.getJobStatusList();
+    }
+
+    @NotNull
+    public Map<String, P4Job> getCachedJobIds(final Collection<String> jobIds) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
     /**
      * This method only has one use, and that's for initial setup after loading into a ServerConnection.
      */
@@ -138,6 +171,12 @@ public class ClientCacheManager {
 
     public void addPendingUpdateState(@NotNull final PendingUpdateState updateState) {
         state.addPendingUpdate(updateState);
+    }
+
+    public void removePendingUpdateStates(@NotNull Collection<PendingUpdateState> pendingUpdateStates) {
+        for (PendingUpdateState pendingUpdateState : pendingUpdateStates) {
+            state.removePendingUpdate(pendingUpdateState);
+        }
     }
 
     public boolean isIgnored(@NotNull FilePath fp) {
@@ -164,6 +203,17 @@ public class ClientCacheManager {
         return changeLists.renameChangelist(changeListId, description);
     }
 
+
+    // ----------------------------------------------------------------------------------------
+    // Package-level behaviors for use in an action
+
+    void markLocalChangelistStateCommitted(int changeListId) {
+        changeLists.markLocalStateCommitted(changeListId);
+    }
+
+    void markLocalFileStateCommitted(@NotNull FilePath file) {
+        fileActions.markLocalFileStateAsCommitted(file);
+    }
 
     private class CacheImpl implements Cache {
 
@@ -203,7 +253,7 @@ public class ClientCacheManager {
 
         @NotNull
         @Override
-        public Collection<P4FileUpdateState> fromOpenedToAction(@NotNull final List<IFileSpec> validSpecs,
+        public Collection<P4FileUpdateState> fromOpenedToAction(@NotNull final List<IExtendedFileSpec> validSpecs,
                 @NotNull final AlertManager alerts) {
             return workspace.fromOpenedToAction(validSpecs, alerts);
         }

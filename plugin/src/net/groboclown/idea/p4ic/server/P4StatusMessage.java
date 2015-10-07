@@ -14,12 +14,15 @@
 package net.groboclown.idea.p4ic.server;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IFileOperationResult;
+import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.MessageGenericCode;
 import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,6 +64,15 @@ public class P4StatusMessage {
 
     public boolean isFileNotFoundError() {
         return isFileNotFoundError(spec);
+    }
+
+    @Nullable
+    public FilePath getFilePath() {
+        if (spec instanceof IFileSpec) {
+            IFileSpec fs = (IFileSpec) spec;
+            return FilePathUtil.getFilePath(fs.getClientPathString());
+        }
+        return null;
     }
 
     @Override

@@ -21,6 +21,7 @@ import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
+import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.server.cache.state.AllClientsState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.ClientLocalServerState;
@@ -52,18 +53,12 @@ public class CentralCacheManager {
             @Override
             public void configUpdated(@NotNull final Project project,
                     @NotNull final List<ProjectConfigSource> sources) {
-                // FIXME implement
-                // NOTE be project aware.
-            }
-        });
-
-        // FIXME use new handlers.
-        messageBus.subscribe(P4ClientsReloadedListener.TOPIC, new P4ClientsReloadedListener() {
-            @Override
-            public void clientsLoaded(@NotNull final Project project, @NotNull final List<Client> clients) {
                 if (disposed) {
                     return;
                 }
+
+                // FIXME be project aware
+
                 cacheLock.lock();
                 try {
                     clientManagers.clear();
@@ -75,22 +70,7 @@ public class CentralCacheManager {
             }
         });
 
-        // FIXME old stuff
-        messageBus.subscribe(P4ConfigListener.TOPIC, new P4ConfigListener() {
-            @Override
-            public void configChanges(@NotNull final Project project, @NotNull final P4Config original,
-                    @NotNull final P4Config config) {
-                if (disposed) {
-                    return;
-                }
-                ClientServerId originalId = ClientServerId.create(project, original);
-                ClientServerId newId = ClientServerId.create(project, config);
-                if (originalId != null && ! originalId.equals(newId)) {
-                    removeCache(originalId);
-                }
-                // Don't create the new one until we need it
-            }
-
+        Events.appConfigInvalid(messageBus, new ConfigInvalidListener() {
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                     @NotNull final P4InvalidConfigException ex) {

@@ -16,11 +16,13 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
+import com.perforce.p4java.Log;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerInfo;
+import com.perforce.p4java.server.callback.ILogCallback;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
@@ -204,6 +206,48 @@ public class ClientExec {
             @Nullable String clientName, @NotNull ConnectionHandler connectionHandler,
             @NotNull ServerConfig config, @NotNull File tempDir)
             throws P4JavaException, URISyntaxException {
+        // Setup logging
+        if (Log.getLogCallback() == null) {
+            Log.setLogCallback(new ILogCallback() {
+                @Override
+                public void internalError(final String errorString) {
+                    LOG.error("p4java error: " + errorString);
+                }
+
+                @Override
+                public void internalException(final Throwable thr) {
+                    LOG.error("p4java error", thr);
+                }
+
+                @Override
+                public void internalWarn(final String warnString) {
+                    LOG.warn("p4java warning: " + warnString);
+                }
+
+                @Override
+                public void internalInfo(final String infoString) {
+                    LOG.info("p4java info: " + infoString);
+                }
+
+                @Override
+                public void internalStats(final String statsString) {
+                    LOG.debug("p4java stats: " + statsString);
+                }
+
+                @Override
+                public void internalTrace(final LogTraceLevel traceLevel, final String traceMessage) {
+                    LOG.debug("p4java trace: " + traceMessage);
+                }
+
+                @Override
+                public LogTraceLevel getTraceLevel() {
+                    return LOG.isDebugEnabled() ? LogTraceLevel.ALL : LogTraceLevel.FINE;
+                }
+            });
+        }
+
+
+
         final Properties properties;
         final String url;
         final IOptionsServer server;

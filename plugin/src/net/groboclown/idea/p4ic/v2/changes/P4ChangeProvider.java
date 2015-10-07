@@ -68,7 +68,6 @@ public class P4ChangeProvider implements ChangeProvider {
             ChangeListManagerGate addGate) throws VcsException {
         // FIXME use the progress indicator for this method
 
-
         lastRefreshRequest = System.currentTimeMillis();
         if (project.isDisposed()) {
             return;
@@ -93,7 +92,11 @@ public class P4ChangeProvider implements ChangeProvider {
 
         final Set<FilePath> dirtyFiles = dirtyScope.getDirtyFiles();
         if (dirtyFiles == null || dirtyFiles.isEmpty()) {
-            LOG.info("No dirty files: nothing to do.");
+            LOG.info("No dirty files: only detecting existing dirty files.");
+
+            // Before we return, we must check for new dirty files.
+            findRemainingDirtyFiles();
+
             return;
         }
 
@@ -109,6 +112,9 @@ public class P4ChangeProvider implements ChangeProvider {
                 if (! cachedChanges.hasChanged(dirtyFiles, addGate)) {
                     LOG.info("Loading changelists through the cache");
                     cachedChanges.applyCache(builder);
+
+                    // Before we return, we must check for new dirty files.
+                    findRemainingDirtyFiles();
                     return;
                 }
                 LOG.info("Dirty files are not the same as the cached changed files");
@@ -136,7 +142,20 @@ public class P4ChangeProvider implements ChangeProvider {
             throw new VcsInterruptedException(e);
         }
         cachedChanges = cacheBuilder.getCache();
+
+        // Before we return, we must check for new dirty files.
+        findRemainingDirtyFiles();
     }
+
+
+    private void findRemainingDirtyFiles() throws VcsInterruptedException {
+        try {
+            changeListSync.findNewDirtyFiles();
+        } catch (InterruptedException e) {
+            throw new VcsInterruptedException(e);
+        }
+    }
+
 
 
     @Override
@@ -149,6 +168,6 @@ public class P4ChangeProvider implements ChangeProvider {
     public void doCleanup(List<VirtualFile> files) {
         // clean up the working copy.
         // Nothing to do?
-        System.out.println("Cleanup called for  " + files);
+        LOG.info("Cleanup called for  " + files);
     }
 }

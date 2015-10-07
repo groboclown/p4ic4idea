@@ -232,6 +232,8 @@ public class ServerConnectionManager implements ApplicationComponent {
         ServerConfigStatus(@NotNull ServerConfig config, @NotNull ServerSynchronizer synchronizer) {
             this.config = config;
             this.synchronizer = synchronizer;
+            // we are online by default
+            synchronizer.wentOnline();
         }
 
         @Override
@@ -325,6 +327,7 @@ public class ServerConnectionManager implements ApplicationComponent {
                     if (!online) {
                         LOG.info("** went online: " + config);
                         online = true;
+                        synchronizer.wentOnline();
                         onlineChangedCondition.signal();
                         return true;
                     }
@@ -342,6 +345,7 @@ public class ServerConnectionManager implements ApplicationComponent {
                 if (online) {
                     LOG.info("** went offline: " + config);
                     online = false;
+                    synchronizer.wentOffline();
                     onlineChangedCondition.signal();
                     return valid;
                 }

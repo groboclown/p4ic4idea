@@ -68,6 +68,10 @@ public class ClientLocalServerState {
         return update;
     }
 
+    public void removePendingUpdate(@NotNull PendingUpdateState pendingUpdateState) {
+        pendingUpdates.remove(pendingUpdateState);
+    }
+
 
     @NotNull
     public P4ClientState getCachedServerState() {

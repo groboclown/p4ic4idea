@@ -21,25 +21,23 @@ import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CancellationException;
 
 public class ServerExecutor {
     private final Project project;
     private final RawServerExecutor exec;
-    private final JobCache jobCache;
+    //private final JobCache jobCache;
 
 
     public ServerExecutor(Project project, RawServerExecutor exec) {
         this.project = project;
         this.exec = exec;
-        this.jobCache = new JobCache(project, exec);
+        //this.jobCache = new JobCache(project, exec);
     }
 
 
@@ -48,12 +46,6 @@ public class ServerExecutor {
      */
     public boolean isWorkingOnline() {
         return exec.isWorkingOnline();
-    }
-
-
-    public void invalidateCache() {
-        exec.invalidateFileInfoCache();
-        jobCache.invalidateCache();
     }
 
 
@@ -93,75 +85,6 @@ public class ServerExecutor {
     }
 
     /**
-     *
-     * @param changelistId
-     * @return
-     * @throws VcsException
-     */
-    @Nullable
-    public List<P4FileInfo> getFilesInChangelist(int changelistId) throws VcsException {
-        return exec.getFilesInChangelist(project, changelistId);
-    }
-
-    /**
-     *
-     * @param comment
-     * @return
-     * @throws VcsException
-     */
-    @NotNull
-    public IChangelist createChangelist(@NotNull String comment) throws VcsException {
-        return exec.createChangelist(project, comment);
-    }
-
-    @NotNull
-    public List<P4StatusMessage> deleteFiles(@NotNull List<FilePath> filesToDelete, int changelistId) throws VcsException {
-        return exec.deleteFiles(project, filesToDelete, changelistId);
-    }
-
-    @NotNull
-    public List<P4StatusMessage> moveFiles(@NotNull Map<FilePath, FilePath> movedFiles, int changelistId) throws VcsException {
-        return exec.moveFiles(project, movedFiles, changelistId);
-    }
-
-    @NotNull
-    public List<P4StatusMessage> addOrCopyFiles(@NotNull Collection<VirtualFile> addedFiles,
-            @NotNull Map<VirtualFile, VirtualFile> copyFromMap, int changelistId) throws VcsException {
-        return exec.addOrCopyFiles(project, addedFiles, copyFromMap, changelistId);
-    }
-
-    @NotNull
-    public List<P4StatusMessage> addOrEditFiles(List<VirtualFile> edited, int changelistId) throws VcsException {
-        return exec.addOrEditFiles(project, edited, changelistId);
-    }
-
-    @NotNull
-    public List<P4StatusMessage> editFiles(List<VirtualFile> edited, int changelistId) throws VcsException {
-        return exec.editFiles(project, edited, changelistId);
-    }
-
-    public void deleteChangelist(int changelistId) throws VcsException {
-        exec.deleteChangelist(project, changelistId);
-    }
-
-    /**
-     *
-     * @param targetChangelistId
-     * @param affected
-     * @return
-     * @throws VcsException
-     */
-    @NotNull
-    public List<P4StatusMessage> moveFilesToChangelist(int targetChangelistId, List<FilePath> affected)
-            throws VcsException {
-        return exec.moveFilesToChangelist(project, targetChangelistId, affected);
-    }
-
-    public void updateChangelistComment(int changelistId, @NotNull String comment) throws VcsException {
-        exec.updateChangelistComment(project, changelistId, comment);
-    }
-
-    /**
      * NOTE should be only called from the P4ChangeListCache.
      *
      * @return pending changelists
@@ -173,43 +96,13 @@ public class ServerExecutor {
     }
 
     @NotNull
-    public List<P4FileInfo> getFilePathInfo(@NotNull Collection<FilePath> filePaths) throws VcsException {
-        return exec.getFilePathInfo(project, filePaths);
-    }
-
-
-    @NotNull
     public Collection<VirtualFile> findRoots(@Nullable final Collection<VirtualFile> requestedRoots) throws VcsException, CancellationException {
         return exec.findRoots(project, requestedRoots);
     }
 
     @NotNull
-    public List<P4FileInfo> loadOpenFiles(@Nullable VirtualFile[] roots) throws VcsException {
-        return exec.loadOpenFiles(project, roots);
-    }
-
-    /*
-    @NotNull
-    public List<P4FileRevision> getRevisionHistory(@NotNull P4FileInfo file, int maxRevs)
-            throws VcsException {
-        return exec.getRevisionHistory(project, file, maxRevs);
-    }
-    */
-
-    @NotNull
     public List<P4StatusMessage> revertFiles(@NotNull List<FilePath> filePaths) throws VcsException {
         return exec.revertFiles(project, filePaths);
-    }
-
-    @NotNull
-    public List<P4FileInfo> getVirtualFileInfo(@NotNull Collection<VirtualFile> virtualFiles) throws VcsException {
-        return exec.getVirtualFileInfo(project, virtualFiles);
-    }
-
-    @NotNull
-    public List<P4StatusMessage> submitChangelist(@NotNull List<FilePath> files, @NotNull Collection<P4Job> jobs,
-            String jobStatus, int changelistId) throws VcsException {
-        return exec.submitChangelist(project, files, jobs, jobStatus, changelistId);
     }
 
     /**
@@ -250,29 +143,11 @@ public class ServerExecutor {
         return exec.loadDeepFileInfo(project, paths);
     }
 
-    /*
-    @NotNull
-    public List<P4AnnotatedLine> getAnnotationsFor(@NotNull VirtualFile file, int rev)
-            throws VcsException, CancellationException {
-        return exec.getAnnotationsFor(project, file, rev);
-    }
-    */
-
-    public void checkConnection() throws P4InvalidConfigException, CancellationException {
-        exec.checkConnection(project);
-    }
-
     @NotNull
     public List<P4FileInfo> synchronizeFiles(@NotNull final Collection<FilePath> path, final int revision,
             @Nullable final String changelist, boolean forceSync, @NotNull final Collection<VcsException> errorsOutput)
             throws VcsException, CancellationException {
         return exec.synchronizeFiles(project, path, revision, changelist, forceSync, errorsOutput);
-    }
-
-    @NotNull
-    public Collection<P4StatusMessage> integrateFiles(@NotNull final P4FileInfo src, @NotNull final FilePath tgt,
-            final int changeListId) throws VcsException, CancellationException {
-        return exec.integrateFiles(project, src, tgt, changeListId);
     }
 
     @NotNull
@@ -286,24 +161,6 @@ public class ServerExecutor {
     public Collection<P4FileInfo> revertUnchangedFiles(@NotNull List<FilePath> filePaths,
             @NotNull final List<P4StatusMessage> errors) throws VcsException {
         return exec.revertUnchangedFiles(project, filePaths, errors);
-    }
-
-    @NotNull
-    public List<String> getJobStatusValues() throws VcsException, CancellationException {
-        //return exec.getJobStatusValues(project);
-        return jobCache.getJobStatusValues();
-    }
-
-    @Nullable
-    public Collection<P4Job> getJobsForChangelist(final int id) throws VcsException, CancellationException {
-        //return exec.getJobsForChangelist(project, id);
-        return jobCache.getJobsForChangelist(id);
-    }
-
-    @Nullable
-    public P4Job getJobForId(final String jobId) throws VcsException, CancellationException {
-        //return exec.getJobForId(project, jobId);
-        return jobCache.getJob(jobId);
     }
 
     @NotNull

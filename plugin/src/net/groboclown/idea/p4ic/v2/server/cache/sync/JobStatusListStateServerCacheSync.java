@@ -30,14 +30,14 @@ import java.util.Date;
  * the client change those; that's the pervue of the admin, and must be done
  * meticulously, not just willy-nilly in the IDE.
  */
-public class JobStateServerCacheSync extends CacheFrontEnd {
-    private static final Logger LOG = Logger.getInstance(JobStateServerCacheSync.class);
+public class JobStatusListStateServerCacheSync extends CacheFrontEnd {
+    private static final Logger LOG = Logger.getInstance(JobStatusListStateServerCacheSync.class);
     private static final long DAY_INTERVAL_MS = 1000L * 60L * 60L * 24L;
 
     private final JobStatusListState cachedServerState;
 
 
-    public JobStateServerCacheSync(@NotNull final JobStatusListState cachedServerState) {
+    public JobStatusListStateServerCacheSync(@NotNull final JobStatusListState cachedServerState) {
         this.cachedServerState = cachedServerState;
     }
 

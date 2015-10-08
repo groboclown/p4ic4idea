@@ -17,7 +17,10 @@ package net.groboclown.idea.p4ic.v2.server.cache;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ChangeListState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Collection;
 
 /**
  * Immutable view of a changelist state.
@@ -58,6 +61,10 @@ public class P4ChangeListValue {
 
     public boolean isOnServer() {
         return state.isOnServer();
+    }
+
+    public Collection<P4JobState> getJobStates() {
+        return state.getJobs();
     }
 
 

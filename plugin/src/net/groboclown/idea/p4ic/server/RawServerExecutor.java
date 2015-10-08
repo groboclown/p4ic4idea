@@ -250,16 +250,6 @@ public class RawServerExecutor {
     }
 
     @NotNull
-    public List<P4StatusMessage> submitChangelist(@NotNull Project project,
-            @Nullable List<FilePath> actualFiles, @Nullable Collection<P4Job> jobs, String jobStatus, int changelistId)
-            throws VcsException, CancellationException {
-        if (changelistId <= 0) {
-            throw new VcsException(P4Bundle.message("error.changelist.submit", changelistId));
-        }
-        return performAction(project, new SubmitRunner(project, actualFiles, jobs, jobStatus, changelistId, fileInfoCache));
-    }
-
-    @NotNull
     public List<P4FileInfo> getFilePathInfo(@NotNull final Project project, @NotNull Collection<FilePath> files)
             throws VcsException, CancellationException {
         if (files.isEmpty()) {
@@ -751,17 +741,6 @@ public class RawServerExecutor {
             @Override
             public Collection<String> run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
                 return exec.getJobIdsForChangelist(project, changelistId);
-            }
-        });
-    }
-
-
-    @Nullable
-    public P4Job getJobForId(final Project project, final String jobId) throws VcsException, CancellationException {
-        return performAction(project, new ServerTask<P4Job>() {
-            @Override
-            public P4Job run(@NotNull final P4Exec exec) throws VcsException, CancellationException {
-                return exec.getJobForId(project, jobId);
             }
         });
     }

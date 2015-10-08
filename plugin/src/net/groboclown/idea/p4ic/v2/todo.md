@@ -18,19 +18,11 @@ There are some features that drive how the inner architecture will work.
 1. When project root is at (say) c:\a\b\c\, and .p4config exists in c:\a\b\c\ and c:\a, the
    c:\a is picked up.
 1. Config GUI doesn't show properties correctly.
-1. Doesn't seem to go offline - widget always shows green.
 1. Changelist mappings don't seem to be persisted.
-1. If a file is not marked for add (unversioned), then it is moved into a changelist,
-   it shows itself in that changelist just fine.  However, if the IDE is restarted,
-   then the file is back to being unversioned.  Happens with a file named
-   `a@b.bat`, so there may be a file escape issue on add, or moving to changelist
-   might be not correctly adding the file.
-1. Files open for edit/add/etc may not be shown in changelist.  This can happen
-   if IDEA is not aware of the change.  There needs to be a "right place" to
-   mark these files as dirty; if it's done in the change refresh, then
-   that will cause an infinite refresh.
-1. Ignored files move between "unversioned" list and default list when
-   `ChangeListSync` runs.
+1. Changelist refresh: some files alternate between showing up and disappearing
+   with each refresh.
+1. Job list in submit needs wrapping scroll pane.
+1. Failure in job submit does not show error to user.
 
 
 ## Parts needing heavy testing
@@ -38,6 +30,7 @@ There are some features that drive how the inner architecture will work.
 1. `ChangeListSync` needs to be thoroughly debugged.  It seems to be working, but it
    needs heavy testing.
 1. All of the history related items.
+1. `P4StatusUpdateEnvironment` group mapping
 
 
 ## Features Needing Migration

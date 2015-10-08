@@ -29,11 +29,12 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
-import net.groboclown.idea.p4ic.server.P4Job;
+import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.ServerExecutor;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.history.P4AnnotatedLine;
 import net.groboclown.idea.p4ic.v2.history.P4FileRevision;
@@ -420,6 +421,7 @@ public class P4Server {
         });
     }
 
+
     /**
      * Needs to be run immediately.
      *
@@ -507,19 +509,27 @@ public class P4Server {
         throw new IllegalStateException("not implemented");
     }
 
-    public void revertUnchangedFiles(@NotNull final List<FilePath> filePaths) {
+    /**
+     *
+     * @param filePaths file to revert.
+     * @return all files that were reverted
+     */
+    @NotNull
+    public MessageResult<Collection<FilePath>> revertUnchangedFiles(@NotNull final Collection<FilePath> filePaths) {
         if (filePaths.isEmpty()) {
-            return;
+            return new MessageResult<Collection<FilePath>>(
+                    Collections.<FilePath>emptyList(), Collections.<P4StatusMessage>emptyList());
         }
         // FIXME implement
         throw new IllegalStateException("not implemented");
     }
 
 
-    public void synchronizeFiles(@NotNull final List<FilePath> files, final int revisionNumber,
-            @Nullable final String syncSpec, final boolean force, @NotNull final List<VcsException> exceptions) {
+    public MessageResult<Collection<FileSyncResult>> synchronizeFiles(@NotNull final Collection<FilePath> files, final int revisionNumber,
+            @Nullable final String syncSpec, final boolean force) {
         if (files.isEmpty()) {
-            return;
+            return new MessageResult<Collection<FileSyncResult>>(
+                    Collections.<FileSyncResult>emptyList(), Collections.<P4StatusMessage>emptyList());
         }
         // FIXME implement
         throw new IllegalStateException("not implemented");
@@ -536,7 +546,6 @@ public class P4Server {
             }
         });
     }
-
 
     public void deleteChangelist(final int changeListId) {
         if (changeListId == P4ChangeListId.P4_DEFAULT || changeListId == P4ChangeListId.P4_UNKNOWN) {
@@ -734,7 +743,7 @@ public class P4Server {
         });
     }
 
-    public void submitChangelist(final List<FilePath> files, final List<P4Job> jobs, final String submitStatus,
+    public void submitChangelist(final List<FilePath> files, final List<P4ChangeListJob> jobs, final String submitStatus,
             final int changeListId) {
         // FIXME implement
         throw new IllegalStateException("not implemented");
@@ -842,13 +851,13 @@ public class P4Server {
     }
 
     @NotNull
-    public Map<String, P4Job> getJobsForIds(@NotNull final Collection<String> jobId) throws InterruptedException {
+    public Map<String, P4ChangeListJob> getJobsForIds(@NotNull final Collection<String> jobId) throws InterruptedException {
         if (jobId.isEmpty()) {
             return Collections.emptyMap();
         }
-        return connection.cacheQuery(new CacheQuery<Map<String, P4Job>>() {
+        return connection.cacheQuery(new CacheQuery<Map<String, P4ChangeListJob>>() {
             @Override
-            public Map<String, P4Job> query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
+            public Map<String, P4ChangeListJob> query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
                 if (isWorkingOnline()) {
                     connection.query(project, mgr.createJobRefreshQuery(jobId));
                 }
@@ -857,6 +866,24 @@ public class P4Server {
         });
     }
 
+
+    @NotNull
+    public Collection<P4ChangeListJob> getJobsInChangelists(@NotNull final Collection<P4ChangeListId> changes)
+            throws InterruptedException {
+        final Collection<P4ChangeListJob> ret = connection.cacheQuery(new CacheQuery<Collection<P4ChangeListJob>>() {
+            @Override
+            public Collection<P4ChangeListJob> query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
+                if (isWorkingOnline()) {
+                    connection.query(project, mgr.createChangeListRefreshQuery());
+                }
+                return mgr.getCachedJobsInChangelists(changes);
+            }
+        });
+        if (ret == null) {
+            return Collections.emptyList();
+        }
+        return ret;
+    }
 
     @Override
     public String toString() {

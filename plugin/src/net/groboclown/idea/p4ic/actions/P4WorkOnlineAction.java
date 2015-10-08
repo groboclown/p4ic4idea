@@ -17,16 +17,10 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.Client;
-import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.ServerStoreService;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 public class P4WorkOnlineAction extends AnAction {
     public P4WorkOnlineAction() {
@@ -42,10 +36,9 @@ public class P4WorkOnlineAction extends AnAction {
         }
         // FIXME
         final P4Vcs vcs = P4Vcs.getInstance(getProject(e));
-        Set<ServerConfig> offlineServers = new HashSet<ServerConfig>();
-
-        // Tell the servers that they should be working online.
-        ServerStoreService.getInstance().workOnline();
+        for (P4Server server: vcs.getP4Servers()) {
+            server.workOnline();
+        }
 
         // Force the configurations to be reloaded.
         vcs.reloadConfigs();
@@ -68,7 +61,7 @@ public class P4WorkOnlineAction extends AnAction {
      */
     @Override
     public void update(@NotNull AnActionEvent e) {
-        e.getPresentation().setEnabled(! isWorkingOnline(getProject(e)));
+        e.getPresentation().setEnabled(isWorkingOffline(getProject(e)));
     }
 
 
@@ -81,23 +74,18 @@ public class P4WorkOnlineAction extends AnAction {
     }
 
 
-    private boolean isWorkingOnline(@Nullable Project project) {
-        if (project == null) {
+    private boolean isWorkingOffline(@Nullable Project project) {
+        if (project == null || project.isDisposed()) {
             return false;
         }
         P4Vcs vcs = P4Vcs.getInstance(project);
-        // If any one client is offline, then report offline.
-        List<Client> clients = vcs.getClients();
-        // Likewise, if there are no clients, or it's a config problem, then report offline
-        if (clients.isEmpty()) {
-            return false;
-        }
-        for (Client client : clients) {
-            if (client.isWorkingOffline()) {
-                return false;
+
+        // only report offline if no server reports online.
+        for (P4Server server: vcs.getP4Servers()) {
+            if (server.isWorkingOffline()) {
+                return true;
             }
         }
-
-        return true;
+        return false;
     }
 }

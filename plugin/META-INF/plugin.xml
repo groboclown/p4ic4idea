@@ -5,7 +5,7 @@
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
-        <p><ol>
+        <ol>
             <li><em>0.7.0</em>
                 <ol>
                   <li>Stuff</li>
@@ -16,7 +16,7 @@
                   <li>Fixed infinite changelist refresh due to incorrect file mappings.</li>
                 </ol>
             </li>
-        </ol></p>
+        </ol>
     ]]></change-notes>
     <description><![CDATA[
       <a href="https://github.com/groboclown/p4ic4idea">[ Github ]</a> | <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue">[ Open Issues ]</a>
@@ -26,14 +26,12 @@
       <p>
       Limitations:
       </p>
-      <p>
       <ul style="margin-left:2em;">
         <li>Does not indicate to the user whether a file is
         synchronized to the head revision or not.</li>
         <li>No repository browsing.</li>
         <li>No resolving merge conflicts.</li>
       </ul>
-      </p>
       <p><strong>Getting Started</strong></p>
       <p>
       Once you install the plugin, you can associate a project directory

@@ -134,11 +134,26 @@ public class P4ChangelistListener implements ChangeListListener {
             return;
         }
 
+        // FIXME big issue to figure out.  If the default changelist is changed,
+        // looks like we'll need to create a new changelist and move the files into
+        // that.  If the old changelist becomes the default changelist, then it's
+        // a move into the default changelist.
 
-        if (P4ChangeListId.DEFAULT_CHANGE_NAME.equals(list.getName())) {
-            // Default changelist cannot be renamed on Perforce.
-            // FIXME What should this do?  Should it delete the old changelist, and move the files into the default one?
+        if (P4ChangeListId.DEFAULT_CHANGE_NAME.equals(list.getName()) &&
+                P4ChangeListId.DEFAULT_CHANGE_NAME.equals(oldName)) {
+            LOG.info("Cannot set a comment to the default changelist in Perforce; ignoring.");
+            return;
+        }
+
+        if (P4ChangeListId.DEFAULT_CHANGE_NAME.equals(list.getName()) ||
+                P4ChangeListId.DEFAULT_CHANGE_NAME.equals(oldName)) {
+            // Move files into or out of the default changelist.
+
+            // FIXME
             throw new IllegalStateException("not implemented");
+
+            // Get the list of files from the changelist, and add those into
+            // the MOVE_FILES_INTO_CHANGELIST update.
         }
 
 
@@ -157,7 +172,7 @@ public class P4ChangelistListener implements ChangeListListener {
         LOG.debug("changeListCommentChanged: " + list);
 
         // This is the same logic as with the name change.
-        changeListRenamed(list, list.getName() + "x");
+        changeListRenamed(list, list.getName());
     }
 
     @Override

@@ -24,7 +24,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.server.P4Job;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -64,7 +64,7 @@ public class P4SubmitPanel {
     private final SubmitContext context;
 
     @NotNull
-    private Set<P4Job> lastJobList = Collections.emptySet();
+    private Set<P4ChangeListJob> lastJobList = Collections.emptySet();
 
     private boolean expandState = false;
 
@@ -184,7 +184,7 @@ public class P4SubmitPanel {
 
                 if (jobsUpdated) {
                     final int jobSelectionIndex = myJobTable.getSelectedRow();
-                    final P4Job jobTableSelection;
+                    final P4ChangeListJob jobTableSelection;
                     if (jobSelectionIndex >= 0 && jobSelectionIndex < context.getJobs().size()) {
                         jobTableSelection = context.getJobs().get(jobSelectionIndex);
                     } else {
@@ -197,7 +197,7 @@ public class P4SubmitPanel {
                             myJobTable.setRowSelectionInterval(rowId, rowId);
                         }
                     }
-                    lastJobList = new HashSet<P4Job>(context.getJobs());
+                    lastJobList = new HashSet<P4ChangeListJob>(context.getJobs());
                 }
 
                 if (context.isJobAssociationValid()) {
@@ -482,12 +482,12 @@ public class P4SubmitPanel {
 
         @Override
         public Object getValueAt(final int rowIndex, final int columnIndex) {
-            final P4Job job = context.getJobs().get(rowIndex);
+            final P4ChangeListJob job = context.getJobs().get(rowIndex);
             switch (columnIndex) {
                 case 0:
                     return job.getJobId();
                 case 1:
-                    return job.getDescription();
+                    return job.getDescription() == null ? "" : job.getDescription();
                 default:
                     return "";
             }

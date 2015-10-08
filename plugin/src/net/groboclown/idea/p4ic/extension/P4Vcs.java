@@ -57,6 +57,8 @@ import net.groboclown.idea.p4ic.ui.P4MultipleConnectionWidget;
 import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeProvider;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangelistListener;
+import net.groboclown.idea.p4ic.v2.extension.P4StatusUpdateEnvironment;
+import net.groboclown.idea.p4ic.v2.extension.P4SyncUpdateEnvironment;
 import net.groboclown.idea.p4ic.v2.file.FileExtensions;
 import net.groboclown.idea.p4ic.v2.file.P4CheckinEnvironment;
 import net.groboclown.idea.p4ic.v2.file.P4EditFileProvider;

@@ -2,13 +2,13 @@ package net.groboclown.idea.p4ic.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.ui.components.JBList;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -32,7 +32,7 @@ public class RevertedFilesDialog extends JDialog {
     private JPanel myNothingDonePanel;
 
     public RevertedFilesDialog(@NotNull Project project, @NotNull Collection<FilePath> reverted,
-            @NotNull Collection<VcsException> errors) {
+            @NotNull Collection<P4StatusMessage> errors) {
         super(WindowManager.getInstance().suggestParentWindow(project),
                 P4Bundle.message("reverted.files.title"));
         $$$setupUI$$$();
@@ -66,7 +66,7 @@ public class RevertedFilesDialog extends JDialog {
     }
 
     public static void show(@NotNull Project project, @NotNull Collection<FilePath> reverted,
-            @NotNull Collection<VcsException> errors) {
+            @NotNull List<P4StatusMessage> errors) {
         RevertedFilesDialog dialog = new RevertedFilesDialog(project, reverted, errors);
         dialog.pack();
         final Dimension bounds = dialog.getSize();
@@ -97,10 +97,11 @@ public class RevertedFilesDialog extends JDialog {
     }
 
     @NotNull
-    private List<String> exceptionDisplay(@NotNull final Collection<VcsException> errors) {
+    private List<String> exceptionDisplay(@NotNull final Collection<P4StatusMessage> errors) {
         List<String> ret = new ArrayList<String>(errors.size());
-        for (VcsException error : errors) {
-            ret.add(error.getMessage());
+        for (P4StatusMessage error : errors) {
+            // FIXME the errors should be linked to files; add them to the UI output.
+            ret.add(error.getMessage().getLocalizedMessage());
         }
         return ret;
     }

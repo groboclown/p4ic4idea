@@ -14,7 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
-import net.groboclown.idea.p4ic.server.P4Job;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,13 +34,13 @@ public class JobStatusListState extends CachedState {
     }
 
     public JobStatusListState() {
-        this.statuses = new ArrayList<String>(P4Job.DEFAULT_JOB_STATUS);
+        this.statuses = new ArrayList<String>(P4ChangeListJob.DEFAULT_JOB_STATUS);
     }
 
     public void setJobStatuses(@Nullable List<String> jobStatusValues) {
         statuses.clear();
         if (jobStatusValues == null || jobStatusValues.isEmpty()) {
-            statuses.addAll(P4Job.DEFAULT_JOB_STATUS);
+            statuses.addAll(P4ChangeListJob.DEFAULT_JOB_STATUS);
         } else {
             statuses.addAll(jobStatusValues);
         }
@@ -72,7 +72,7 @@ public class JobStatusListState extends CachedState {
             }
         }
         if (statuses.isEmpty()) {
-            return new JobStatusListState(P4Job.DEFAULT_JOB_STATUS);
+            return new JobStatusListState(P4ChangeListJob.DEFAULT_JOB_STATUS);
         }
         return new JobStatusListState(statuses);
     }

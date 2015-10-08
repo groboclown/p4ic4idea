@@ -21,8 +21,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
-import net.groboclown.idea.p4ic.server.P4Job;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
@@ -51,8 +51,13 @@ public class ClientCacheManager {
     private final WorkspaceServerCacheSync workspace;
     private final FileActionsServerCacheSync fileActions;
     private final ChangeListServerCacheSync changeLists;
-    private final JobStateServerCacheSync jobState;
+    private final JobStatusListStateServerCacheSync jobStatusList;
     private final IgnoreFiles ignoreFiles;
+
+    // Jobs are only stored in terms of their association with the
+    // changelists.  The current design is to have the jobs only
+    // be managed in terms of their association with changelists;
+    // creation and other actions on jobs is not supported.
 
     public ClientCacheManager(@NotNull ServerConfig config, @NotNull ClientLocalServerState state) {
         this.state = state;
@@ -67,7 +72,8 @@ public class ClientCacheManager {
         changeLists = new ChangeListServerCacheSync(cache,
                 state.getLocalClientState().getChanges(),
                 state.getCachedServerState().getChanges());
-        jobState = new JobStateServerCacheSync(state.getCachedServerState().getJobStatusList());
+        jobStatusList = new JobStatusListStateServerCacheSync(
+                state.getCachedServerState().getJobStatusList());
         ignoreFiles = new IgnoreFiles(config);
     }
 
@@ -89,7 +95,7 @@ public class ClientCacheManager {
 
     @NotNull
     public ServerQuery createJobStatusListRefreshQuery() {
-        return jobState.createRefreshQuery();
+        return jobStatusList.createRefreshQuery();
     }
 
     /**
@@ -152,11 +158,11 @@ public class ClientCacheManager {
 
     @NotNull
     public Collection<String> getCachedJobStatusList() {
-        return jobState.getJobStatusList();
+        return jobStatusList.getJobStatusList();
     }
 
     @NotNull
-    public Map<String, P4Job> getCachedJobIds(final Collection<String> jobIds) {
+    public Map<String, P4ChangeListJob> getCachedJobIds(final Collection<String> jobIds) {
         // FIXME implement
         throw new IllegalStateException("not implemented");
     }
@@ -201,6 +207,11 @@ public class ClientCacheManager {
     @Nullable
     public PendingUpdateState renameChangelist(final int changeListId, final String description) {
         return changeLists.renameChangelist(changeListId, description);
+    }
+
+    @NotNull
+    public Collection<P4ChangeListJob> getCachedJobsInChangelists(final Collection<P4ChangeListId> changes) {
+        return changeLists.getJobsInChangelists(changes);
     }
 
 

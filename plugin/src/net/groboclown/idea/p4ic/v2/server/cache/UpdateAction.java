@@ -53,14 +53,15 @@ public enum UpdateAction {
     DELETE_CHANGELIST(UpdateGroup.CHANGELIST_DELETE,
             UpdateParameterNames.CHANGELIST),
 
-    SET_JOB_DETAIL(UpdateGroup.JOB,
-            UpdateParameterNames.JOB, UpdateParameterNames.FIELD, UpdateParameterNames.VALUE),
-    SET_JOB_DESCRIPTION(UpdateGroup.JOB,
-            UpdateParameterNames.JOB, UpdateParameterNames.DESCRIPTION),
-    CREATE_JOB(UpdateGroup.JOB,
-            UpdateParameterNames.JOB, UpdateParameterNames.DESCRIPTION),
-    DELETE_JOB(UpdateGroup.JOB,
-            UpdateParameterNames.JOB),
+    // Job management is not handled by the server right now.
+    //SET_JOB_DETAIL(UpdateGroup.JOB,
+    //        UpdateParameterNames.JOB, UpdateParameterNames.FIELD, UpdateParameterNames.VALUE),
+    //SET_JOB_DESCRIPTION(UpdateGroup.JOB,
+    //        UpdateParameterNames.JOB, UpdateParameterNames.DESCRIPTION),
+    //CREATE_JOB(UpdateGroup.JOB,
+    //        UpdateParameterNames.JOB, UpdateParameterNames.DESCRIPTION),
+    //DELETE_JOB(UpdateGroup.JOB,
+    //        UpdateParameterNames.JOB),
 
     // Note: changing a file to a different changelist is not an independent action;
     // it's considered keeping the current action but with a new changelist number.
@@ -68,18 +69,17 @@ public enum UpdateAction {
             UpdateParameterNames.DEPOT, UpdateParameterNames.FILE, UpdateParameterNames.CHANGELIST),
     DELETE_FILE(UpdateGroup.FILE_DELETE,
             UpdateParameterNames.DEPOT, UpdateParameterNames.FILE, UpdateParameterNames.CHANGELIST),
-    MOVE_FILE(UpdateGroup.FILE,
+    MOVE_FILE(UpdateGroup.FILE_MOVE,
             UpdateParameterNames.DEPOT, UpdateParameterNames.DEPOT_SOURCE,
             UpdateParameterNames.FILE, UpdateParameterNames.FILE_SOURCE, UpdateParameterNames.CHANGELIST),
-    // TODO is this the right update group?
-    MOVE_DELETE_FILE(UpdateGroup.FILE_DELETE,
+    MOVE_DELETE_FILE(UpdateGroup.FILE_NO_OP, // no=op because it's implicit in the move operation
             UpdateParameterNames.DEPOT, UpdateParameterNames.FILE, UpdateParameterNames.CHANGELIST),
-    INTEGRATE_FILE(UpdateGroup.FILE,
+    INTEGRATE_FILE(UpdateGroup.FILE_MOVE,
             UpdateParameterNames.DEPOT, UpdateParameterNames.DEPOT_SOURCE,
             UpdateParameterNames.FILE, UpdateParameterNames.FILE_SOURCE, UpdateParameterNames.CHANGELIST),
     EDIT_FILE(UpdateGroup.FILE_ADD_EDIT,
             UpdateParameterNames.FILE, UpdateParameterNames.CHANGELIST),
-    REVERT_FILE(UpdateGroup.FILE,
+    REVERT_FILE(UpdateGroup.FILE_REVERT,
             UpdateParameterNames.DEPOT, UpdateParameterNames.FILE),
 
     // A hybrid action, due to the nature of creating local changelists and their relationship to
@@ -91,6 +91,8 @@ public enum UpdateAction {
     ADD_IGNORE_PATTERN(UpdateGroup.IGNORE_PATTERNS,
             UpdateParameterNames.PATTERN),
     IGNORE_FILE_UPDATE(UpdateGroup.IGNORE_PATTERNS)
+
+    // Submit is not allowed while offline, so it's not in this list.
     ;
 
     public enum UpdateParameterNames {

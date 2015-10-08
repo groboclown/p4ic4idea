@@ -16,11 +16,16 @@ package net.groboclown.idea.p4ic.v2.server.cache;
 
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ChangeListServerCacheSync;
+import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.FileActionsServerCacheSync;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
+import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerUpdateAction;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * The general category of update that this belongs to.  All updates that share
@@ -49,7 +54,11 @@ public enum UpdateGroup {
     /** Updates to the delete state and changelist association on files. */
     FILE_DELETE(new FileActionsServerCacheSync.DeleteFactory()),
 
-    FILE(new NIF()), // FIXME
+    FILE_MOVE(new NIF()), // FIXME
+
+    FILE_REVERT(new NIF()), // FIXME
+
+    FILE_NO_OP(new NoOp()),
 
     /** Updates to the ignore file */
     IGNORE_PATTERNS(new NIF()) // FIXME
@@ -72,6 +81,27 @@ public enum UpdateGroup {
         @Override
         public ServerUpdateAction create(@NotNull final Collection<PendingUpdateState> states) {
             throw new IllegalStateException("Not implemented: " + states);
+        }
+    }
+
+    static class NoOp implements ServerUpdateActionFactory {
+        @NotNull
+        @Override
+        public ServerUpdateAction create(@NotNull final Collection<PendingUpdateState> states) {
+            return new ServerUpdateAction() {
+                @NotNull
+                @Override
+                public Collection<PendingUpdateState> getPendingUpdateStates() {
+                    return Collections.emptyList();
+                }
+
+                @Override
+                public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
+                        @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                        throws InterruptedException {
+                    // intentionally empty
+                }
+            };
         }
     }
 }

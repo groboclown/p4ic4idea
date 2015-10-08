@@ -19,17 +19,13 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.Client;
-import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.ServerStoreService;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * For now, this action is based on all the servers.
@@ -49,10 +45,10 @@ public class P4WorkOfflineAction extends AnAction {
             return;
         }
         final P4Vcs vcs = P4Vcs.getInstance(getProject(e));
-        Set<ServerConfig> onlineServers = new HashSet<ServerConfig>();
-        for (Client client: vcs.getClients()) {
-            if (client.isWorkingOnline()) {
-                onlineServers.add(client.getConfig());
+        List<P4Server> onlineServers = new ArrayList<P4Server>();
+        for (P4Server server: vcs.getP4Servers()) {
+            if (server.isWorkingOnline()) {
+                onlineServers.add(server);
             }
         }
         if (! onlineServers.isEmpty()) {
@@ -62,13 +58,8 @@ public class P4WorkOfflineAction extends AnAction {
                     Messages.getQuestionIcon()) == Messages.CANCEL) {
                 return;
             }
-            for (ServerConfig config: onlineServers) {
-                try {
-                    ServerStoreService.getInstance().getServerStatus(project, config).
-                            forceDisconnect();
-                } catch (P4InvalidConfigException ex) {
-                    LOG.info(ex);
-                }
+            for (P4Server server: onlineServers) {
+                server.workOffline();
             }
         }
     }
@@ -105,22 +96,17 @@ public class P4WorkOfflineAction extends AnAction {
 
 
     private boolean isWorkingOnline(@Nullable Project project) {
-        if (project == null) {
+        if (project == null || project.isDisposed()) {
             return false;
         }
         P4Vcs vcs = P4Vcs.getInstance(project);
-        // If any one client is offline, then report offline.
-        List<Client> clients = vcs.getClients();
-        // Likewise, if there are no clients, or it's a config problem, then report offline
-        if (clients.isEmpty()) {
-            return false;
-        }
-        for (Client client : clients) {
-            if (client.isWorkingOffline()) {
+
+        // only report online if no server reports offline.
+        for (P4Server server : vcs.getP4Servers()) {
+            if (server.isWorkingOffline()) {
                 return false;
             }
         }
-
         return true;
     }
 }

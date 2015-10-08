@@ -14,10 +14,13 @@
 
 package net.groboclown.idea.p4ic.v2.server.connection;
 
+import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.IFileOperationResult;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -26,7 +29,7 @@ public class MessageResult<T> {
     private final List<P4StatusMessage> messages;
     private final boolean error;
 
-    public static <T extends IFileOperationResult> MessageResult<List<T>> create(List<T> specs) {
+    public static <T extends IFileOperationResult> MessageResult<List<T>> create(@NotNull  List<T> specs) {
         List<T> results = new ArrayList<T>(specs.size());
         List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
         for (T spec : specs) {
@@ -41,7 +44,7 @@ public class MessageResult<T> {
     }
 
 
-    public static <T extends IFileOperationResult> MessageResult<List<T>> create(List<T> specs,
+    public static <T extends IFileOperationResult> MessageResult<List<T>> create(@NotNull  List<T> specs,
             boolean markFileNotFoundAsValid) {
         List<T> results = new ArrayList<T>(specs.size());
         List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
@@ -75,11 +78,17 @@ public class MessageResult<T> {
         return result;
     }
 
+    @NotNull
     public List<P4StatusMessage> getMessages() {
         return messages;
     }
 
     public boolean isError() {
         return error;
+    }
+
+    @NotNull
+    public Collection<? extends VcsException> messagesAsExceptions() {
+        return P4StatusMessage.messagesAsErrors(getMessages());
     }
 }

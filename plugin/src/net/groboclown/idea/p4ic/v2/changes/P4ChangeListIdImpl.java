@@ -16,7 +16,6 @@ package net.groboclown.idea.p4ic.v2.changes;
 
 import com.intellij.openapi.util.Comparing;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
-import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jetbrains.annotations.NotNull;
@@ -70,12 +69,6 @@ public class P4ChangeListIdImpl implements P4ChangeListId {
     @Override
     public boolean isUnsynchedChangelist() {
         return clid <= P4ChangeListId.P4_LOCAL;
-    }
-
-    @Override
-    public boolean isIn(@NotNull Client client) {
-        return getServerConfigId().equals(client.getConfig().getServiceName()) &&
-                getClientName().equals(client.getClientName());
     }
 
     @Override

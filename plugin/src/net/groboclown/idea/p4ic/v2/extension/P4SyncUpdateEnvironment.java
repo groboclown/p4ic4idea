@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.extension;
+package net.groboclown.idea.p4ic.v2.extension;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
@@ -22,15 +22,17 @@ import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.update.*;
-import net.groboclown.idea.p4ic.config.Client;
-import net.groboclown.idea.p4ic.extension.P4RevisionNumber.RevType;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
-import net.groboclown.idea.p4ic.server.P4FileInfo.ClientAction;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.ui.sync.SyncOptionConfigurable;
+import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.connection.MessageResult;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -62,24 +64,23 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
 
         final SyncUpdateSession session = new SyncUpdateSession();
         final Map<String, FileGroup> groups = sortByFileGroupId(updatedFiles.getTopLevelGroups(), null);
-        final Map<Client, List<FilePath>> clientRoots = findClientRoots(contentRoots, session);
+        final Map<P4Server, List<FilePath>> clientRoots = findClientRoots(contentRoots, session);
 
-        for (Entry<Client, List<FilePath>> entry: clientRoots.entrySet()) {
-            Client client = entry.getKey();
-            try {
-                // Get the revision or changelist from the Configurable that the user wants to sync to.
-                final List<P4FileInfo> results = client.getServer().synchronizeFiles(
-                        entry.getValue(),
-                        syncOptions.getRevision(),
-                        syncOptions.getChangelist(),
-                        syncOptions.isForceSync(), session.exceptions);
-                for (P4FileInfo file: results) {
-                    updateFileInfo(file);
-                    addToGroup(file, groups);
-                }
-            } catch (VcsException e) {
-                session.exceptions.add(e);
+        for (Entry<P4Server, List<FilePath>> entry : clientRoots.entrySet()) {
+            P4Server server = entry.getKey();
+            // Get the revision or changelist from the Configurable that the user wants to sync to.
+
+            final MessageResult<Collection<FileSyncResult>> results = server.synchronizeFiles(
+                    entry.getValue(),
+                    syncOptions.getRevision(),
+                    syncOptions.getChangelist(),
+                    syncOptions.isForceSync());
+
+            for (FileSyncResult file : results.getResult()) {
+                updateFileInfo(file);
+                addToGroup(file, groups);
             }
+            session.exceptions.addAll(results.messagesAsExceptions());
         }
 
         return session;
@@ -92,39 +93,36 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
      *
      * @param file p4 file information
      */
-    private void updateFileInfo(@Nullable final P4FileInfo file) {
+    private void updateFileInfo(@Nullable final FileSyncResult file) {
         if (file != null) {
-            final FilePath path = file.getPath();
+            final FilePath path = file.getFilePath();
             path.hardRefresh();
         }
     }
 
-    private void addToGroup(@Nullable final P4FileInfo file,
+    private void addToGroup(@Nullable final FileSyncResult file,
             @NotNull final Map<String, FileGroup> groups) {
         final String groupId = getGroupIdFor(file);
         if (groupId != null) {
             final FileGroup group = groups.get(groupId);
             if (group != null) {
-                group.add(file.getPath().getIOFile().getAbsolutePath(),
-                        P4Vcs.getKey(), new P4RevisionNumber(file.getDepotPath(), file, RevType.HAVE));
+                group.add(file.getFilePath().getIOFile().getAbsolutePath(),
+                        P4Vcs.getKey(), file.getRevisionNumber());
             } else {
-                LOG.warn("Unknown group " + groupId + " for action " + file.getClientAction() +
-                        "; caused by synchronizing " + file.getPath());
+                LOG.warn("Unknown group " + groupId + " for action " + file.getFileAction() +
+                        "; caused by synchronizing " + file.getFilePath());
             }
         }
     }
 
 
     @Nullable
-    private String getGroupIdFor(@Nullable final P4FileInfo file) {
+    private String getGroupIdFor(@Nullable final FileSyncResult file) {
         if (file == null) {
             return null;
         }
-        LOG.info("sync: " + file.getClientAction() + " / " + file.getPath());
-        if (file.getClientAction() == ClientAction.NONE) {
-            return FileGroup.UPDATED_ID;
-        }
-        return file.getClientAction().getFileGroupId();
+        LOG.info("sync: " + file.getFileAction() + " / " + file.getFilePath());
+        return P4StatusUpdateEnvironment.getGroupId(file.getFileAction());
     }
 
     @Nullable
@@ -145,13 +143,12 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
     }
 
 
-
     private Map<String, FileGroup> sortByFileGroupId(final List<FileGroup> groups, Map<String, FileGroup> sorted) {
         if (sorted == null) {
             sorted = new HashMap<String, FileGroup>();
         }
 
-        for (FileGroup group: groups) {
+        for (FileGroup group : groups) {
             sorted.put(group.getId(), group);
             sorted = sortByFileGroupId(group.getChildren(), sorted);
         }
@@ -165,33 +162,38 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
      * might map to multiple clients.
      *
      * @param contentRoots input context roots
-     * @param session session
+     * @param session      session
      * @return clients mapped to roots
      */
-    private Map<Client, List<FilePath>> findClientRoots(final FilePath[] contentRoots, final SyncUpdateSession session) {
-        Map<Client, List<FilePath>> ret = new HashMap<Client, List<FilePath>>();
+    private Map<P4Server, List<FilePath>> findClientRoots(final FilePath[] contentRoots,
+            final SyncUpdateSession session) {
+        Map<P4Server, List<FilePath>> ret = new HashMap<P4Server, List<FilePath>>();
 
         Set<FilePath> discoveredRoots = new HashSet<FilePath>();
 
-        final List<Client> clients = vcs.getClients();
-        for (Client client: clients) {
+        for (P4Server server : vcs.getP4Servers()) {
             final List<FilePath> clientPaths = new ArrayList<FilePath>();
-            final List<FilePath> clientRoots;
+            final List<FilePath> clientRoots = new ArrayList<FilePath>();
             try {
-                clientRoots = client.getFilePathRoots();
-            } catch (P4InvalidConfigException e) {
-                session.exceptions.add(e);
+                for (List<File> roots : server.getRoots()) {
+                    for (File file : roots) {
+                        clientRoots.add(FilePathUtil.getFilePath(file));
+                    }
+                }
+            } catch (InterruptedException e) {
+                session.exceptions.add(new VcsInterruptedException(e));
                 continue;
             }
 
+            // FIXME re-examine this logic
             // Find the double mapping - if a content root is a child of the client root, then add the
             // content root.  If the client root is a child of the content root, then add the client root.
-            for (FilePath clientRoot: clientRoots) {
+            for (FilePath clientRoot : clientRoots) {
                 for (FilePath contentRoot : contentRoots) {
-                    if (contentRoot.isUnder(clientRoot, false) && ! discoveredRoots.contains(contentRoot)) {
+                    if (contentRoot.isUnder(clientRoot, false) && !discoveredRoots.contains(contentRoot)) {
                         clientPaths.add(contentRoot);
                         discoveredRoots.add(contentRoot);
-                    } else if (clientRoot.isUnder(contentRoot, false) && ! discoveredRoots.contains(clientRoot)) {
+                    } else if (clientRoot.isUnder(contentRoot, false) && !discoveredRoots.contains(clientRoot)) {
                         clientPaths.add(clientRoot);
                         discoveredRoots.add(clientRoot);
                     }
@@ -201,8 +203,8 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
             // We could shrink the contents of the list - we don't want both a/b/c AND a/b in the list.
             // However, the p4 command will shrink it for us.
 
-            if (! clientPaths.isEmpty()) {
-                ret.put(client, clientPaths);
+            if (!clientPaths.isEmpty()) {
+                ret.put(server, clientPaths);
             }
         }
 

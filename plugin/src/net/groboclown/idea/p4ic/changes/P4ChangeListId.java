@@ -15,7 +15,6 @@ package net.groboclown.idea.p4ic.changes;
 
 import com.intellij.openapi.vcs.VcsBundle;
 import com.perforce.p4java.core.IChangelist;
-import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jetbrains.annotations.NotNull;
@@ -64,15 +63,6 @@ public interface P4ChangeListId {
      * @return true if the changelist has not been created on the server.
      */
     boolean isUnsynchedChangelist();
-
-    /**
-     * Is this changelist in the given client?  Matches on the client name
-     * and the server config id.
-     *
-     * @param client client to check
-     * @return true if the given client matches the server config and client name.
-     */
-    boolean isIn(@NotNull Client client);
 
     /**
      * Is this changelist in the given client?  Matches on the client name

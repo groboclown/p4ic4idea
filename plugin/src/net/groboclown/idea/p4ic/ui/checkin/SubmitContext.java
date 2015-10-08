@@ -16,15 +16,12 @@ package net.groboclown.idea.p4ic.ui.checkin;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
-import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.P4Job;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.file.P4CheckinEnvironment;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
@@ -45,7 +42,7 @@ public class SubmitContext {
 
     private final P4Vcs vcs;
     private final P4ChangeListMapping changeListMapping;
-    private final List<P4Job> jobs;
+    private final List<P4ChangeListJob> jobs;
     private Set<String> acceptableJobStates = Collections.emptySet();
 
     // default status
@@ -57,7 +54,7 @@ public class SubmitContext {
 
     public SubmitContext(@NotNull P4Vcs vcs, Collection<Change> ideaChanges) {
         this.vcs = vcs;
-        this.jobs = new ArrayList<P4Job>();
+        this.jobs = new ArrayList<P4ChangeListJob>();
         this.currentChanges = new HashMap<P4Server, List<P4ChangeListId>>();
         this.changeListMapping = P4ChangeListMapping.getInstance(vcs.getProject());
         refresh(ideaChanges);
@@ -72,19 +69,25 @@ public class SubmitContext {
         return isJobAssociationValid;
     }
 
-    public List<P4Job> getJobs() {
+    @NotNull
+    public List<P4ChangeListJob> getJobs() {
         return Collections.unmodifiableList(jobs);
     }
 
 
-    public P4Job addJobId(@NotNull String jobId) {
+    @Nullable
+    public P4ChangeListJob addJobId(@NotNull String jobId) {
         if (isJobAssociationValid()) {
-            P4Job job = getJob(null, jobId);
-            if (job == null) {
-                return null;
+            for (P4Server server: currentChanges.keySet()) {
+                P4ChangeListJob job = getJob(server, jobId);
+                if (job != null) {
+                    jobs.add(job);
+                    return job;
+                }
             }
-            jobs.add(job);
-            return job;
+            LOG.info("Could not find job " + jobId + " on any registered server for the active changelists " +
+                    currentChanges);
+            return null;
         } else {
             return null;
         }
@@ -97,7 +100,7 @@ public class SubmitContext {
 
 
 
-    public void removeJob(@NotNull P4Job jobId) {
+    public void removeJob(@NotNull P4ChangeListJob jobId) {
         jobs.remove(jobId);
     }
 
@@ -130,7 +133,7 @@ public class SubmitContext {
             // special status used for check-ins, but is not a formal status.
             acceptableJobStates.add("same");
 
-            acceptableJobStates.addAll(P4Job.DEFAULT_JOB_STATUS);
+            acceptableJobStates.addAll(P4ChangeListJob.DEFAULT_JOB_STATUS);
         }
         return acceptableJobStates;
     }
@@ -193,7 +196,7 @@ public class SubmitContext {
 
 
     @Nullable
-    private P4Job getJob(@NotNull P4Server server, @NotNull final String jobId) {
+    private P4ChangeListJob getJob(@NotNull P4Server server, @NotNull final String jobId) {
         try {
             return server.getJobsForIds(Collections.singleton(jobId)).get(jobId);
         } catch (InterruptedException e) {
@@ -204,33 +207,15 @@ public class SubmitContext {
 
 
     @NotNull
-    private List<P4Job> getJobsFor(@NotNull P4Server server, @NotNull Collection<P4ChangeListId> changes) {
-        Set<P4Job> allJobs = new HashSet<P4Job>();
-        for (P4ChangeListId changeListId: changes) {
-            // FIXME get the change list value, and add in its jobs
-            // allJobs.addAll(server.get)
+    private List<P4ChangeListJob> getJobsFor(@NotNull P4Server server, @NotNull Collection<P4ChangeListId> changes) {
+        try {
+            final ArrayList<P4ChangeListJob> ret = new ArrayList<P4ChangeListJob>(server.getJobsInChangelists(changes));
+            Collections.sort(ret);
+            return ret;
+        } catch (InterruptedException e) {
+            LOG.warn(e);
+            return Collections.emptyList();
         }
-
-        for (Client client: vcs.getClients()) {
-            for (P4ChangeListId change : changes) {
-                if (change.isIn(client)) {
-                    try {
-                        final Collection<P4Job> jobs = client.getServer().getJobsForChangelist(change.getChangeListId());
-                        if (jobs != null) {
-                            allJobs.addAll(jobs);
-                        }
-                    } catch (P4InvalidConfigException e) {
-                        LOG.info(e);
-                    } catch (VcsException e) {
-                        LOG.info(e);
-                    }
-                }
-            }
-        }
-
-        List<P4Job> ret = new ArrayList<P4Job>(allJobs);
-        Collections.sort(ret);
-        return ret;
     }
 
 

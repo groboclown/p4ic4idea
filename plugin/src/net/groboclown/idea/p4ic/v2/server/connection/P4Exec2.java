@@ -38,11 +38,12 @@ import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
-import net.groboclown.idea.p4ic.server.P4Job;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -707,12 +708,12 @@ public class P4Exec2 {
                         return values.get("Status");
                     }
                     LOG.info("No Status values listed in job spec");
-                    return P4Job.DEFAULT_JOB_STATUS;
+                    return P4ChangeListJob.DEFAULT_JOB_STATUS;
                 }
             });
         } catch (VcsException e) {
             LOG.info("Could not access the job spec", e);
-            return P4Job.DEFAULT_JOB_STATUS;
+            return P4ChangeListJob.DEFAULT_JOB_STATUS;
         }
     }
 
@@ -753,23 +754,23 @@ public class P4Exec2 {
 
 
     @Nullable
-    public P4Job getJobForId(@NotNull final String jobId) throws VcsException, CancellationException {
-        return exec.runWithServer(project, new ClientExec.WithServer<P4Job>() {
+    public P4JobState getJobForId(@NotNull final String jobId) throws VcsException, CancellationException {
+        return exec.runWithServer(project, new ClientExec.WithServer<P4JobState>() {
             @Override
-            public P4Job run(@NotNull final IOptionsServer server, @NotNull ClientExec.ServerCount count)
+            public P4JobState run(@NotNull final IOptionsServer server, @NotNull ClientExec.ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
-                P4Job job = null;
+                P4JobState job = null;
                 LOG.debug("Loading information for job " + jobId);
                 IJob iJob;
                 count.invoke("getJob");
                 try {
                     iJob = server.getJob(jobId);
-                    job = iJob == null ? null : new P4Job(iJob);
+                    job = iJob == null ? null : new P4JobState(iJob);
                 } catch (RequestException re) {
                     // Bug #33
                     LOG.warn(re);
                     if (re.getMessage().contains("Syntax error in")) {
-                        job = new P4Job(jobId, P4Bundle.message("error.job.parse", jobId, re.getMessage()));
+                        job = new P4JobState(jobId, P4Bundle.message("error.job.parse", jobId, re.getMessage()));
                     }
                 }
                 return job;

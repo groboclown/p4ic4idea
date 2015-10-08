@@ -20,20 +20,19 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.actions.AbstractVcsAction;
 import com.intellij.openapi.vcs.actions.VcsContext;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
-import net.groboclown.idea.p4ic.config.Client;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.P4FileInfo;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.RevertedFilesDialog;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
+import net.groboclown.idea.p4ic.v2.server.P4FileAction;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.connection.MessageResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,66 +60,40 @@ public class P4RevertUnchanged extends AbstractVcsAction {
 
         final ChangeList[] changes = e.getSelectedChangeLists();
         final Set<FilePath> reverted = new HashSet<FilePath>();
-        final List<VcsException> errors = new ArrayList<VcsException>();
+        final List<P4StatusMessage> errors = new ArrayList<P4StatusMessage>();
         if (changes != null) {
             for (ChangeList change: changes) {
-                final Map<Client, P4ChangeListId> clientChanges = mapClientsToChangelistsFor(vcs, change);
-                for (Entry<Client, P4ChangeListId> en: clientChanges.entrySet()) {
+                final Map<P4Server, P4ChangeListId> serverChanges = mapClientsToChangelistsFor(vcs, change);
+                for (Entry<P4Server, P4ChangeListId> en: serverChanges.entrySet()) {
+                    final P4Server server = en.getKey();
+                    final Set<FilePath> files = new HashSet<FilePath>();
                     try {
-                        List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
-                        final Collection<P4FileInfo> revertedInfo = en.getKey().getServer().revertUnchangedFilesInChangelist(
-                                en.getValue().getChangeListId(), messages);
-                        for (P4FileInfo fileInfo: revertedInfo) {
-                            reverted.add(fileInfo.getPath());
-                            LOG.debug("Revert unchanged from changelist: " + fileInfo.getPath());
+                        for (P4FileAction action: server.getOpenFiles()) {
+                            if (action.getChangeList() == en.getValue().getChangeListId()) {
+                                files.add(action.getFile());
+                            }
                         }
-                        errors.addAll(P4StatusMessage.messagesAsErrors(messages, true));
-                    } catch (VcsException ex) {
-                        LOG.warn("Revert caused error", ex);
-                        errors.add(ex);
+                        final MessageResult<Collection<FilePath>> messages =
+                                server.revertUnchangedFiles(files);
+                        reverted.addAll(messages.getResult());
+                        errors.addAll(messages.getMessages());
+                    } catch (InterruptedException ex) {
+                        LOG.warn(ex);
                     }
                 }
             }
         }
 
-
-        // Revert files
-        final FilePath[] files = e.getSelectedFilePaths();
-        if (files != null) {
-            Map<Client, List<FilePath>> clientFileMap;
-            try {
-                clientFileMap = vcs.mapFilePathToClient(Arrays.asList(files));
-            } catch (P4InvalidConfigException ex) {
-                errors.add(ex);
-                clientFileMap = Collections.emptyMap();
-            }
-
-            for (Entry<Client, List<FilePath>> entry: clientFileMap.entrySet()) {
-                List<FilePath> toRevert = getFilesToRevert(entry.getValue(), reverted);
-                if (! toRevert.isEmpty()) {
-                    try {
-                        List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
-                        final Collection<P4FileInfo> revertedInfo = entry.getKey().getServer().revertUnchangedFiles(toRevert, messages);
-                        for (P4FileInfo fileInfo : revertedInfo) {
-                            reverted.add(fileInfo.getPath());
-                            LOG.debug("Revert unchanged from filespec: " + fileInfo.getPath());
-                        }
-                        errors.addAll(P4StatusMessage.messagesAsErrors(messages, true));
-                    } catch (VcsException ex) {
-                        LOG.warn("Revert caused error", ex);
-                        errors.add(ex);
-                    }
+        if (! reverted.isEmpty()) {
+            P4ChangesViewRefresher.refreshLater(project);
+            ApplicationManager.getApplication().invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    RevertedFilesDialog.show(project, reverted, errors);
                 }
-            }
+            });
         }
 
-        P4ChangesViewRefresher.refreshLater(project);
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                RevertedFilesDialog.show(project, reverted, errors);
-            }
-        });
     }
 
     @Override
@@ -169,30 +142,20 @@ public class P4RevertUnchanged extends AbstractVcsAction {
      * @return online clients to P4 changelists
      */
     @NotNull
-    private Map<Client, P4ChangeListId> mapClientsToChangelistsFor(@NotNull P4Vcs vcs, @Nullable ChangeList ideaChange) {
+    private Map<P4Server, P4ChangeListId> mapClientsToChangelistsFor(@NotNull P4Vcs vcs, @Nullable ChangeList ideaChange) {
         if (ideaChange == null || ! (ideaChange instanceof LocalChangeList)) {
             return Collections.emptyMap();
         }
 
-
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
-        /*
-        Map<Client, P4ChangeListId> ret = new HashMap<Client, P4ChangeListId>();
-        for (Client client: vcs.getClients()) {
-            final P4ChangeListId change = P4ChangeListMapping.getInstance(vcs.getProject()).getPerforceChangelistFor(client, (LocalChangeList) ideaChange);
-            if (client.isWorkingOnline() && change != null) {
-                ret.put(client, change);
+        final LocalChangeList localChange = (LocalChangeList) ideaChange;
+        final P4ChangeListMapping changeListMapping = P4ChangeListMapping.getInstance(vcs.getProject());
+        Map<P4Server, P4ChangeListId> ret = new HashMap<P4Server, P4ChangeListId>();
+        for (P4Server server: vcs.getP4Servers()) {
+            final P4ChangeListId change = changeListMapping.getPerforceChangelistFor(server, localChange);
+            if (change != null) {
+                ret.put(server, change);
             }
         }
-        return ret;
-        */
-    }
-
-    @NotNull
-    private List<FilePath> getFilesToRevert(@NotNull final List<FilePath> files, @NotNull final Set<FilePath> reverted) {
-        List<FilePath> ret = new ArrayList<FilePath>(files);
-        ret.removeAll(reverted);
         return ret;
     }
 

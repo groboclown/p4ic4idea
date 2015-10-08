@@ -26,8 +26,8 @@ import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
-import net.groboclown.idea.p4ic.server.P4Job;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.server.cache.*;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
@@ -92,11 +92,13 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
             ret.put(change.getChangelistId(), new P4ChangeListValue(cache.getClientServerId(), change));
         }
 
-        for (P4ChangeListState change: localClientChanges) {
-            if (change.isDeleted()) {
-                ret.remove(change.getChangelistId());
-            } else {
-                ret.put(change.getChangelistId(), new P4ChangeListValue(cache.getClientServerId(), change));
+        synchronized (localCacheSync) {
+            for (P4ChangeListState change : localClientChanges) {
+                if (change.isDeleted()) {
+                    ret.remove(change.getChangelistId());
+                } else {
+                    ret.put(change.getChangelistId(), new P4ChangeListValue(cache.getClientServerId(), change));
+                }
             }
         }
 
@@ -212,8 +214,10 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 final Collection<String> jobs = exec.getJobIdsForChangelist(state.getChangelistId());
                 if (jobs != null) {
                     for (String jobId : jobs) {
-                        final P4Job job = exec.getJobForId(jobId);
-                        state.addJob(new P4JobState(job));
+                        final P4JobState job = exec.getJobForId(jobId);
+                        if (job != null) {
+                            state.addJob(job);
+                        }
                     }
                 }
             } catch (VcsException e) {
@@ -295,6 +299,23 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         final P4ChangeListState local = getOrAddChangeState(changeListId);
         local.setComment(description);
         return description;
+    }
+
+    @NotNull
+    public Collection<P4ChangeListJob> getJobsInChangelists(@NotNull final Collection<P4ChangeListId> changes) {
+        final Collection<P4ChangeListValue> allChanges = getOpenedChangeLists();
+        Set<P4ChangeListJob> ret = new HashSet<P4ChangeListJob>();
+        for (P4ChangeListValue change : allChanges) {
+            for (P4ChangeListId changeId: changes) {
+                if (change.getChangeListId() == changeId.getChangeListId() &&
+                        change.getClientServerId().equals(changeId.getClientServerId())) {
+                    for (P4JobState job: change.getJobStates()) {
+                        ret.add(new P4ChangeListJob(change, job));
+                    }
+                }
+            }
+        }
+        return ret;
     }
 
     // =======================================================================

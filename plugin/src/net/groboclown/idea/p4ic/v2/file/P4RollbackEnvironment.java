@@ -26,7 +26,9 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.connection.MessageResult;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -151,7 +153,9 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             for (Entry<P4Server, List<FilePath>> entry : mapping.entrySet()) {
                 listener.checkCanceled();
                 listener.accept(entry.getValue());
-                entry.getKey().synchronizeFiles(entry.getValue(), -1, null, true, exceptions);
+                final MessageResult<Collection<FileSyncResult>> results =
+                        entry.getKey().synchronizeFiles(entry.getValue(), -1, null, true);
+                exceptions.addAll(results.messagesAsExceptions());
             }
         } catch (InterruptedException e) {
             LOG.warn(e);

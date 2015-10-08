@@ -27,18 +27,14 @@ import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.impl.generic.core.Changelist;
-import com.perforce.p4java.impl.generic.core.Job;
 import com.perforce.p4java.impl.generic.core.file.FilePath;
-import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
 import com.perforce.p4java.option.server.GetFileContentsOptions;
-import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.VcsFuture;
 import net.groboclown.idea.p4ic.background.VcsSettableFuture;
@@ -712,6 +708,7 @@ public class P4Exec {
     }
 
 
+    /*
     @Nullable
     public P4Job getJobForId(@NotNull final Project project, @NotNull final String jobId) throws VcsException, CancellationException {
         return runWithServer(project, new WithServer<P4Job>() {
@@ -735,6 +732,7 @@ public class P4Exec {
             }
         });
     }
+    */
 
 
     protected <T> T runWithClient(@NotNull final Project project, @NotNull final WithClient<T> runner)
@@ -1109,6 +1107,7 @@ public class P4Exec {
     }
 
 
+    /*
     private synchronized P4Job customGetJob(@NotNull final Server server, @NotNull final String jobId) throws ConnectionException, AccessException {
         List<Map<String, Object>> resultMaps = server.execMapCmdList(CmdSpec.JOB, new String[]{"-o", jobId}, null);
         if (resultMaps != null) {
@@ -1132,6 +1131,7 @@ public class P4Exec {
         }
         return null;
     }
+    */
 
 
     interface P4Runner<T> {

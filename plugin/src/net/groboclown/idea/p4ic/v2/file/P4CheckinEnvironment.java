@@ -31,11 +31,11 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.P4Job;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.ui.checkin.P4SubmitPanel;
 import net.groboclown.idea.p4ic.ui.checkin.SubmitContext;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
@@ -293,13 +293,13 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     }
 
 
-    private static void setJobs(@NotNull List<P4Job> jobIds, @NotNull PairConsumer<Object, Object> dataConsumer) {
+    private static void setJobs(@NotNull List<P4ChangeListJob> jobIds, @NotNull PairConsumer<Object, Object> dataConsumer) {
         dataConsumer.consume("jobIds", jobIds);
     }
 
     @SuppressWarnings("unchecked")
     @NotNull
-    private static List<P4Job> getJobs(@NotNull NullableFunction<Object, Object> dataFunc) {
+    private static List<P4ChangeListJob> getJobs(@NotNull NullableFunction<Object, Object> dataFunc) {
         final Object ret = dataFunc.fun("jobIds");
         if (ret == null) {
             return Collections.emptyList();

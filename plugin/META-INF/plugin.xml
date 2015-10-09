@@ -205,9 +205,6 @@
 
     <application-components>
         <component>
-            <implementation-class>net.groboclown.idea.p4ic.server.ServerStoreService</implementation-class>
-        </component>
-        <component>
             <implementation-class>net.groboclown.idea.p4ic.v2.server.connection.AlertManager</implementation-class>
         </component>
         <component>

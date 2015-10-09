@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.v2.server;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ProjectComponent;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupManager;
@@ -49,6 +50,12 @@ public class P4ServerManager implements ProjectComponent {
     private final Map<ClientServerId, P4Server> servers = new HashMap<ClientServerId, P4Server>();
     private final AlertManager alertManager;
     private volatile boolean connectionsValid = true;
+
+
+    @NotNull
+    public static P4ServerManager getInstance(@NotNull Project project) {
+        return ServiceManager.getService(project, P4ServerManager.class);
+    }
 
 
     /** should only be created by the P4Vcs object. */

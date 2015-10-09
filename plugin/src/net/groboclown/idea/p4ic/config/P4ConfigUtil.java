@@ -412,15 +412,21 @@ public class P4ConfigUtil {
                     } else if (!mapping.containsKey(vFile.getParent())) {
                         // ignore, because this specific directory has a mapping
                         // already; don't perform the config file loading again.
-                        // FIXME DEBUG
-                        LOG.info("-- already loaded config for " + vFile.getParent());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("-- already loaded config for " + vFile.getParent());
+                        }
                     } else if (!file.exists()) {
-                        LOG.info("Discovered non-existent file in IDEA cache: " + file);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Discovered non-existent file in IDEA cache: " + file);
+                        }
                     } else if (file.getName().equals(configFileName)) {
                         ManualP4Config config = new ManualP4Config();
                         config.setConfigFile(file.getAbsolutePath());
                         try {
-                            LOG.info("-- loading config file " + file.getAbsolutePath() + " -> " + vFile.getParent());
+                            if (LOG.isDebugEnabled()) {
+                                LOG.info("-- loading config file " + file.getAbsolutePath() + " -> " + vFile
+                                        .getParent());
+                            }
                             final P4Config loadedConfig = loadCmdP4Config(config);
                             mapping.put(vFile.getParent(), loadedConfig);
                         } catch (IOException e) {

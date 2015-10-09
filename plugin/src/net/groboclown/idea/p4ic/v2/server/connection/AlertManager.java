@@ -267,7 +267,6 @@ public class AlertManager implements ApplicationComponent {
 
     class ErrorMsg implements Runnable {
         final CriticalErrorHandler error;
-        //final Client client;
         final Throwable src;
         final Date when = new Date();
 

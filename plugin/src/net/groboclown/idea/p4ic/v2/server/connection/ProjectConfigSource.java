@@ -103,7 +103,7 @@ public class ProjectConfigSource {
             return new ProjectConfigSource(project, new ArrayList<VirtualFile>(dirs),
                     clientName, serverConfig);
         }
-        
+
         @Override
         public String toString() {
             return clientName + "; " + serverConfig + "; " + dirs;

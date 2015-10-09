@@ -13,7 +13,6 @@
  */
 package net.groboclown.idea.p4ic.server;
 
-import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
 import org.jetbrains.annotations.NotNull;
@@ -22,17 +21,6 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated should instead use a {@link ServerConfig} and {@link ServerConnectedController}.
  */
 public interface ServerStatus {
-    /**
-     *
-     * @param project project
-     * @param clientName client name
-     * @return executor
-     * @deprecated use ServerConnection instead.
-     */
-    ServerExecutor getExecutorForClient(@NotNull Project project, @NotNull String clientName);
-
-    void removeClient(@NotNull String clientName);
-
     @NotNull
     ServerConfig getConfig();
 
@@ -56,6 +44,4 @@ public interface ServerStatus {
      * @deprecated see ServerConnectionController
      */
     void forceDisconnect();
-
-    ServerConnectedController getConnectedController();
 }

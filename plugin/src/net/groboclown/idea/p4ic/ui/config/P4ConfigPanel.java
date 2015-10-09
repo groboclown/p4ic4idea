@@ -562,9 +562,11 @@ public class P4ConfigPanel {
                 // Find the source corresponding to the selected item
                 final StringBuilder displayText = new StringBuilder();
                 try {
-                    LOG.info("creating connection configs");
+                    LOG.debug("creating connection configs");
                     final Collection<Builder> sources = createConnectionConfigs();
-                    LOG.info(" - found sources " + sources);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(" - found sources " + sources);
+                    }
                     Builder selectedSource = null;
                     if (sources.isEmpty()) {
                         selectedSource = null;
@@ -587,15 +589,17 @@ public class P4ConfigPanel {
                     }
 
                     if (selectedSource != null) {
-                        LOG.info(" - selected source is " + selectedSource);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug(" - selected source is " + selectedSource);
+                        }
                         createSourceDisplay(displayText, selectedSource);
                     } else {
                         // don't know if this is right...
-                        LOG.info(" - no selected source, and no sources found");
+                        LOG.info("No selected source, and no sources found");
                         displayText.append(P4Bundle.message("config.display.properties.no_path"));
                     }
                 } catch (P4InvalidConfigException e) {
-                    LOG.info(" - invalid config", e);
+                    LOG.info("Invalid config", e);
                     displayText.append(P4Bundle.message("configuration.resolved.invalid-setup",
                             e.getMessage()));
                 }
@@ -648,11 +652,14 @@ public class P4ConfigPanel {
 
     @CalledInAwt
     private <T> void runBackgroundAwtAction(@NotNull final AsyncProcessIcon icon, @NotNull final BackgroundAwtAction<T> action) {
-        // FIXME debug
-        LOG.info("Requested background action " + icon.getName(), new Throwable("stack capture"));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Requested background action " + icon.getName());
+        }
         synchronized (activeProcesses) {
             if (activeProcesses.contains(icon)) {
-                LOG.info(" - process is already running in background");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(" - process is already running in background");
+                }
                 return;
             }
             activeProcesses.add(icon);
@@ -662,18 +669,23 @@ public class P4ConfigPanel {
         ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
             @Override
             public void run() {
-                LOG.info("Running " + icon.getName() + " in background ");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Running " + icon.getName() + " in background ");
+                }
                 T tmpValue;
                 Exception tmpFailure;
                 try {
                     tmpValue = action.runBackgroundProcess();
                     tmpFailure = null;
                 } catch (Exception e) {
-                    LOG.info("Background procesing for " + icon.getName() + " failed", e);
+                    LOG.error("Background processing for " + icon.getName() + " failed", e);
                     tmpValue = null;
                     tmpFailure = e;
                 } finally {
-                    LOG.info("Background processing for " + icon.getName() + " completed.  Queueing AWT processing.");
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Background processing for " + icon
+                                .getName() + " completed.  Queueing AWT processing.");
+                    }
                 }
                 final T value = tmpValue;
                 final Exception failure = tmpFailure;
@@ -686,7 +698,9 @@ public class P4ConfigPanel {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        LOG.info("Running " + icon.getName() + " in AWT");
+                        if (LOG.isDebugEnabled()) {
+                            LOG.info("Running " + icon.getName() + " in AWT");
+                        }
                         try {
                             if (failure == null) {
                                 action.runAwtProcess(value);
@@ -697,7 +711,9 @@ public class P4ConfigPanel {
                             synchronized (activeProcesses) {
                                 activeProcesses.remove(icon);
                             }
-                            LOG.info("AWT processing for " + icon.getName() + " completed");
+                            if (LOG.isDebugEnabled()) {
+                                LOG.info("AWT processing for " + icon.getName() + " completed");
+                            }
                         }
                     }
                 });

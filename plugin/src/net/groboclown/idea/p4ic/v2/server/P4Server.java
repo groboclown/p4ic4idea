@@ -30,7 +30,6 @@ import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
-import net.groboclown.idea.p4ic.server.ServerExecutor;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
@@ -50,6 +49,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -64,8 +64,7 @@ import java.util.Map.Entry;
  * <p/>
  * The owner should also only save the state for valid server objects.
  * <p/>
- * This is a future replacement for {@link ServerExecutor}.  It connects
- * to a {@link ServerConnection}.
+ * It connects to a {@link ServerConnection}.
  */
 public class P4Server {
     private static final Logger LOG = Logger.getInstance(P4Server.class);
@@ -918,7 +917,8 @@ public class P4Server {
 
     private static final RevCompare REV_COMPARE = new RevCompare();
 
-    private static class RevCompare implements Comparator<P4FileRevision> {
+    // Comparator must implement Serializable
+    private static class RevCompare implements Comparator<P4FileRevision>, Serializable {
         @Override
         public int compare(final P4FileRevision o1, final P4FileRevision o2) {
             // compare in reverse order

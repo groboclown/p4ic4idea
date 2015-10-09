@@ -17,22 +17,12 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.*;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsListener;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
-import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.ServerExecutor;
-import net.groboclown.idea.p4ic.server.ServerStatus;
-import net.groboclown.idea.p4ic.server.ServerStoreService;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
-import net.groboclown.idea.p4ic.server.exceptions.P4WorkingOfflineException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
@@ -41,10 +31,10 @@ import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSourceLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.CancellationException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Manages the configuration of the Perforce setup.  It should handle the normal method
@@ -77,11 +67,7 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
     boolean sourcesInitialized = false;
 
     @Nullable
-    private List<Client> clients;
-    private P4InvalidConfigException clientConfigEx;
-    private P4InvalidClientException clientClientEx;
     boolean clientsInitialized = false;
-    private ManualP4Config previous;
 
     // FIXME for testing
     private int badLoadCount = 0;
@@ -193,108 +179,6 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
         return ret;
     }
 
-
-    /**
-     * @param project
-     * @return
-     * @throws P4InvalidConfigException
-     * @throws P4InvalidClientException
-     * @deprecated see #readProjectConfigSources(Project)
-     */
-    public List<Client> loadClients(@NotNull Project project)
-            throws P4InvalidConfigException, P4InvalidClientException {
-        initializeClients();
-        if (clientConfigEx != null) {
-            P4InvalidConfigException ret = new P4InvalidConfigException(clientConfigEx.getMessage());
-            ret.initCause(clientConfigEx);
-            throw ret;
-        }
-        if (clientClientEx != null) {
-            P4InvalidClientException ret = new P4InvalidClientException(clientClientEx.getMessage());
-            ret.initCause(clientClientEx);
-            throw ret;
-        }
-        return clients;
-    }
-
-    private void initializeClients() {
-        synchronized (this) {
-            if (! clientsInitialized) {
-                // Mark as initialized first, so we don't re-enter this function.
-                clientsInitialized = true;
-                try {
-                    clientClientEx = null;
-                    clientConfigEx = null;
-                    clients = readClients(previous);
-                } catch (P4InvalidConfigException e) {
-                    clientConfigEx = e;
-                    clients = null;
-                } catch (P4InvalidClientException e) {
-                    clientClientEx = e;
-                    clients = null;
-                }
-            }
-        }
-    }
-
-    /**
-     *
-     * @return
-     * @throws P4InvalidConfigException
-     * @throws P4InvalidClientException
-     * @deprecated see #readProjectConfigSources(Project)
-     */
-    private List<Client> readClients(@Nullable P4Config old) throws P4InvalidConfigException, P4InvalidClientException {
-        // If the manual config defines a relative p4config file,
-        // then find those under the root for the project.
-        // Otherwise, just return the config.
-
-        List<Client> ret = new ArrayList<Client>();
-
-        ManualP4Config base = getBaseConfig();
-        String configFile = base.getConfigFile();
-        if (configFile != null && configFile.indexOf('/') < 0 &&
-                configFile.indexOf('\\') < 0 &&
-                configFile.indexOf(File.separatorChar) < 0) {
-            // Relative config file
-            Map<VirtualFile, P4Config> map = P4ConfigUtil.loadProjectP4Configs(project, configFile, true);
-            if (map.isEmpty()) {
-                LOG.info("No p4config files found for config setup");
-                P4InvalidConfigException ex = new P4InvalidConfigException(P4Bundle.message("error.config.no-file"));
-                Events.configInvalid(project, base, ex);
-                throw ex;
-            }
-            for (Map.Entry<VirtualFile, P4Config> en: map.entrySet()) {
-                Client client = new ClientImpl(project, en.getValue(), Collections.singletonList(en.getKey()));
-                // Check that the root directory is fine.
-                client.getRoots();
-                ret.add(client);
-            }
-        } else {
-            P4Config fullConfig;
-            try {
-                fullConfig = P4ConfigUtil.loadCmdP4Config(base);
-            } catch (IOException e) {
-                LOG.info("Error loading p4 config file", e);
-                P4InvalidConfigException ex = new P4InvalidConfigException(e);
-                Events.configInvalid(project, base, ex);
-                throw ex;
-            }
-            List<VirtualFile> roots = P4Vcs.getInstance(project).getVcsRoots();
-            // Not necessary: the roots for the client should only be based on the VCS roots.
-            //roots.add(project.getBaseDir());
-            //for (Module module: ModuleManager.getInstance(project).getModules()) {
-            //    roots.addAll(Arrays.asList(ModuleRootManager.getInstance(module).getContentRoots()));
-            //}
-            Client client = new ClientImpl(project, fullConfig, roots);
-            // Check that the root directory is fine.
-            client.getRoots();
-            ret.add(client);
-        }
-
-        return ret;
-    }
-
     /**
      * 
      * @return a copy of the base config.  The only way to actually update the value is
@@ -324,7 +208,6 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
                 // initialized yet.  That can lead to the project view being
                 // empty.  IntelliJ 13 shows the massive amount of errors, but
                 // 15 hides it.
-                previous = original;
                 sourcesInitialized = false;
                 clientsInitialized = false;
             }
@@ -379,181 +262,6 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
     @Override
     public String getComponentName() {
         return "P4ConfigProject";
-    }
-
-
-    static class ClientImpl implements Client {
-        private final Project project;
-        private final P4Config sourceConfig;
-        private final ServerConfig config;
-
-        @Nullable
-        private ServerStatus status;
-        private final String clientName;
-        private final List<VirtualFile> inputRoots;
-        private List<VirtualFile> roots;
-        private List<FilePath> fpRoots;
-
-        ClientImpl(@NotNull Project project, @NotNull P4Config config, @NotNull List<VirtualFile> roots)
-                throws P4InvalidConfigException, P4InvalidClientException {
-            this.project = project;
-            this.sourceConfig = config;
-            this.config = ServerConfig.createNewServerConfig(project, config);
-            if (this.config == null) {
-                P4InvalidConfigException ex = new P4InvalidConfigException(config);
-                Events.configInvalid(project, config, ex);
-                throw ex;
-            }
-            this.clientName = config.getClientname();
-            if (clientName == null || clientName.length() <= 0) {
-                throw new P4InvalidClientException();
-            }
-            this.status = ServerStoreService.getInstance().getServerStatus(project, this.config);
-            this.inputRoots = roots;
-            if (roots.isEmpty()) {
-                throw new P4InvalidConfigException(P4Bundle.message("error.config.no-roots", clientName));
-            }
-        }
-
-        @NotNull
-        @Override
-        public ServerExecutor getServer() throws P4InvalidConfigException {
-            if (status == null) {
-                // Note that this error is actually due to the client no longer being
-                // valid, rather than a real config problem.
-                throw new P4InvalidConfigException(P4Bundle.message("error.config.disconnected"));
-            }
-            return status.getExecutorForClient(project, clientName);
-        }
-
-        @NotNull
-        @Override
-        public String getClientName() {
-            return clientName;
-        }
-
-        @NotNull
-        @Override
-        public ServerConfig getConfig() {
-            return config;
-        }
-
-        @NotNull
-        @Override
-        public List<VirtualFile> getRoots() throws P4InvalidConfigException {
-            setupRoots();
-            return roots;
-        }
-
-        @NotNull
-        @Override
-        public List<FilePath> getFilePathRoots() throws P4InvalidConfigException {
-            setupRoots();
-            return fpRoots;
-        }
-
-
-        @Override
-        public boolean isWorkingOffline() {
-            return status == null || status.isWorkingOffline();
-        }
-
-        @Override
-        public boolean isWorkingOnline() {
-            return status != null && status.isWorkingOnline();
-        }
-
-        @Override
-        public void forceDisconnect() {
-            if (status != null) {
-                status.forceDisconnect();
-            }
-        }
-
-        @Override
-        public void dispose() {
-            if (status != null) {
-                status.removeClient(getClientName());
-                ServerStoreService.getInstance().removeServerConfig(project, config);
-                // FIXME DEBUG
-                LOG.info("*** disposed client " + clientName + " (" + config + ")");
-                status = null;
-            }
-        }
-
-        @Override
-        public boolean isDisposed() {
-            return status == null;
-        }
-
-        @Override
-        public boolean isSameConfig(@NotNull final P4Config p4config) {
-            // FIXME ensure this does the right thing
-            return sourceConfig.equals(p4config);
-        }
-
-
-        @Override
-        public String toString() {
-            return config.getServiceName() + " " + clientName;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null || ! obj.getClass().equals(ClientImpl.class)) {
-                return false;
-            }
-            ClientImpl that = (ClientImpl) obj;
-            return Comparing.equal(config, that.config) &&
-                    Comparing.equal(clientName, that.clientName);
-        }
-
-        @Override
-        public int hashCode() {
-            return config.hashCode() + clientName.hashCode();
-        }
-
-
-        private synchronized void setupRoots() throws P4InvalidConfigException {
-            if (roots != null || status == null) {
-                return;
-            }
-
-            // Ensure the root is valid
-            try {
-                // getServer won't work yet, because we haven't defined the root directory yet.
-                // We don't need a root for the call we're making, so don't worry about which one
-                // we choose at this point.
-                ServerExecutor exec = status.getExecutorForClient(project, clientName);
-                Collection<VirtualFile> realRoots = exec.findRoots(inputRoots);
-                if (realRoots.isEmpty()) {
-                    P4InvalidConfigException ex = new P4InvalidConfigException(P4Bundle.message("error.config.root-not-found", realRoots));
-                    Events.configInvalid(project, sourceConfig, ex);
-                    throw ex;
-                }
-                roots = Collections.unmodifiableList(new ArrayList<VirtualFile>(realRoots));
-                ArrayList<FilePath> fpr = new ArrayList<FilePath>(roots.size());
-                for (VirtualFile vf : roots) {
-                    fpr.add(VcsUtil.getFilePath(vf));
-                }
-                fpRoots = Collections.unmodifiableList(fpr);
-            } catch (P4InvalidConfigException e) {
-                // the thrower should make the call to the listener.
-                throw e;
-            } catch (CancellationException e) {
-                P4InvalidConfigException ex = new P4InvalidConfigException(e.getMessage());
-                ex.initCause(e);
-                Events.configInvalid(project, sourceConfig, ex);
-                throw ex;
-            } catch (VcsException e) {
-                P4InvalidConfigException ex = new P4InvalidConfigException(e.getMessage());
-                ex.initCause(e);
-                if (! (e instanceof P4WorkingOfflineException)) {
-                    Events.configInvalid(project, sourceConfig, ex);
-                }
-                throw ex;
-            }
-        }
     }
 
 }

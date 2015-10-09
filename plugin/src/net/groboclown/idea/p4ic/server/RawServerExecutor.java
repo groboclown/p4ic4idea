@@ -41,6 +41,7 @@ import java.util.concurrent.CancellationException;
 
 /**
  * Higher level actions on Perforce objects.
+ * @deprecated being kept around until the other code that's copying this is finished.
  */
 public class RawServerExecutor {
     private static final Logger LOG = Logger.getInstance(RawServerExecutor.class);

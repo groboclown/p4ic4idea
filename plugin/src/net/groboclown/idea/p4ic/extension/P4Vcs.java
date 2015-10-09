@@ -42,7 +42,6 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.TempFileWatchDog;
 import net.groboclown.idea.p4ic.compat.CompatFactoryLoader;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
-import net.groboclown.idea.p4ic.config.P4ConfigProject;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.ui.P4MultipleConnectionWidget;
 import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
@@ -186,7 +185,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     public P4Vcs(
             @NotNull Project project,
-            @NotNull P4ConfigProject configProject,
             @NotNull UserProjectPreferences preferences) {
         super(project, VCS_NAME);
 
@@ -199,7 +197,10 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         this.statusUpdateEnvironment = new P4StatusUpdateEnvironment(project);
         this.annotationProvider = new P4AnnotationProvider(this);
         this.committedChangesProvider = new P4CommittedChangesProvider();
-        this.serverManager = new P4ServerManager(project);
+
+        // TODO validate this line
+        this.serverManager = P4ServerManager.getInstance(project);
+
         this.revisionSelector = new P4RevisionSelector(this);
         this.tempFileWatchDog = new TempFileWatchDog();
         this.fileExtensions = new FileExtensions(this, AlertManager.getInstance());

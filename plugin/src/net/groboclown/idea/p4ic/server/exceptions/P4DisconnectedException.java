@@ -17,8 +17,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
-import net.groboclown.idea.p4ic.server.ServerStatus;
-import net.groboclown.idea.p4ic.server.ServerStoreService;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.P4ServerManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,21 +61,15 @@ public class P4DisconnectedException extends VcsConnectionProblem {
         if (project == null || project.isDisposed() || config == null) {
             return false;
         }
-        try {
-            ServerStatus status = ServerStoreService.getInstance().getServerStatus(project, config);
-            if (status.isWorkingOnline()) {
-                if (status.onDisconnect()) {
-                    //status.onReconnect();
-                    return true;
-                }
+
+        final P4ServerManager manager = P4ServerManager.getInstance(project);
+        for (P4Server server: manager.getServers()) {
+            if (server.getServerConfig().equals(config)) {
+                server.workOnline();
+                return server.isWorkingOnline();
             }
-            return false;
-        } catch (NullPointerException npe) {
-            // ignore
-            return false;
-        } catch (VcsConnectionProblem vcsConnectionProblem) {
-            return false;
         }
+        return false;
     }
 
 }

@@ -17,8 +17,7 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.config.ServerConfig;
-import net.groboclown.idea.p4ic.server.RawServerExecutor;
-import net.groboclown.idea.p4ic.server.ServerStoreService;
+import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
@@ -37,9 +36,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The multi-threaded connections to the Perforce server for a specific client.
- * <p>
- * This is a future replacement for the {@link RawServerExecutor}, {@link ServerStoreService}, and
- * {@link net.groboclown.idea.p4ic.server.ServerStatus}.
  */
 public class ServerConnection {
     private static final Logger LOG = Logger.getInstance(ServerConnection.class);
@@ -340,11 +336,10 @@ public class ServerConnection {
                 } catch (InterruptedException e) {
                     // do not requeue action
                     LOG.info(e);
-                } catch (ThreadDeath t) {
-                    throw t;
-                } catch (VirtualMachineError e) {
-                    throw e;
                 } catch (Throwable e) {
+                    // Ensure exceptions that we should never trap are handled right.
+                    VcsExceptionUtil.alwaysThrown(e);
+
                     // do not requeue action
                     LOG.error(e);
                 }

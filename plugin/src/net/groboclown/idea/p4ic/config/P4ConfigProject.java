@@ -37,6 +37,7 @@ import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource.Builder;
+import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSourceLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -154,80 +155,15 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
     @NotNull
     private List<ProjectConfigSource> readProjectConfigSources()
             throws P4InvalidConfigException {
-        // If the manual config defines a relative p4config file,
-        // then find those under the root for the project.
-        // Otherwise, just return the config.
 
-        ManualP4Config base = getBaseConfig();
-        String configFile = base.getConfigFile();
-        LOG.info(project.getName() + ": Config file: " + configFile + "; base config: " + base);
-        List<Builder> sourceBuilders;
-        if (configFile != null && configFile.indexOf('/') < 0 &&
-                configFile.indexOf('\\') < 0 &&
-                configFile.indexOf(File.separatorChar) < 0) {
-            LOG.info("Loading relative config files");
+        final Collection<Builder> sourceBuilders;
+        try {
+            sourceBuilders = ProjectConfigSourceLoader.loadSources(project, getBaseConfig());
+        } catch (P4InvalidConfigException ex) {
+            Events.configInvalid(project, getBaseConfig(), ex);
 
-            // Relative config file.  Make sure that we use the version
-            // that maps the correct root directory to the config file.
-            Map<VirtualFile, P4Config> map = P4ConfigUtil.loadCorrectDirectoryP4Configs(project, configFile);
-            if (map.isEmpty()) {
-                LOG.info("Config invalid because no p4config files were found");
-                P4InvalidConfigException ex = new P4InvalidConfigException(P4Bundle.message("error.config.no-file"));
-                Events.configInvalid(project, getBaseConfig(), ex);
-
-                // FIXME old crumbly stuff
-                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, base, ex);
-
-                throw ex;
-            }
-            // The map returns one virtual file for each config directory found (and/or VCS root directories).
-            // These may be duplicate configs, so need to add them to the matching entry, if any.
-            sourceBuilders = new ArrayList<Builder>(map.size());
-            LOG.info("config file mapping: " + map);
-
-            for (Map.Entry<VirtualFile, P4Config> en : map.entrySet()) {
-                boolean found = false;
-                for (Builder sourceBuilder : sourceBuilders) {
-                    if (sourceBuilder.isSame(en.getValue())) {
-                        LOG.info("found existing builder path " + en.getKey());
-                        sourceBuilder.add(en.getKey());
-                        found = true;
-                        break;
-                    }
-                }
-                if (! found) {
-                    LOG.info("found new builder path " + en.getKey() + " - " + en.getValue());
-                    final Builder builder = new Builder(project, en.getValue());
-                    builder.add(en.getKey());
-                    sourceBuilders.add(builder);
-                }
-            }
-        } else {
-            P4Config fullConfig;
-            try {
-                fullConfig = P4ConfigUtil.loadCmdP4Config(base);
-            } catch (IOException e) {
-                LOG.info("Config invalid because of an IO exception", e);
-                P4InvalidConfigException ex = new P4InvalidConfigException(e);
-                Events.configInvalid(project, getBaseConfig(), ex);
-
-                // FIXME old crumbly stuff
-                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, base, ex);
-
-                throw ex;
-            }
-
-            // Note that the roots may change, which is why we register a
-            // VCS root directory change listener.
-            List<VirtualFile> roots = P4Vcs.getInstance(project).getVcsRoots();
-            Builder builder = new Builder(project, fullConfig);
-            sourceBuilders = Collections.singletonList(builder);
-            for (VirtualFile root : roots) {
-                builder.add(root);
-            }
-            LOG.info("Added source builder from config " + fullConfig + " with roots " + roots);
+            throw ex;
         }
-
 
         List<ProjectConfigSource> ret = new ArrayList<ProjectConfigSource>(sourceBuilders.size());
         List<P4Config> invalidConfigs = new ArrayList<P4Config>();
@@ -248,10 +184,6 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
             P4InvalidConfigException ex = new P4InvalidConfigException(invalidConfigs);
             for (P4Config invalidConfig : invalidConfigs) {
                 Events.configInvalid(project, invalidConfig, new P4InvalidConfigException(invalidConfig));
-
-                // FIXME old stuff
-                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project,
-                        invalidConfig, ex);
             }
             throw ex;
         }
@@ -330,9 +262,6 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
                 LOG.info("No p4config files found for config setup");
                 P4InvalidConfigException ex = new P4InvalidConfigException(P4Bundle.message("error.config.no-file"));
                 Events.configInvalid(project, base, ex);
-
-                // FIXME old stuff
-                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, base, ex);
                 throw ex;
             }
             for (Map.Entry<VirtualFile, P4Config> en: map.entrySet()) {
@@ -349,9 +278,6 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
                 LOG.info("Error loading p4 config file", e);
                 P4InvalidConfigException ex = new P4InvalidConfigException(e);
                 Events.configInvalid(project, base, ex);
-
-                // FIXME old stuff
-                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, base, ex);
                 throw ex;
             }
             List<VirtualFile> roots = P4Vcs.getInstance(project).getVcsRoots();
@@ -365,16 +291,6 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
             client.getRoots();
             ret.add(client);
         }
-
-
-        // FIXME old stuff
-        ApplicationManager.getApplication().getMessageBus().syncPublisher(P4ClientsReloadedListener.TOPIC)
-                .clientsLoaded(project, ret);
-        if (old != null) {
-            project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).
-                    configChanges(project, old, base);
-        }
-
 
         return ret;
     }
@@ -447,10 +363,6 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
                         } catch (P4InvalidConfigException e) {
                             // Ignore; don't even log.
                         }
-
-                        // FIXME old crufty stuff
-                        project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC)
-                                .configChanges(project, config, config);
                     }
                 });
     }
@@ -490,9 +402,6 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
             if (this.config == null) {
                 P4InvalidConfigException ex = new P4InvalidConfigException(config);
                 Events.configInvalid(project, config, ex);
-
-                // FIXME old stuff
-                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, config, ex);
                 throw ex;
             }
             this.clientName = config.getClientname();
@@ -620,9 +529,6 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
                 if (realRoots.isEmpty()) {
                     P4InvalidConfigException ex = new P4InvalidConfigException(P4Bundle.message("error.config.root-not-found", realRoots));
                     Events.configInvalid(project, sourceConfig, ex);
-
-                    // FIXME old stuff
-                    project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, sourceConfig, ex);
                     throw ex;
                 }
                 roots = Collections.unmodifiableList(new ArrayList<VirtualFile>(realRoots));
@@ -638,18 +544,12 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
                 P4InvalidConfigException ex = new P4InvalidConfigException(e.getMessage());
                 ex.initCause(e);
                 Events.configInvalid(project, sourceConfig, ex);
-
-                // FIXME old stuff
-                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, sourceConfig, ex);
                 throw ex;
             } catch (VcsException e) {
                 P4InvalidConfigException ex = new P4InvalidConfigException(e.getMessage());
                 ex.initCause(e);
                 if (! (e instanceof P4WorkingOfflineException)) {
                     Events.configInvalid(project, sourceConfig, ex);
-
-                    // FIXME old stuff
-                    project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project, sourceConfig, ex);
                 }
                 throw ex;
             }

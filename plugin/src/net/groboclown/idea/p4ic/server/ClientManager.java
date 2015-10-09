@@ -76,16 +76,9 @@ public class ClientManager {
         clientAccess.writeLock().lock();
         try {
             if (!initialized) {
-                //ApplicationManager.getApplication().getMessageBus().connect().subscribe(
-                //        P4ConfigListener.TOPIC, new ConfigListener());
-                projectMessageBus = project.getMessageBus().connect();
-
-                // FIXME old stuff
-                ConfigListener listener = new ConfigListener();
-                projectMessageBus.subscribe(P4ConfigListener.TOPIC, listener);
-
                 appMessageBus = ApplicationManager.getApplication().getMessageBus().connect();
 
+                ConfigListener listener = new ConfigListener();
                 Events.appBaseConfigUpdated(appMessageBus, listener);
                 Events.appConfigInvalid(appMessageBus, listener);
 
@@ -149,14 +142,7 @@ public class ClientManager {
     }
 
 
-    class ConfigListener implements P4ConfigListener, BaseConfigUpdatedListener, ConfigInvalidListener {
-        @Override
-        public void configChanges(@NotNull Project project, @NotNull P4Config original, @NotNull P4Config config) {
-            if (project == ClientManager.this.project) {
-                loadConfig();
-            }
-        }
-
+    class ConfigListener implements BaseConfigUpdatedListener, ConfigInvalidListener {
         @Override
         public void configurationProblem(@NotNull Project project, @NotNull P4Config config, @NotNull P4InvalidConfigException ex) {
             if (project == ClientManager.this.project) {

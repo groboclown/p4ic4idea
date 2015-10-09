@@ -84,7 +84,7 @@ public class P4Exec {
     private final ConnectionHandler connectionHandler;
 
     @NotNull
-    private final OnServerConfigurationProblem onServerProblem;
+    private final Object onServerProblem;
 
     private boolean disposed = false;
 
@@ -93,7 +93,7 @@ public class P4Exec {
 
 
     public P4Exec(@NotNull ServerStatus serverStatus, @Nullable String clientName,
-                  @NotNull ConnectionHandler connectionHandler, @NotNull OnServerConfigurationProblem onServerProblem)
+                  @NotNull ConnectionHandler connectionHandler, @Nullable Object onServerProblem)
             throws P4InvalidConfigException {
         this.serverStatus = serverStatus;
         this.clientName = clientName;
@@ -884,8 +884,9 @@ public class P4Exec {
             } catch (ProtocolError e) {
                 LOG.warn("ProtocolError in P4JavaApi", e);
                 VcsSettableFuture<Boolean> future = VcsSettableFuture.create();
-                onServerProblem.onInvalidConfiguration(
-                        future, serverStatus.getConfig(), e.getMessage());
+                // FIXME change the future
+                //onServerProblem.onInvalidConfiguration(
+                //        future, serverStatus.getConfig(), e.getMessage());
                 Boolean b = getWithoutCancel(future);
                 if (b == null || b == Boolean.FALSE) {
                     throw new P4ApiException(e);
@@ -907,7 +908,8 @@ public class P4Exec {
                     }
                 } else {
                     VcsSettableFuture<Boolean> future = VcsSettableFuture.create();
-                    onServerProblem.onInvalidConfiguration(future, serverStatus.getConfig(), e.getMessage());
+                    // FIXME change the future
+                    //onServerProblem.onInvalidConfiguration(future, serverStatus.getConfig(), e.getMessage());
                     Boolean b = getWithoutCancel(future);
                     if (b == null || b == Boolean.FALSE) {
                         // force offline mode
@@ -919,8 +921,9 @@ public class P4Exec {
             } catch (ConfigException e) {
                 LOG.info("Problem with configuration", e);
                 VcsSettableFuture<Boolean> future = VcsSettableFuture.create();
-                onServerProblem.onInvalidConfiguration(
-                        future, serverStatus.getConfig(), e.getMessage());
+                // FIXME change the future
+                //onServerProblem.onInvalidConfiguration(
+                //        future, serverStatus.getConfig(), e.getMessage());
                 Boolean b = getWithoutCancel(future);
                 if (b == null || b == Boolean.FALSE) {
                     // force offline mode
@@ -938,8 +941,9 @@ public class P4Exec {
             } catch (TrustException e) {
                 LOG.info("SSL trust problem", e);
                 VcsSettableFuture<Boolean> future = VcsSettableFuture.create();
-                onServerProblem.onInvalidConfiguration(future,
-                        serverStatus.getConfig(), e.getMessage());
+                // FIXME change the future
+                //onServerProblem.onInvalidConfiguration(future,
+                //        serverStatus.getConfig(), e.getMessage());
                 Boolean b = getWithoutCancel(future);
                 if (b == null || b == Boolean.FALSE) {
                     throw new P4LoginException(e);
@@ -1002,7 +1006,8 @@ public class P4Exec {
             } catch (URISyntaxException e) {
                 LOG.info("Invalid URI", e);
                 VcsSettableFuture<Boolean> future = VcsSettableFuture.create();
-                onServerProblem.onInvalidConfiguration(future, serverStatus.getConfig(), e.getMessage());
+                // FIXME change the future
+                //onServerProblem.onInvalidConfiguration(future, serverStatus.getConfig(), e.getMessage());
                 Boolean b = getWithoutCancel(future);
                 if (b == null || b == Boolean.FALSE) {
                     throw new P4InvalidConfigException(e);

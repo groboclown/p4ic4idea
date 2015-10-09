@@ -19,9 +19,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.util.messages.MessageBusConnection;
-import net.groboclown.idea.p4ic.background.VcsSettableFuture;
-import net.groboclown.idea.p4ic.config.P4Config;
-import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
@@ -43,7 +40,7 @@ public class ServerStoreService implements ApplicationComponent {
 
     private final Object sync = new Object();
     private final Map<ServerConfig, ServerData> servers = new HashMap<ServerConfig, ServerData>();
-    private final MyConfigChangedListener configChangedListener = new MyConfigChangedListener();
+    //private final MyConfigChangedListener configChangedListener = new MyConfigChangedListener();
     private MessageBusConnection appMessageBus;
 
     public static ServerStoreService getInstance() {
@@ -95,7 +92,8 @@ public class ServerStoreService implements ApplicationComponent {
         appMessageBus = ApplicationManager.getApplication().getMessageBus().connect();
 
         // FIXME old stuff
-        appMessageBus.subscribe(P4ConfigListener.TOPIC, configChangedListener);
+        // no new stuff, because this class is old and will be removed.
+        //appMessageBus.subscribe(P4ConfigListener.TOPIC, configChangedListener);
     }
 
     @Override
@@ -392,6 +390,9 @@ public class ServerStoreService implements ApplicationComponent {
                 onlineChanging = true;
                 try {
                     synchronized (connectionSync) {
+                        // Just commented out, because this will all be removed soon.
+                        boolean wentOffline = true;
+                        /*
                         VcsSettableFuture<OnServerDisconnectListener.OnDisconnectAction> future =
                                 VcsSettableFuture.create();
                         ApplicationManager.getApplication().getMessageBus().syncPublisher(
@@ -406,6 +407,7 @@ public class ServerStoreService implements ApplicationComponent {
                         } catch (VcsException e) {
                             wentOffline = true;
                         }
+                        */
 
                         if (wentOffline) {
                             wentOffline();
@@ -536,18 +538,4 @@ public class ServerStoreService implements ApplicationComponent {
 
 
 
-    private class MyConfigChangedListener implements P4ConfigListener {
-        @Override
-        public void configChanges(@NotNull Project project, @NotNull P4Config original, @NotNull P4Config config) {
-            changeServerConfig(project,
-                    ServerConfig.createOldServerConfig(original),
-                    ServerConfig.createNewServerConfig(project, config));
-        }
-
-        @Override
-        public void configurationProblem(@NotNull Project project, @NotNull P4Config config, @NotNull P4InvalidConfigException ex) {
-            // ignore
-            LOG.info("Problem in config: " + config, ex);
-        }
-    }
 }

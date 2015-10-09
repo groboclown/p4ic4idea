@@ -27,7 +27,6 @@ import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
-import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.*;
@@ -129,8 +128,8 @@ public class RawServerExecutor {
                 } else if (! idlePool.isEmpty()) {
                     exec = idlePool.remove(idlePool.size() - 1);
                 } else if (activePool.size() < userPreferences.getMaxServerConnections()) {
-                    exec = new P4Exec(config, clientName, connectionHandler,
-                            new OnServerConfigurationProblem.WithMessageBus(project));
+                    exec = new P4Exec(config, clientName, connectionHandler, null);
+                    //        new OnServerConfigurationProblem.WithMessageBus(project));
                 } else if (System.currentTimeMillis() - startTime > userPreferences.getMaxConnectionWaitTimeMillis()) {
                     throw new P4DisconnectedException(P4Bundle.message("connection.timeout"));
                 } else {
@@ -344,8 +343,8 @@ public class RawServerExecutor {
 
 
                             // FIXME old stuff
-                            project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).
-                                    configurationProblem(project, badConfig, ex);
+                            //project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).
+                            //        configurationProblem(project, badConfig, ex);
                             throw ex;
                         }
                         LOG.info("Roots (" + missed + ") are not under the client root (" + clientFp +

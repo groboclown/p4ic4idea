@@ -38,10 +38,7 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.idea.p4ic.config.ManualP4Config;
-import net.groboclown.idea.p4ic.config.P4Config;
-import net.groboclown.idea.p4ic.config.P4ConfigProject;
-import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.config.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jetbrains.annotations.NotNull;
@@ -86,6 +83,11 @@ public class ProjectConfigSource {
         }
 
 
+        public Collection<VirtualFile> getDirs() {
+            return Collections.unmodifiableCollection(dirs);
+        }
+
+
         public boolean isSame(@NotNull P4Config other) {
             return new ManualP4Config(serverConfig, clientName).equals(other);
         }
@@ -100,6 +102,11 @@ public class ProjectConfigSource {
             }
             return new ProjectConfigSource(project, new ArrayList<VirtualFile>(dirs),
                     clientName, serverConfig);
+        }
+        
+        @Override
+        public String toString() {
+            return clientName + "; " + serverConfig + "; " + dirs;
         }
     }
 

@@ -19,6 +19,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.Log;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerInfo;
@@ -35,9 +36,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
@@ -115,6 +114,26 @@ public class ClientExec {
                 File.createTempFile("p4tempfile", "y"));
         try {
             return server.getServerInfo();
+        } finally {
+            server.disconnect();
+        }
+    }
+
+    static List<String> getClientNames(@NotNull ServerConfig config)
+            throws IOException, P4JavaException, URISyntaxException {
+        final IOptionsServer server = connectTo(null, null, ConnectionHandler.getHandlerFor(config), config,
+                // temp dir doesn't matter for this call.
+                File.createTempFile("p4tempfile", "y"));
+        try {
+            final List<IClientSummary> clients =
+                    server.getClients(config.getUsername(), null, 0);
+            List<String> ret = new ArrayList<String>(clients.size());
+            for (IClientSummary client : clients) {
+                if (client != null && client.getName() != null) {
+                    ret.add(client.getName());
+                }
+            }
+            return ret;
         } finally {
             server.disconnect();
         }

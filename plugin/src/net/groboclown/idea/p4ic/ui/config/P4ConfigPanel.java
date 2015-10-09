@@ -18,19 +18,29 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Comparing;
+import com.intellij.openapi.vcs.CalledInAwt;
+import com.intellij.openapi.vcs.CalledInBackground;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ListCellRendererWrapper;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.intellij.util.ui.AsyncProcessIcon;
 import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4Config.ConnectionMethod;
 import net.groboclown.idea.p4ic.config.P4ConfigUtil;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.ErrorDialog;
 import net.groboclown.idea.p4ic.ui.connection.*;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
+import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
+import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration.ClientResult;
+import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
+import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource.Builder;
+import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSourceLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,7 +48,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.util.*;
 import java.util.List;
 import java.util.Map.Entry;
@@ -51,7 +60,7 @@ public class P4ConfigPanel {
     private JButton myRefreshClientList;
     private JComboBox/*<String>*/ myClientList; // JDK 1.6 does not have generic combo box
     private JCheckBox myReuseEnvValueCheckBox;
-    private JButton checkConnectionButton;
+    private JButton myCheckConnectionButton;
     private JCheckBox mySilentlyGoOfflineOnCheckBox;
     private P4ConfigConnectionPanel myP4ConfigConnectionPanel;
     private ClientPasswordConnectionPanel myClientPasswordConnectionPanel;
@@ -65,11 +74,13 @@ public class P4ConfigPanel {
     private JTextArea myResolvedValuesField;
     private JLabel myResolvePathLabel;
     private JButton myRefreshResolved;
-
-    private final Object relativeConfigPathMapSync = new Object();
-    private Map<String, P4Config> relativeConfigPathMap;
+    private AsyncProcessIcon myCheckConnectionSpinner;
+    private AsyncProcessIcon myRefreshClientListSpinner;
+    private AsyncProcessIcon myRefreshResolvedSpinner;
 
     private Project myProject;
+    private AlertManager alertManager = AlertManager.getInstance();
+    private final Set<AsyncProcessIcon> activeProcesses = new HashSet<AsyncProcessIcon>();
 
     public P4ConfigPanel() {
         // Initialize GUI constant values
@@ -103,7 +114,7 @@ public class P4ConfigPanel {
         myRefreshClientList.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                loadClientList();
+                refreshClientList();
             }
         });
         myReuseEnvValueCheckBox.addActionListener(new ActionListener() {
@@ -114,7 +125,7 @@ public class P4ConfigPanel {
                 myClientList.setEnabled(allowSelection);
             }
         });
-        checkConnectionButton.addActionListener(new ActionListener() {
+        myCheckConnectionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 checkConnection();
@@ -197,7 +208,6 @@ public class P4ConfigPanel {
             }
         }
 
-        //refreshResolvedProperties();
         resetResolvedProperties();
     }
 
@@ -212,6 +222,9 @@ public class P4ConfigPanel {
         config.setConfigFile(null);
         config.setTrustTicketPath(null);
         config.setServerFingerprint(null);
+        config.setClientHostname(null);
+        config.setClientname(null);
+        config.setIgnoreFileName(null);
 
         ConnectionPanel conn = getSelectedConnection();
         conn.saveSettingsToConfig(config);
@@ -260,91 +273,190 @@ public class P4ConfigPanel {
     }
 
 
+    // ---------------------------------------------------------
+    // Connection utilities
+
     @NotNull
-    private P4Config createConnectionConfig() throws IOException {
+    private Collection<Builder> createConnectionConfigs()
+            throws P4InvalidConfigException {
         ManualP4Config partial = new ManualP4Config();
         saveSettingsToConfig(partial);
-        if (useRelativePathConfig()) {
-            // we can't load all the child configs from here
-            return partial;
+        return ProjectConfigSourceLoader.loadSources(myProject, partial);
+    }
+
+
+    /**
+     * Reports a problem to the user if there is any error in a config,
+     * and returns null.
+     *
+     * @return only the valid connections, or null if there are invalid ones.
+     */
+    @CalledInBackground
+    @Nullable
+    private Collection<ProjectConfigSource> getValidConfigs() {
+        try {
+            final Collection<Builder> sources = createConnectionConfigs();
+            final List<ProjectConfigSource> ret = new ArrayList<ProjectConfigSource>(sources.size());
+            final StringBuilder invalidConfigs = new StringBuilder();
+            String sep = "";
+            int invalidConfigCount = 0;
+            for (Builder source : sources) {
+                if (source.isInvalid()) {
+                    invalidConfigCount++;
+                    createSourceDisplay(invalidConfigs.append(sep), source);
+                    sep = "\n------------------\n";
+                } else {
+                    ret.add(source.create());
+                }
+            }
+            if (invalidConfigCount <= 0) {
+                if (ret.isEmpty()) {
+                    // FIXME use alertManager
+                    ErrorDialog.logError(myProject,
+                            P4Bundle.message("configuration.error.no-config-defined"),
+                            new P4InvalidConfigException(""));
+                    return null;
+                }
+                return ret;
+            }
+            // FIXME use alertManager
+            ErrorDialog.logError(myProject,
+                    P4Bundle.message("configuration.error.problem-list",
+                            invalidConfigCount, invalidConfigs.toString()),
+                    new P4InvalidConfigException(""));
+            return null;
+        } catch (P4InvalidConfigException e) {
+            // FIXME use alertManager
+            ErrorDialog.logError(myProject,
+                    P4Bundle.message("configuration.check.io-error"),
+                    e);
+            return null;
         }
-        return P4ConfigUtil.loadCmdP4Config(partial);
     }
 
 
     // ---------------------------------------------------------
     // UI callbacks
 
+    @CalledInAwt
     private void checkConnection() {
-        try {
-            final P4Config config = createConnectionConfig();
-            List<String> clients = new UserClientsLoader(
-                    myProject, config).loadClients();
-            if (clients != null) {
-                Messages.showMessageDialog(myProject,
-                        P4Bundle.message("configuration.dialog.valid-connection.message"),
-                        P4Bundle.message("configuration.dialog.valid-connection.title"),
-                        Messages.getInformationIcon());
+        runBackgroundAwtAction(myCheckConnectionSpinner, new BackgroundAwtAction<Map<ProjectConfigSource, Exception>>() {
+            @Override
+            public Map<ProjectConfigSource, Exception> runBackgroundProcess() {
+                final Collection<ProjectConfigSource> sources = getValidConfigs();
+                final Map<ProjectConfigSource, Exception> problems;
+                if (sources == null) {
+                    // errors already handled
+                    problems = null;
+                } else {
+                    problems = ConnectionUIConfiguration.findConnectionProblems(sources);
+                }
+                return problems;
             }
-        } catch (IOException e) {
-            ErrorDialog.logError(myProject,
-                    P4Bundle.message("configuration.check.io-error"),
-                    e);
-        }
+
+            @Override
+            public void runAwtProcess(final Map<ProjectConfigSource, Exception> problems) {
+                if (problems != null && problems.isEmpty()) {
+                    Messages.showMessageDialog(myProject,
+                            P4Bundle.message("configuration.dialog.valid-connection.message"),
+                            P4Bundle.message("configuration.dialog.valid-connection.title"),
+                            Messages.getInformationIcon());
+                } else if (problems != null) {
+                    // FIXME use alertManager
+                    ErrorDialog.logError(myProject,
+                            P4Bundle.message("configuration.check.io-error"),
+                            problems.values().iterator().next());
+                }
+            }
+        });
     }
 
-    private void loadClientList() {
-        final List<String> clients;
-        try {
-            final P4Config config = createConnectionConfig();
-            clients = new UserClientsLoader(
-                    myProject, config).loadClients();
-        } catch (IOException e) {
-            ErrorDialog.logError(myProject,
-                    P4Bundle.message("configuration.check.io-error"),
-                    e);
-            return;
-        }
-        if (clients == null) {
+    /**
+     * Reloads the displayed list of clients.
+     */
+    @CalledInAwt
+    private void refreshClientList() {
+        final Object selected = myClientList.getSelectedItem();
+        runBackgroundAwtAction(myRefreshClientListSpinner, new BackgroundAwtAction<List<String>>() {
+            @Override
+            public List<String> runBackgroundProcess() {
+                return loadClientList(selected);
+            }
+
+            @Override
+            public void runAwtProcess(final List<String> clientList) {
+                if (clientList != null) {
+                    myClientList.removeAllItems();
+                    for (String client : clientList) {
+                        myClientList.addItem(client);
+                    }
+                    if (!clientList.isEmpty()) {
+                        myClientList.setSelectedIndex(0);
+                    }
+                }
+                // else already handled the errors
+            }
+        });
+    }
+
+    @CalledInBackground
+    private List<String> loadClientList(@Nullable Object selected) {
+        final Map<ProjectConfigSource, ClientResult> clientResults =
+                ConnectionUIConfiguration.getClients(getValidConfigs());
+
+        if (clientResults == null) {
             // Don't need a status update or any updates; the user should have
             // seen error dialogs.
             LOG.info("UserClientsLoader returned null");
-            return;
+            return null;
         }
 
-        List<String> toAdd = new ArrayList<String>(clients.size() + 1);
-        toAdd.addAll(clients);
+        // Find errors and valid clients
+        Set<String> toAdd = new HashSet<String>();
+        List<Exception> problems = new ArrayList<Exception>();
+        for (Entry<ProjectConfigSource, ClientResult> entry : clientResults.entrySet()) {
+            if (entry.getValue().isInalid()) {
+                problems.add(entry.getValue().getConnectionProblem());
+            } else {
+                toAdd.addAll(entry.getValue().getClientNames());
+            }
+        }
+        if (!problems.isEmpty()) {
+            // FIXME use alert manager
+            ErrorDialog.logError(myProject,
+                    P4Bundle.message("configuration.check.io-error"),
+                    problems.get(0));
+            return null;
+        }
 
         // Make sure to keep the currently selected item selected.
         // If it wasn't in the original list, it needs to be added
         // and have a custom renderer highlight it as ss invalid.
         // Also, move the currently selected one to the top.
-        Object selected = myClientList.getSelectedItem();
+
+        // TODO if the selected item isn't in the new client list,
+        // then mark it as an error.
+
+        List<String> orderedClients = new ArrayList<String>(toAdd);
+        Collections.sort(orderedClients);
         if (selected != null) {
-            clients.remove(selected.toString());
-            if (selected.toString().trim().length() > 0) {
-                toAdd.remove(selected.toString());
-                toAdd.add(0, selected.toString());
-            } else {
-                selected = null;
+            if (orderedClients.remove(selected.toString()) && selected.toString().trim().length() > 0) {
+                // in the new client list and it's a valid (not-empty) name.
+                orderedClients.add(0, selected.toString());
             }
         }
-
-        myClientList.removeAllItems();
-        for (String client : toAdd) {
-            myClientList.addItem(client);
-        }
-        if (selected != null) {
-            myClientList.setSelectedItem(selected);
-        }
+        return orderedClients;
     }
 
+    @CalledInAwt
     private void changeConnectionSelection() {
         int currentSelectedIndex = myConnectionChoice.getSelectedIndex();
         ConnectionPanel selected = (ConnectionPanel) myConnectionChoice.getItemAt(currentSelectedIndex);
+
         showConnectionPanel(selected);
     }
 
+    @CalledInAwt
     private void initializeClientAndPathSelection(@Nullable String currentClientName,
             @NotNull final ConnectionMethod connectionMethod) {
         if (connectionMethod.isRelativeToPath()) {
@@ -383,7 +495,7 @@ public class P4ConfigPanel {
         }
     }
 
-
+    @CalledInAwt
     private void showConnectionPanel(@NotNull ConnectionPanel panel) {
         myConnectionDescriptionLabel.setText("<html>" + panel.getDescription());
         ((CardLayout) myConnectionTypeContainerPanel.getLayout()).show(
@@ -394,50 +506,42 @@ public class P4ConfigPanel {
     }
 
 
-    private void createUIComponents() {
-        // Add custom component construction here.
-        myP4ConfigConnectionPanel = new P4ConfigConnectionPanel();
-    }
-
-
     /**
      * Refresh the list of config file paths.  This will indirectly invoke
      * the refreshResolvedProperties
      */
+    @CalledInAwt
     private void refreshConfigPaths() {
-        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+        runBackgroundAwtAction(myRefreshResolvedSpinner, new BackgroundAwtAction<Collection<ProjectConfigSource>>() {
             @Override
-            public void run() {
-                // Load the config paths in the background thread
-                final Map<String, P4Config> mapping = loadRelativeConfigPaths();
+            public Collection<ProjectConfigSource> runBackgroundProcess() {
+                return getValidConfigs();
+            }
 
-                // update the UI in the EDT
-                ApplicationManager.getApplication().invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        // load the drop-down list with the new values.
-                        // Make sure to maintain the existing selected item.
-
-                        Object current = myResolvePath.getSelectedItem();
-                        myResolvePath.removeAllItems();
-                        if (mapping != null && !mapping.isEmpty()) {
-                            boolean found = false;
-                            for (String s : mapping.keySet()) {
-                                if (s.equals(current)) {
-                                    found = true;
-                                }
-                                myResolvePath.addItem(s);
+            @Override
+            public void runAwtProcess(final Collection<ProjectConfigSource> sources) {
+                // load the drop-down list with the new values.
+                // Make sure to maintain the existing selected item.
+                Object current = myResolvePath.getSelectedItem();
+                myResolvePath.removeAllItems();
+                if (sources != null && !sources.isEmpty()) {
+                    boolean found = false;
+                    for (ProjectConfigSource source : sources) {
+                        for (VirtualFile dir : source.getProjectSourceDirs()) {
+                            if (dir.getPath().equals(current)) {
+                                found = true;
                             }
-                            if (found) {
-                                myResolvePath.setSelectedItem(current);
-                            } else {
-                                myResolvePath.setSelectedIndex(0);
-                            }
+                            myResolvePath.addItem(dir);
                         }
-
-                        refreshResolvedProperties();
                     }
-                });
+                    if (found) {
+                        myResolvePath.setSelectedItem(current);
+                    } else {
+                        myResolvePath.setSelectedIndex(0);
+                    }
+                }
+
+                refreshResolvedProperties();
             }
         });
     }
@@ -446,52 +550,87 @@ public class P4ConfigPanel {
     /**
      * Refresh just the list of resolved properties.
      */
+    @CalledInAwt
     private void refreshResolvedProperties() {
-        final StringBuilder display = new StringBuilder();
-        P4Config config = null;
+        // This is actually invoked when the config directory drop-down is changed,
+        // or when the connection is changed, but this spinner is fine.
 
-        Object configPath = useRelativePathConfig()
-                ? myResolvePath.getSelectedItem()
-                : null;
+        final Object selectedItem = myResolvePath.getSelectedItem();
+        runBackgroundAwtAction(myRefreshResolvedSpinner, new BackgroundAwtAction<StringBuilder>() {
+            @Override
+            public StringBuilder runBackgroundProcess() {
+                // Find the source corresponding to the selected item
+                final StringBuilder displayText = new StringBuilder();
+                try {
+                    LOG.info("creating connection configs");
+                    final Collection<Builder> sources = createConnectionConfigs();
+                    LOG.info(" - found sources " + sources);
+                    Builder selectedSource = null;
+                    if (sources.isEmpty()) {
+                        selectedSource = null;
+                    } else if (sources.size() == 1 || selectedItem == null) {
+                        selectedSource = sources.iterator().next();
+                    } else {
+                        sourceLoop:
+                        for (Builder source : sources) {
+                            if (source.isInvalid()) {
+                                // skip
+                            } else {
+                                for (VirtualFile file : source.getDirs()) {
+                                    if (file.getPath().equals(selectedItem)) {
+                                        selectedSource = source;
+                                        break sourceLoop;
+                                    }
+                                }
+                            }
+                        }
+                    }
 
-        if (configPath != null) {
-            LOG.debug("using config path " + configPath);
-            config = getConfigForRelativeConfigPath(configPath.toString());
-        } else if (useRelativePathConfig()) {
-            myResolvedValuesField.setText(P4Bundle.message("config.display.properties.no_path"));
-            return;
-        }
-        if (config == null) {
-            LOG.debug("Using cmd style config loading");
-            ManualP4Config manualConfig = new ManualP4Config();
-            saveSettingsToConfig(manualConfig);
-            try {
-                config = P4ConfigUtil.loadCmdP4Config(manualConfig);
-            } catch (IOException e) {
-                display.append(P4Bundle.message("configuration.resolved.file-not-found",
-                        manualConfig.getConfigFile()));
+                    if (selectedSource != null) {
+                        LOG.info(" - selected source is " + selectedSource);
+                        createSourceDisplay(displayText, selectedSource);
+                    } else {
+                        // don't know if this is right...
+                        LOG.info(" - no selected source, and no sources found");
+                        displayText.append(P4Bundle.message("config.display.properties.no_path"));
+                    }
+                } catch (P4InvalidConfigException e) {
+                    LOG.info(" - invalid config", e);
+                    displayText.append(P4Bundle.message("configuration.resolved.invalid-setup",
+                            e.getMessage()));
+                }
+                return displayText;
             }
+
+
+            @Override
+            public void runAwtProcess(final StringBuilder displayText) {
+                myResolvedValuesField.setText(displayText.toString());
+            }
+        });
+    }
+
+
+    @NotNull
+    private StringBuilder createSourceDisplay(@NotNull StringBuilder display,
+            @NotNull Builder builder) {
+        if (builder.isInvalid()) {
+            display.append(P4Bundle.message("config.display.invalid")).append("\n");
         }
-
-
-        final Map<String, String> props = P4ConfigUtil.getProperties(config);
+        final Map<String, String> props = P4ConfigUtil.getProperties(builder.getBaseConfig());
         List<String> keys = new ArrayList<String>(props.keySet());
         Collections.sort(keys);
-        boolean first = true;
+        String sep = "";
         for (String key : keys) {
-            if (first) {
-                first = false;
-            } else {
-                display.append("\n");
-            }
+            display.append(sep);
             String val = props.get(key);
             if (val == null) {
                 val = P4Bundle.getString("config.display.key.no-value");
             }
             display.append(P4Bundle.message("config.display.property-line", key, val));
+            sep = "\n";
         }
-
-        myResolvedValuesField.setText(display.toString());
+        return display;
     }
 
 
@@ -499,68 +638,92 @@ public class P4ConfigPanel {
         myResolvedValuesField.setText(P4Bundle.message("config.display.properties.refresh"));
     }
 
-    // ----------------------------------------------------------------------------
-    // Relative path methods
 
+    private interface BackgroundAwtAction<T> {
+        T runBackgroundProcess();
 
-    private boolean useRelativePathConfig() {
-        return useRelativePathConfig(getSelectedConnection());
+        void runAwtProcess(T value);
     }
 
 
-    private static boolean useRelativePathConfig(@NotNull ConnectionPanel conn) {
-        return conn.getConnectionMethod().isRelativeToPath();
-    }
-
-
-    private void clearRelativeConfigPaths() {
-        synchronized (relativeConfigPathMapSync) {
-            relativeConfigPathMap = null;
-        }
-    }
-
-
-    @Nullable
-    private P4Config getConfigForRelativeConfigPath(String path) {
-        synchronized (relativeConfigPathMapSync) {
-            if (relativeConfigPathMap == null) {
-                return null;
+    @CalledInAwt
+    private <T> void runBackgroundAwtAction(@NotNull final AsyncProcessIcon icon, @NotNull final BackgroundAwtAction<T> action) {
+        // FIXME debug
+        LOG.info("Requested background action " + icon.getName(), new Throwable("stack capture"));
+        synchronized (activeProcesses) {
+            if (activeProcesses.contains(icon)) {
+                LOG.info(" - process is already running in background");
+                return;
             }
-            return relativeConfigPathMap.get(path);
+            activeProcesses.add(icon);
         }
+        icon.resume();
+        icon.setVisible(true);
+        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+            @Override
+            public void run() {
+                LOG.info("Running " + icon.getName() + " in background ");
+                T tmpValue;
+                Exception tmpFailure;
+                try {
+                    tmpValue = action.runBackgroundProcess();
+                    tmpFailure = null;
+                } catch (Exception e) {
+                    LOG.info("Background procesing for " + icon.getName() + " failed", e);
+                    tmpValue = null;
+                    tmpFailure = e;
+                } finally {
+                    LOG.info("Background processing for " + icon.getName() + " completed.  Queueing AWT processing.");
+                }
+                final T value = tmpValue;
+                final Exception failure = tmpFailure;
+
+                // NOTE: ApplicationManager.getApplication().invokeLater
+                // will not work, because it will wait until the UI dialog
+                // goes away, which means we can't see the results until
+                // the UI element goes away, which is just backwards.
+
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        LOG.info("Running " + icon.getName() + " in AWT");
+                        try {
+                            if (failure == null) {
+                                action.runAwtProcess(value);
+                            }
+                        } finally {
+                            icon.suspend();
+                            icon.setVisible(false);
+                            synchronized (activeProcesses) {
+                                activeProcesses.remove(icon);
+                            }
+                            LOG.info("AWT processing for " + icon.getName() + " completed");
+                        }
+                    }
+                });
+            }
+        });
     }
 
 
-    /**
-     * Must be called in a background process
-     */
-    @Nullable
-    private Map<String, P4Config> loadRelativeConfigPaths() {
-        final ConnectionPanel connection = getSelectedConnection();
-        // Should be connection.getConnectionMethod().isRelativeToPath(), but
-        // we are reaching into the panel to grab its path.  This is at least a bit more
-        // abstracted out.
-        if (connection instanceof RelativeConfigConnectionPanel) {
-            final String configFile = ((RelativeConfigConnectionPanel) connection).getConfigFileName();
-            if (configFile != null && myProject != null) {
-                final Map<VirtualFile, P4Config> allConfigs =
-                        P4ConfigUtil.loadProjectP4Configs(myProject, configFile, true);
+    // -----------------------------------------------------------------------
+    // UI form stuff
 
-                Map<String, P4Config> configMap = new HashMap<String, P4Config>();
-                for (Entry<VirtualFile, P4Config> entry : allConfigs.entrySet()) {
-                    configMap.put(entry.getKey().getPath(), entry.getValue());
-                }
+    private void createUIComponents() {
+        // Add custom component construction here.
+        myP4ConfigConnectionPanel = new P4ConfigConnectionPanel();
 
-                synchronized (relativeConfigPathMapSync) {
-                    relativeConfigPathMap = new HashMap<String, P4Config>(configMap);
-                }
+        myCheckConnectionSpinner = new AsyncProcessIcon("Check Connection Progress");
+        myCheckConnectionSpinner.setName("Check Connection Progress");
+        myCheckConnectionSpinner.setVisible(false);
 
-                return configMap;
-            }
-        }
-        LOG.info("No config file name set; not returning any configs");
-        clearRelativeConfigPaths();
-        return Collections.emptyMap();
+        myRefreshClientListSpinner = new AsyncProcessIcon("Refresh Client List Progress");
+        myRefreshClientListSpinner.setName("Refresh Client List Progress");
+        myRefreshClientListSpinner.setVisible(false);
+
+        myRefreshResolvedSpinner = new AsyncProcessIcon("Refresh Resolved Progress");
+        myRefreshResolvedSpinner.setName("Refresh Resolved Progress");
+        myRefreshResolvedSpinner.setVisible(false);
     }
 
     /**
@@ -573,7 +736,7 @@ public class P4ConfigPanel {
     private void $$$setupUI$$$() {
         createUIComponents();
         myMainPanel = new JPanel();
-        myMainPanel.setLayout(new GridLayoutManager(10, 2, new Insets(0, 0, 0, 0), -1, -1));
+        myMainPanel.setLayout(new GridLayoutManager(10, 3, new Insets(0, 0, 0, 0), -1, -1));
         final JLabel label1 = new JLabel();
         label1.setHorizontalAlignment(10);
         this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
@@ -588,7 +751,7 @@ public class P4ConfigPanel {
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         myMainPanel.add(panel1,
-                new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                new GridConstraints(3, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
                         0, false));
@@ -605,31 +768,21 @@ public class P4ConfigPanel {
                         GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel3.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
         myMainPanel.add(panel3,
-                new GridConstraints(4, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                new GridConstraints(4, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
-                        0, false));
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myRefreshClientList = new JButton();
         myRefreshClientList.setHorizontalAlignment(0);
         this.$$$loadButtonText$$$(myRefreshClientList, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.choose-client-button"));
-        panel3.add(myRefreshClientList,
-                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer1 = new Spacer();
-        panel3.add(spacer1,
-                new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel3.add(myRefreshClientList);
+        panel3.add(myRefreshClientListSpinner);
         myReuseEnvValueCheckBox = new JCheckBox();
         this.$$$loadButtonText$$$(myReuseEnvValueCheckBox, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.clientname.inherit"));
-        panel3.add(myReuseEnvValueCheckBox,
-                new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
-                        false));
+        panel3.add(myReuseEnvValueCheckBox);
         final JLabel label3 = new JLabel();
         label3.setHorizontalAlignment(10);
         label3.setHorizontalTextPosition(11);
@@ -640,7 +793,7 @@ public class P4ConfigPanel {
         myConnectionTypeContainerPanel = new JPanel();
         myConnectionTypeContainerPanel.setLayout(new CardLayout(0, 0));
         myMainPanel.add(myConnectionTypeContainerPanel,
-                new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                new GridConstraints(2, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
                         0, false));
@@ -658,7 +811,7 @@ public class P4ConfigPanel {
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
         myMainPanel.add(panel4,
-                new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                new GridConstraints(0, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
                         0, false));
@@ -666,15 +819,16 @@ public class P4ConfigPanel {
         myConnectionChoice.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.connection-choice.picker.tooltip"));
         panel4.add(myConnectionChoice);
-        checkConnectionButton = new JButton();
-        checkConnectionButton.setHorizontalAlignment(10);
-        this.$$$loadButtonText$$$(checkConnectionButton, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+        myCheckConnectionButton = new JButton();
+        myCheckConnectionButton.setHorizontalAlignment(10);
+        this.$$$loadButtonText$$$(myCheckConnectionButton, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.check-connection"));
-        panel4.add(checkConnectionButton);
+        panel4.add(myCheckConnectionButton);
+        panel4.add(myCheckConnectionSpinner);
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new BorderLayout(0, 0));
         myMainPanel.add(panel5,
-                new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_NORTHWEST, GridConstraints.FILL_NONE,
+                new GridConstraints(1, 1, 1, 2, GridConstraints.ANCHOR_NORTHWEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_FIXED,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
                         0, false));
@@ -685,7 +839,7 @@ public class P4ConfigPanel {
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         myMainPanel.add(panel6,
-                new GridConstraints(5, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                new GridConstraints(5, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
                         0, false));
@@ -701,7 +855,7 @@ public class P4ConfigPanel {
         final JPanel panel7 = new JPanel();
         panel7.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         myMainPanel.add(panel7,
-                new GridConstraints(6, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                new GridConstraints(6, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
                         0, false));
@@ -725,10 +879,6 @@ public class P4ConfigPanel {
                 new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
                         GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
-        final Spacer spacer2 = new Spacer();
-        myMainPanel.add(spacer2,
-                new GridConstraints(9, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JLabel label4 = new JLabel();
         this.$$$loadLabelText$$$(label4, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.resolved.title"));
@@ -736,7 +886,7 @@ public class P4ConfigPanel {
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         myMainPanel.add(scrollPane1,
-                new GridConstraints(7, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                new GridConstraints(7, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null,
                         0, false));
@@ -750,13 +900,20 @@ public class P4ConfigPanel {
                 .getString("configuration.resolved.tooltip"));
         myResolvedValuesField.setWrapStyleWord(false);
         scrollPane1.setViewportView(myResolvedValuesField);
+        final Spacer spacer1 = new Spacer();
+        myMainPanel.add(spacer1,
+                new GridConstraints(9, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JPanel panel9 = new JPanel();
+        panel9.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        myMainPanel.add(panel9, new GridConstraints(8, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myRefreshResolved = new JButton();
         this.$$$loadButtonText$$$(myRefreshResolved, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.resolve.refresh"));
-        myMainPanel.add(myRefreshResolved,
-                new GridConstraints(8, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel9.add(myRefreshResolved);
+        panel9.add(myRefreshResolvedSpinner);
         label1.setLabelFor(myConnectionChoice);
         label2.setLabelFor(myClientList);
         myResolvePathLabel.setLabelFor(myResolvedValuesField);

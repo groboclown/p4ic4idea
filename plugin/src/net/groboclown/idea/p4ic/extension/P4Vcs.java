@@ -38,25 +38,17 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.util.messages.MessageBusConnection;
-import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.TempFileWatchDog;
-import net.groboclown.idea.p4ic.background.VcsFutureSetter;
-import net.groboclown.idea.p4ic.background.VcsSettableFuture;
-import net.groboclown.idea.p4ic.v2.changes.P4CommittedChangeList;
 import net.groboclown.idea.p4ic.compat.CompatFactoryLoader;
-import net.groboclown.idea.p4ic.compat.UICompat;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
-import net.groboclown.idea.p4ic.config.*;
-import net.groboclown.idea.p4ic.server.ClientManager;
-import net.groboclown.idea.p4ic.server.OnServerConfigurationProblem;
-import net.groboclown.idea.p4ic.server.OnServerDisconnectListener;
-import net.groboclown.idea.p4ic.server.ServerStoreService;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.config.P4ConfigProject;
+import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.ui.P4MultipleConnectionWidget;
 import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeProvider;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangelistListener;
+import net.groboclown.idea.p4ic.v2.changes.P4CommittedChangeList;
 import net.groboclown.idea.p4ic.v2.extension.P4StatusUpdateEnvironment;
 import net.groboclown.idea.p4ic.v2.extension.P4SyncUpdateEnvironment;
 import net.groboclown.idea.p4ic.v2.file.FileExtensions;
@@ -154,17 +146,10 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     private final DiffProvider diffProvider;
 
-    @NotNull
-    private final ConfigListener problemListener;
-
-    @NotNull
-    private final OnServerDisconnectListener disconnectListener;
-
     private final P4AnnotationProvider annotationProvider;
 
     private final FileExtensions fileExtensions;
 
-    private final ClientManager clients;
     private final P4ServerManager serverManager;
 
     private final P4RevisionSelector revisionSelector;
@@ -211,12 +196,9 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         this.changeProvider = new P4ChangeProvider(this);
         this.historyProvider = new P4HistoryProvider(project, this);
         this.diffProvider = new P4DiffProvider(project);
-        this.problemListener = new ConfigListener();
-        this.disconnectListener = new DisconnectListener();
         this.statusUpdateEnvironment = new P4StatusUpdateEnvironment(project);
         this.annotationProvider = new P4AnnotationProvider(this);
         this.committedChangesProvider = new P4CommittedChangesProvider();
-        this.clients = new ClientManager(project, configProject);
         this.serverManager = new P4ServerManager(project);
         this.revisionSelector = new P4RevisionSelector(this);
         this.tempFileWatchDog = new TempFileWatchDog();
@@ -302,11 +284,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         //Events.appConfigInvalid(projectMessageBusConnection, problemListener);
         //Events.appServerConnectionState(appMessageBusConnection, disconnectListener);
 
-        // FIXME old stuff
-        projectMessageBusConnection.subscribe(OnServerConfigurationProblem.TOPIC, problemListener);
-        projectMessageBusConnection.subscribe(P4ConfigListener.TOPIC, problemListener);
-        appMessageBusConnection.subscribe(OnServerDisconnectListener.TOPIC, disconnectListener);
-
         // Keep our cache up-to-date
         projectMessageBusConnection.subscribe(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED, new VcsListener() {
             @Override
@@ -318,8 +295,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
                 }
             }
         });
-
-        clients.initialize();
 
         /*
 
@@ -334,7 +309,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     @Override
     public void deactivate() {
-        clients.dispose();
         myConfigurable.disposeUIResources();
 
         ChangeListManager.getInstance(myProject).removeChangeListListener(changelistListener);
@@ -600,17 +574,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     }
 
 
-    @NotNull
-    public List<Client> getClients() {
-        return clients.getClients();
-    }
-
-
-    public void reloadConfigs() {
-        clients.loadConfig();
-    }
-
-
     /**
      * A thread-safe way to get the VCS roots for this VCS.  The standard call
      * will perform an IDE-wide read lock, which can lead to massive thread
@@ -623,59 +586,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         synchronized (vcsRootsCache) {
             return new ArrayList<VirtualFile>(vcsRootsCache);
         }
-    }
-
-    /**
-     *
-     *
-     * @param filePaths paths mapped
-     * @return a mapping of all the input files to the corresponding Perforce server configuration.  If a file
-     *      isn't mapped to any server configs, then it will be assigned to the "null" entry.
-     * @throws P4InvalidConfigException
-     */
-    public Map<Client, List<FilePath>> mapFilePathToClient(Collection<FilePath> filePaths)
-            throws P4InvalidConfigException {
-        // TODO handle p4ignore
-
-        // There can  be situations where one client is buried under another client
-        // path.  This needs to be able to handle that situation.
-
-        // Cache the list of clients, so we don't need to take the multiple impact of
-        // the call overhead for each loop.
-        final List<Client> allClients = getClients();
-
-        // Now find the actual mapping between file and client.
-        Map<Client, List<FilePath>> ret = new HashMap<Client, List<FilePath>>();
-        for (FilePath input: filePaths) {
-            Client deepestClient = null;
-            int deepestDepth = -1;
-            for (Client client: allClients) {
-                for (FilePath configRoot: client.getFilePathRoots()) {
-                    int matchDepth = getFilePathMatchDepth(input, configRoot);
-                    if (matchDepth > deepestDepth) {
-                        deepestDepth = matchDepth;
-                        deepestClient = client;
-                        // keep searching in this client - the next match
-                        // may be deeper.  Yes, this is possible, but only
-                        // in very odd setups.
-                    }
-                }
-            }
-            if (deepestClient != null) {
-                List<FilePath> matched = ret.get(deepestClient);
-                if (matched == null) {
-                    matched = new ArrayList<FilePath>();
-                    ret.put(deepestClient, matched);
-                }
-                matched.add(input);
-            } else {
-                LOG.info("not under a Perforce client: " + input);
-            }
-        }
-
-        LOG.debug("client-file mapping: " + ret);
-
-        return ret;
     }
 
 
@@ -735,128 +645,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
 
     /**
-     * @param virtualFiles paths mapped
-     * @return a mapping of all the input files to the corresponding Perforce server configuration.  If a file
-     * isn't mapped to any server configs, then it will be assigned to the "null" entry.
-     * @throws P4InvalidConfigException the underlying calls that generate this exception (Client implementations)
-     *      should properly handle calls to
-     *      {@link net.groboclown.idea.p4ic.config.P4ConfigListener#configurationProblem(com.intellij.openapi.project.Project, net.groboclown.idea.p4ic.config.P4Config, net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException)}
-     */
-    public Map<Client, List<VirtualFile>> mapVirtualFilesToClient(Collection<VirtualFile> virtualFiles)
-            throws P4InvalidConfigException {
-        // There can  be situations where one client is buried under another client
-        // path.  This needs to be able to handle that situation.
-
-        // Cache the list of clients, so we don't need to take the multiple impact of
-        // the call overhead for each loop.
-        final List<Client> allClients = getClients();
-
-        // Now find the actual mapping between file and client.
-        Map<Client, List<VirtualFile>> ret = new HashMap<Client, List<VirtualFile>>();
-        for (VirtualFile input : virtualFiles) {
-            Client deepestClient = null;
-            int deepestDepth = -1;
-            for (Client client : allClients) {
-                for (FilePath configRoot : client.getFilePathRoots()) {
-                    int matchDepth = getFilePathMatchDepth(VcsUtil.getFilePath(input), configRoot);
-                    if (matchDepth > deepestDepth) {
-                        deepestDepth = matchDepth;
-                        deepestClient = client;
-                        // keep searching in this client - the next match
-                        // may be deeper.  Yes, this is possible, but only
-                        // in very odd setups.
-                    }
-                }
-            }
-            if (deepestClient != null) {
-                List<VirtualFile> matched = ret.get(deepestClient);
-                if (matched == null) {
-                    matched = new ArrayList<VirtualFile>();
-                    ret.put(deepestClient, matched);
-                }
-                matched.add(input);
-            } else {
-                LOG.info("not under a Perforce client: " + input);
-            }
-        }
-
-        LOG.debug("client-file mapping: " + ret);
-
-        // Related to bug #35
-        if (ret.containsKey(null)) {
-            LOG.warn("null client in mapping for " + virtualFiles + ": mapped to " + ret.get(null));
-            ret.remove(null);
-        }
-
-        return ret;
-    }
-
-
-    /**
-     *
-     * @param serverConfigId
-     * @return
-     * @deprecated see ServerConnectionController
-     */
-    public boolean isWorkingOffline(@NotNull String serverConfigId) {
-        for (Client client: getClients()) {
-            if (client.getConfig().getServiceName().equals(serverConfigId)) {
-                return isWorkingOffline(client.getConfig());
-            }
-        }
-        // unknown config; report it as offline
-        return true;
-    }
-
-
-    /**
-     *
-     * @param config
-     * @return
-     * @deprecated see ServerConnectionController
-     */
-    public boolean isWorkingOffline(@NotNull ServerConfig config) {
-        try {
-            return ServerStoreService.getInstance().
-                    getServerStatus(myProject, config).isWorkingOffline();
-        } catch (P4InvalidConfigException e) {
-            LOG.debug(e);
-            return true;
-        }
-    }
-
-    @Nullable
-    public Client getClientFor(@NotNull FilePath fp) {
-        // Uses the same logic as the above client searches.
-
-        Client deepestMatch = null;
-        int deepestDepth = -1;
-        for (Client config: getClients()) {
-            try {
-                for (FilePath root : config.getFilePathRoots()) {
-                    int depth = getFilePathMatchDepth(fp, root);
-                    if (depth > deepestDepth) {
-                        deepestMatch = config;
-                        deepestDepth = depth;
-                        // Keep searching in this client, in case there's
-                        // an even deeper root that should be used.
-                    }
-                }
-            } catch (P4InvalidConfigException e) {
-                // ignore
-                LOG.debug(e);
-            }
-        }
-        return deepestMatch;
-    }
-
-    @Nullable
-    public Client getClientFor(VirtualFile vf) {
-        return getClientFor(VcsUtil.getFilePath(vf));
-    }
-
-
-    /**
      * Checks if the input path is under the config root, and how deep
      * the config root is.
      * <p>
@@ -910,112 +698,5 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     public boolean isAutoOffline() {
         return autoOffline;
-    }
-
-
-    class ConfigListener implements P4ConfigListener, OnServerConfigurationProblem {
-
-        @Override
-        public void configChanges(@NotNull Project project, @NotNull P4Config original, @NotNull P4Config config) {
-            if (project.isDisposed()) {
-                return;
-            }
-            autoOffline = config.isAutoOffline();
-        }
-
-        @Override
-        public void configurationProblem(@NotNull Project project, @NotNull P4Config config, @NotNull P4InvalidConfigException ex) {
-            if (project.isDisposed()) {
-                return;
-            }
-            onInvalidConfiguration(VcsSettableFuture.<Boolean>create(), null, ex.getMessage());
-        }
-
-        @Override
-        public void onInvalidConfiguration(@NotNull final VcsFutureSetter<Boolean> future,
-                @Nullable ServerConfig config, @Nullable final String message) {
-            if (myProject.isDisposed()) {
-                return;
-            }
-            if (future.isDone()) {
-                // already handled
-                return;
-            }
-
-            // show the config dialog
-            future.runInEdt(new Runnable() {
-                @Override
-                public void run() {
-                    int result = Messages.showYesNoDialog(myProject,
-                            P4Bundle.message("configuration.connection-problem-ask", message),
-                            P4Bundle.message("configuration.check-connection"),
-                            Messages.getErrorIcon());
-                    boolean changed = false;
-                    if (result == Messages.YES) {
-                        // Signal to the API to try again only if
-                        // the user selected "okay".
-                        changed = UICompat.getInstance().editVcsConfiguration(myProject, getConfigurable());
-                    }
-                    if (!changed) {
-                        // Work offline
-                        Messages.showMessageDialog(myProject,
-                                P4Bundle.message("dialog.offline.went-offline.message"),
-                                P4Bundle.message("dialog.offline.went-offline.title"),
-                                Messages.getInformationIcon());
-                    }
-                    future.set(changed);
-                }
-            });
-        }
-    }
-
-
-    class DisconnectListener implements OnServerDisconnectListener {
-        @Override
-        public void onDisconnect(@NotNull ServerConfig config, @NotNull final VcsFutureSetter<OnDisconnectAction> retry) {
-            LOG.warn("Disconnected from Perforce server");
-            if (myProject.isDisposed()) {
-                return;
-            }
-            if (retry.isDone()) {
-                // already handled
-                return;
-            }
-
-            // We may need to switch to automatically work offline due
-            // to a user setting.
-            if (autoOffline) {
-                LOG.info("User running in auto-offline mode.  Will silently work disconnected.");
-                retry.set(OnDisconnectAction.WORK_OFFLINE);
-                return;
-            }
-
-            // Ask the user if they want to disconnect.
-            retry.runInEdt(new Runnable() {
-                @Override
-                public void run() {
-                    LOG.info("Asking user to reconnect");
-                    int choice = Messages.showDialog(myProject,
-                            P4Bundle.message("dialog.offline.message"),
-                            P4Bundle.message("dialog.offline.title"),
-                            new String[]{
-                                    P4Bundle.message("dialog.offline.reconnect"),
-                                    P4Bundle.message("dialog.offline.offline-mode")
-                            },
-                            1,
-                            Messages.getErrorIcon());
-                    if (choice == 0) {
-                        retry.set(OnDisconnectAction.RETRY);
-                    } else {
-                        retry.set(OnDisconnectAction.WORK_OFFLINE);
-                        Messages.showMessageDialog(myProject,
-                                P4Bundle.message("dialog.offline.went-offline.message"),
-                                P4Bundle.message("dialog.offline.went-offline.title"),
-                                Messages.getInformationIcon());
-                    }
-                }
-            });
-        }
-
     }
 }

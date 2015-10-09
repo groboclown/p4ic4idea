@@ -34,14 +34,10 @@ public class P4WorkOnlineAction extends AnAction {
         if (project == null) {
             return;
         }
-        // FIXME
         final P4Vcs vcs = P4Vcs.getInstance(getProject(e));
         for (P4Server server: vcs.getP4Servers()) {
             server.workOnline();
         }
-
-        // Force the configurations to be reloaded.
-        vcs.reloadConfigs();
     }
 
     /**

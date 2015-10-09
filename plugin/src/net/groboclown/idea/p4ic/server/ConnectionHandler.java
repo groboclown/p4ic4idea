@@ -22,7 +22,6 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4Config;
-import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.connection.AuthTicketConnectionHandler;
 import net.groboclown.idea.p4ic.server.connection.ClientPasswordConnectionHandler;
@@ -168,10 +167,6 @@ public abstract class ConnectionHandler {
             if (project != null) {
                 ManualP4Config badConfig = new ManualP4Config(config, null);
                 Events.configInvalid(project, badConfig, ex);
-
-                // FIXME old stuff
-                project.getMessageBus().syncPublisher(P4ConfigListener.TOPIC).configurationProblem(project,
-                        badConfig, ex);
             }
             throw ex;
         }

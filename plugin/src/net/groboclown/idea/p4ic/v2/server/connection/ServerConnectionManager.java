@@ -20,7 +20,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.P4Config;
-import net.groboclown.idea.p4ic.config.P4ConfigListener;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
@@ -95,23 +94,6 @@ public class ServerConnectionManager implements ApplicationComponent {
             @Override
             public void disconnected(@NotNull final ServerConfig config) {
                 setConnectionState(config, false);
-            }
-        });
-
-        // FIXME old stuff, and a bug - this is a project level event
-        messageBus.subscribe(P4ConfigListener.TOPIC, new P4ConfigListener() {
-            @Override
-            public void configChanges(@NotNull final Project project, @NotNull final P4Config original,
-                    @NotNull final P4Config config) {
-                // because this is selective on a config, we can safely ignore the project.
-                invalidateConfig(original);
-            }
-
-            @Override
-            public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
-                    @NotNull final P4InvalidConfigException ex) {
-                // because this is selective on a config, we can safely ignore the project.
-                invalidateConfig(config);
             }
         });
     }

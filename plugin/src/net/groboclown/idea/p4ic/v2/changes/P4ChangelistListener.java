@@ -26,7 +26,6 @@ import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
@@ -109,7 +108,10 @@ public class P4ChangelistListener implements ChangeListListener {
             try {
                 perServer = myVcs.mapFilePathsToP4Server(paths);
             } catch (InterruptedException e) {
-                alerts.addWarning(P4Bundle.message("error.cancelled-timeout"), new VcsInterruptedException(e));
+                alerts.addWarning(myProject,
+                        P4Bundle.message("error.cancelled-timeout.changes-added"),
+                        P4Bundle.message("error.cancelled-timeout"),
+                        e);
                 return;
             }
             for (Entry<P4Server, List<FilePath>> entry : perServer.entrySet()) {

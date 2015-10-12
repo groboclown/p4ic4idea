@@ -33,23 +33,24 @@ There are some features that drive how the inner architecture will work.
 1. `P4StatusUpdateEnvironment` group mapping
 
 
-## Features Needing Migration
-
-1. `P4ChangelistListener`
-1. `P4WorkOnlineAction` and the offline one.  These are the "turn them all on/off at once" actions.
-1. `P4CheckinEnvironment` has remaining code in the submit method that needs to be implemented.
-
-
 ## Not-implemented behavior in existing features
 
 (see `// FIXME` comments)
 
 1. Remove the excessive logging.  Move down to debug if necessary,
    and include `LOG.isDebugEnabled()` calls if debug is used.
-1. `AlertManager` - UI display for messages.
+
+
+## Smaller Bugs
+
+1. Connection setup panel - when initial "refresh" button is pressed, the directory list
+   is loaded, and the first one is displayed as selected.  However, the properties are
+   not loaded.  Looks like a timing issue.
+1. Remove the old, dead code.
 
 
 ## Long term features
 
 1. Keep backups of edited files, to allow for simulated reverts and limited diffs while in
-   offline mode.
+   offline mode.  Maybe take advantage of IDEA's built-in VCS?
+

@@ -117,8 +117,8 @@ public class ClientCacheManager {
      * so that the returned {@link PendingUpdateState} is handled correctly.
      */
     @Nullable
-    public PendingUpdateState addOrEditFile(@NotNull FilePath file, int changeListId) {
-        return fileActions.addOrEditFile(file, changeListId);
+    public PendingUpdateState addOrEditFile(@NotNull Project project, @NotNull FilePath file, int changeListId) {
+        return fileActions.addOrEditFile(project, file, changeListId);
     }
 
 
@@ -127,13 +127,13 @@ public class ClientCacheManager {
      * so that the returned {@link PendingUpdateState} is handled correctly.
      */
     @Nullable
-    public PendingUpdateState editFile(@NotNull VirtualFile file, int changeListId) {
-        return fileActions.editFile(file, changeListId);
+    public PendingUpdateState editFile(@NotNull Project project, @NotNull VirtualFile file, int changeListId) {
+        return fileActions.editFile(project, file, changeListId);
     }
 
     @Nullable
-    public PendingUpdateState deleteFile(@NotNull FilePath file, final int changeListId) {
-        return fileActions.deleteFile(file, changeListId);
+    public PendingUpdateState deleteFile(@NotNull Project project, @NotNull FilePath file, final int changeListId) {
+        return fileActions.deleteFile(project, file, changeListId);
     }
 
     @Nullable
@@ -236,8 +236,8 @@ public class ClientCacheManager {
 
         @Nullable
         @Override
-        public VirtualFile getBestClientRoot(@NotNull final File referenceDir, @NotNull AlertManager alerts) {
-            return workspace.getBestClientRoot(referenceDir, alerts);
+        public VirtualFile getBestClientRoot(@NotNull Project project, @NotNull final File referenceDir, @NotNull AlertManager alerts) {
+            return workspace.getBestClientRoot(project, referenceDir, alerts);
         }
 
         @NotNull
@@ -264,9 +264,10 @@ public class ClientCacheManager {
 
         @NotNull
         @Override
-        public Collection<P4FileUpdateState> fromOpenedToAction(@NotNull final List<IExtendedFileSpec> validSpecs,
+        public Collection<P4FileUpdateState> fromOpenedToAction(@NotNull Project project,
+                @NotNull final List<IExtendedFileSpec> validSpecs,
                 @NotNull final AlertManager alerts) {
-            return workspace.fromOpenedToAction(validSpecs, alerts);
+            return workspace.fromOpenedToAction(project, validSpecs, alerts);
         }
 
         @Override

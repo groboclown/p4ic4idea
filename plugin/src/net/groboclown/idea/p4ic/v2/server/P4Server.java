@@ -353,7 +353,9 @@ public class P4Server {
         try {
             fileSpecs = FileSpecUtil.getFromFilePaths(filePathList);
         } catch (P4Exception e) {
-            alertManager.addWarning(P4Bundle.message("error.file-status.fetch", files), e);
+            alertManager.addWarning(project,
+                    P4Bundle.message("error.file-status.fetch.title"),
+                    P4Bundle.message("error.file-status.fetch", files), e);
             return null;
         }
         final List<IExtendedFileSpec> extended = connection.query(project, new ServerQuery<List<IExtendedFileSpec>>() {
@@ -366,7 +368,9 @@ public class P4Server {
                 try {
                     return exec.getFileStatus(fileSpecs);
                 } catch (VcsException e) {
-                    alertManager.addWarning(P4Bundle.message("error.file-status.fetch", files), e);
+                    alertManager.addWarning(project,
+                            P4Bundle.message("error.file-status.fetch.title"),
+                            P4Bundle.message("error.file-status.fetch", files), e);
                     return null;
                 }
             }
@@ -445,7 +449,7 @@ public class P4Server {
 
                 List<PendingUpdateState> updates = new ArrayList<PendingUpdateState>();
                 for (VirtualFile file : files) {
-                    final PendingUpdateState update = mgr.addOrEditFile(FilePathUtil.getFilePath(file), changelistId);
+                    final PendingUpdateState update = mgr.addOrEditFile(project, FilePathUtil.getFilePath(file), changelistId);
                     if (update != null) {
                         LOG.info("add pending update " + update);
                         updates.add(update);
@@ -472,7 +476,7 @@ public class P4Server {
             @NotNull
             @Override
             public Collection<PendingUpdateState> create(@NotNull ClientCacheManager mgr) {
-                final PendingUpdateState update = mgr.editFile(file, changelistId);
+                final PendingUpdateState update = mgr.editFile(project, file, changelistId);
                 if (update != null) {
                     LOG.info("add pending update " + update);
                     return Collections.singletonList(update);
@@ -727,7 +731,7 @@ public class P4Server {
             public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
                 List<PendingUpdateState> ret = new ArrayList<PendingUpdateState>(files.size());
                 for (FilePath file : files) {
-                    PendingUpdateState update = mgr.deleteFile(file, changelistId);
+                    PendingUpdateState update = mgr.deleteFile(project, file, changelistId);
                     if (update != null) {
                         // FIXME debug
                         LOG.info("Created delete update for " + file);
@@ -803,7 +807,8 @@ public class P4Server {
                 try {
                     history = exec.getRevisionHistory(Collections.<IFileSpec>singletonList(spec), limit);
                 } catch (VcsException e) {
-                    alerts.addNotice(P4Bundle.message("error.revision-history", spec.getDepotPathString()), e);
+                    alerts.addNotice(project,
+                            P4Bundle.message("error.revision-history", spec.getDepotPathString()), e);
                     return null;
                 }
                 LOG.info("history for " + spec.getDepotPathString() + ": " + history);
@@ -906,7 +911,8 @@ public class P4Server {
     private P4FileRevision createRevision(@NotNull IFileSpec spec,
             @NotNull final IFileRevisionData rev, final AlertManager alerts) {
         if (spec.getDepotPathString() == null && rev.getDepotFileName() == null) {
-            alerts.addNotice(P4Bundle.message("error.revision-null", spec), null);
+            alerts.addNotice(project, P4Bundle.message("error.revision-null", spec), null,
+                    FilePathUtil.getFilePath(spec.getClientPathString()));
             return null;
         }
         LOG.info("Finding location of " + spec);

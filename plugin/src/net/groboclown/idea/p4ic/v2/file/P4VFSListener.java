@@ -82,7 +82,7 @@ public class P4VFSListener extends VcsVFSListener {
                 }
             }
         } catch (InterruptedException e) {
-            alerts.addNotice(P4Bundle.message("interrupted_exception", filesToDelete),
+            alerts.addNotice(vcs.getProject(), P4Bundle.message("interrupted_exception", filesToDelete),
                     new VcsInterruptedException(e));
         }
     }
@@ -134,7 +134,7 @@ public class P4VFSListener extends VcsVFSListener {
 
             P4ChangesViewRefresher.refreshLater(vcs.getProject());
         } catch (InterruptedException e) {
-            alerts.addNotice(P4Bundle.message("interrupted_exception", movedFiles),
+            alerts.addNotice(vcs.getProject(), P4Bundle.message("interrupted_exception", movedFiles),
                     new VcsInterruptedException(e));
         }
     }
@@ -167,7 +167,8 @@ public class P4VFSListener extends VcsVFSListener {
                 final P4Server server = entry.getKey();
                 if (server == null) {
                     // outside of VCS.  Ignore.
-                    alerts.addNotice(P4Bundle.message("add.file.no-server", entry.getValue()), null);
+                    alerts.addNotice(vcs.getProject(),
+                            P4Bundle.message("add.file.no-server", entry.getValue()), null);
                 } else {
                     final int changelistId = changeListMapping.
                             getProjectDefaultPerforceChangelist(server).getChangeListId();
@@ -207,8 +208,8 @@ public class P4VFSListener extends VcsVFSListener {
             }
         } catch (InterruptedException e) {
             // FIXME better error message
-            alerts.addNotice(P4Bundle.message("interrupted_exception", addedFiles),
-                    new VcsInterruptedException(e));
+            alerts.addNotice(vcs.getProject(),
+                    P4Bundle.message("interrupted_exception", addedFiles), e);
         }
     }
 
@@ -245,8 +246,8 @@ public class P4VFSListener extends VcsVFSListener {
                             getProjectDefaultPerforceChangelist(server).getChangeListId());
                 }
             } catch (InterruptedException e) {
-                alerts.addNotice(P4Bundle.message("interrupted_exception", file),
-                        new VcsInterruptedException(e));
+                alerts.addNotice(vcs.getProject(),
+                        P4Bundle.message("interrupted_exception", file), e);
             }
         }
     }

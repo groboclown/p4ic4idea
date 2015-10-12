@@ -252,8 +252,10 @@ public class ChangeListSync {
                         }
                     } else {
                         // FIXME do something smart
-                        alerts.addWarning(P4Bundle.message("errors.changelist.mapping",
-                                fp, spec.getDepotPath()), null);
+                        alerts.addWarning(project,
+                                P4Bundle.message("errors.changelist.mapping.title", fp),
+                                P4Bundle.message("errors.changelist.mapping", fp, spec.getDepotPath()),
+                                null, fp);
                         if (vf == null) {
                             // CHECK if the file isn't in Perforce, then this should
                             // be ignored!
@@ -343,7 +345,6 @@ public class ChangeListSync {
     }
 
     private Change createChange(@NotNull P4FileAction file) {
-        // FIXME looks like we need 2 kinds of revision classes: one for this method, one for the history methods.
         ContentRevision beforeRev = new P4CurrentContentRevision(project, file);
         ContentRevision afterRev = new CurrentContentRevision(file.getFile());
         return new Change(beforeRev, afterRev, file.getClientFileStatus());

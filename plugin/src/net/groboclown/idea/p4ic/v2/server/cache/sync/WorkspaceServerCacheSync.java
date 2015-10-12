@@ -63,6 +63,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
     // per-instance exception to reference the root directory.  It
     // is reset whenever the workspace is reloaded.  It is necessary
     // to be reused so that the user doesn't keep seeing the same error.
+    @SuppressWarnings("ThrowableInstanceNeverThrown")
     @NotNull
     private VcsException invalidRootsException = new VcsException("no valid roots");
 
@@ -88,7 +89,9 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
      * @return update states
      */
     @NotNull
-    public Collection<P4FileUpdateState> fromOpenedToAction(@NotNull final List<IExtendedFileSpec> fileSpecs,
+    public Collection<P4FileUpdateState> fromOpenedToAction(
+            @NotNull final Project project,
+            @NotNull final List<IExtendedFileSpec> fileSpecs,
             @NotNull AlertManager alerts) {
         ServerConnection.assertInServerConnection();
 
@@ -118,7 +121,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         for (IFileSpec spec : fileSpecs) {
             if (spec != null && P4StatusMessage.isValid(spec)) {
                 String depotPath = spec.getDepotPathString();
-                FilePath clientFilePath = clientSpecToFilePath(spec, alerts);
+                FilePath clientFilePath = clientSpecToFilePath(project, spec, alerts);
                 if (depotPath == null || clientFilePath == null) {
                     LOG.error("callee did not remove invalid file specs: " + spec +
                             ": depot " + depotPath + ", client: " + clientFilePath);
@@ -127,7 +130,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                     final FileUpdateAction action = FileUpdateAction.getFileUpdateAction(
                             UpdateAction.getUpdateActionForOpened(spec.getAction()));
                     if (action == null) {
-                        alerts.addNotice(P4Bundle.message("error.spec.unknown-open-action", depotPath, spec.getAction()), null);
+                        alerts.addNotice(project, P4Bundle.message("error.spec.unknown-open-action", depotPath, spec.getAction()), null);
                     } else {
                         ret.add(new P4FileUpdateState(fileState, spec.getChangelistId(), action));
                     }
@@ -139,7 +142,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
 
 
     @Nullable
-    private FilePath clientSpecToFilePath(@NotNull IFileSpec spec, @NotNull AlertManager alerts) {
+    private FilePath clientSpecToFilePath(@NotNull Project project, @NotNull IFileSpec spec, @NotNull AlertManager alerts) {
         // no need for synchronization here
         String clientPath = spec.getClientPathString();
         if (clientPath == null) {
@@ -163,8 +166,12 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         String relClientPath = clientPath.substring(clientPrefix.length());
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
         if (workspaceRoots.isEmpty()) {
-            alerts.addWarning(P4Bundle.message("error.config.invalid-roots", cache.getClientName()),
-                    invalidRootsException);
+            alerts.addWarning(
+                    project,
+                    P4Bundle.message("error.config.invalid-roots.title", cache.getClientName()),
+                    P4Bundle.message("error.config.invalid-roots", cache.getClientName()),
+                    invalidRootsException,
+                    FilePathUtil.getFilePath(clientPath));
             return null;
         }
         for (String workspaceRoot : workspaceRoots) {
@@ -200,7 +207,9 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         // the last one in the list is correct.
 
         File root = new File(workspaceRoots.get(workspaceRoots.size() - 1));
-        alerts.addNotice(P4Bundle.message("client.root.non-existent", root), null);
+        alerts.addNotice(project,
+                P4Bundle.message("client.root.non-existent", root), null,
+                FilePathUtil.getFilePath(root));
 
         File clientFile = new File(root, relClientPath);
         return FilePathUtil.getFilePath(clientFile);
@@ -260,7 +269,11 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
             }
         }
         // no root found.
-        alerts.addWarning(P4Bundle.message("error.config.invalid-roots", cache.getClientName()), invalidRootsException);
+        alerts.addWarning(
+                project,
+                P4Bundle.message("error.config.invalid-roots.title", cache.getClientName()),
+                P4Bundle.message("error.config.invalid-roots", cache.getClientName()),
+                invalidRootsException);
         return Collections.emptyList();
     }
 
@@ -325,7 +338,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
 
 
     @Nullable
-    VirtualFile getBestClientRoot(@NotNull File referenceDir, @NotNull AlertManager alerts) {
+    VirtualFile getBestClientRoot(@NotNull Project project, @NotNull File referenceDir, @NotNull AlertManager alerts) {
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
         final FilePath reference = FilePathUtil.getFilePath(referenceDir);
         for (String workspaceRoot : workspaceRoots) {
@@ -346,7 +359,10 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         }
         LOG.debug("Did not find roots matching " + referenceDir + "; roots = " + workspaceRoots);
         // no root found.
-        alerts.addWarning(P4Bundle.message("error.config.invalid-roots", cache.getClientName()), invalidRootsException);
+        alerts.addWarning(project,
+                P4Bundle.message("error.config.invalid-roots.title", cache.getClientName()),
+                P4Bundle.message("error.config.invalid-roots", cache.getClientName()),
+                invalidRootsException);
         return null;
     }
 
@@ -366,7 +382,8 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         }
         List<String> roots = new ArrayList<String>();
         if (client.getRoot() == null) {
-            alerts.addNotice("Perforce reports the primary client root directory is null", null);
+            // FIXME use bundle
+            alerts.addNotice(exec.getProject(), "Perforce reports the primary client root directory is null", null);
         } else {
             roots.add(client.getRoot());
         }
@@ -436,7 +453,11 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
 
         if (doRefresh) {
             cachedServerWorkspace.setUpdated();
-            alerts.addWarning(P4Bundle.message("warning.client.updated", getCachedClientName()), null);
+            alerts.addWarning(
+                    exec.getProject(),
+                    P4Bundle.message("warning.client.updated.title", getCachedClientName()),
+                    P4Bundle.message("warning.client.updated", getCachedClientName()),
+                    null);
             cache.refreshServerState(exec, alerts);
         }
     }

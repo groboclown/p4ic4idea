@@ -42,7 +42,7 @@ interface Cache {
     List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts);
 
     @Nullable
-    VirtualFile getBestClientRoot(@NotNull File referenceDir, @NotNull AlertManager alerts);
+    VirtualFile getBestClientRoot(@NotNull Project project, @NotNull File referenceDir, @NotNull AlertManager alerts);
 
 
     @NotNull
@@ -55,7 +55,7 @@ interface Cache {
     P4ClientFileMapping getClientMappingFor(@NotNull FilePath file);
 
     @NotNull
-    Collection<P4FileUpdateState> fromOpenedToAction(
+    Collection<P4FileUpdateState> fromOpenedToAction(@NotNull Project project,
             @NotNull List<IExtendedFileSpec> validSpecs, @NotNull AlertManager alerts);
 
     /**

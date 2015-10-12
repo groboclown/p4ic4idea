@@ -34,7 +34,6 @@ public class P4CurrentContentRevision implements ContentRevision {
     private final P4CurrentRevisionNumber rev;
     private final P4FileAction fileAction;
 
-    // FIXME needs a better implementation than this, to better record the revision number.
     @Deprecated
     public P4CurrentContentRevision(@NotNull Project project, @NotNull P4FileAction file) {
         this.vcs = P4Vcs.getInstance(project);

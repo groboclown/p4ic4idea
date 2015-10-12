@@ -94,10 +94,6 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         LOG.info("Submit to server: " + changes);
         final List<VcsException> errors = new ArrayList<VcsException>();
 
-
-        // FIXME this is still all the old crufty stuff.
-
-
         // Find all the files and their respective P4 changelists.
         // This method deals with the problem of discovering the
         // changelists to submit, and their associated P4 client.
@@ -336,7 +332,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
 
 
 
-            // TODO set the ok action as enabled/disabled depending upon
+            // FIXME set the ok action as enabled/disabled depending upon
             // whether the comment is empty or not (bug #52).  Probably
             // should just set a warning, though, but that doesn't do anything.
             // We will also need a notification for when the comment is changed,

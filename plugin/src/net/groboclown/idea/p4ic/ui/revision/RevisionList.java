@@ -137,12 +137,6 @@ public class RevisionList extends JPanel {
 
 
 
-    private static final int COL_REV = 0;
-    private static final int COL_DATE = 1;
-    private static final int COL_AUTH = 2;
-    private static final int COL_COMMENT = 3;
-    private static final int COL_COUNT = 4;
-
     private static class RevisionListModel implements ListModel {
         private final List<CellData> revisions;
 
@@ -195,11 +189,6 @@ public class RevisionList extends JPanel {
     private static final class CellData {
         final String depotPath;
         final P4FileRevision rev;
-
-        CellData(@NotNull final String depotPath) {
-            this.depotPath = depotPath;
-            this.rev = null;
-        }
 
         private CellData(@NotNull final P4FileRevision rev) {
             this.depotPath = null;

@@ -195,8 +195,10 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         try {
             pendingChanges = exec.getPendingClientChangelists();
         } catch (VcsException e) {
-            alerts.addWarning(
-                    P4Bundle.message("error.getPendingClientChangelists", exec.getClientName()), e);
+            alerts.addWarning(exec.getProject(),
+                    P4Bundle.message("error.getPendingClientChangelists", exec.getClientName()),
+                    P4Bundle.message("error.getPendingClientChangelists", exec.getClientName()),
+                    e);
             return;
         }
         lastRefreshDate = new Date();
@@ -221,7 +223,9 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     }
                 }
             } catch (VcsException e) {
-                alerts.addNotice(P4Bundle.message("error.getJobIdsForChangelist",
+                alerts.addNotice(
+                        exec.getProject(),
+                        P4Bundle.message("error.getJobIdsForChangelist",
                         pendingChange.getId(), exec.getClientName()), e);
             }
         }
@@ -386,14 +390,20 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                             ret = ExecutionStatus.RELOAD_CACHE;
                         }
                     } catch (VcsException e) {
-                        alerts.addWarning(P4Bundle.message("error.changelist.delete.failure", changeListId), e);
+                        alerts.addWarning(
+                                exec.getProject(),
+                                P4Bundle.message("error.changelist.delete.failure", changeListId),
+                                P4Bundle.message("error.changelist.delete.failure", changeListId),
+                                e);
                         ret = ExecutionStatus.FAIL;
                     }
                 } else {
                     // else the cached version had its "deleted" setting changed back, or is only locally stored
                     // and marked for delete, or it is not known and numbered like a locally stored change.
                     // In any case, ignore the change.
-                    alerts.addNotice(P4Bundle.message("changelist.delete.ignored", changeListId), null);
+                    alerts.addNotice(
+                            exec.getProject(),
+                            P4Bundle.message("changelist.delete.ignored", changeListId), null);
                 }
             }
 
@@ -454,7 +464,9 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     }
                 }
                 if (changeListId == null || files.isEmpty() || description == null) {
-                    alerts.addNotice(P4Bundle.message("pendingupdatestate.invalid", state), null);
+                    alerts.addNotice(
+                            exec.getProject(),
+                            P4Bundle.message("pendingupdatestate.invalid", state), null);
                     continue;
                 }
 
@@ -468,7 +480,11 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                         P4ChangeListId newCl = new P4ChangeListIdImpl(clientServerId, realChangeListId);
                         changeListMapping.replace(oldCl, newCl);
                     } catch (VcsException e) {
-                        alerts.addWarning(P4Bundle.message("error.createchangelist", description), e);
+                        alerts.addWarning(
+                                exec.getProject(),
+                                P4Bundle.message("error.createchangelist.title"),
+                                P4Bundle.message("error.createchangelist", description),
+                                e);
                         // cannot actually perform the action
                         ret = ExecutionStatus.FAIL;
                         continue;
@@ -483,7 +499,11 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                             exec.updateChangelistDescription(realChangeListId, description);
                             ret = ExecutionStatus.RELOAD_CACHE;
                         } catch (VcsException e) {
-                            alerts.addWarning(P4Bundle.message("error.updatechangelist", realChangeListId), e);
+                            alerts.addWarning(
+                                    exec.getProject(),
+                                    P4Bundle.message("error.updatechangelist.title"),
+                                    P4Bundle.message("error.updatechangelist", realChangeListId),
+                                    e);
                             // cannot actually perform the action
                             ret = ExecutionStatus.FAIL;
                             continue;
@@ -495,7 +515,11 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 try {
                     status = exec.getFileStatus(FileSpecUtil.getFromFilePaths(files));
                 } catch (VcsException e) {
-                    alerts.addWarning(P4Bundle.message("filestatus.error", files), e);
+                    alerts.addWarning(
+                            exec.getProject(),
+                            P4Bundle.message("filestatus.error.title"),
+                            P4Bundle.message("filestatus.error", files),
+                            e);
                     continue;
                 }
                 if (status.isEmpty()) {
@@ -529,11 +553,16 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     LOG.info("Reopening files into " + realChangeListId + ": " + reopen);
                     try {
                         alerts.addWarnings(
+                                exec.getProject(),
                                 P4Bundle.message("error.reopen", reopen),
                                 exec.reopenFiles(reopen, realChangeListId, null),
                                 false);
                     } catch (VcsException e) {
-                        alerts.addWarning(P4Bundle.message("error.reopen", reopen), e);
+                        alerts.addWarning(
+                                exec.getProject(),
+                                P4Bundle.message("error.reopen.title"),
+                                P4Bundle.message("error.reopen", reopen),
+                                e);
                         // keep going
                     }
                 }
@@ -542,11 +571,16 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     LOG.info("Editing files into " + realChangeListId + ": " + edit);
                     try {
                         alerts.addWarnings(
+                                exec.getProject(),
                                 P4Bundle.message("error.edit", edit),
                                 exec.editFiles(edit, realChangeListId),
                                 false);
                     } catch (VcsException e) {
-                        alerts.addWarning(P4Bundle.message("error.edit", edit), e);
+                        alerts.addWarning(
+                                exec.getProject(),
+                                P4Bundle.message("error.edit.title"),
+                                P4Bundle.message("error.edit", edit),
+                                e);
                         // keep going
                     }
                 }
@@ -555,11 +589,16 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     LOG.info("Adding files into " + realChangeListId + ": " + add);
                     try {
                         alerts.addWarnings(
+                                exec.getProject(),
                                 P4Bundle.message("error.add", add),
                                 exec.addFiles(add, realChangeListId),
                                 false);
                     } catch (VcsException e) {
-                        alerts.addWarning(P4Bundle.message("error.add", add), e);
+                        alerts.addWarning(
+                                exec.getProject(),
+                                P4Bundle.message("error.add.title"),
+                                P4Bundle.message("error.add", add),
+                                e);
                         // keep going
                     }
                 }

@@ -105,17 +105,18 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             // This is okay to run with the "-s" argument.
             final MessageResult<List<IExtendedFileSpec>> results =
                 exec.loadOpenedFiles(getClientRootSpecs(exec.getProject(), alerts), false);
-            if (!alerts.addWarnings(P4Bundle.message("error.load-opened", cache.getClientName()), results, true)) {
+            if (!alerts.addWarnings(exec.getProject(),
+                    P4Bundle.message("error.load-opened", cache.getClientName()), results, true)) {
                 lastRefreshed = new Date();
 
                 // Only clear the cache once we know that we have valid results.
 
                 final List<IExtendedFileSpec> validSpecs = new ArrayList<IExtendedFileSpec>(results.getResult());
                 final List<IExtendedFileSpec> invalidSpecs = sortInvalidActions(validSpecs);
-                addInvalidActionAlerts(alerts, invalidSpecs);
+                addInvalidActionAlerts(exec.getProject(), alerts, invalidSpecs);
 
                 cachedServerUpdatedFiles.clear();
-                cachedServerUpdatedFiles.addAll(cache.fromOpenedToAction(validSpecs, alerts));
+                cachedServerUpdatedFiles.addAll(cache.fromOpenedToAction(exec.getProject(), validSpecs, alerts));
 
                 // Flush out the local changes that have been updated.
                 final Iterator<P4FileUpdateState> iter = localClientUpdatedFiles.iterator();
@@ -127,7 +128,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 }
             }
         } catch (VcsException e) {
-            alerts.addWarning(P4Bundle.message("error.load-opened", cache.getClientName()), e);
+            alerts.addWarning(
+                    exec.getProject(),
+                    P4Bundle.message("error.load-opened.title", cache.getClientName()),
+                    P4Bundle.message("error.load-opened", cache.getClientName()),
+                    e);
         }
     }
 
@@ -146,11 +151,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
      * @return the update state
      */
     @Nullable
-    public PendingUpdateState addOrEditFile(@NotNull final FilePath file, int changeListId) {
+    public PendingUpdateState addOrEditFile(@NotNull Project project, @NotNull final FilePath file, int changeListId) {
         // Edit operations will need to have the file be writable.  The Perforce
         // command may delay when the edit action actually occurs, so ensure
         // the file is set to writable first.
-        makeWritable(file);
+        makeWritable(project, file);
 
         // Check if it is already in an action state, and create it if necessary
         final P4FileUpdateState action = createFileUpdateState(file, FileUpdateAction.ADD_EDIT_FILE, changeListId);
@@ -180,12 +185,12 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
      * @return the update state
      */
     @Nullable
-    public PendingUpdateState editFile(@NotNull final VirtualFile file, int changeListId) {
+    public PendingUpdateState editFile(@NotNull Project project, @NotNull final VirtualFile file, int changeListId) {
         // Edit operations will need to have the file be writable.  The Perforce
         // command may delay when the edit action actually occurs, so ensure
         // the file is set to writable first.
         FilePath fp = FilePathUtil.getFilePath(file);
-        makeWritable(fp);
+        makeWritable(project, fp);
 
         // Check if it is already in an action state, and create it if necessary
         final P4FileUpdateState action = createFileUpdateState(fp, FileUpdateAction.EDIT_FILE, changeListId);
@@ -208,11 +213,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
 
     @Nullable
-    public PendingUpdateState deleteFile(@NotNull FilePath file, int changeListId) {
+    public PendingUpdateState deleteFile(@NotNull Project project, @NotNull FilePath file, int changeListId) {
         // Let the IDE deal with the actual removal of the file.
         // But just to be sure, make it writable first.
         if (file.getIOFile().exists()) {
-            makeWritable(file);
+            makeWritable(project, file);
         }
 
         // FIXME put the file in the local cache.
@@ -264,10 +269,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
 
-    private void addInvalidActionAlerts(@NotNull final AlertManager alerts, @NotNull final List<IExtendedFileSpec> invalidSpecs) {
+    private void addInvalidActionAlerts(@NotNull Project project, @NotNull final AlertManager alerts, @NotNull final List<IExtendedFileSpec> invalidSpecs) {
         if (invalidSpecs.isEmpty()) {
             return;
         }
+        List<FilePath> files = new ArrayList<FilePath>(invalidSpecs.size());
         StringBuilder sb = new StringBuilder(P4Bundle.message("error.opened-action-status.invalid"));
         String sep = "";
         for (IFileSpec spec: invalidSpecs) {
@@ -285,9 +291,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                         spec.getAction(),
                         spec.getStatusMessage());
             }
+            files.add(FilePathUtil.getFilePath(spec.getClientPathString()));
             sep = P4Bundle.message("file.invalid.action.spec.seperator");
         }
-        alerts.addNotice(sb.toString(), null);
+        alerts.addNotice(project, sb.toString(), null,
+                files.toArray(new FilePath[files.size()]));
     }
 
     @NotNull
@@ -334,7 +342,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         return FileSpecUtil.makeRootFileSpecs(roots.toArray(new VirtualFile[roots.size()]));
     }
 
-    private void makeWritable(@NotNull final FilePath file) {
+    private void makeWritable(@NotNull final Project project, @NotNull final FilePath file) {
         // write actions can only be in the dispatch thread.
         if (ApplicationManager.getApplication().isDispatchThread()) {
             ApplicationManager.getApplication().runWriteAction(new Runnable() {
@@ -357,8 +365,10 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         if (f.exists() && f.isFile() && !f.canWrite()) {
             if (!f.setWritable(true)) {
                 // FIXME get access to the alerts in a better way
-                AlertManager.getInstance()
-                        .addWarning(P4Bundle.message("error.writable.failed", file), null);
+                AlertManager.getInstance().addWarning(project,
+                        P4Bundle.message("error.writable.failed.title"),
+                        P4Bundle.message("error.writable.failed", file),
+                        null);
 
                 // Keep going with the action, even though we couldn't set it to
                 // writable...
@@ -454,7 +464,10 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             try {
                 srcSpecs = FileSpecUtil.getFromFilePaths(filenames);
             } catch (P4Exception e) {
-                alerts.addWarning(P4Bundle.message("error.file-spec.create", filenames), e);
+                alerts.addWarning(exec.getProject(),
+                        P4Bundle.message("error.file-spec.create.title"),
+                        P4Bundle.message("error.file-spec.create", filenames),
+                        e);
                 status = ExecutionStatus.FAIL;
                 return;
             }
@@ -463,7 +476,10 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             try {
                 fullSpecs = exec.getFileStatus(srcSpecs);
             } catch (VcsException e) {
-                alerts.addWarning(P4Bundle.message("error.file-status.fetch", srcSpecs), e);
+                alerts.addWarning(exec.getProject(),
+                        P4Bundle.message("error.file-status.fetch.title"),
+                        P4Bundle.message("error.file-status.fetch", srcSpecs),
+                        e);
                 status = ExecutionStatus.FAIL;
                 return;
             }
@@ -493,7 +509,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 FilePath filePath = FilePathUtil.getFilePath(filename);
                 LOG.info(" - Checking category for " + filePath + " (from " + spec + ")");
                 if (isNotInClientView(spec)) {
-                    alerts.addNotice(P4Bundle.message("error.client.not-in-view", spec.getClientPathString()), null);
+                    alerts.addNotice(exec.getProject(),
+                            P4Bundle.message("error.client.not-in-view", spec.getClientPathString()), null);
                     // don't handle
                     continue;
                 }
@@ -638,13 +655,17 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 try {
                     final List<P4StatusMessage> msgs =
                             exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
-                    alerts.addNotices(P4Bundle.message("warning.edit.file.revert", reverts), msgs, false);
+                    alerts.addNotices(exec.getProject(),
+                            P4Bundle.message("warning.edit.file.revert", reverts), msgs, false);
                     hasUpdate = true;
                 } catch (P4DisconnectedException e) {
                     // error already handled as critical
                     return ExecutionStatus.RETRY;
                 } catch (VcsException e) {
-                    alerts.addWarning(P4Bundle.message("error.revert", reverts), e);
+                    alerts.addWarning(exec.getProject(),
+                            P4Bundle.message("error.revert.title"),
+                            P4Bundle.message("error.revert", reverts),
+                            e);
                     // cannot continue; just fail?
                     return ExecutionStatus.FAIL;
                 }
@@ -656,14 +677,18 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     try {
                         final List<P4StatusMessage> msgs =
                                 exec.addFiles(FileSpecUtil.getFromFilePaths(entry.getValue()), entry.getKey());
-                        alerts.addNotices(P4Bundle.message("warning.edit.file.add", entry.getValue()), msgs, false);
+                        alerts.addNotices(exec.getProject(),
+                                P4Bundle.message("warning.edit.file.add", entry.getValue()), msgs, false);
                         markUpdated(clientCacheManager, entry.getValue(), msgs);
                         hasUpdate = true;
                     } catch (P4DisconnectedException e) {
                         // error already handled as critical
                         return ExecutionStatus.RETRY;
                     } catch (VcsException e) {
-                        alerts.addWarning(P4Bundle.message("error.add", entry.getValue()), e);
+                        alerts.addWarning(exec.getProject(),
+                                P4Bundle.message("error.add.title"),
+                                P4Bundle.message("error.add", entry.getValue()),
+                                e);
                         returnCode = ExecutionStatus.FAIL;
                     }
                 }
@@ -684,13 +709,17 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     // actions were errors.  Instead, they are notifications
                     // to the user that they must do something again
                     // with a correction.
-                    alerts.addWarnings(P4Bundle.message("warning.edit.file.reopen", entry.getValue()), msgs, false);
+                    alerts.addWarnings(exec.getProject(),
+                            P4Bundle.message("warning.edit.file.reopen", entry.getValue()), msgs, false);
                     hasUpdate = true;
                 } catch (P4DisconnectedException e) {
                     // error already handled as critical
                     return ExecutionStatus.RETRY;
                 } catch (VcsException e) {
-                    alerts.addWarning(P4Bundle.message("error.edit", entry.getValue()), e);
+                    alerts.addWarning(exec.getProject(),
+                            P4Bundle.message("error.edit.title"),
+                            P4Bundle.message("error.edit", entry.getValue()),
+                            e);
                     returnCode = ExecutionStatus.FAIL;
                 }
             }
@@ -718,13 +747,17 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     // actions were errors.  Instead, they are notifications
                     // to the user that they must do something again
                     // with a correction.
-                    alerts.addWarnings(P4Bundle.message("warning.edit.file.edit", entry.getValue()), msgs, false);
+                    alerts.addWarnings(exec.getProject(),
+                            P4Bundle.message("warning.edit.file.edit", entry.getValue()), msgs, false);
                     hasUpdate = true;
                 } catch (P4DisconnectedException e) {
                     // error already handled as critical
                     return ExecutionStatus.RETRY;
                 } catch (VcsException e) {
-                    alerts.addWarning(P4Bundle.message("error.edit", entry.getValue()), e);
+                    alerts.addWarning(exec.getProject(),
+                            P4Bundle.message("error.edit.title"),
+                            P4Bundle.message("error.edit", entry.getValue()),
+                            e);
                     returnCode = ExecutionStatus.FAIL;
                 }
             }
@@ -804,13 +837,17 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 try {
                     final List<P4StatusMessage> msgs =
                             exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
-                    alerts.addNotices(P4Bundle.message("warning.edit.file.revert", reverts), msgs, false);
+                    alerts.addNotices(exec.getProject(),
+                            P4Bundle.message("warning.edit.file.revert", reverts), msgs, false);
                     hasUpdate = true;
                 } catch (P4DisconnectedException e) {
                     // error already handled as critical
                     return ExecutionStatus.RETRY;
                 } catch (VcsException e) {
-                    alerts.addWarning(P4Bundle.message("error.revert", reverts), e);
+                    alerts.addWarning(exec.getProject(),
+                            P4Bundle.message("error.revert.title"),
+                            P4Bundle.message("error.revert", reverts),
+                            e);
                     // cannot continue; just fail?
                     return ExecutionStatus.FAIL;
                 }
@@ -831,13 +868,17 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     // actions were errors.  Instead, they are notifications
                     // to the user that they must do something again
                     // with a correction.
-                    alerts.addWarnings(P4Bundle.message("warning.edit.file.edit", entry.getValue()), msgs, false);
+                    alerts.addWarnings(exec.getProject(),
+                            P4Bundle.message("warning.edit.file.edit", entry.getValue()), msgs, false);
                     hasUpdate = true;
                 } catch (P4DisconnectedException e) {
                     // error already handled as critical
                     return ExecutionStatus.RETRY;
                 } catch (VcsException e) {
-                    alerts.addWarning(P4Bundle.message("error.edit", entry.getValue()), e);
+                    alerts.addWarning(exec.getProject(),
+                            P4Bundle.message("error.edit.title"),
+                            P4Bundle.message("error.edit", entry.getValue()),
+                            e);
                     returnCode = ExecutionStatus.FAIL;
                 }
             }

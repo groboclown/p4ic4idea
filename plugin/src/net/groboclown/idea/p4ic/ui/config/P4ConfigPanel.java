@@ -340,35 +340,36 @@ public class P4ConfigPanel {
 
     @CalledInAwt
     private void checkConnection() {
-        runBackgroundAwtAction(myCheckConnectionSpinner, new BackgroundAwtAction<Map<ProjectConfigSource, Exception>>() {
-            @Override
-            public Map<ProjectConfigSource, Exception> runBackgroundProcess() {
-                final Collection<ProjectConfigSource> sources = getValidConfigs();
-                final Map<ProjectConfigSource, Exception> problems;
-                if (sources == null) {
-                    // errors already handled
-                    problems = null;
-                } else {
-                    problems = ConnectionUIConfiguration.findConnectionProblems(sources);
-                }
-                return problems;
-            }
+        runBackgroundAwtAction(myCheckConnectionSpinner,
+                new BackgroundAwtAction<Map<ProjectConfigSource, Exception>>() {
+                    @Override
+                    public Map<ProjectConfigSource, Exception> runBackgroundProcess() {
+                        final Collection<ProjectConfigSource> sources = getValidConfigs();
+                        final Map<ProjectConfigSource, Exception> problems;
+                        if (sources == null) {
+                            // errors already handled
+                            problems = null;
+                        } else {
+                            problems = ConnectionUIConfiguration.findConnectionProblems(sources);
+                        }
+                        return problems;
+                    }
 
-            @Override
-            public void runAwtProcess(final Map<ProjectConfigSource, Exception> problems) {
-                if (problems != null && problems.isEmpty()) {
-                    Messages.showMessageDialog(myProject,
-                            P4Bundle.message("configuration.dialog.valid-connection.message"),
-                            P4Bundle.message("configuration.dialog.valid-connection.title"),
-                            Messages.getInformationIcon());
-                } else if (problems != null) {
-                    // FIXME use alertManager
-                    ErrorDialog.logError(myProject,
-                            P4Bundle.message("configuration.check.io-error"),
-                            problems.values().iterator().next());
-                }
-            }
-        });
+                    @Override
+                    public void runAwtProcess(final Map<ProjectConfigSource, Exception> problems) {
+                        if (problems != null && problems.isEmpty()) {
+                            Messages.showMessageDialog(myProject,
+                                    P4Bundle.message("configuration.dialog.valid-connection.message"),
+                                    P4Bundle.message("configuration.dialog.valid-connection.title"),
+                                    Messages.getInformationIcon());
+                        } else if (problems != null) {
+                            // FIXME use alertManager
+                            ErrorDialog.logError(myProject,
+                                    P4Bundle.message("configuration.check.io-error"),
+                                    problems.values().iterator().next());
+                        }
+                    }
+                });
     }
 
     /**
@@ -642,106 +643,6 @@ public class P4ConfigPanel {
         myResolvedValuesField.setText(P4Bundle.message("config.display.properties.refresh"));
     }
 
-
-    private interface BackgroundAwtAction<T> {
-        T runBackgroundProcess();
-
-        void runAwtProcess(T value);
-    }
-
-
-    @CalledInAwt
-    private <T> void runBackgroundAwtAction(@NotNull final AsyncProcessIcon icon, @NotNull final BackgroundAwtAction<T> action) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Requested background action " + icon.getName());
-        }
-        synchronized (activeProcesses) {
-            if (activeProcesses.contains(icon)) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(" - process is already running in background");
-                }
-                return;
-            }
-            activeProcesses.add(icon);
-        }
-        icon.resume();
-        icon.setVisible(true);
-        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
-            @Override
-            public void run() {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Running " + icon.getName() + " in background ");
-                }
-                T tmpValue;
-                Exception tmpFailure;
-                try {
-                    tmpValue = action.runBackgroundProcess();
-                    tmpFailure = null;
-                } catch (Exception e) {
-                    LOG.error("Background processing for " + icon.getName() + " failed", e);
-                    tmpValue = null;
-                    tmpFailure = e;
-                } finally {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Background processing for " + icon
-                                .getName() + " completed.  Queueing AWT processing.");
-                    }
-                }
-                final T value = tmpValue;
-                final Exception failure = tmpFailure;
-
-                // NOTE: ApplicationManager.getApplication().invokeLater
-                // will not work, because it will wait until the UI dialog
-                // goes away, which means we can't see the results until
-                // the UI element goes away, which is just backwards.
-
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.info("Running " + icon.getName() + " in AWT");
-                        }
-                        try {
-                            if (failure == null) {
-                                action.runAwtProcess(value);
-                            }
-                        } finally {
-                            icon.suspend();
-                            icon.setVisible(false);
-                            synchronized (activeProcesses) {
-                                activeProcesses.remove(icon);
-                            }
-                            if (LOG.isDebugEnabled()) {
-                                LOG.info("AWT processing for " + icon.getName() + " completed");
-                            }
-                        }
-                    }
-                });
-            }
-        });
-    }
-
-
-    // -----------------------------------------------------------------------
-    // UI form stuff
-
-    private void createUIComponents() {
-        // Add custom component construction here.
-        myP4ConfigConnectionPanel = new P4ConfigConnectionPanel();
-
-        myCheckConnectionSpinner = new AsyncProcessIcon("Check Connection Progress");
-        myCheckConnectionSpinner.setName("Check Connection Progress");
-        myCheckConnectionSpinner.setVisible(false);
-
-        myRefreshClientListSpinner = new AsyncProcessIcon("Refresh Client List Progress");
-        myRefreshClientListSpinner.setName("Refresh Client List Progress");
-        myRefreshClientListSpinner.setVisible(false);
-
-        myRefreshResolvedSpinner = new AsyncProcessIcon("Refresh Resolved Progress");
-        myRefreshResolvedSpinner.setName("Refresh Resolved Progress");
-        myRefreshResolvedSpinner.setVisible(false);
-    }
-
     /**
      * Method generated by IntelliJ IDEA GUI Designer
      * >>> IMPORTANT!! <<<
@@ -998,6 +899,107 @@ public class P4ConfigPanel {
      */
     public JComponent $$$getRootComponent$$$() {
         return myMainPanel;
+    }
+
+
+    private interface BackgroundAwtAction<T> {
+        T runBackgroundProcess();
+
+        void runAwtProcess(T value);
+    }
+
+
+    @CalledInAwt
+    private <T> void runBackgroundAwtAction(@NotNull final AsyncProcessIcon icon,
+            @NotNull final BackgroundAwtAction<T> action) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Requested background action " + icon.getName());
+        }
+        synchronized (activeProcesses) {
+            if (activeProcesses.contains(icon)) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(" - process is already running in background");
+                }
+                return;
+            }
+            activeProcesses.add(icon);
+        }
+        icon.resume();
+        icon.setVisible(true);
+        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+            @Override
+            public void run() {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Running " + icon.getName() + " in background ");
+                }
+                T tmpValue;
+                Exception tmpFailure;
+                try {
+                    tmpValue = action.runBackgroundProcess();
+                    tmpFailure = null;
+                } catch (Exception e) {
+                    LOG.error("Background processing for " + icon.getName() + " failed", e);
+                    tmpValue = null;
+                    tmpFailure = e;
+                } finally {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Background processing for " + icon
+                                .getName() + " completed.  Queueing AWT processing.");
+                    }
+                }
+                final T value = tmpValue;
+                final Exception failure = tmpFailure;
+
+                // NOTE: ApplicationManager.getApplication().invokeLater
+                // will not work, because it will wait until the UI dialog
+                // goes away, which means we can't see the results until
+                // the UI element goes away, which is just backwards.
+
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.info("Running " + icon.getName() + " in AWT");
+                        }
+                        try {
+                            if (failure == null) {
+                                action.runAwtProcess(value);
+                            }
+                        } finally {
+                            icon.suspend();
+                            icon.setVisible(false);
+                            synchronized (activeProcesses) {
+                                activeProcesses.remove(icon);
+                            }
+                            if (LOG.isDebugEnabled()) {
+                                LOG.info("AWT processing for " + icon.getName() + " completed");
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+
+    // -----------------------------------------------------------------------
+    // UI form stuff
+
+    private void createUIComponents() {
+        // Add custom component construction here.
+        myP4ConfigConnectionPanel = new P4ConfigConnectionPanel();
+
+        myCheckConnectionSpinner = new AsyncProcessIcon("Check Connection Progress");
+        myCheckConnectionSpinner.setName("Check Connection Progress");
+        myCheckConnectionSpinner.setVisible(false);
+
+        myRefreshClientListSpinner = new AsyncProcessIcon("Refresh Client List Progress");
+        myRefreshClientListSpinner.setName("Refresh Client List Progress");
+        myRefreshClientListSpinner.setVisible(false);
+
+        myRefreshResolvedSpinner = new AsyncProcessIcon("Refresh Resolved Progress");
+        myRefreshResolvedSpinner.setName("Refresh Resolved Progress");
+        myRefreshResolvedSpinner.setVisible(false);
     }
 
 

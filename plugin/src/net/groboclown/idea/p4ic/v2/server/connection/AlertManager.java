@@ -17,12 +17,19 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
+import net.groboclown.idea.p4ic.v2.ui.warning.WarningDialog;
+import net.groboclown.idea.p4ic.v2.ui.warning.WarningMessage;
+import net.groboclown.idea.p4ic.v2.ui.warning.WarningUI;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +52,7 @@ public class AlertManager implements ApplicationComponent {
     private static ThrowableHandled throwableHandled = new ThrowableHandled();
 
     // Every error and warning added causes a new event added.
-    private final List<WarningMsg> pendingWarnings = new ArrayList<WarningMsg>();
+    private final List<WarningMessage> pendingWarnings = new ArrayList<WarningMessage>();
     private final Deque<ErrorMsg> criticalErrorHandlers = new ArrayDeque<ErrorMsg>();
     private final Lock eventLock = new ReentrantLock();
     private final Condition eventPending = eventLock.newCondition();
@@ -54,14 +61,29 @@ public class AlertManager implements ApplicationComponent {
     private volatile int criticalErrorCount = 0;
     private volatile boolean disposed;
 
+    private WarningDialog warningDialog;
+
 
 
     public static AlertManager getInstance() {
         return ApplicationManager.getApplication().getComponent(AlertManager.class);
     }
 
+    public void addWarning(@NotNull Project project, @Nls @NotNull String title, @Nls @NotNull String details,
+            @Nullable Exception ex, @Nullable FilePath... affectedFiles) {
+        List<VirtualFile> files = new ArrayList<VirtualFile>();
+        if (affectedFiles != null) {
+            for (FilePath file : affectedFiles) {
+                if (file != null && file.getVirtualFile() != null) {
+                    files.add(file.getVirtualFile());
+                }
+            }
+        }
+        addWarning(project, title, details, ex, files);
+    }
 
-    public void addWarning(@Nls @NotNull String message, @Nullable VcsException ex) {
+    public void addWarning(@NotNull Project project, @Nls @NotNull String title, @Nls @NotNull String details,
+            @Nullable Exception ex, @Nullable Collection<VirtualFile> affectedFiles) {
         if (ex != null && throwableHandled.isHandled(ex)) {
             LOG.info("Skipped duplicate handling of " + ex);
             return;
@@ -69,8 +91,8 @@ public class AlertManager implements ApplicationComponent {
         eventLock.lock();
         try {
             // FIXME make debug
-            LOG.info("adding warning " + message, ex);
-            pendingWarnings.add(new WarningMsg(message, ex));
+            LOG.info("adding warning " + details, ex);
+            pendingWarnings.add(new WarningMessage(project, title, details, ex, affectedFiles));
             eventPending.signal();
         } finally {
             eventLock.unlock();
@@ -78,58 +100,62 @@ public class AlertManager implements ApplicationComponent {
     }
 
 
-    public <T> boolean addWarnings(@Nls @NotNull final String message, @NotNull MessageResult<T> result,
-            boolean ignoreFileNotFound) {
-        return addWarnings(message, result.getMessages(), ignoreFileNotFound);
+    public <T> boolean addWarnings(@NotNull Project project, @Nls @NotNull final String message,
+            @NotNull MessageResult<T> result, boolean ignoreFileNotFound) {
+        return addWarnings(project, message, result.getMessages(), ignoreFileNotFound);
     }
 
 
     /**
      *
-     * @param message localized message
+     * @param title localized message
      * @param msgs status messages
      * @param ignoreFileNotFound ignore "file not found" messages if true
      * @return true if the messages contained an error, false if not.
      */
-    public boolean addWarnings(@Nls @NotNull final String message, @NotNull final List<P4StatusMessage> msgs,
+    public boolean addWarnings(@NotNull Project project, @Nls @NotNull final String title,
+            @NotNull final List<P4StatusMessage> msgs,
             final boolean ignoreFileNotFound) {
-        List<String> statusMessages = new ArrayList<String>(msgs.size());
+        boolean wasWarning = false;
+
+        // TODO check if usability-wise, it's better to have individual messages or just one message
         for (P4StatusMessage msg : msgs) {
             if (msg != null && msg.isError() && (!ignoreFileNotFound ||
                     !msg.isFileNotFoundError())) {
-                statusMessages.add(msg.toString());
+                addWarning(project, title, msg.toString(), null,
+                        msg.getFilePath());
+                wasWarning = true;
             }
         }
-        if (! statusMessages.isEmpty()) {
-            // TODO make as a local message
-            addWarning(message + ": " + statusMessages, null);
-            return true;
-        }
-        return false;
+        return wasWarning;
     }
 
-    public void addNotice(@NotNull @Nls final String message, @Nullable final VcsException ex) {
+    public void addNotice(@NotNull Project project, @NotNull @Nls final String message, @Nullable final Exception ex,
+            @Nullable FilePath... files) {
         if (ex != null && throwableHandled.isHandled(ex)) {
             LOG.debug("Skipped duplicate handling of " + ex);
             return;
         }
 
-        // FIXME this should be turned into a UI-friendly element
+        // For now, it'll be in the warnings.
+        addWarning(project, message, ex == null ? "" : (ex.getMessage() == null ? "" : ex.getMessage()), ex,
+                files);
         LOG.warn(message, ex);
     }
 
-    public void addNotices(@Nls @NotNull final String message, @NotNull final List<P4StatusMessage> msgs,
+    public void addNotices(@NotNull Project project, @Nls @NotNull final String message,
+            @NotNull final List<P4StatusMessage> msgs,
             final boolean ignoreFileNotFound) {
-        for (P4StatusMessage msg : msgs) {
-            if (msg != null && msg.isError() && (! ignoreFileNotFound ||
-                    ! msg.isFileNotFoundError())) {
-                // FIXME this should be turned into a UI-friendly element
-                LOG.warn(message, P4StatusMessage.messageAsError(msg));
+        addWarnings(project, message, msgs, ignoreFileNotFound);
 
-                // Need a valid project to do this.
-                // VcsUtil.showStatusMessage(null, message);
-            }
-        }
+        // FIXME make an actual notice, not warning
+//
+//        for (P4StatusMessage msg : msgs) {
+//            if (msg != null && msg.isError() && (! ignoreFileNotFound ||
+//                    ! msg.isFileNotFoundError())) {
+//                addNotice(project, message, )
+//            }
+//        }
     }
 
 
@@ -187,11 +213,11 @@ public class AlertManager implements ApplicationComponent {
     }
 
 
-    private void handleWarnings(@NotNull final List<WarningMsg> warnings) {
-        // FIXME handle all the warnings in a single UI message.
-        for (WarningMsg warning : warnings) {
-            LOG.warn(warning.message, warning.warning);
-        }
+    private void handleWarnings(@NotNull final List<WarningMessage> warnings) {
+        // See AbstractVcsHelperImpl and AbstractVcsHelper
+        // tab name VcsBundle.message("message.title.annotate")
+        LOG.info("start handleWarnings");
+        WarningUI.showWarnings(warnings);
     }
 
     // Run by the ErrorMsg class, from within the EDT
@@ -222,12 +248,12 @@ public class AlertManager implements ApplicationComponent {
             while (true) {
                 try {
                     ErrorMsg errorMsg = null;
-                    List<WarningMsg> warningMsgs = null;
+                    List<WarningMessage> warningMessages = null;
                     eventLock.lock();
                     try {
                         // Loop until we get an action to perform.
                         // Actions are performed outside the event lock.
-                        while (errorMsg == null && warningMsgs == null) {
+                        while (errorMsg == null && warningMessages == null) {
                             if (disposed) {
                                 return;
                             }
@@ -236,10 +262,10 @@ public class AlertManager implements ApplicationComponent {
                             if (!criticalErrorHandlers.isEmpty()) {
                                 errorMsg = criticalErrorHandlers.poll();
                             } else if (!pendingWarnings.isEmpty()) {
-                                warningMsgs = new ArrayList<WarningMsg>(pendingWarnings);
+                                warningMessages = new ArrayList<WarningMessage>(pendingWarnings);
                                 pendingWarnings.clear();
                             }
-                            if (errorMsg == null && warningMsgs == null) {
+                            if (errorMsg == null && warningMessages == null) {
                                 // wait
                                 eventPending.await(POLL_TIMEOUT, POLL_TIMEOUT_UNIT);
                             }
@@ -248,14 +274,21 @@ public class AlertManager implements ApplicationComponent {
                         eventLock.unlock();
                     }
                     if (errorMsg != null) {
-                        ApplicationManager.getApplication().invokeLater(errorMsg);
-                    } else if (warningMsgs != null) {
+                        // Note that ApplicationManager.getApplication().invokeLater
+                        // will wait for the UI dialogs to be closed before running.
+                        // We do not want that behavior.
+                        SwingUtilities.invokeLater(errorMsg);
+                    } else if (warningMessages != null) {
                         // should always be true, but just to be sure, check that it
                         // isn't null.
-                        handleWarnings(warningMsgs);
+                        handleWarnings(warningMessages);
                     }
                 } catch (InterruptedException e) {
                     // stops the polling
+                } catch (Throwable t) {
+                    // make sure we always throw certain exceptions
+                    VcsExceptionUtil.alwaysThrown(t);
+                    LOG.error(t);
                 }
                 if (disposed) {
                     return;
@@ -294,18 +327,6 @@ public class AlertManager implements ApplicationComponent {
             } catch (Exception e) {
                 LOG.warn("Error handler " + error.getClass().getSimpleName() + " caused error", e);
             }
-        }
-    }
-
-
-    static class WarningMsg {
-        final String message;
-        final VcsException warning;
-        final Date when = new Date();
-
-        WarningMsg(@NotNull final String message, @Nullable final VcsException warning) {
-            this.message = message;
-            this.warning = warning;
         }
     }
 

@@ -35,25 +35,6 @@ import org.jetbrains.annotations.Nullable;
  * limited to the current file depot location.
  */
 public class P4CurrentRevisionNumber implements VcsRevisionNumber {
-
-    /*
-    public enum RevType {
-        HEAD() {
-            public int getRev(P4FileInfo info) {
-                return info.getHeadRev();
-            }
-        },
-        HAVE() {
-            public int getRev(P4FileInfo info) {
-                return info.getHaveRev();
-            }
-        };
-
-        public abstract int getRev(P4FileInfo info);
-    }
-    */
-
-
     private final String depotPath;
     private final int rev;
     private final int changelist;
@@ -99,6 +80,7 @@ public class P4CurrentRevisionNumber implements VcsRevisionNumber {
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
 
+    // FIXME come up with a better invoker
     @Deprecated
     public P4CurrentRevisionNumber(@NotNull P4FileAction file) {
         this.depotPath = file.getDepotPath();

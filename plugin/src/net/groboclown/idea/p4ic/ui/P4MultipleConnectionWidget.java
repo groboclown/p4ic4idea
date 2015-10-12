@@ -86,8 +86,6 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
         setValues();
         appMessageBus = ApplicationManager.getApplication().getMessageBus().connect();
 
-        // FIXME note that we're not listening to old crufty stuff
-
         ConnectionStateListener listener = new ConnectionStateListener();
         Events.appBaseConfigUpdated(appMessageBus, listener);
         Events.appConfigInvalid(appMessageBus, listener);

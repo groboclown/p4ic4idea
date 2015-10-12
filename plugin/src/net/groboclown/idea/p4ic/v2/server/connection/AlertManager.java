@@ -22,7 +22,6 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
-import net.groboclown.idea.p4ic.v2.ui.warning.WarningDialog;
 import net.groboclown.idea.p4ic.v2.ui.warning.WarningMessage;
 import net.groboclown.idea.p4ic.v2.ui.warning.WarningUI;
 import org.jetbrains.annotations.Nls;
@@ -60,8 +59,6 @@ public class AlertManager implements ApplicationComponent {
     private final Synchronizer synchronizer = new Synchronizer();
     private volatile int criticalErrorCount = 0;
     private volatile boolean disposed;
-
-    private WarningDialog warningDialog;
 
 
 

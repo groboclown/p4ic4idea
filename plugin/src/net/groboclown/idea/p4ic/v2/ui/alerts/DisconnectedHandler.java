@@ -14,52 +14,42 @@
 
 package net.groboclown.idea.p4ic.v2.ui.alerts;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.v2.server.connection.CriticalErrorHandler;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 
-public class DisconnectedHandler implements CriticalErrorHandler {
+public class DisconnectedHandler extends AbstractErrorHandler {
     private static final Logger LOG = Logger.getInstance(DisconnectedHandler.class);
 
-    private final Project project;
-    private final ServerConnectedController connectedController;
-
-    public DisconnectedHandler(@NotNull final Project project, @NotNull final ServerConnectedController connectedController) {
-        this.project = project;
-        this.connectedController = connectedController;
+    public DisconnectedHandler(@NotNull Project project, @NotNull ServerConnectedController connectedController,
+            @NotNull Exception exception) {
+        super(project, connectedController, exception);
     }
 
 
     @Override
     public void handleError(@NotNull final Date when) {
         LOG.warn("Disconnected from Perforce server");
-        ApplicationManager.getApplication().assertIsDispatchThread();
 
-        if (connectedController.isWorkingOnline()) {
-            return;
-        }
-
-        if (project.isDisposed()) {
+        if (isInvalid() || isWorkingOnline()) {
             return;
         }
 
         // We may need to switch to automatically work offline due
         // to a user setting.
-        if (connectedController.isAutoOffline()) {
+        if (isAutoOffline()) {
             LOG.info("User running in auto-offline mode.  Will silently work disconnected.");
             return;
         }
 
         // Ask the user if they want to disconnect.
         LOG.info("Asking user to reconnect");
-        int choice = Messages.showDialog(project,
+        int choice = Messages.showDialog(getProject(),
                 P4Bundle.message("dialog.offline.message"),
                 P4Bundle.message("dialog.offline.title"),
                 new String[]{
@@ -69,10 +59,10 @@ public class DisconnectedHandler implements CriticalErrorHandler {
                 1,
                 Messages.getErrorIcon());
         if (choice == 0) {
-            connectedController.connect();
+            connect();
         } else {
-            connectedController.disconnect();
-            Messages.showMessageDialog(project,
+            goOffline();
+            Messages.showMessageDialog(getProject(),
                     P4Bundle.message("dialog.offline.went-offline.message"),
                     P4Bundle.message("dialog.offline.went-offline.title"),
                     Messages.getInformationIcon());

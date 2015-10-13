@@ -37,8 +37,6 @@
 package net.groboclown.idea.p4ic.v2.server.connection;
 
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * Maintains the state of the server connection
  */
@@ -58,13 +56,4 @@ public interface ServerConnectedController {
      * the actual connection attempt later.
      */
     void connect();
-
-    /**
-     * Wait for the connection to go online, and return.
-     *
-     * @param timeout maximum time (roughly) to wait for the connection.
-     * @param unit time unit for the wait
-     * @throws InterruptedException
-     */
-    void waitForOnline(long timeout, TimeUnit unit) throws InterruptedException;
 }

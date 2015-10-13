@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -234,22 +233,6 @@ public class ServerConnectionManager implements ApplicationComponent {
         public void connect() {
             if (setOnline()) {
                 Events.serverConnected(config);
-            }
-        }
-
-        @Override
-        public void waitForOnline(final long timeout, final TimeUnit unit) throws InterruptedException {
-            onlineStatusLock.lock();
-            try {
-                while (! online) {
-                    if (timeout > 0) {
-                        onlineChangedCondition.await(timeout, unit);
-                    } else {
-                        onlineChangedCondition.await();
-                    }
-                }
-            } finally {
-                onlineStatusLock.unlock();
             }
         }
 

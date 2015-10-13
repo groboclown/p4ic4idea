@@ -109,6 +109,11 @@ public class P4Exec2 {
         }
     }
 
+    @NotNull
+    public ServerConnectedController getServerConnectedController() {
+        return exec.getServerConnectedController();
+    }
+
 
     @Override
     protected void finalize() throws Throwable {

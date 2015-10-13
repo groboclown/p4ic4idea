@@ -373,7 +373,8 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
             client = exec.getClient();
         } catch (VcsException e) {
             alerts.addCriticalError(
-                    new InvalidClientHandler(exec.getProject(), getCachedClientName(), e.getMessage()), e);
+                    new InvalidClientHandler(exec.getProject(), getCachedClientName(),
+                            exec.getServerConnectedController(), e), e);
             return;
         }
         if (!client.getName().equals(getCachedClientName())) {

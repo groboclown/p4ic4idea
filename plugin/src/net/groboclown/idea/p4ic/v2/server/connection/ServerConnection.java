@@ -137,7 +137,7 @@ public class ServerConnection {
                     THREAD_EXECUTION_ACTIVE.set(Boolean.TRUE);
                     action.perform(getExec(project), cacheManager, ServerConnection.this, alertManager);
                 } catch (P4InvalidConfigException e) {
-                    alertManager.addCriticalError(new ConfigurationProblemHandler(), e);
+                    alertManager.addCriticalError(new ConfigurationProblemHandler(project, statusController, e), e);
                 } finally {
                     THREAD_EXECUTION_ACTIVE.remove();
                 }
@@ -155,7 +155,7 @@ public class ServerConnection {
                     THREAD_EXECUTION_ACTIVE.set(Boolean.TRUE);
                     return query.query(getExec(project), cacheManager, ServerConnection.this, alertManager);
                 } catch (P4InvalidConfigException e) {
-                    alertManager.addCriticalError(new ConfigurationProblemHandler(), e);
+                    alertManager.addCriticalError(new ConfigurationProblemHandler(project, statusController, e), e);
                     return null;
                 } finally {
                     THREAD_EXECUTION_ACTIVE.remove();
@@ -323,7 +323,8 @@ public class ServerConnection {
                                         cacheManager, ServerConnection.this, alertManager);
                                 cacheManager.removePendingUpdateStates(action.action.getPendingUpdateStates());
                             } catch (P4InvalidConfigException e) {
-                                alertManager.addCriticalError(new ConfigurationProblemHandler(), e);
+                                alertManager.addCriticalError(new ConfigurationProblemHandler(action.project,
+                                        statusController, e), e);
                                 // do not requeue the action
                             }
                             return null;

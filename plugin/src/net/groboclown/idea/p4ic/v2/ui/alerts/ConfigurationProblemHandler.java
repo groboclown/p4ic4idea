@@ -14,15 +14,48 @@
 
 package net.groboclown.idea.p4ic.v2.ui.alerts;
 
-import net.groboclown.idea.p4ic.v2.server.connection.CriticalErrorHandler;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
+import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerStatusController;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 
-public class ConfigurationProblemHandler implements CriticalErrorHandler {
+public class ConfigurationProblemHandler extends AbstractErrorHandler {
+    private static final Logger LOG = Logger.getInstance(ConfigurationProblemHandler.class);
+
+    public ConfigurationProblemHandler(@NotNull Project project, @NotNull ServerStatusController serverStatusController,
+            @NotNull Exception ex) {
+        super(project, serverStatusController, ex);
+    }
+
     @Override
     public void handleError(@NotNull final Date when) {
-        // FIXME
-        throw new IllegalStateException("not implemented");
+        LOG.warn("Configuration problem", getException());
+
+        if (isInvalid()) {
+            return;
+        }
+
+        int result = Messages.showYesNoDialog(getProject(),
+                P4Bundle.message("configuration.connection-problem-ask", getExceptionMessage()),
+                P4Bundle.message("configuration.check-connection"),
+                Messages.getErrorIcon());
+        boolean changed = false;
+        if (result == Messages.YES) {
+            // Signal to the API to try again only if
+            // the user selected "okay".
+            changed = tryConfigChange();
+        }
+        if (!changed) {
+            // Work offline
+            goOffline();
+            Messages.showMessageDialog(getProject(),
+                    P4Bundle.message("dialog.offline.went-offline.message"),
+                    P4Bundle.message("dialog.offline.went-offline.title"),
+                    Messages.getInformationIcon());
+        }
     }
 }

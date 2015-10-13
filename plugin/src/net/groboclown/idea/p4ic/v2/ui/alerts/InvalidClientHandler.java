@@ -15,46 +15,47 @@
 package net.groboclown.idea.p4ic.v2.ui.alerts;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.compat.UICompat;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.v2.server.connection.CriticalErrorHandler;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 
-public class InvalidClientHandler implements CriticalErrorHandler {
-    private final Project project;
+public class InvalidClientHandler extends AbstractErrorHandler {
+    private static final Logger LOG = Logger.getInstance(InvalidClientHandler.class);
+
     private final String clientName;
-    private final String errorMessage;
 
     public InvalidClientHandler(@NotNull final Project project, @NotNull final String clientName,
-            @NotNull final String errorMessage) {
-        this.project = project;
+            @NotNull ServerConnectedController connectedController,
+            @NotNull Exception ex) {
+        super(project, connectedController, ex);
         this.clientName = clientName;
-        this.errorMessage = errorMessage;
     }
 
     @Override
     public void handleError(@NotNull final Date when) {
+        LOG.warn("Invalid client " + clientName);
+
         ApplicationManager.getApplication().assertIsDispatchThread();
 
-        int result = Messages.showYesNoDialog(project,
-                P4Bundle.message("configuration.connection-problem-ask", errorMessage),
+        int result = Messages.showYesNoDialog(getProject(),
+                P4Bundle.message("configuration.connection-problem-ask", getExceptionMessage()),
                 P4Bundle.message("configuration.check-connection"),
                 Messages.getErrorIcon());
         boolean changed = false;
         if (result == Messages.YES) {
             // Signal to the API to try again only if
             // the user selected "okay".
-            P4Vcs vcs = P4Vcs.getInstance(project);
-            changed = UICompat.getInstance().editVcsConfiguration(project, vcs.getConfigurable());
+            changed = tryConfigChange();
         }
         if (!changed) {
             // Work offline
-            Messages.showMessageDialog(project,
+            goOffline();
+            Messages.showMessageDialog(getProject(),
                     P4Bundle.message("dialog.offline.went-offline.message"),
                     P4Bundle.message("dialog.offline.went-offline.title"),
                     Messages.getInformationIcon());

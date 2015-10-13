@@ -360,7 +360,8 @@ public class ClientExec {
             LOG.info("Problem accessing resources (password problem)", e);
             if (loginCount >= 1) {
                 P4LoginException ex = new P4LoginException(project, getServerConfig(), e);
-                AlertManager.getInstance().addCriticalError(new LoginFailedHandler(), ex);
+                AlertManager.getInstance().addCriticalError(new LoginFailedHandler(project,
+                        getServerConnectedController(), getServerConfig(), e), ex);
                 throw ex;
             } else {
                 onPasswordProblem(project, new P4LoginException(e));
@@ -370,7 +371,7 @@ public class ClientExec {
             LOG.info("Problem with configuration", e);
             connectedController.onConfigInvalid();
             P4InvalidConfigException ex = new P4InvalidConfigException(e);
-            AlertManager.getInstance().addCriticalError(new ConfigurationProblemHandler(), ex);
+            AlertManager.getInstance().addCriticalError(new ConfigurationProblemHandler(project, connectedController, e), ex);
             throw ex;
         } catch (ConnectionNotConnectedException e) {
             LOG.info("Wasn't connected", e);
@@ -379,7 +380,7 @@ public class ClientExec {
                 connectedController.onDisconnected();
                 P4WorkingOfflineException ex = new P4WorkingOfflineException(e);
                 AlertManager.getInstance()
-                        .addCriticalError(new DisconnectedHandler(project, connectedController), ex);
+                        .addCriticalError(new DisconnectedHandler(project, connectedController, ex), ex);
                 throw ex;
             } else {
                 return p4RunFor(project, runner, retryCount + 1, loginCount);
@@ -417,7 +418,7 @@ public class ClientExec {
             if (retryCount > 1) {
                 connectedController.onDisconnected();
                 P4DisconnectedException ex = new P4DisconnectedException(e);
-                AlertManager.getInstance().addCriticalError(new DisconnectedHandler(project, connectedController), ex);
+                AlertManager.getInstance().addCriticalError(new DisconnectedHandler(project, connectedController, ex), ex);
                 throw ex;
             }
             return p4RunFor(project, runner, retryCount + 1, loginCount);
@@ -443,7 +444,8 @@ public class ClientExec {
                 if (loginCount >= 1) {
                     connectedController.onConfigInvalid();
                     P4LoginException ex = new P4LoginException(project, getServerConfig(), e);
-                    AlertManager.getInstance().addCriticalError(new LoginFailedHandler(), ex);
+                    AlertManager.getInstance().addCriticalError(new LoginFailedHandler(
+                            project, getServerConnectedController(), getServerConfig(), ex), ex);
                     throw ex;
                 } else {
                     onPasswordProblem(project, new P4LoginException(e));
@@ -471,7 +473,7 @@ public class ClientExec {
             LOG.info("Invalid URI", e);
             connectedController.onConfigInvalid();
             P4InvalidConfigException ex = new P4InvalidConfigException(e);
-            AlertManager.getInstance().addCriticalError(new ConfigurationProblemHandler(), ex);
+            AlertManager.getInstance().addCriticalError(new ConfigurationProblemHandler(project, connectedController, e), ex);
             throw ex;
         } catch (CancellationException e) {
             // A user-requested cancellation of the action.
@@ -552,6 +554,11 @@ public class ClientExec {
         String message = e.getMessage();
         return message != null &&
                 message.contains("The fingerprint for the public key sent to your client is");
+    }
+
+    @NotNull
+    ServerConnectedController getServerConnectedController() {
+        return connectedController;
     }
 
 

@@ -26,6 +26,8 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
+import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.connection.MessageResult;
@@ -97,7 +99,15 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
                 if (server != null && ! files.isEmpty()) {
                     hasRefreshedFiles = true;
                     LOG.info("Reverting in client " + server + ": " + files);
-                    server.revertFiles(files);
+                    try {
+                        server.revertFilesOnline(files);
+                    } catch (InterruptedException e) {
+                        LOG.warn(e);
+                        vcsExceptions.add(new VcsInterruptedException(e));
+                    } catch (P4DisconnectedException e) {
+                        LOG.warn(e);
+                        vcsExceptions.add(e);
+                    }
                 }
             }
         }
@@ -148,17 +158,28 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             return;
         }
 
+        final Map<P4Server, List<FilePath>> mapping;
         try {
-            final Map<P4Server, List<FilePath>> mapping = vcs.mapFilePathsToP4Server(files);
-            for (Entry<P4Server, List<FilePath>> entry : mapping.entrySet()) {
-                listener.checkCanceled();
-                listener.accept(entry.getValue());
-                final MessageResult<Collection<FileSyncResult>> results =
-                        entry.getKey().synchronizeFiles(entry.getValue(), -1, null, true);
-                exceptions.addAll(results.messagesAsExceptions());
-            }
+            mapping = vcs.mapFilePathsToP4Server(files);
         } catch (InterruptedException e) {
             LOG.warn(e);
+            exceptions.add(new VcsInterruptedException(e));
+            return;
+        }
+        for (Entry<P4Server, List<FilePath>> entry : mapping.entrySet()) {
+            listener.checkCanceled();
+            listener.accept(entry.getValue());
+            final MessageResult<Collection<FileSyncResult>> results;
+            try {
+                results = entry.getKey().synchronizeFilesOnline(entry.getValue(), -1, null, true);
+                exceptions.addAll(results.messagesAsExceptions());
+            } catch (P4DisconnectedException e) {
+                LOG.warn(e);
+                exceptions.add(e);
+            } catch (InterruptedException e) {
+                LOG.warn(e);
+                exceptions.add(new VcsInterruptedException(e));
+            }
         }
     }
 
@@ -181,11 +202,18 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             LOG.debug("No client for file " + file);
             return;
         }
-        boolean reverted = false;
+        boolean reverted = true;
         synchronized (vfsLock) {
-            // FIXME do this right
-            server.revertUnchangedFiles(Collections.singletonList(fp));
-            reverted = true;
+            // TODO do this right
+            try {
+                server.revertUnchangedFilesOnline(Collections.singletonList(fp));
+            } catch (InterruptedException e) {
+                LOG.warn(e);
+                reverted = false;
+            } catch (P4DisconnectedException e) {
+                LOG.warn(e);
+                reverted = false;
+            }
         }
 
         if (reverted) {

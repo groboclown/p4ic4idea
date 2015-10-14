@@ -492,7 +492,7 @@ public class RawServerExecutor {
 
     /*
     @NotNull
-    public List<P4FileRevision> getRevisionHistory(@NotNull Project project,
+    public List<P4FileRevision> getRevisionHistoryOnline(@NotNull Project project,
             @NotNull P4FileInfo files, int maxRevs)
             throws VcsException, CancellationException {
         return performAction(project, new GetRevisionHistoryTask(project, files, maxRevs));

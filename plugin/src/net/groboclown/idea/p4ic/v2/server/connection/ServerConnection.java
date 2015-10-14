@@ -196,6 +196,10 @@ public class ServerConnection {
         statusController.connect();
     }
 
+    public ServerConnectedController getServerConnectedController() {
+        return statusController;
+    }
+
 
 
 

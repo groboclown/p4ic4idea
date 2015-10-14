@@ -52,7 +52,8 @@ public class FileSyncResult {
         assert file.getLocalFilePath() != null;
         this.file = file;
         this.fileAction = clientAction;
-        this.rev = new P4RevisionNumber(file.getDepotPath(), file.getDepotPath(), revision);
+        this.rev = new P4RevisionNumber(file.getLocalFilePath(),
+                file.getDepotPath(), file.getDepotPath(), revision);
     }
 
     @SuppressWarnings("ConstantConditions")

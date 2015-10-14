@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -23,7 +24,9 @@ import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
+import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
+import net.groboclown.idea.p4ic.v2.server.P4Server.IntegrateFile;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.local.IgnoreFiles;
@@ -31,10 +34,8 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.ClientLocalServerState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
-import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
+import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CreateUpdate;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerQuery;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -214,6 +215,58 @@ public class ClientCacheManager {
         return changeLists.getJobsInChangelists(changes);
     }
 
+
+    @Nullable
+    public PendingUpdateState moveFile(@NotNull final IntegrateFile file, final int changelistId) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public PendingUpdateState integrateFile(@NotNull final IntegrateFile file, final int changelistId) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public PendingUpdateState revertFile(@NotNull final FilePath file) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public PendingUpdateState revertFileIfUnchanged(@NotNull final FilePath file) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public ServerUpdateAction revertFileOnline(@NotNull final List<FilePath> files,
+            @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
+        return null;
+    }
+
+    @Nullable
+    public ServerUpdateAction revertFileIfUnchangedOnline(@NotNull final Collection<FilePath> files,
+            @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
+        return null;
+    }
+
+    @Nullable
+    public ServerUpdateAction synchronizeFilesOnline(@NotNull final Collection<FilePath> files, final int revisionNumber,
+            @Nullable final String syncSpec, final boolean force,
+            final Ref<MessageResult<Collection<FileSyncResult>>> ref) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public ServerUpdateAction submitChangelist(@NotNull final List<FilePath> files,
+            @NotNull final List<P4ChangeListJob> jobs,
+            @Nullable final String submitStatus, final int changeListId) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
 
     // ----------------------------------------------------------------------------------------
     // Package-level behaviors for use in an action

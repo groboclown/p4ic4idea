@@ -131,7 +131,7 @@ public class P4HistoryProvider implements VcsHistoryProvider {
                             return null;
                         }
                         final IExtendedFileSpec spec = status.get(path);
-                        return new P4RevisionNumber(spec.getDepotPathString(), spec,
+                        return new P4RevisionNumber(path, spec.getDepotPathString(), spec,
                                 P4RevisionNumber.RevType.HEAD);
                     }
                     return null;
@@ -171,7 +171,7 @@ public class P4HistoryProvider implements VcsHistoryProvider {
                     LOG.info("No file information for " + filePath);
                     return Collections.emptyList();
                 }
-                return server.getRevisionHistory(specs.get(filePath), limit);
+                return server.getRevisionHistoryOnline(specs.get(filePath), limit);
             }
         } catch (InterruptedException e) {
             throw new VcsInterruptedException(e);

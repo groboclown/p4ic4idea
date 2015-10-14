@@ -27,7 +27,7 @@ public class SSLKeyStrengthProblemHandler extends AbstractErrorHandler {
     private static final Logger LOG = Logger.getInstance(SSLKeyStrengthProblemHandler.class);
 
 
-    SSLKeyStrengthProblemHandler(@NotNull final Project project,
+    public SSLKeyStrengthProblemHandler(@NotNull final Project project,
             @NotNull final ServerConnectedController connectedController,
             @NotNull final Exception exception) {
         super(project, connectedController, exception);

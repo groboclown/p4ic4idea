@@ -23,6 +23,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.update.*;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.ui.sync.SyncOptionConfigurable;
 import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
@@ -70,17 +71,23 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
             P4Server server = entry.getKey();
             // Get the revision or changelist from the Configurable that the user wants to sync to.
 
-            final MessageResult<Collection<FileSyncResult>> results = server.synchronizeFiles(
-                    entry.getValue(),
-                    syncOptions.getRevision(),
-                    syncOptions.getChangelist(),
-                    syncOptions.isForceSync());
-
-            for (FileSyncResult file : results.getResult()) {
-                updateFileInfo(file);
-                addToGroup(file, groups);
+            final MessageResult<Collection<FileSyncResult>> results;
+            try {
+                results = server.synchronizeFilesOnline(
+                        entry.getValue(),
+                        syncOptions.getRevision(),
+                        syncOptions.getChangelist(),
+                        syncOptions.isForceSync());
+                for (FileSyncResult file : results.getResult()) {
+                    updateFileInfo(file);
+                    addToGroup(file, groups);
+                }
+                session.exceptions.addAll(results.messagesAsExceptions());
+            } catch (InterruptedException e) {
+                throw new ProcessCanceledException(e);
+            } catch (P4DisconnectedException e) {
+                session.exceptions.add(e);
             }
-            session.exceptions.addAll(results.messagesAsExceptions());
         }
 
         return session;

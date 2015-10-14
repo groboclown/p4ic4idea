@@ -17,12 +17,11 @@ There are some features that drive how the inner architecture will work.
 
 1. When project root is at (say) c:\a\b\c\, and .p4config exists in c:\a\b\c\ and c:\a, the
    c:\a is picked up.
-1. Config GUI doesn't show properties correctly.
-1. Changelist mappings don't seem to be persisted.
 1. Changelist refresh: some files alternate between showing up and disappearing
    with each refresh.
 1. Job list in submit needs wrapping scroll pane.
 1. Failure in job submit does not show error to user.
+1. Going offline does not show the offline icon.
 
 
 ## Parts needing heavy testing

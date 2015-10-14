@@ -389,7 +389,9 @@ public class ClientExec {
             LOG.info("SSL trust problem", e);
             connectedController.onConfigInvalid();
             P4SSLFingerprintException ex = new P4SSLFingerprintException(config.getServerFingerprint(), e);
-            AlertManager.getInstance().addCriticalError(new SSLFingerprintProblemHandler(), ex);
+            AlertManager.getInstance().addCriticalError(
+                    new SSLFingerprintProblemHandler(project, connectedController, e),
+                    ex);
             throw ex;
         } catch (ConnectionException e) {
             LOG.info("Connection problem", e);
@@ -400,7 +402,9 @@ public class ClientExec {
                 connectedController.onConfigInvalid();
                 P4SSLFingerprintException ex =
                        new P4SSLFingerprintException(config.getServerFingerprint(), e);
-                AlertManager.getInstance().addCriticalError(new SSLFingerprintProblemHandler(), ex);
+                AlertManager.getInstance().addCriticalError(
+                        new SSLFingerprintProblemHandler(project, connectedController, e),
+                        ex);
                 throw ex;
             }
 
@@ -409,7 +413,9 @@ public class ClientExec {
                 // SSL extensions are not installed.
                 connectedController.onConfigInvalid();
                 P4JavaSSLStrengthException ex = new P4JavaSSLStrengthException(e);
-                AlertManager.getInstance().addCriticalError(new SSLKeyStrengthProblemHandler(), ex);
+                AlertManager.getInstance().addCriticalError(
+                        new SSLKeyStrengthProblemHandler(project, connectedController, e),
+                        ex);
                 throw ex;
             }
 
@@ -541,6 +547,8 @@ public class ClientExec {
 
     private boolean isSSLHandshakeProblem(@NotNull final ConnectionException e) {
         // TODO replace with error code checking
+
+        // FIXME this check isn't always right - it could be a fingerprint problem in disguise
 
         String message = e.getMessage();
         return message != null &&

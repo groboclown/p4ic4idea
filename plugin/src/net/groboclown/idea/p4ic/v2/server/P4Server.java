@@ -45,6 +45,8 @@ import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CacheQuery;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CreateUpdate;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
+import net.groboclown.idea.p4ic.v2.server.util.RemoteFileReader;
+import net.groboclown.idea.p4ic.v2.ui.alerts.DisconnectedHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -181,6 +183,9 @@ public class P4Server {
      *      the client roots.  It returns -1 if there is no match.
      */
     int getFilePathMatchDepth(@NotNull FilePath file) throws InterruptedException {
+
+        // FIXME move to another class; this logic is too complicated for this class.
+
         if (LOG.isDebugEnabled()) {
             LOG.debug("Finding depth for " + file + " in " + getClientName());
         }
@@ -246,6 +251,9 @@ public class P4Server {
      */
     @NotNull
     public List<List<File>> getRoots() throws InterruptedException {
+
+        // FIXME move to another class; this logic is too complicated for this class.
+
         // use the ProjectConfigSource as the lowest level these can be under.
         final Set<List<File>> ret = new HashSet<List<File>>();
         final List<VirtualFile> projectRoots = source.getProjectSourceDirs();
@@ -337,6 +345,7 @@ public class P4Server {
             return Collections.emptyMap();
         }
         if (isWorkingOffline()) {
+            LOG.info("Cannot get file status while offline: " + files);
             return null;
         }
         List<FilePath> filePathList = new ArrayList<FilePath>(files);
@@ -380,6 +389,7 @@ public class P4Server {
         }
 
         // FIXME perform better matching
+        // Logic is a bit complex; move to another class?
 
         // should be a 1-to-1 mapping
         if (filePathList.size() != extended.size()) {
@@ -439,23 +449,17 @@ public class P4Server {
             return;
         }
         connection.queueUpdates(project, new CreateUpdate() {
+            @NotNull
             @Override
             public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
 
-                // FIXME rollback implementation
-                // For rollback, we can use the internal IDE history to capture what to rollback to.
+                // TODO For rollback, we can use the internal IDE history to capture what to rollback to.
                 // Need to inspect their API around that.
 
 
                 List<PendingUpdateState> updates = new ArrayList<PendingUpdateState>();
                 for (VirtualFile file : files) {
-                    final PendingUpdateState update = mgr.addOrEditFile(project, FilePathUtil.getFilePath(file), changelistId);
-                    if (update != null) {
-                        LOG.info("add pending update " + update);
-                        updates.add(update);
-                    } else {
-                        LOG.info("add/edit caused no update: " + file);
-                    }
+                    addPendingUpdateState(updates, mgr.addOrEditFile(project, FilePathUtil.getFilePath(file), changelistId));
                 }
                 return updates;
             }
@@ -476,66 +480,151 @@ public class P4Server {
             @NotNull
             @Override
             public Collection<PendingUpdateState> create(@NotNull ClientCacheManager mgr) {
-                final PendingUpdateState update = mgr.editFile(project, file, changelistId);
-                if (update != null) {
-                    LOG.info("add pending update " + update);
-                    return Collections.singletonList(update);
-                } else {
-                    LOG.info("add/edit caused no update: " + file);
-                    return Collections.emptyList();
-                }
+                return singlePendingUpdateState(mgr.editFile(project, file, changelistId));
             }
         });
     }
 
-    public void moveFiles(@NotNull final List<IntegrateFile> filePathMatch, final int changelistId) {
-        if (filePathMatch.isEmpty()) {
+    public void moveFiles(@NotNull final List<IntegrateFile> files, final int changelistId) {
+        if (files.isEmpty()) {
             return;
         }
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        connection.queueUpdates(project, new CreateUpdate() {
+            @NotNull
+            @Override
+            public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
+                List<PendingUpdateState> ret = new ArrayList<PendingUpdateState>(files.size());
+                for (IntegrateFile file : files) {
+                    LOG.info("move: " + file);
+                    addPendingUpdateState(ret, mgr.moveFile(file, changelistId));
+                }
+                return ret;
+            }
+        });
     }
 
     public void integrateFiles(@NotNull final List<IntegrateFile> integrationFiles, final int changelistId) {
         if (integrationFiles.isEmpty()) {
             return;
         }
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
-    }
-
-    public void revertFiles(@NotNull final List<FilePath> files) {
-        if (files.isEmpty()) {
-            return;
-        }
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        connection.queueUpdates(project, new CreateUpdate() {
+            @NotNull
+            @Override
+            public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
+                List<PendingUpdateState> ret = new ArrayList<PendingUpdateState>(integrationFiles.size());
+                for (IntegrateFile file : integrationFiles) {
+                    LOG.info("integrate: " + file);
+                    addPendingUpdateState(ret, mgr.integrateFile(file, changelistId));
+                }
+                return ret;
+            }
+        });
     }
 
     /**
      *
-     * @param filePaths file to revert.
-     * @return all files that were reverted
+     * @param files files to revert.
      */
     @NotNull
-    public MessageResult<Collection<FilePath>> revertUnchangedFiles(@NotNull final Collection<FilePath> filePaths) {
-        if (filePaths.isEmpty()) {
+    public MessageResult<Collection<FilePath>> revertFilesOnline(@NotNull final List<FilePath> files)
+            throws InterruptedException, P4DisconnectedException {
+        if (files.isEmpty()) {
             return new MessageResult<Collection<FilePath>>(
                     Collections.<FilePath>emptyList(), Collections.<P4StatusMessage>emptyList());
         }
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        validateOnline();
+        return connection.cacheQuery(new CacheQuery<MessageResult<Collection<FilePath>>>() {
+            @Override
+            public MessageResult<Collection<FilePath>> query(@NotNull final ClientCacheManager mgr)
+                    throws InterruptedException {
+                Ref<MessageResult<Collection<FilePath>>> ret = new Ref<MessageResult<Collection<FilePath>>>();
+                ServerUpdateAction action = mgr.revertFileOnline(files, ret);
+                if (action != null) {
+                    connection.runImmediately(project, action);
+                }
+                if (ret.isNull()) {
+                    return new MessageResult<Collection<FilePath>>(
+                            Collections.<FilePath>emptyList(), Collections.<P4StatusMessage>emptyList());
+                }
+                return ret.get();
+            }
+        });
+        /* offline version
+        connection.queueUpdates(project, new CreateUpdate() {
+            @NotNull
+            @Override
+            public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
+                List<PendingUpdateState> ret = new ArrayList<PendingUpdateState>(files.size());
+                for (FilePath file : files) {
+                    LOG.info("revert: " + file);
+                    addPendingUpdateState(ret, mgr.revertFile(file));
+                }
+                return ret;
+            }
+        });
+        */
+    }
+
+    /**
+     * For now, the rollback operations can only be done while online.
+     *
+     *
+     * @param files file to revert.
+     * @return all files that were reverted
+     */
+    @NotNull
+    public MessageResult<Collection<FilePath>> revertUnchangedFilesOnline(@NotNull final Collection<FilePath> files)
+            throws InterruptedException, P4DisconnectedException {
+        if (files.isEmpty()) {
+            return new MessageResult<Collection<FilePath>>(
+                    Collections.<FilePath>emptyList(), Collections.<P4StatusMessage>emptyList());
+        }
+        validateOnline();
+        return connection.cacheQuery(new CacheQuery<MessageResult<Collection<FilePath>>>() {
+            @Override
+            public MessageResult<Collection<FilePath>> query(@NotNull final ClientCacheManager mgr)
+                    throws InterruptedException {
+                Ref<MessageResult<Collection<FilePath>>> ret = new Ref<MessageResult<Collection<FilePath>>>();
+                ServerUpdateAction action = mgr.revertFileIfUnchangedOnline(files, ret);
+                if (action != null) {
+                    connection.runImmediately(project, action);
+                }
+                if (ret.isNull()) {
+                    return new MessageResult<Collection<FilePath>>(
+                            Collections.<FilePath>emptyList(), Collections.<P4StatusMessage>emptyList());
+                }
+                return ret.get();
+            }
+        });
     }
 
 
-    public MessageResult<Collection<FileSyncResult>> synchronizeFiles(@NotNull final Collection<FilePath> files, final int revisionNumber,
-            @Nullable final String syncSpec, final boolean force) {
+    @NotNull
+    public MessageResult<Collection<FileSyncResult>> synchronizeFilesOnline(@NotNull final Collection<FilePath> files,
+            final int revisionNumber, @Nullable final String syncSpec, final boolean force)
+            throws InterruptedException, P4DisconnectedException {
         if (files.isEmpty()) {
             return new MessageResult<Collection<FileSyncResult>>(
                     Collections.<FileSyncResult>emptyList(), Collections.<P4StatusMessage>emptyList());
         }
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        validateOnline();
+        // This operation must be done when called.
+        return connection.cacheQuery(new CacheQuery<MessageResult<Collection<FileSyncResult>>>() {
+            @Override
+            public MessageResult<Collection<FileSyncResult>> query(@NotNull final ClientCacheManager mgr)
+                    throws InterruptedException {
+                Ref<MessageResult<Collection<FileSyncResult>>> ref = new Ref<MessageResult<Collection<FileSyncResult>>>();
+                final ServerUpdateAction update = mgr.synchronizeFilesOnline(files, revisionNumber, syncSpec, force, ref);
+                if (update != null) {
+                    connection.runImmediately(project, update);
+                }
+                if (ref.isNull()) {
+                    return new MessageResult<Collection<FileSyncResult>>(
+                            Collections.<FileSyncResult>emptyList(), Collections.<P4StatusMessage>emptyList());
+                }
+                return ref.get();
+            }
+        });
     }
 
     public Collection<P4ChangeListValue> getOpenChangeLists() throws InterruptedException {
@@ -691,34 +780,61 @@ public class P4Server {
      * an exception is thrown.
      *
      * @param spec file spec to read
-     * @return the file contents
-     * @throws P4FileException
+     * @return the file contents, or null if it does not exist.
      * @throws P4DisconnectedException
      */
     @Nullable
-    public String loadFileAsString(@NotNull IFileSpec spec)
-            throws P4FileException, P4DisconnectedException {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+    public String loadFileAsStringOnline(@NotNull final FilePath file, @NotNull final IFileSpec spec)
+            throws P4DisconnectedException, InterruptedException {
+        validateOnline();
+        return connection.cacheQuery(new CacheQuery<String>() {
+            @Override
+            public String query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
+                return connection.query(project, RemoteFileReader.createStringReader(file, spec));
+            }
+        });
     }
 
     @Nullable
-    public String loadFileAsString(@NotNull FilePath file, final int rev)
-            throws P4FileException, P4DisconnectedException {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+    public String loadFileAsStringOnline(@NotNull FilePath file, final int rev)
+            throws P4DisconnectedException, InterruptedException {
+        try {
+            final IFileSpec spec = FileSpecUtil.getOneSpecWithRev(file, rev);
+            return loadFileAsStringOnline(file, spec);
+        } catch (P4Exception e) {
+            alertManager.addWarning(project,
+                    P4Bundle.message("exception.load-file.error.title"),
+                    P4Bundle.message("exception.load-file.error", file),
+                    e, file);
+            return null;
+        }
     }
 
     @Nullable
-    public byte[] loadFileAsBytes(@NotNull IFileSpec spec) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+    public byte[] loadFileAsBytesOnline(@NotNull final FilePath file, @NotNull final IFileSpec spec)
+            throws P4DisconnectedException, InterruptedException {
+        validateOnline();
+        return connection.cacheQuery(new CacheQuery<byte[]>() {
+            @Override
+            public byte[] query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
+                return connection.query(project, RemoteFileReader.createByteReader(file, spec));
+            }
+        });
     }
 
     @Nullable
-    public byte[] loadFileAsBytes(@NotNull FilePath file, final int rev) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+    public byte[] loadFileAsBytesOnline(@NotNull FilePath file, final int rev)
+            throws P4DisconnectedException, InterruptedException {
+        try {
+            final IFileSpec spec = FileSpecUtil.getOneSpecWithRev(file, rev);
+            return loadFileAsBytesOnline(file, spec);
+        } catch (P4Exception e) {
+            alertManager.addWarning(project,
+                    P4Bundle.message("exception.load-file.error.title"),
+                    P4Bundle.message("exception.load-file.error", file),
+                    e, file);
+            return null;
+        }
     }
 
     public void deleteFiles(@NotNull final List<FilePath> files, final int changelistId) {
@@ -746,18 +862,26 @@ public class P4Server {
         });
     }
 
-    public void submitChangelist(final List<FilePath> files, final List<P4ChangeListJob> jobs, final String submitStatus,
-            final int changeListId) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+    public void submitChangelistOnline(final List<FilePath> files, final List<P4ChangeListJob> jobs, final String submitStatus,
+            final int changeListId) throws P4DisconnectedException, InterruptedException {
+        validateOnline();
+        connection.cacheQuery(new CacheQuery<Void>() {
+            @Override
+            public Void query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
+                ServerUpdateAction action = mgr.submitChangelist(files, jobs, submitStatus, changeListId);
+                if (action != null) {
+                    connection.runImmediately(project, action);
+                }
+                return null;
+            }
+        });
     }
 
     @NotNull
-    public List<P4AnnotatedLine> getAnnotationsFor(@NotNull final IFileSpec spec, final int revNumber)
+    public List<P4AnnotatedLine> getAnnotationsFor(@NotNull final FilePath baseFile,
+            @NotNull final IFileSpec spec, final int revNumber)
             throws VcsException, InterruptedException {
-        if (isWorkingOffline()) {
-            throw new P4DisconnectedException();
-        }
+        validateOnline();
         final Ref<VcsException> ex = new Ref<VcsException>();
         final List<P4AnnotatedLine> ret = connection.query(project, new ServerQuery<List<P4AnnotatedLine>>() {
             @Nullable
@@ -771,7 +895,7 @@ public class P4Server {
                     if (revNumber > 0) {
                         usedSpec = FileSpecUtil.getAlreadyEscapedSpec(spec.getDepotPathString() + '#' + revNumber);
                     }
-                    return P4AnnotatedLine.loadAnnotatedLines(exec,
+                    return P4AnnotatedLine.loadAnnotatedLines(exec, baseFile,
                             exec.getAnnotationsFor(Collections.singletonList(usedSpec)));
                 } catch (VcsException e) {
                     ex.set(e);
@@ -789,8 +913,11 @@ public class P4Server {
     }
 
     @Nullable
-    public List<P4FileRevision> getRevisionHistory(@NotNull final IExtendedFileSpec spec,
+    public List<P4FileRevision> getRevisionHistoryOnline(@NotNull final IExtendedFileSpec spec,
             final int limit) throws InterruptedException {
+
+        // FIXME this is too complex for this class; move to another.
+
         return connection.query(project, new ServerQuery<List<P4FileRevision>>() {
             @Nullable
             @Override
@@ -820,7 +947,9 @@ public class P4Server {
                     } else {
                         for (IFileRevisionData rev : entry.getValue()) {
                             if (rev != null) {
-                                final P4FileRevision p4rev = createRevision(entry.getKey(), rev, alerts);
+                                final P4FileRevision p4rev = createRevision(
+                                        FilePathUtil.getFilePath(spec.getClientPathString()),
+                                        entry.getKey(), rev, alerts);
                                 if (p4rev != null) {
                                     ret.add(p4rev);
                                 }
@@ -907,8 +1036,36 @@ public class P4Server {
     }
 
 
+    private static void addPendingUpdateState(@NotNull final List<PendingUpdateState> updates,
+            @Nullable final PendingUpdateState pendingUpdateState) {
+        if (pendingUpdateState != null) {
+            updates.add(pendingUpdateState);
+        }
+    }
+
+
+    private void validateOnline() throws P4DisconnectedException {
+        if (isWorkingOffline()) {
+            P4DisconnectedException ex = new P4DisconnectedException();
+            alertManager.addCriticalError(new DisconnectedHandler(project, connection.getServerConnectedController(),
+                    ex), ex);
+            throw ex;
+        }
+    }
+
+
+    @NotNull
+    private static Collection<PendingUpdateState> singlePendingUpdateState(
+            @Nullable final PendingUpdateState pendingUpdateState) {
+        if (pendingUpdateState == null) {
+            return Collections.emptyList();
+        }
+        return Collections.singleton(pendingUpdateState);
+    }
+
+
     @Nullable
-    private P4FileRevision createRevision(@NotNull IFileSpec spec,
+    private P4FileRevision createRevision(@NotNull FilePath baseFile, @NotNull IFileSpec spec,
             @NotNull final IFileRevisionData rev, final AlertManager alerts) {
         if (spec.getDepotPathString() == null && rev.getDepotFileName() == null) {
             alerts.addNotice(project, P4Bundle.message("error.revision-null", spec), null,
@@ -918,7 +1075,7 @@ public class P4Server {
         LOG.info("Finding location of " + spec);
         // Note: check above performs the NPE checks.
         return new P4FileRevision(project, getClientServerId(),
-                spec.getDepotPathString(), rev.getDepotFileName(), rev);
+                baseFile, spec.getDepotPathString(), rev.getDepotFileName(), rev);
     }
 
     private static final RevCompare REV_COMPARE = new RevCompare();

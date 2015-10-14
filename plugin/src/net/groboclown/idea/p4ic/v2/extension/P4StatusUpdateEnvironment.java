@@ -110,7 +110,8 @@ public class P4StatusUpdateEnvironment implements UpdateEnvironment {
                         final IExtendedFileSpec spec = infoEntry.getValue();
                         FileGroup group = updatedFiles.getGroupById(getGroupId(spec));
                         group.add(infoEntry.getKey().getIOFile().getAbsolutePath(), P4Vcs.getKey(),
-                                new P4RevisionNumber(spec.getDepotPathString(), spec,
+                                new P4RevisionNumber(infoEntry.getKey(),
+                                        spec.getDepotPathString(), spec,
                                         // Have revision - we're seeing what the user has synced.
                                         RevType.HAVE));
                     }

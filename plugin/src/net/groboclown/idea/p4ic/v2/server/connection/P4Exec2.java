@@ -559,7 +559,7 @@ public class P4Exec2 {
             public Map<IFileSpec, List<IFileRevisionData>> run(@NotNull IOptionsServer server, @NotNull IClient client,
                     @NotNull ClientExec.ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
-                count.invoke("getRevisionHistory");
+                count.invoke("getRevisionHistoryOnline");
 
                 return server.getRevisionHistory(depotFiles, maxRevisions, false, true, true, false);
             }

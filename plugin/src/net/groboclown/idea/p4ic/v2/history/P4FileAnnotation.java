@@ -21,6 +21,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.text.DateFormatUtil;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -183,6 +184,7 @@ public class P4FileAnnotation extends FileAnnotation {
         for (P4AnnotatedLine line : annotations) {
             if (line != null) {
                 P4FileRevision fileRev = new P4FileRevision(project, clientServerId,
+                        FilePathUtil.getFilePath(file),
                         this.fileRev.getDepotPath(), line);
                 revs.add(fileRev);
             }

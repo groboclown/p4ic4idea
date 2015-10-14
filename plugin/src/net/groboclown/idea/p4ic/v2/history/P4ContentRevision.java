@@ -49,11 +49,11 @@ public class P4ContentRevision implements ContentRevision {
     public P4ContentRevision(@NotNull Project project, @NotNull FilePath file, @NotNull IExtendedFileSpec p4file) {
         this.myProject = project;
         this.file = file;
-        this.rev = new P4RevisionNumber(p4file.getDepotPathString(), p4file, P4RevisionNumber.RevType.HEAD);
+        this.rev = new P4RevisionNumber(file, p4file.getDepotPathString(), p4file, P4RevisionNumber.RevType.HEAD);
     }
 
     public P4ContentRevision(@NotNull Project project, @NotNull FilePath file, @NotNull IExtendedFileSpec p4file, int rev) {
-        this(project, file, new P4RevisionNumber(p4file.getDepotPathString(), p4file.getDepotPathString(), rev));
+        this(project, file, new P4RevisionNumber(file, p4file.getDepotPathString(), p4file.getDepotPathString(), rev));
     }
 
     @Nullable
@@ -81,7 +81,12 @@ public class P4ContentRevision implements ContentRevision {
         if (server == null) {
             throw new P4FileException(P4Bundle.message("error.filespec.no-client", file));
         }
-        String ret = rev.loadContentAsString(server, file);
+        String ret = null;
+        try {
+            ret = rev.loadContentAsString(server, file);
+        } catch (InterruptedException e) {
+            throw new VcsInterruptedException(e);
+        }
         if (ret == null) {
             // cache the null value as an empty string, so we
             // don't need to go through this again.

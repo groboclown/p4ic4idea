@@ -31,6 +31,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.ui.checkin.P4SubmitPanel;
@@ -148,10 +149,19 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             for (Entry<P4ChangeListId, List<FilePath>> clEn: en.getValue().entrySet()) {
                 LOG.info("Submit to " + server + " cl " + clEn.getValue() + " files " +
                     clEn.getValue());
-                server.submitChangelist(clEn.getValue(),
-                        getJobs(parametersHolder),
-                        getSubmitStatus(parametersHolder),
-                        clEn.getKey().getChangeListId());
+                try {
+                    server.submitChangelistOnline(clEn.getValue(),
+                            getJobs(parametersHolder),
+                            getSubmitStatus(parametersHolder),
+                            clEn.getKey().getChangeListId());
+                } catch (P4DisconnectedException e) {
+                    LOG.warn(e);
+                    errors.add(e);
+                } catch (InterruptedException e) {
+                    LOG.warn(e);
+                    errors.add(new VcsInterruptedException(e));
+                    e.printStackTrace();
+                }
                 //errors.addAll(P4StatusMessage.messagesAsErrors(messages));
             }
         }

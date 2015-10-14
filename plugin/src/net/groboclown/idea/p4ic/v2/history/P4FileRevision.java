@@ -15,12 +15,14 @@ package net.groboclown.idea.p4ic.v2.history;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.RepositoryLocation;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jetbrains.annotations.NotNull;
@@ -48,18 +50,22 @@ public class P4FileRevision implements VcsFileRevision {
     private final Date date;
     private final IFileRevisionData revisionData;
     private final ClientServerId clientServerId;
+    private final FilePath baseFile;
 
 
     public P4FileRevision(@NotNull Project project, @NotNull ClientServerId clientServerId,
+            @NotNull FilePath baseFile,
             @Nullable String rootDepotPath, @NotNull P4AnnotatedLine line) {
-        this(project, clientServerId, rootDepotPath, line.getDepotPath(), line.getRevisionData());
+        this(project, clientServerId, baseFile, rootDepotPath, line.getDepotPath(), line.getRevisionData());
     }
 
     public P4FileRevision(@NotNull Project project, @NotNull ClientServerId clientServerId,
+            @NotNull FilePath baseFile,
             @Nullable String rootDepotPath, @Nullable String versionDepotPath, @Nullable IFileRevisionData data) {
         this.project = project;
         this.clientServerId = clientServerId;
         this.streamName = null;
+        this.baseFile = baseFile;
         this.revisionDepotPath = data != null
                 ? data.getDepotFileName()
                 : versionDepotPath == null ? rootDepotPath : versionDepotPath;
@@ -68,9 +74,9 @@ public class P4FileRevision implements VcsFileRevision {
                 : new P4SimpleRepositoryLocation(revisionDepotPath);
         if (data == null) {
             LOG.info("null revision data for " + revisionDepotPath);
-            this.revision = new P4RevisionNumber(rootDepotPath, revisionDepotPath, 0);
+            this.revision = new P4RevisionNumber(baseFile, rootDepotPath, revisionDepotPath, 0);
         } else {
-            this.revision = new P4RevisionNumber(rootDepotPath, data);
+            this.revision = new P4RevisionNumber(baseFile, rootDepotPath, data);
         }
 
         this.comment = data == null ? null : data.getDescription();
@@ -104,7 +110,11 @@ public class P4FileRevision implements VcsFileRevision {
         if (server == null) {
             return null;
         }
-        return revision.loadContentAsBytes(server, null);
+        try {
+            return revision.loadContentAsBytes(server, null);
+        } catch (InterruptedException e) {
+            throw new VcsInterruptedException(e);
+        }
     }
 
 

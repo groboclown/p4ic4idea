@@ -17,8 +17,6 @@ package net.groboclown.idea.p4ic.v2.changes;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
-import com.perforce.p4java.core.file.IFileAnnotation;
-import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
@@ -35,11 +33,13 @@ import org.jetbrains.annotations.Nullable;
  * limited to the current file depot location.
  */
 public class P4CurrentRevisionNumber implements VcsRevisionNumber {
+    private final FilePath baseFile;
     private final String depotPath;
     private final int rev;
     private final int changelist;
     private final boolean showDepotPath;
 
+    /*
     public P4CurrentRevisionNumber(@Nullable String requestedDepotPath, @Nullable final String depotPath, final int rev) {
         if (rev < 0) {
             throw new IllegalArgumentException(P4Bundle.message("exception.revision.number.bad", rev));
@@ -61,7 +61,6 @@ public class P4CurrentRevisionNumber implements VcsRevisionNumber {
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
 
-    /*
     public P4CurrentRevisionNumber(@Nullable String requestedDepotPath, @NotNull final P4FileInfo info, @NotNull RevType revType) {
         this.depotPath = info.getDepotPath();
         this.rev = revType.getRev(info);
@@ -71,7 +70,6 @@ public class P4CurrentRevisionNumber implements VcsRevisionNumber {
 
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
-    */
 
     public P4CurrentRevisionNumber(@Nullable String requestedDepotPath, @NotNull final IFileAnnotation ann) {
         this.depotPath = ann.getDepotPath();
@@ -79,10 +77,12 @@ public class P4CurrentRevisionNumber implements VcsRevisionNumber {
         this.changelist = -1;
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
+    */
 
     // FIXME come up with a better invoker
     @Deprecated
     public P4CurrentRevisionNumber(@NotNull P4FileAction file) {
+        this.baseFile = file.getFile();
         this.depotPath = file.getDepotPath();
         this.rev = -1;
         this.changelist = -1;
@@ -129,25 +129,25 @@ public class P4CurrentRevisionNumber implements VcsRevisionNumber {
     // This can run in the EDT!
     @Nullable
     public String loadContentAsString(@NotNull P4Server server, @NotNull FilePath alternate)
-            throws VcsException {
+            throws VcsException, InterruptedException {
         if (rev < 0) {
             return null;
         }
         if (depotPath == null) {
-            return server.loadFileAsString(alternate, rev);
+            return server.loadFileAsStringOnline(alternate, rev);
         }
         try {
-            return server.loadFileAsString(getFileSpec());
+            return server.loadFileAsStringOnline(baseFile, getFileSpec());
         } catch (P4FileException e) {
             // something went wrong with the spec conversion.  Try again.
-            return server.loadFileAsString(alternate, rev);
+            return server.loadFileAsStringOnline(alternate, rev);
         }
     }
 
 
     @Nullable
     public byte[] loadContentAsBytes(@NotNull P4Server server, @Nullable FilePath alternate)
-            throws VcsException {
+            throws VcsException, InterruptedException {
         if (rev < 0) {
             return null;
         }
@@ -155,17 +155,17 @@ public class P4CurrentRevisionNumber implements VcsRevisionNumber {
             if (alternate == null) {
                 return null;
             }
-            return server.loadFileAsBytes(alternate, rev);
+            return server.loadFileAsBytesOnline(alternate, rev);
         }
         try {
-            return server.loadFileAsBytes(getFileSpec());
+            return server.loadFileAsBytesOnline(baseFile, getFileSpec());
         } catch (P4FileException e) {
             // something went wrong with the spec conversion.  Try again.
 
             if (alternate == null) {
                 return null;
             }
-            return server.loadFileAsBytes(alternate, rev);
+            return server.loadFileAsBytesOnline(alternate, rev);
         }
     }
 

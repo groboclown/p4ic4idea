@@ -60,14 +60,14 @@ public class P4AnnotationProvider implements AnnotationProvider {
             if (spec == null) {
                 throw new P4FileException(file);
             }
-            P4RevisionNumber rev = new P4RevisionNumber(spec.getDepotPathString(), spec,
+            P4RevisionNumber rev = new P4RevisionNumber(filePath, spec.getDepotPathString(), spec,
                     P4RevisionNumber.RevType.HAVE);
             String contents = rev.loadContentAsString(server, filePath);
             if (contents == null) {
                 // TODO right way to handle this?
                 contents = "";
             }
-            return createAnnotation(server, file, server.getAnnotationsFor(spec, spec.getHaveRev()),
+            return createAnnotation(server, file, server.getAnnotationsFor(filePath, spec, spec.getHaveRev()),
                     rev, contents);
 
         } catch (InterruptedException e) {
@@ -93,14 +93,19 @@ public class P4AnnotationProvider implements AnnotationProvider {
         }
         P4RevisionNumber p4rev = (P4RevisionNumber) vcsRev;
         int revNumber = p4rev.getRev();
-        String contents = server.loadFileAsString(filePath, revNumber);
+        String contents = null;
+        try {
+            contents = server.loadFileAsStringOnline(filePath, revNumber);
+        } catch (InterruptedException e) {
+            throw new VcsInterruptedException(e);
+        }
         if (contents == null) {
             // TODO right way to handle this?
             contents = "";
         }
         IFileSpec annotatedSpec = FileSpecUtil.getOneSpecWithRev(filePath, revNumber);
         try {
-            return createAnnotation(server, file, server.getAnnotationsFor(annotatedSpec, revNumber),
+            return createAnnotation(server, file, server.getAnnotationsFor(filePath, annotatedSpec, revNumber),
                     p4rev, contents);
         } catch (InterruptedException e) {
             throw new VcsInterruptedException(e);

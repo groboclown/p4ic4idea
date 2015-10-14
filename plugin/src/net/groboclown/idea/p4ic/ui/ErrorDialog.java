@@ -13,7 +13,6 @@
  */
 package net.groboclown.idea.p4ic.ui;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -24,6 +23,7 @@ import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4WorkingOfflineException;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
 import java.util.concurrent.CancellationException;
 
 public class ErrorDialog {
@@ -32,7 +32,11 @@ public class ErrorDialog {
     public static void logError(@NotNull final Project project, @NotNull final String action, @NotNull final Throwable t) {
         // no response from the user is required, so it's fine
         // to run in an invoke later (there's no Future involved).
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
+
+        // using ApplicationManager.getApplication().invokeLater
+        // will cause the dialog to delay displaying until all
+        // other active gui are dismissed.
+        SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
                 if (!(t instanceof VcsException) && !(t instanceof CancellationException)) {

@@ -52,27 +52,26 @@ public class P4RevisionNumber implements VcsRevisionNumber {
     }
 
 
+    private final FilePath baseFile;
     private final String depotPath;
     private final int rev;
     private final int changelist;
     private final boolean showDepotPath;
 
-    public P4RevisionNumber(@Nullable String requestedDepotPath, @Nullable final String depotPath, final int rev) {
+    public P4RevisionNumber(@NotNull FilePath baseFile, @Nullable String requestedDepotPath, @Nullable final String depotPath, final int rev) {
         if (rev < 0) {
             throw new IllegalArgumentException(P4Bundle.message("exception.revision.number.bad", rev));
         }
-        if (depotPath == null) {
-            this.depotPath = null;
-        } else {
-            this.depotPath = depotPath;
-        }
+        this.baseFile = baseFile;
+        this.depotPath = depotPath;
         this.rev = rev;
         this.changelist = -1;
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
 
-    public P4RevisionNumber(@Nullable String requestedDepotPath, @NotNull final IExtendedFileSpec info,
+    public P4RevisionNumber(@NotNull FilePath baseFile, @Nullable String requestedDepotPath, @NotNull final IExtendedFileSpec info,
             @NotNull RevType revType) {
+        this.baseFile = baseFile;
         this.depotPath = info.getDepotPathString();
         this.rev = revType.getRev(info);
 
@@ -82,14 +81,16 @@ public class P4RevisionNumber implements VcsRevisionNumber {
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
 
-    public P4RevisionNumber(@Nullable String requestedDepotPath, @NotNull final IFileRevisionData rev) {
+    public P4RevisionNumber(@NotNull FilePath baseFile, @Nullable String requestedDepotPath, @NotNull final IFileRevisionData rev) {
+        this.baseFile = baseFile;
         this.depotPath = rev.getDepotFileName();
         this.rev = rev.getRevision();
         this.changelist = rev.getChangelistId();
         this.showDepotPath = doShowDepotPath(requestedDepotPath, this.depotPath);
     }
 
-    public P4RevisionNumber(@Nullable String requestedDepotPath, @NotNull final IFileAnnotation ann) {
+    public P4RevisionNumber(@NotNull FilePath baseFile, @Nullable String requestedDepotPath, @NotNull final IFileAnnotation ann) {
+        this.baseFile = baseFile;
         this.depotPath = ann.getDepotPath();
         this.rev = ann.getUpper();
         this.changelist = -1;
@@ -119,25 +120,25 @@ public class P4RevisionNumber implements VcsRevisionNumber {
 
     @Nullable
     public String loadContentAsString(@NotNull P4Server server, @NotNull FilePath alternate)
-            throws VcsException {
+            throws VcsException, InterruptedException {
         if (rev < 0) {
             return null;
         }
         if (depotPath == null) {
-            return server.loadFileAsString(alternate, rev);
+            return server.loadFileAsStringOnline(alternate, rev);
         }
         try {
-            return server.loadFileAsString(getFileSpec());
+            return server.loadFileAsStringOnline(baseFile, getFileSpec());
         } catch (P4FileException e) {
             // something went wrong with the spec conversion.  Try again.
-            return server.loadFileAsString(alternate, rev);
+            return server.loadFileAsStringOnline(alternate, rev);
         }
     }
 
 
     @Nullable
     public byte[] loadContentAsBytes(@NotNull P4Server server, @Nullable FilePath alternate)
-            throws VcsException {
+            throws VcsException, InterruptedException {
         if (rev < 0) {
             return null;
         }
@@ -145,17 +146,17 @@ public class P4RevisionNumber implements VcsRevisionNumber {
             if (alternate == null) {
                 return null;
             }
-            return server.loadFileAsBytes(alternate, rev);
+            return server.loadFileAsBytesOnline(alternate, rev);
         }
         try {
-            return server.loadFileAsBytes(getFileSpec());
+            return server.loadFileAsBytesOnline(baseFile, getFileSpec());
         } catch (P4FileException e) {
             // something went wrong with the spec conversion.  Try again.
 
             if (alternate == null) {
                 return null;
             }
-            return server.loadFileAsBytes(alternate, rev);
+            return server.loadFileAsBytesOnline(alternate, rev);
         }
     }
 

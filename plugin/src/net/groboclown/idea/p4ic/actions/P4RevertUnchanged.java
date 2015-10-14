@@ -28,6 +28,7 @@ import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.ui.RevertedFilesDialog;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
@@ -74,10 +75,13 @@ public class P4RevertUnchanged extends AbstractVcsAction {
                             }
                         }
                         final MessageResult<Collection<FilePath>> messages =
-                                server.revertUnchangedFiles(files);
+                                server.revertUnchangedFilesOnline(files);
                         reverted.addAll(messages.getResult());
                         errors.addAll(messages.getMessages());
                     } catch (InterruptedException ex) {
+                        LOG.warn(ex);
+                    } catch (P4DisconnectedException ex) {
+                        // FIXME ensure that it's already handled
                         LOG.warn(ex);
                     }
                 }

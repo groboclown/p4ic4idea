@@ -30,6 +30,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -57,7 +58,7 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
 
         // NOTE: have vs. head!
         if (spec.getHaveRev() >= 0) {
-            return new P4RevisionNumber(spec.getDepotPathString(), spec, P4RevisionNumber.RevType.HAVE);
+            return new P4RevisionNumber(fp, spec.getDepotPathString(), spec, P4RevisionNumber.RevType.HAVE);
         }
         return null;
     }
@@ -83,7 +84,7 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
         }
 
         return new ItemLatestState(
-                new P4RevisionNumber(spec.getDepotPathString(), spec, P4RevisionNumber.RevType.HEAD),
+                new P4RevisionNumber(filePath, spec.getDepotPathString(), spec, P4RevisionNumber.RevType.HEAD),
                 spec.getHeadRev() != 0 && spec.getHeadAction() != null,
                 false);
     }
@@ -116,22 +117,22 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
         }
         final String requestedPath = spec.getDepotPathString();
         if (spec.getHaveRev() <= 0) {
-            return new P4RevisionDescription(requestedPath, null);
+            return new P4RevisionDescription(fp, requestedPath, null);
         }
 
         // TODO this is really bad in terms of performance.
         List<P4FileRevision> history;
         try {
-            history = server.getRevisionHistory(spec, 1);
+            history = server.getRevisionHistoryOnline(spec, 1);
         } catch (InterruptedException e) {
             LOG.info(e);
             return null;
         }
         // just choose the top one
         if (history == null || history.isEmpty()) {
-            return new P4RevisionDescription(requestedPath, null);
+            return new P4RevisionDescription(fp, requestedPath, null);
         } else {
-            return new P4RevisionDescription(requestedPath, history.get(0).getRevisionData());
+            return new P4RevisionDescription(fp, requestedPath, history.get(0).getRevisionData());
         }
     }
 
@@ -173,10 +174,12 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
 
 
     private static class P4RevisionDescription implements VcsRevisionDescription {
+        private final FilePath baseFile;
         private final String requestedPath;
         private final IFileRevisionData rev;
 
-        private P4RevisionDescription(@Nullable final String requestedPath, @Nullable IFileRevisionData rev) {
+        private P4RevisionDescription(@NotNull FilePath baseFile, @Nullable final String requestedPath, @Nullable IFileRevisionData rev) {
+            this.baseFile = baseFile;
             this.requestedPath = requestedPath;
             this.rev = rev;
         }
@@ -185,9 +188,9 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
         public VcsRevisionNumber getRevisionNumber() {
             if (rev == null) {
                 // TODO how to eliminate this special case?
-                return new P4RevisionNumber(requestedPath, null, 0);
+                return new P4RevisionNumber(baseFile, requestedPath, null, 0);
             }
-            return new P4RevisionNumber(requestedPath, rev);
+            return new P4RevisionNumber(baseFile, requestedPath, rev);
         }
 
         @Override

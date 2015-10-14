@@ -14,6 +14,7 @@
 package net.groboclown.idea.p4ic.v2.history;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.*;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -28,6 +29,7 @@ import java.util.*;
 public class P4AnnotatedLine {
     private static final Logger LOG = Logger.getInstance(P4AnnotatedLine.class);
 
+    private final FilePath baseFile;
     private final String depotPath;
     private final IFileAnnotation ann;
     private final int lineNumber;
@@ -35,7 +37,8 @@ public class P4AnnotatedLine {
     @Nullable
     private final IFileRevisionData revisionData;
 
-    public P4AnnotatedLine(int lineNumber, @NotNull IFileAnnotation ann, @Nullable IFileRevisionData data) {
+    public P4AnnotatedLine(@NotNull FilePath baseFile, int lineNumber, @NotNull IFileAnnotation ann, @Nullable IFileRevisionData data) {
+        this.baseFile = baseFile;
         this.depotPath = ann.getDepotPath();
         this.ann = ann;
         this.revisionData = data;
@@ -44,7 +47,7 @@ public class P4AnnotatedLine {
 
     @NotNull
     public P4RevisionNumber getRev() {
-        return new P4RevisionNumber(depotPath, ann);
+        return new P4RevisionNumber(baseFile, depotPath, ann);
     }
 
     @Nullable
@@ -74,7 +77,7 @@ public class P4AnnotatedLine {
 
 
     public static List<P4AnnotatedLine> loadAnnotatedLines(@NotNull P4Exec2 exec,
-            @NotNull List<IFileAnnotation> annotations) throws VcsException {
+            @NotNull FilePath baseFile, @NotNull List<IFileAnnotation> annotations) throws VcsException {
         Map<String, IFileRevisionData> revisions = new HashMap<String, IFileRevisionData>();
         List<P4AnnotatedLine> ret = new ArrayList<P4AnnotatedLine>(annotations.size());
         Map<String, IExtendedFileSpec> fileSpecs = new HashMap<String, IExtendedFileSpec>();
@@ -115,13 +118,13 @@ public class P4AnnotatedLine {
                     data = getHistoryFor(exec, depotRev);
                     revisions.put(depotRev, data);
                 }
-                ret.add(new P4AnnotatedLine(lineNumber++, ann, data));
+                ret.add(new P4AnnotatedLine(baseFile, lineNumber++, ann, data));
             } else if (ann.getUpper() == 0) {
                 // TODO this is the source of "null" rev data
-                ret.add(new P4AnnotatedLine(lineNumber++, ann, getUnknownHistoryFor(spec)));
+                ret.add(new P4AnnotatedLine(baseFile, lineNumber++, ann, getUnknownHistoryFor(spec)));
                 //LOG.info("deleted file");
             } else {
-                ret.add(new P4AnnotatedLine(lineNumber++, ann, getUnknownHistoryFor(spec)));
+                ret.add(new P4AnnotatedLine(baseFile, lineNumber++, ann, getUnknownHistoryFor(spec)));
                 //LOG.info("current revision");
             }
         }

@@ -101,13 +101,12 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         // The server end deals with filtering out the files that
         // aren't requested to submit.
         final ChangeListManager clm = ChangeListManager.getInstance(vcs.getProject());
-        final Map<P4Server, List<FilePath>> defaultChangeFiles = new HashMap<P4Server, List<FilePath>>();
         final Map<P4Server, Map<P4ChangeListId, List<FilePath>>> pathsPerChangeList = new HashMap<P4Server, Map<P4ChangeListId, List<FilePath>>>();
         for (Change change: changes) {
             if (change != null) {
                 LocalChangeList cl = clm.getChangeList(change);
                 try {
-                    splitChanges(change, cl, pathsPerChangeList, defaultChangeFiles);
+                    splitChanges(change, cl, pathsPerChangeList);
                 } catch (InterruptedException e) {
                     errors.add(new VcsInterruptedException(e));
                 }
@@ -122,28 +121,6 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         // with the rest of the changelists below.
 
         LOG.info("changes in a changelist: " + pathsPerChangeList);
-        LOG.info("changes in default changelists: " + defaultChangeFiles);
-
-        if (! defaultChangeFiles.isEmpty()) {
-            for (Entry<P4Server, List<FilePath>> en: defaultChangeFiles.entrySet()) {
-                P4Server server = en.getKey();
-                // FIXME implement
-                errors.add(new VcsException("not implemented - create a new changelist"));
-                /*
-                final P4ChangeListId changeList = P4ChangeListCache.getInstance().createChangelist(
-                        server, preparedComment);
-                Map<P4ChangeListId, List<FilePath>> clFp = pathsPerChangeList.get(server);
-                if (clFp == null) {
-                    clFp = new HashMap<P4ChangeListId, List<FilePath>>();
-                    pathsPerChangeList.put(server, clFp);
-                }
-                LOG.info("moving from default changelist in " + server + " to " + changeList + ": " + en.getValue());
-                P4ChangeListCache.getInstance().addFilesToChangelist(server,
-                        changeList, en.getValue());
-                clFp.put(changeList, en.getValue());
-                */
-            }
-        }
         for (Entry<P4Server, Map<P4ChangeListId, List<FilePath>>> en: pathsPerChangeList.entrySet()) {
             final P4Server server = en.getKey();
             for (Entry<P4ChangeListId, List<FilePath>> clEn: en.getValue().entrySet()) {
@@ -174,8 +151,8 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     }
 
     private void splitChanges(@NotNull Change change, @Nullable LocalChangeList lcl,
-            @NotNull Map<P4Server, Map<P4ChangeListId, List<FilePath>>> clientPathsPerChangeList,
-            @NotNull Map<P4Server, List<FilePath>> defaultChangeFiles) throws InterruptedException {
+            @NotNull Map<P4Server, Map<P4ChangeListId, List<FilePath>>> clientPathsPerChangeList)
+            throws InterruptedException {
         final FilePath fp;
         if (change.getVirtualFile() == null) {
             // possibly deleted.
@@ -195,45 +172,34 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             LOG.info("Tried to submit a change (" + change + " / " + fp + ") that is not under P4 control");
             return;
         }
-        if (lcl != null) {
-            final P4ChangeListId p4cl = changeListMapping.getPerforceChangelistFor(server, lcl);
-            if (p4cl != null) {
-                // each IDEA changelist stores at most 1 p4 changelist per client.
-                // so we can exit once it's a client match.
-                if (p4cl.isNumberedChangelist()) {
-                    Map<P4ChangeListId, List<FilePath>> pathsPerChangeList = clientPathsPerChangeList.get(server);
-                    if (pathsPerChangeList == null) {
-                        pathsPerChangeList = new HashMap<P4ChangeListId, List<FilePath>>();
-                        clientPathsPerChangeList.put(server, pathsPerChangeList);
-                    }
-                    List<FilePath> files = pathsPerChangeList.get(p4cl);
-                    if (files == null) {
-                        files = new ArrayList<FilePath>();
-                        pathsPerChangeList.put(p4cl, files);
-                    }
-                    files.add(fp);
-                } else {
-                    addToDefaultChangeFiles(server, fp, defaultChangeFiles);
-                }
-            } else {
-                // FIXME do something smart
-                throw new IllegalStateException("No perforce changelist known for " + lcl + " at " +
-                    server.getClientServerId());
-            }
-        } else {
+        if (lcl == null) {
+            // use the default changelist
             LOG.info("Not in a changelist: " + fp + "; putting in the default changelist");
-            addToDefaultChangeFiles(server, fp, defaultChangeFiles);
+            lcl = changeListMapping.getDefaultIdeaChangelist();
+            if (lcl == null) {
+                return;
+            }
         }
-    }
-
-    private void addToDefaultChangeFiles(@NotNull P4Server server, @NotNull FilePath fp,
-            @NotNull Map<P4Server, List<FilePath>> map) {
-        List<FilePath> fpList = map.get(server);
-        if (fpList == null) {
-            fpList = new ArrayList<FilePath>();
-            map.put(server, fpList);
+        final P4ChangeListId p4cl = changeListMapping.getPerforceChangelistFor(server, lcl);
+        if (p4cl != null) {
+            // each IDEA changelist stores at most 1 p4 changelist per client.
+            // so we can exit once it's a client match.
+            Map<P4ChangeListId, List<FilePath>> pathsPerChangeList = clientPathsPerChangeList.get(server);
+            if (pathsPerChangeList == null) {
+                pathsPerChangeList = new HashMap<P4ChangeListId, List<FilePath>>();
+                clientPathsPerChangeList.put(server, pathsPerChangeList);
+            }
+            List<FilePath> files = pathsPerChangeList.get(p4cl);
+            if (files == null) {
+                files = new ArrayList<FilePath>();
+                pathsPerChangeList.put(p4cl, files);
+            }
+            files.add(fp);
+        } else {
+            // FIXME do something smart
+            throw new IllegalStateException("No perforce changelist known for " + lcl + " at " +
+                    server.getClientServerId());
         }
-        fpList.add(fp);
     }
 
 

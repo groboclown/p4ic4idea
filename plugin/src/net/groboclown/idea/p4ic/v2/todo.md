@@ -21,7 +21,6 @@ There are some features that drive how the inner architecture will work.
    with each refresh.
 1. Job list in submit needs wrapping scroll pane.
 1. Failure in job submit does not show error to user.
-1. Going offline does not show the offline icon.
 
 
 ## Parts needing heavy testing
@@ -38,6 +37,8 @@ There are some features that drive how the inner architecture will work.
 
 1. Remove the excessive logging.  Move down to debug if necessary,
    and include `LOG.isDebugEnabled()` calls if debug is used.
+1. `ClientCacheManager`
+1. `UpdateGroup`
 
 
 ## Smaller Bugs
@@ -45,6 +46,7 @@ There are some features that drive how the inner architecture will work.
 1. Connection setup panel - when initial "refresh" button is pressed, the directory list
    is loaded, and the first one is displayed as selected.  However, the properties are
    not loaded.  Looks like a timing issue.
+1. Going offline does not show the offline icon.
 1. Remove the old, dead code.
 
 

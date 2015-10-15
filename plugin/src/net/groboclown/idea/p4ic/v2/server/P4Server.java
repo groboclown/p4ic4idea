@@ -434,7 +434,6 @@ public class P4Server {
         });
     }
 
-
     /**
      * Needs to be run immediately.
      *
@@ -496,7 +495,7 @@ public class P4Server {
                 List<PendingUpdateState> ret = new ArrayList<PendingUpdateState>(files.size());
                 for (IntegrateFile file : files) {
                     LOG.info("move: " + file);
-                    addPendingUpdateState(ret, mgr.moveFile(file, changelistId));
+                    addPendingUpdateState(ret, mgr.moveFile(project, file, changelistId));
                 }
                 return ret;
             }

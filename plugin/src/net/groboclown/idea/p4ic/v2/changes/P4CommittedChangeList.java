@@ -13,20 +13,29 @@
  */
 package net.groboclown.idea.p4ic.v2.changes;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcs;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeListImpl;
 import com.intellij.openapi.vcs.versionBrowser.VcsRevisionNumberAware;
 import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.extension.P4ChangelistNumber;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
+import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
+import net.groboclown.idea.p4ic.v2.history.P4ContentRevision;
+import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
+import java.util.*;
+import java.util.Map.Entry;
 
 public class P4CommittedChangeList extends CommittedChangeListImpl implements VcsRevisionNumberAware {
 
@@ -67,40 +76,59 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
 
     @NotNull
     private static Collection<Change> createChanges(@NotNull P4Vcs vcs, @NotNull P4Server server, int changelistId) throws VcsException {
-        /*
-        List<P4FileInfo> files = client.getServer().getFilesInChangelist(changelistId);
-        if (files == null) {
-            return Collections.emptyList();
+        final Collection<P4FileAction> files;
+        try {
+            files = server.getOpenFiles();
+        } catch (InterruptedException e) {
+            throw new VcsInterruptedException(e);
         }
-        return createChanges(vcs.getProject(), files);
-        */
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        List<FilePath> inChange = new ArrayList<FilePath>(files.size());
+        for (P4FileAction file : files) {
+            if (file.getChangeList() == changelistId) {
+                inChange.add(file.getFile());
+            }
+        }
+        try {
+            final Map<FilePath, IExtendedFileSpec> status =
+                    server.getFileStatus(inChange);
+            if (status == null) {
+                throw new P4DisconnectedException();
+            }
+            Map<P4FileAction, IExtendedFileSpec> actionStatus = new HashMap<P4FileAction, IExtendedFileSpec>();
+            for (P4FileAction file : files) {
+                IExtendedFileSpec spec = status.remove(file.getFile());
+                if (spec != null) {
+                    actionStatus.put(file, spec);
+                }
+            }
+            return createChanges(vcs.getProject(), actionStatus);
+        } catch (InterruptedException e) {
+            throw new VcsInterruptedException(e);
+        }
     }
 
-    /*
     @NotNull
-    private static Collection<Change> createChanges(@NotNull Project project, @NotNull List<P4FileInfo> files) {
+    private static Collection<Change> createChanges(@NotNull Project project,
+            @NotNull Map<P4FileAction, IExtendedFileSpec> files) {
         List<Change> ret = new ArrayList<Change>(files.size());
-        for (P4FileInfo p4file : files) {
+        for (Entry<P4FileAction, IExtendedFileSpec> entry : files.entrySet()) {
             P4ContentRevision before = null;
             P4ContentRevision after = null;
 
-            if (p4file.isInClientView()) {
-                if (! p4file.isOpenForDelete()) {
-                    after = new P4ContentRevision(project, p4file, p4file.getHaveRev());
-                }
-                if (! p4file.isDeletedInDepot() || ! p4file.isInDepot()) {
-                    before = new P4ContentRevision(project, p4file, p4file.getHaveRev() - 1);
-                }
+            assert entry.getKey().getFile() != null: "file is null";
+            final FileStatus fileStatus = entry.getKey().getClientFileStatus();
+            if (fileStatus != P4Vcs.DELETED_OFFLINE && fileStatus != FileStatus.DELETED) {
+                // not open for delete
+                after = new P4ContentRevision(project, entry.getKey().getFile(), entry.getValue());
             }
-            // else it's not in the client view, and thus not a valid change
+            if (entry.getValue().getHaveRev() > 0) {
+                before = new P4ContentRevision(project, entry.getKey().getFile(), entry.getValue(),
+                        entry.getValue().getHaveRev() - 1);
+            }
 
             Change c = new Change(before, after);
             ret.add(c);
         }
         return ret;
     }
-    */
-
 }

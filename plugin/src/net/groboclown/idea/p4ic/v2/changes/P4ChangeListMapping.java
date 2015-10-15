@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.v2.changes;
 import com.intellij.openapi.components.*;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
@@ -152,8 +153,12 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
     }
 
 
-    public static boolean isDefaultChangelist(@Nullable LocalChangeList idea) {
-        return (idea != null && idea.getName().equals(P4ChangeListId.DEFAULT_CHANGE_NAME));
+    public static boolean isDefaultChangelist(@Nullable ChangeList idea) {
+        return (idea != null && isIdeaDefaultChangelistName(idea.getName()));
+    }
+
+    public static boolean isIdeaDefaultChangelistName(@Nullable String name) {
+        return P4ChangeListId.DEFAULT_CHANGE_NAME.equals(name);
     }
 
     @Nullable
@@ -230,6 +235,18 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
     }
 
 
+    public Map<ClientServerId, P4ChangeListId> rebindChangelistAsDefault(@NotNull LocalChangeList list) {
+        if (! isDefaultChangelist(list)) {
+            throw new IllegalStateException("Can only be called after list has been renamed to the default change");
+        }
+        synchronized (sync) {
+            LOG.info("Mapped idea " + list.getId() + " to default p4 change");
+            return state.ideaToPerforce.remove(list.getId());
+        }
+
+    }
+
+
     /**
      * Creates a mapping between a local IDEA changelist and a Perforce
      * changelist.
@@ -240,11 +257,22 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
      * @param p4id perforce-backed changelist id
      */
     public void bindChangelists(@NotNull LocalChangeList idea, @NotNull P4ChangeListId p4id) {
-        checkForInvalidMapping(idea, p4id);
+        // There's a situation that can occur where the IDEA changelist changed the
+        // name to be default, but the ID is still bound to a real changelist.  The
+        // caller should be handling this weird situation (should be done in
+        // P4ChangelistListener to move the files into default),
+        // but the binding needs to be redone here.
+
         if (isDefaultChangelist(idea) && p4id.isDefaultChangelist()) {
             // this is an implicit mapping
             return;
         }
+        if (isDefaultChangelist(idea) || p4id.isDefaultChangelist()) {
+            LOG.error("Attempted to bind a default changelist to a non-default changelist: " +
+                idea.getName() + " to " + p4id.getChangeListId());
+            return;
+        }
+
         synchronized (sync) {
             Map<ClientServerId, P4ChangeListId> p4ChangeMap = state.ideaToPerforce.get(idea.getId());
             if (p4ChangeMap != null) {
@@ -317,12 +345,17 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
      */
     @Nullable
     public P4ChangeListId getPerforceChangelistFor(@NotNull P4Server server, @NotNull LocalChangeList idea) {
-        if (isDefaultChangelist(idea)) {
-            return new P4ChangeListIdImpl(server.getClientServerId(), P4ChangeListId.P4_DEFAULT);
-        }
+        // This is a little weird.  There are circumstances where the IDEA
+        // changelist has changed its name to the default changelist.  So,
+        // instead, we check if we have a mapping for the ID, and if so,
+        // return that mapping first.
+
         synchronized (sync) {
             Map<ClientServerId, P4ChangeListId> ret = state.ideaToPerforce.get(idea.getId());
             if (ret == null) {
+                if (isDefaultChangelist(idea)) {
+                    return new P4ChangeListIdImpl(server.getClientServerId(), P4ChangeListId.P4_DEFAULT);
+                }
                 return null;
             }
             return ret.get(server.getClientServerId());
@@ -355,18 +388,5 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
             }
 
         }
-    }
-
-
-    private void checkForInvalidMapping(@NotNull LocalChangeList idea, @NotNull P4ChangeListId p4) {
-        if (isDefaultChangelist(idea)) {
-            if (! p4.isDefaultChangelist()) {
-                LOG.warn("cannot pair default IDEA changelist with the non-default P4 changelist (" + p4 + ")");
-            }
-            // else it's fine
-        } else if (p4.isDefaultChangelist()) {
-            LOG.warn("cannot pair non-default IDEA changelist (" + idea + ") with the default P4 changelist");
-        }
-        // else it's fine.
     }
 }

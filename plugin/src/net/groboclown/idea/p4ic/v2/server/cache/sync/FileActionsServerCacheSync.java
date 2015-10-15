@@ -30,6 +30,7 @@ import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
+import net.groboclown.idea.p4ic.v2.server.P4Server.IntegrateFile;
 import net.groboclown.idea.p4ic.v2.server.cache.AbstractServerUpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.AbstractServerUpdateAction.ExecutionStatus;
 import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
@@ -220,7 +221,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             makeWritable(project, file);
         }
 
-        // FIXME put the file in the local cache.
+        // FIXME put the file in the local cache, or mark it in the IDEA built-in vcs.
 
         // Check if it is already in an action state, and create it if necessary
         final P4FileUpdateState action = createFileUpdateState(file, FileUpdateAction.DELETE_FILE, changeListId);
@@ -238,6 +239,45 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         return new PendingUpdateState(
                 action.getFileUpdateAction().getUpdateAction(),
                 Collections.singleton(file.getIOFile().getAbsolutePath()),
+                params);
+    }
+
+    @Nullable
+    public PendingUpdateState moveFile(@NotNull final Project project,
+            @NotNull final IntegrateFile file, final int changeListId) {
+        // Let the IDE deal with the actual removal of the file.
+        // But just to be sure, make it writable first.
+        if (file.getSourceFile().getIOFile().exists()) {
+            makeWritable(project, file.getSourceFile());
+        }
+
+
+        // Check if it is already in an action state, and create it if necessary
+        final P4FileUpdateState tgtAction = createFileUpdateState(file.getTargetFile(),
+                FileUpdateAction.MOVE_FILE, changeListId);
+        // Make a source action, too
+        final P4FileUpdateState srcAction = createFileUpdateState(file.getSourceFile(),
+                FileUpdateAction.MOVE_DELETE_FILE, changeListId);
+        if (tgtAction == null) {
+            // nothing to do
+            return null;
+        }
+        // doesn't matter too much if the delete file is not null
+
+        // Create the action.
+        final HashMap<String, Object> params = new HashMap<String, Object>();
+        // We don't know for sure the depot path, so use the file path.
+        params.put(UpdateParameterNames.FILE.getKeyName(),
+                file.getTargetFile().getIOFile().getAbsolutePath());
+        params.put(UpdateParameterNames.FILE_SOURCE.getKeyName(),
+                file.getSourceFile().getIOFile().getAbsolutePath());
+        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changeListId);
+
+        return new PendingUpdateState(
+                tgtAction.getFileUpdateAction().getUpdateAction(),
+                new HashSet<String>(Arrays.asList(
+                        file.getTargetFile().getIOFile().getAbsolutePath(),
+                        file.getSourceFile().getIOFile().getAbsolutePath())),
                 params);
     }
 

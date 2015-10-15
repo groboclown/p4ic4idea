@@ -217,9 +217,8 @@ public class ClientCacheManager {
 
 
     @Nullable
-    public PendingUpdateState moveFile(@NotNull final IntegrateFile file, final int changelistId) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+    public PendingUpdateState moveFile(@NotNull Project project, @NotNull IntegrateFile file, int changelistId) {
+        return fileActions.moveFile(project, file, changelistId);
     }
 
     @Nullable
@@ -229,27 +228,17 @@ public class ClientCacheManager {
     }
 
     @Nullable
-    public PendingUpdateState revertFile(@NotNull final FilePath file) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
-    }
-
-    @Nullable
-    public PendingUpdateState revertFileIfUnchanged(@NotNull final FilePath file) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
-    }
-
-    @Nullable
     public ServerUpdateAction revertFileOnline(@NotNull final List<FilePath> files,
             @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
-        return null;
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
     }
 
     @Nullable
     public ServerUpdateAction revertFileIfUnchangedOnline(@NotNull final Collection<FilePath> files,
             @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
-        return null;
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
     }
 
     @Nullable
@@ -264,6 +253,10 @@ public class ClientCacheManager {
     public ServerUpdateAction submitChangelist(@NotNull final List<FilePath> files,
             @NotNull final List<P4ChangeListJob> jobs,
             @Nullable final String submitStatus, final int changeListId) {
+
+        // NOTE: if the changelist is the default changelist, and there are jobs,
+        // then the code will need to create a new changelist and submit that.
+
         // FIXME implement
         throw new IllegalStateException("not implemented");
     }

@@ -40,7 +40,7 @@ public class P4JobState extends CachedState {
         for (Map.Entry<String, Object> entry: job.getRawFields().entrySet()) {
             if (entry.getValue() instanceof String && entry.getValue() != null &&
                     entry.getKey() != null) {
-                details.put(entry.getKey(), entry.getValue().toString());
+                details.put(entry.getKey(), entry.getValue().toStringList());
             }
         }
     }

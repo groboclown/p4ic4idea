@@ -23,6 +23,7 @@ There are some features that drive how the inner architecture will work.
 1. Failure in job submit does not show error to user.
 
 
+
 ## Parts needing heavy testing
 
 1. `ChangeListSync` needs to be thoroughly debugged.  It seems to be working, but it
@@ -46,8 +47,13 @@ There are some features that drive how the inner architecture will work.
 1. Connection setup panel - when initial "refresh" button is pressed, the directory list
    is loaded, and the first one is displayed as selected.  However, the properties are
    not loaded.  Looks like a timing issue.
+1. Connection setup panel - For relative configs, the directory list is not refreshed.
+   Ensure it's reading the right root directory path.
+   Ensure it's reading the right root directory path.
 1. Going offline does not show the offline icon.
 1. Remove the old, dead code.
+1. Many "to string" parts in `P4Bundle.message` calls are done on FilePath, which
+   do not display well to the user.  Make these nicer.
 
 
 ## Long term features

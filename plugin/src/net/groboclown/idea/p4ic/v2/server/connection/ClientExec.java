@@ -359,11 +359,13 @@ public class ClientExec {
         } catch (AccessException e) {
             LOG.info("Problem accessing resources (password problem)", e);
             if (loginCount >= 1) {
+                LOG.info("Gave up on trying to login.  Showing critical error.");
                 P4LoginException ex = new P4LoginException(project, getServerConfig(), e);
                 AlertManager.getInstance().addCriticalError(new LoginFailedHandler(project,
                         getServerConnectedController(), getServerConfig(), e), ex);
                 throw ex;
             } else {
+                LOG.info("Trying to log in");
                 onPasswordProblem(project, new P4LoginException(e));
             }
             return p4RunFor(project, runner, retryCount, loginCount + 1);

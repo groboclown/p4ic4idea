@@ -582,7 +582,7 @@ public class RawServerExecutor {
             throws VcsException, CancellationException {
         String revStr = "#have";
         if (rev >= 0) {
-            revStr = "#" + Integer.toString(rev);
+            revStr = "#" + Integer.toStringList(rev);
         }
         return performAction(project, new AnnotateFileTask(project, file, revStr, fileInfoCache));
     }

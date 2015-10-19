@@ -198,7 +198,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
             alerts.addWarning(exec.getProject(),
                     P4Bundle.message("error.getPendingClientChangelists", exec.getClientName()),
                     P4Bundle.message("error.getPendingClientChangelists", exec.getClientName()),
-                    e);
+                    e, FilePathUtil.getFilePath(exec.getProject().getBaseDir()));
             return;
         }
         lastRefreshDate = new Date();
@@ -394,7 +394,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                                 exec.getProject(),
                                 P4Bundle.message("error.changelist.delete.failure", changeListId),
                                 P4Bundle.message("error.changelist.delete.failure", changeListId),
-                                e);
+                                e, FilePathUtil.getFilePath(exec.getProject().getBaseDir()));
                         ret = ExecutionStatus.FAIL;
                     }
                 } else {
@@ -484,7 +484,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                                 exec.getProject(),
                                 P4Bundle.message("error.createchangelist.title"),
                                 P4Bundle.message("error.createchangelist", description),
-                                e);
+                                e, FilePathUtil.getFilePath(exec.getProject().getBaseDir()));
                         // cannot actually perform the action
                         ret = ExecutionStatus.FAIL;
                         continue;
@@ -503,7 +503,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                                     exec.getProject(),
                                     P4Bundle.message("error.updatechangelist.title"),
                                     P4Bundle.message("error.updatechangelist", realChangeListId),
-                                    e);
+                                    e, FilePathUtil.getFilePath(exec.getProject().getBaseDir()));
                             // cannot actually perform the action
                             ret = ExecutionStatus.FAIL;
                             continue;
@@ -519,7 +519,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                             exec.getProject(),
                             P4Bundle.message("filestatus.error.title"),
                             P4Bundle.message("filestatus.error", files),
-                            e);
+                            e, files);
                     continue;
                 }
                 if (status.isEmpty()) {
@@ -562,7 +562,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                                 exec.getProject(),
                                 P4Bundle.message("error.reopen.title"),
                                 P4Bundle.message("error.reopen", reopen),
-                                e);
+                                e, reopen);
                         // keep going
                     }
                 }
@@ -580,7 +580,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                                 exec.getProject(),
                                 P4Bundle.message("error.edit.title"),
                                 P4Bundle.message("error.edit", edit),
-                                e);
+                                e, edit);
                         // keep going
                     }
                 }
@@ -598,7 +598,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                                 exec.getProject(),
                                 P4Bundle.message("error.add.title"),
                                 P4Bundle.message("error.add", add),
-                                e);
+                                e, add);
                         // keep going
                     }
                 }

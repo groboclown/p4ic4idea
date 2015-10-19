@@ -25,6 +25,7 @@ import com.intellij.openapi.vcs.checkin.CheckinChangeListSpecificComponent;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -127,6 +128,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                 LOG.info("Submit to " + server + " cl " + clEn.getValue() + " files " +
                     clEn.getValue());
                 try {
+                    // FIXME set the changelist comment as well.
                     server.submitChangelistOnline(clEn.getValue(),
                             getJobs(parametersHolder),
                             getSubmitStatus(parametersHolder),
@@ -298,6 +300,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         private final PairConsumer<Object, Object> dataConsumer;
         private final SubmitContext context;
         private final P4SubmitPanel panel;
+        private final JScrollPane root;
 
 
         P4OnCheckinPanel(@NotNull P4Vcs vcs, @NotNull CheckinProjectPanel panel, final PairConsumer<Object, Object> additionalDataConsumer) {
@@ -305,7 +308,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             this.dataConsumer = additionalDataConsumer;
             this.context = new SubmitContext(vcs, panel.getSelectedChanges());
             this.panel = new P4SubmitPanel(context);
-
+            this.root = new JBScrollPane(this.panel.getRootPanel());
 
 
             // FIXME set the ok action as enabled/disabled depending upon

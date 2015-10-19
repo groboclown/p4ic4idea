@@ -43,7 +43,7 @@ public class LoginFailedHandler extends AbstractErrorHandler {
 
     @Override
     public void handleError(@NotNull final Date when) {
-        LOG.warn("Configuration problem", getException());
+        LOG.warn("Login problem", getException());
 
         if (isInvalid()) {
             return;

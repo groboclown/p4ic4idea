@@ -113,7 +113,7 @@ public class P4ChangelistListener implements ChangeListListener {
                 alerts.addWarning(myProject,
                         P4Bundle.message("error.cancelled-timeout.changes-added"),
                         P4Bundle.message("error.cancelled-timeout"),
-                        e);
+                        e, paths);
                 return;
             }
             for (Entry<P4Server, List<FilePath>> entry : perServer.entrySet()) {

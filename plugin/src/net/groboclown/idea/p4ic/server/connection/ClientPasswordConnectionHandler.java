@@ -87,6 +87,8 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
     @Override
     public boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config) throws P4JavaException {
         try {
+            // FIXME turn off logging
+            LOG.info("Asking PasswordSafe for the password");
             String password = PasswordSafe.getInstance().getPassword(project,
                     P4Vcs.class, config.getServiceName());
             if (password != null && password.length() > 0) {
@@ -94,6 +96,8 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
                 // user to log in; in fact, that wil raise an error by Perforce
                 server.login(password, new LoginOptions(false, true));
                 return true;
+            } else {
+                LOG.info("No password found");
             }
         } catch (PasswordSafeException e) {
             LOG.info(e);

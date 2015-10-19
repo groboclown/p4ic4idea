@@ -348,7 +348,7 @@ public class P4Server {
             LOG.info("Cannot get file status while offline: " + files);
             return null;
         }
-        List<FilePath> filePathList = new ArrayList<FilePath>(files);
+        final List<FilePath> filePathList = new ArrayList<FilePath>(files);
         final Iterator<FilePath> iter = filePathList.iterator();
         while (iter.hasNext()) {
             // Strip out directories, to ensure we have a valid mapping
@@ -364,7 +364,8 @@ public class P4Server {
         } catch (P4Exception e) {
             alertManager.addWarning(project,
                     P4Bundle.message("error.file-status.fetch.title"),
-                    P4Bundle.message("error.file-status.fetch", files), e);
+                    P4Bundle.message("error.file-status.fetch", files), e,
+                    filePathList);
             return null;
         }
         final List<IExtendedFileSpec> extended = connection.query(project, new ServerQuery<List<IExtendedFileSpec>>() {
@@ -379,7 +380,8 @@ public class P4Server {
                 } catch (VcsException e) {
                     alertManager.addWarning(project,
                             P4Bundle.message("error.file-status.fetch.title"),
-                            P4Bundle.message("error.file-status.fetch", files), e);
+                            P4Bundle.message("error.file-status.fetch", files), e,
+                            filePathList);
                     return null;
                 }
             }

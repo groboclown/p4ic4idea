@@ -23,6 +23,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public final class FilePathUtil {
     private static final Logger LOG = Logger.getInstance(FilePathUtil.class);
@@ -59,5 +63,43 @@ public final class FilePathUtil {
             LOG.debug("VcsUtil.getFilePath raised an exception for " + f, ex);
             return new FilePathImpl(f);
         }
+    }
+
+    @NotNull
+    public static Collection<FilePath> getFilePathsForVirtualFiles(@NotNull Collection<VirtualFile> virtualFiles) {
+        List<FilePath> ret = new ArrayList<FilePath>(virtualFiles.size());
+        for (VirtualFile virtualFile : virtualFiles) {
+            if (virtualFile != null) {
+                ret.add(getFilePath(virtualFile));
+            }
+        }
+        return ret;
+    }
+
+    @NotNull
+    public static Collection<FilePath> getFilePathsFsrStrings(@NotNull List<String> paths) {
+        List<FilePath> ret = new ArrayList<FilePath>(paths.size());
+        for (String path: paths) {
+            if (path != null) {
+                ret.add(getFilePath(path));
+            }
+        }
+        return ret;
+    }
+
+    @NotNull
+    public static List<String> toStringList(@Nullable Collection<FilePath> files) {
+        if (files == null) {
+            return Collections.emptyList();
+        }
+        List<String> ret = new ArrayList<String>(files.size());
+        for (FilePath file : files) {
+            if (file == null) {
+                ret.add(null);
+            } else {
+                ret.add(file.getIOFile().getAbsolutePath());
+            }
+        }
+        return ret;
     }
 }

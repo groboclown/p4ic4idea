@@ -273,7 +273,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                 project,
                 P4Bundle.message("error.config.invalid-roots.title", cache.getClientName()),
                 P4Bundle.message("error.config.invalid-roots", cache.getClientName()),
-                invalidRootsException);
+                invalidRootsException, FilePathUtil.getFilePathsForVirtualFiles(projectRoots));
         return Collections.emptyList();
     }
 
@@ -362,7 +362,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         alerts.addWarning(project,
                 P4Bundle.message("error.config.invalid-roots.title", cache.getClientName()),
                 P4Bundle.message("error.config.invalid-roots", cache.getClientName()),
-                invalidRootsException);
+                invalidRootsException, reference);
         return null;
     }
 
@@ -458,7 +458,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                     exec.getProject(),
                     P4Bundle.message("warning.client.updated.title", getCachedClientName()),
                     P4Bundle.message("warning.client.updated", getCachedClientName()),
-                    null);
+                    null, FilePathUtil.getFilePathsFsrStrings(roots));
             cache.refreshServerState(exec, alerts);
         }
     }

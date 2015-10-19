@@ -112,8 +112,15 @@ public class WarningUI {
     private static Map<HotfixData, List<VcsException>> getErrorGroups(@NotNull Collection<WarningMessage> warnings) {
         Map<HotfixData, List<VcsException>> ret = new HashMap<HotfixData, List<VcsException>>();
         for (WarningMessage warning : warnings) {
-            HotfixData data = new HotfixData(warning.getSummary(),
-                    warning.getSummary(), warning.getSummary(), new WarningConsumer());
+            final Consumer<HotfixGate> hotfix = warning.getHotfix();
+            final HotfixData data;
+            if (hotfix != null) {
+                data = new HotfixData(warning.getSummary(),
+                        warning.getSummary(), warning.getSummary(),
+                        hotfix);
+            } else {
+                data = null;
+            }
             List<VcsException> exList = new ArrayList<VcsException>();
             VcsException baseException;
             if (warning.getWarning() != null) {
@@ -142,18 +149,13 @@ public class WarningUI {
                     exList.add(ex);
                 }
             }
-            ret.put(data, exList);
+            final List<VcsException> list = ret.get(data);
+            if (list == null) {
+                ret.put(data, exList);
+            } else {
+                list.addAll(exList);
+            }
         }
         return ret;
-    }
-
-
-    private static class WarningConsumer implements Consumer<HotfixGate> {
-        // FIXME figure out what to do with this.
-
-        @Override
-        public void consume(final HotfixGate hotfixGate) {
-            LOG.info("HotFix gate: " + hotfixGate);
-        }
     }
 }

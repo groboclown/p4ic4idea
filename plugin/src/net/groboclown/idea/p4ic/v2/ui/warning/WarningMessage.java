@@ -36,8 +36,10 @@
 
 package net.groboclown.idea.p4ic.v2.ui.warning;
 
+import com.intellij.ide.errorTreeView.HotfixGate;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.Consumer;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -53,11 +55,30 @@ public class WarningMessage {
     private final String message;
     private final Exception warning;
     private final Collection<VirtualFile> affectedFiles;
+    private final Consumer<HotfixGate> hotfix;
     private final Date when = new Date();
 
     public WarningMessage(@NotNull Project project, @Nls @NotNull String summary,
             @Nls @NotNull final String message,
             @Nullable final Exception warning, @Nullable Collection<VirtualFile> affectedFiles) {
+        this(project, summary, message, warning, affectedFiles, null);
+    }
+
+    /**
+     *
+     * @param project project
+     * @param summary display summary
+     * @param message display message
+     * @param warning error source
+     * @param affectedFiles files that generated error
+     * @param hotfix if the error is automatically solvable, add this in;
+     *               it will display the error as "fixable", and give the
+     *               user a chance to click it and resolve the issue.
+     */
+    public WarningMessage(@NotNull Project project, @Nls @NotNull String summary,
+            @Nls @NotNull final String message,
+            @Nullable final Exception warning, @Nullable Collection<VirtualFile> affectedFiles,
+            @Nullable Consumer<HotfixGate> hotfix) {
         this.project = project;
         this.summary = summary;
         this.message = message;
@@ -65,6 +86,7 @@ public class WarningMessage {
         this.affectedFiles = affectedFiles == null
                 ? Collections.<VirtualFile>emptyList()
                 : Collections.unmodifiableCollection(affectedFiles);
+        this.hotfix = hotfix;
     }
 
     public WarningMessage(@NotNull Project project, @Nls @NotNull String summary,
@@ -101,6 +123,11 @@ public class WarningMessage {
     @NotNull
     public Collection<VirtualFile> getAffectedFiles() {
         return affectedFiles;
+    }
+
+    @Nullable
+    public Consumer<HotfixGate> getHotfix() {
+        return hotfix;
     }
 
 

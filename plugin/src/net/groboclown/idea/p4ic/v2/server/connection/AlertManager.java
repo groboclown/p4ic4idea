@@ -20,8 +20,10 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import net.groboclown.idea.p4ic.v2.ui.warning.WarningMessage;
 import net.groboclown.idea.p4ic.v2.ui.warning.WarningUI;
 import org.jetbrains.annotations.Nls;
@@ -67,7 +69,7 @@ public class AlertManager implements ApplicationComponent {
     }
 
     public void addWarning(@NotNull Project project, @Nls @NotNull String title, @Nls @NotNull String details,
-            @Nullable Exception ex, @Nullable FilePath... affectedFiles) {
+            @Nullable Exception ex, @Nullable FilePath[] affectedFiles) {
         List<VirtualFile> files = new ArrayList<VirtualFile>();
         if (affectedFiles != null) {
             for (FilePath file : affectedFiles) {
@@ -76,11 +78,21 @@ public class AlertManager implements ApplicationComponent {
                 }
             }
         }
-        addWarning(project, title, details, ex, files);
+        addWarning(project, title, details, ex, files.toArray(new VirtualFile[files.size()]));
     }
 
     public void addWarning(@NotNull Project project, @Nls @NotNull String title, @Nls @NotNull String details,
-            @Nullable Exception ex, @Nullable Collection<VirtualFile> affectedFiles) {
+            @Nullable Exception ex, @NotNull FilePath affectedFiles) {
+        addWarning(project, title, details, ex, new FilePath[] { affectedFiles });
+    }
+
+    public void addWarning(@NotNull Project project, @Nls @NotNull String title, @Nls @NotNull String details,
+            @Nullable Exception ex, @NotNull Collection<FilePath> affectedFiles) {
+        addWarning(project, title, details, ex, affectedFiles.toArray(new FilePath[affectedFiles.size()]));
+    }
+
+    public void addWarning(@NotNull Project project, @Nls @NotNull String title, @Nls @NotNull String details,
+            @Nullable Exception ex, @NotNull VirtualFile[] affectedFiles) {
         if (ex != null && throwableHandled.isHandled(ex)) {
             LOG.info("Skipped duplicate handling of " + ex);
             return;
@@ -94,6 +106,15 @@ public class AlertManager implements ApplicationComponent {
         } finally {
             eventLock.unlock();
         }
+    }
+
+    public void addWarning(@NotNull Project project, @Nls @NotNull String title, @Nls @NotNull String details,
+            @Nullable Exception ex, @NotNull List<IFileSpec> specs) {
+        FilePath[] files = new FilePath[specs.size()];
+        for (int i = 0; i < specs.size(); i++) {
+            files[i] = FilePathUtil.getFilePath(specs.get(i).getClientPathString());
+        }
+        addWarning(project, title, details, ex, files);
     }
 
 
@@ -115,12 +136,13 @@ public class AlertManager implements ApplicationComponent {
             final boolean ignoreFileNotFound) {
         boolean wasWarning = false;
 
-        // TODO check if usability-wise, it's better to have individual messages or just one message
         for (P4StatusMessage msg : msgs) {
             if (msg != null && msg.isError() && (!ignoreFileNotFound ||
                     !msg.isFileNotFoundError())) {
                 addWarning(project, title, msg.toString(), null,
-                        msg.getFilePath());
+                        msg.getFilePath() == null
+                                ? FilePathUtil.getFilePath(project.getBaseDir())
+                                : msg.getFilePath());
                 wasWarning = true;
             }
         }
@@ -135,6 +157,9 @@ public class AlertManager implements ApplicationComponent {
         }
 
         // For now, it'll be in the warnings.
+        if (files == null) {
+            files = new FilePath[0];
+        }
         addWarning(project, message, ex == null ? "" : (ex.getMessage() == null ? "" : ex.getMessage()), ex,
                 files);
         LOG.warn(message, ex);

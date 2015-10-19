@@ -91,4 +91,14 @@ public class MessageResult<T> {
     public Collection<? extends VcsException> messagesAsExceptions() {
         return P4StatusMessage.messagesAsErrors(getMessages());
     }
+
+    @NotNull
+    @Override
+    public String toString() {
+        if (isError()) {
+            return getMessages().toString();
+        }
+        return getResult().toString();
+    }
+
 }

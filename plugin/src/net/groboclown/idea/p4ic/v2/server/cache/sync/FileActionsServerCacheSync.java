@@ -24,6 +24,7 @@ import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.exception.MessageGenericCode;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
@@ -444,7 +445,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
     private static boolean isNotKnownToServer(@NotNull final IExtendedFileSpec spec) {
         return spec.getOpStatus() == FileSpecOpStatus.ERROR &&
-                spec.getStatusMessage().hasMessageFragment(" - no such file(s).");
+                (spec.getGenericCode() == MessageGenericCode.EV_EMPTY ||
+                spec.getStatusMessage().hasMessageFragment(" - no such file(s)."));
     }
 
     private static boolean isNotInClientView(@NotNull final IExtendedFileSpec spec) {
@@ -485,6 +487,25 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         return filenames;
     }
 
+    @NotNull
+    private static List<String> toStringList(@NotNull Collection<? extends IFileSpec> specs) {
+        List<String> ret = new ArrayList<String>(specs.size());
+        for (IFileSpec spec : specs) {
+            if (spec == null) {
+                ret.add(null);
+            } else if (spec.getDepotPathString() != null) {
+                ret.add(spec.getDepotPathString());
+            } else if (spec.getClientPathString() != null) {
+                ret.add(spec.getClientPathString());
+            } else if (spec.getOriginalPathString() != null) {
+                ret.add(spec.getOriginalPathString());
+            } else {
+                ret.add(spec.toString());
+            }
+        }
+        return ret;
+    }
+
     static class ActionSplit {
         ExecutionStatus status;
         final Map<Integer, Set<FilePath>> notInPerforce = new HashMap<Integer, Set<FilePath>>();
@@ -511,7 +532,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 status = ExecutionStatus.FAIL;
                 return;
             }
-            LOG.info("File specs: " + srcSpecs);
+            LOG.info("File specs: " + toStringList(srcSpecs));
             final List<IExtendedFileSpec> fullSpecs;
             try {
                 fullSpecs = exec.getFileStatus(srcSpecs);
@@ -535,6 +556,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     // in the client view.  Generally, that's an ERROR status.
                     LOG.info("fstat non-valid state: " + spec.getOpStatus() + ": " + spec.getStatusMessage());
                     continue;
+                } else {
+                    // FIXME debug
+                    LOG.info("fstat state: " + spec.getOpStatus() + ": [" + spec.getStatusMessage() + "];" +
+                            spec.getClientPathString() + ";" + spec.getOriginalPathString() +
+                            ";" + spec.getUniqueCode() + ":" + spec.getGenericCode() + ":" + spec.getSubCode());
                 }
 
                 // Valid response.  Advance iterators
@@ -547,10 +573,12 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 // is edit only mode is only valid for the EDIT_FILE action.
                 boolean isEditOnly = update.getUpdateAction() == UpdateAction.EDIT_FILE;
                 FilePath filePath = FilePathUtil.getFilePath(filename);
-                LOG.info(" - Checking category for " + filePath + " (from " + spec + ")");
+                LOG.info(" - Checking category for " + filePath + " (from [" + spec.getDepotPathString() + "];[" + spec.getOriginalPathString() + "])");
                 if (isNotInClientView(spec)) {
+                    LOG.info(" -+- not in client view");
                     alerts.addNotice(exec.getProject(),
-                            P4Bundle.message("error.client.not-in-view", spec.getClientPathString()), null);
+                            P4Bundle.message("error.client.not-in-view", spec.getClientPathString()), null,
+                            filePath);
                     // don't handle
                     continue;
                 }
@@ -562,6 +590,16 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                         LOG.info(" -+- not known to server");
                         container = notInPerforce;
                     }
+                } else if (spec.getOpStatus() != FileSpecOpStatus.VALID) {
+                    LOG.info(" -+- unknown error");
+                    P4StatusMessage msg = new P4StatusMessage(spec);
+                    alerts.addWarning(exec.getProject(),
+                            P4Bundle.message("error.client.unknown.p4.title"),
+                            msg.toString(),
+                            P4StatusMessage.messageAsError(msg),
+                            filePath);
+                    // don't handle
+                    continue;
                 } else {
                     FileAction action = spec.getOpenAction();
                     if (action == null) {

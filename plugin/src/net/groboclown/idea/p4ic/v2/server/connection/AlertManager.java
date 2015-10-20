@@ -100,7 +100,7 @@ public class AlertManager implements ApplicationComponent {
         eventLock.lock();
         try {
             // FIXME make debug
-            LOG.info("adding warning " + details, ex);
+            LOG.info("adding warning " + details, ex == null ? new Throwable("stack capture") : ex);
             pendingWarnings.add(new WarningMessage(project, title, details, ex, affectedFiles));
             eventPending.signal();
         } finally {

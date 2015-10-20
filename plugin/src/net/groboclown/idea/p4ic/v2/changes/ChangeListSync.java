@@ -139,6 +139,10 @@ public class ChangeListSync {
         final Map<P4Server, List<FilePath>> mappedFiles =
                 vcs.mapFilePathsToP4Server(dirtyFiles);
 
+        // FIXME debug (checking why every other refresh causes only some of the files to show up)
+        LOG.info("dirty files: " + dirtyFiles);
+        LOG.info("found dirty files mapped to: " + mappedFiles);
+
         final Map<P4Server, Map<P4ChangeListValue, LocalChangeList>> mappedChanges = getLocalChangelistMapping(
                 mappedFiles.keySet(), addGate);
 

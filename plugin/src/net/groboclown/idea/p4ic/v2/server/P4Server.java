@@ -534,6 +534,9 @@ public class P4Server {
                     Collections.<FilePath>emptyList(), Collections.<P4StatusMessage>emptyList());
         }
         validateOnline();
+        // FIXME this API usage here is not the right way to go about it;
+        // the runImmediately needs to be called inside another call (usually cacheQuery,
+        // but probably shouldn't be).  It's too easy to mess up this usage pattern.
         return connection.cacheQuery(new CacheQuery<MessageResult<Collection<FilePath>>>() {
             @Override
             public MessageResult<Collection<FilePath>> query(@NotNull final ClientCacheManager mgr)
@@ -863,13 +866,15 @@ public class P4Server {
         });
     }
 
-    public void submitChangelistOnline(final List<FilePath> files, final List<P4ChangeListJob> jobs, final String submitStatus,
-            final int changeListId) throws P4DisconnectedException, InterruptedException {
+    public void submitChangelistOnline(final List<FilePath> files, final List<P4ChangeListJob> jobs,
+            final String submitStatus,
+            final int changeListId, @NotNull final Ref<VcsException> problem)
+            throws P4DisconnectedException, InterruptedException {
         validateOnline();
         connection.cacheQuery(new CacheQuery<Void>() {
             @Override
             public Void query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
-                ServerUpdateAction action = mgr.submitChangelist(files, jobs, submitStatus, changeListId);
+                ServerUpdateAction action = mgr.submitChangelistOnline(files, jobs, submitStatus, changeListId, problem);
                 if (action != null) {
                     connection.runImmediately(project, action);
                 }

@@ -14,6 +14,7 @@
 package net.groboclown.idea.p4ic.v2.file;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -129,17 +130,20 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                     clEn.getValue());
                 try {
                     // FIXME set the changelist comment as well.
+                    Ref<VcsException> problem = new Ref<VcsException>();
                     server.submitChangelistOnline(clEn.getValue(),
                             getJobs(parametersHolder),
                             getSubmitStatus(parametersHolder),
-                            clEn.getKey().getChangeListId());
+                            clEn.getKey().getChangeListId(), problem);
+                    if (! problem.isNull()) {
+                        errors.add(problem.get());
+                    }
                 } catch (P4DisconnectedException e) {
                     LOG.warn(e);
                     errors.add(e);
                 } catch (InterruptedException e) {
                     LOG.warn(e);
                     errors.add(new VcsInterruptedException(e));
-                    e.printStackTrace();
                 }
                 //errors.addAll(P4StatusMessage.messagesAsErrors(messages));
             }

@@ -17,6 +17,7 @@ package net.groboclown.idea.p4ic.v2.server.cache.sync;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
@@ -223,42 +224,34 @@ public class ClientCacheManager {
 
     @Nullable
     public PendingUpdateState integrateFile(@NotNull final IntegrateFile file, final int changelistId) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        return fileActions.integrateFile(file, changelistId);
     }
 
     @Nullable
     public ServerUpdateAction revertFileOnline(@NotNull final List<FilePath> files,
             @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        return fileActions.revertFileOnline(files, ret);
     }
 
     @Nullable
     public ServerUpdateAction revertFileIfUnchangedOnline(@NotNull final Collection<FilePath> files,
             @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        return fileActions.revertFileIfUnchangedOnline(files, ret);
     }
 
     @Nullable
     public ServerUpdateAction synchronizeFilesOnline(@NotNull final Collection<FilePath> files, final int revisionNumber,
             @Nullable final String syncSpec, final boolean force,
             final Ref<MessageResult<Collection<FileSyncResult>>> ref) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        return fileActions.synchronizeFilesOnline(files, revisionNumber, syncSpec, force, ref);
     }
 
     @Nullable
-    public ServerUpdateAction submitChangelist(@NotNull final List<FilePath> files,
+    public ServerUpdateAction submitChangelistOnline(@NotNull final List<FilePath> files,
             @NotNull final List<P4ChangeListJob> jobs,
-            @Nullable final String submitStatus, final int changeListId) {
-
-        // NOTE: if the changelist is the default changelist, and there are jobs,
-        // then the code will need to create a new changelist and submit that.
-
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+            @Nullable final String submitStatus, final int changelistId,
+            @NotNull Ref<VcsException> problem) {
+        return fileActions.submitChangelist(files, jobs, submitStatus, changelistId, problem);
     }
 
     // ----------------------------------------------------------------------------------------

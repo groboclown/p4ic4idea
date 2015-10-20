@@ -17,6 +17,7 @@ package net.groboclown.idea.p4ic.v2.server.cache.sync;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -30,6 +31,8 @@ import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
+import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server.IntegrateFile;
 import net.groboclown.idea.p4ic.v2.server.cache.AbstractServerUpdateAction;
@@ -245,7 +248,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
     @Nullable
     public PendingUpdateState moveFile(@NotNull final Project project,
-            @NotNull final IntegrateFile file, final int changeListId) {
+            @NotNull final IntegrateFile file, final int changelistId) {
         // Let the IDE deal with the actual removal of the file.
         // But just to be sure, make it writable first.
         if (file.getSourceFile().getIOFile().exists()) {
@@ -255,15 +258,20 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
         // Check if it is already in an action state, and create it if necessary
         final P4FileUpdateState tgtAction = createFileUpdateState(file.getTargetFile(),
-                FileUpdateAction.MOVE_FILE, changeListId);
+                FileUpdateAction.MOVE_FILE, changelistId);
         // Make a source action, too
-        final P4FileUpdateState srcAction = createFileUpdateState(file.getSourceFile(),
-                FileUpdateAction.MOVE_DELETE_FILE, changeListId);
+        createFileUpdateState(file.getSourceFile(),
+                FileUpdateAction.MOVE_DELETE_FILE, changelistId);
         if (tgtAction == null) {
             // nothing to do
             return null;
         }
         // doesn't matter too much if the delete file is not null
+
+        // TODO if the source file is on the same server but different
+        // client, use a depot path as the source.  This requires being
+        // online to perform this action,  This logic may be improved
+        // to be delayed as long as possible, through.
 
         // Create the action.
         final HashMap<String, Object> params = new HashMap<String, Object>();
@@ -272,7 +280,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 file.getTargetFile().getIOFile().getAbsolutePath());
         params.put(UpdateParameterNames.FILE_SOURCE.getKeyName(),
                 file.getSourceFile().getIOFile().getAbsolutePath());
-        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changeListId);
+        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changelistId);
 
         return new PendingUpdateState(
                 tgtAction.getFileUpdateAction().getUpdateAction(),
@@ -280,6 +288,73 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                         file.getTargetFile().getIOFile().getAbsolutePath(),
                         file.getSourceFile().getIOFile().getAbsolutePath())),
                 params);
+    }
+
+
+    @Nullable
+    public PendingUpdateState integrateFile(@NotNull final IntegrateFile file, final int changelistId) {
+        // The destination file does not need to be writable
+
+
+        // Check if it is already in an action state, and create it if necessary
+        final P4FileUpdateState action = createFileUpdateState(file.getTargetFile(),
+                FileUpdateAction.INTEGRATE_FILE, changelistId);
+        if (action == null) {
+            // nothing to do
+            return null;
+        }
+
+        // Create the action.
+        final HashMap<String, Object> params = new HashMap<String, Object>();
+        // We don't know for sure the depot path, so use the file path.
+        params.put(UpdateParameterNames.FILE.getKeyName(),
+                file.getTargetFile().getIOFile().getAbsolutePath());
+        params.put(UpdateParameterNames.FILE_SOURCE.getKeyName(),
+                file.getSourceFile().getIOFile().getAbsolutePath());
+        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changelistId);
+
+        return new PendingUpdateState(
+                action.getFileUpdateAction().getUpdateAction(),
+                // Note that the source is not in the ID.
+                Collections.singleton(file.getTargetFile().getIOFile().getAbsolutePath()),
+                params);
+    }
+
+
+    @Nullable
+    public ServerUpdateAction revertFileOnline(@NotNull final List<FilePath> files,
+            @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public ServerUpdateAction revertFileIfUnchangedOnline(@NotNull final Collection<FilePath> files,
+            @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public ServerUpdateAction synchronizeFilesOnline(@NotNull final Collection<FilePath> files,
+            final int revisionNumber,
+            @Nullable final String syncSpec, final boolean force,
+            final Ref<MessageResult<Collection<FileSyncResult>>> ref) {
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    public ServerUpdateAction submitChangelist(@NotNull final List<FilePath> files,
+            @NotNull final List<P4ChangeListJob> jobs,
+            @Nullable final String submitStatus, final int changeListId,
+            @NotNull Ref<VcsException> problem) {
+
+        // NOTE: if the changelist is the default changelist, and there are jobs,
+        // then the code will need to create a new changelist and submit that.
+
+        // FIXME implement
+        throw new IllegalStateException("not implemented");
     }
 
 

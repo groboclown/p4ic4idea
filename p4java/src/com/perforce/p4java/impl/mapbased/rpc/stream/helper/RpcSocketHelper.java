@@ -3,14 +3,14 @@
  */
 package com.perforce.p4java.impl.mapbased.rpc.stream.helper;
 
+import com.perforce.p4java.Log;
+import com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs;
+import com.perforce.p4java.impl.mapbased.rpc.stream.RpcSSLSocketFactory;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Properties;
-
-import com.perforce.p4java.Log;
-import com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs;
-import com.perforce.p4java.impl.mapbased.rpc.stream.RpcSSLSocketFactory;
 
 /**
  * Helper class for creating and configuring sockets.
@@ -103,6 +103,7 @@ public class RpcSocketHelper {
 
 		socket.bind(new InetSocketAddress(0));
 		socket.connect(new InetSocketAddress(host, port));
+
 		
 		return socket;
 	}

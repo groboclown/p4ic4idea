@@ -50,29 +50,24 @@ public class P4Edit extends BasicAction {
 
         LOG.info("Checking enabled state for files " + Arrays.asList(vFiles));
 
-        boolean mapsToServer = false;
-        final Map<P4Server, List<VirtualFile>> servers;
         try {
-            servers = vcs.mapVirtualFilesToP4Server(Arrays.asList(vFiles));
+            final Map<P4Server, List<VirtualFile>> servers = vcs.mapVirtualFilesToP4Server(Arrays.asList(vFiles));
+
+            // all we care about for open for edit/add is whether
+            // the files map to servers or not.  Online or offline
+            // modes don't matter.
+            return !(servers.isEmpty() || (servers.size() == 1 && servers.containsKey(null)));
         } catch (InterruptedException e) {
             LOG.info(e);
             return false;
         }
-        for (P4Server server : servers.keySet()) {
-            if (server != null) {
-                if (server.isWorkingOffline()) {
-                    LOG.info("Server working offline: " + server);
-                    return false;
-                }
-                mapsToServer = true;
-            }
-        }
-        return mapsToServer;
     }
 
 
+
     @Override
-    protected void perform(@NotNull final Project project, @NotNull final P4Vcs vcs, @NotNull final List<VcsException> exceptions, @NotNull final List<VirtualFile> affectedFiles) {
+    protected void perform(@NotNull final Project project, @NotNull final P4Vcs vcs,
+            @NotNull final List<VcsException> exceptions, @NotNull final List<VirtualFile> affectedFiles) {
         if (affectedFiles.isEmpty()) {
             return;
         }
@@ -91,22 +86,13 @@ public class P4Edit extends BasicAction {
 
         LOG.info("adding or editing files: " + affectedFiles);
 
-        //double clientIndex = 0.0;
         for (Map.Entry<P4Server, List<VirtualFile>> en: servers.entrySet()) {
             final P4Server server = en.getKey();
             List<VirtualFile> files = en.getValue();
-            //SubProgressIndicator sub = new SubProgressIndicator(indicator,
-            //        0.9 * clientIndex / (double) clients.size(),
-            //        0.9 * (clientIndex + 1.0) / (double) clients.size());
-            //sub.setFraction(0.0);
             int changelistId = changeListMapping.getProjectDefaultPerforceChangelist(server).getChangeListId();
-            //indicator.setFraction(0.2);
             server.addOrEditFiles(files, changelistId);
             VcsDirtyScopeManager.getInstance(project).filesDirty(files, null);
-
-            //clientIndex += 1.0;
         }
-        //indicator.setFraction(0.9);
         // No longer supported in IntelliJ 15
         VcsCompat.getInstance().refreshFiles(project, affectedFiles);
     }

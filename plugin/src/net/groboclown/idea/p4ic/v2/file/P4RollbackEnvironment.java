@@ -206,7 +206,8 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
         synchronized (vfsLock) {
             // TODO do this right
             try {
-                server.revertUnchangedFilesOnline(Collections.singletonList(fp));
+                // FIXME get correct changelist number
+                server.revertUnchangedFilesOnline(Collections.singletonList(fp), 0);
             } catch (InterruptedException e) {
                 LOG.warn(e);
                 reverted = false;

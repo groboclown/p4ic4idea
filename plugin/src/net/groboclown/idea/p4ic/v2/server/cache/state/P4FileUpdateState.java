@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
 import org.jdom.Element;
@@ -24,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
  * Encompasses all the information about an update to a file (edit, add, delete, integrate, move).
  */
 public class P4FileUpdateState extends CachedState {
+    private static final Logger LOG = Logger.getInstance(P4FileUpdateState.class);
+
 
     // FIXME include information about a cached backup file (for reverts)
 
@@ -100,11 +103,14 @@ public class P4FileUpdateState extends CachedState {
     protected void serialize(@NotNull final Element wrapper, @NotNull final EncodeReferences refs) {
         wrapper.setAttribute("f", refs.getFileMappingId(file));
         wrapper.setAttribute("c", encodeLong(activeChangelist));
-        wrapper.setAttribute("a", action.toString());
+        wrapper.setAttribute("a", action.name());
         if (integrateSource != null) {
             wrapper.setAttribute("s", refs.getFileMappingId(integrateSource));
         }
         serializeDate(wrapper);
+
+        // FIXME debug
+        LOG.info("Serialized P4FileUpdateState " + file);
     }
 
     @Override
@@ -117,17 +123,20 @@ public class P4FileUpdateState extends CachedState {
             @NotNull final DecodeReferences refs) {
         P4ClientFileMapping file = refs.getFileMapping(getAttribute(wrapper, "f"));
         if (file == null) {
+            LOG.warn("no file defined for file update state");
             return null;
         }
         Long c = decodeLong(getAttribute(wrapper, "c"));
         String a = getAttribute(wrapper, "a");
         if (a == null) {
+            LOG.warn("no action defined for file update state of " + file);
             return null;
         }
         FileUpdateAction action;
         try {
             action = FileUpdateAction.valueOf(a);
         } catch (IllegalArgumentException e) {
+            LOG.warn("unknown file update action " + a);
             return null;
         }
         P4FileUpdateState ret = new P4FileUpdateState(file, (c == null) ? -1 : c.intValue(), action);

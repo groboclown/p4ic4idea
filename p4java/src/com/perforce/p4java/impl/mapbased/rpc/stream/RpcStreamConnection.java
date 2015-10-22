@@ -3,32 +3,6 @@
  */
 package com.perforce.p4java.impl.mapbased.rpc.stream;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
-import java.nio.charset.Charset;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.X509Certificate;
-import java.text.MessageFormat;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-
 import com.perforce.p4java.Log;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.NullPointerError;
@@ -46,6 +20,23 @@ import com.perforce.p4java.impl.mapbased.rpc.packet.helper.RpcPacketFieldRule;
 import com.perforce.p4java.impl.mapbased.rpc.stream.RpcSocketPool.ShutdownHandler;
 import com.perforce.p4java.impl.mapbased.rpc.stream.helper.RpcSocketHelper;
 import com.perforce.p4java.server.callback.IFilterCallback;
+
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.*;
+import java.nio.charset.Charset;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Socket stream I/O based implementation of the RpcConnection class.<p>
@@ -217,23 +208,30 @@ public class RpcStreamConnection extends RpcConnection {
 		super(serverHost, serverPort, props, stats, charset, secure);
 		try {
 			this.pool = pool;
-			if( this.pool != null) {
+			if (this.pool != null) {
 				this.socket = this.pool.acquire();
 			} else {
 				this.socket = RpcSocketHelper.createSocket(serverHost, serverPort, props, secure);
 			}
 			init();
+		// groboclown: don't wrap the underlying connection exception; just reuse it
+		} catch (ConnectionException e) {
+			throw e;
 		} catch (UnknownHostException exc) {
 			throw new ConnectionException("Unable to resolve Perforce server host name '"
 												+ hostName
 												+ "' for RPC connection");
 		} catch (IOException exc) {
 			throw new ConnectionException("Unable to connect to Perforce server at "
-												+ hostName + ":" + hostPort);
-		} catch (Throwable thr) {
+					+ hostName + ":" + hostPort);
+		// groboclown: never, never just capture "throwable"
+		//} catch (Throwable thr) {
+		} catch (Exception thr) {
 			Log.error("Unexpected exception: " + thr.getLocalizedMessage());
 			Log.exception(thr);
-			throw new ConnectionException(thr.getLocalizedMessage());
+			// groboclown show the real source of the problem.
+			//throw new ConnectionException(thr.getLocalizedMessage());
+			throw new ConnectionException(thr);
 		}
 	}
 	
@@ -326,7 +324,8 @@ public class RpcStreamConnection extends RpcConnection {
 	 */
 	public String getServerIpPort() {
         String serverIpPort = null;
-        if (this.hostIp != UNKNOWN_SERVER_HOST) {
+		// groboclown: compare strings with "equals"
+        if (! this.hostIp.equals(UNKNOWN_SERVER_HOST)) {
         	serverIpPort = this.hostIp;
             if (this.hostPort != UNKNOWN_SERVER_PORT) {
             	serverIpPort += ":" + Integer.toString(this.hostPort);
@@ -338,7 +337,7 @@ public class RpcStreamConnection extends RpcConnection {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection#disconnect()
+	 * @see com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection#disconnect(RpcPacketDispatcher)
 	 */
 	public void disconnect(final RpcPacketDispatcher dispatcher) throws ConnectionException {
 		try {

@@ -6,13 +6,14 @@
 These bugs need to be handled before features.
 
 1. working offline at startup has major issues (server off).
-    * not using cache values
-        * changelist refresh in particular
-    * cannot reconnect once server comes back online
-
-## Features that drive architecture
-
-There are some features that drive how the inner architecture will work.
+    1. cannot reconnect once server comes back online
+    1. the cached values for changelist assignment is not
+       loaded correctly at restart.  Only one is restored?
+1. Reinstate the old pwd state object so that it can ensure that the
+   state values are wiped out, for those migrating to the new storage
+   mechanism.
+1. Open multiple files for edit, with one of them (the first one?) already
+   open for edit, causes none of them to be opened.
 
 
 ## Big Bugs
@@ -24,7 +25,8 @@ There are some features that drive how the inner architecture will work.
    with each refresh.
 1. Job list in submit needs wrapping scroll pane.
 1. Failure in job submit does not show error to user.
-
+1. ssh connection failure due to can't reach host port is indistinguishable from
+   when the server is down.
 
 
 ## Parts needing heavy testing

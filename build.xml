@@ -34,4 +34,11 @@
         <ant antfile="plugin/build.xml" target="package"
             inheritrefs="false" inheritall="false"/>
     </target>
+    <target name="p4api">
+        <ant antfile="p4java/build.xml" target="package"
+            inheritrefs="false" inheritall="false"/>
+        <ant antfile="plugin/build.xml" target="package"
+            inheritrefs="false" inheritall="false"/>
+    </target>
 </project>
+

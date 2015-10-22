@@ -74,6 +74,9 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             @NotNull final Set<P4FileUpdateState> localClientUpdatedFiles,
             @NotNull final Set<P4FileUpdateState> cachedServerUpdatedFiles) {
         this.cache = cache;
+
+        // these variables must be directly referenced, because they're a link into
+        // the persisted state.
         this.localClientUpdatedFiles = localClientUpdatedFiles;
         this.cachedServerUpdatedFiles = cachedServerUpdatedFiles;
 
@@ -536,7 +539,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         if (action != null && fileUpdateAction.equals(action.getFileUpdateAction())) {
             LOG.info("Already opened for " + fileUpdateAction + " " + file);
 
-            // TODO this might be wrong - the file may need to move to a different changelist.
+            // FIXME this might be wrong - the file may need to move to a different changelist.
 
             return null;
         }
@@ -544,10 +547,14 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         // we still need to create a new one to put in our local cache.
         P4FileUpdateState newAction = new P4FileUpdateState(
                 cache.getClientMappingFor(file), changeListId, fileUpdateAction);
-        localClientUpdatedFiles.add(newAction);
-
+        if (action != null) {
+            // FIXME debug
+            LOG.info("removing action from local file cache: " + action);
+            localClientUpdatedFiles.remove(action);
+        }
         // FIXME debug
-        LOG.info("Switching from " + action + " to " + newAction);
+        LOG.info("adding action into local file cache: " + newAction);
+        localClientUpdatedFiles.add(newAction);
 
         return newAction;
     }
@@ -788,6 +795,10 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
     // The actions are also placed in here, rather than as stand-alone classes,
     // so that they have increased access to the cache objects.
+
+
+    // FIXME all this logic below is really complicated.  Look at ways to
+    // simplify it.
 
 
     // -----------------------------------------------------------------------

@@ -228,24 +228,27 @@ public class ClientExec {
         // Setup logging
         if (Log.getLogCallback() == null) {
             Log.setLogCallback(new ILogCallback() {
+                // errors are pushed up to the normal logging mechanisms,
+                // so no need to mark it as error here.
+
                 @Override
                 public void internalError(final String errorString) {
-                    LOG.error("p4java error: " + errorString);
+                    LOG.warn("p4java error: " + errorString);
                 }
 
                 @Override
                 public void internalException(final Throwable thr) {
-                    LOG.error("p4java error", thr);
+                    LOG.info("p4java error", thr);
                 }
 
                 @Override
                 public void internalWarn(final String warnString) {
-                    LOG.warn("p4java warning: " + warnString);
+                    LOG.info("p4java warning: " + warnString);
                 }
 
                 @Override
                 public void internalInfo(final String infoString) {
-                    LOG.info("p4java info: " + infoString);
+                    LOG.debug("p4java info: " + infoString);
                 }
 
                 @Override

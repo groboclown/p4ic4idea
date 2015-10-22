@@ -102,7 +102,8 @@ public class ClientCacheManager {
 
     /**
      * Jobs are not cached like other things, because there can be potentially a huge
-     * number of jobs.  Instead, only the jobs the user asks about will be cached.
+     * number of jobs.  Instead, only the jobs the user asks about will be cached, or
+     * that are associated with changelists.
      *
      * @param jobIds the job IDs to refresh in the query.
      * @return the server query
@@ -215,7 +216,6 @@ public class ClientCacheManager {
     public Collection<P4ChangeListJob> getCachedJobsInChangelists(final Collection<P4ChangeListId> changes) {
         return changeLists.getJobsInChangelists(changes);
     }
-
 
     @Nullable
     public PendingUpdateState moveFile(@NotNull Project project, @NotNull IntegrateFile file, int changelistId) {

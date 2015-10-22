@@ -56,6 +56,7 @@ public class P4ClientState {
 
     @NotNull
     public Set<P4FileUpdateState> getUpdatedFiles() {
+        // must return the underlying data structure
         return updatedFiles;
     }
 
@@ -104,10 +105,12 @@ public class P4ClientState {
         // the shared IDs.
         for (P4FileSyncState fileState : knownHave) {
             Element el = new Element("h");
+            wrapper.addContent(el);
             fileState.serialize(el, refs);
         }
         for (P4FileUpdateState fileState : updatedFiles) {
             Element el = new Element("u");
+            wrapper.addContent(el);
             fileState.serialize(el, refs);
         }
     }

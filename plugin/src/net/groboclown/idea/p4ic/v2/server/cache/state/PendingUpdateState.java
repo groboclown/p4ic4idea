@@ -87,24 +87,24 @@ public class PendingUpdateState extends CachedState {
     }
 
     public static PendingUpdateState deserialize(@NotNull Element wrapper, @NotNull DecodeReferences refs) {
-        String actionStr = getAttribute(wrapper, "a");
-        UpdateAction action = null;
+        final String actionStr = getAttribute(wrapper, "a");
         if (actionStr == null) {
             return null;
         }
+        final UpdateAction action;
         try {
             action = UpdateAction.valueOf(actionStr);
         } catch (IllegalArgumentException e) {
             return null;
         }
-        Set<String> ids = new HashSet<String>();
+        final Set<String> ids = new HashSet<String>();
         for (Element el: wrapper.getChildren("i")) {
             String id = getAttribute(el, "k");
             if (id != null) {
                 ids.add(id);
             }
         }
-        Map<String, Object> params = new HashMap<String, Object>();
+        final Map<String, Object> params = new HashMap<String, Object>();
         for (Element el: wrapper.getChildren("p")) {
             String key = getAttribute(el, "p");
             Object val = action.deserialize(key, getAttribute(el, "v"));

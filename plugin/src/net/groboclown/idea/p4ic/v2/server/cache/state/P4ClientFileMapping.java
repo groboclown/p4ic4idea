@@ -110,6 +110,12 @@ public final class P4ClientFileMapping {
         return depotPath != null ? depotPath.hashCode() : (localFilePath == null ? 0 : localFilePath.hashCode());
     }
 
+    @Override
+    public String toString() {
+        return depotPath + ";" + localFilePath;
+    }
+
+
     protected void serialize(@NotNull Element wrapper) {
         wrapper.setAttribute("d", depotPath == null ? "" : depotPath);
         wrapper.setAttribute("l", getLocalPath() == null ? "" : getLocalPath());
@@ -128,6 +134,4 @@ public final class P4ClientFileMapping {
         }
         return new P4ClientFileMapping(depot, localFilePath);
     }
-
-
 }

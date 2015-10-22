@@ -29,6 +29,7 @@ import com.perforce.p4java.impl.generic.core.file.FilePath;
 import com.perforce.p4java.impl.generic.core.file.FilePath.PathType;
 import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
+import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.GetExtendedFilesOptions;
 import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
@@ -219,19 +220,36 @@ public class P4Exec2 {
 
 
     @NotNull
-    public List<P4StatusMessage> revertFiles(@NotNull final List<IFileSpec> files)
+    public List<IFileSpec> revertFiles(@NotNull final List<IFileSpec> files)
             throws VcsException, CancellationException {
         if (files.isEmpty()) {
             return Collections.emptyList();
         }
-        return exec.runWithClient(project, new ClientExec.WithClient<List<P4StatusMessage>>() {
+        return exec.runWithClient(project, new ClientExec.WithClient<List<IFileSpec>>() {
             @Override
-            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client,
+            public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client,
                     @NotNull ClientExec.ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
                 count.invoke("revertFiles");
-                List<IFileSpec> ret = client.revertFiles(files, false, -1, false, false);
-                return getErrors(ret);
+                return client.revertFiles(files, false, -1, false, false);
+            }
+        });
+    }
+
+
+    @NotNull
+    public List<IFileSpec> revertUnchangedFiles(
+            @NotNull final List<IFileSpec> fileSpecs, final int changeListId)
+            throws VcsException, CancellationException {
+        return exec.runWithClient(project, new ClientExec.WithClient<List<IFileSpec>>() {
+            @Override
+            public List<IFileSpec> run(@NotNull final IOptionsServer server, @NotNull final IClient client,
+                    @NotNull final ClientExec.ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                RevertFilesOptions options = new RevertFilesOptions(false, changeListId, true, false);
+                count.invoke("revertFiles");
+                return client.revertFiles(fileSpecs, options);
             }
         });
     }
@@ -658,39 +676,6 @@ public class P4Exec2 {
             }
         });
     }
-
-    /*
-    @NotNull
-    public Collection<P4FileInfo> revertUnchangedFiles(final Project project,
-            @NotNull final List<IFileSpec> fileSpecs, final int changeListId,
-            @NotNull final List<P4StatusMessage> errors, @NotNull FileInfoCache fileInfoCache)
-            throws VcsException, CancellationException {
-        final List<IFileSpec> reverted = runWithClient(project, new WithClient<List<IFileSpec>>() {
-            @Override
-            public List<IFileSpec> run(@NotNull final IOptionsServer server, @NotNull final IClient client, @NotNull final ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
-                RevertFilesOptions options = new RevertFilesOptions(false, changeListId, true, false);
-                count.invoke("revertFiles");
-                final List<IFileSpec> results = client.revertFiles(fileSpecs, options);
-                List<IFileSpec> reverted = new ArrayList<IFileSpec>(results.size());
-                for (IFileSpec spec : results) {
-                    if (P4StatusMessage.isErrorStatus(spec)) {
-                        final P4StatusMessage msg = new P4StatusMessage(spec);
-                        if (!msg.isFileNotFoundError()) {
-                            errors.add(msg);
-                        }
-                    } else {
-                        LOG.info("Revert for spec " + spec + ": action " + spec.getAction());
-                        reverted.add(spec);
-                    }
-                }
-                LOG.info("reverted specs: " + reverted);
-                LOG.info("reverted errors: " + errors);
-                return reverted;
-            }
-        });
-        return runWithClient(project, new P4FileInfo.FstatLoadSpecs(reverted, fileInfoCache));
-    }
-    */
 
 
     /**

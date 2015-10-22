@@ -577,7 +577,8 @@ public class P4Server {
      * @return all files that were reverted
      */
     @NotNull
-    public MessageResult<Collection<FilePath>> revertUnchangedFilesOnline(@NotNull final Collection<FilePath> files)
+    public MessageResult<Collection<FilePath>> revertUnchangedFilesOnline(@NotNull final Collection<FilePath> files,
+            final int changelistId)
             throws InterruptedException, P4DisconnectedException {
         if (files.isEmpty()) {
             return new MessageResult<Collection<FilePath>>(
@@ -589,7 +590,7 @@ public class P4Server {
             public MessageResult<Collection<FilePath>> query(@NotNull final ClientCacheManager mgr)
                     throws InterruptedException {
                 Ref<MessageResult<Collection<FilePath>>> ret = new Ref<MessageResult<Collection<FilePath>>>();
-                ServerUpdateAction action = mgr.revertFileIfUnchangedOnline(files, ret);
+                ServerUpdateAction action = mgr.revertFileIfUnchangedOnline(files, changelistId, ret);
                 if (action != null) {
                     connection.runImmediately(project, action);
                 }

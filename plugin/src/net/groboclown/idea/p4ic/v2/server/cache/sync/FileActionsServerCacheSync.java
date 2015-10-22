@@ -324,15 +324,50 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     @Nullable
     public ServerUpdateAction revertFileOnline(@NotNull final List<FilePath> files,
             @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        return new ImmediateServerUpdateAction() {
+            @Override
+            public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
+                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    throws InterruptedException {
+                try {
+                    final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(files));
+                    ret.set(MessageResult.createForFilePath(files, results, false));
+                } catch (VcsException e) {
+                    alerts.addWarning(exec.getProject(),
+                            P4Bundle.message("error.revert-file.unchanged.title"),
+                            P4Bundle.message("error.revert-file.unchanged",
+                                    FilePathUtil.toStringList(files)),
+                            e,
+                            files);
+                }
+            }
+        };
     }
 
     @Nullable
-    public ServerUpdateAction revertFileIfUnchangedOnline(@NotNull final Collection<FilePath> files,
+    public ServerUpdateAction revertFileIfUnchangedOnline(@NotNull Collection<FilePath> files,
+            final int changelistId,
             @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        final List<FilePath> orderedFiles = new ArrayList<FilePath>(files);
+        return new ImmediateServerUpdateAction() {
+            @Override
+            public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
+                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    throws InterruptedException {
+                try {
+                    final List<IFileSpec> results =
+                            exec.revertUnchangedFiles(FileSpecUtil.getFromFilePaths(orderedFiles), changelistId);
+                    ret.set(MessageResult.createForFilePath(orderedFiles, results, false));
+                } catch (VcsException e) {
+                    alerts.addWarning(exec.getProject(),
+                            P4Bundle.message("error.revert-file.unchanged.title"),
+                            P4Bundle.message("error.revert-file.unchanged",
+                                    FilePathUtil.toStringList(orderedFiles)),
+                            e,
+                            orderedFiles);
+                }
+            }
+        };
     }
 
     @Nullable
@@ -806,8 +841,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     reverts.addAll(fpList);
                 }
                 try {
-                    final List<P4StatusMessage> msgs =
-                            exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
+                    final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
+                    final List<P4StatusMessage> msgs = P4StatusMessage.getErrors(results);
                     alerts.addNotices(exec.getProject(),
                             P4Bundle.message("warning.edit.file.revert",
                                     FilePathUtil.toStringList(reverts)), msgs, false);
@@ -998,8 +1033,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     reverts.addAll(fpList);
                 }
                 try {
-                    final List<P4StatusMessage> msgs =
-                            exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
+                    final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
+                    final List<P4StatusMessage> msgs = P4StatusMessage.getErrors(results);
                     alerts.addNotices(exec.getProject(),
                             P4Bundle.message("warning.edit.file.revert",
                                     FilePathUtil.toStringList(reverts)),

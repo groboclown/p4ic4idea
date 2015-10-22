@@ -5,7 +5,10 @@
 
 These bugs need to be handled before features.
 
-
+1. working offline at startup has major issues (server off).
+    * not using cache values
+        * changelist refresh in particular
+    * cannot reconnect once server comes back online
 
 ## Features that drive architecture
 

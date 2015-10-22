@@ -14,15 +14,15 @@
 
 package net.groboclown.idea.p4ic.v2.server.connection;
 
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.IFileOperationResult;
+import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.exception.MessageSeverityCode;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class MessageResult<T> {
     private final T result;
@@ -59,6 +59,32 @@ public class MessageResult<T> {
             }
         }
         return new MessageResult<List<T>>(results, messages);
+    }
+
+
+    @NotNull
+    public static MessageResult<Collection<FilePath>> createForFilePath(
+            @NotNull List<FilePath> originalFiles,
+            @NotNull List<IFileSpec> specs,
+            boolean markFileNotFoundAsValid) {
+        List<FilePath> results = new ArrayList<FilePath>(specs.size());
+        List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
+        Iterator<FilePath> iter = originalFiles.iterator();
+        for (IFileSpec spec : specs) {
+            if (P4StatusMessage.isValid(spec)) {
+                results.add(iter.next());
+            } else if (markFileNotFoundAsValid && P4StatusMessage.isFileNotFoundError(spec)) {
+                results.add(iter.next());
+            } else {
+                if (spec.getSeverityCode() != MessageSeverityCode.E_FATAL) {
+                    // advance but don't use the file reference
+                    iter.next();
+                }
+                final P4StatusMessage msg = new P4StatusMessage(spec);
+                messages.add(msg);
+            }
+        }
+        return new MessageResult<Collection<FilePath>>(results, messages);
     }
 
 

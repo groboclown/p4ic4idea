@@ -702,7 +702,7 @@ public class P4Server {
                     // a mess to properly detect and clean up.
 
                     // To add to the mess, this method can be called by the P4ChangelistListener
-                    // after ChangeListSync causes things to move into the correct changelist.
+                    // after P4ChangeProvider causes things to move into the correct changelist.
                     // This can lead to all kinds of terrible performance issues.
 
                     P4ChangeListId clid = changeListMapping.getPerforceChangelistFor(P4Server.this, source);

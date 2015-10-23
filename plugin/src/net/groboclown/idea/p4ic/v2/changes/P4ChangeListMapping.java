@@ -365,7 +365,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
 
     /**
      * Removes mappings for IDEA changelists that no longer exist, and Perforce
-     * changelists that no longer exist.  Used by the {@link ChangeListSync}.
+     * changelists that no longer exist.  Used by the {@link ChangeListMatcher}.
      *
      * @param changes the changes loaded from the server.
      */

@@ -14,24 +14,15 @@
 package net.groboclown.idea.p4ic.v2.changes;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.*;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
-import com.perforce.p4java.core.file.FileSpecOpStatus;
-import com.perforce.p4java.core.file.IExtendedFileSpec;
-import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,309 +41,42 @@ import java.util.regex.Pattern;
  * If there is a Perforce changelist that has no mapping to IDEA, an IDEA
  * change list is created.
  */
-public class ChangeListSync {
-    private static final Logger LOG = Logger.getInstance(ChangeListSync.class);
+public class ChangeListMatcher {
+    private static final Logger LOG = Logger.getInstance(ChangeListMatcher.class);
 
     private final Project project;
     private final P4Vcs vcs;
     private final AlertManager alerts;
     private final P4ChangeListMapping changeListMapping;
 
-    public ChangeListSync(@NotNull final P4Vcs vcs, @NotNull AlertManager alerts) {
+
+    public ChangeListMatcher(@NotNull final P4Vcs vcs, @NotNull AlertManager alerts) {
         this.project = vcs.getProject();
         this.vcs = vcs;
         this.alerts = alerts;
         this.changeListMapping = P4ChangeListMapping.getInstance(project);
     }
 
-    void findNewDirtyFiles() throws InterruptedException {
-        final List<LocalChangeList> changes = ChangeListManager.getInstance(project).getChangeLists();
-        Set<FilePath> dirtyFiles = new HashSet<FilePath>();
-        for (LocalChangeList changeList: changes) {
-            for (Change change: changeList.getChanges()) {
-                if (change.getBeforeRevision() != null) {
-                    dirtyFiles.add(change.getBeforeRevision().getFile());
-                }
-                if (change.getAfterRevision() != null) {
-                    dirtyFiles.add(change.getAfterRevision().getFile());
-                }
-            }
-        }
-
-        final List<VirtualFile> roots = vcs.getVcsRoots();
-
-        for (P4Server server : vcs.getP4Servers()) {
-            for (P4FileAction file : server.getOpenFiles()) {
-                final FilePath filePath = file.getFile();
-                if (!dirtyFiles.contains(filePath) && inRoot(roots, filePath)) {
-                    LOG.info("Marking " + filePath + " as dirty");
-                    VcsUtil.markFileAsDirty(project, filePath);
-                }
-            }
-        }
-    }
-
-    private boolean inRoot(@NotNull List<VirtualFile> roots, @Nullable FilePath filePath) {
-        if (filePath == null) {
-            return false;
-        }
-        for (VirtualFile root : roots) {
-            if (filePath.isUnder(FilePathUtil.getFilePath(root), false)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    /**
-     * Refreshes the changes.  It only acts upon the dirty files.
-     *
-     * @param builder data access and storage
-     * @param progress progress bar
-     * @throws VcsException
-     */
-    public void syncChanges(@NotNull Set<FilePath> dirtyFiles, @NotNull ChangeListBuilderCache builder,
-            @NotNull final ChangeListManagerGate addGate, @NotNull ProgressIndicator progress)
-            throws VcsException, InterruptedException {
-        // TODO add in progress indicator
-
-        LOG.info("start changelist refresh");
-
-
-        { // Strip out directories from the search.
-            final Iterator<FilePath> iter = dirtyFiles.iterator();
-            while (iter.hasNext()) {
-                if (iter.next().isDirectory()) {
-                    iter.remove();
-                }
-            }
-        }
-
-
-        // Load all the dirty files into the correct changelist, based on the
-        // server state of the file.
-
-        final Map<P4Server, List<FilePath>> mappedFiles =
-                vcs.mapFilePathsToP4Server(dirtyFiles);
-
-        final Map<P4Server, Map<P4ChangeListValue, LocalChangeList>> mappedChanges = getLocalChangelistMapping(
-                mappedFiles.keySet(), addGate);
-
-
-        for (Entry<P4Server, List<FilePath>> serverFileEntry: mappedFiles.entrySet()) {
-            P4Server server = serverFileEntry.getKey();
-            if (server == null) {
-                // files that do not map to a server, so they are not covered by VCS.
-                for (FilePath fp : serverFileEntry.getValue()) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug(" - server-less file: " + fp);
-                    }
-                    final VirtualFile vf = fp.getVirtualFile();
-                    if (vf != null) {
-                        LOG.debug(" --- marked as unversioned");
-                        builder.processUnversionedFile(vf);
-                        if (! dirtyFiles.remove(fp)) {
-                            LOG.warn("Duplicate file processed (1): " + vf);
-                        }
-                    } else {
-                        LOG.debug(" --- no virtual file");
-                        builder.processLocallyDeletedFile(fp);
-                        if (! dirtyFiles.remove(fp)) {
-                            LOG.warn("Duplicate file processed (2): " + fp);
-                        }
-                    }
-                }
-                // don't need to put the "else" in an indention...
-                continue;
-            }
-
-            // Files on the server.  This allows us to know whether the
-            // file is currently tracked by the server or not (e.g. whether
-            // a change is a delete, add, or edit).
-
-            // Always use the server.getOpenedFiles first.  The files that
-            // aren't matched after that are not already open; we pull their
-            // server status separately.
-
-            Set<FilePath> unopenedFiles = new HashSet<FilePath>(serverFileEntry.getValue());
-
-            // Files which we know their current state; note that we
-            // only track the files that the current client has open
-            // (delete, edit, add, integrate, move).
-            final List<P4FileAction> opened = new ArrayList<P4FileAction>(server.getOpenFiles());
-            final Iterator<FilePath> iter = unopenedFiles.iterator();
-            while (iter.hasNext()) {
-                final FilePath fp = iter.next();
-                P4FileAction action = findActionFor(fp, opened);
-                if (action != null) {
-                    // Matched this file state
-                    iter.remove();
-                    opened.remove(action);
-                    LocalChangeList changeList = getChangeList(action, server, mappedChanges);
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug(" --- mapped file " + fp + " to known change, in local changelist " + changeList);
-                    }
-                    ensureOnlyIn(action, changeList, builder);
-                    if (!dirtyFiles.remove(fp)) {
-                        LOG.warn("Duplicate file processed (3): " + fp);
-                    }
-                }
-            }
-
-            // It looks like that not all the open files are passed here in all cases;
-            // Adding these files that were not dirty into changelists is a sure-fire way
-            // to get infinite refresh on the changelist view.  Instead, we mark these
-            // other files as dirty.
-            for (P4FileAction action : opened) {
-                if (! dirtyFiles.contains(action.getFile())) {
-                    VcsUtil.markFileAsDirty(project, action.getFile());
-                } else {
-                    LOG.warn("Missed opened file in dirty list: " + action.getFile());
-                }
-            }
-
-
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(" --- handling unknown p4 action for " + unopenedFiles);
-            }
-            final Map<FilePath, IExtendedFileSpec> status =
-                    server.getFileStatus(unopenedFiles);
-            if (status == null) {
-                // working offline - nothing can be discovered about the state.
-                for (FilePath unopenedFile: unopenedFiles) {
-                    VirtualFile vf = unopenedFile.getVirtualFile();
-                    if (vf == null) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug(" --- locally deleted: " + unopenedFile);
-                        }
-                        builder.processLocallyDeletedFile(unopenedFile);
-                        if (!dirtyFiles.remove(unopenedFile)) {
-                            LOG.warn("Duplicate file processed (4): " + unopenedFile);
-                        }
-                    } else {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug(" --- modified without checkout: " + vf);
-                        }
-                        builder.processModifiedWithoutCheckout(vf);
-                        if (!dirtyFiles.remove(unopenedFile)) {
-                            LOG.warn("Duplicate file processed (5): " + unopenedFile);
-                        }
-                    }
-                }
-            } else {
-                for (Entry<FilePath, IExtendedFileSpec> specEntry : status.entrySet()) {
-                    FilePath fp = specEntry.getKey();
-                    VirtualFile vf = fp.getVirtualFile();
-                    final IExtendedFileSpec spec = specEntry.getValue();
-                    if (spec.getOpStatus() != FileSpecOpStatus.VALID ||
-                            spec.getOpenAction() == null) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug(" -- spec status: " + spec.getOpStatus() + " [" + spec.getStatusMessage() + "]");
-                            LOG.debug(" -- spec open action: " + spec.getOpenAction());
-                        }
-                        // assume it's a file that isn't added yet.
-                        if (vf == null) {
-                            builder.processLocallyDeletedFile(fp);
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug(" --- invalid p4 status, locally deleted: " + fp);
-                            }
-                            if (!dirtyFiles.remove(fp)) {
-                                LOG.warn("Duplicate file processed (6): " + fp);
-                            }
-                        } else if (server.isIgnored(specEntry.getKey())) {
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug(" --- in ignore file: " + vf);
-                            }
-                            builder.processIgnoredFile(vf);
-                            if (!dirtyFiles.remove(fp)) {
-                                LOG.warn("Duplicate file processed (7): " + fp);
-                            }
-                        } else {
-                            // not on server, and user did not indicate that they
-                            // wanted to edit it.
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug(" --- user didn't want to edit: " + vf);
-                            }
-                            builder.processUnversionedFile(vf);
-                            if (!dirtyFiles.remove(fp)) {
-                                LOG.warn("Duplicate file processed (8): " + fp);
-                            }
-                        }
-                    } else {
-                        // FIXME do something smart
-                        alerts.addWarning(project,
-                                P4Bundle.message("errors.changelist.mapping.title", fp),
-                                P4Bundle.message("errors.changelist.mapping", fp, spec.getDepotPath()),
-                                null, fp);
-                        if (vf == null) {
-                            // CHECK if the file isn't in Perforce, then this should
-                            // be ignored!
-
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug(" --- no changelist mapping, marking as locally deleted: " + fp);
-                            }
-                            builder.processLocallyDeletedFile(fp);
-                            if (!dirtyFiles.remove(fp)) {
-                                LOG.warn("Duplicate file processed (9): " + fp);
-                            }
-                        } else {
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug(" --- no changelist mapping, marking as modified without checkout; " + vf);
-                            }
-                            builder.processModifiedWithoutCheckout(vf);
-                            if (!dirtyFiles.remove(fp)) {
-                                LOG.warn("Duplicate file processed (10): " + fp);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-
-        LOG.info("Remaining dirty files: " + new ArrayList<FilePath>(dirtyFiles));
-        if (! dirtyFiles.isEmpty()) {
-            throw new VcsException("Did not process all the dirty files: " + new ArrayList<FilePath>(dirtyFiles));
-        }
-    }
-
-    private void ensureOnlyIn(@NotNull P4FileAction action, @NotNull LocalChangeList changeList,
-            @NotNull ChangeListBuilderCache builder) {
-        boolean movedChange = false;
-        if (action.getFile() == null) {
-            throw new IllegalStateException("File action " + action + " has no local file setting");
-        }
-        for (LocalChangeList cl: ChangeListManager.getInstance(project).getChangeLists()) {
-            for (Change change: cl.getChanges()) {
-                if (change.affectsFile(action.getFile().getIOFile())) {
-                    if (changeList.equals(cl)) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug(" --- Keeping " + action.getFile() + " in " + changeList);
-                        }
-                        // null changelist: setting the changelist will cause infinite
-                        // reloads, because it means that the changelist has changed.
-                        builder.processChange(change, changeList, false);
-                    } else {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug(" --- Moving " + action.getFile() + " out of " + cl + " into " + changeList);
-                        }
-                        builder.processChange(change, changeList, true);
-                    }
-                    movedChange = true;
-                }
-            }
-        }
-        if (! movedChange) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(" --- Put " + action.getFile() + " into " + changeList);
-            }
-            builder.processChange(createChange(action), changeList, true);
-        }
-    }
 
     @NotNull
-    private LocalChangeList getChangeList(@NotNull P4FileAction action, @NotNull P4Server server,
+    public Map<P4Server, Map<P4ChangeListValue, LocalChangeList>> getLocalChangelistMapping(
+            @NotNull Set<P4Server> p4Servers, @NotNull ChangeListManagerGate addGate)
+            throws InterruptedException {
+        Map<P4Server, Map<P4ChangeListValue, LocalChangeList>> ret =
+                new HashMap<P4Server, Map<P4ChangeListValue, LocalChangeList>>();
+        for (P4Server server : p4Servers) {
+            if (server != null) {
+                final Collection<P4ChangeListValue> changes = server.getOpenChangeLists();
+                changeListMapping.cleanServerMapping(server.getClientServerId(), changes);
+                ret.put(server, mapIdeaChanges(addGate, changes));
+            }
+        }
+        return ret;
+    }
+
+
+    @NotNull
+    public LocalChangeList getChangeList(@NotNull P4FileAction action, @NotNull P4Server server,
             @NotNull Map<P4Server, Map<P4ChangeListValue, LocalChangeList>> mappedChanges) {
         final Map<P4ChangeListValue, LocalChangeList> changes = mappedChanges.get(server);
         if (changes == null) {
@@ -372,36 +96,11 @@ public class ChangeListSync {
                 " changelist " + action.getChangeList() + " (known changes for server: " + changes.keySet() + ")");
     }
 
-    @Nullable
-    private P4FileAction findActionFor(@NotNull FilePath fp, @NotNull Collection<P4FileAction> opened) {
-        for (P4FileAction action : opened) {
-            if (action.affects(fp)) {
-                return action;
-            }
-        }
-        return null;
-    }
-
-    private Change createChange(@NotNull P4FileAction file) {
+    @NotNull
+    public Change createChange(@NotNull P4FileAction file) {
         ContentRevision beforeRev = new P4CurrentContentRevision(project, file);
         ContentRevision afterRev = new CurrentContentRevision(file.getFile());
         return new Change(beforeRev, afterRev, file.getClientFileStatus());
-    }
-
-
-    @NotNull
-    private Map<P4Server, Map<P4ChangeListValue, LocalChangeList>> getLocalChangelistMapping(
-            @NotNull Set<P4Server> p4Servers, @NotNull ChangeListManagerGate addGate)
-            throws InterruptedException {
-        Map<P4Server, Map<P4ChangeListValue, LocalChangeList>> ret = new HashMap<P4Server, Map<P4ChangeListValue, LocalChangeList>>();
-        for (P4Server server : p4Servers) {
-            if (server != null) {
-                final Collection<P4ChangeListValue> changes = server.getOpenChangeLists();
-                changeListMapping.cleanServerMapping(server.getClientServerId(), changes);
-                ret.put(server, mapIdeaChanges(addGate, changes));
-            }
-        }
-        return ret;
     }
 
     @NotNull

@@ -6,9 +6,6 @@
 These bugs need to be handled before features.
 
 1. working offline at startup has major issues (server off).
-    1. infinite changelist refresh again, this time when offline.
-        Happens when you try to add multiple files, one of which was
-        already added - looks related to the bug below.
     1. cannot reconnect once server comes back online (ssl mode only, it seems)
     1. the cached values for changelist assignment is not
        loaded correctly at restart.  Only one is restored?

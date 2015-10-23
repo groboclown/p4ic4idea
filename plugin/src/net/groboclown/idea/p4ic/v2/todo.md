@@ -9,6 +9,16 @@ These bugs need to be handled before features.
     1. cannot reconnect once server comes back online
     1. the cached values for changelist assignment is not
        loaded correctly at restart.  Only one is restored?
+       They are all deserialized.
+    1. initial display does not load the cached state?  This is
+       because of the initial assumption that it's working online,
+       but that causes a working offline exception.  Instead, the
+       working offline exception should be displayed (as it is
+       currently happening), but the exception should not cause
+       the refresh to stop.
+    1. The "I'm offline now" message seems to not propigate correctly.
+       Needs better tracing of the server pool, and its currently
+       known online/offline state.
 1. Reinstate the old pwd state object so that it can ensure that the
    state values are wiped out, for those migrating to the new storage
    mechanism.

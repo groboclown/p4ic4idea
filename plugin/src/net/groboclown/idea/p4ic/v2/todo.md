@@ -6,7 +6,10 @@
 These bugs need to be handled before features.
 
 1. working offline at startup has major issues (server off).
-    1. cannot reconnect once server comes back online
+    1. infinite changelist refresh again, this time when offline.
+        Happens when you try to add multiple files, one of which was
+        already added - looks related to the bug below.
+    1. cannot reconnect once server comes back online (ssl mode only, it seems)
     1. the cached values for changelist assignment is not
        loaded correctly at restart.  Only one is restored?
        They are all deserialized.
@@ -16,7 +19,7 @@ These bugs need to be handled before features.
        working offline exception should be displayed (as it is
        currently happening), but the exception should not cause
        the refresh to stop.
-    1. The "I'm offline now" message seems to not propigate correctly.
+    1. The "I'm offline now" message seems to not propagate correctly.
        Needs better tracing of the server pool, and its currently
        known online/offline state.
 1. Reinstate the old pwd state object so that it can ensure that the

@@ -29,6 +29,7 @@ import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -67,6 +68,12 @@ public class P4ChangeProvider implements ChangeProvider {
     public void getChanges(VcsDirtyScope dirtyScope, ChangelistBuilder builder, ProgressIndicator progress,
             ChangeListManagerGate addGate) throws VcsException {
         // FIXME use the progress indicator for this method
+
+
+        // FIXME now that we're caching the underlying changelist mapping through
+        // another mechanism, this is essentially doubling up on the caching, and
+        // that itself could be a source of the infinite refresh.  Remove the
+        // double caching.
 
         lastRefreshRequest = System.currentTimeMillis();
         if (project.isDisposed()) {
@@ -118,6 +125,8 @@ public class P4ChangeProvider implements ChangeProvider {
                     return;
                 }
                 LOG.info("Dirty files are not the same as the cached changed files");
+                LOG.info("Dirty: " + new HashSet<FilePath>(dirtyFiles));
+                LOG.info("Cached: " + cachedChanges.getDirtyFiles());
             } else {
                 LOG.info("Reloading the changelists due to cache expiration");
             }
@@ -143,8 +152,16 @@ public class P4ChangeProvider implements ChangeProvider {
         }
         cachedChanges = cacheBuilder.getCache();
 
-        // Before we return, we must check for new dirty files.
-        findRemainingDirtyFiles();
+        // actually apply the cache!
+        cachedChanges.applyCache(builder);
+
+        // This can cause infinite refresh; so don't do it.
+        //  - What ends up happening is one newly changed file comes in as dirty,
+        //    then this call reports several other files that are also dirty.
+        //    That causes the caller to invoke this again, but only with the
+        //    newly marked dirty files.  That causes this to mark that original
+        //    single file as dirty.
+        // findRemainingDirtyFiles();
     }
 
 

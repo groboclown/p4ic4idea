@@ -55,7 +55,7 @@ public class ChangeListBuilderCache {
             for (ChangeToChangeList processedChange: processedChanges) {
 
                 // ---------------------------------------------------------------------
-                // This appears to be the source of the "refresh changelist forever"
+                // This appears to be one source of the "refresh changelist forever"
                 // code.  If this code registers the change AND registers it with
                 // a changelist, it triggers another refresh, which makes
                 // the refresh repeat forever.
@@ -261,6 +261,36 @@ public class ChangeListBuilderCache {
             }
 
             return false;
+        }
+
+        public Set<String> getDirtyFiles() {
+            Set<String> ret = new HashSet<String>();
+            for (VirtualFile vf: unversionedFiles) {
+                ret.add("u@"+vf.getPath());
+            }
+            for (FilePath fp: locallyDeletedFiles) {
+                ret.add("l@" + fp.getIOFile().getAbsolutePath());
+            }
+            for (VirtualFile vf: modifiedWithoutCheckout) {
+                ret.add("m@" + vf.getPath());
+            }
+            for (VirtualFile vf: ignoredFiles) {
+                ret.add("i@" + vf.getPath());
+            }
+            for (File f: affectedButNotDirty) {
+                ret.add("a@" + f.getAbsolutePath());
+            }
+            for (ChangeToChangeList ctcl: processedChanges) {
+                if (ctcl.change.getBeforeRevision() != null) {
+                    ret.add("c@" + ctcl.change.getBeforeRevision().getFile().getIOFile().getAbsolutePath());
+                }
+                if (ctcl.change.getAfterRevision() != null &&
+                        (ctcl.change.getBeforeRevision() == null ||
+                        (! ctcl.change.getBeforeRevision().getFile().equals(ctcl.change.getAfterRevision().getFile())))) {
+                    ret.add("a@" + ctcl.change.getBeforeRevision().getFile().getIOFile().getAbsolutePath());
+                }
+            }
+            return ret;
         }
     }
 

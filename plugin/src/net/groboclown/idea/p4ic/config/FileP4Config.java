@@ -249,4 +249,9 @@ public class FileP4Config implements P4Config {
     public File getSource() {
         return configFile;
     }
+
+    @Override
+    public String toString() {
+        return P4ConfigUtil.getProperties(this).toString();
+    }
 }

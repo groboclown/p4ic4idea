@@ -23,8 +23,10 @@ import com.intellij.openapi.startup.StartupManager;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigProject;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
@@ -203,8 +205,15 @@ public class P4ServerManager implements ProjectComponent {
                             knownServers.remove(id);
                             servers.get(id).setValid(true);
                         } else {
-                            final P4Server server = new P4Server(project, source);
-                            servers.put(server.getClientServerId(), server);
+                            try {
+                                final P4Server server = new P4Server(project, source);
+                                servers.put(server.getClientServerId(), server);
+                            } catch (P4InvalidClientException e) {
+                                alertManager.addWarning(project,
+                                        P4Bundle.message("errors.no-client.source", source),
+                                        P4Bundle.message("errors.no-client.source", source),
+                                        e, new FilePath[0]);
+                            }
                         }
                     }
                     final AllClientsState clientState = AllClientsState.getInstance();
@@ -283,19 +292,28 @@ public class P4ServerManager implements ProjectComponent {
 
     private void initializeServers() {
         P4ConfigProject cp = P4ConfigProject.getInstance(project);
+        final List<ProjectConfigSource> sources;
         try {
-            final List<ProjectConfigSource> sources = cp.loadProjectConfigSources();
-            synchronized (servers) {
-                servers.clear();
-                for (ProjectConfigSource source : sources) {
-                    final P4Server server = new P4Server(project, source);
-                    servers.put(server.getClientServerId(), server);
-                }
-            }
+            sources = cp.loadProjectConfigSources();
         } catch (P4InvalidConfigException e) {
             LOG.info("source load caused error", e);
             synchronized (servers) {
                 servers.clear();
+            }
+            return;
+        }
+        synchronized (servers) {
+            servers.clear();
+            for (ProjectConfigSource source : sources) {
+                try {
+                    final P4Server server = new P4Server(project, source);
+                    servers.put(server.getClientServerId(), server);
+                } catch (P4InvalidClientException e) {
+                    alertManager.addWarning(project,
+                            P4Bundle.message("errors.no-client.source", source),
+                            P4Bundle.message("errors.no-client.source", source),
+                            e, new FilePath[0]);
+                }
             }
         }
     }

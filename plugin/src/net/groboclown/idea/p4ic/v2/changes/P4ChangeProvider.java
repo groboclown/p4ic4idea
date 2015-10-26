@@ -19,7 +19,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.*;
-import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
@@ -134,7 +133,10 @@ public class P4ChangeProvider implements ChangeProvider {
         MappedOpenFiles mapped = getOpenedFiles(dirtyFiles, progress);
         progress.setFraction(0.80);
 
-        // FIXME EXPERIMENTAL marking dirty may cause infinite loops
+        /* marking dirty may cause infinite loops.
+        This is why we have the special case for "everything is dirty",
+        as it is usually called at startup or at critical times, which allows
+        the change provider to mark anything as dirty.
         List<VirtualFile> dirty = new ArrayList<VirtualFile>();
         for (Entry<P4Server, Set<P4FileAction>> entry : mapped.notDirtyOpenedFiles.entrySet()) {
             for (P4FileAction action : entry.getValue()) {
@@ -144,6 +146,7 @@ public class P4ChangeProvider implements ChangeProvider {
             }
         }
         VfsUtil.markDirty(false, false, dirty.toArray(new VirtualFile[dirty.size()]));
+        */
 
         for (FilePath file : mapped.noServerDirtyFiles) {
             if (file.getVirtualFile() == null) {
@@ -273,6 +276,7 @@ public class P4ChangeProvider implements ChangeProvider {
             // We could just discover the open state for the dirty files,
             // which is the optimal way to handle this method, but for now,
             // just find everything that's dirty and organize it.
+            // TODO optimize this to only check dirty files.
             final Set<FilePath> unknownDirties = new HashSet<FilePath>(scopedDirtyFiles);
             this.notDirtyOpenedFiles = new HashMap<P4Server, Set<P4FileAction>>();
             this.dirtyP4Files = new HashMap<FilePath, ServerAction>();

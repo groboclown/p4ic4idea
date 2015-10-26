@@ -14,14 +14,19 @@
 package net.groboclown.idea.p4ic.server.exceptions;
 
 import net.groboclown.idea.p4ic.P4Bundle;
-import org.jetbrains.annotations.Nullable;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import org.jetbrains.annotations.NotNull;
 
 public class P4InvalidClientException extends P4DisconnectedException {
-    public P4InvalidClientException(@Nullable String clientName) {
+    public P4InvalidClientException(@NotNull String clientName) {
         super(P4Bundle.message("exception.invalid.client", clientName));
     }
 
     public P4InvalidClientException() {
         super(P4Bundle.message("error.config.no-client"));
+    }
+
+    public P4InvalidClientException(@NotNull final ClientServerId clientServerId) {
+        super(P4Bundle.message("exception.invalid.client", clientServerId));
     }
 }

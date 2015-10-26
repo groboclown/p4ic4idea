@@ -19,6 +19,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.*;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
@@ -108,10 +109,13 @@ public class CentralCacheManager {
      */
     @NotNull
     public ClientCacheManager getClientCacheManager(@NotNull ClientServerId clientServerId, @NotNull ServerConfig config,
-            @NotNull  Callable<Boolean> isServerCaseInsensitiveCallable) {
+            @NotNull  Callable<Boolean> isServerCaseInsensitiveCallable) throws P4InvalidClientException {
         if (disposed) {
             // Coding error; no bundled message
             throw new IllegalStateException("disposed");
+        }
+        if (clientServerId.getClientId() == null) {
+            throw new P4InvalidClientException(clientServerId);
         }
         ClientCacheManager cacheManager;
         cacheLock.lock();

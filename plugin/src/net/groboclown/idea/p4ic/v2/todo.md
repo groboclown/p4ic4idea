@@ -10,6 +10,16 @@ These bugs need to be handled before features.
     1. the cached values for changelist assignment is not
        loaded correctly at restart.  Only one is restored?
        They are all deserialized.
+       
+       Turns out that the actions are loaded into the queue, but
+       they are immediately acted upon, even if offline.  Looks
+       like there's an issue with the "wait for online" check
+       in the queue thread.
+       
+       Looks like going offline should immediately send a signal
+       that the server is offline, before asking the user if
+       they want to retry.
+       
     1. initial display does not load the cached state?  This is
        because of the initial assumption that it's working online,
        but that causes a working offline exception.  Instead, the
@@ -24,6 +34,8 @@ These bugs need to be handled before features.
    mechanism.
 1. Open multiple files for edit, with one of them (the first one?) already
    open for edit, causes none of them to be opened.
+   The first file is triggered to be opened for edit, but none of the
+   others are.
 
 
 ## Big Bugs
@@ -31,8 +43,6 @@ These bugs need to be handled before features.
 
 1. When project root is at (say) c:\a\b\c\, and .p4config exists in c:\a\b\c\ and c:\a, the
    c:\a is picked up.
-1. Changelist refresh: some files alternate between showing up and disappearing
-   with each refresh.
 1. Job list in submit needs wrapping scroll pane.
 1. Failure in job submit does not show error to user.
 1. ssh connection failure due to can't reach host port is indistinguishable from

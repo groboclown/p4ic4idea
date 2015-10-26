@@ -53,14 +53,14 @@ public class WarningMessage {
     private final Project project;
     private final String summary;
     private final String message;
-    private final Exception warning;
+    private final Throwable warning;
     private final Collection<VirtualFile> affectedFiles;
     private final Consumer<HotfixGate> hotfix;
     private final Date when = new Date();
 
     public WarningMessage(@NotNull Project project, @Nls @NotNull String summary,
             @Nls @NotNull final String message,
-            @Nullable final Exception warning, @Nullable Collection<VirtualFile> affectedFiles) {
+            @Nullable final Throwable warning, @Nullable Collection<VirtualFile> affectedFiles) {
         this(project, summary, message, warning, affectedFiles, null);
     }
 
@@ -77,7 +77,7 @@ public class WarningMessage {
      */
     public WarningMessage(@NotNull Project project, @Nls @NotNull String summary,
             @Nls @NotNull final String message,
-            @Nullable final Exception warning, @Nullable Collection<VirtualFile> affectedFiles,
+            @Nullable final Throwable warning, @Nullable Collection<VirtualFile> affectedFiles,
             @Nullable Consumer<HotfixGate> hotfix) {
         this.project = project;
         this.summary = summary;
@@ -91,7 +91,7 @@ public class WarningMessage {
 
     public WarningMessage(@NotNull Project project, @Nls @NotNull String summary,
             @Nls @NotNull final String message,
-            @Nullable final Exception warning, VirtualFile... affectedFiles) {
+            @Nullable final Throwable warning, VirtualFile... affectedFiles) {
         this(project, summary, message, warning, Arrays.asList(affectedFiles));
     }
 
@@ -106,7 +106,7 @@ public class WarningMessage {
     }
 
     @Nullable
-    public Exception getWarning() {
+    public Throwable getWarning() {
         return warning;
     }
 

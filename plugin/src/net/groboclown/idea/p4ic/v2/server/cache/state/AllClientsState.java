@@ -21,6 +21,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
@@ -67,9 +68,9 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
 
     @NotNull
     public ClientLocalServerState getStateForClient(@NotNull ClientServerId clientServerId,
-            Callable<Boolean> isServerCaseInsensitiveCallable) {
+            Callable<Boolean> isServerCaseInsensitiveCallable) throws P4InvalidClientException {
         if (clientServerId.getClientId() == null) {
-            throw new IllegalArgumentException("must supply a client name");
+            throw new P4InvalidClientException(clientServerId);
         }
         synchronized (clientStates) {
             ClientLocalServerState ret = clientStates.get(clientServerId);

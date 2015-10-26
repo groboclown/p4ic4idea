@@ -69,7 +69,7 @@ public class AlertManager implements ApplicationComponent {
     }
 
     public void addWarning(@NotNull Project project, @Nls @NotNull String title, @Nls @NotNull String details,
-            @Nullable Exception ex, @Nullable FilePath[] affectedFiles) {
+            @Nullable Throwable ex, @Nullable FilePath[] affectedFiles) {
         List<VirtualFile> files = new ArrayList<VirtualFile>();
         if (affectedFiles != null) {
             for (FilePath file : affectedFiles) {
@@ -82,17 +82,17 @@ public class AlertManager implements ApplicationComponent {
     }
 
     public void addWarning(@NotNull Project project, @Nls @NotNull String title, @Nls @NotNull String details,
-            @Nullable Exception ex, @NotNull FilePath affectedFiles) {
+            @Nullable Throwable ex, @NotNull FilePath affectedFiles) {
         addWarning(project, title, details, ex, new FilePath[] { affectedFiles });
     }
 
     public void addWarning(@NotNull Project project, @Nls @NotNull String title, @Nls @NotNull String details,
-            @Nullable Exception ex, @NotNull Collection<FilePath> affectedFiles) {
+            @Nullable Throwable ex, @NotNull Collection<FilePath> affectedFiles) {
         addWarning(project, title, details, ex, affectedFiles.toArray(new FilePath[affectedFiles.size()]));
     }
 
     public void addWarning(@NotNull Project project, @Nls @NotNull String title, @Nls @NotNull String details,
-            @Nullable Exception ex, @NotNull VirtualFile[] affectedFiles) {
+            @Nullable Throwable ex, @NotNull VirtualFile[] affectedFiles) {
         if (ex != null && throwableHandled.isHandled(ex)) {
             LOG.info("Skipped duplicate handling of " + ex);
             return;

@@ -119,6 +119,37 @@ public class ClientExec {
         }
     }
 
+
+    static boolean checkIfOnline(@NotNull Project project, @NotNull ServerConfig config,
+            @NotNull ServerStatusController statusController) {
+        Exception exception = null;
+        boolean online = false;
+        try {
+            final IServerInfo info = getServerInfo(config);
+            if (info != null) {
+                online = true;
+            }
+        } catch (IOException e) {
+            exception = e;
+        } catch (P4JavaException e) {
+            exception = e;
+        } catch (URISyntaxException e) {
+            exception = e;
+        }
+        if (! online) {
+            statusController.onDisconnected();
+            final P4DisconnectedException ex;
+            if (exception == null) {
+                ex = new P4DisconnectedException();
+            } else {
+                ex = new P4DisconnectedException(exception);
+            }
+            AlertManager.getInstance().addCriticalError(new DisconnectedHandler(project, statusController, ex), ex);
+        }
+        return online;
+    }
+
+
     static List<String> getClientNames(@NotNull ServerConfig config)
             throws IOException, P4JavaException, URISyntaxException {
         final IOptionsServer server = connectTo(null, null, ConnectionHandler.getHandlerFor(config), config,

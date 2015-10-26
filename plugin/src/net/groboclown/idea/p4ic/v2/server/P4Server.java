@@ -33,6 +33,7 @@ import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.history.P4AnnotatedLine;
@@ -128,7 +129,8 @@ public class P4Server {
 
 
 
-    P4Server(@NotNull final Project project, @NotNull final ProjectConfigSource source) {
+    P4Server(@NotNull final Project project, @NotNull final ProjectConfigSource source)
+            throws P4InvalidClientException {
         this.project = project;
         this.alertManager = AlertManager.getInstance();
         this.source = source;

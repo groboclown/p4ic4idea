@@ -26,6 +26,7 @@ import java.util.Collection;
  * {@link UpdateGroup}.
  */
 public interface ServerUpdateAction {
+
     /**
      *
      * @return all the grouped corresponding state stores for the server update.

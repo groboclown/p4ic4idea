@@ -227,6 +227,10 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
 
     @NotNull
     List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts) {
+        if (project.isDisposed()) {
+            LOG.info("Called getClientRoots() on a disposed project");
+            return Collections.emptyList();
+        }
         final List<VirtualFile> projectRoots = P4Vcs.getInstance(project).getVcsRoots();
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
         if (LOG.isDebugEnabled()) {

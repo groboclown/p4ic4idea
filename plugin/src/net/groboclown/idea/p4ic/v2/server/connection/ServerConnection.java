@@ -16,14 +16,18 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.connection.Synchronizer.ActionRunner;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import net.groboclown.idea.p4ic.v2.ui.alerts.ConfigurationProblemHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -97,6 +101,17 @@ public class ServerConnection {
 
 
     public synchronized void postSetup(@NotNull Project project) {
+        // First, check if the server is reachable.
+        // This is necessary to keep the pending changes from being gobbled
+        // up if we have a mistaken online mode set.  If we know we're
+        // working offline, then don't check if we're online (especially since
+        // the user can manually switch to offline mode).
+        if (isWorkingOnline()) {
+            ClientExec.checkIfOnline(project, config, statusController);
+        }
+
+        // Push all the cached pending updates into the queue for future
+        // processing.
         if (! loadedPendingUpdateStates) {
             queueUpdateActions(project, cacheManager.getCachedPendingUpdates());
             loadedPendingUpdateStates = true;
@@ -325,6 +340,8 @@ public class ServerConnection {
                             try {
                                 action.action.perform(getExec(action.project),
                                         cacheManager, ServerConnection.this, alertManager);
+                                // only remove the state once we've successfully
+                                // processed the action.
                                 cacheManager.removePendingUpdateStates(action.action.getPendingUpdateStates());
                             } catch (P4InvalidConfigException e) {
                                 alertManager.addCriticalError(new ConfigurationProblemHandler(action.project,
@@ -339,17 +356,44 @@ public class ServerConnection {
                         pushAbortedAction(action);
                     }
                 } catch (InterruptedException e) {
-                    // do not requeue action
+                    // Requeue the action, because it is still in the
+                    // cached pending update states.
                     LOG.info(e);
+                    pushAbortedAction(action);
                 } catch (Throwable e) {
                     // Ensure exceptions that we should never trap are handled right.
                     VcsExceptionUtil.alwaysThrown(e);
 
-                    // do not requeue action
+                    // Big time error, so remove the update
+                    cacheManager.removePendingUpdateStates(action.action.getPendingUpdateStates());
+                    alertManager.addWarning(action.project,
+                            P4Bundle.message("error.update-state"),
+                            action.action.toString(),
+                            e, getFilesFor(action.action.getPendingUpdateStates()));
+
+                    // do not requeue action, because we removed it
+                    // from the cached update list.
                     LOG.error(e);
                 }
             }
         }
+    }
+
+    @Nullable
+    private static FilePath[] getFilesFor(final Collection<PendingUpdateState> pendingUpdateStates) {
+        List<FilePath> ret = new ArrayList<FilePath>(pendingUpdateStates.size());
+        for (PendingUpdateState state : pendingUpdateStates) {
+            Object file = state.getParameters().get(UpdateParameterNames.FILE.getKeyName());
+            if (file != null && file instanceof String) {
+                ret.add(FilePathUtil.getFilePath(file.toString()));
+            } else {
+                file = state.getParameters().get(UpdateParameterNames.FILE_SOURCE.getKeyName());
+                if (file != null && file instanceof String) {
+                    ret.add(FilePathUtil.getFilePath(file.toString()));
+                }
+            }
+        }
+        return ret.toArray(new FilePath[ret.size()]);
     }
 
 

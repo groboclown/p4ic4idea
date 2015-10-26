@@ -32,14 +32,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Pushes changes FROM Perforce INTO idea.  No Perforce jobs will be altered.
- * <p/>
- * If there was an IDEA changelist that referenced a Perforce changelist that
- * has since been submitted or deleted, the IDEA changelist will be removed,
- * and any contents will be moved into the default changelist.
- * <p/>
- * If there is a Perforce changelist that has no mapping to IDEA, an IDEA
- * change list is created.
+ * Matches up {@link LocalChangeList} objects to {@link P4ChangeListValue}
+ * objects, and creates local changes if there isn't one for a P4 change.
  */
 public class ChangeListMatcher {
     private static final Logger LOG = Logger.getInstance(ChangeListMatcher.class);

@@ -21,6 +21,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
@@ -126,7 +127,8 @@ public class ServerConnectionManager implements ApplicationComponent {
      * @return connection
      */
     @NotNull
-    public ServerConnection getConnectionFor(@NotNull ClientServerId clientServerId, @NotNull ServerConfig config) {
+    public ServerConnection getConnectionFor(@NotNull ClientServerId clientServerId, @NotNull ServerConfig config)
+            throws P4InvalidClientException {
         serverCacheLock.lock();
         try {
             ServerConfigStatus status = serverCache.get(config);
@@ -274,7 +276,8 @@ public class ServerConnectionManager implements ApplicationComponent {
         }
 
         synchronized ServerConnection getConnectionFor(@NotNull final ClientServerId clientServer,
-                @NotNull AlertManager alerts, @NotNull CentralCacheManager cacheManager) {
+                @NotNull AlertManager alerts, @NotNull CentralCacheManager cacheManager)
+                throws P4InvalidClientException {
             ServerConnection conn = clientNames.get(clientServer.getClientId());
             if (conn == null) {
                 conn = new ServerConnection(alerts, clientServer,

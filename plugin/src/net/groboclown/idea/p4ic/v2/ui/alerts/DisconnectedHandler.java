@@ -29,6 +29,8 @@ public class DisconnectedHandler extends AbstractErrorHandler {
     public DisconnectedHandler(@NotNull Project project, @NotNull ServerConnectedController connectedController,
             @NotNull Exception exception) {
         super(project, connectedController, exception);
+        // When the disconnection happens, immediately go offline.
+        connectedController.disconnect();
     }
 
 

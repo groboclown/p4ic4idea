@@ -857,6 +857,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     alerts.addNotices(exec.getProject(),
                             P4Bundle.message("warning.edit.file.revert",
                                     FilePathUtil.toStringList(reverts)), msgs, false);
+                    // No need to mark updated, because these updates
+                    // are happening later.
                     hasUpdate = true;
                 } catch (P4DisconnectedException e) {
                     // error already handled as critical

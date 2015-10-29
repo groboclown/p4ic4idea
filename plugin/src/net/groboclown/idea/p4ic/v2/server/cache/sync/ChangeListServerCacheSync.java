@@ -333,6 +333,25 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
     // so that they have increased access to the cache objects.
 
 
+    static abstract class AbstractChangelistAction extends AbstractServerUpdateAction {
+
+
+        protected AbstractChangelistAction(@NotNull final Collection<PendingUpdateState> pendingUpdateStates) {
+            super(pendingUpdateStates);
+        }
+
+        @Override
+        public void abort(@NotNull final ClientCacheManager clientCacheManager) {
+            for (PendingUpdateState state : getPendingUpdateStates()) {
+                final Integer changelistId = UpdateParameterNames.CHANGELIST.getParameterValue(state);
+                if (changelistId != null) {
+                    clientCacheManager.markLocalChangelistStateCommitted(changelistId);
+                }
+            }
+        }
+    }
+
+
     // -----------------------------------------------------------------------
     // -----------------------------------------------------------------------
     // Delete Action
@@ -345,7 +364,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         }
     }
 
-    static class DeleteAction extends AbstractServerUpdateAction {
+    static class DeleteAction extends AbstractChangelistAction {
         DeleteAction(final Collection<PendingUpdateState> states) {
             super(states);
         }
@@ -365,35 +384,36 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
             ExecutionStatus ret = ExecutionStatus.NO_OP;
             final Collection<P4ChangeListValue> openedChanges = clientCacheManager.getCachedOpenedChanges();
             for (PendingUpdateState state: getPendingUpdateStates()) {
-                final Integer changeListId = UpdateParameterNames.CHANGELIST.getParameterValue(state);
-                if (changeListId == null || changeListId == P4ChangeListId.P4_DEFAULT ||
-                        changeListId == P4ChangeListId.P4_UNKNOWN) {
+                final Integer changelistId = UpdateParameterNames.CHANGELIST.getParameterValue(state);
+                if (changelistId == null || changelistId == P4ChangeListId.P4_DEFAULT ||
+                        changelistId == P4ChangeListId.P4_UNKNOWN) {
                     continue;
                 }
 
                 // See if the change state is known.
                 P4ChangeListValue cachedValue = null;
                 for (P4ChangeListValue value: openedChanges) {
-                    if (value.getChangeListId() == changeListId) {
+                    if (value.getChangeListId() == changelistId) {
                         cachedValue = value;
                         break;
                     }
                 }
 
-                if ((cachedValue == null && changeListId > P4ChangeListId.P4_LOCAL) ||
+                if ((cachedValue == null && changelistId > P4ChangeListId.P4_LOCAL) ||
                         (cachedValue != null && cachedValue.isDeleted() && cachedValue.isOnServer())) {
                     // The value either is not known but could exist on the server,
                     // or it's on the server and is locally marked for delete.
                     try {
-                        exec.deletePendingChangelist(changeListId);
+                        exec.deletePendingChangelist(changelistId);
                         if (ret == ExecutionStatus.NO_OP) {
                             ret = ExecutionStatus.RELOAD_CACHE;
                         }
+                        clientCacheManager.markLocalChangelistStateCommitted(changelistId);
                     } catch (VcsException e) {
                         alerts.addWarning(
                                 exec.getProject(),
-                                P4Bundle.message("error.changelist.delete.failure", changeListId),
-                                P4Bundle.message("error.changelist.delete.failure", changeListId),
+                                P4Bundle.message("error.changelist.delete.failure", changelistId),
+                                P4Bundle.message("error.changelist.delete.failure", changelistId),
                                 e, FilePathUtil.getFilePath(exec.getProject().getBaseDir()));
                         ret = ExecutionStatus.FAIL;
                     }
@@ -403,12 +423,13 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     // In any case, ignore the change.
                     alerts.addNotice(
                             exec.getProject(),
-                            P4Bundle.message("changelist.delete.ignored", changeListId), null);
+                            P4Bundle.message("changelist.delete.ignored", changelistId), null);
                 }
             }
 
             return ret;
         }
+
     }
 
 
@@ -425,7 +446,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
     }
 
 
-    static class MoveFileAction extends AbstractServerUpdateAction {
+    static class MoveFileAction extends AbstractChangelistAction {
         MoveFileAction(final Collection<PendingUpdateState> states) {
             super(states);
         }
@@ -454,7 +475,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
 
 
             for (PendingUpdateState state : getPendingUpdateStates()) {
-                final Integer changeListId = UpdateParameterNames.CHANGELIST.getParameterValue(state);
+                final Integer changelistId = UpdateParameterNames.CHANGELIST.getParameterValue(state);
                 final String description = UpdateParameterNames.DESCRIPTION.getParameterValue(state);
                 final List<FilePath> files = new ArrayList<FilePath>();
                 for (Map.Entry<String, Object> entry: state.getParameters().entrySet()) {
@@ -463,20 +484,20 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                                 (String) UpdateParameterNames.FIELD.getValue(entry.getValue())));
                     }
                 }
-                if (changeListId == null || files.isEmpty() || description == null) {
+                if (changelistId == null || files.isEmpty() || description == null) {
                     alerts.addNotice(
                             exec.getProject(),
                             P4Bundle.message("pendingupdatestate.invalid", state), null);
                     continue;
                 }
 
-                int realChangeListId = changeListId;
+                int realChangeListId = changelistId;
                 if (realChangeListId <= P4ChangeListId.P4_LOCAL) {
                     // create a new changelist and force the update across the files
                     try {
                         final IChangelist changelist = exec.createChangeList(description);
                         realChangeListId = changelist.getId();
-                        P4ChangeListId oldCl = new P4ChangeListIdImpl(clientServerId, changeListId);
+                        P4ChangeListId oldCl = new P4ChangeListIdImpl(clientServerId, changelistId);
                         P4ChangeListId newCl = new P4ChangeListIdImpl(clientServerId, realChangeListId);
                         changeListMapping.replace(oldCl, newCl);
                     } catch (VcsException e) {
@@ -532,7 +553,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
 
                 for (IExtendedFileSpec spec: status) {
                     if (spec.getOpenAction() != null || spec.getAction() != null) {
-                        if (spec.getOpenChangelistId() != changeListId) {
+                        if (spec.getOpenChangelistId() != changelistId) {
                             // already opened; reopen it
                             reopen.add(spec);
                         } else {
@@ -603,7 +624,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     }
                 }
 
-                clientCacheManager.markLocalChangelistStateCommitted(changeListId);
+                clientCacheManager.markLocalChangelistStateCommitted(changelistId);
                 clientCacheManager.markLocalChangelistStateCommitted(realChangeListId);
             }
 

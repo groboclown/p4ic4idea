@@ -15,6 +15,7 @@ package net.groboclown.idea.p4ic.server.exceptions;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
+import com.perforce.p4java.exception.RequestException;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
@@ -48,7 +49,7 @@ public class P4DisconnectedException extends VcsConnectionProblem {
     }
 
     public P4DisconnectedException(@Nullable Project project, @Nullable ServerConfig config, @NotNull Throwable cause) {
-        super(cause.getMessage());
+        super(getMessage(cause));
         this.project = project;
         this.config = config;
 
@@ -72,4 +73,21 @@ public class P4DisconnectedException extends VcsConnectionProblem {
         return false;
     }
 
+
+    @NotNull
+    private static String getMessage(@Nullable Throwable t) {
+        Throwable prev = null;
+        while (t != null && t != prev) {
+            if (t.getMessage() != null && t.getMessage().length() > 0) {
+                return t.getMessage();
+            }
+            if (t instanceof RequestException) {
+                RequestException re = (RequestException) t;
+                return re.getDisplayString();
+            }
+            prev = t;
+            t = t.getCause();
+        }
+        return "";
+    }
 }

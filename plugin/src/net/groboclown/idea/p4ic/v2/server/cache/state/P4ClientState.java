@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -28,13 +29,16 @@ import static net.groboclown.idea.p4ic.v2.server.cache.state.CachedState.getAttr
  * work whether it's online or offline.
  */
 public class P4ClientState {
+    private static final Logger LOG = Logger.getInstance(P4ClientState.class);
+
+
     private final boolean isServerCaseInsensitive;
 
     private final ClientServerId clientServerId;
     private final P4WorkspaceViewState workspace;
     private final Set<P4ChangeListState> changes = new HashSet<P4ChangeListState>();
     private final Set<P4FileSyncState> knownHave = new HashSet<P4FileSyncState>();
-    private final Set<P4FileUpdateState> updatedFiles = new HashSet<P4FileUpdateState>();
+    private final FileUpdateStateList updatedFiles = new FileUpdateStateList();
     private final JobStatusListState jobStatusList;
 
     public P4ClientState(final boolean isServerCaseInsensitive, @NotNull final ClientServerId clientServerId,
@@ -55,7 +59,7 @@ public class P4ClientState {
     }
 
     @NotNull
-    public Set<P4FileUpdateState> getUpdatedFiles() {
+    public FileUpdateStateList getUpdatedFiles() {
         // must return the underlying data structure
         return updatedFiles;
     }
@@ -158,6 +162,9 @@ public class P4ClientState {
             }
         }
 
+        // FIXME DEBUG
+        LOG.info("Final list of updated files for " +
+            ret.clientServerId + ": " + ret.updatedFiles);
         return ret;
     }
 }

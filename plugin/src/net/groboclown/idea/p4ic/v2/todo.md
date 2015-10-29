@@ -7,19 +7,6 @@ These bugs need to be handled before features.
 
 1. working offline at startup has major issues (server off).
     1. cannot reconnect once server comes back online (ssl mode only, it seems)
-    1. the cached values for changelist assignment is not
-       loaded correctly at restart.  Only one is restored?
-       They are all deserialized.
-       
-       Turns out that the actions are loaded into the queue, but
-       they are immediately acted upon, even if offline.  Looks
-       like there's an issue with the "wait for online" check
-       in the queue thread.
-       
-       Looks like going offline should immediately send a signal
-       that the server is offline, before asking the user if
-       they want to retry.
-       
     1. initial display does not load the cached state?  This is
        because of the initial assumption that it's working online,
        but that causes a working offline exception.  Instead, the
@@ -41,12 +28,14 @@ These bugs need to be handled before features.
 ## Big Bugs
 
 
+1. When the connection config is changed, it requires a restart to pick up the changes.
 1. When project root is at (say) c:\a\b\c\, and .p4config exists in c:\a\b\c\ and c:\a, the
    c:\a is picked up.
 1. Job list in submit needs wrapping scroll pane.
 1. Failure in job submit does not show error to user.
 1. ssh connection failure due to can't reach host port is indistinguishable from
    when the server is down.
+
 
 
 ## Parts needing heavy testing
@@ -72,6 +61,9 @@ These bugs need to be handled before features.
 1. Connection setup panel - when initial "refresh" button is pressed, the directory list
    is loaded, and the first one is displayed as selected.  However, the properties are
    not loaded.  Looks like a timing issue.
+   
+   It looks bigger than a timing issue.  When the configs aren't valid, then are changed
+   to be valid, the refresh and client drop-down aren't working.
 1. Connection setup panel - For relative configs, the directory list is not refreshed.
    Ensure it's reading the right root directory path.
    Ensure it's reading the right root directory path.
@@ -79,6 +71,8 @@ These bugs need to be handled before features.
 1. Remove the old, dead code.
 1. Many "to string" parts in `P4Bundle.message` calls are done on FilePath, which
    do not display well to the user.  Make these nicer.
+1. Replace "IntelliJ" and "IDEA" from the strings with the actual IDE name.
+1. Selecting "no" to the add new file dialog to p4 still adds the file for edit.
 
 
 ## Long term features

@@ -54,9 +54,9 @@ public enum UpdateGroup {
     /** Updates to the delete state and changelist association on files. */
     FILE_DELETE(new FileActionsServerCacheSync.DeleteFactory()),
 
-    FILE_MOVE(new NIF()), // FIXME
+    FILE_MOVE(new FileActionsServerCacheSync.MoveFactory()),
 
-    FILE_REVERT(new NIF()), // FIXME
+    FILE_REVERT(new FileActionsServerCacheSync.RevertFactory()),
 
     FILE_NO_OP(new NoOp()),
 
@@ -100,6 +100,11 @@ public enum UpdateGroup {
                         @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
                         throws InterruptedException {
                     // intentionally empty
+                }
+
+                @Override
+                public void abort(@NotNull final ClientCacheManager clientCacheManager) {
+                    // do nothing
                 }
             };
         }

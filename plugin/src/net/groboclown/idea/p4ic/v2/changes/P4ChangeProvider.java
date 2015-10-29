@@ -147,6 +147,10 @@ public class P4ChangeProvider implements ChangeProvider {
         }
         VfsUtil.markDirty(false, false, dirty.toArray(new VirtualFile[dirty.size()]));
         */
+        if (LOG.isDebugEnabled()) {
+            LOG.info("ignoring files that should already be considered dirty: " +
+                    mapped.notDirtyOpenedFiles);
+        }
 
         for (FilePath file : mapped.noServerDirtyFiles) {
             if (file.getVirtualFile() == null) {
@@ -288,6 +292,8 @@ public class P4ChangeProvider implements ChangeProvider {
                 if (! opened.isEmpty()) {
                     affectedServers.add(server);
                 }
+                // FIXME DEBUG
+                LOG.info("Opened files for " + server + ": " + opened);
                 for (P4FileAction file: opened) {
                     final FilePath fp = file.getFile();
                     if (fp == null) {

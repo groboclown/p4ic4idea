@@ -46,4 +46,11 @@ public interface ServerUpdateAction {
     void perform(@NotNull P4Exec2 exec, @NotNull ClientCacheManager clientCacheManager,
             @NotNull ServerConnection connection, @NotNull AlertManager alerts)
             throws InterruptedException;
+
+    /**
+     * Aborts the action; clear the local state of the pending updates.
+     *
+     * @param clientCacheManager cache manager
+     */
+    void abort(@NotNull ClientCacheManager clientCacheManager);
 }

@@ -42,6 +42,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.ServerUpdateActionFactory;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
 import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.FileUpdateStateList;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
@@ -64,15 +65,15 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     private static final Logger LOG = Logger.getInstance(FileActionsServerCacheSync.class);
 
     private final Cache cache;
-    private final Set<P4FileUpdateState> localClientUpdatedFiles;
-    private final Set<P4FileUpdateState> cachedServerUpdatedFiles;
+    private final FileUpdateStateList localClientUpdatedFiles;
+    private final FileUpdateStateList cachedServerUpdatedFiles;
     private final Set<FilePath> committed = new HashSet<FilePath>();
     private Date lastRefreshed;
 
 
     public FileActionsServerCacheSync(@NotNull final Cache cache,
-            @NotNull final Set<P4FileUpdateState> localClientUpdatedFiles,
-            @NotNull final Set<P4FileUpdateState> cachedServerUpdatedFiles) {
+            @NotNull final FileUpdateStateList localClientUpdatedFiles,
+            @NotNull final FileUpdateStateList cachedServerUpdatedFiles) {
         this.cache = cache;
 
         // these variables must be directly referenced, because they're a link into
@@ -91,9 +92,9 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
     public Collection<P4FileAction> getOpenFiles() {
         // Get all the cached files that we know about from the server
-        final Set<P4FileUpdateState> files = new HashSet<P4FileUpdateState>(cachedServerUpdatedFiles);
+        final Set<P4FileUpdateState> files = new HashSet<P4FileUpdateState>(cachedServerUpdatedFiles.copy());
         // Overwrite them with the locally updated versions of them.
-        files.addAll(localClientUpdatedFiles);
+        files.addAll(localClientUpdatedFiles.copy());
         final List<P4FileAction> ret = new ArrayList<P4FileAction>(files.size());
         for (P4FileUpdateState file : files) {
             ret.add(new P4FileAction(file, file.getFileUpdateAction().getUpdateAction()));
@@ -123,8 +124,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 final List<IExtendedFileSpec> invalidSpecs = sortInvalidActions(validSpecs);
                 addInvalidActionAlerts(exec.getProject(), alerts, invalidSpecs);
 
-                cachedServerUpdatedFiles.clear();
-                cachedServerUpdatedFiles.addAll(cache.fromOpenedToAction(exec.getProject(), validSpecs, alerts));
+                cachedServerUpdatedFiles.replaceWith(cache.fromOpenedToAction(exec.getProject(), validSpecs, alerts));
 
                 // Flush out the local changes that have been updated.
                 final Iterator<P4FileUpdateState> iter = localClientUpdatedFiles.iterator();
@@ -404,22 +404,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
     @Nullable
     private P4FileUpdateState getCachedUpdateState(@NotNull final FilePath file) {
-        P4FileUpdateState action = getUpdateStateFrom(file, localClientUpdatedFiles);
+        P4FileUpdateState action = localClientUpdatedFiles.getUpdateStateFor(file);
         if (action != null) {
             return action;
         }
-        return getUpdateStateFrom(file, cachedServerUpdatedFiles);
-    }
-
-    @Nullable
-    private P4FileUpdateState getUpdateStateFrom(@NotNull final FilePath file,
-            @NotNull final Set<P4FileUpdateState> updatedFiles) {
-        for (P4FileUpdateState updatedFile : updatedFiles) {
-            if (file.equals(updatedFile.getLocalFilePath())) {
-                return updatedFile;
-            }
-        }
-        return null;
+        return cachedServerUpdatedFiles.getUpdateStateFor(file);
     }
 
 
@@ -786,6 +775,37 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         return ret;
     }
 
+    private static Map<FilePath, FilePath> matchFileMoves(final Map<Integer, Set<FilePath>> moves,
+            final Collection<PendingUpdateState> pendingUpdateStates) {
+        Map<FilePath, FilePath> ret = new HashMap<FilePath, FilePath>();
+        List<PendingUpdateState> remaining = new ArrayList<PendingUpdateState>(pendingUpdateStates);
+        for (Set<FilePath> filePaths : moves.values()) {
+            for (FilePath filePath : filePaths) {
+                final Iterator<PendingUpdateState> iter = remaining.iterator();
+                boolean found = false;
+                while (iter.hasNext()) {
+                    final PendingUpdateState next = iter.next();
+                    final String dest = UpdateParameterNames.FILE.getParameterValue(next);
+                    final String source = UpdateParameterNames.FILE_SOURCE.getParameterValue(next);
+                    if (dest != null) {
+                        FilePath destFile = FilePathUtil.getFilePath(dest);
+                        if (filePath.equals(destFile)) {
+                            found = true;
+                            ret.put(filePath, FilePathUtil.getFilePath(source));
+                            iter.remove();
+                            break;
+                        }
+                    }
+                }
+                if (! found) {
+                    // FIXME report real problem
+                    LOG.error("No matched source file for " + filePath);
+                }
+            }
+        }
+        return ret;
+    }
+
     // =======================================================================
     // ACTIONS
 
@@ -801,6 +821,24 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     // simplify it.
 
 
+    static abstract class AbstractFileAction extends AbstractServerUpdateAction {
+        protected AbstractFileAction(@NotNull final Collection<PendingUpdateState> pendingUpdateStates) {
+            super(pendingUpdateStates);
+        }
+
+        public void abort(@NotNull ClientCacheManager clientCacheManager) {
+            for (PendingUpdateState state: getPendingUpdateStates()) {
+                String file = UpdateParameterNames.FILE.getParameterValue(state);
+                if (file != null) {
+                    FilePath fp = FilePathUtil.getFilePath(file);
+                    clientCacheManager.markLocalFileStateCommitted(fp);
+                }
+            }
+        }
+    }
+
+
+
     // -----------------------------------------------------------------------
     // -----------------------------------------------------------------------
     // Add/Edit Action
@@ -813,7 +851,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         }
     }
 
-    static class AddEditAction extends AbstractServerUpdateAction {
+    static class AddEditAction extends AbstractFileAction {
         AddEditAction(@NotNull Collection<PendingUpdateState> pendingUpdateState) {
             super(pendingUpdateState);
         }
@@ -1002,7 +1040,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
 
-    static class DeleteAction extends AbstractServerUpdateAction {
+    static class DeleteAction extends AbstractFileAction {
 
         DeleteAction(final Collection<PendingUpdateState> states) {
             super(states);
@@ -1092,6 +1130,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     return ExecutionStatus.RETRY;
                 } catch (VcsException e) {
                     alerts.addWarning(exec.getProject(),
+                            // FIXME delete
                             P4Bundle.message("error.edit.title"),
                             P4Bundle.message("error.edit",
                                     FilePathUtil.toStringList(entry.getValue())),
@@ -1101,6 +1140,229 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             }
 
             if (hasUpdate && returnCode == ExecutionStatus.NO_OP) {
+                returnCode = ExecutionStatus.RELOAD_CACHE;
+            }
+
+            return returnCode;
+        }
+
+        @Nullable
+        @Override
+        protected ServerQuery updateCache(@NotNull final ClientCacheManager clientCacheManager,
+                @NotNull final AlertManager alerts) {
+            return clientCacheManager.createFileActionsRefreshQuery();
+        }
+    }
+
+
+    // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // Move Action
+
+    public static class MoveFactory implements ServerUpdateActionFactory {
+        @NotNull
+        @Override
+        public ServerUpdateAction create(@NotNull Collection<PendingUpdateState> states) {
+            return new MoveAction(states);
+        }
+    }
+
+
+    static class MoveAction extends AbstractFileAction {
+
+        MoveAction(final Collection<PendingUpdateState> states) {
+            super(states);
+        }
+
+        @NotNull
+        @Override
+        protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
+                @NotNull final ClientCacheManager clientCacheManager,
+                @NotNull final AlertManager alerts) {
+            // FIXME debug
+            LOG.info("Running move");
+
+            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts, false);
+            if (split.status != null) {
+                return split.status;
+            }
+
+            // ignore, because perforce doesn't know about it
+            //     split.notInPerforce
+            // move
+            //     split.notOpened
+            // revert and move
+            //     split.edited
+            //     deleted
+            //     integrated
+            //     move_deleted
+
+            boolean hasUpdate = false;
+            ExecutionStatus returnCode = ExecutionStatus.NO_OP;
+
+
+            // FIXME check logic for whether the source is in the client.  If not, then this is either
+            // an integrate or a no-op.
+
+
+            // Perform the reverts first
+            @SuppressWarnings("unchecked") final Map<Integer, Set<FilePath>> revertSets =
+                    joinChangelistFiles(split.edited, split.deleted, split.integrated, split.move_deleted);
+            if (!revertSets.isEmpty()) {
+                final Set<FilePath> reverts = new HashSet<FilePath>();
+                for (Collection<FilePath> fpList : split.deleted.values()) {
+                    reverts.addAll(fpList);
+                }
+                try {
+                    final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
+                    final List<P4StatusMessage> msgs = P4StatusMessage.getErrors(results);
+                    alerts.addNotices(exec.getProject(),
+                            // FIXME move revert
+                            P4Bundle.message("warning.edit.file.revert",
+                                    FilePathUtil.toStringList(reverts)),
+                            msgs, false);
+                    hasUpdate = true;
+                } catch (P4DisconnectedException e) {
+                    // error already handled as critical
+                    return ExecutionStatus.RETRY;
+                } catch (VcsException e) {
+                    alerts.addWarning(exec.getProject(),
+                            P4Bundle.message("error.revert.title"),
+                            P4Bundle.message("error.revert",
+                                    FilePathUtil.toStringList(reverts)),
+                            e, reverts);
+                    // cannot continue; just fail?
+                    return ExecutionStatus.FAIL;
+                }
+            }
+
+
+            @SuppressWarnings("unchecked") Map<Integer, Set<FilePath>> moves = joinChangelistFiles(
+                    split.notOpened, revertSets);
+            final Map<FilePath, FilePath> moveTo = matchFileMoves(moves, getPendingUpdateStates());
+            for (Entry<Integer, Set<FilePath>> entry : moves.entrySet()) {
+                for (FilePath filePath : entry.getValue()) {
+                    try {
+                        final List<P4StatusMessage> msgs = exec.moveFile(FileSpecUtil.getFromFilePath(filePath),
+                                FileSpecUtil.getFromFilePath(moveTo.get(filePath)), entry.getKey(), false);
+                        markUpdated(clientCacheManager, entry.getValue(), msgs);
+                        // Note: any errors here will be displayed to the
+                        // user, but they do not indicate that the actual
+                        // actions were errors.  Instead, they are notifications
+                        // to the user that they must do something again
+                        // with a correction.
+                        alerts.addWarnings(exec.getProject(),
+                                P4Bundle.message("warning.edit.file.edit",
+                                        FilePathUtil.toStringList(entry.getValue())),
+                                msgs, false);
+                        hasUpdate = true;
+                    } catch (P4DisconnectedException e) {
+                        // error already handled as critical
+                        return ExecutionStatus.RETRY;
+                    } catch (VcsException e) {
+                        alerts.addWarning(exec.getProject(),
+                                // FIXME move
+                                P4Bundle.message("error.edit.title"),
+                                P4Bundle.message("error.edit",
+                                        FilePathUtil.toStringList(entry.getValue())),
+                                e, entry.getValue());
+                        returnCode = ExecutionStatus.FAIL;
+                    }
+                }
+            }
+
+            if (hasUpdate && returnCode == ExecutionStatus.NO_OP) {
+                returnCode = ExecutionStatus.RELOAD_CACHE;
+            }
+
+            return returnCode;
+        }
+
+        @Nullable
+        @Override
+        protected ServerQuery updateCache(@NotNull final ClientCacheManager clientCacheManager,
+                @NotNull final AlertManager alerts) {
+            return clientCacheManager.createFileActionsRefreshQuery();
+        }
+    }
+
+
+    // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // Move Action
+
+    public static class RevertFactory implements ServerUpdateActionFactory {
+        @NotNull
+        @Override
+        public ServerUpdateAction create(@NotNull Collection<PendingUpdateState> states) {
+            return new RevertAction(states);
+        }
+    }
+
+
+    static class RevertAction extends AbstractFileAction {
+
+        RevertAction(final Collection<PendingUpdateState> states) {
+            super(states);
+        }
+
+        @NotNull
+        @Override
+        protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
+                @NotNull final ClientCacheManager clientCacheManager,
+                @NotNull final AlertManager alerts) {
+            // FIXME debug
+            LOG.info("Running move");
+
+            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts, false);
+            if (split.status != null) {
+                return split.status;
+            }
+
+            // ignore, because perforce doesn't know about it
+            //     split.notInPerforce
+            // ignore, because it's not open for edit
+            //     split.notOpened
+            // revert and move
+            //     split.edited
+            //     deleted
+            //     integrated
+            //     move_deleted
+
+            boolean hasUpdate = false;
+            ExecutionStatus returnCode = ExecutionStatus.NO_OP;
+
+            @SuppressWarnings("unchecked") final Map<Integer, Set<FilePath>> revertSets =
+                    joinChangelistFiles(split.edited, split.deleted, split.integrated, split.move_deleted);
+            if (!revertSets.isEmpty()) {
+                final Set<FilePath> reverts = new HashSet<FilePath>();
+                for (Collection<FilePath> fpList : split.deleted.values()) {
+                    reverts.addAll(fpList);
+                }
+                try {
+                    final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
+                    final List<P4StatusMessage> msgs = P4StatusMessage.getErrors(results);
+                    alerts.addNotices(exec.getProject(),
+                            // FIXME revert
+                            P4Bundle.message("warning.edit.file.revert",
+                                    FilePathUtil.toStringList(reverts)),
+                            msgs, false);
+                    hasUpdate = true;
+                } catch (P4DisconnectedException e) {
+                    // error already handled as critical
+                    return ExecutionStatus.RETRY;
+                } catch (VcsException e) {
+                    alerts.addWarning(exec.getProject(),
+                            P4Bundle.message("error.revert.title"),
+                            P4Bundle.message("error.revert",
+                                    FilePathUtil.toStringList(reverts)),
+                            e, reverts);
+                    // cannot continue; just fail?
+                    return ExecutionStatus.FAIL;
+                }
+            }
+
+            if (hasUpdate) {
                 returnCode = ExecutionStatus.RELOAD_CACHE;
             }
 

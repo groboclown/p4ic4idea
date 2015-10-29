@@ -109,6 +109,12 @@ public class FileSpecUtil {
 
 
     @NotNull
+    public static IFileSpec getFromFilePath(@NotNull FilePath file) throws P4Exception {
+        return getFromFilePathsAt(Collections.singletonList(file), "", false).get(0);
+    }
+
+
+    @NotNull
     public static List<IFileSpec> getFromFilePaths(@NotNull Collection<FilePath> files) throws P4Exception {
         return getFromFilePathsAt(files, "", false);
     }

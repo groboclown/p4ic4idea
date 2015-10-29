@@ -56,7 +56,7 @@ public abstract class CachedState {
                 lastUpdated = new Date(time);
 
                 // FIXME debug
-                LOG.info("deserialized " + getClass().getSimpleName() + " date to " + lastUpdated);
+                LOG.info("deserialized " + getClass().getSimpleName() + " date to " + lastUpdated + " - " + this);
             }
         }
     }

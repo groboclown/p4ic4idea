@@ -140,8 +140,8 @@ public class P4FileUpdateState extends CachedState {
             return null;
         }
         P4FileUpdateState ret = new P4FileUpdateState(file, (c == null) ? -1 : c.intValue(), action);
-        ret.deserializeDate(wrapper);
         ret.integrateSource = refs.getFileMapping(getAttribute(wrapper, "s"));
+        ret.deserializeDate(wrapper);
         return ret;
     }
 }

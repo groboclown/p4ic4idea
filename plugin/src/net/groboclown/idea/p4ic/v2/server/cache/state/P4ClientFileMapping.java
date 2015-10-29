@@ -47,12 +47,16 @@ public final class P4ClientFileMapping {
 
     // called by FileMappingRepo
     P4ClientFileMapping(@NotNull String depotPath) {
+        assert depotPath.length() > 0;
         this.depotPath = depotPath;
         this.localFilePath = null;
     }
 
     // called by FileMappingRepo
     P4ClientFileMapping(@Nullable String depotPath, @NotNull FilePath localFilePath) {
+        if (depotPath != null && depotPath.length() <= 0) {
+            depotPath = null;
+        }
         this.depotPath = depotPath;
         this.localFilePath = localFilePath;
     }
@@ -117,13 +121,18 @@ public final class P4ClientFileMapping {
 
 
     protected void serialize(@NotNull Element wrapper) {
-        wrapper.setAttribute("d", depotPath == null ? "" : depotPath);
+        if (depotPath != null) {
+            wrapper.setAttribute("d", depotPath);
+        }
         wrapper.setAttribute("l", getLocalPath() == null ? "" : getLocalPath());
     }
 
     @Nullable
     protected static P4ClientFileMapping deserialize(@NotNull Element wrapper) {
         String depot = CachedState.getAttribute(wrapper, "d");
+        if (depot != null && depot.length() <= 0) {
+            depot = null;
+        }
         String localPath = CachedState.getAttribute(wrapper, "l");
         FilePath localFilePath = FilePathUtil.getFilePath(localPath);
         if (depot == null && localFilePath == null) {

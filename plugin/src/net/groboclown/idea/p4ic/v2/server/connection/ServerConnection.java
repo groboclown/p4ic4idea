@@ -17,6 +17,7 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
@@ -29,6 +30,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.connection.Synchronizer.ActionRunner;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import net.groboclown.idea.p4ic.v2.ui.alerts.ConfigurationProblemHandler;
+import net.groboclown.idea.p4ic.v2.ui.alerts.DisconnectedHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -331,23 +333,37 @@ public class ServerConnection {
                     continue;
                 }
 
-
                 try {
                     boolean didRun = synchronizer.runBackgroundAction(new ActionRunner<Void>() {
                         @Override
                         public Void perform() throws InterruptedException {
                             LOG.info("Running action " + action);
+                            final P4Exec2 exec;
                             try {
-                                action.action.perform(getExec(action.project),
-                                        cacheManager, ServerConnection.this, alertManager);
-                                // only remove the state once we've successfully
-                                // processed the action.
-                                cacheManager.removePendingUpdateStates(action.action.getPendingUpdateStates());
+                                exec = getExec(action.project);
+                                // Perform a second connection attempt, just to be sure.
+                                exec.getServerInfo();
                             } catch (P4InvalidConfigException e) {
                                 alertManager.addCriticalError(new ConfigurationProblemHandler(action.project,
                                         statusController, e), e);
                                 // do not requeue the action
+                                cacheManager.removePendingUpdateStates(action.action.getPendingUpdateStates());
+                                action.action.abort(cacheManager);
+                                return null;
+                            } catch (VcsException e) {
+                                // FIXME need a more nuanced handler for general connection problems.
+                                alertManager.addCriticalError(new DisconnectedHandler(action.project,
+                                        statusController, e), e);
+                                // go offline and requeue the action
+                                getServerConnectedController().disconnect();
+                                pushAbortedAction(action);
+                                return null;
                             }
+                            action.action.perform(exec,
+                                        cacheManager, ServerConnection.this, alertManager);
+                                // only remove the state once we've successfully
+                                // processed the action.
+                                cacheManager.removePendingUpdateStates(action.action.getPendingUpdateStates());
                             return null;
                         }
                     });

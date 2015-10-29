@@ -34,25 +34,86 @@
  *                                                                         *
  * *************************************************************************/
 
-package net.groboclown.idea.p4ic.v2.server.cache.sync;
+package net.groboclown.idea.p4ic.v2.server.cache.state;
 
-import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerUpdateAction;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
-public abstract class ImmediateServerUpdateAction implements ServerUpdateAction {
-    @Override
+public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
+    private static final Logger LOG = Logger.getInstance(FileUpdateStateList.class);
+
+    private final Set<P4FileUpdateState> updatedFiles;
+    private final Object sync = new Object();
+
+    public FileUpdateStateList() {
+        this.updatedFiles = new HashSet<P4FileUpdateState>();
+    }
+
     @NotNull
-    public Collection<PendingUpdateState> getPendingUpdateStates() {
-        return Collections.emptyList();
+    @Override
+    public Iterator<P4FileUpdateState> iterator() {
+        return copy().iterator();
+    }
+
+
+    @NotNull
+    public Set<P4FileUpdateState> copy() {
+        synchronized (sync) {
+            return new HashSet<P4FileUpdateState>(updatedFiles);
+        }
+    }
+
+
+    public void replaceWith(@NotNull Collection<P4FileUpdateState> newValues) {
+        synchronized (sync) {
+            // FIXME debug
+            LOG.info("Replacing update state files with " + newValues + "; was " + updatedFiles);
+            updatedFiles.clear();
+            updatedFiles.addAll(newValues);
+        }
+    }
+
+
+    public void add(@NotNull P4FileUpdateState state) {
+        synchronized (sync) {
+            updatedFiles.add(state);
+            // FIXME debug
+            LOG.info("Adding state file with " + state + "; now " + updatedFiles);
+        }
+    }
+
+
+    public boolean remove(@NotNull P4FileUpdateState state) {
+        synchronized (sync) {
+            final boolean ret = updatedFiles.remove(state);
+            // FIXME debug
+            LOG.info("Removing state file " + state + "; now " + updatedFiles);
+            return ret;
+        }
+    }
+
+
+    @Nullable
+    public P4FileUpdateState getUpdateStateFor(@NotNull final FilePath file) {
+        for (P4FileUpdateState updatedFile : copy()) {
+            if (file.equals(updatedFile.getLocalFilePath())) {
+                return updatedFile;
+            }
+        }
+        return null;
     }
 
 
     @Override
-    public void abort(@NotNull ClientCacheManager clientCacheManager) {
-        // intentionally empty
+    public String toString() {
+        return updatedFiles.toString();
     }
 }
+

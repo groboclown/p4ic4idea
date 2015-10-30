@@ -34,76 +34,60 @@
  *                                                                         *
  * *************************************************************************/
 
-package net.groboclown.idea.p4ic.v2.changes;
+package net.groboclown.idea.p4ic.v2.server.cache.state;
 
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
-import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
-import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
-/**
- * A Perforce Job associated with a changelist.  Immutable.
- */
-public final class P4ChangeListJob implements Comparable<P4ChangeListJob> {
-    // Default list of status, in case of a problem.
-    public static final List<String> DEFAULT_JOB_STATUS = Arrays.asList(
-            "open", "suspended", "closed"
-    );
+public class JobStateList implements Iterable<P4JobState> {
+    private final Map<String, P4JobState> jobs;
+    private final Object sync = new Object();
 
-    private final ClientServerId clientServerId;
-    private final P4JobState job;
-
-    public P4ChangeListJob(@NotNull P4ChangeListValue change, @NotNull P4JobState job) {
-        this.clientServerId = change.getClientServerId();
-        this.job = job;
+    public JobStateList(@NotNull Collection<P4JobState> jobs) {
+        this.jobs = new HashMap<String, P4JobState>();
+        for (P4JobState job : jobs) {
+            this.jobs.put(job.getId(), job);
+        }
     }
 
-    public P4ChangeListJob(@NotNull ClientServerId clientServerId, @NotNull P4JobState job) {
-        this.clientServerId = clientServerId;
-        this.job = job;
+    public JobStateList() {
+        this.jobs = new HashMap<String, P4JobState>();
     }
-
 
     @NotNull
-    public String getJobId() {
-        return job.getId();
+    @Override
+    public Iterator<P4JobState> iterator() {
+        return copy().values().iterator();
     }
 
+    @NotNull
+    public Map<String, P4JobState> copy() {
+        synchronized (sync) {
+            return new HashMap<String, P4JobState>(jobs);
+        }
+    }
+
+    public void add(@NotNull P4JobState job) {
+        synchronized (sync) {
+            jobs.put(job.getId(), job);
+        }
+    }
 
     @Nullable
-    public String getDescription() {
-        return job.getDescription();
+    public P4JobState get(final String jobId) {
+        synchronized (sync) {
+            return jobs.get(jobId);
+        }
     }
 
-
-    @Override
-    public int compareTo(final P4ChangeListJob o) {
-        return job.getId().compareTo(o.job.getId());
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null) {
-            return false;
+    public boolean remove(@NotNull final String jobId) {
+        synchronized (sync) {
+            return jobs.remove(jobId) != null;
         }
-        if (o == this) {
-            return true;
-        }
-        if (o instanceof P4ChangeListJob) {
-            P4ChangeListJob that = (P4ChangeListJob) o;
-            return clientServerId.equals(that.clientServerId) &&
-                    job.getId().equals(that.job.getId());
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return (clientServerId.hashCode() << 2) +
-                job.getId().hashCode();
     }
 }

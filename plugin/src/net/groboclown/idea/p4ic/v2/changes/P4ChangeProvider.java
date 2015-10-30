@@ -292,13 +292,15 @@ public class P4ChangeProvider implements ChangeProvider {
                 if (! opened.isEmpty()) {
                     affectedServers.add(server);
                 }
-                // FIXME DEBUG
-                LOG.info("Opened files for " + server + ": " + opened);
+                if (LOG.isDebugEnabled()) {
+                    LOG.info("Opened files for " + server + ": " + opened);
+                }
                 for (P4FileAction file: opened) {
                     final FilePath fp = file.getFile();
                     if (fp == null) {
-                        LOG.info("Ignoring opened file whose path isn't known: " + file.getDepotPath());
-                        // TODO should this actually be marked as an alert?
+                        alerts.addNotice(vcs.getProject(),
+                                P4Bundle.message("unknown.opened.file.path", file.getDepotPath()),
+                                null);
                         Set<P4FileAction> fileSet = notDirtyOpenedFiles.get(server);
                         if (fileSet == null) {
                             fileSet = new HashSet<P4FileAction>();
@@ -387,11 +389,8 @@ public class P4ChangeProvider implements ChangeProvider {
                 for (P4FileAction file : opened) {
                     final FilePath fp = file.getFile();
                     if (fp == null) {
-                        LOG.info("Ignoring opened file whose path isn't known: " + file.getDepotPath());
-                        // TODO mark as an alert?
                         alerts.addNotice(vcs.getProject(),
-                                // FIXME localize
-                                "Ignoring opened file whose path isn't known: " + file.getDepotPath(),
+                                P4Bundle.message("unknown.opened.file.path", file.getDepotPath()),
                                 null);
                         continue;
                     }

@@ -88,9 +88,9 @@ public enum UpdateAction {
             UpdateParameterNames.CHANGELIST, UpdateParameterNames.DESCRIPTION,
             UpdateParameterNames.FIELD),
 
-    ADD_IGNORE_PATTERN(UpdateGroup.IGNORE_PATTERNS,
-            UpdateParameterNames.PATTERN),
-    IGNORE_FILE_UPDATE(UpdateGroup.IGNORE_PATTERNS)
+    //ADD_IGNORE_PATTERN(UpdateGroup.IGNORE_PATTERNS,
+    //        UpdateParameterNames.PATTERN),
+    //IGNORE_FILE_UPDATE(UpdateGroup.IGNORE_PATTERNS),
 
     // Submit is not allowed while offline, so it's not in this list.
     ;

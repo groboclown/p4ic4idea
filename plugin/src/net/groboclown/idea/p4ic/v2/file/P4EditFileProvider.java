@@ -70,14 +70,17 @@ public class P4EditFileProvider implements EditFileProvider {
                 final P4Server server = entry.getKey();
                 if (server == null) {
                     // not assigned to any server
-                    // FIXME debug
-                    LOG.info("Not assigned to server: " + entry.getValue());
+                    if (LOG.isDebugEnabled()) {
+                        LOG.info("Not assigned to server: " + entry.getValue());
+                    }
                 } else {
                     final int changelist = changeListMapping.
                             getProjectDefaultPerforceChangelist(server).getChangeListId();
-                    // FIXME debug
-                    LOG.info("Open for edit/add on changelist " + changelist + ": " + entry.getValue());
+                    if (LOG.isDebugEnabled()) {
+                        LOG.info("Open for edit/add on changelist " + changelist + ": " + entry.getValue());
+                    }
                     // TODO see if lock is really necessary now with the new server API.
+                    // (answer: it's not)
                     vfsLock.lock();
                     try {
                         server.addOrEditFiles(entry.getValue(), changelist);

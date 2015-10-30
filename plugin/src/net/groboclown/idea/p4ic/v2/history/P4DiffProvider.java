@@ -147,7 +147,8 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
         try {
             return vcs.getP4ServerFor(file);
         } catch (InterruptedException e) {
-            // FIXME should this really be swallowed?
+            // just swallow the exception
+            LOG.info(e);
             return null;
         }
     }
@@ -165,7 +166,7 @@ public class P4DiffProvider implements DiffProvider, DiffMixin {
             }
             return specs.get(file);
         } catch (InterruptedException e) {
-            // FIXME should this really be swallowed?
+            // just swallow the exception
             LOG.info(e);
             return null;
         }

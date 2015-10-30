@@ -13,15 +13,10 @@
  */
 package net.groboclown.idea.p4ic.changes;
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangesViewRefresher;
-import com.intellij.openapi.vcs.changes.InvokeAfterUpdateMode;
-import com.intellij.openapi.vcs.changes.actions.RefreshAction;
-import net.groboclown.idea.p4ic.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 
 public class P4ChangesViewRefresher implements ChangesViewRefresher {
@@ -37,9 +32,10 @@ public class P4ChangesViewRefresher implements ChangesViewRefresher {
     public static void refreshLater(@NotNull final Project project) {
         LOG.debug("Refreshing changelist view", new Throwable());
 
-        // FIXME try just:
-        // ChangeListManager.getInstance(project).schedule();
+        ChangeListManager.getInstance(project).scheduleUpdate(true);
 
+        // TODO remove if the above line works fine
+        /* Old code; works, but may be too much.
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -55,5 +51,6 @@ public class P4ChangesViewRefresher implements ChangesViewRefresher {
                     ModalityState.NON_MODAL);
             }
         });
+        */
     }
 }

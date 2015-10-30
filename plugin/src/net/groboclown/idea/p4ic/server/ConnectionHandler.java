@@ -45,11 +45,6 @@ public abstract class ConnectionHandler {
 
 
     @NotNull
-    public static ConnectionHandler getHandlerFor(@NotNull ServerStatus status) {
-        return getHandlerFor(status.getConfig());
-    }
-
-    @NotNull
     public static ConnectionHandler getHandlerFor(@NotNull ServerConfig config) {
         return getHandlerFor(config.getConnectionMethod());
     }
@@ -101,8 +96,9 @@ public abstract class ConnectionHandler {
                 hostname = hostname.trim();
             }
             if (hostname != null && hostname.length() > 0) {
-                // FIXME debug
-                LOG.info("Using hostname [" + hostname + "]");
+                if (LOG.isDebugEnabled()) {
+                    LOG.info("Using hostname [" + hostname + "]");
+                }
                 options.setHostName(hostname);
             }
 

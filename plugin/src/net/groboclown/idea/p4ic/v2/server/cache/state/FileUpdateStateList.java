@@ -73,8 +73,9 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
 
     public void replaceWith(@NotNull Collection<P4FileUpdateState> newValues) {
         synchronized (sync) {
-            // FIXME debug
-            LOG.info("Replacing update state files with " + newValues + "; was " + updatedFiles);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Replacing update state files with " + newValues + "; was " + updatedFiles);
+            }
             updatedFiles.clear();
             updatedFiles.addAll(newValues);
         }
@@ -84,8 +85,9 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
     public void add(@NotNull P4FileUpdateState state) {
         synchronized (sync) {
             updatedFiles.add(state);
-            // FIXME debug
-            LOG.info("Adding state file with " + state + "; now " + updatedFiles);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Adding state file with " + state + "; now " + updatedFiles);
+            }
         }
     }
 
@@ -93,8 +95,9 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
     public boolean remove(@NotNull P4FileUpdateState state) {
         synchronized (sync) {
             final boolean ret = updatedFiles.remove(state);
-            // FIXME debug
-            LOG.info("Removing state file " + state + "; now " + updatedFiles);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Removing state file " + state + "; now " + updatedFiles);
+            }
             return ret;
         }
     }

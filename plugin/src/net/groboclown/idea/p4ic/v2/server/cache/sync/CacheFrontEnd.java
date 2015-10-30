@@ -33,7 +33,7 @@ abstract class CacheFrontEnd {
 
 
     // FIXME make this configurable
-    private static final long MIN_REFRESH_INTERVAL_MS = 1000L;
+    static final long MIN_REFRESH_INTERVAL_MS = 1000L;
 
 
     protected final ServerQuery<CacheFrontEnd> createRefreshQuery() {

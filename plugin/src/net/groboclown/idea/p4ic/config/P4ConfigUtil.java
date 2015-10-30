@@ -331,7 +331,9 @@ public class P4ConfigUtil {
                     } else if (! file.exists()) {
                         LOG.info("Discovered non-existent file in IDEA cache: " + file);
                     } else if (file.getName().equals(configFileName)) {
-                        //LOG.info("Found config file " + file);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Found config file " + file);
+                        }
                         ManualP4Config config = new ManualP4Config();
                         config.setConfigFile(file.getAbsolutePath());
                         try {
@@ -424,7 +426,7 @@ public class P4ConfigUtil {
                         config.setConfigFile(file.getAbsolutePath());
                         try {
                             if (LOG.isDebugEnabled()) {
-                                LOG.info("-- loading config file " + file.getAbsolutePath() + " -> " + vFile
+                                LOG.debug("-- loading config file " + file.getAbsolutePath() + " -> " + vFile
                                         .getParent());
                             }
                             final P4Config loadedConfig = loadCmdP4Config(config);
@@ -493,40 +495,57 @@ public class P4ConfigUtil {
         boolean usedConfig = false;
 
         if (overrideConfig != null) {
-            // FIXME DEBUG
-            LOG.info("adding override config: " + overrideConfig);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("adding override config: " + overrideConfig);
+            }
             hierarchy.add(overrideConfig);
             usedConfig = addConfigFile(overrideConfig.getConfigFile(), hierarchy, true);
-            LOG.info(" - " + hierarchy);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(" - " + hierarchy);
+            }
         }
 
         if (WinRegP4Config.isAvailable()) {
             P4Config userWinConfig = new WinRegP4Config(true);
-            LOG.info("adding user winreg config: " + userWinConfig);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("adding user winreg config: " + userWinConfig);
+            }
             hierarchy.add(userWinConfig);
             if (! usedConfig) {
                 usedConfig = addConfigFile(userWinConfig.getConfigFile(), hierarchy, false);
             }
-            LOG.info(" - " + hierarchy);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(" - " + hierarchy);
+            }
 
             P4Config sysWinConfig = new WinRegP4Config(false);
-            LOG.info("adding sys winreg config: " + sysWinConfig);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("adding sys winreg config: " + sysWinConfig);
+            }
             hierarchy.add(sysWinConfig);
             if (! usedConfig) {
                 usedConfig = addConfigFile(sysWinConfig.getConfigFile(), hierarchy, false);
             }
-            LOG.info(" - " + hierarchy);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(" - " + hierarchy);
+            }
         }
 
         P4Config envConf = new EnvP4Config();
-        LOG.info("adding env config: " + envConf);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("adding env config: " + envConf);
+        }
         if (! usedConfig) {
             addConfigFile(envConf.getConfigFile(), hierarchy, false);
         }
-        LOG.info(" - " + hierarchy);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(" - " + hierarchy);
+        }
 
         P4Config ret = new HierarchyP4Config(hierarchy.toArray(new P4Config[hierarchy.size()]));
-        LOG.info(" +++ " + ret);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(" +++ " + ret);
+        }
         return ret;
     }
 
@@ -534,12 +553,17 @@ public class P4ConfigUtil {
         if (source != null) {
             File cf = new File(source);
             if (cf.exists() && cf.isFile() && cf.canRead()) {
-                LOG.info("Using config file " + cf.getAbsolutePath());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Using config file " + cf.getAbsolutePath());
+                }
                 P4Config configFile = new FileP4Config(cf);
-                LOG.info(" - " + configFile);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(" - " + configFile);
+                }
                 hierarchy.add(configFile);
                 return true;
             } else if (required) {
+                // Because this is an error case, log it all out.
                 LOG.info(cf.getAbsolutePath() + ": exists? " + cf.exists() + "; directory? " +
                     cf.isFile() + "; readable? " + cf.canRead());
                 throw new FileNotFoundException(cf.getAbsolutePath());

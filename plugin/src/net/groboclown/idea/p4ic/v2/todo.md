@@ -5,6 +5,10 @@
 
 These bugs need to be handled before features.
 
+
+## Big Bugs
+
+
 1. working offline at startup has major issues (server off).
     1. cannot reconnect once server comes back online (ssl mode only, it seems)
     1. initial display does not load the cached state?  This is
@@ -23,11 +27,6 @@ These bugs need to be handled before features.
    open for edit, causes none of them to be opened.
    The first file is triggered to be opened for edit, but none of the
    others are.
-
-
-## Big Bugs
-
-
 1. When the connection config is changed, it requires a restart to pick up the changes.
 1. When project root is at (say) c:\a\b\c\, and .p4config exists in c:\a\b\c\ and c:\a, the
    c:\a is picked up.
@@ -35,8 +34,11 @@ These bugs need to be handled before features.
 1. Failure in job submit does not show error to user.
 1. ssh connection failure due to can't reach host port is indistinguishable from
    when the server is down.
-
-
+1. The AllClientsState and another class (find it) need to know the association of
+   each project's client-server objects.  This is a new persistent data class that
+   needs to be created.
+1. The ServerConnection.runImmediately process is hokey and susceptible to abuse
+   or incorrect usage.  It needs to be reworked.
 
 ## Parts needing heavy testing
 
@@ -53,7 +55,6 @@ These bugs need to be handled before features.
 1. Remove the excessive logging.  Move down to debug if necessary,
    and include `LOG.isDebugEnabled()` calls if debug is used.
 1. `ClientCacheManager`
-1. `UpdateGroup`
 
 
 ## Smaller Bugs

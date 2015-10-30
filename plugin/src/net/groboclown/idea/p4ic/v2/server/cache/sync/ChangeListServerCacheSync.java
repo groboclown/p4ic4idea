@@ -215,6 +215,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
             try {
                 final Collection<String> jobs = exec.getJobIdsForChangelist(state.getChangelistId());
                 if (jobs != null) {
+                    cache.refreshJobState(exec, alerts, jobs);
                     for (String jobId : jobs) {
                         final P4JobState job = exec.getJobForId(jobId);
                         if (job != null) {
@@ -634,4 +635,39 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         }
     }
 
+
+    // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // Delete Action
+
+    public static class UpdateChangelistFactory implements ServerUpdateActionFactory {
+        @NotNull
+        @Override
+        public ServerUpdateAction create(@NotNull Collection<PendingUpdateState> states) {
+            return new UpdateChangelistAction(states);
+        }
+    }
+
+
+    static class UpdateChangelistAction extends AbstractChangelistAction {
+        UpdateChangelistAction(final Collection<PendingUpdateState> states) {
+            super(states);
+        }
+
+        @Nullable
+        @Override
+        protected ServerQuery updateCache(@NotNull final ClientCacheManager clientCacheManager,
+                @NotNull final AlertManager alerts) {
+            return clientCacheManager.createChangeListRefreshQuery();
+        }
+
+        @NotNull
+        @Override
+        protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
+                @NotNull final ClientCacheManager clientCacheManager,
+                @NotNull final AlertManager alerts) {
+            // FIXME implement
+            throw new IllegalStateException("not implemented");
+        }
+    }
 }

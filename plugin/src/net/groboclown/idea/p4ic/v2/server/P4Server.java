@@ -140,7 +140,6 @@ public class P4Server {
         connection.postSetup(project);
 
         // Do not reload the caches early.
-        // TODO figure out if this is the right behavior.
     }
 
 
@@ -536,6 +535,7 @@ public class P4Server {
                     Collections.<FilePath>emptyList(), Collections.<P4StatusMessage>emptyList());
         }
         validateOnline();
+
         // FIXME this API usage here is not the right way to go about it;
         // the runImmediately needs to be called inside another call (usually cacheQuery,
         // but probably shouldn't be).  It's too easy to mess up this usage pattern.
@@ -856,12 +856,14 @@ public class P4Server {
                 for (FilePath file : files) {
                     PendingUpdateState update = mgr.deleteFile(project, file, changelistId);
                     if (update != null) {
-                        // FIXME debug
-                        LOG.info("Created delete update for " + file);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.info("Created delete update for " + file);
+                        }
                         ret.add(update);
                     } else {
-                        // FIXME debug
-                        LOG.info("Ignored delete update for " + file);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.info("Ignored delete update for " + file);
+                        }
                     }
                 }
                 return ret;

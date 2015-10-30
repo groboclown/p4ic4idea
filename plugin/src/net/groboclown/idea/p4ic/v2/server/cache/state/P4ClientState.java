@@ -40,13 +40,16 @@ public class P4ClientState {
     private final Set<P4FileSyncState> knownHave = new HashSet<P4FileSyncState>();
     private final FileUpdateStateList updatedFiles = new FileUpdateStateList();
     private final JobStatusListState jobStatusList;
+    private final JobStateList jobs;
 
-    public P4ClientState(final boolean isServerCaseInsensitive, @NotNull final ClientServerId clientServerId,
-            @NotNull final P4WorkspaceViewState workspace, final JobStatusListState jobStatusList) {
+    public P4ClientState(boolean isServerCaseInsensitive, @NotNull ClientServerId clientServerId,
+            @NotNull P4WorkspaceViewState workspace, @NotNull JobStatusListState jobStatusList,
+            @NotNull JobStateList jobs) {
         this.isServerCaseInsensitive = isServerCaseInsensitive;
         this.clientServerId = clientServerId;
         this.workspace = workspace;
         this.jobStatusList = jobStatusList;
+        this.jobs = jobs;
     }
 
     @NotNull
@@ -77,6 +80,11 @@ public class P4ClientState {
     @NotNull
     public JobStatusListState getJobStatusList() {
         return jobStatusList;
+    }
+
+    @NotNull
+    public JobStateList getJobs() {
+        return jobs;
     }
 
 
@@ -134,14 +142,17 @@ public class P4ClientState {
         }
 
         Element jobStatusEl = state.getChild("job-status");
-        JobStatusListState jobStatusList = new JobStatusListState();
+        JobStatusListState jobStatusList = null;
         if (jobStatusEl != null) {
             jobStatusList = JobStatusListState.deserialize(state, refs);
+        }
+        if (jobStatusList == null) {
+            jobStatusList = new JobStatusListState();
         }
 
         ClientServerId clientServerId = ClientServerId.create(serverConnection, clientName);
         final P4ClientState ret = new P4ClientState(isServerCaseInsensitive, clientServerId,
-                workspace, jobStatusList);
+                workspace, jobStatusList, refs.getJobStateList());
 
         for (Element el: state.getChildren("ch")) {
             P4ChangeListState change = P4ChangeListState.deserialize(el, refs);
@@ -162,9 +173,10 @@ public class P4ClientState {
             }
         }
 
-        // FIXME DEBUG
-        LOG.info("Final list of updated files for " +
-            ret.clientServerId + ": " + ret.updatedFiles);
+        if (LOG.isDebugEnabled()) {
+            LOG.info("Final list of updated files for " +
+                    ret.clientServerId + ": " + ret.updatedFiles);
+        }
         return ret;
     }
 }

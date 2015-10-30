@@ -20,7 +20,7 @@ import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Date;
 
 public abstract class CachedState {
     private static final Logger LOG = Logger.getInstance(CachedState.class);
@@ -55,8 +55,9 @@ public abstract class CachedState {
             if (time != null) {
                 lastUpdated = new Date(time);
 
-                // FIXME debug
-                LOG.info("deserialized " + getClass().getSimpleName() + " date to " + lastUpdated + " - " + this);
+                if (LOG.isDebugEnabled()) {
+                    LOG.info("deserialized " + getClass().getSimpleName() + " date to " + lastUpdated + " - " + this);
+                }
             }
         }
     }

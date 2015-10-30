@@ -27,6 +27,8 @@ import com.perforce.p4java.impl.mapbased.client.Client;
 import com.perforce.p4java.impl.mapbased.client.ClientSummary;
 import com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs;
 import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey;
+import com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage;
+import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
 import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.option.server.*;
 import com.perforce.p4java.server.*;
@@ -655,7 +657,23 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		// necessary, no password set for this user."), throw access exception.
 		if (password != null && password.length() > 0 && retVal != null) {
 			if (isLoginNotRequired(retVal)) {
-				throw new AccessException(retVal);
+				// p4ic4idea: build up a server message
+				List<ISingleServerMessage> singleMessages = new ArrayList<ISingleServerMessage>();
+				for (Map<String, Object> map: resultMaps) {
+					int index = 0;
+					String code = (String) map.get(RpcMessage.CODE + index);
+					while (code != null) {
+						singleMessages.add(new ServerMessage.SingleServerMessage(code, index, map));
+						index++;
+						code = (String) map.get(RpcMessage.CODE + index);
+					}
+					if (! singleMessages.isEmpty()) {
+						final ServerMessage msg = new ServerMessage(singleMessages, map);
+						throw new AccessException(msg);
+					}
+				}
+				final ServerMessage msg = new ServerMessage(singleMessages, Collections.<String, Object>emptyMap());
+				throw new AccessException(msg);
 			}
 		}
 		

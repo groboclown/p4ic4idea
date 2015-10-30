@@ -256,8 +256,9 @@ public class ServerConnection {
         UpdateGroup currentGroup = null;
         List<PendingUpdateState> currentGroupUpdates = null;
         for (PendingUpdateState update : updates) {
-            // FIXME debug
-            LOG.info("adding update state as action: " + update);
+            if (LOG.isDebugEnabled()) {
+                LOG.info("adding update state as action: " + update);
+            }
 
             if (currentGroup != null && !update.getUpdateGroup().equals(currentGroup)) {
                 // new group, so add the old stuff and clear it out.
@@ -299,12 +300,13 @@ public class ServerConnection {
             redoLock.unlock();
         }
         if (action == null) {
-            // FIXME debug
-            LOG.info("Polling pending updates for action");
+            LOG.debug("Polling pending updates for action");
             action = pendingUpdates.take();
         }
-        // FIXME debug
-        LOG.info("pulled action " + action + "; pending size " + pendingUpdates.size() + "; redo size " + redo.size());
+        if (LOG.isDebugEnabled()) {
+            LOG.info("pulled action " + action + "; pending size " + pendingUpdates.size() + "; redo size " +
+                    redo.size());
+        }
         return action;
     }
 

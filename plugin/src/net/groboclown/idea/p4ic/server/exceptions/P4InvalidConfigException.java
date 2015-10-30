@@ -64,8 +64,7 @@ public class P4InvalidConfigException extends P4DisconnectedException {
         String sep = "";
         for (P4Config config : configs) {
             configProps.append(sep).append(P4ConfigUtil.getProperties(config));
-            // FIXME make localized
-            sep = ", ";
+            sep = P4Bundle.message("config.message.separator");
         }
         return P4Bundle.message("error.config.setup", configProps.toString());
     }

@@ -24,6 +24,7 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
@@ -204,10 +205,12 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
         }
         boolean reverted = true;
         synchronized (vfsLock) {
-            // TODO do this right
             try {
-                // FIXME get correct changelist number
-                server.revertUnchangedFilesOnline(Collections.singletonList(fp), 0);
+                // The changelist doesn't matter, so pass in a
+                // negative number which will mean it doesn't use
+                // the "-c" argument.
+                server.revertUnchangedFilesOnline(Collections.singletonList(fp),
+                        P4ChangeListId.P4_UNKNOWN);
             } catch (InterruptedException e) {
                 LOG.warn(e);
                 reverted = false;

@@ -86,9 +86,9 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
                 }
                 ret = new ClientLocalServerState(
                         new P4ClientState(isServerCaseInsensitive, clientServerId, new P4WorkspaceViewState(clientServerId.getClientId()),
-                                new JobStatusListState()),
+                                new JobStatusListState(), new JobStateList()),
                         new P4ClientState(isServerCaseInsensitive, clientServerId, new P4WorkspaceViewState(clientServerId.getClientId()),
-                                new JobStatusListState()),
+                                new JobStatusListState(), new JobStateList()),
                         new ArrayList<PendingUpdateState>());
                 clientStates.put(clientServerId, ret);
             }
@@ -104,8 +104,9 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
 
         // FIXME it looks like this is too aggressively called.
 
-        // FIXME debug
-        LOG.info("Removing client cache " + client, new Exception("stack capture"));
+        if (LOG.isDebugEnabled()) {
+            LOG.info("Removing client cache " + client, new Exception("stack capture"));
+        }
         synchronized (clientStates) {
             final ClientLocalServerState state = clientStates.get(client);
             if (state != null) {
@@ -161,6 +162,10 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
                     @NotNull final List<ProjectConfigSource> sources) {
                 // FIXME implement
                 // NOTE be project aware
+                // Currently, this is not possible to implement correctly.
+                // It requires knowledge about which projects have which
+                // sources (that's an extra bit of serialized data that
+                // needs to be created, associated with the project).
             }
         });
         Events.appConfigInvalid(messageBus, new ConfigInvalidListener() {
@@ -169,6 +174,10 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
                     @NotNull final P4InvalidConfigException ex) {
                 // FIXME implement
                 // NOTE be project aware
+                // Currently, this is not possible to implement correctly.
+                // It requires knowledge about which projects have which
+                // sources (that's an extra bit of serialized data that
+                // needs to be created, associated with the project).
             }
         });
     }

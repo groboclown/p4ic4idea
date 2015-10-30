@@ -31,10 +31,7 @@ import net.groboclown.idea.p4ic.v2.server.P4Server.IntegrateFile;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.local.IgnoreFiles;
-import net.groboclown.idea.p4ic.v2.server.cache.state.ClientLocalServerState;
-import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
-import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
-import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.*;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CreateUpdate;
 import org.jetbrains.annotations.NotNull;
@@ -54,6 +51,7 @@ public class ClientCacheManager {
     private final FileActionsServerCacheSync fileActions;
     private final ChangeListServerCacheSync changeLists;
     private final JobStatusListStateServerCacheSync jobStatusList;
+    private final JobServerCacheSync jobs;
     private final IgnoreFiles ignoreFiles;
 
     // Jobs are only stored in terms of their association with the
@@ -76,6 +74,7 @@ public class ClientCacheManager {
                 state.getCachedServerState().getChanges());
         jobStatusList = new JobStatusListStateServerCacheSync(
                 state.getCachedServerState().getJobStatusList());
+        jobs = new JobServerCacheSync(state.getCachedServerState().getJobs());
         ignoreFiles = new IgnoreFiles(config);
     }
 
@@ -100,6 +99,11 @@ public class ClientCacheManager {
         return jobStatusList.createRefreshQuery();
     }
 
+    @NotNull
+    public ServerQuery createJobListRefreshQuery() {
+        return jobs.createRefreshQuery();
+    }
+
     /**
      * Jobs are not cached like other things, because there can be potentially a huge
      * number of jobs.  Instead, only the jobs the user asks about will be cached, or
@@ -110,8 +114,12 @@ public class ClientCacheManager {
      */
     @NotNull
     public ServerQuery createJobRefreshQuery(final Collection<String> jobIds) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        return jobs.createRefreshQuery(jobIds);
+    }
+
+    @NotNull
+    public Map<String, P4ChangeListJob> getCachedJobIds(final Collection<String> jobIds) {
+        return jobs.getCachedJobIds(state.getClientServerId(), jobIds);
     }
 
 
@@ -162,12 +170,6 @@ public class ClientCacheManager {
     @NotNull
     public Collection<String> getCachedJobStatusList() {
         return jobStatusList.getJobStatusList();
-    }
-
-    @NotNull
-    public Map<String, P4ChangeListJob> getCachedJobIds(final Collection<String> jobIds) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
     }
 
     /**
@@ -314,12 +316,21 @@ public class ClientCacheManager {
             // Refresh everything except workspace, as that would cause a recursive loop.
             fileActions.innerLoadServerCache(exec, alerts);
             changeLists.innerLoadServerCache(exec, alerts);
+            jobs.innerLoadServerCache(exec, alerts);
+            // don't refresh, because these are pretty much static per server: jobStatusList
             // not refreshable, because no real server state: ignoreFiles
         }
 
         @Override
         public boolean isFileIgnored(@Nullable final FilePath file) {
             return ignoreFiles.isFileIgnored(file);
+        }
+
+        @NotNull
+        @Override
+        public Collection<P4JobState> refreshJobState(final P4Exec2 exec, final AlertManager alerts,
+                final Collection<String> jobIds) {
+            return jobs.loadServerCache(exec, alerts, jobIds);
         }
     }
 

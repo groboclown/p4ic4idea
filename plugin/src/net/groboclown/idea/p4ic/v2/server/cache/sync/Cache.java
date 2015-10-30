@@ -21,6 +21,7 @@ import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
 import org.jetbrains.annotations.NotNull;
@@ -71,4 +72,7 @@ interface Cache {
      * @return
      */
     boolean isFileIgnored(@Nullable FilePath file);
+
+    @NotNull
+    Collection<P4JobState> refreshJobState(P4Exec2 exec, AlertManager alerts, Collection<String> jobs);
 }

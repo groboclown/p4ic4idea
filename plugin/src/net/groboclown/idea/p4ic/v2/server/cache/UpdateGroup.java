@@ -33,14 +33,14 @@ import java.util.Collections;
  */
 public enum UpdateGroup {
     /** Updates to the job description or whether the job exists */
-    JOB(new NIF()), // FIXME
+    //JOB(new NIF()),
 
     /** CreateUpdate sto the workspace mappings or root directories; workspace existence should be
      * handled at a higher level (connection level). */
-    WORKSPACE(new NIF()), // FIXME
+    //WORKSPACE(new NIF()),
 
     /** Updates to the description, job association, fix state, and existence. */
-    CHANGELIST(new NIF()), // FIXME
+    CHANGELIST(new ChangeListServerCacheSync.UpdateChangelistFactory()),
 
     /** Update the file association on files. */
     CHANGELIST_FILES(new ChangeListServerCacheSync.MoveFileFactory()),
@@ -61,7 +61,7 @@ public enum UpdateGroup {
     FILE_NO_OP(new NoOp()),
 
     /** Updates to the ignore file */
-    IGNORE_PATTERNS(new NIF()) // FIXME
+    //IGNORE_PATTERNS(new NIF()),
     ;
 
     private final ServerUpdateActionFactory factory;

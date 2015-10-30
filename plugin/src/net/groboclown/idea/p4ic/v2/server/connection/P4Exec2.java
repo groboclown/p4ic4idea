@@ -788,8 +788,10 @@ public class P4Exec2 {
                 spec = FileSpecUtil.getAlreadyEscapedSpec(spec.getDepotPathString());
                 fstatSpecs.add(spec);
             } else {
-                // FIXME debug
-                LOG.info("Found spec message (not going to fstat on it): " + spec.getOpStatus() + "/" + spec.getStatusMessage());
+                if (LOG.isDebugEnabled()) {
+                    LOG.info("Found spec message (not going to fstat on it): " + spec.getOpStatus() + "/" +
+                            spec.getStatusMessage());
+                }
                 retSpecs.add(new ExtendedFileSpec(spec.getStatusMessage()));
             }
         }

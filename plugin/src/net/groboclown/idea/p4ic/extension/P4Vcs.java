@@ -16,7 +16,6 @@ package net.groboclown.idea.p4ic.extension;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -70,9 +69,6 @@ import java.util.*;
 import java.util.Map.Entry;
 
 public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
-    private static final Logger LOG = Logger.getInstance(P4Vcs.class);
-
-
     public static final FileStatus MODIFIED_OFFLINE =
             FileStatusFactory.getInstance().createFileStatus(
                     "MODIFIED_OFFLINE",
@@ -158,9 +154,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     private final List<VirtualFile> vcsRootsCache;
 
 
-    private boolean autoOffline = false;
-
-
     @NotNull
     public static P4Vcs getInstance(Project project) {
         if (project == null || project.isDisposed()) {
@@ -198,7 +191,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         this.annotationProvider = new P4AnnotationProvider(this);
         this.committedChangesProvider = new P4CommittedChangesProvider();
 
-        // TODO validate this line
         this.serverManager = P4ServerManager.getInstance(project);
 
         this.revisionSelector = new P4RevisionSelector(this);
@@ -279,11 +271,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
         projectMessageBusConnection = myProject.getMessageBus().connect();
         appMessageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
-
-        // FIXME enable if it makes sense to handle these here.
-        //Events.appBaseConfigUpdated(projectMessageBusConnection, problemListener);
-        //Events.appConfigInvalid(projectMessageBusConnection, problemListener);
-        //Events.appServerConnectionState(appMessageBusConnection, disconnectListener);
 
         // Keep our cache up-to-date
         projectMessageBusConnection.subscribe(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED, new VcsListener() {
@@ -467,7 +454,10 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
      */
     @Override
     public boolean fileIsUnderVcs(FilePath filePath) {
-        // TODO add checking against the P4IGNORE file.
+        // This does not check for ignored files, because
+        // it's possible for a file to be in the depot, and thus not ignored,
+        // but in the ignore list.  The ignore list is only for ignoring
+        // new files.
         return filePath != null &&
                 ! filePath.isDirectory() &&
                 // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
@@ -513,7 +503,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @Override
     @Nullable
     protected UpdateEnvironment createUpdateEnvironment() {
-        //return IllegalStateProxy.create(UpdateEnvironment.class);
         return new P4SyncUpdateEnvironment(this);
     }
 
@@ -642,62 +631,5 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @Nullable
     public P4Server getP4ServerFor(@NotNull VirtualFile vf) throws InterruptedException {
         return serverManager.getForVirtualFile(vf);
-    }
-
-
-    /**
-     * Checks if the input path is under the config root, and how deep
-     * the config root is.
-     * <p>
-     * This does not perform link expansion (get absolute path).  We
-     * assume that if you have a file under a path in a link, you want
-     * it to be at that location, and not at its real location.
-     * </p>
-     *
-     * @param input the file to match against a P4 client directory
-     * @param configRoot root directory of a client
-     * @return &lt; 0 if the file is not under the client directory, otherwise the
-     *      directory depth (from root) of the config root.
-     */
-    private int getFilePathMatchDepth(@NotNull final FilePath input, @NotNull final FilePath configRoot) {
-        final List<FilePath> inputParts = getPathParts(input);
-        final List<FilePath> rootParts = getPathParts(configRoot);
-
-        if (inputParts.size() < rootParts.size()) {
-            // input is at a higher ancestor level than the root parts,
-            // so there's no way it could be in this root.
-            return -1;
-        }
-
-        // See if input is under the root.
-        // We should be able to just  call input.isUnder(configRoot), but
-        // that seems to be buggy - it reported that "/a/b/c" was under "/a/b/d".
-
-        final FilePath sameRootDepth = inputParts.get(rootParts.size() - 1);
-        if (sameRootDepth.equals(configRoot)) {
-            // it's a match.  The input file ancestor path that is
-            // at the same directory depth as the config root is the same
-            // path.
-            return rootParts.size();
-        }
-
-        // Not under the same path, so it's not a match.
-        return -1;
-    }
-
-    @NotNull
-    private List<FilePath> getPathParts(@NotNull final FilePath child) {
-        List<FilePath> ret = new ArrayList<FilePath>();
-        FilePath next = child;
-        while (next != null) {
-            ret.add(next);
-            next = next.getParentPath();
-        }
-        Collections.reverse(ret);
-        return ret;
-    }
-
-    public boolean isAutoOffline() {
-        return autoOffline;
     }
 }

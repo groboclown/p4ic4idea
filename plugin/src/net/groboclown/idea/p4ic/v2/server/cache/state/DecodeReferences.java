@@ -39,30 +39,35 @@ public class DecodeReferences {
         return jobs.get(id);
     }
 
+    @NotNull
+    public JobStateList getJobStateList() {
+        return new JobStateList(jobs.values());
+    }
+
     Collection<P4ClientFileMapping> getFileMappings() {
         return Collections.unmodifiableCollection(fileMappings.values());
     }
 
-        static DecodeReferences deserialize(@NotNull Element parent) {
-                // NOTE: order is very important here.  It is the opposite of the serialize
-                DecodeReferences ret = new DecodeReferences();
+    static DecodeReferences deserialize(@NotNull Element parent) {
+        // NOTE: order is very important here.  It is the opposite of the serialize
+        DecodeReferences ret = new DecodeReferences();
 
-                for (Element el : parent.getChildren("m")) {
-                        String key = getAttribute(el, "k");
-                        if (key != null) {
-                                P4ClientFileMapping val = P4ClientFileMapping.deserialize(el);
-                                ret.fileMappings.put(key, val);
-                        }
+        for (Element el : parent.getChildren("m")) {
+                String key = getAttribute(el, "k");
+                if (key != null) {
+                        P4ClientFileMapping val = P4ClientFileMapping.deserialize(el);
+                        ret.fileMappings.put(key, val);
                 }
-
-                for (Element el : parent.getChildren("j")) {
-                        String key = getAttribute(el, "k");
-                        if (key != null) {
-                                P4JobState val = P4JobState.deserialize(el, ret);
-                                ret.jobs.put(key, val);
-                        }
-                }
-
-                return ret;
         }
+
+        for (Element el : parent.getChildren("j")) {
+                String key = getAttribute(el, "k");
+                if (key != null) {
+                        P4JobState val = P4JobState.deserialize(el, ret);
+                        ret.jobs.put(key, val);
+                }
+        }
+
+        return ret;
+    }
 }

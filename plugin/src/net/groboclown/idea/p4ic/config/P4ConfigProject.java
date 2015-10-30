@@ -65,12 +65,10 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
     private List<ProjectConfigSource> configSources;
     private P4InvalidConfigException sourceConfigEx;
     boolean sourcesInitialized = false;
-
-    @Nullable
     boolean clientsInitialized = false;
 
-    // FIXME for testing
-    private int badLoadCount = 0;
+    // for testing
+    //private int badLoadCount = 0;
 
     public P4ConfigProject(@NotNull Project project) {
         this.project = project;
@@ -90,11 +88,11 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
             throws P4InvalidConfigException {
         initializeConfigSources();
         if (sourceConfigEx != null) {
-            // FIXME for testing; the underlying error seems to get lost.
-            if ((++badLoadCount) % 10 == 0) {
-                sourcesInitialized = false;
-                return loadProjectConfigSources();
-            }
+            // for testing; the underlying error seems to get lost.
+            //if ((++badLoadCount) % 10 == 0) {
+            //    sourcesInitialized = false;
+            //    return loadProjectConfigSources();
+            //}
             P4InvalidConfigException ret = new P4InvalidConfigException(sourceConfigEx.getMessage());
             ret.initCause(sourceConfigEx);
             throw ret;
@@ -115,8 +113,9 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
 
         synchronized (this) {
             if (! sourcesInitialized) {
-                // FIXME DEBUG
-                LOG.info("reloading project " + project.getName() + " config sources", new Throwable("stack capture"));
+                if (LOG.isDebugEnabled()) {
+                    LOG.info("reloading project " + project.getName() + " config sources");
+                }
 
                 // Mark as initialized first, so we don't re-enter this function.
                 sourcesInitialized = true;

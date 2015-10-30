@@ -37,7 +37,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 /**
- * Checks the latest
+ * Checks the latest status of the files on the server
  */
 public class P4StatusUpdateEnvironment implements UpdateEnvironment {
     private final Project project;

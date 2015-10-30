@@ -109,8 +109,9 @@ public class P4FileUpdateState extends CachedState {
         }
         serializeDate(wrapper);
 
-        // FIXME debug
-        LOG.info("Serialized P4FileUpdateState " + file);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Serialized P4FileUpdateState " + file);
+        }
     }
 
     @Override

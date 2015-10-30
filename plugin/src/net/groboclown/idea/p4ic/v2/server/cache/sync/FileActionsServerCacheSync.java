@@ -83,7 +83,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
         lastRefreshed = CachedState.NEVER_LOADED;
         for (P4FileUpdateState state: cachedServerUpdatedFiles) {
-            if (state.getLastUpdated().before(lastRefreshed)) {
+            if (state.getLastUpdated().after(lastRefreshed)) {
                 lastRefreshed = state.getLastUpdated();
             }
         }
@@ -228,7 +228,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             makeWritable(project, file);
         }
 
-        // FIXME put the file in the local cache, or mark it in the IDEA built-in vcs.
+        // TODO put the file in the local cache, or mark it in the IDEA built-in vcs.
 
         // Check if it is already in an action state, and create it if necessary
         final P4FileUpdateState action = createFileUpdateState(file, FileUpdateAction.DELETE_FILE, changeListId);
@@ -449,18 +449,22 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             final IExtendedFileSpec next = iter.next();
             if (next != null) {
                 if (! isValidUpdateAction(next)) {
-                    // FIXME debug
-                    LOG.info("invalid spec: " + next.getDepotPathString() + "; " + next.getOpStatus() + ": action: " +
-                            next.getAction() + "/" + next.getOtherAction() + "/" +
-                            next.getOpenAction() + "/" + next.getHeadAction() +
-                            "; client path string: " + next.getClientPathString());
+                    if (LOG.isDebugEnabled()) {
+                        LOG.info("invalid spec: " + next.getDepotPathString() + "; " + next
+                                .getOpStatus() + ": action: " +
+                                next.getAction() + "/" + next.getOtherAction() + "/" +
+                                next.getOpenAction() + "/" + next.getHeadAction() +
+                                "; client path string: " + next.getClientPathString());
+                    }
                     ret.add(next);
                     iter.remove();
                 } else {
-                    LOG.info("valid spec: " + next.getDepotPathString() + "; " + next.getOpStatus() + ": action: " +
-                            next.getAction() + "/" + next.getOtherAction() + "/" +
-                            next.getOpenAction() + "/" + next.getHeadAction() +
-                            "; client path string: " + next.getClientPathString());
+                    if (LOG.isDebugEnabled()) {
+                        LOG.info("valid spec: " + next.getDepotPathString() + "; " + next.getOpStatus() + ": action: " +
+                                next.getAction() + "/" + next.getOtherAction() + "/" +
+                                next.getOpenAction() + "/" + next.getHeadAction() +
+                                "; client path string: " + next.getClientPathString());
+                    }
                 }
             } else {
                 iter.remove();
@@ -537,12 +541,14 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         P4FileUpdateState newAction = new P4FileUpdateState(
                 cache.getClientMappingFor(file), changeListId, fileUpdateAction);
         if (action != null) {
-            // FIXME debug
-            LOG.info("removing action from local file cache: " + action);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("removing action from local file cache: " + action);
+            }
             localClientUpdatedFiles.remove(action);
         }
-        // FIXME debug
-        LOG.info("adding action into local file cache: " + newAction);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("adding action into local file cache: " + newAction);
+        }
         localClientUpdatedFiles.add(newAction);
 
         return newAction;
@@ -638,7 +644,9 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 status = ExecutionStatus.FAIL;
                 return;
             }
-            LOG.info("File specs: " + toStringList(srcSpecs));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("File specs: " + toStringList(srcSpecs));
+            }
             final List<IExtendedFileSpec> fullSpecs;
             try {
                 fullSpecs = exec.getFileStatus(srcSpecs);
@@ -650,7 +658,9 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 status = ExecutionStatus.FAIL;
                 return;
             }
-            LOG.info("Full specs: " + fullSpecs);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Full specs: " + fullSpecs);
+            }
 
             Iterator<PendingUpdateState> updatesIter = updateList.iterator();
             for (IExtendedFileSpec spec : fullSpecs) {
@@ -663,10 +673,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     LOG.info("fstat non-valid state: " + spec.getOpStatus() + ": " + spec.getStatusMessage());
                     continue;
                 } else {
-                    // FIXME debug
-                    LOG.info("fstat state: " + spec.getOpStatus() + ": [" + spec.getStatusMessage() + "];" +
-                            spec.getClientPathString() + ";" + spec.getOriginalPathString() +
-                            ";" + spec.getUniqueCode() + ":" + spec.getGenericCode() + ":" + spec.getSubCode());
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("fstat state: " + spec.getOpStatus() + ": [" + spec.getStatusMessage() + "];" +
+                                spec.getClientPathString() + ";" + spec.getOriginalPathString() +
+                                ";" + spec.getUniqueCode() + ":" + spec.getGenericCode() + ":" + spec.getSubCode());
+                    }
                 }
 
                 // Valid response.  Advance iterators
@@ -679,9 +690,12 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 // is edit only mode is only valid for the EDIT_FILE action.
                 boolean isEditOnly = update.getUpdateAction() == UpdateAction.EDIT_FILE;
                 FilePath filePath = FilePathUtil.getFilePath(filename);
-                LOG.info(" - Checking category for " + filePath + " (from [" + spec.getDepotPathString() + "];[" + spec.getOriginalPathString() + "])");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(" - Checking category for " + filePath + " (from [" + spec
+                            .getDepotPathString() + "];[" + spec.getOriginalPathString() + "])");
+                }
                 if (isNotInClientView(spec)) {
-                    LOG.info(" -+- not in client view");
+                    LOG.debug(" -+- not in client view");
                     alerts.addNotice(exec.getProject(),
                             P4Bundle.message("error.client.not-in-view", spec.getClientPathString()), null,
                             filePath);
@@ -691,18 +705,19 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 Map<Integer, Set<FilePath>> container = null;
                 if (isNotKnownToServer(spec)) {
                     if (isEditOnly && ignoreAddsIfEditOnly) {
-                        LOG.info(" -+- Ignoring because Perforce doesn't know it, and the change is edit-only.");
+                        LOG.debug(" -+- Ignoring because Perforce doesn't know it, and the change is edit-only.");
                     } else {
-                        LOG.info(" -+- not known to server");
+                        LOG.debug(" -+- not known to server");
                         container = notInPerforce;
                     }
                 } else if (spec.getOpStatus() != FileSpecOpStatus.VALID) {
-                    LOG.info(" -+- unknown error");
+                    LOG.debug(" -+- unknown error");
                     P4StatusMessage msg = new P4StatusMessage(spec);
                     alerts.addWarning(exec.getProject(),
                             P4Bundle.message("error.client.unknown.p4.title"),
                             msg.toString(),
                             P4StatusMessage.messageAsError(msg),
+                            // FIXME null check the file path
                             filePath);
                     // don't handle
                     continue;
@@ -860,8 +875,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         @Override
         protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
                 @NotNull ClientCacheManager clientCacheManager, @NotNull final AlertManager alerts) {
-            // FIXME debug
-            LOG.info("Running edit");
+            LOG.debug("Running edit");
 
             final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts, true);
             if (split.status != null) {
@@ -1051,8 +1065,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
                 @NotNull final ClientCacheManager clientCacheManager,
                 @NotNull final AlertManager alerts) {
-            // FIXME debug
-            LOG.info("Running delete");
+            LOG.debug("Running delete");
 
             final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts, false);
             if (split.status != null) {
@@ -1130,7 +1143,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     return ExecutionStatus.RETRY;
                 } catch (VcsException e) {
                     alerts.addWarning(exec.getProject(),
-                            // FIXME delete
+                            // FIXME property should be for "delete"
                             P4Bundle.message("error.edit.title"),
                             P4Bundle.message("error.edit",
                                     FilePathUtil.toStringList(entry.getValue())),
@@ -1179,8 +1192,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
                 @NotNull final ClientCacheManager clientCacheManager,
                 @NotNull final AlertManager alerts) {
-            // FIXME debug
-            LOG.info("Running move");
+            LOG.debug("Running move");
 
             final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts, false);
             if (split.status != null) {
@@ -1217,7 +1229,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
                     final List<P4StatusMessage> msgs = P4StatusMessage.getErrors(results);
                     alerts.addNotices(exec.getProject(),
-                            // FIXME move revert
+                            // FIXME property should be for "move revert"
                             P4Bundle.message("warning.edit.file.revert",
                                     FilePathUtil.toStringList(reverts)),
                             msgs, false);
@@ -1261,7 +1273,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                         return ExecutionStatus.RETRY;
                     } catch (VcsException e) {
                         alerts.addWarning(exec.getProject(),
-                                // FIXME move
+                                // FIXME property should be for "move"
                                 P4Bundle.message("error.edit.title"),
                                 P4Bundle.message("error.edit",
                                         FilePathUtil.toStringList(entry.getValue())),
@@ -1311,8 +1323,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
                 @NotNull final ClientCacheManager clientCacheManager,
                 @NotNull final AlertManager alerts) {
-            // FIXME debug
-            LOG.info("Running move");
+            LOG.debug("Running move");
 
             final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts, false);
             if (split.status != null) {
@@ -1343,7 +1354,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
                     final List<P4StatusMessage> msgs = P4StatusMessage.getErrors(results);
                     alerts.addNotices(exec.getProject(),
-                            // FIXME revert
+                            // FIXME property should be for "revert"
                             P4Bundle.message("warning.edit.file.revert",
                                     FilePathUtil.toStringList(reverts)),
                             msgs, false);

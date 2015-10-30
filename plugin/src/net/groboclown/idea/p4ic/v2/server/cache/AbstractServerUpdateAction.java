@@ -51,18 +51,21 @@ public abstract class AbstractServerUpdateAction implements ServerUpdateAction {
     public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
             @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
             throws InterruptedException {
-        // FIXME debug
-        LOG.info("Performing action " + getClass().getSimpleName() + " on " + pendingUpdateStates);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Performing action " + getClass().getSimpleName() + " on " + pendingUpdateStates);
+        }
         final ExecutionStatus result = executeAction(exec, clientCacheManager, alerts);
-        LOG.info("Result: " + result);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Result: " + result);
+        }
         if (result == ExecutionStatus.RELOAD_CACHE) {
-            LOG.info("Updating the cache");
+            LOG.debug("Updating the cache");
             ServerQuery query = updateCache(clientCacheManager, alerts);
             if (query != null) {
                 connection.query(exec.getProject(), query);
             }
         } else if (result == ExecutionStatus.RETRY) {
-            LOG.info("Retrying the action");
+            LOG.debug("Retrying the action");
             requeue(exec.getProject(), connection, alerts);
         }
         // failure: don't retry, don't update

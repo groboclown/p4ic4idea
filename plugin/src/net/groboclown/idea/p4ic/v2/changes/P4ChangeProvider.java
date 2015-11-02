@@ -151,7 +151,7 @@ public class P4ChangeProvider implements ChangeProvider {
         VfsUtil.markDirty(false, false, dirty.toArray(new VirtualFile[dirty.size()]));
         */
         if (LOG.isDebugEnabled()) {
-            LOG.info("ignoring files that should already be considered dirty: " +
+            LOG.debug("ignoring files that should already be considered dirty: " +
                     mapped.notDirtyOpenedFiles);
         }
 
@@ -336,7 +336,7 @@ public class P4ChangeProvider implements ChangeProvider {
                     affectedServers.add(server);
                 }
                 if (LOG.isDebugEnabled()) {
-                    LOG.info("Opened files for " + server + ": " + opened);
+                    LOG.debug("Opened files for " + server + ": " + opened);
                 }
                 for (P4FileAction file: opened) {
                     final FilePath fp = file.getFile();

@@ -19,6 +19,7 @@ import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -63,6 +64,8 @@ import java.util.List;
  * Widget to display Perforce server connection information.
  */
 public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentation, StatusBarWidget.Multiframe {
+    private static final Logger LOG = Logger.getInstance(P4MultipleConnectionWidget.class);
+
 
     @Nullable
     private P4Vcs myVcs;
@@ -167,7 +170,10 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
         return new Consumer<MouseEvent>() {
             public void consume(MouseEvent mouseEvent) {
                 // update on click
-                update();
+
+                // click will cause the UI to refresh the view automatically,
+                // so we don't need an explicit repaint.
+                update(false);
 
                 showPopup(mouseEvent);
             }
@@ -197,15 +203,19 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
                 parent));
     }
 
-    public void update() {
+    private void update(final boolean refreshStatusBar) {
         UIUtil.invokeLaterIfNeeded(new Runnable() {
             @Override
             public void run() {
                 if (project == null || project.isDisposed()) {
                     emptyTextAndTooltip();
-                    return;
+                } else {
+                    setValues();
                 }
-                setValues();
+                if (statusBar != null && refreshStatusBar) {
+                    LOG.info("updating the connection widget display");
+                    statusBar.getComponent().repaint();
+                }
             }
         });
     }
@@ -309,13 +319,6 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
         }
     }
 
-    private void updateUI() {
-        update();
-        if (statusBar != null) {
-            statusBar.getComponent().repaint();
-        }
-    }
-
 
     private class ConnectionStateListener implements
             BaseConfigUpdatedListener, ServerConnectionStateListener, ConfigInvalidListener {
@@ -323,7 +326,7 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
         @Override
         public void configUpdated(@NotNull final Project project, @NotNull final List<ProjectConfigSource> sources) {
             if (project == P4MultipleConnectionWidget.this.project) {
-                updateUI();
+                update(true);
             }
         }
 
@@ -331,18 +334,18 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
         public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                 @NotNull final P4InvalidConfigException ex) {
             if (project == P4MultipleConnectionWidget.this.project) {
-                updateUI();
+                update(true);
             }
         }
 
         @Override
         public void connected(@NotNull final ServerConfig config) {
-            updateUI();
+            update(true);
         }
 
         @Override
         public void disconnected(@NotNull final ServerConfig config) {
-            updateUI();
+            update(true);
         }
     }
 }

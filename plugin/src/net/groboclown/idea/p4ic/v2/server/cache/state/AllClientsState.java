@@ -105,7 +105,7 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
         // TODO it looks like this is too aggressively called.
 
         if (LOG.isDebugEnabled()) {
-            LOG.info("Removing client cache " + client, new Exception("stack capture"));
+            LOG.debug("Removing client cache " + client);
         }
         synchronized (clientStates) {
             final ClientLocalServerState state = clientStates.get(client);

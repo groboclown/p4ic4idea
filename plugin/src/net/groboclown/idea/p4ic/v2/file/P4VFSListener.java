@@ -73,12 +73,12 @@ public class P4VFSListener extends VcsVFSListener {
                 final P4Server server = entry.getKey();
                 if (server == null) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.info("deleted non-p4 server files: " + entry.getValue());
+                        LOG.debug("deleted non-p4 server files: " + entry.getValue());
                     }
                 } else {
                     int changelist = changeListMapping.getProjectDefaultPerforceChangelist(server).getChangeListId();
                     if (LOG.isDebugEnabled()) {
-                        LOG.info("Opening for delete on changelist " + changelist + ": " + entry.getValue());
+                        LOG.debug("Opening for delete on changelist " + changelist + ": " + entry.getValue());
                     }
                     server.deleteFiles(entry.getValue(), changelist);
                 }

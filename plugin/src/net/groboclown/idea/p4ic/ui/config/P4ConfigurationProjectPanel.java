@@ -47,6 +47,8 @@ public class P4ConfigurationProjectPanel {
         ManualP4Config saved = new ManualP4Config();
         myMainPanel.saveSettingsToConfig(saved, preferences);
         config.loadState(saved);
+        // Announce the change to state.
+        config.announceBaseConfigUpdated();
     }
 
     public void loadSettings(@NotNull ManualP4Config config, @NotNull UserProjectPreferences preferences) {

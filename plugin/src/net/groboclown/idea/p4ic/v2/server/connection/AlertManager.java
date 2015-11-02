@@ -99,7 +99,7 @@ public class AlertManager implements ApplicationComponent {
         }
         eventLock.lock();
         try {
-            LOG.warn(details, ex == null ? new Throwable("stack capture") : ex);
+            LOG.warn(details, ex);
             pendingWarnings.add(new WarningMessage(project, title, details, ex, affectedFiles));
             eventPending.signal();
         } finally {

@@ -97,7 +97,7 @@ public abstract class ConnectionHandler {
             }
             if (hostname != null && hostname.length() > 0) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.info("Using hostname [" + hostname + "]");
+                    LOG.debug("Using hostname [" + hostname + "]");
                 }
                 options.setHostName(hostname);
             }

@@ -1,14 +1,14 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.0b5</version>
+    <version>0.7.0</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
             <li><em>0.7.0</em>
                 <ol>
-                  <li>Stuff</li>
+                  <li>Major changes</li>
                 </ol>
             </li>
             <li><em>0.6.6.1</em>
@@ -212,6 +212,9 @@
         </component>
         <component>
             <implementation-class>net.groboclown.idea.p4ic.v2.server.cache.state.AllClientsState</implementation-class>
+        </component>
+        <component>
+            <implementation-class>net.groboclown.idea.p4ic.v2.historic_compat.ClearPasswordStoreService</implementation-class>
         </component>
     </application-components>
 </idea-plugin>

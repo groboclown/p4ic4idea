@@ -281,6 +281,9 @@ public class P4ConfigPanel {
             throws P4InvalidConfigException {
         ManualP4Config partial = new ManualP4Config();
         saveSettingsToConfig(partial);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Creating connection configs from " + P4ConfigUtil.getProperties(partial));
+        }
         return ProjectConfigSourceLoader.loadSources(myProject, partial);
     }
 
@@ -549,7 +552,15 @@ public class P4ConfigPanel {
         // This is actually invoked when the config directory drop-down is changed,
         // or when the connection is changed, but this spinner is fine.
 
-        final Object selectedItem = myResolvePath.getSelectedItem();
+        final Object selectedItem;
+        if (myResolvePath.getItemCount() <= 0) {
+            selectedItem = null;
+        } else if (myResolvePath.getSelectedItem() == null) {
+            selectedItem = myResolvePath.getItemAt(0);
+        } else {
+            selectedItem = myResolvePath.getSelectedItem();
+        }
+
         runBackgroundAwtAction(myRefreshResolvedSpinner, new BackgroundAwtAction<StringBuilder>() {
             @Override
             public StringBuilder runBackgroundProcess() {
@@ -987,7 +998,7 @@ public class P4ConfigPanel {
                     @Override
                     public void run() {
                         if (LOG.isDebugEnabled()) {
-                            LOG.info("Running " + icon.getName() + " in AWT");
+                            LOG.debug("Running " + icon.getName() + " in AWT");
                         }
                         try {
                             if (failure == null) {
@@ -1000,7 +1011,7 @@ public class P4ConfigPanel {
                                 activeProcesses.remove(icon);
                             }
                             if (LOG.isDebugEnabled()) {
-                                LOG.info("AWT processing for " + icon.getName() + " completed");
+                                LOG.debug("AWT processing for " + icon.getName() + " completed");
                             }
                         }
                     }

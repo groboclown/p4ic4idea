@@ -857,12 +857,12 @@ public class P4Server {
                     PendingUpdateState update = mgr.deleteFile(project, file, changelistId);
                     if (update != null) {
                         if (LOG.isDebugEnabled()) {
-                            LOG.info("Created delete update for " + file);
+                            LOG.debug("Created delete update for " + file);
                         }
                         ret.add(update);
                     } else {
                         if (LOG.isDebugEnabled()) {
-                            LOG.info("Ignored delete update for " + file);
+                            LOG.debug("Ignored delete update for " + file);
                         }
                     }
                 }

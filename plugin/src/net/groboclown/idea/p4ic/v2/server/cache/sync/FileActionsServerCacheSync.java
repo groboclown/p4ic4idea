@@ -521,7 +521,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             if (next != null) {
                 if (! isValidUpdateAction(next)) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.info("invalid spec: " + next.getDepotPathString() + "; " + next
+                        LOG.debug("invalid spec: " + next.getDepotPathString() + "; " + next
                                 .getOpStatus() + ": action: " +
                                 next.getAction() + "/" + next.getOtherAction() + "/" +
                                 next.getOpenAction() + "/" + next.getHeadAction() +
@@ -531,7 +531,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     iter.remove();
                 } else {
                     if (LOG.isDebugEnabled()) {
-                        LOG.info("valid spec: " + next.getDepotPathString() + "; " + next.getOpStatus() + ": action: " +
+                        LOG.debug("valid spec: " + next.getDepotPathString() + "; " + next.getOpStatus() + ": action: " +
                                 next.getAction() + "/" + next.getOtherAction() + "/" +
                                 next.getOpenAction() + "/" + next.getHeadAction() +
                                 "; client path string: " + next.getClientPathString());

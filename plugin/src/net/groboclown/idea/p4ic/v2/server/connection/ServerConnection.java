@@ -135,7 +135,7 @@ public class ServerConnection {
 
 
     public void queueAction(@NotNull Project project, @NotNull ServerUpdateAction action) {
-        LOG.info("Queueing action for execution: " + action, new Throwable("stack capture"));
+        LOG.info("Queueing action for execution: " + action);
         pendingUpdates.add(new UpdateAction(project, action));
     }
 
@@ -257,7 +257,7 @@ public class ServerConnection {
         List<PendingUpdateState> currentGroupUpdates = null;
         for (PendingUpdateState update : updates) {
             if (LOG.isDebugEnabled()) {
-                LOG.info("adding update state as action: " + update);
+                LOG.debug("adding update state as action: " + update);
             }
 
             if (currentGroup != null && !update.getUpdateGroup().equals(currentGroup)) {
@@ -304,7 +304,7 @@ public class ServerConnection {
             action = pendingUpdates.take();
         }
         if (LOG.isDebugEnabled()) {
-            LOG.info("pulled action " + action + "; pending size " + pendingUpdates.size() + "; redo size " +
+            LOG.debug("pulled action " + action + "; pending size " + pendingUpdates.size() + "; redo size " +
                     redo.size());
         }
         return action;

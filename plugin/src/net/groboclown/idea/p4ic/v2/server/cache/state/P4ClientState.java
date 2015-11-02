@@ -174,7 +174,7 @@ public class P4ClientState {
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.info("Final list of updated files for " +
+            LOG.debug("Final list of updated files for " +
                     ret.clientServerId + ": " + ret.updatedFiles);
         }
         return ret;

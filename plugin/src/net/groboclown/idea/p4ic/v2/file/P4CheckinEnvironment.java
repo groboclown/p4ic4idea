@@ -330,7 +330,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
 
         @Override
         public JComponent getComponent() {
-            return panel.getRootPanel();
+            return root;
         }
 
         @Override

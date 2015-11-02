@@ -826,7 +826,7 @@ public class P4Exec2 {
                 fstatSpecs.add(spec);
             } else {
                 if (LOG.isDebugEnabled()) {
-                    LOG.info("Found spec message (not going to fstat on it): " + spec.getOpStatus() + "/" +
+                    LOG.debug("Found spec message (not going to fstat on it): " + spec.getOpStatus() + "/" +
                             spec.getStatusMessage());
                 }
                 retSpecs.add(new ExtendedFileSpec(spec.getStatusMessage()));

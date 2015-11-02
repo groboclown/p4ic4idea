@@ -71,13 +71,13 @@ public class P4EditFileProvider implements EditFileProvider {
                 if (server == null) {
                     // not assigned to any server
                     if (LOG.isDebugEnabled()) {
-                        LOG.info("Not assigned to server: " + entry.getValue());
+                        LOG.debug("Not assigned to server: " + entry.getValue());
                     }
                 } else {
                     final int changelist = changeListMapping.
                             getProjectDefaultPerforceChangelist(server).getChangeListId();
                     if (LOG.isDebugEnabled()) {
-                        LOG.info("Open for edit/add on changelist " + changelist + ": " + entry.getValue());
+                        LOG.debug("Open for edit/add on changelist " + changelist + ": " + entry.getValue());
                     }
                     // TODO see if lock is really necessary now with the new server API.
                     // (answer: it's not)

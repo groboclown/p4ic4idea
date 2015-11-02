@@ -103,79 +103,11 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
         return configSources;
     }
 
-    private void initializeConfigSources() {
-        if (! P4Vcs.isProjectValid(project)) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Ignoring reload for invalid project " + project.getName());
-            }
-            return;
-        }
-
-        synchronized (this) {
-            if (! sourcesInitialized) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.info("reloading project " + project.getName() + " config sources");
-                }
-
-                // Mark as initialized first, so we don't re-enter this function.
-                sourcesInitialized = true;
-
-                try {
-                    sourceConfigEx = null;
-                    configSources = readProjectConfigSources();
-                    // now that the sources are reloaded, we can make the announcement
-                    ApplicationManager.getApplication().getMessageBus().syncPublisher(
-                            BaseConfigUpdatedListener.TOPIC).
-                            configUpdated(project, configSources);
-                } catch (P4InvalidConfigException e) {
-                    // ignore; already sent notifications
-                    configSources = null;
-                    sourceConfigEx = e;
-                }
-            }
-        }
-    }
-
-
-    @NotNull
-    private List<ProjectConfigSource> readProjectConfigSources()
-            throws P4InvalidConfigException {
-
-        final Collection<Builder> sourceBuilders;
-        try {
-            sourceBuilders = ProjectConfigSourceLoader.loadSources(project, getBaseConfig());
-        } catch (P4InvalidConfigException ex) {
-            Events.configInvalid(project, getBaseConfig(), ex);
-
-            throw ex;
-        }
-
-        List<ProjectConfigSource> ret = new ArrayList<ProjectConfigSource>(sourceBuilders.size());
-        List<P4Config> invalidConfigs = new ArrayList<P4Config>();
-        for (Builder sourceBuilder : sourceBuilders) {
-            if (sourceBuilder.isInvalid()) {
-                LOG.warn("Invalid config: " +
-                        P4ConfigUtil.getProperties(sourceBuilder.getBaseConfig()));
-                invalidConfigs.add(sourceBuilder.getBaseConfig());
-            } else {
-                final ProjectConfigSource source = sourceBuilder.create();
-                LOG.info("Created config source " + source + " from " +
-                        P4ConfigUtil.getProperties(sourceBuilder.getBaseConfig()) +
-                        "; config dirs = " + source.getProjectSourceDirs());
-                ret.add(source);
-            }
-        }
-        if (! invalidConfigs.isEmpty()) {
-            P4InvalidConfigException ex = new P4InvalidConfigException(invalidConfigs);
-            for (P4Config invalidConfig : invalidConfigs) {
-                Events.configInvalid(project, invalidConfig, new P4InvalidConfigException(invalidConfig));
-            }
-            throw ex;
-        }
-
-        // don't call the reloaded event until we store the value.
-
-        return ret;
+    public void announceBaseConfigUpdated() {
+        assert configSources != null;
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                BaseConfigUpdatedListener.TOPIC).
+                configUpdated(project, configSources);
     }
 
     /**
@@ -261,6 +193,79 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
     @Override
     public String getComponentName() {
         return "P4ConfigProject";
+    }
+
+    private void initializeConfigSources() {
+        if (!P4Vcs.isProjectValid(project)) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Ignoring reload for invalid project " + project.getName());
+            }
+            return;
+        }
+
+        synchronized (this) {
+            if (!sourcesInitialized) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("reloading project " + project.getName() + " config sources");
+                }
+
+                // Mark as initialized first, so we don't re-enter this function.
+                sourcesInitialized = true;
+
+                try {
+                    sourceConfigEx = null;
+                    configSources = readProjectConfigSources();
+                    // now that the sources are reloaded, we can make the announcement
+                    announceBaseConfigUpdated();
+                } catch (P4InvalidConfigException e) {
+                    // ignore; already sent notifications
+                    configSources = null;
+                    sourceConfigEx = e;
+                }
+            }
+        }
+    }
+
+
+    @NotNull
+    private List<ProjectConfigSource> readProjectConfigSources()
+            throws P4InvalidConfigException {
+
+        final Collection<Builder> sourceBuilders;
+        try {
+            sourceBuilders = ProjectConfigSourceLoader.loadSources(project, getBaseConfig());
+        } catch (P4InvalidConfigException ex) {
+            Events.configInvalid(project, getBaseConfig(), ex);
+
+            throw ex;
+        }
+
+        List<ProjectConfigSource> ret = new ArrayList<ProjectConfigSource>(sourceBuilders.size());
+        List<P4Config> invalidConfigs = new ArrayList<P4Config>();
+        for (Builder sourceBuilder : sourceBuilders) {
+            if (sourceBuilder.isInvalid()) {
+                LOG.warn("Invalid config: " +
+                        P4ConfigUtil.getProperties(sourceBuilder.getBaseConfig()));
+                invalidConfigs.add(sourceBuilder.getBaseConfig());
+            } else {
+                final ProjectConfigSource source = sourceBuilder.create();
+                LOG.info("Created config source " + source + " from " +
+                        P4ConfigUtil.getProperties(sourceBuilder.getBaseConfig()) +
+                        "; config dirs = " + source.getProjectSourceDirs());
+                ret.add(source);
+            }
+        }
+        if (!invalidConfigs.isEmpty()) {
+            P4InvalidConfigException ex = new P4InvalidConfigException(invalidConfigs);
+            for (P4Config invalidConfig : invalidConfigs) {
+                Events.configInvalid(project, invalidConfig, new P4InvalidConfigException(invalidConfig));
+            }
+            throw ex;
+        }
+
+        // don't call the reloaded event until we store the value.
+
+        return ret;
     }
 
 }

@@ -124,13 +124,17 @@ public class P4ConfigConnectionPanel implements ConnectionPanel {
                 // It can also happen if there are multiple project roots.
                 // See bug #21.
                 //text = new File(".", DEFAULT_P4CONFIG_NAME).getAbsolutePath();
-                LOG.info("Using default config file name (null project? " +
-                        (project == null) + ")");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Using default config file name (null project? " +
+                            (project == null) + ")");
+                }
                 text = DEFAULT_P4CONFIG_NAME;
             } else {
                 text = (new File(project.getBaseDir().getPath(), DEFAULT_P4CONFIG_NAME)).getAbsolutePath();
             }
-            LOG.info("Config file set to [" + text + "]");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Config file set to [" + text + "]");
+            }
         }
         myP4ConfigFile.setText(text);
     }

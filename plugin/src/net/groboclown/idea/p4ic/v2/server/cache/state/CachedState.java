@@ -56,7 +56,7 @@ public abstract class CachedState {
                 lastUpdated = new Date(time);
 
                 if (LOG.isDebugEnabled()) {
-                    LOG.info("deserialized " + getClass().getSimpleName() + " date to " + lastUpdated + " - " + this);
+                    LOG.debug("deserialized " + getClass().getSimpleName() + " date to " + lastUpdated + " - " + this);
                 }
             }
         }

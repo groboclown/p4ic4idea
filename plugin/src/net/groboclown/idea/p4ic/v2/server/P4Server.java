@@ -185,7 +185,7 @@ public class P4Server {
      */
     int getFilePathMatchDepth(@NotNull FilePath file) throws InterruptedException {
 
-        // FIXME move to another class; this logic is too complicated for this class.
+        // TODO move to another class; this logic is too complicated for this class.
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Finding depth for " + file + " in " + getClientName());
@@ -253,7 +253,7 @@ public class P4Server {
     @NotNull
     public List<List<File>> getRoots() throws InterruptedException {
 
-        // FIXME move to another class; this logic is too complicated for this class.
+        // TODO move to another class; this logic is too complicated for this class.
 
         // use the ProjectConfigSource as the lowest level these can be under.
         final Set<List<File>> ret = new HashSet<List<File>>();
@@ -391,7 +391,7 @@ public class P4Server {
             return null;
         }
 
-        // FIXME perform better matching
+        // TODO perform better matching
         // Logic is a bit complex; move to another class?
 
         // should be a 1-to-1 mapping
@@ -536,7 +536,7 @@ public class P4Server {
         }
         validateOnline();
 
-        // FIXME this API usage here is not the right way to go about it;
+        // TODO this API usage here is not the right way to go about it;
         // the runImmediately needs to be called inside another call (usually cacheQuery,
         // but probably shouldn't be).  It's too easy to mess up this usage pattern.
         return connection.cacheQuery(new CacheQuery<MessageResult<Collection<FilePath>>>() {
@@ -927,7 +927,7 @@ public class P4Server {
     public List<P4FileRevision> getRevisionHistoryOnline(@NotNull final IExtendedFileSpec spec,
             final int limit) throws InterruptedException {
 
-        // FIXME this is too complex for this class; move to another.
+        // TODO this is too complex for this class; move to another.
 
         return connection.query(project, new ServerQuery<List<P4FileRevision>>() {
             @Nullable
@@ -937,8 +937,7 @@ public class P4Server {
                     @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
                     throws InterruptedException {
 
-                // FIXME there's a bug here where getting the revision for a file with a special character won't return
-                // any history.  e.g.
+                // FIXME there's a bug here where getting the revision for a file with a special character won't return any history.  e.g.
                 // //depot/projecta/hotfix/a/test%23one.txt returns map {null=null}
 
                 Map<IFileSpec, List<IFileRevisionData>> history;

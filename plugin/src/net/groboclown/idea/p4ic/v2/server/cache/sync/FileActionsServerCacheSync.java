@@ -41,10 +41,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.ServerUpdateActionFactory;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
-import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
-import net.groboclown.idea.p4ic.v2.server.cache.state.FileUpdateStateList;
-import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
-import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.*;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
@@ -374,25 +371,99 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
     @Nullable
-    public ServerUpdateAction synchronizeFilesOnline(@NotNull final Collection<FilePath> files,
+    public ServerUpdateAction synchronizeFilesOnline(@NotNull Collection<FilePath> files,
             final int revisionNumber,
             @Nullable final String syncSpec, final boolean force,
             final Ref<MessageResult<Collection<FileSyncResult>>> ref) {
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        final List<FilePath> fileList = new ArrayList<FilePath>(files);
+        return new ImmediateServerUpdateAction() {
+            @Override
+            public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
+                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    throws InterruptedException {
+                try {
+                    List<IFileSpec> specs;
+                    if (revisionNumber >= 0) {
+                        specs = FileSpecUtil.getFromFilePathsAt(fileList,
+                                "#" + revisionNumber, false);
+                    } else if (syncSpec != null) {
+                        specs = FileSpecUtil.getFromFilePathsAt(fileList, syncSpec, false);
+                    } else {
+                        specs = FileSpecUtil.getFromFilePaths(fileList);
+                    }
+                    final List<IFileSpec> results = exec.synchronizeFiles(specs, force);
+                    Iterator<FilePath> srcIter = fileList.iterator();
+                    Iterator<IFileSpec> resultIter = results.iterator();
+                    List<FileSyncResult> ret = new ArrayList<FileSyncResult>(fileList.size());
+                    List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
+                    while (resultIter.hasNext()) {
+                        final IFileSpec spec = resultIter.next();
+                        if (spec.getOpStatus() == FileSpecOpStatus.VALID) {
+                            FilePath file = srcIter.next();
+                            final P4ClientFileMapping mapping =
+                                    cache.getClientMappingFor(file);
+                            if (spec.getDepotPathString() != null) {
+                                cache.updateDepotPathFor(mapping, spec.getDepotPathString());
+                            }
+                            ret.add(new FileSyncResult(mapping, spec.getAction(),
+                                    // "rev" is turned into end revision
+                                    spec.getEndRevision()));
+                        } else if (P4StatusMessage.isErrorStatus(spec)) {
+                            final P4StatusMessage msg = new P4StatusMessage(spec);
+
+                            // 17 = "file(s) up-to-date"
+                            if (msg.getErrorCode() != 17) {
+                                LOG.info(msg + ": error code " + msg.getErrorCode());
+                                messages.add(msg);
+                            } else {
+                                LOG.info(msg + ": ignored");
+                            }
+                        } else if (spec.getOpStatus() == FileSpecOpStatus.INFO) {
+                            // INFO messages don't have a source, unfortunately.
+                            // So we need to extract the path information.
+                            LOG.info("info message: " + spec.getStatusMessage());
+                            messages.add(new P4StatusMessage(spec));
+                        }
+                    }
+
+                    ref.set(new MessageResult<Collection<FileSyncResult>>(ret, messages));
+                } catch (VcsException e) {
+                    alerts.addWarning(exec.getProject(),
+                            P4Bundle.message("error.sync.title"),
+                            P4Bundle.message("error.sync"),
+                            e, fileList);
+                } catch (NoSuchElementException e) {
+                    alerts.addWarning(exec.getProject(),
+                            P4Bundle.message("error.sync.title"),
+                            P4Bundle.message("error.sync"),
+                            e, fileList);
+                }
+            }
+        };
     }
 
     @Nullable
     public ServerUpdateAction submitChangelist(@NotNull final List<FilePath> files,
             @NotNull final List<P4ChangeListJob> jobs,
-            @Nullable final String submitStatus, final int changeListId,
-            @NotNull Ref<VcsException> problem) {
+            @Nullable final String submitStatus, final int changelistId,
+            @NotNull final Ref<VcsException> problem) {
+        final List<String> jobIds = new ArrayList<String>(jobs.size());
+        for (P4ChangeListJob job : jobs) {
+            jobIds.add(job.getJobId());
+        }
 
-        // NOTE: if the changelist is the default changelist, and there are jobs,
-        // then the code will need to create a new changelist and submit that.
-
-        // FIXME implement
-        throw new IllegalStateException("not implemented");
+        return new ImmediateServerUpdateAction() {
+            @Override
+            public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
+                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    throws InterruptedException {
+                try {
+                    exec.submit(changelistId, jobIds, submitStatus);
+                } catch (VcsException e) {
+                    problem.set(e);
+                }
+            }
+        };
     }
 
 
@@ -511,7 +582,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         File f = file.getIOFile();
         if (f.exists() && f.isFile() && !f.canWrite()) {
             if (!f.setWritable(true)) {
-                // FIXME get access to the alerts in a better way
+                // TODO get access to the alerts in a better way
                 AlertManager.getInstance().addWarning(project,
                         P4Bundle.message("error.writable.failed.title"),
                         P4Bundle.message("error.writable.failed", file),
@@ -713,12 +784,17 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 } else if (spec.getOpStatus() != FileSpecOpStatus.VALID) {
                     LOG.debug(" -+- unknown error");
                     P4StatusMessage msg = new P4StatusMessage(spec);
+                    FilePath[] files;
+                    if (filePath != null) {
+                        files = new FilePath[] { filePath };
+                    } else {
+                        files = new FilePath[0];
+                    }
                     alerts.addWarning(exec.getProject(),
                             P4Bundle.message("error.client.unknown.p4.title"),
                             msg.toString(),
                             P4StatusMessage.messageAsError(msg),
-                            // FIXME null check the file path
-                            filePath);
+                            files);
                     // don't handle
                     continue;
                 } else {
@@ -740,7 +816,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             case INTEGRATE:
                             case BRANCH:
                                 // Integrated, but not open for edit.  Open for edit.
-                                // FIXME branch may need "add" in some cases.
+                                // TODO branch may need "add" in some cases.
                                 container = integrated;
                                 break;
 
@@ -813,7 +889,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     }
                 }
                 if (! found) {
-                    // FIXME report real problem
+                    // TODO report real problem
                     LOG.error("No matched source file for " + filePath);
                 }
             }
@@ -1143,9 +1219,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     return ExecutionStatus.RETRY;
                 } catch (VcsException e) {
                     alerts.addWarning(exec.getProject(),
-                            // FIXME property should be for "delete"
-                            P4Bundle.message("error.edit.title"),
-                            P4Bundle.message("error.edit",
+                            P4Bundle.message("error.delete.title"),
+                            P4Bundle.message("error.delete",
                                     FilePathUtil.toStringList(entry.getValue())),
                             e, entry.getValue());
                     returnCode = ExecutionStatus.FAIL;
@@ -1213,7 +1288,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             ExecutionStatus returnCode = ExecutionStatus.NO_OP;
 
 
-            // FIXME check logic for whether the source is in the client.  If not, then this is either
+            // TODO check logic for whether the source is in the client.  If not, then this is either
             // an integrate or a no-op.
 
 
@@ -1229,8 +1304,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
                     final List<P4StatusMessage> msgs = P4StatusMessage.getErrors(results);
                     alerts.addNotices(exec.getProject(),
-                            // FIXME property should be for "move revert"
-                            P4Bundle.message("warning.edit.file.revert",
+                            P4Bundle.message("warning.move.file.revert",
                                     FilePathUtil.toStringList(reverts)),
                             msgs, false);
                     hasUpdate = true;
@@ -1273,9 +1347,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                         return ExecutionStatus.RETRY;
                     } catch (VcsException e) {
                         alerts.addWarning(exec.getProject(),
-                                // FIXME property should be for "move"
-                                P4Bundle.message("error.edit.title"),
-                                P4Bundle.message("error.edit",
+                                P4Bundle.message("error.move.title"),
+                                P4Bundle.message("error.move",
                                         FilePathUtil.toStringList(entry.getValue())),
                                 e, entry.getValue());
                         returnCode = ExecutionStatus.FAIL;
@@ -1354,8 +1427,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
                     final List<P4StatusMessage> msgs = P4StatusMessage.getErrors(results);
                     alerts.addNotices(exec.getProject(),
-                            // FIXME property should be for "revert"
-                            P4Bundle.message("warning.edit.file.revert",
+                            P4Bundle.message("warning.revert.file",
                                     FilePathUtil.toStringList(reverts)),
                             msgs, false);
                     hasUpdate = true;

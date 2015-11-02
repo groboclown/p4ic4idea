@@ -23,7 +23,9 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
@@ -32,6 +34,7 @@ import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -180,7 +183,27 @@ public class P4ChangeProvider implements ChangeProvider {
             if (virt == null) {
                 builder.processLocallyDeletedFile(file);
             } else {
-                builder.processModifiedWithoutCheckout(virt);
+                // In this situation, there are times where a file is
+                // marked as dirty, it hasn't been checked out, and the
+                // file isn't different than the server version.
+
+                // This needs to be verified by comparing against the
+                // server version, but that can only happen if we're
+                // online.
+
+                final P4Server server = mapped.notEditedDirtyFiles.get(file);
+                if (server.isWorkingOnline()) {
+                    if (isDifferentThanServerCopy(server, file)) {
+                        builder.processModifiedWithoutCheckout(virt);
+                    } else {
+                        // do nothing with the file.
+                        LOG.info("Incorrectly tagged " + file + " as dirty.");
+                    }
+                } else {
+                    // TODO this needs a special case, in that we can't
+                    // tell if it's different or not.
+                    builder.processModifiedWithoutCheckout(virt);
+                }
             }
         }
 
@@ -239,6 +262,25 @@ public class P4ChangeProvider implements ChangeProvider {
     }
 
 
+    private boolean isDifferentThanServerCopy(@NotNull P4Server server, @NotNull FilePath file) {
+        try {
+            assert file.getVirtualFile() != null;
+            final byte[] serverCopy = server.loadFileAsBytesOnline(file, P4ChangeListId.P4_UNKNOWN);
+            final byte[] localCopy = file.getVirtualFile().contentsToByteArray();
+            return Arrays.equals(serverCopy, localCopy);
+        } catch (P4DisconnectedException e) {
+            LOG.info("Could not check online state, as the server just went offline", e);
+            return true;
+        } catch (InterruptedException e) {
+            LOG.info("Could not get server bytes from " + file, e);
+            return true;
+        } catch (IOException e) {
+            LOG.info("Could not get local bytes from " + file, e);
+            return true;
+        }
+    }
+
+
     @NotNull
     private MappedOpenFiles getOpenedFiles(@Nullable final Set<FilePath> dirtyFiles,
             @NotNull final ProgressIndicator progress)
@@ -249,6 +291,7 @@ public class P4ChangeProvider implements ChangeProvider {
             return new MappedOpenFiles(vcs, alerts, progress);
         }
     }
+
 
 
     static class ServerAction {

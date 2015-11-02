@@ -74,5 +74,7 @@ interface Cache {
     boolean isFileIgnored(@Nullable FilePath file);
 
     @NotNull
-    Collection<P4JobState> refreshJobState(P4Exec2 exec, AlertManager alerts, Collection<String> jobs);
+    Collection<P4JobState> refreshJobState(@NotNull P4Exec2 exec, AlertManager alerts, @NotNull Collection<String> jobs);
+
+    void updateDepotPathFor(@NotNull P4ClientFileMapping mapping, @NotNull String depotPathString);
 }

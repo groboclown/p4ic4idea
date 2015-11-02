@@ -36,6 +36,7 @@ import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
+import net.groboclown.idea.p4ic.v2.ui.alerts.ClientNameMismatchHandler;
 import net.groboclown.idea.p4ic.v2.ui.alerts.InvalidClientHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -281,6 +282,10 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         return Collections.emptyList();
     }
 
+    void updateDepotPathFor(@NotNull P4ClientFileMapping mapping, @NotNull String depotPathString) {
+        fileRepo.updateDepotPath(mapping, depotPathString);
+    }
+
     @NotNull
     private List<VirtualFile> findClientMappingsUnder(@NotNull List<VirtualFile> projectRoots) {
         // Called when the root is Null.
@@ -382,13 +387,17 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
             return;
         }
         if (!client.getName().equals(getCachedClientName())) {
-            // FIXME critical error for wrong client
-            throw new IllegalStateException("not implemented");
+            alerts.addCriticalError(new ClientNameMismatchHandler(exec.getProject(),
+                    client.getName(),
+                    getCachedClientName(),
+                    exec.getServerConnectedController()),
+                    null);
         }
         List<String> roots = new ArrayList<String>();
         if (client.getRoot() == null) {
-            // FIXME use bundle
-            alerts.addNotice(exec.getProject(), "Perforce reports the primary client root directory is null", null);
+            alerts.addNotice(exec.getProject(),
+                    P4Bundle.message("error.primary.client.root.null"),
+                    null);
         } else {
             roots.add(client.getRoot());
         }

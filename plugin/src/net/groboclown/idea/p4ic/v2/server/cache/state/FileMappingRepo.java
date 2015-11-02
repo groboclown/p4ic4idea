@@ -196,12 +196,11 @@ public class FileMappingRepo {
         return map;
     }
 
-    /**
+    /*
      *
      * @param depotToLocation new mappings.  This does not strip out the existing mappings
      *               that aren't in the passed-in list.
      * @deprecated because it's not implemented yet
-     */
     public void updateLocations(@NotNull Map<String, FilePath> depotToLocation) {
         lock.lock();
         try {
@@ -209,8 +208,38 @@ public class FileMappingRepo {
             // existing maps for old stuff.
             flush();
 
-            // FIXME implement or delete this method if not used
             throw new IllegalStateException("not implemented");
+        } finally {
+            lock.unlock();
+        }
+    }
+    */
+
+    public void updateDepotPath(@NotNull P4ClientFileMapping mapping, @NotNull String depotPath) {
+        if (depotPath.equals(mapping.getDepotPath())) {
+            // nothing to do
+            return;
+        }
+        lock.lock();
+        try {
+            WeakReference<P4ClientFileMapping> ref;
+            if (mapping.getLocalFilePath() != null) {
+                ref = filesByLocal.get(mapping.getLocalFilePath());
+            } else if (mapping.getDepotPath() != null) {
+                ref = getWeakRefByDepot(mapping.getDepotPath());
+            } else {
+                throw new IllegalArgumentException("bad mapping: " + mapping);
+            }
+            if (ref == null) {
+                ref = createRef(mapping);
+                files.add(ref);
+                if (mapping.getLocalFilePath() != null) {
+                    filesByLocal.put(mapping.getLocalFilePath(), ref);
+                }
+            }
+            removeByDepot(mapping.getDepotPath());
+            mapping.updateDepot(depotPath);
+            addByDepot(depotPath, ref);
         } finally {
             lock.unlock();
         }

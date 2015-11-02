@@ -75,7 +75,7 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
                 if (ex.getServerMessage().hasMessageFragment("'login' not necessary")) {
                     // ignore login and keep going
                     LOG.info(config + ": User provided password, but  it is not necessary", ex);
-                    // FIXME tell the caller that the password should be forgotten
+                    // TODO tell the caller that the password should be forgotten
                 } else {
                     throw ex;
                 }
@@ -98,8 +98,8 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
             //    LOG.info("No password found");
             }
         } catch (PasswordSafeException e) {
-            // FIXME handle better
-            LOG.info(e);
+            // TODO handle better
+            LOG.error(e);
         }
         return false;
     }

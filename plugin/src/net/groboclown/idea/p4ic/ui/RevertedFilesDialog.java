@@ -100,7 +100,7 @@ public class RevertedFilesDialog extends JDialog {
     private List<String> exceptionDisplay(@NotNull final Collection<P4StatusMessage> errors) {
         List<String> ret = new ArrayList<String>(errors.size());
         for (P4StatusMessage error : errors) {
-            // FIXME the errors should be linked to files; add them to the UI output.
+            // TODO the errors should be linked to files; add them to the UI output.
             ret.add(error.getMessage().getLocalizedMessage());
         }
         return ret;

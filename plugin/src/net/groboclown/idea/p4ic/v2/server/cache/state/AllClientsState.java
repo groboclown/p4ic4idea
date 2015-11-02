@@ -102,7 +102,7 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
             return;
         }
 
-        // FIXME it looks like this is too aggressively called.
+        // TODO it looks like this is too aggressively called.
 
         if (LOG.isDebugEnabled()) {
             LOG.info("Removing client cache " + client, new Exception("stack capture"));
@@ -160,7 +160,7 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
             @Override
             public void configUpdated(@NotNull final Project project,
                     @NotNull final List<ProjectConfigSource> sources) {
-                // FIXME implement
+                // FIXME implement when project <-> client relationship is stored
                 // NOTE be project aware
                 // Currently, this is not possible to implement correctly.
                 // It requires knowledge about which projects have which
@@ -172,7 +172,7 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                     @NotNull final P4InvalidConfigException ex) {
-                // FIXME implement
+                // FIXME implement when project <-> client relationship is stored
                 // NOTE be project aware
                 // Currently, this is not possible to implement correctly.
                 // It requires knowledge about which projects have which

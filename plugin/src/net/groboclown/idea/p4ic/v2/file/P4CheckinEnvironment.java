@@ -202,8 +202,8 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             }
             files.add(fp);
         } else {
-            // FIXME do something smart
-            throw new IllegalStateException("No perforce changelist known for " + lcl + " at " +
+            // TODO do something smart
+            LOG.error("No perforce changelist known for " + lcl + " at " +
                     server.getClientServerId());
         }
     }
@@ -315,7 +315,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             this.root = new JBScrollPane(this.panel.getRootPanel());
 
 
-            // FIXME set the ok action as enabled/disabled depending upon
+            // TODO set the ok action as enabled/disabled depending upon
             // whether the comment is empty or not (bug #52).  Probably
             // should just set a warning, though, but that doesn't do anything.
             // We will also need a notification for when the comment is changed,

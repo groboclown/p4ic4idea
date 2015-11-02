@@ -81,7 +81,7 @@ public class P4RevertUnchanged extends AbstractVcsAction {
                     } catch (InterruptedException ex) {
                         LOG.warn(ex);
                     } catch (P4DisconnectedException ex) {
-                        // FIXME ensure that it's already handled
+                        // TODO ensure that it's already handled by looking at the calls that were made.
                         LOG.warn(ex);
                     }
                 }

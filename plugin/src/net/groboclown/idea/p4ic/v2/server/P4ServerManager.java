@@ -218,7 +218,7 @@ public class P4ServerManager implements ProjectComponent {
                     }
                     final AllClientsState clientState = AllClientsState.getInstance();
                     for (ClientServerId serverId : knownServers) {
-                        // FIXME check if this is too aggressive.
+                        // TODO check if this is too aggressive.
                         servers.get(serverId).setValid(false);
                         clientState.removeClientState(serverId);
                         servers.remove(serverId);
@@ -238,7 +238,7 @@ public class P4ServerManager implements ProjectComponent {
                     // Connections are temporarily invalid.
                     connectionsValid = false;
                     synchronized (servers) {
-                        // FIXME examine whether this is appropriate to keep calling.
+                        // TODO examine whether this is appropriate to keep calling.
                         for (P4Server server : servers.values()) {
                             server.setValid(false);
                             clientState.removeClientState(server.getClientServerId());

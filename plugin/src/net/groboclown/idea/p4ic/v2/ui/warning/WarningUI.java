@@ -134,7 +134,7 @@ public class WarningUI {
             }
             if (warning.getAffectedFiles().isEmpty()) {
                 if (baseException.getVirtualFile() == null) {
-                    // FIXME figure out a better file instance.
+                    // TODO figure out a better file instance.
                     LOG.warn("No file set for exception", baseException);
                     baseException.setVirtualFile(FilePathUtil.getFilePath(new File(".")).getVirtualFile());
                 }

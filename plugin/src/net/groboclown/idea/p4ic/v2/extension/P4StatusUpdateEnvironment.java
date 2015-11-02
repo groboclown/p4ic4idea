@@ -118,13 +118,13 @@ public class P4StatusUpdateEnvironment implements UpdateEnvironment {
                 } else {
                     FileGroup group = updatedFiles.getGroupById(OFFLINE_GROUP_ID);
                     for (FilePath filePath: en.getValue()) {
-                        // FIXME get cached known state
+                        // TODO get cached known state
                         group.add(filePath.getIOFile().getAbsolutePath(),
                                 P4Vcs.getKey(),
                                 null);
                     }
                 }
-                // FIXME else mark them w/ offline status
+                // TODO else mark them w/ offline status
             } catch (InterruptedException ex) {
                 session.exceptions.add(new VcsInterruptedException(ex));
             }

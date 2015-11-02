@@ -353,7 +353,7 @@ public class ServerConnection {
                                 action.action.abort(cacheManager);
                                 return null;
                             } catch (VcsException e) {
-                                // FIXME need a more nuanced handler for general connection problems.
+                                // TODO need a more nuanced handler for general connection problems.
                                 alertManager.addCriticalError(new DisconnectedHandler(action.project,
                                         statusController, e), e);
                                 // go offline and requeue the action

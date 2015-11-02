@@ -79,7 +79,7 @@ public class P4CurrentRevisionNumber implements VcsRevisionNumber {
     }
     */
 
-    // FIXME come up with a better invoker
+    // TODO come up with a better constructor
     @Deprecated
     public P4CurrentRevisionNumber(@NotNull P4FileAction file) {
         this.baseFile = file.getFile();

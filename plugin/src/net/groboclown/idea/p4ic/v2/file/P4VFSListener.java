@@ -209,7 +209,7 @@ public class P4VFSListener extends VcsVFSListener {
                 }
             }
         } catch (InterruptedException e) {
-            // FIXME better error message
+            // TODO better error message
             alerts.addNotice(vcs.getProject(),
                     P4Bundle.message("interrupted_exception", addedFiles), e);
         }

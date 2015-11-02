@@ -45,6 +45,8 @@ import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
+import net.groboclown.idea.p4ic.v2.server.connection.ClientExec.ServerCount;
+import net.groboclown.idea.p4ic.v2.server.connection.ClientExec.WithClient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -394,6 +396,38 @@ public class P4Exec2 {
     }
 
 
+    public void addJobsToChangelist(final int changelistId,
+            @NotNull final Collection<String> jobIds,
+            @Nullable final String fixState) throws VcsException, CancellationException {
+        exec.runWithClient(project, new WithClient<Void>() {
+            @Override
+            public Void run(@NotNull final IOptionsServer server, @NotNull final IClient client,
+                    @NotNull final ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                server.fixJobs(new ArrayList<String>(jobIds), changelistId, fixState, false);
+                return null;
+            }
+        });
+    }
+
+
+    public void removeJobsFromChangelist(final int changelistId,
+            @NotNull final Collection<String> jobIds)
+            throws VcsException, CancellationException {
+        exec.runWithClient(project, new WithClient<Void>() {
+            @Override
+            public Void run(@NotNull final IOptionsServer server, @NotNull final IClient client,
+                    @NotNull final ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                server.fixJobs(new ArrayList<String>(jobIds), changelistId, null, true);
+                return null;
+            }
+        });
+    }
+
+
     @NotNull
     public List<IChangelistSummary> getPendingClientChangelists()
             throws VcsException, CancellationException {
@@ -453,7 +487,10 @@ public class P4Exec2 {
                 }
                 count.invoke("changelist.getFiles");
 
-                // FIXME make this get the status
+                // TODO make this get the status
+                // It's in the IServer object (the IFix object).
+
+
                 return cl.getFiles(false);
             }
         });

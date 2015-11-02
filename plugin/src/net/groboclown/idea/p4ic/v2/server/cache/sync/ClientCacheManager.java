@@ -332,6 +332,12 @@ public class ClientCacheManager {
                 final Collection<String> jobIds) {
             return jobs.loadServerCache(exec, alerts, jobIds);
         }
+
+        @Override
+        public void updateDepotPathFor(@NotNull final P4ClientFileMapping mapping,
+                @NotNull final String depotPathString) {
+            workspace.updateDepotPathFor(mapping, depotPathString);
+        }
     }
 
 }

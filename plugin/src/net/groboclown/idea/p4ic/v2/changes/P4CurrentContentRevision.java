@@ -34,7 +34,7 @@ public class P4CurrentContentRevision implements ContentRevision {
     private final P4CurrentRevisionNumber rev;
     private final P4FileAction fileAction;
 
-    // FIXME Just as the P4CurrentRevisionNumber needs a better implementation,
+    // TODO Just as the P4CurrentRevisionNumber needs a better implementation,
     // this too will need to be improved.
     @Deprecated
     public P4CurrentContentRevision(@NotNull Project project, @NotNull P4FileAction file) {

@@ -32,7 +32,7 @@ abstract class CacheFrontEnd {
     private static final Logger LOG = Logger.getInstance(CacheFrontEnd.class);
 
 
-    // FIXME make this configurable
+    // TODO make this configurable
     static final long MIN_REFRESH_INTERVAL_MS = 1000L;
 
 

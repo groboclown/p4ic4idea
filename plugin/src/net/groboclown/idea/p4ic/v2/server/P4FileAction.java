@@ -107,7 +107,7 @@ public class P4FileAction {
             case MOVE_DELETE_FILE:
                 return FileStatus.DELETED;
             case REVERT_FILE:
-                // FIXME Weird status that shouldn't happen
+                // TODO Weird status that shouldn't happen
                 return P4Vcs.REVERTED_OFFLINE;
             default:
                 return FileStatus.NOT_CHANGED;

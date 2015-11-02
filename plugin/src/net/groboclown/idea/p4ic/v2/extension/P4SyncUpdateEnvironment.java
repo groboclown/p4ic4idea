@@ -192,7 +192,7 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
                 continue;
             }
 
-            // FIXME re-examine this logic
+            // TODO re-examine this logic
             // Find the double mapping - if a content root is a child of the client root, then add the
             // content root.  If the client root is a child of the content root, then add the client root.
             for (FilePath clientRoot : clientRoots) {

@@ -41,6 +41,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 public class ChangeListServerCacheSync extends CacheFrontEnd {
     private static final Logger LOG = Logger.getInstance(ChangeListServerCacheSync.class);
@@ -107,18 +108,21 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
 
 
     @Nullable
-    public PendingUpdateState deleteChangelist(final int changeListId) {
-        if (changeListId == P4ChangeListId.P4_UNKNOWN || changeListId == P4ChangeListId.P4_DEFAULT) {
+    public PendingUpdateState deleteChangelist(final int changelistId) {
+        if (changelistId == P4ChangeListId.P4_UNKNOWN || changelistId == P4ChangeListId.P4_DEFAULT) {
             // can't delete these ones
             return null;
         }
 
-        // FIXME put in local cache, and remove from committed
+        final P4ChangeListState state = new P4ChangeListState(changelistId);
+        state.setDeleted(true);
+        localClientChanges.add(state);
+        committed.remove(changelistId);
 
         Map<String, Object> params = new HashMap<String, Object>();
-        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changeListId);
+        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changelistId);
         return new PendingUpdateState(UpdateAction.DELETE_CHANGELIST,
-                Collections.singleton(Integer.toString(changeListId)),
+                Collections.singleton(Integer.toString(changelistId)),
                 params);
     }
 
@@ -168,19 +172,28 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
     }
 
     @Nullable
-    public PendingUpdateState renameChangelist(final int changeListId, final String description) {
-        if (changeListId == P4ChangeListId.P4_UNKNOWN || changeListId == P4ChangeListId.P4_DEFAULT) {
+    public PendingUpdateState renameChangelist(final int changelistId, final String description) {
+        if (changelistId == P4ChangeListId.P4_UNKNOWN || changelistId == P4ChangeListId.P4_DEFAULT) {
             return null;
         }
 
-        // FIXME put in local cache, and remove from committed
+        // Note that in the world of possibilities, this could potentially
+        // be called when the changelist is already registered as deleted.
+        // However, that shouldn't be likely.  In this situation, the
+        // changelist will no longer be cached as deleted, but the pending
+        // update could still exist.
+
+        final P4ChangeListState state = new P4ChangeListState(changelistId);
+        state.setComment(description);
+        localClientChanges.add(state);
+        committed.remove(changelistId);
 
         Map<String, Object> params = new HashMap<String, Object>();
-        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changeListId);
+        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changelistId);
         params.put(UpdateParameterNames.DESCRIPTION.getKeyName(), description);
 
         return new PendingUpdateState(UpdateAction.CHANGE_CHANGELIST_DESCRIPTION,
-                Collections.singleton(Integer.toString(changeListId)),
+                Collections.singleton(Integer.toString(changelistId)),
                 params);
     }
 
@@ -205,7 +218,8 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         Set<P4ChangeListState> refreshed = new HashSet<P4ChangeListState>(pendingChanges.size());
         boolean foundDefault = false;
         for (IChangelistSummary pendingChange : pendingChanges) {
-            // FIXME include job fix state
+            // TODO include job fix state
+            // It's attached to the IServer / IFix classes.
 
             P4ChangeListState state = new P4ChangeListState(pendingChange);
             refreshed.add(state);
@@ -295,7 +309,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
 
     @NotNull
     private String setDescription(final int changeListId, @NotNull LocalChangeList source) {
-        // FIXME there are other places where the description is joined together.
+        // TODO there are other places where the description is joined together.
         // Put them all here, or at least in one place.
         String description = source.getName();
         if (source.getComment() != null && source.getComment().length() > 0) {
@@ -666,8 +680,104 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
                 @NotNull final ClientCacheManager clientCacheManager,
                 @NotNull final AlertManager alerts) {
-            // FIXME implement
-            throw new IllegalStateException("not implemented");
+            // organize the changes by ID, so that they can be done at a single
+            // pass.
+
+            ExecutionStatus ret = ExecutionStatus.NO_OP;
+            boolean updated = false;
+
+            Map<Integer, List<PendingUpdateState>> clToUpdate = new HashMap<Integer, List<PendingUpdateState>>();
+            for (PendingUpdateState state : getPendingUpdateStates()) {
+                Integer cl = UpdateParameterNames.CHANGELIST.getParameterValue(state);
+                if (cl != null) {
+                    List<PendingUpdateState> values = clToUpdate.get(cl);
+                    if (values == null) {
+                        values = new ArrayList<PendingUpdateState>();
+                        clToUpdate.put(cl, values);
+                    }
+                    values.add(state);
+                } else {
+                    alerts.addNotice(exec.getProject(),
+                            P4Bundle.message("error.bad-update.ignored", state),
+                            null);
+                }
+            }
+
+            for (Entry<Integer, List<PendingUpdateState>> entry : clToUpdate.entrySet()) {
+                final Integer cl = entry.getKey();
+                if (cl <= 0) {
+                    // not correct
+                    // TODO should this be a error dialog?
+                    LOG.error("Encountered a changelist update for an invalid changelist number " +
+                        cl);
+                    continue;
+                }
+                String newComment = null;
+                String fixState = null;
+                List<String> newJobs = new ArrayList<String>();
+                List<String> removedJobs = new ArrayList<String>();
+                for (PendingUpdateState state : entry.getValue()) {
+                    switch (state.getUpdateAction()) {
+                        case CHANGE_CHANGELIST_DESCRIPTION:
+                            newComment = UpdateParameterNames.DESCRIPTION.getParameterValue(state);
+                            break;
+                        case ADD_JOB_TO_CHANGELIST:
+                            newJobs.add((String) UpdateParameterNames.JOB.getParameterValue(state));
+                            break;
+                        case REMOVE_JOB_FROM_CHANGELIST:
+                            removedJobs.add((String) UpdateParameterNames.JOB.getParameterValue(state));
+                            break;
+                        case SET_CHANGELIST_FIX_STATE:
+                            fixState = UpdateParameterNames.FIX_STATE.getParameterValue(state);
+                            break;
+                        default:
+                            LOG.error("Incorrect update group (changelist) for action " +
+                                    state.getUpdateAction());
+                            break;
+                    }
+                }
+                if (newComment != null) {
+                    try {
+                        exec.updateChangelistDescription(cl, newComment);
+                        updated = true;
+                    } catch (VcsException e) {
+                        alerts.addWarning(exec.getProject(),
+                                P4Bundle.message("exception.update-changelist.description.title", cl),
+                                P4Bundle.message("exception.update-changelist.description", cl),
+                                e, new FilePath[0]);
+                        ret = ExecutionStatus.FAIL;
+                    }
+                }
+                if (! newJobs.isEmpty()) {
+                    try {
+                        exec.addJobsToChangelist(cl, newJobs, fixState);
+                        updated = true;
+                    } catch (VcsException e) {
+                        alerts.addWarning(exec.getProject(),
+                                P4Bundle.message("exception.update-changelist.add-jobs.title", cl),
+                                P4Bundle.message("exception.update-changelist.add-jobs", cl, newJobs),
+                                e, new FilePath[0]);
+                        ret = ExecutionStatus.FAIL;
+                    }
+                }
+                if (! removedJobs.isEmpty()) {
+                    try {
+                        exec.removeJobsFromChangelist(cl, removedJobs);
+                        updated = true;
+                    } catch (VcsException e) {
+                        alerts.addWarning(exec.getProject(),
+                                P4Bundle.message("exception.update-changelist.remove-jobs.title", cl),
+                                P4Bundle.message("exception.update-changelist.remove-jobs", cl, removedJobs),
+                                e, new FilePath[0]);
+                        ret = ExecutionStatus.FAIL;
+                    }
+                }
+            }
+
+            if (updated && ret == ExecutionStatus.NO_OP) {
+                ret = ExecutionStatus.RELOAD_CACHE;
+            }
+            return ret;
         }
     }
 }

@@ -22,7 +22,7 @@ public class P4RequestException extends P4Exception {
     private final IServerMessage msg;
 
     public P4RequestException(@NotNull IServerMessage msg) {
-        // FIXME needs to be handled better.
+        // TODO needs to be handled better.
         super(msg.toString());
         this.msg = msg;
     }

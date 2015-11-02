@@ -9,14 +9,9 @@ These bugs need to be handled before features.
 ## Big Bugs
 
 
+1. Modified without checkout on files that aren't different
+   than the P4 version.  *Fixed needs check.*
 1. working offline at startup has major issues (server off).
-    1. cannot reconnect once server comes back online (ssl mode only, it seems)
-    1. initial display does not load the cached state?  This is
-       because of the initial assumption that it's working online,
-       but that causes a working offline exception.  Instead, the
-       working offline exception should be displayed (as it is
-       currently happening), but the exception should not cause
-       the refresh to stop.
     1. The "I'm offline now" message seems to not propagate correctly.
        Needs better tracing of the server pool, and its currently
        known online/offline state.
@@ -39,6 +34,7 @@ These bugs need to be handled before features.
    needs to be created.
 1. The ServerConnection.runImmediately process is hokey and susceptible to abuse
    or incorrect usage.  It needs to be reworked.
+
 
 ## Parts needing heavy testing
 
@@ -74,7 +70,8 @@ These bugs need to be handled before features.
    do not display well to the user.  Make these nicer.
 1. Replace "IntelliJ" and "IDEA" from the strings with the actual IDE name.
 1. Selecting "no" to the add new file dialog to p4 still adds the file for edit.
-
+1. Text display should fetch the name of the IDE, and not hard-code "IntelliJ" or
+    "IDEA".
 
 ## Long term features
 

@@ -33,7 +33,6 @@ import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4Config.ConnectionMethod;
 import net.groboclown.idea.p4ic.config.P4ConfigUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
-import net.groboclown.idea.p4ic.ui.ErrorDialog;
 import net.groboclown.idea.p4ic.ui.connection.*;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
@@ -41,6 +40,7 @@ import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration.C
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource.Builder;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSourceLoader;
+import net.groboclown.idea.p4ic.v2.ui.alerts.ConfigPanelErrorHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -311,25 +311,24 @@ public class P4ConfigPanel {
             }
             if (invalidConfigCount <= 0) {
                 if (ret.isEmpty()) {
-                    // FIXME use alertManager
-                    ErrorDialog.logError(myProject,
-                            P4Bundle.message("configuration.error.no-config-defined"),
-                            new P4InvalidConfigException(""));
+                    alertManager.addCriticalError(new ConfigPanelErrorHandler(
+                            myProject,
+                            P4Bundle.message("configuration.error.title"),
+                            P4Bundle.message("configuration.error.no-config-defined")
+                    ), null);
                     return null;
                 }
                 return ret;
             }
-            // FIXME use alertManager
-            ErrorDialog.logError(myProject,
+            alertManager.addCriticalError(new ConfigPanelErrorHandler(
+                    myProject,
+                    P4Bundle.message("configuration.error.title"),
                     P4Bundle.message("configuration.error.problem-list",
-                            invalidConfigCount, invalidConfigs.toString()),
-                    new P4InvalidConfigException(""));
+                            invalidConfigCount, invalidConfigs.toString())
+            ), null);
             return null;
         } catch (P4InvalidConfigException e) {
-            // FIXME use alertManager
-            ErrorDialog.logError(myProject,
-                    P4Bundle.message("configuration.check.io-error"),
-                    e);
+            reportProblems(Collections.<Exception>singleton(e));
             return null;
         }
     }
@@ -363,10 +362,7 @@ public class P4ConfigPanel {
                                     P4Bundle.message("configuration.dialog.valid-connection.title"),
                                     Messages.getInformationIcon());
                         } else if (problems != null) {
-                            // FIXME use alertManager
-                            ErrorDialog.logError(myProject,
-                                    P4Bundle.message("configuration.check.io-error"),
-                                    problems.values().iterator().next());
+                            reportProblems(problems);
                         }
                     }
                 });
@@ -423,10 +419,7 @@ public class P4ConfigPanel {
             }
         }
         if (!problems.isEmpty()) {
-            // FIXME use alert manager
-            ErrorDialog.logError(myProject,
-                    P4Bundle.message("configuration.check.io-error"),
-                    problems.get(0));
+            reportProblems(problems);
             return null;
         }
 
@@ -642,6 +635,41 @@ public class P4ConfigPanel {
     private void resetResolvedProperties() {
         myResolvedValuesField.setText(P4Bundle.message("config.display.properties.refresh"));
     }
+
+
+    private void reportProblems(@NotNull Map<ProjectConfigSource, Exception> problems) {
+        // TODO use better UI element
+        String message = "";
+        String sep = "";
+        for (Map.Entry<ProjectConfigSource, Exception> entry : problems.entrySet()) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            message += sep + entry.getKey().toString() +
+                    ": " + entry.getValue().getMessage();
+            sep = "\n";
+        }
+        alertManager.addCriticalError(new ConfigPanelErrorHandler(
+                        myProject,
+                        P4Bundle.message("configuration.error.title"),
+                        message),
+                null);
+    }
+
+    private void reportProblems(@NotNull Collection<Exception> problems) {
+        // TODO use better UI element
+        String message = "";
+        String sep = "";
+        for (Exception ex : problems) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            message += sep + ex.getMessage();
+            sep = "\n";
+        }
+        alertManager.addCriticalError(new ConfigPanelErrorHandler(
+                        myProject,
+                        P4Bundle.message("configuration.error.title"),
+                        message),
+                null);
+    }
+
 
     /**
      * Method generated by IntelliJ IDEA GUI Designer

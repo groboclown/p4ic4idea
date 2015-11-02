@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
  * All UpdateGroup.FILE actions.
  */
 public enum FileUpdateAction {
-    // FIXME include a "pure" ADD_FILE action, so that file status can be accurate when we know what the server has.
+    // TODO include a "pure" ADD_FILE action, so that file status can be accurate when we know what the server has.
 
     /** Indeterminate state, for when the user requests an edit or an add, but we don't
      * know yet if the server knows about the file. */

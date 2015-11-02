@@ -584,7 +584,7 @@ public class ClientExec {
     private boolean isSSLHandshakeProblem(@NotNull final ConnectionException e) {
         // TODO replace with error code checking
 
-        // FIXME this check isn't always right - it could be a fingerprint problem in disguise
+        // TODO this check isn't always right - it could be a fingerprint problem in disguise
 
         String message = e.getMessage();
         return message != null &&

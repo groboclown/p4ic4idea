@@ -28,7 +28,7 @@ public class P4FileUpdateState extends CachedState {
     private static final Logger LOG = Logger.getInstance(P4FileUpdateState.class);
 
 
-    // FIXME include information about a cached backup file (for reverts)
+    // TODO include information about a cached backup file (for reverts)
 
 
     @NotNull

@@ -99,8 +99,7 @@ public class AlertManager implements ApplicationComponent {
         }
         eventLock.lock();
         try {
-            // FIXME make debug
-            LOG.info("adding warning " + details, ex == null ? new Throwable("stack capture") : ex);
+            LOG.warn(details, ex == null ? new Throwable("stack capture") : ex);
             pendingWarnings.add(new WarningMessage(project, title, details, ex, affectedFiles));
             eventPending.signal();
         } finally {
@@ -170,7 +169,7 @@ public class AlertManager implements ApplicationComponent {
             final boolean ignoreFileNotFound) {
         addWarnings(project, message, msgs, ignoreFileNotFound);
 
-        // FIXME make an actual notice, not warning
+        // TODO make an actual notice, not just reuse the warning code
 //
 //        for (P4StatusMessage msg : msgs) {
 //            if (msg != null && msg.isError() && (! ignoreFileNotFound ||

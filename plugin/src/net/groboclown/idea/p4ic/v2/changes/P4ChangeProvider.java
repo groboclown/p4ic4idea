@@ -354,6 +354,9 @@ public class P4ChangeProvider implements ChangeProvider {
                     }
 
                     if (unknownDirties.remove(fp)) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Marking dirty file for " + server.getClientServerId() + ": " + fp);
+                        }
                         dirtyP4Files.put(fp, new ServerAction(server, file));
                     } else {
                         Set<P4FileAction> fileSet = notDirtyOpenedFiles.get(server);
@@ -427,6 +430,8 @@ public class P4ChangeProvider implements ChangeProvider {
 
             this.affectedServers = new HashSet<P4Server>(vcs.getP4Servers());
 
+            LOG.debug("Performing 'all dirty' refresh");
+
             for (P4Server server : affectedServers) {
                 final Collection<P4FileAction> opened = server.getOpenFiles();
                 for (P4FileAction file : opened) {
@@ -438,6 +443,9 @@ public class P4ChangeProvider implements ChangeProvider {
                         continue;
                     }
 
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Marking dirty: " + fp);
+                    }
                     dirtyP4Files.put(fp, new ServerAction(server, file));
                     scopedDirtyFiles.add(fp);
                 }

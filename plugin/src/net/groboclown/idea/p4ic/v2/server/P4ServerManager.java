@@ -16,7 +16,6 @@ package net.groboclown.idea.p4ic.v2.server;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ProjectComponent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupManager;
@@ -56,7 +55,7 @@ public class P4ServerManager implements ProjectComponent {
 
     @NotNull
     public static P4ServerManager getInstance(@NotNull Project project) {
-        return ServiceManager.getService(project, P4ServerManager.class);
+        return project.getComponent(P4ServerManager.class);
     }
 
 

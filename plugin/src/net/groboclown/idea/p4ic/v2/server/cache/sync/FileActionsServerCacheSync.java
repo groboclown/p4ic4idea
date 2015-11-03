@@ -35,13 +35,13 @@ import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server.IntegrateFile;
-import net.groboclown.idea.p4ic.v2.server.cache.AbstractServerUpdateAction;
-import net.groboclown.idea.p4ic.v2.server.cache.AbstractServerUpdateAction.ExecutionStatus;
+import net.groboclown.idea.p4ic.v2.server.cache.sync.AbstractServerUpdateAction.ExecutionStatus;
 import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.ServerUpdateActionFactory;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
 import net.groboclown.idea.p4ic.v2.server.cache.state.*;
+import net.groboclown.idea.p4ic.v2.server.cache.sync.MappedUpdateHandler.StateClearHandler;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
@@ -145,6 +145,32 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     @Override
     protected Date getLastRefreshDate() {
         return lastRefreshed;
+    }
+
+    @Override
+    protected void checkLocalIntegrity(@NotNull final List<PendingUpdateState> pendingUpdates) {
+        // Find if there are any local actions that do not have corresponding pending updates
+        Set<FilePath> known = new HashSet<FilePath>();
+        for (PendingUpdateState update : pendingUpdates) {
+            String path = UpdateParameterNames.FILE.getParameterValue(update);
+            FilePath fp = FilePathUtil.getFilePath(path);
+            if (fp != null) {
+                known.add(fp);
+            }
+            path = UpdateParameterNames.FILE_SOURCE.getParameterValue(update);
+            fp = FilePathUtil.getFilePath(path);
+            if (fp != null) {
+                known.add(fp);
+            }
+        }
+
+        for (P4FileUpdateState state: localClientUpdatedFiles) {
+            final FilePath fp = state.getLocalFilePath();
+            if (fp != null && ! known.contains(fp)) {
+                LOG.warn("Incorrect mapping: pending change did not remove " + state);
+                localClientUpdatedFiles.remove(state);
+            }
+        }
     }
 
 
@@ -643,17 +669,6 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 spec.getOpStatus() == FileSpecOpStatus.UNKNOWN;
     }
 
-    private static void markUpdated(final ClientCacheManager clientCacheManager, @NotNull Set<FilePath> files,
-            @NotNull List<P4StatusMessage> msgs) {
-        Set<FilePath> updated = new HashSet<FilePath>(files);
-        for (P4StatusMessage msg: msgs) {
-            updated.remove(msg.getFilePath());
-        }
-        for (FilePath fp: updated) {
-            clientCacheManager.markLocalFileStateCommitted(fp);
-        }
-    }
-
     @NotNull
     private static List<FilePath> getFilePaths(@NotNull final List<PendingUpdateState> updateList) {
         List<FilePath> filenames = new ArrayList<FilePath>(updateList.size());
@@ -911,19 +926,50 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     // FIXME all this logic below is really complicated.  Look at ways to
     // simplify it.
 
+    private static StateClearHandler<FilePath> CLEAR_HANDLER = new StateClearHandler<FilePath>() {
+        @Override
+        public void clearState(@NotNull final FilePath state, @NotNull final ClientCacheManager clientCacheManager) {
+            clientCacheManager.markLocalFileStateCommitted(state);
+        }
+    };
 
-    static abstract class AbstractFileAction extends AbstractServerUpdateAction {
+    static abstract class AbstractFileAction extends AbstractServerUpdateAction<FilePath> {
         protected AbstractFileAction(@NotNull final Collection<PendingUpdateState> pendingUpdateStates) {
             super(pendingUpdateStates);
         }
 
-        public void abort(@NotNull ClientCacheManager clientCacheManager) {
-            for (PendingUpdateState state: getPendingUpdateStates()) {
-                String file = UpdateParameterNames.FILE.getParameterValue(state);
-                if (file != null) {
-                    FilePath fp = FilePathUtil.getFilePath(file);
-                    clientCacheManager.markLocalFileStateCommitted(fp);
+        @Nullable
+        @Override
+        protected StateClearHandler<FilePath> getStateClearHandler() {
+            return CLEAR_HANDLER;
+        }
+
+        @Nullable
+        @Override
+        protected FilePath mapToState(final PendingUpdateState update) {
+            String path = UpdateParameterNames.FILE.getParameterValue(update);
+            return FilePathUtil.getFilePath(path);
+        }
+
+        @Override
+        @Nullable
+        protected final ServerQuery updateCache(@NotNull final ClientCacheManager clientCacheManager,
+                @NotNull final AlertManager alerts) {
+            return clientCacheManager.createFileActionsRefreshQuery();
+        }
+
+        void markUpdated(@NotNull Set<FilePath> files, @NotNull List<P4StatusMessage> msgs) {
+            Set<FilePath> updated = new HashSet<FilePath>(files);
+            for (P4StatusMessage msg : msgs) {
+                final FilePath fp = msg.getFilePath();
+                if (fp != null) {
+                    updated.remove(msg.getFilePath());
+                    // TODO get associated update
+                    markStateFailed(fp);
                 }
+            }
+            for (FilePath fp : updated) {
+                markStateSuccess(fp);
             }
         }
     }
@@ -996,8 +1042,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             P4Bundle.message("error.revert.title"),
                             P4Bundle.message("error.revert", FilePathUtil.toStringList(reverts)),
                             e, reverts);
-                    // cannot continue; just fail?
-                    return ExecutionStatus.FAIL;
+                    // this can be acceptable; it's up to the following open-for-edit to
+                    // determine whether it's a failure or not.
                 }
             }
 
@@ -1011,7 +1057,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                                 P4Bundle.message("warning.edit.file.add",
                                         FilePathUtil.toStringList(entry.getValue())),
                                 msgs, false);
-                        markUpdated(clientCacheManager, entry.getValue(), msgs);
+                        markUpdated(entry.getValue(), msgs);
                         hasUpdate = true;
                     } catch (P4DisconnectedException e) {
                         // error already handled as critical
@@ -1022,6 +1068,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                                 P4Bundle.message("error.add",
                                         FilePathUtil.toStringList(entry.getValue())),
                                 e, entry.getValue());
+                        markStateFailed(entry.getValue());
                         returnCode = ExecutionStatus.FAIL;
                     }
                 }
@@ -1036,7 +1083,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     final List<P4StatusMessage> msgs =
                             exec.reopenFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
                                     entry.getKey(), null);
-                    markUpdated(clientCacheManager, entry.getValue(), msgs);
+                    markUpdated(entry.getValue(), msgs);
                     // Note: any errors here will be displayed to the
                     // user, but they do not indicate that the actual
                     // actions were errors.  Instead, they are notifications
@@ -1056,6 +1103,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             P4Bundle.message("error.edit",
                                     FilePathUtil.toStringList(entry.getValue())),
                             e, entry.getValue());
+                    markStateFailed(entry.getValue());
                     returnCode = ExecutionStatus.FAIL;
                 }
             }
@@ -1077,7 +1125,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     final List<P4StatusMessage> msgs =
                             exec.editFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
                                     entry.getKey());
-                    markUpdated(clientCacheManager, entry.getValue(), msgs);
+                    markUpdated(entry.getValue(), msgs);
                     // Note: any errors here will be displayed to the
                     // user, but they do not indicate that the actual
                     // actions were errors.  Instead, they are notifications
@@ -1097,6 +1145,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             P4Bundle.message("error.edit",
                                     FilePathUtil.toStringList(entry.getValue())),
                             e, entry.getValue());
+                    markStateFailed(entry.getValue());
                     returnCode = ExecutionStatus.FAIL;
                 }
             }
@@ -1106,13 +1155,6 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             }
 
             return returnCode;
-        }
-
-        @Override
-        @Nullable
-        protected ServerQuery updateCache(@NotNull final ClientCacheManager clientCacheManager,
-                @NotNull final AlertManager alerts) {
-            return clientCacheManager.createFileActionsRefreshQuery();
         }
     }
 
@@ -1189,8 +1231,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             P4Bundle.message("error.revert",
                                     FilePathUtil.toStringList(reverts)),
                             e, reverts);
-                    // cannot continue; just fail?
-                    return ExecutionStatus.FAIL;
+                    // Whether the revert is a real failure or not
+                    // will be deterined in the below invocation.
                 }
             }
 
@@ -1203,7 +1245,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     final List<P4StatusMessage> msgs =
                             exec.deleteFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
                                     entry.getKey(), true);
-                    markUpdated(clientCacheManager, entry.getValue(), msgs);
+                    markUpdated(entry.getValue(), msgs);
                     // Note: any errors here will be displayed to the
                     // user, but they do not indicate that the actual
                     // actions were errors.  Instead, they are notifications
@@ -1223,6 +1265,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             P4Bundle.message("error.delete",
                                     FilePathUtil.toStringList(entry.getValue())),
                             e, entry.getValue());
+                    markStateFailed(entry.getValue());
                     returnCode = ExecutionStatus.FAIL;
                 }
             }
@@ -1232,13 +1275,6 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             }
 
             return returnCode;
-        }
-
-        @Nullable
-        @Override
-        protected ServerQuery updateCache(@NotNull final ClientCacheManager clientCacheManager,
-                @NotNull final AlertManager alerts) {
-            return clientCacheManager.createFileActionsRefreshQuery();
         }
     }
 
@@ -1317,8 +1353,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             P4Bundle.message("error.revert",
                                     FilePathUtil.toStringList(reverts)),
                             e, reverts);
-                    // cannot continue; just fail?
-                    return ExecutionStatus.FAIL;
+                    // actual fail status will be determined when the
+                    // real action occurs below
                 }
             }
 
@@ -1331,7 +1367,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     try {
                         final List<P4StatusMessage> msgs = exec.moveFile(FileSpecUtil.getFromFilePath(filePath),
                                 FileSpecUtil.getFromFilePath(moveTo.get(filePath)), entry.getKey(), false);
-                        markUpdated(clientCacheManager, entry.getValue(), msgs);
+                        markUpdated(entry.getValue(), msgs);
                         // Note: any errors here will be displayed to the
                         // user, but they do not indicate that the actual
                         // actions were errors.  Instead, they are notifications
@@ -1351,6 +1387,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                                 P4Bundle.message("error.move",
                                         FilePathUtil.toStringList(entry.getValue())),
                                 e, entry.getValue());
+                        markStateFailed(filePath);
                         returnCode = ExecutionStatus.FAIL;
                     }
                 }
@@ -1362,19 +1399,12 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
             return returnCode;
         }
-
-        @Nullable
-        @Override
-        protected ServerQuery updateCache(@NotNull final ClientCacheManager clientCacheManager,
-                @NotNull final AlertManager alerts) {
-            return clientCacheManager.createFileActionsRefreshQuery();
-        }
     }
 
 
     // -----------------------------------------------------------------------
     // -----------------------------------------------------------------------
-    // Move Action
+    // Revert Action
 
     public static class RevertFactory implements ServerUpdateActionFactory {
         @NotNull
@@ -1396,7 +1426,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
                 @NotNull final ClientCacheManager clientCacheManager,
                 @NotNull final AlertManager alerts) {
-            LOG.debug("Running move");
+            LOG.debug("Running revert");
 
             final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts, false);
             if (split.status != null) {
@@ -1407,7 +1437,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             //     split.notInPerforce
             // ignore, because it's not open for edit
             //     split.notOpened
-            // revert and move
+            // revert
             //     split.edited
             //     deleted
             //     integrated
@@ -1431,6 +1461,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                                     FilePathUtil.toStringList(reverts)),
                             msgs, false);
                     hasUpdate = true;
+                    markUpdated(reverts, msgs);
                 } catch (P4DisconnectedException e) {
                     // error already handled as critical
                     return ExecutionStatus.RETRY;
@@ -1440,8 +1471,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             P4Bundle.message("error.revert",
                                     FilePathUtil.toStringList(reverts)),
                             e, reverts);
-                    // cannot continue; just fail?
-                    return ExecutionStatus.FAIL;
+                    markStateFailed(reverts);
                 }
             }
 
@@ -1450,13 +1480,6 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             }
 
             return returnCode;
-        }
-
-        @Nullable
-        @Override
-        protected ServerQuery updateCache(@NotNull final ClientCacheManager clientCacheManager,
-                @NotNull final AlertManager alerts) {
-            return clientCacheManager.createFileActionsRefreshQuery();
         }
     }
 

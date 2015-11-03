@@ -718,7 +718,10 @@ public class P4Server {
                         for (P4FileAction action : opened) {
                             if (action.getChangeList() == clid.getChangeListId() &&
                                     filePathCopy.contains(action.getFile())) {
-                                LOG.info("Ignoring move-to-changelist " + clid + " request for " + action.getFile());
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Ignoring move-to-changelist " + clid + " request for " +
+                                            action.getFile());
+                                }
                                 filePathCopy.remove(action.getFile());
                             }
                         }

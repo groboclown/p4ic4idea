@@ -488,4 +488,9 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
     protected Date getLastRefreshDate() {
         return cachedServerWorkspace.getLastUpdated();
     }
+
+    @Override
+    protected void checkLocalIntegrity(final List<PendingUpdateState> pendingUpdates) {
+        // ignore, because there's no local changed versions
+    }
 }

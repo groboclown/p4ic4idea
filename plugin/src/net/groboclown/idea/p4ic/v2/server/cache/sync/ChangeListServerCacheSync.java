@@ -29,12 +29,16 @@ import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
-import net.groboclown.idea.p4ic.v2.server.cache.*;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
+import net.groboclown.idea.p4ic.v2.server.cache.ServerUpdateActionFactory;
+import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
 import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ChangeListState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
+import net.groboclown.idea.p4ic.v2.server.cache.sync.MappedUpdateHandler.StateClearHandler;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
@@ -268,6 +272,31 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         return lastRefreshDate;
     }
 
+    @Override
+    protected void checkLocalIntegrity(@NotNull List<PendingUpdateState> pendingUpdates) {
+        // if there are local changes that aren't in the pending changes,
+        // that's an issue with the local cache.
+
+        Set<Integer> pendingChanges = new HashSet<Integer>();
+        for (PendingUpdateState update : pendingUpdates) {
+            Integer cl = UpdateParameterNames.CHANGELIST.getParameterValue(update);
+            if (cl != null) {
+                pendingChanges.add(cl);
+            }
+        }
+
+        synchronized (localCacheSync) {
+            Iterator<P4ChangeListState> iter = localClientChanges.iterator();
+            while (iter.hasNext()) {
+                final P4ChangeListState next = iter.next();
+                if (! pendingChanges.contains(next.getChangelistId())) {
+                    LOG.warn("Incorrect mapping: pending change did not remove " + next);
+                    iter.remove();
+                }
+            }
+        }
+    }
+
 
     void markLocalStateCommitted(final int changeListId) {
         synchronized (localCacheSync) {
@@ -347,22 +376,32 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
     // The actions are also placed in here, rather than as stand-alone classes,
     // so that they have increased access to the cache objects.
 
+    private static StateClearHandler<Integer> CLEAR_HANDLER = new StateClearHandler<Integer>() {
+        @Override
+        public void clearState(@NotNull final Integer state,
+                @NotNull final ClientCacheManager clientCacheManager) {
+            clientCacheManager.markLocalChangelistStateCommitted(state);
+        }
+    };
 
-    static abstract class AbstractChangelistAction extends AbstractServerUpdateAction {
+    static abstract class AbstractChangelistAction extends AbstractServerUpdateAction<Integer> {
 
 
         protected AbstractChangelistAction(@NotNull final Collection<PendingUpdateState> pendingUpdateStates) {
             super(pendingUpdateStates);
         }
 
+
+        @Nullable
         @Override
-        public void abort(@NotNull final ClientCacheManager clientCacheManager) {
-            for (PendingUpdateState state : getPendingUpdateStates()) {
-                final Integer changelistId = UpdateParameterNames.CHANGELIST.getParameterValue(state);
-                if (changelistId != null) {
-                    clientCacheManager.markLocalChangelistStateCommitted(changelistId);
-                }
-            }
+        protected StateClearHandler<Integer> getStateClearHandler() {
+            return CLEAR_HANDLER;
+        }
+
+        @Nullable
+        @Override
+        protected Integer mapToState(final PendingUpdateState update) {
+            return UpdateParameterNames.CHANGELIST.getParameterValue(update);
         }
     }
 
@@ -399,9 +438,10 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
             ExecutionStatus ret = ExecutionStatus.NO_OP;
             final Collection<P4ChangeListValue> openedChanges = clientCacheManager.getCachedOpenedChanges();
             for (PendingUpdateState state: getPendingUpdateStates()) {
-                final Integer changelistId = UpdateParameterNames.CHANGELIST.getParameterValue(state);
+                final Integer changelistId = mapToState(state);
                 if (changelistId == null || changelistId == P4ChangeListId.P4_DEFAULT ||
                         changelistId == P4ChangeListId.P4_UNKNOWN) {
+                    markFailed(state);
                     continue;
                 }
 
@@ -423,13 +463,14 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                         if (ret == ExecutionStatus.NO_OP) {
                             ret = ExecutionStatus.RELOAD_CACHE;
                         }
-                        clientCacheManager.markLocalChangelistStateCommitted(changelistId);
+                        markSuccess(state);
                     } catch (VcsException e) {
                         alerts.addWarning(
                                 exec.getProject(),
                                 P4Bundle.message("error.changelist.delete.failure", changelistId),
                                 P4Bundle.message("error.changelist.delete.failure", changelistId),
                                 e, FilePathUtil.getFilePath(exec.getProject().getBaseDir()));
+                        markFailed(state);
                         ret = ExecutionStatus.FAIL;
                     }
                 } else {
@@ -439,6 +480,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     alerts.addNotice(
                             exec.getProject(),
                             P4Bundle.message("changelist.delete.ignored", changelistId), null);
+                    markSuccess(state);
                 }
             }
 
@@ -486,14 +528,11 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 changeListMap.put(value.getChangeListId(), value);
             }
 
-            // FIXME update the localClientChanges list.
-
-
-            for (PendingUpdateState state : getPendingUpdateStates()) {
-                final Integer changelistId = UpdateParameterNames.CHANGELIST.getParameterValue(state);
-                final String description = UpdateParameterNames.DESCRIPTION.getParameterValue(state);
+            for (PendingUpdateState update : getPendingUpdateStates()) {
+                final Integer changelistId = mapToState(update);
+                final String description = UpdateParameterNames.DESCRIPTION.getParameterValue(update);
                 final List<FilePath> files = new ArrayList<FilePath>();
-                for (Map.Entry<String, Object> entry: state.getParameters().entrySet()) {
+                for (Map.Entry<String, Object> entry: update.getParameters().entrySet()) {
                     if (UpdateParameterNames.FIELD.matches(entry.getKey())) {
                         files.add(FilePathUtil.getFilePath(
                                 (String) UpdateParameterNames.FIELD.getValue(entry.getValue())));
@@ -502,7 +541,8 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 if (changelistId == null || files.isEmpty() || description == null) {
                     alerts.addNotice(
                             exec.getProject(),
-                            P4Bundle.message("pendingupdatestate.invalid", state), null);
+                            P4Bundle.message("pendingupdatestate.invalid", update), null);
+                    markFailed(update);
                     continue;
                 }
 
@@ -515,6 +555,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                         P4ChangeListId oldCl = new P4ChangeListIdImpl(clientServerId, changelistId);
                         P4ChangeListId newCl = new P4ChangeListIdImpl(clientServerId, realChangeListId);
                         changeListMapping.replace(oldCl, newCl);
+                        markStateSuccess(realChangeListId);
                     } catch (VcsException e) {
                         alerts.addWarning(
                                 exec.getProject(),
@@ -522,6 +563,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                                 P4Bundle.message("error.createchangelist", description),
                                 e, FilePathUtil.getFilePath(exec.getProject().getBaseDir()));
                         // cannot actually perform the action
+                        markFailed(update);
                         ret = ExecutionStatus.FAIL;
                         continue;
                     }
@@ -541,6 +583,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                                     P4Bundle.message("error.updatechangelist", realChangeListId),
                                     e, FilePathUtil.getFilePath(exec.getProject().getBaseDir()));
                             // cannot actually perform the action
+                            markFailed(update);
                             ret = ExecutionStatus.FAIL;
                             continue;
                         }
@@ -550,15 +593,20 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 final List<IExtendedFileSpec> status;
                 try {
                     status = exec.getFileStatus(FileSpecUtil.getFromFilePaths(files));
+                    markSuccess(update);
+                    markStateSuccess(realChangeListId);
                 } catch (VcsException e) {
                     alerts.addWarning(
                             exec.getProject(),
                             P4Bundle.message("filestatus.error.title"),
                             P4Bundle.message("filestatus.error", files),
                             e, files);
+                    markFailed(update);
+                    markStateFailed(realChangeListId);
                     continue;
                 }
                 if (status.isEmpty()) {
+                    // no file motion to perform
                     continue;
                 }
 
@@ -638,9 +686,6 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                         // keep going
                     }
                 }
-
-                clientCacheManager.markLocalChangelistStateCommitted(changelistId);
-                clientCacheManager.markLocalChangelistStateCommitted(realChangeListId);
             }
 
             // FIXME ensure the file actions are refreshed with the new changelist.
@@ -687,19 +732,20 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
             boolean updated = false;
 
             Map<Integer, List<PendingUpdateState>> clToUpdate = new HashMap<Integer, List<PendingUpdateState>>();
-            for (PendingUpdateState state : getPendingUpdateStates()) {
-                Integer cl = UpdateParameterNames.CHANGELIST.getParameterValue(state);
+            for (PendingUpdateState update : getPendingUpdateStates()) {
+                Integer cl = mapToState(update);
                 if (cl != null) {
                     List<PendingUpdateState> values = clToUpdate.get(cl);
                     if (values == null) {
                         values = new ArrayList<PendingUpdateState>();
                         clToUpdate.put(cl, values);
                     }
-                    values.add(state);
+                    values.add(update);
                 } else {
                     alerts.addNotice(exec.getProject(),
-                            P4Bundle.message("error.bad-update.ignored", state),
+                            P4Bundle.message("error.bad-update.ignored", update),
                             null);
+                    markFailed(update);
                 }
             }
 
@@ -710,6 +756,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     // TODO should this be a error dialog?
                     LOG.error("Encountered a changelist update for an invalid changelist number " +
                         cl);
+                    markFailed(entry.getValue());
                     continue;
                 }
                 String newComment = null;
@@ -740,11 +787,13 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     try {
                         exec.updateChangelistDescription(cl, newComment);
                         updated = true;
+                        markSuccess(entry.getValue());
                     } catch (VcsException e) {
                         alerts.addWarning(exec.getProject(),
                                 P4Bundle.message("exception.update-changelist.description.title", cl),
                                 P4Bundle.message("exception.update-changelist.description", cl),
                                 e, new FilePath[0]);
+                        markFailed(entry.getValue());
                         ret = ExecutionStatus.FAIL;
                     }
                 }
@@ -752,11 +801,13 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     try {
                         exec.addJobsToChangelist(cl, newJobs, fixState);
                         updated = true;
+                        markSuccess(entry.getValue());
                     } catch (VcsException e) {
                         alerts.addWarning(exec.getProject(),
                                 P4Bundle.message("exception.update-changelist.add-jobs.title", cl),
                                 P4Bundle.message("exception.update-changelist.add-jobs", cl, newJobs),
                                 e, new FilePath[0]);
+                        markFailed(entry.getValue());
                         ret = ExecutionStatus.FAIL;
                     }
                 }
@@ -764,11 +815,13 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     try {
                         exec.removeJobsFromChangelist(cl, removedJobs);
                         updated = true;
+                        markSuccess(entry.getValue());
                     } catch (VcsException e) {
                         alerts.addWarning(exec.getProject(),
                                 P4Bundle.message("exception.update-changelist.remove-jobs.title", cl),
                                 P4Bundle.message("exception.update-changelist.remove-jobs", cl, removedJobs),
                                 e, new FilePath[0]);
+                        markFailed(entry.getValue());
                         ret = ExecutionStatus.FAIL;
                     }
                 }

@@ -112,6 +112,14 @@ public class P4ChangeListState extends CachedState {
     }
 
     @Override
+    public String toString() {
+        return "Change " + id + " (" + comment + "); " + jobs +
+                ";" + (isShelved ? "" : " not") + " shelved;" +
+                (isRestricted ? "" : " not") + " restricted;" +
+                (isDeleted ? "" : " not") + " deleted";
+    }
+
+    @Override
     protected void serialize(@NotNull final Element wrapper, @NotNull final EncodeReferences refs) {
         serializeDate(wrapper);
         wrapper.setAttribute("c", encodeLong(id));

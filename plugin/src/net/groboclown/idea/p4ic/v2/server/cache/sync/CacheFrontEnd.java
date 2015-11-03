@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
 import com.intellij.openapi.diagnostic.Logger;
+import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
@@ -23,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * Package-level marker for the cache front ends.  This just enforces
@@ -76,4 +78,6 @@ abstract class CacheFrontEnd {
 
     @NotNull
     protected abstract Date getLastRefreshDate();
+
+    protected abstract void checkLocalIntegrity(@NotNull List<PendingUpdateState> pendingUpdates);
 }

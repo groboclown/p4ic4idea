@@ -22,6 +22,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.JobStateList;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
@@ -73,6 +74,11 @@ public class JobServerCacheSync extends CacheFrontEnd {
     @Override
     protected Date getLastRefreshDate() {
         return lastRefreshed;
+    }
+
+    @Override
+    protected void checkLocalIntegrity(final List<PendingUpdateState> pendingUpdates) {
+        // do nothing - no local changes are stored.
     }
 
     @NotNull

@@ -256,6 +256,20 @@ public class ClientCacheManager {
         return fileActions.submitChangelist(files, jobs, submitStatus, changelistId, problem);
     }
 
+
+    /**
+     * Ensure the local cache only has items for what's in the pending updates.
+     */
+    public void checkLocalIntegrity() {
+        workspace.checkLocalIntegrity(state.getPendingUpdates());
+        fileActions.checkLocalIntegrity(state.getPendingUpdates());
+        changeLists.checkLocalIntegrity(state.getPendingUpdates());
+        jobStatusList.checkLocalIntegrity(state.getPendingUpdates());
+        jobs.checkLocalIntegrity(state.getPendingUpdates());
+        //ignoreFiles.checkLocalIntegrity(state.getPendingUpdates());
+    }
+
+
     // ----------------------------------------------------------------------------------------
     // Package-level behaviors for use in an action
 

@@ -6,30 +6,43 @@
 
 ### Overview
 
-* Major changes to the server connection logic.
-* Multiple server connection status in statusbar widget.
+* Major overhaul to the server connection logic.
+* Multiple server connection status in status bar widget.
 * Passwords are now stored with better security.
+* P4IGNORE support.
 * Bug fixes.
 
 ### Details
 
-* Major changes to the server connection logic.
+* Major changes to the server connection logic. (#70)
     * Allows for limited offline work.  Edit, add, delete, and move operations are
       cached for replay after you reconnect to the server.
-* Multiple server connection status in statusbar widget.
+    * Warnings are displayed in the messages docked view.
+    * Errors are now more consistently displayed and handled.
+* Multiple server connection status in status bar widget. (#19)
     * The online state can now be controlled per-server through
       the connection status widget.
 * Passwords are now stored with better security.
     * Uses the IntelliJ password storage, so you may be prompted for a
       master password now if you setup the IDE to use that.
-    * This eliminates the "persist password locally" setting. 
+    * This eliminates the "persist password locally" setting.
+* P4IGNORE support (#69)
+    * Support the `P4IGNORE` environment variable.  The default filename is
+      `.p4ignore`
+    * Only files that are not known by the server are ignored.
 * Bug fixes.
     * The configuration UI could make UI requests outside the AWT event dispatch
       thread.
     * Finally identified the sources of the infinite changelist refresh issues
       and fixed it, so that new improvements to the changelist sorting code can
       be attempted.
-
+    * Internal communication of events are now handled in the correct
+      message bus, which should lead to more consistent responses to
+      going offline or changing configuration.
+    * Add trusted ticket file support (#4)
+    * Changelist sync can discover null Idea changelists (#64)
+    * Initial creation of file asks if it should be added to perforce, but it is not added (#66)
+    
 
 ## ::v0.6.6.1::
 

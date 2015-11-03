@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
 import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.idea.p4ic.v2.server.cache.state.JobStatusListState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
@@ -24,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Keeps track of all the job status states.  It does not have any ability to have
@@ -59,6 +61,11 @@ public class JobStatusListStateServerCacheSync extends CacheFrontEnd {
     @Override
     protected Date getLastRefreshDate() {
         return cachedServerState.getLastUpdated();
+    }
+
+    @Override
+    protected void checkLocalIntegrity(final List<PendingUpdateState> pendingUpdates) {
+        // nothing to do, because there are no local changed versions
     }
 
     // This updaes so infrequently that there's no need to update more than once a day.

@@ -325,6 +325,13 @@ public class ServerConnection {
         @Override
         public void run() {
             while (!disposed) {
+                // As part of the execution, we'll include an integrity check, to ensure the
+                // local cache matches up with the remaining actions.
+                // This needs to be done at some point, and it's good to have it done after
+                // an action, and when the plugin first initializes itself.
+                cacheManager.checkLocalIntegrity();
+
+
                 // Wait for something to do first
                 final UpdateAction action;
                 try {

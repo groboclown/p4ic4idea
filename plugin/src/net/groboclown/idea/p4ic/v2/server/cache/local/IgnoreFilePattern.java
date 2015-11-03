@@ -42,24 +42,68 @@ public class IgnoreFilePattern {
         final BufferedReader lineReader =
                 new BufferedReader(new InputStreamReader(ignoreFile.getInputStream()));
         try {
+            // TODO update this file to match the expected behavior.
+            // Note: there is now a "p4 ignores" command, and "p4 ignore" is now
+            // also built into the API for newer servers.
+
             // File format:
-            // (from http://ftp.perforce.com/pub/perforce/r14.1/doc/help/p4vs-html/en/HtmlHelp/p4vs_ignore.html)
+            // (from https://www.perforce.com/perforce/r15.2/manuals/cmdref/P4IGNORE.html)
             // The syntax for ignore rules is not the same as Perforce syntax. Instead, it is similar to that used
             // by other versioning systems:
             //
-            // Files are specified in local syntax
-            //   # at the beginning of a line denotes a comment
-            //   ! at the beginning of a line excludes the file specification
-            //   * wildcard matches substrings
+            // * Rules are specified using local filepath syntax.Unix style paths will work on Windows for cross platform
+            // file support.
+            //
+            // * A # character at the beginning of a line denotes a comment
+            //
+            // * A ! character at the beginning of a line line excludes the file specification.These exclusions override rules
+            // defined above it in the P4IGNORE file, but may be overridden by later rules.
+            //
+            // * A / (or \ on Windows)character at the beginning of a line causes the file specification to be considered
+            // relative to the P4IGNORE file.This is useful when the rule must apply to files at particular depots of
+            // the directory tree.
+            //
+            // * A / (or \ on Windows)character at the end of a line causes the file specification to only match
+            // directories, and not files of the same name.
+            //
+            // * The * wildcard matches substrings.Like the Perforce wildcard equivalent, it does not match path separators;
+            // however,if it is not used as part of a path, the directory scanning nature of the rule may make it appear
+            // to perform like the Perforce "..." wildcard.
+            //
+            // * The ** wildcard matches substrings including path separators. It is equivalent to the Perforce "..."
+            // wildcard, which is not permitted. (Note: the "**" must match at least 1 wild card)
             //
             // For example:
-            // foo.txt     Ignore files called "foo.txt"
-            // *.exe       Ignore all executables
-            // !bar.exe    Exclude bar.exe from being ignored
+            //
+            // # Ignore.p4ignore files
+            // .p4ignore
+            //
+            // # Ignore object files, shared libraries, executables
+            // *.dll
+            // *.so
+            // *.exe
+            // *.o
+            //
+            // # Ignore all HTML files except the readme file
+            // *.html
+            // !readme.html
+            //
+            // # Ignore the bin directory
+            // bin/
+            //
+            // # Ignore the build.properties file in this directory
+            // /build.properties
+            //
+            // # Ignore all text files in test directories
+            // test/**.txt
+            //
+
+
 
             // This description unfortunately does not describe these circumstances:
             //   - if a "!" is found after the matcher, is it still a match?
             //     (does the first match force a result?)
+            //     TODO It looks like last match?
             //   - if a path is specified ("temp/*.tmp"), is it relative to the
             //     ignore file?  Assuming not; as per the .gitignore format
             //     (if a file matcher starts with a '/', then it is relative to

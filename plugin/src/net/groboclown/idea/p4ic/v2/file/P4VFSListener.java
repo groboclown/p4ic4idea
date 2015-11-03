@@ -340,15 +340,31 @@ public class P4VFSListener extends VcsVFSListener {
         private SplitServerFileEntry(@Nullable P4Server srcClient, @Nullable Object srcFile,
                 @Nullable P4Server tgtClient, @Nullable Object tgtFile) {
             this.srcClient = srcClient;
-            this.srcVirtualFile = (srcFile == null) ? null :
-                    (srcFile instanceof VirtualFile) ? (VirtualFile) srcFile : null;
-            this.srcFilePath = (srcFile == null) ? null :
-                    (srcFile instanceof FilePath) ? (FilePath) srcFile : null;
+            this.srcVirtualFile = (srcFile == null)
+                    ? null
+                    : (srcFile instanceof VirtualFile)
+                            ? (VirtualFile) srcFile
+                            : null;
+            this.srcFilePath = (srcFile == null)
+                    ? null
+                    : (srcFile instanceof FilePath)
+                            ? (FilePath) srcFile
+                            : (srcFile instanceof VirtualFile)
+                                ? FilePathUtil.getFilePath((VirtualFile) srcFile)
+                                : null;
             this.tgtClient = tgtClient;
-            this.tgtVirtualFile = (tgtFile == null) ? null :
-                    (tgtFile instanceof VirtualFile) ? (VirtualFile) tgtFile : null;
-            this.tgtFilePath = (tgtFile == null) ? null :
-                    (tgtFile instanceof FilePath) ? (FilePath) tgtFile : null;
+            this.tgtVirtualFile = (tgtFile == null)
+                    ? null
+                    : (tgtFile instanceof VirtualFile)
+                            ? (VirtualFile) tgtFile
+                            : null;
+            this.tgtFilePath = (tgtFile == null)
+                    ? null
+                    : (tgtFile instanceof FilePath)
+                            ? (FilePath) tgtFile
+                            : (tgtFile instanceof VirtualFile)
+                                ? FilePathUtil.getFilePath((VirtualFile) tgtFile)
+                                : null;
         }
 
 

@@ -642,13 +642,17 @@ public class P4Exec2 {
     public List<IFileSpec> synchronizeFiles(@NotNull final List<IFileSpec> files,
             final boolean forceSync)
             throws VcsException, CancellationException {
+        if (files.isEmpty()) {
+            return Collections.emptyList();
+        }
         return exec.runWithClient(project, new ClientExec.WithClient<List<IFileSpec>>() {
             @Override
             public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client,
                     @NotNull ClientExec.ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 count.invoke("sync");
-                final List<IFileSpec> ret = client.sync(files, new SyncOptions(forceSync, false, false, false, true));
+                final List<IFileSpec> ret = client.sync(files,
+                        new SyncOptions(forceSync, false, false, false, false));
                 if (ret == null) {
                     return Collections.emptyList();
                 }

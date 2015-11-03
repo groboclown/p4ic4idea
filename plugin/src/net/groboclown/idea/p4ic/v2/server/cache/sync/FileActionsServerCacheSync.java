@@ -35,12 +35,12 @@ import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server.IntegrateFile;
-import net.groboclown.idea.p4ic.v2.server.cache.sync.AbstractServerUpdateAction.ExecutionStatus;
 import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.ServerUpdateActionFactory;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
 import net.groboclown.idea.p4ic.v2.server.cache.state.*;
+import net.groboclown.idea.p4ic.v2.server.cache.sync.AbstractServerUpdateAction.ExecutionStatus;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.MappedUpdateHandler.StateClearHandler;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
@@ -670,12 +670,13 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
     @NotNull
-    private static List<FilePath> getFilePaths(@NotNull final List<PendingUpdateState> updateList) {
+    private static List<FilePath> getFilePaths(@NotNull final List<PendingUpdateState> updateList,
+            UpdateParameterNames fileParameter) {
         List<FilePath> filenames = new ArrayList<FilePath>(updateList.size());
         final Iterator<PendingUpdateState> iter = updateList.iterator();
         while (iter.hasNext()) {
             PendingUpdateState update = iter.next();
-            String val = UpdateParameterNames.FILE.getParameterValue(update);
+            String val = fileParameter.getParameterValue(update);
             if (val != null) {
                 filenames.add(FilePathUtil.getFilePath(val));
             } else {
@@ -715,10 +716,10 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
         ActionSplit(@NotNull P4Exec2 exec,
                 @NotNull Collection<PendingUpdateState> pendingUpdateStates,
-                @NotNull AlertManager alerts,
+                @NotNull AlertManager alerts, @NotNull UpdateParameterNames parameterName,
                 boolean ignoreAddsIfEditOnly) {
             List<PendingUpdateState> updateList = new ArrayList<PendingUpdateState>(pendingUpdateStates);
-            List<FilePath> filenames = getFilePaths(updateList);
+            List<FilePath> filenames = getFilePaths(updateList, parameterName);
             final List<IFileSpec> srcSpecs;
             try {
                 srcSpecs = FileSpecUtil.getFromFilePaths(filenames);
@@ -864,6 +865,17 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 }
             }
         }
+
+
+        boolean contains(FilePath fp) {
+            return
+                    existsInMap(fp, notInPerforce) ||
+                    existsInMap(fp, notOpened) ||
+                    existsInMap(fp, edited) ||
+                    existsInMap(fp, deleted) ||
+                    existsInMap(fp, integrated) ||
+                    existsInMap(fp, move_deleted);
+        }
     }
 
     private static Map<Integer, Set<FilePath>> joinChangelistFiles(final Map<Integer, Set<FilePath>>... mList) {
@@ -880,6 +892,18 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         }
         return ret;
     }
+
+
+
+    private static boolean existsInMap(@NotNull FilePath file, @NotNull Map<Integer, Set<FilePath>> map) {
+        for (Entry<Integer, Set<FilePath>> entry : map.entrySet()) {
+            if (entry.getValue().contains(file)) {
+                return entry.getKey() != null;
+            }
+        }
+        return false;
+    }
+
 
     private static Map<FilePath, FilePath> matchFileMoves(final Map<Integer, Set<FilePath>> moves,
             final Collection<PendingUpdateState> pendingUpdateStates) {
@@ -999,7 +1023,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 @NotNull ClientCacheManager clientCacheManager, @NotNull final AlertManager alerts) {
             LOG.debug("Running edit");
 
-            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts, true);
+            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(),
+                    alerts, UpdateParameterNames.FILE, true);
             if (split.status != null) {
                 return split.status;
             }
@@ -1072,9 +1097,9 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                         returnCode = ExecutionStatus.FAIL;
                     }
                 }
-            } else if (! split.notInPerforce.isEmpty()) {
-                LOG.info("Skipping add (because command is edit-only: " + split.notInPerforce);
             }
+            // no real way to tell what was ignored because of the "add only"
+
 
             // reopen:
             //     split.edited
@@ -1185,7 +1210,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 @NotNull final AlertManager alerts) {
             LOG.debug("Running delete");
 
-            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts, false);
+            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(),
+                    alerts, UpdateParameterNames.FILE, false);
             if (split.status != null) {
                 return split.status;
             }
@@ -1305,9 +1331,15 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 @NotNull final AlertManager alerts) {
             LOG.debug("Running move");
 
-            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts, false);
-            if (split.status != null) {
-                return split.status;
+            final ActionSplit splitTgt = new ActionSplit(exec, getPendingUpdateStates(),
+                    alerts, UpdateParameterNames.FILE, false);
+            if (splitTgt.status != null) {
+                return splitTgt.status;
+            }
+            final ActionSplit splitSrc = new ActionSplit(exec, getPendingUpdateStates(),
+                    alerts, UpdateParameterNames.FILE_SOURCE, false);
+            if (splitSrc.status != null) {
+                return splitSrc.status;
             }
 
             // ignore, because perforce doesn't know about it
@@ -1323,18 +1355,14 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             boolean hasUpdate = false;
             ExecutionStatus returnCode = ExecutionStatus.NO_OP;
 
-
-            // TODO check logic for whether the source is in the client.  If not, then this is either
-            // an integrate or a no-op.
-
-
             // Perform the reverts first
-            @SuppressWarnings("unchecked") final Map<Integer, Set<FilePath>> revertSets =
-                    joinChangelistFiles(split.edited, split.deleted, split.integrated, split.move_deleted);
+            @SuppressWarnings("unchecked") final Map<Integer, Set<FilePath>> revertSets = joinChangelistFiles(
+                            splitTgt.edited, splitTgt.deleted, splitTgt.integrated, splitTgt.move_deleted,
+                            splitSrc.edited, splitSrc.deleted, splitSrc.integrated, splitSrc.move_deleted);
             if (!revertSets.isEmpty()) {
                 final Set<FilePath> reverts = new HashSet<FilePath>();
-                for (Collection<FilePath> fpList : split.deleted.values()) {
-                    reverts.addAll(fpList);
+                for (Set<FilePath> filePaths : revertSets.values()) {
+                    reverts.addAll(filePaths);
                 }
                 try {
                     final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
@@ -1358,38 +1386,75 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 }
             }
 
-
-            @SuppressWarnings("unchecked") Map<Integer, Set<FilePath>> moves = joinChangelistFiles(
-                    split.notOpened, revertSets);
-            final Map<FilePath, FilePath> moveTo = matchFileMoves(moves, getPendingUpdateStates());
-            for (Entry<Integer, Set<FilePath>> entry : moves.entrySet()) {
-                for (FilePath filePath : entry.getValue()) {
-                    try {
-                        final List<P4StatusMessage> msgs = exec.moveFile(FileSpecUtil.getFromFilePath(filePath),
-                                FileSpecUtil.getFromFilePath(moveTo.get(filePath)), entry.getKey(), false);
-                        markUpdated(entry.getValue(), msgs);
-                        // Note: any errors here will be displayed to the
-                        // user, but they do not indicate that the actual
-                        // actions were errors.  Instead, they are notifications
-                        // to the user that they must do something again
-                        // with a correction.
-                        alerts.addWarnings(exec.getProject(),
-                                P4Bundle.message("warning.edit.file.edit",
-                                        FilePathUtil.toStringList(entry.getValue())),
-                                msgs, false);
-                        hasUpdate = true;
-                    } catch (P4DisconnectedException e) {
-                        // error already handled as critical
-                        return ExecutionStatus.RETRY;
-                    } catch (VcsException e) {
-                        alerts.addWarning(exec.getProject(),
-                                P4Bundle.message("error.move.title"),
-                                P4Bundle.message("error.move",
-                                        FilePathUtil.toStringList(entry.getValue())),
-                                e, entry.getValue());
-                        markStateFailed(filePath);
-                        returnCode = ExecutionStatus.FAIL;
+            // Because move has to be done on a file by file basis,
+            // we'll walk through each update, find the corresponding bucket for the
+            // source, and determine whether the move can actually happen.
+            for (PendingUpdateState update: getPendingUpdateStates()) {
+                String srcPath = UpdateParameterNames.FILE_SOURCE.getParameterValue(update);
+                String tgtPath = UpdateParameterNames.FILE.getParameterValue(update);
+                FilePath source = FilePathUtil.getFilePath(srcPath);
+                FilePath target = FilePathUtil.getFilePath(tgtPath);
+                Integer updateChange = UpdateParameterNames.CHANGELIST.getParameterValue(update);
+                if (source != null && target != null && updateChange != null) {
+                    if (existsInMap(source, splitSrc.notInPerforce) || ! splitSrc.contains(source)) {
+                        // just an add or edit
+                        try {
+                            final List<P4StatusMessage> msgs = exec.addFiles(
+                                    FileSpecUtil.getFromFilePaths(Collections.singletonList(target)),
+                                    updateChange);
+                            // TODO check result state
+                            //markUpdated(Collections.singleton(target), msgs);
+                            markSuccess(update);
+                            alerts.addWarnings(exec.getProject(),
+                                    P4Bundle.message("error.move",
+                                            target.getIOFile().getAbsolutePath()),
+                                    msgs, false);
+                            hasUpdate = true;
+                        } catch (P4DisconnectedException e) {
+                            // error already handled as critical
+                            return ExecutionStatus.RETRY;
+                        } catch (VcsException e) {
+                            alerts.addWarning(exec.getProject(),
+                                    P4Bundle.message("error.move.title"),
+                                    P4Bundle.message("error.move",
+                                            target.getIOFile().getAbsolutePath()),
+                                    e, target);
+                            markFailed(update);
+                            returnCode = ExecutionStatus.FAIL;
+                        }
+                    } else {
+                        // actual move
+                        try {
+                            final List<P4StatusMessage> msgs = exec.moveFile(
+                                    FileSpecUtil.getFromFilePath(source),
+                                    FileSpecUtil.getFromFilePath(target),
+                                    updateChange, false);
+                            // TODO check result state
+                            //markUpdated(Collections.singleton(target), msgs);
+                            markSuccess(update);
+                            alerts.addWarnings(exec.getProject(),
+                                    P4Bundle.message("error.move",
+                                            FilePathUtil.toStringList(Arrays.asList(source, target))),
+                                    msgs, false);
+                            hasUpdate = true;
+                        } catch (P4DisconnectedException e) {
+                            // error already handled as critical
+                            return ExecutionStatus.RETRY;
+                        } catch (VcsException e) {
+                            alerts.addWarning(exec.getProject(),
+                                    P4Bundle.message("error.move.title"),
+                                    P4Bundle.message("error.move",
+                                            FilePathUtil.toStringList(Arrays.asList(source, target))),
+                                    e, new FilePath[] { source, target });
+                            markFailed(update);
+                            returnCode = ExecutionStatus.FAIL;
+                        }
                     }
+                } else {
+                    alerts.addWarning(exec.getProject(),
+                            P4Bundle.message("move.no-source-target.title"),
+                            P4Bundle.message("move.no-source-target", update),
+                            null, new FilePath[] { source, target });
                 }
             }
 
@@ -1428,7 +1493,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 @NotNull final AlertManager alerts) {
             LOG.debug("Running revert");
 
-            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(), alerts, false);
+            final ActionSplit split = new ActionSplit(exec, getPendingUpdateStates(),
+                    alerts, UpdateParameterNames.FILE, false);
             if (split.status != null) {
                 return split.status;
             }

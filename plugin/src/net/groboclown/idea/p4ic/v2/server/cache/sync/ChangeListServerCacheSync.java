@@ -21,6 +21,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
+import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -593,8 +594,6 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 final List<IExtendedFileSpec> status;
                 try {
                     status = exec.getFileStatus(FileSpecUtil.getFromFilePaths(files));
-                    markSuccess(update);
-                    markStateSuccess(realChangeListId);
                 } catch (VcsException e) {
                     alerts.addWarning(
                             exec.getProject(),
@@ -607,6 +606,8 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 }
                 if (status.isEmpty()) {
                     // no file motion to perform
+                    markSuccess(update);
+                    markStateSuccess(realChangeListId);
                     continue;
                 }
 
@@ -615,7 +616,9 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 List<IFileSpec> add = new ArrayList<IFileSpec>(status.size());
 
                 for (IExtendedFileSpec spec: status) {
-                    if (spec.getOpenAction() != null || spec.getAction() != null) {
+                    if (spec.getOpStatus() != FileSpecOpStatus.VALID) {
+                        LOG.debug("File status: " + spec.getOpStatus() + ": " + spec.getStatusMessage());
+                    } else if (spec.getOpenAction() != null || spec.getAction() != null) {
                         if (spec.getOpenChangelistId() != changelistId) {
                             // already opened; reopen it
                             reopen.add(spec);
@@ -626,15 +629,20 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                         // add
                         add.add(spec);
                     } else {
-                        LOG.info("Marking as edit: " + spec +
-                            "; action: " + spec.getOpenAction() + "/" + spec.getAction() + "/" + spec.getHeadAction() + "/" + spec.getOtherAction() +
-                            "; change: " + spec.getOpenChangelistId());
-                        edit.add(spec);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Marking as edit: " + spec +
+                                    "; action: " + spec.getOpenAction() + "/" + spec.getAction() + "/" + spec
+                                    .getHeadAction() + "/" + spec.getOtherAction() +
+                                    "; change: " + spec.getOpenChangelistId());
+                        }
+                        edit.add(FileSpecUtil.stripAnnotations(spec));
                     }
                 }
 
                 if (! reopen.isEmpty()) {
-                    LOG.info("Reopening files into " + realChangeListId + ": " + reopen);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Reopening files into " + realChangeListId + ": " + reopen);
+                    }
                     try {
                         alerts.addWarnings(
                                 exec.getProject(),
@@ -652,7 +660,9 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 }
 
                 if (! edit.isEmpty()) {
-                    LOG.info("Editing files into " + realChangeListId + ": " + edit);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Editing files into " + realChangeListId + ": " + edit);
+                    }
                     try {
                         alerts.addWarnings(
                                 exec.getProject(),
@@ -670,7 +680,9 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 }
 
                 if (!add.isEmpty()) {
-                    LOG.info("Adding files into " + realChangeListId + ": " + add);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Adding files into " + realChangeListId + ": " + add);
+                    }
                     try {
                         alerts.addWarnings(
                                 exec.getProject(),

@@ -340,7 +340,7 @@ public class ServerConnection {
                     // this is fine.
                     LOG.info(e);
                     continue;
-                }
+                };
 
                 try {
                     boolean didRun = synchronizer.runBackgroundAction(new ActionRunner<Void>() {

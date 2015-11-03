@@ -20,6 +20,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.impl.generic.core.file.FilePath.PathType;
+import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
@@ -287,7 +289,7 @@ public class FileSpecUtil {
     }
 
 
-        /** Only use if you know what you're doing; specifically, the P4Exec objects */
+    /** Only use if you know what you're doing; specifically, the P4Exec objects */
     @NotNull
     public static String unescapeP4Path(@NotNull String path) {
         StringBuilder sb = new StringBuilder(path.length());
@@ -314,4 +316,33 @@ public class FileSpecUtil {
         return sb.toString();
     }
 
+    /**
+     * Strips off the revision or changelist suffix from the spec.
+     * @param spec
+     * @return
+     */
+    @NotNull
+    public static IFileSpec stripAnnotations(@NotNull IFileSpec spec) {
+        if (spec.getDepotPathString() != null) {
+            return new FileSpec(new com.perforce.p4java.impl.generic.core.file.FilePath(
+                    PathType.DEPOT,
+                    spec.getDepotPath().getPathString(), false));
+        }
+        if (spec.getLocalPathString() != null) {
+            return new FileSpec(new com.perforce.p4java.impl.generic.core.file.FilePath(
+                    PathType.LOCAL,
+                    spec.getLocalPath().getPathString(), false));
+        }
+        if (spec.getClientPathString() != null) {
+            return new FileSpec(new com.perforce.p4java.impl.generic.core.file.FilePath(
+                    PathType.CLIENT,
+                    spec.getClientPath().getPathString(), false));
+        }
+        if (spec.getOriginalPathString() != null) {
+            return new FileSpec(new com.perforce.p4java.impl.generic.core.file.FilePath(
+                    PathType.CLIENT,
+                    spec.getOriginalPath().getPathString(), false));
+        }
+        throw new IllegalArgumentException("no path information in spec " + spec);
+    }
 }

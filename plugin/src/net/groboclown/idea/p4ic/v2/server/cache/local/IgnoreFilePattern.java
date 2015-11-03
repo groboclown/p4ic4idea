@@ -48,6 +48,7 @@ public class IgnoreFilePattern {
 
             // File format:
             // (from https://www.perforce.com/perforce/r15.2/manuals/cmdref/P4IGNORE.html)
+            // (Clarifications at http://forums.perforce.com/index.php?/topic/4492-new-p4-ignore-functionality/page__gopid__18940#entry18940)
             // The syntax for ignore rules is not the same as Perforce syntax. Instead, it is similar to that used
             // by other versioning systems:
             //

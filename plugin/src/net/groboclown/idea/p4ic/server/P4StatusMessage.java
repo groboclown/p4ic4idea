@@ -157,7 +157,9 @@ public class P4StatusMessage {
                 if (P4StatusMessage.isErrorStatus(spec)) {
                     ret.add(new P4StatusMessage(spec));
                 } else if (spec.getOpStatus() == FileSpecOpStatus.INFO) {
-                    LOG.info("result: [" + spec.getStatusMessage() + "] (" + spec + ")");
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("result: [" + spec.getStatusMessage() + "] (" + spec + ")");
+                    }
                 }
             }
         }

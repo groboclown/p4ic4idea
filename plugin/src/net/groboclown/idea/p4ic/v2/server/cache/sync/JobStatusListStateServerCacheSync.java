@@ -15,6 +15,8 @@
 package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
+import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
 import net.groboclown.idea.p4ic.v2.server.cache.state.JobStatusListState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
@@ -55,6 +57,19 @@ public class JobStatusListStateServerCacheSync extends CacheFrontEnd {
 
         cachedServerState.setJobStatuses(exec.getJobStatusValues());
         cachedServerState.setUpdated();
+    }
+
+    @Override
+    protected void rectifyCache(@NotNull final Project project,
+            @NotNull final Collection<PendingUpdateState> pendingUpdateStates,
+            @NotNull final AlertManager alerts) {
+        // Nothing to do
+    }
+
+    @NotNull
+    @Override
+    protected Collection<UpdateGroup> getSupportedUpdateGroups() {
+        return Collections.emptyList();
     }
 
     @NotNull

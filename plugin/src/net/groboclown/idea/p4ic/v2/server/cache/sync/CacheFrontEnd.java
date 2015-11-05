@@ -15,6 +15,8 @@
 package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
+import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
@@ -23,6 +25,8 @@ import net.groboclown.idea.p4ic.v2.server.connection.ServerQuery;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -46,17 +50,29 @@ abstract class CacheFrontEnd {
                     @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 ServerConnection.assertInServerConnection();
-                loadServerCache(exec, alerts);
+                loadServerCache(exec, cacheManager, alerts);
                 return CacheFrontEnd.this;
             }
         };
     }
 
 
-    protected final void loadServerCache(@NotNull P4Exec2 exec, @NotNull AlertManager alerts) {
+    protected final void loadServerCache(@NotNull P4Exec2 exec, @NotNull ClientCacheManager cacheManager,
+            @NotNull AlertManager alerts) {
         if (needsRefresh()) {
-            LOG.info("Refreshing the cache for " + getClass().getSimpleName() + "; last refresh was " + getLastRefreshDate());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Refreshing the cache for " +
+                        getClass().getSimpleName() + "; last refresh was " +
+                        getLastRefreshDate());
+            }
             innerLoadServerCache(exec, alerts);
+            final List<PendingUpdateState> updates = new ArrayList<PendingUpdateState>();
+            for (PendingUpdateState updateState : cacheManager.getCachedPendingUpdates()) {
+                if (getSupportedUpdateGroups().contains(updateState.getUpdateGroup())) {
+                    updates.add(updateState);
+                }
+            }
+            rectifyCache(exec.getProject(), updates, alerts);
         } else if (LOG.isDebugEnabled()) {
             LOG.debug("No need to refresh the cache for " + getClass().getSimpleName() + "; last refresh was " + getLastRefreshDate());
         }
@@ -69,6 +85,23 @@ abstract class CacheFrontEnd {
      * @param alerts user message handler
      */
     protected abstract void innerLoadServerCache(@NotNull P4Exec2 exec, @NotNull AlertManager alerts);
+
+    /**
+     * Fix the local cache to be in-line with
+     * Called after the inner cache has been loaded from the server,
+     * so the server cache is up-to-date.
+     *
+     * @param project project invoking
+     * @param pendingUpdateStates all pending updates that have a supported
+     *                            group for this class.
+     * @param alerts alerts
+     */
+    protected abstract void rectifyCache(@NotNull Project project,
+            @NotNull Collection<PendingUpdateState> pendingUpdateStates,
+            @NotNull AlertManager alerts);
+
+    @NotNull
+    protected abstract Collection<UpdateGroup> getSupportedUpdateGroups();
 
 
     boolean needsRefresh() {

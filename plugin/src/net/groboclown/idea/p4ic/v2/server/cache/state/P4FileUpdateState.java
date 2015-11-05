@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Encompasses all the information about an update to a file (edit, add, delete, integrate, move).
  */
-public class P4FileUpdateState extends CachedState {
+public final class P4FileUpdateState extends CachedState {
     private static final Logger LOG = Logger.getInstance(P4FileUpdateState.class);
 
 

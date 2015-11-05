@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -30,10 +31,7 @@ import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
-import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
-import net.groboclown.idea.p4ic.v2.server.cache.ServerUpdateActionFactory;
-import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
+import net.groboclown.idea.p4ic.v2.server.cache.*;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
 import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ChangeListState;
@@ -265,6 +263,25 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
             }
         }
         committed.clear();
+    }
+
+    @Override
+    protected void rectifyCache(@NotNull final Project project,
+            @NotNull final Collection<PendingUpdateState> pendingUpdateStates,
+            @NotNull final AlertManager alerts) {
+        // TODO check the state
+    }
+
+    private static final Collection<UpdateGroup> SUPPORTED_GROUPS =
+            Collections.unmodifiableCollection(Arrays.asList(
+                    UpdateGroup.CHANGELIST,
+                    UpdateGroup.CHANGELIST_DELETE,
+                    UpdateGroup.CHANGELIST_FILES
+            ));
+    @NotNull
+    @Override
+    protected Collection<UpdateGroup> getSupportedUpdateGroups() {
+        return SUPPORTED_GROUPS;
     }
 
     @NotNull

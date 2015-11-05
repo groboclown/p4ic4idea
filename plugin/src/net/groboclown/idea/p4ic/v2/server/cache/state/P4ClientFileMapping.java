@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jdom.Element;
@@ -37,7 +38,8 @@ import org.jetbrains.annotations.Nullable;
  * file system.
  */
 public final class P4ClientFileMapping {
-    //private static final Logger LOG = Logger.getInstance(P4ClientFileMapping.class);
+    private static final Logger LOG = Logger.getInstance(P4ClientFileMapping.class);
+
 
     @Nullable
     private String depotPath;
@@ -98,13 +100,21 @@ public final class P4ClientFileMapping {
             return false;
         }
         P4ClientFileMapping that = (P4ClientFileMapping) obj;
-        if (depotPath != null) {
+        if (depotPath != null && that.depotPath != null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("comparing depot paths: " + depotPath + " vs " + that.depotPath);
+            }
             return depotPath.equals(that.depotPath);
         }
-        if (that.depotPath != null) {
-            return false;
+        if (localFilePath != null && that.localFilePath != null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("comparing file paths:" + localFilePath + " vs " + that.localFilePath);
+            }
         }
-        return (that.localFilePath != null && localFilePath != null && that.localFilePath.equals(localFilePath));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("this (" + this + ") and that (" + that + ") don't have comparable contents");
+        }
+        return false;
     }
 
     @Override

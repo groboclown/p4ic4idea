@@ -5,18 +5,19 @@
 
 These bugs need to be handled before features.
 
-
-## Big Bugs
-
-There are multiple "todos" and "fixmes" marked in the code, but these are the bugs
-that should be fixed up.
-
+1. Move a file: it is not marked as move, but as add; the source delete is lost.
 1. Connection setup panel - when initial "refresh" button is pressed, the directory list
    is loaded, and the first one is displayed as selected.  However, the properties are
    not loaded.  *Fixed, needs check.*
 1. Connection setup panel - For relative configs, the directory list is not refreshed.
    Ensure it's reading the right root directory path.  This also happens with
    specific config file.
+
+
+## Big Bugs
+
+There are multiple "todos" and "fixmes" marked in the code, but these are the bugs
+that should be fixed up.
 1. Open multiple files for edit, with one of them (the first one?) already
    open for edit, causes none of them to be opened.
    The first file is triggered to be opened for edit, but none of the

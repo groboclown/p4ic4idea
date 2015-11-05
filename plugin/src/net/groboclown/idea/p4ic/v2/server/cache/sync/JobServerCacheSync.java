@@ -14,11 +14,13 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
 import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.JobStateList;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
@@ -68,6 +70,19 @@ public class JobServerCacheSync extends CacheFrontEnd {
                         e, new FilePath[0]);
             }
         }
+    }
+
+    @Override
+    protected void rectifyCache(@NotNull final Project project,
+            @NotNull final Collection<PendingUpdateState> pendingUpdateStates,
+            @NotNull final AlertManager alerts) {
+        // Have this do something if job changing is ever implemented
+    }
+
+    @NotNull
+    @Override
+    protected Collection<UpdateGroup> getSupportedUpdateGroups() {
+        return Collections.emptyList();
     }
 
     @NotNull

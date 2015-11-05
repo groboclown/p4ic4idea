@@ -97,6 +97,9 @@ public class AlertManager implements ApplicationComponent {
             LOG.info("Skipped duplicate handling of " + ex);
             return;
         }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Added warning " + details, ex == null ? new Throwable("stack capture") : ex);
+        }
         eventLock.lock();
         try {
             LOG.warn(details, ex);
@@ -237,7 +240,7 @@ public class AlertManager implements ApplicationComponent {
     private void handleWarnings(@NotNull final List<WarningMessage> warnings) {
         // See AbstractVcsHelperImpl and AbstractVcsHelper
         // tab name VcsBundle.message("message.title.annotate")
-        LOG.info("start handleWarnings");
+        LOG.debug("start handleWarnings");
         WarningUI.showWarnings(warnings);
     }
 

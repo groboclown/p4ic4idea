@@ -56,6 +56,8 @@ public class MappedUpdateHandler<T> {
         validateUpdate(update);
         if (! mapping.containsKey(update)) {
             LOG.warn("Did not create mapping for " + update);
+        } else if (LOG.isDebugEnabled()) {
+            LOG.debug("marking as failed: " + update);
         }
         failed.add(update);
     }
@@ -70,6 +72,8 @@ public class MappedUpdateHandler<T> {
         validateUpdate(update);
         if (!mapping.containsKey(update)) {
             LOG.warn("Did not create mapping for " + update);
+        } else if (LOG.isDebugEnabled()) {
+            LOG.debug("marking as success: " + update);
         }
         success.add(update);
     }
@@ -112,6 +116,9 @@ public class MappedUpdateHandler<T> {
 
     public void map(@NotNull PendingUpdateState update, @NotNull T state) {
         validateUpdate(update);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Mapped " + update + " to " + state);
+        }
         this.mapping.put(update, state);
     }
 

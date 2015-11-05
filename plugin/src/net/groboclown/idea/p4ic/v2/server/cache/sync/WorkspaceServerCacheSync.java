@@ -30,6 +30,7 @@ import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
+import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
 import net.groboclown.idea.p4ic.v2.server.cache.state.*;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4WorkspaceViewState.ViewMapping;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
@@ -136,6 +137,21 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                         ret.add(new P4FileUpdateState(fileState, spec.getChangelistId(), action));
                     }
                 }
+
+                // Check for move source file
+                // FIXME debug
+                /*
+                LOG.info("depot path: " + depotPath);
+                LOG.info("from path: " + spec.getFromFile());
+                LOG.info("base path: " + spec.getBaseFile());
+                String fromPath = spec.getFromFile();
+                if (fromPath != null) {
+
+                    FilePath clientFromPath = clientSpecToFilePath(project,
+                            FileSpecUtil.getFromDepotPath(fromPath, -1));
+                }
+                */
+
             }
         }
         return ret;
@@ -474,6 +490,19 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                     null, FilePathUtil.getFilePathsFsrStrings(roots));
             cache.refreshServerState(exec, alerts);
         }
+    }
+
+    @Override
+    protected void rectifyCache(@NotNull final Project project,
+            @NotNull final Collection<PendingUpdateState> pendingUpdateStates,
+            @NotNull final AlertManager alerts) {
+        // Nothing to do
+    }
+
+    @NotNull
+    @Override
+    protected Collection<UpdateGroup> getSupportedUpdateGroups() {
+        return Collections.emptyList();
     }
 
 

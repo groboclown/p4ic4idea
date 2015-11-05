@@ -634,6 +634,9 @@ public class ClientExec {
         final Map<String, Map<String, Integer>> callCounts = new HashMap<String, Map<String, Integer>>();
 
         synchronized void invoke(@NotNull String operation, @NotNull String serverId, @NotNull String clientId) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("server " + serverId + "@" + clientId + " " + operation);
+            }
             Map<String, Integer> clientCount = callCounts.get(serverId);
             if (clientCount == null) {
                 clientCount = new HashMap<String, Integer>();

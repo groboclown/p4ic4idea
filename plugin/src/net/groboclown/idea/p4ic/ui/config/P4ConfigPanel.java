@@ -80,7 +80,8 @@ public class P4ConfigPanel {
 
     private Project myProject;
     private AlertManager alertManager = AlertManager.getInstance();
-    private final Set<AsyncProcessIcon> activeProcesses = new HashSet<AsyncProcessIcon>();
+    private final Set<String> activeProcesses = new HashSet<String>();
+    private boolean initialized = false;
 
     public P4ConfigPanel() {
         // Initialize GUI constant values
@@ -209,6 +210,9 @@ public class P4ConfigPanel {
         }
 
         resetResolvedProperties();
+        initialized = true;
+        refreshClientList();
+        refreshResolvedProperties();
     }
 
     protected void saveSettingsToConfig(@NotNull ManualP4Config config) {
@@ -297,8 +301,10 @@ public class P4ConfigPanel {
     @CalledInBackground
     @Nullable
     private Collection<ProjectConfigSource> getValidConfigs() {
-        // FIXME this seems to be called too early?
-
+        if (!initialized) {
+            LOG.debug("called getValidConfigs before configs were loaded");
+            return Collections.emptyList();
+        }
 
         try {
             final Collection<Builder> sources = createConnectionConfigs();
@@ -512,7 +518,7 @@ public class P4ConfigPanel {
      */
     @CalledInAwt
     private void refreshConfigPaths() {
-        runBackgroundAwtAction(myRefreshResolvedSpinner, new BackgroundAwtAction<Collection<ProjectConfigSource>>() {
+        runBackgroundAwtAction(myRefreshClientListSpinner, new BackgroundAwtAction<Collection<ProjectConfigSource>>() {
             @Override
             public Collection<ProjectConfigSource> runBackgroundProcess() {
                 return getValidConfigs();
@@ -959,13 +965,13 @@ public class P4ConfigPanel {
             LOG.debug("Requested background action " + icon.getName());
         }
         synchronized (activeProcesses) {
-            if (activeProcesses.contains(icon)) {
+            if (activeProcesses.contains(icon.getName())) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug(" - process is already running in background");
+                    LOG.debug(" - process is already running in background (active: " + activeProcesses + ")");
                 }
                 return;
             }
-            activeProcesses.add(icon);
+            activeProcesses.add(icon.getName());
         }
         icon.resume();
         icon.setVisible(true);
@@ -1012,7 +1018,10 @@ public class P4ConfigPanel {
                             icon.suspend();
                             icon.setVisible(false);
                             synchronized (activeProcesses) {
-                                activeProcesses.remove(icon);
+                                activeProcesses.remove(icon.getName());
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Remaining background processes active: " + activeProcesses);
+                                }
                             }
                             if (LOG.isDebugEnabled()) {
                                 LOG.debug("AWT processing for " + icon.getName() + " completed");

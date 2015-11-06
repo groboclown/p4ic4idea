@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.connection;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.IFileOperationResult;
@@ -25,6 +26,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class MessageResult<T> {
+    private static final Logger LOG = Logger.getInstance(MessageResult.class);
+
+
     private final T result;
     private final List<P4StatusMessage> messages;
     private final boolean error;
@@ -71,10 +75,16 @@ public class MessageResult<T> {
         List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
         Iterator<FilePath> iter = originalFiles.iterator();
         for (IFileSpec spec : specs) {
-            if (P4StatusMessage.isValid(spec)) {
-                results.add(iter.next());
-            } else if (markFileNotFoundAsValid && P4StatusMessage.isFileNotFoundError(spec)) {
-                results.add(iter.next());
+            if (P4StatusMessage.isValid(spec) ||
+                    (markFileNotFoundAsValid && P4StatusMessage.isFileNotFoundError(spec))) {
+                if (!iter.hasNext()) {
+                    // FIXME this can happen when reverting both sides of the
+                    // move operation at the same time.
+                    LOG.warn("No direct mapping between files " + originalFiles +
+                        " to messages " + specs);
+                } else {
+                    results.add(iter.next());
+                }
             } else {
                 if (spec.getSeverityCode() != MessageSeverityCode.E_FATAL) {
                     // advance but don't use the file reference

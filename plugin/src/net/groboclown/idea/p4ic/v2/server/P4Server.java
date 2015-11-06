@@ -79,6 +79,7 @@ public class P4Server {
 
     private boolean valid = true;
 
+
     /**
      * Contains data for integrating one file to another file.
      * It specifically has reference data for handling the
@@ -170,6 +171,8 @@ public class P4Server {
     public void workOnline() {
         if (valid) {
             connection.workOnline();
+        } else {
+            LOG.warn("Client " + source + " is invalid, so cannot go online");
         }
     }
 
@@ -737,6 +740,18 @@ public class P4Server {
         }
     }
 
+    // FIXME this method is kind of a hack.
+    // This needs to be performed in a more robust manner.
+    public void checkLocalIntegrity() throws InterruptedException {
+        connection.cacheQuery(new CacheQuery<Void>() {
+            @Override
+            public Void query(@NotNull final ClientCacheManager cacheManager) throws InterruptedException {
+                cacheManager.checkLocalIntegrity();
+                return null;
+            }
+        });
+    }
+
     /**
      * Set by the owning manager.
      *
@@ -874,15 +889,18 @@ public class P4Server {
         });
     }
 
-    public void submitChangelistOnline(final List<FilePath> files, final List<P4ChangeListJob> jobs,
-            final String submitStatus,
-            final int changeListId, @NotNull final Ref<VcsException> problem)
+    public void submitChangelistOnline(@NotNull final List<FilePath> files,
+            @NotNull final List<P4ChangeListJob> jobs,
+            @Nullable final String submitStatus, final int changeListId,
+            @Nullable final String comment, @NotNull final Ref<List<P4StatusMessage>> results,
+            @NotNull final Ref<VcsException> problem)
             throws P4DisconnectedException, InterruptedException {
         validateOnline();
         connection.cacheQuery(new CacheQuery<Void>() {
             @Override
             public Void query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
-                ServerUpdateAction action = mgr.submitChangelistOnline(files, jobs, submitStatus, changeListId, problem);
+                ServerUpdateAction action = mgr.submitChangelistOnline(
+                        files, jobs, submitStatus, changeListId, comment, results, problem);
                 if (action != null) {
                     connection.runImmediately(project, action);
                 }

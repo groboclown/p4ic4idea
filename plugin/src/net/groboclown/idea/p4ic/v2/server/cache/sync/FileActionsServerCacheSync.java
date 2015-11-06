@@ -397,6 +397,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     throws InterruptedException {
                 try {
                     final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(files));
+                    // FIXME if reverting both sides of a move operation, this
+                    // can return invalid results
                     ret.set(MessageResult.createForFilePath(files, results, false));
                 } catch (VcsException e) {
                     alerts.addWarning(exec.getProject(),
@@ -423,6 +425,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 try {
                     final List<IFileSpec> results =
                             exec.revertUnchangedFiles(FileSpecUtil.getFromFilePaths(orderedFiles), changelistId);
+                    // FIXME if reverting both sides of a move operation, this
+                    // can return invalid results
                     ret.set(MessageResult.createForFilePath(orderedFiles, results, false));
                 } catch (VcsException e) {
                     alerts.addWarning(exec.getProject(),
@@ -512,19 +516,25 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     public ServerUpdateAction submitChangelist(@NotNull final List<FilePath> files,
             @NotNull final List<P4ChangeListJob> jobs,
             @Nullable final String submitStatus, final int changelistId,
-            @NotNull final Ref<VcsException> problem) {
+            @Nullable final String comment,
+            @NotNull final Ref<VcsException> problem,
+            @NotNull final Ref<List<P4StatusMessage>> results) {
         final List<String> jobIds = new ArrayList<String>(jobs.size());
         for (P4ChangeListJob job : jobs) {
             jobIds.add(job.getJobId());
         }
-
         return new ImmediateServerUpdateAction() {
             @Override
             public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
                     @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 try {
-                    exec.submit(changelistId, jobIds, submitStatus);
+                    // Setup the changelist to only contain the given files.
+                    final List<IFileSpec> fileSpecs = FileSpecUtil.getFromFilePaths(files);
+                    int actualChangelist = exec.updateChangelist(changelistId,
+                            comment, fileSpecs);
+                    final List<P4StatusMessage> msgs = exec.submit(actualChangelist, jobIds, submitStatus);
+                    results.set(msgs);
                 } catch (VcsException e) {
                     problem.set(e);
                 }
@@ -749,6 +759,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         ExecutionStatus status;
         final Map<Integer, Set<FilePath>> notInPerforce = new HashMap<Integer, Set<FilePath>>();
         final Map<Integer, Set<FilePath>> notOpened = new HashMap<Integer, Set<FilePath>>();
+        final Map<Integer, Set<FilePath>> added = new HashMap<Integer, Set<FilePath>>();
         final Map<Integer, Set<FilePath>> edited = new HashMap<Integer, Set<FilePath>>();
         final Map<Integer, Set<FilePath>> deleted = new HashMap<Integer, Set<FilePath>>();
         final Map<Integer, Set<FilePath>> integrated = new HashMap<Integer, Set<FilePath>>();
@@ -867,10 +878,14 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             case ADD:
                             case ADD_EDIT:
                             case ADDED:
+                            case MOVE_ADD:
+                                // open for add.
+                                LOG.debug(" -+- open for add or move");
+                                container = added;
+                                break;
                             case EDIT:
                             case EDIT_FROM:
-                            case MOVE_ADD:
-                                // open for add or edit.
+                                // open for edit.
                                 LOG.debug(" -+- open for add, edit, or move");
                                 container = edited;
                                 break;
@@ -918,6 +933,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             return
                     existsInMap(fp, notInPerforce) ||
                     existsInMap(fp, notOpened) ||
+                    existsInMap(fp, added) ||
                     existsInMap(fp, edited) ||
                     existsInMap(fp, deleted) ||
                     existsInMap(fp, integrated) ||
@@ -1119,7 +1135,9 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
             // reopen:
             //     split.edited
-            for (Entry<Integer, Set<FilePath>> entry: split.edited.entrySet()) {
+            @SuppressWarnings("unchecked") Map<Integer, Set<FilePath>> reopen = joinChangelistFiles(
+                    split.edited, split.added);
+            for (Entry<Integer, Set<FilePath>> entry: reopen.entrySet()) {
                 try {
                     final List<P4StatusMessage> msgs =
                             exec.reopenFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
@@ -1234,6 +1252,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
             // ignore, because perforce doesn't know about it
             //     split.notInPerforce
+            // revert only:
+            //     split.added
             // open for delete:
             //     split.notOpened
             // revert and delete
@@ -1250,7 +1270,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
             // Perform the reverts first
             @SuppressWarnings("unchecked") final Map<Integer, Set<FilePath>> revertSets =
-                    joinChangelistFiles(split.edited, split.integrated);
+                    joinChangelistFiles(split.edited, split.added, split.integrated);
             if (!revertSets.isEmpty()) {
                 final Set<FilePath> reverts = new HashSet<FilePath>();
                 for (Collection<FilePath> fpList : split.deleted.values()) {
@@ -1372,12 +1392,15 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             ExecutionStatus returnCode = ExecutionStatus.NO_OP;
 
             // Perform the reverts first
-            // TODO this is inefficient.
-            // This can end up taking a file that's already open for add or edit,
-            // revert it, then open it for add or edit again.
+            // TODO inefficient use of splitTgt.added
+            // In the situation where the source isn't in the
+            // depot, and the target is added, then we don't need to revert the target
+            // or perform the add.
             @SuppressWarnings("unchecked") final Map<Integer, Set<FilePath>> revertSets = joinChangelistFiles(
-                            splitTgt.edited, splitTgt.deleted, splitTgt.integrated, splitTgt.move_deleted,
-                            splitSrc.edited, splitSrc.deleted, splitSrc.integrated, splitSrc.move_deleted);
+                            splitTgt.added, splitTgt.edited, splitTgt.deleted, splitTgt.integrated, splitTgt.move_deleted,
+                            splitSrc.added, splitSrc.deleted, splitSrc.integrated, splitSrc.move_deleted);
+                            // note that source edit is not present.
+                            // that's because it needs to be open for edit to move.
             if (!revertSets.isEmpty()) {
                 final Set<FilePath> reverts = new HashSet<FilePath>();
                 for (Set<FilePath> filePaths : revertSets.values()) {
@@ -1418,8 +1441,12 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 FilePath target = FilePathUtil.getFilePath(tgtPath);
                 Integer updateChange = UpdateParameterNames.CHANGELIST.getParameterValue(update);
                 if (source != null && target != null && updateChange != null) {
-                    if (existsInMap(source, splitSrc.notInPerforce) || ! splitSrc.contains(source)) {
+                    if (existsInMap(source, splitSrc.notInPerforce) ||
+                            existsInMap(source, splitSrc.added) ||
+                            ! splitSrc.contains(source)) {
                         // just an add or edit
+                        // If the source was added, it should have already been
+                        // reverted with the above action.
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Move is really an add: " + target + " (source not in p4: " + source + ")");
                         }
@@ -1458,30 +1485,56 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             // The source MUST be open for edit for this to work.
                             // This should be efficiently checked during the
                             // revert phase.
+
+                            boolean moveClientFiles = source.getIOFile().exists();
+
                             final IFileSpec sourceSpec = FileSpecUtil.getFromFilePath(source);
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("open for edit: " + sourceSpec);
-                            }
-                            List<P4StatusMessage> msgs =
-                                    exec.editFiles(Collections.singletonList(sourceSpec), updateChange);
-                            if (alerts.addWarnings(exec.getProject(),
-                                    P4Bundle.message("error.move",
-                                            FilePathUtil.toStringList(Arrays.asList(source, target))),
-                                    msgs, false)) {
-                                // don't keep going
-                                markFailed(update);
-                                continue;
-                            }
+                            if (! existsInMap(source, splitSrc.edited)) {
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("open for edit: " + sourceSpec);
+                                }
+                                final List<P4StatusMessage> msgs =
+                                        exec.editFiles(Collections.singletonList(sourceSpec), updateChange);
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("edit result: " + msgs);
+                                }
+                                if (alerts.addWarnings(exec.getProject(),
+                                        P4Bundle.message("error.move",
+                                                FilePathUtil.toStringList(Arrays.asList(source, target))),
+                                        msgs, false)) {
+                                    // don't keep going
+                                    markFailed(update);
+                                    LOG.debug("open source file for edit (pre-move action) failed");
+                                    continue;
+                                }
+                            } /* debugging stuff:
+                            else {
+                                final List<IExtendedFileSpec> details =
+                                        exec.getFileStatus(Collections.singletonList(sourceSpec));
+                                for (IExtendedFileSpec detail : details) {
+                                    if (detail.getOpStatus() == FileSpecOpStatus.VALID) {
+                                        LOG.debug("Current open action of " + source +
+                                            " is expected to be 'edit', is " + detail.getAction());
+                                    } else {
+                                        LOG.debug("file status of " + source + " encountered " +
+                                            detail.getOpStatus() + ": " +
+                                            detail.getStatusMessage());
+                                    }
+                                }
+                            } */
 
                             final IFileSpec targetSpec = FileSpecUtil.getFromFilePath(target);
                             if (LOG.isDebugEnabled()) {
                                 LOG.debug("move from " + sourceSpec + " to " + targetSpec);
                             }
 
-                            msgs = exec.moveFile(
+                            final List<P4StatusMessage> msgs = exec.moveFile(
                                     sourceSpec,
                                     targetSpec,
-                                    updateChange, false);
+                                    updateChange, ! moveClientFiles);
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("move result: " + msgs);
+                            }
                             if (alerts.addWarnings(exec.getProject(),
                                     P4Bundle.message("error.move",
                                             FilePathUtil.toStringList(Arrays.asList(source, target))),

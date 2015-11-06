@@ -151,6 +151,9 @@ public class P4StatusMessage {
     @NotNull
     public static <T extends IFileOperationResult> List<P4StatusMessage> getErrors(
             @Nullable Collection<T> specs) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Operation result: " + specs);
+        }
         List<P4StatusMessage> ret = new ArrayList<P4StatusMessage>();
         if (specs != null) {
             for (T spec : specs) {

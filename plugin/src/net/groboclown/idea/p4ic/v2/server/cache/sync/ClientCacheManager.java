@@ -23,6 +23,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
@@ -252,14 +253,19 @@ public class ClientCacheManager {
     public ServerUpdateAction submitChangelistOnline(@NotNull final List<FilePath> files,
             @NotNull final List<P4ChangeListJob> jobs,
             @Nullable final String submitStatus, final int changelistId,
+            @Nullable String comment,
+            @NotNull Ref<List<P4StatusMessage>> results,
             @NotNull Ref<VcsException> problem) {
-        return fileActions.submitChangelist(files, jobs, submitStatus, changelistId, problem);
+        return fileActions.submitChangelist(files, jobs, submitStatus, changelistId, comment,
+                problem, results);
     }
 
 
     /**
      * Ensure the local cache only has items for what's in the pending updates.
      */
+    // FIXME this method is kind of a hack.
+    // This needs to be performed in a more robust manner.
     public void checkLocalIntegrity() {
         workspace.checkLocalIntegrity(state.getPendingUpdates());
         fileActions.checkLocalIntegrity(state.getPendingUpdates());

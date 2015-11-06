@@ -15,6 +15,7 @@ package net.groboclown.idea.p4ic.v2.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
@@ -24,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class P4ServerWorkOnlineAction extends AnAction {
+    private static final Logger LOG = Logger.getInstance(P4ServerWorkOnlineAction.class);
+
 
     private final ClientServerId serverId;
 
@@ -41,10 +44,15 @@ public class P4ServerWorkOnlineAction extends AnAction {
             return;
         }
         final P4Vcs vcs = P4Vcs.getInstance(getProject(e));
+        boolean found = false;
         for (P4Server server : vcs.getP4Servers()) {
             if (serverId.equals(server.getClientServerId())) {
                 server.workOnline();
+                found = true;
             }
+        }
+        if (! found) {
+            LOG.warn("No server found matching " + serverId + "; cannot reconnect");
         }
 
         // No need to force a reload of the VCS, because of the events

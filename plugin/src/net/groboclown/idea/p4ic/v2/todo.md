@@ -3,9 +3,14 @@
 
 ## Critical and Blocker Bugs
 
-These bugs need to be handled before features.
+These bugs need to be handled before release.
 
-1. Move a file: it is not marked as move, but as add; the source delete is lost.
+1. Change view state doesn't correctly match what's in the actual changes.
+   This comes from a big problem with the design.  We need to properly map
+   state objects to the pending update objects, so that local caches can
+   correctly be cleaned up.
+1. When project root is at (say) c:\a\b\c\, and .p4config exists in c:\a\b\c\ and c:\a, the
+   c:\a is picked up.  *TODO double check this*
 
 
 ## Big Bugs
@@ -16,32 +21,8 @@ that should be fixed up.
    open for edit, causes none of them to be opened.
    The first file is triggered to be opened for edit, but none of the
    others are.  Looks like an IDEA bug.
-1. When project root is at (say) c:\a\b\c\, and .p4config exists in c:\a\b\c\ and c:\a, the
-   c:\a is picked up.
 1. The working online/offline icon isn't being correctly updated
    when state changes. *Fixed, needs check.*
-1. error (idea):
-    ```
-    ERROR - ellij.ide.impl.DataManagerImpl - cannot share data context between Swing events; initial event count = 142537; current event count = 142559 
-    java.lang.Throwable
-        at com.intellij.openapi.diagnostic.Logger.error(Logger.java:115)
-        at com.intellij.ide.impl.DataManagerImpl$MyDataContext.getData(DataManagerImpl.java:357)
-        at com.intellij.openapi.actionSystem.DataKey.getData(DataKey.java:75)
-        at com.intellij.openapi.actionSystem.AnActionEvent.getData(AnActionEvent.java:165)
-        at com.intellij.openapi.vcs.changes.actions.RollbackAction.getChanges(RollbackAction.java:148)
-        at com.intellij.openapi.vcs.changes.actions.RollbackAction.actionPerformed(RollbackAction.java:120)
-    ```
-1. error (idea):
-    ```
-    ERROR - ellij.ide.impl.DataManagerImpl - cannot share data context between Swing events; initial event count = 142537; current event count = 142559 
-    java.lang.Throwable
-        at com.intellij.openapi.diagnostic.Logger.error(Logger.java:115)
-        at com.intellij.ide.impl.DataManagerImpl$MyDataContext.getData(DataManagerImpl.java:357)
-        at com.intellij.openapi.actionSystem.DataKey.getData(DataKey.java:75)
-        at com.intellij.openapi.actionSystem.AnActionEvent.getData(AnActionEvent.java:165)
-        at com.intellij.openapi.vcs.changes.actions.RollbackAction.getModifiedWithoutEditing(RollbackAction.java:180)
-        at com.intellij.openapi.vcs.changes.actions.RollbackAction.actionPerformed(RollbackAction.java:122)    
-    ```
 
 
 ## Not-implemented behavior in existing features

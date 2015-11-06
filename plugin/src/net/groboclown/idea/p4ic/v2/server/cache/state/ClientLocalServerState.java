@@ -69,7 +69,9 @@ public class ClientLocalServerState {
     }
 
     public void removePendingUpdate(@NotNull PendingUpdateState pendingUpdateState) {
-        LOG.info("Removing pending state " + pendingUpdateState);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Removing pending state " + pendingUpdateState);
+        }
         pendingUpdates.remove(pendingUpdateState);
     }
 

@@ -33,6 +33,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
@@ -129,15 +130,18 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                 LOG.info("Submit to " + server + " cl " + clEn.getValue() + " files " +
                     clEn.getValue());
                 try {
-                    // FIXME set the changelist comment as well.
                     Ref<VcsException> problem = new Ref<VcsException>();
+                    Ref<List<P4StatusMessage>> results = new Ref<List<P4StatusMessage>>();
                     server.submitChangelistOnline(clEn.getValue(),
                             getJobs(parametersHolder),
                             getSubmitStatus(parametersHolder),
-                            clEn.getKey().getChangeListId(), problem);
+                            clEn.getKey().getChangeListId(),
+                            preparedComment,
+                            results, problem);
                     if (! problem.isNull()) {
                         errors.add(problem.get());
                     }
+                    errors.addAll(P4StatusMessage.messagesAsErrors(results.get()));
                 } catch (P4DisconnectedException e) {
                     LOG.warn(e);
                     errors.add(e);

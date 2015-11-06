@@ -31,12 +31,10 @@ import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.option.server.GetExtendedFilesOptions;
-import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
-import com.perforce.p4java.option.server.GetFileContentsOptions;
-import com.perforce.p4java.option.server.OpenedFilesOptions;
+import com.perforce.p4java.option.server.*;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
@@ -632,8 +630,22 @@ public class P4Exec2 {
                     @NotNull ClientExec.ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 count.invoke("moveFile");
-                return getErrors(server.moveFile(changelistId, false, leaveLocalFiles, null,
-                        source, target));
+                final MoveFileOptions options = new MoveFileOptions(changelistId,
+                        false, true, leaveLocalFiles, null);
+                // FIXME debug
+                //return getErrors(server.moveFile(source, target, options));
+                //final List<IFileSpec> res = server.moveFile(source, target, options);
+                final List<IFileSpec> res = server.moveFile(changelistId,
+                        false, leaveLocalFiles, null, source, target);
+                if (LOG.isDebugEnabled()) {
+                    if (res.isEmpty()) {
+                        LOG.debug("no move file results?");
+                    }
+                    for (IFileSpec spec : res) {
+                        LOG.debug("move file: " + spec.getOpStatus() + "/" + spec.getStatusMessage() + "/" + spec);
+                    }
+                }
+                return getErrors(res);
             }
         });
     }
@@ -805,6 +817,67 @@ public class P4Exec2 {
                     }
                 }
                 return job;
+            }
+        });
+    }
+
+
+    public int updateChangelist(final int changelistId, @Nullable final String comment,
+            @NotNull final List<IFileSpec> files) throws VcsException, CancellationException {
+        // Make sure we have the full depot path of the input files for comparison.
+        List<IExtendedFileSpec> fullFileSpecs = getFileStatus(files);
+        final Set<String> fileDepos = new HashSet<String>(fullFileSpecs.size());
+        for (IExtendedFileSpec fullFileSpec : fullFileSpecs) {
+            fileDepos.add(fullFileSpec.getDepotPathString());
+        }
+        return exec.runWithClient(project, new WithClient<Integer>() {
+            @NotNull
+            @Override
+            public Integer run(@NotNull final IOptionsServer server, @NotNull final IClient client,
+                    @NotNull final ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
+                // Look if we can keep the current changelist
+                if (changelistId > P4ChangeListId.P4_DEFAULT) {
+                    final IChangelist changelist = server.getChangelist(changelistId);
+                    if (changelist != null && changelist.getId() > P4ChangeListId.P4_DEFAULT) {
+                        // Remove files only.  If more files are present than
+                        // what are in the changelist, we'll have to reopen files.
+
+                        final List<IFileSpec> activeFiles = changelist.getFiles(true);
+                        final Iterator<IFileSpec> iter = activeFiles.iterator();
+                        while (iter.hasNext()) {
+                            final IFileSpec next = iter.next();
+                            if (! fileDepos.remove(next.getDepotPathString())) {
+                                iter.remove();
+                            }
+                        }
+                        if (fileDepos.isEmpty()) {
+                            // used all the files.
+                            changelist.setDescription(comment);
+                            changelist.update();
+                            return changelist.getId();
+                        }
+                    }
+                }
+
+                // Need to create a new changelist, and move the selected files into it.
+                Changelist replacement = new Changelist();
+                replacement.setUsername(getUsername());
+                replacement.setClientId(client.getName());
+                replacement.setDescription(comment);
+
+                IChangelist newChange = client.createChangelist(replacement);
+                final List<IFileSpec> result = client.reopenFiles(files, newChange.getId(), null);
+                final List<P4StatusMessage> errors = getErrors(result);
+
+                // FIXME handle these better
+                try {
+                    P4StatusMessage.throwIfError(errors, false);
+                } catch (VcsException e) {
+                    throw new P4JavaException(e);
+                }
+
+                return newChange.getId();
             }
         });
     }

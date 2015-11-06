@@ -298,6 +298,8 @@ public class ServerConnectionManager implements ApplicationComponent {
                         synchronizer.wentOnline();
                         onlineChangedCondition.signal();
                         return true;
+                    } else if (LOG.isDebugEnabled()) {
+                        LOG.debug("Already online; skipping going online");
                     }
                 } finally {
                     onlineStatusLock.unlock();

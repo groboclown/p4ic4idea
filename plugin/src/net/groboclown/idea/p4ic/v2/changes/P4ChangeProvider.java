@@ -123,6 +123,12 @@ public class P4ChangeProvider implements ChangeProvider {
         }
 
         try {
+            // As part of the execution, we'll include an integrity check, to ensure the
+            // local cache matches up with the remaining actions.
+            for (P4Server server : vcs.getP4Servers()) {
+                server.checkLocalIntegrity();
+            }
+
             syncChanges(dirtyFiles, builder, addGate, progress);
         } catch (InterruptedException e) {
             throw new VcsInterruptedException(e);

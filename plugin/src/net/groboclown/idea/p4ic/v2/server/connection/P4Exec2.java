@@ -15,10 +15,8 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.*;
 import com.perforce.p4java.core.file.*;
 import com.perforce.p4java.exception.P4JavaException;
@@ -31,14 +29,16 @@ import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.option.server.*;
+import com.perforce.p4java.option.server.GetExtendedFilesOptions;
+import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
+import com.perforce.p4java.option.server.GetFileContentsOptions;
+import com.perforce.p4java.option.server.OpenedFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
-import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
@@ -120,27 +120,6 @@ public class P4Exec2 {
     protected void finalize() throws Throwable {
         dispose();
         super.finalize();
-    }
-
-
-    public List<IClientSummary> getClientsForUser() throws VcsConnectionProblem, CancellationException {
-        try {
-            return exec.runWithServer(project, new ClientExec.WithServer<List<IClientSummary>>() {
-                @Override
-                public List<IClientSummary> run(@NotNull IOptionsServer server, @NotNull ClientExec.ServerCount count)
-                        throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
-                    count.invoke("getServers");
-                    List<IClientSummary> ret = server.getClients(getUsername(), null, 0);
-                    assert ret != null;
-                    return ret;
-                }
-            });
-        } catch (VcsConnectionProblem e) {
-            throw e;
-        } catch (VcsException e) {
-            LOG.warn("Raised a general VCS exception", e);
-            throw new P4DisconnectedException(e);
-        }
     }
 
 
@@ -470,37 +449,12 @@ public class P4Exec2 {
     }
 
 
-    @Nullable
-    public List<IFileSpec> getFileSpecsInChangelist(final int id)
-            throws VcsException, CancellationException {
-        return exec.runWithClient(project, new ClientExec.WithClient<List<IFileSpec>>() {
-            @Override
-            public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client,
-                    @NotNull ClientExec.ServerCount count)
-                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
-                count.invoke("getChangelist");
-                IChangelist cl = server.getChangelist(id);
-                if (cl == null) {
-                    return null;
-                }
-                count.invoke("changelist.getFiles");
-
-                // TODO make this get the status
-                // It's in the IServer object (the IFix object).
-
-
-                return cl.getFiles(false);
-            }
-        });
-    }
-
-
     /**
      * Get the state of the file specs.  This should only be invoked when the {@code files} references
      * only files, not glob patterns.  The {@code files} must be fully escaped IFileSpec objects.
      *
-     * @param files
-     * @return
+     * @param files files
+     * @return file status
      * @throws VcsException
      * @throws CancellationException
      */
@@ -519,8 +473,6 @@ public class P4Exec2 {
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
                     P4Exception {
                 count.invoke("getFileStatus");
-                GetExtendedFilesOptions opts = new GetExtendedFilesOptions(
-                    "-m", Integer.toString(files.size()));
                 return getExtendedFiles(files, server);
             }
         });
@@ -586,6 +538,9 @@ public class P4Exec2 {
                 count.invoke("getFileContents");
                 InputStream inp = server.getFileContents(Collections.singletonList(spec),
                         fileContentsOptions);
+                if (inp == null) {
+                    return null;
+                }
 
                 try {
                     byte[] buff = new byte[4096];
@@ -630,11 +585,6 @@ public class P4Exec2 {
                     @NotNull ClientExec.ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 count.invoke("moveFile");
-                final MoveFileOptions options = new MoveFileOptions(changelistId,
-                        false, true, leaveLocalFiles, null);
-                // FIXME debug
-                //return getErrors(server.moveFile(source, target, options));
-                //final List<IFileSpec> res = server.moveFile(source, target, options);
                 final List<IFileSpec> res = server.moveFile(changelistId,
                         false, leaveLocalFiles, null, source, target);
                 if (LOG.isDebugEnabled()) {

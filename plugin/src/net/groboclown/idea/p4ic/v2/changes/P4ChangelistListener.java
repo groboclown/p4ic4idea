@@ -30,6 +30,7 @@ import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
+import net.groboclown.idea.p4ic.v2.server.util.ChangelistDescriptionGenerator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -273,16 +274,6 @@ public class P4ChangelistListener implements ChangeListListener {
 
 
     static String toDescription(@NotNull ChangeList changeList) {
-        StringBuilder sb = new StringBuilder();
-        if (changeList.getName().length() > 0) {
-            sb.append(changeList.getName());
-            if (changeList.getComment() != null && changeList.getComment().length() > 0) {
-                sb.append("\n\n");
-            }
-        }
-        if (changeList.getComment() != null && changeList.getComment().length() > 0) {
-            sb.append(changeList.getComment());
-        }
-        return sb.toString();
+        return ChangelistDescriptionGenerator.getDescription(changeList);
     }
 }

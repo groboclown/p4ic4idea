@@ -14,6 +14,8 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache;
 
+import com.perforce.p4java.core.ChangelistStatus;
+import com.perforce.p4java.impl.generic.core.ChangelistSummary;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ChangeListState;
@@ -21,6 +23,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.Date;
 
 /**
  * Immutable view of a changelist state.
@@ -35,9 +38,12 @@ public class P4ChangeListValue {
         this.state = state;
     }
 
-    public P4ChangeListValue(@NotNull ClientServerId clientServerId, int dummyChangeListId) {
+    public P4ChangeListValue(final ClientServerId clientServerId, final boolean isServerDefaultChange) {
+        assert isServerDefaultChange;
         this.clientServerId = clientServerId;
-        this.state = new P4ChangeListState(dummyChangeListId);
+        this.state = new P4ChangeListState(new ChangelistSummary(
+                P4ChangeListId.P4_DEFAULT, clientServerId.getClientId(), null,
+                ChangelistStatus.NEW, new Date(), "", false));
     }
 
 
@@ -93,6 +99,7 @@ public class P4ChangeListValue {
         return state.isDefault();
     }
 
+    // TODO is this still necessary
     public synchronized P4ChangeListId getIdObject() {
         if (id == null) {
             id = new P4ChangeListIdImpl(clientServerId, getChangeListId());

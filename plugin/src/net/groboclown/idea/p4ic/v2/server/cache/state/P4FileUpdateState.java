@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Encompasses all the information about an update to a file (edit, add, delete, integrate, move).
  */
-public final class P4FileUpdateState extends CachedState {
+public final class P4FileUpdateState extends UpdateRef {
     private static final Logger LOG = Logger.getInstance(P4FileUpdateState.class);
 
 
@@ -43,7 +43,25 @@ public final class P4FileUpdateState extends CachedState {
     private P4ClientFileMapping integrateSource;
 
 
-    public P4FileUpdateState(@NotNull final P4ClientFileMapping file, int changelist, @NotNull FileUpdateAction action) {
+    private P4FileUpdateState(@NotNull final P4ClientFileMapping file, int changelist, @NotNull FileUpdateAction action) {
+        super(null);
+        this.file = file;
+        this.activeChangelist = changelist;
+        this.action = action;
+    }
+
+    public P4FileUpdateState(@NotNull PendingUpdateState state, @NotNull final P4ClientFileMapping file, int changelist,
+            @NotNull FileUpdateAction action) {
+        super(state);
+        this.file = file;
+        this.activeChangelist = changelist;
+        this.action = action;
+    }
+
+    public P4FileUpdateState(@NotNull final P4ClientFileMapping file, int changelist,
+            @NotNull FileUpdateAction action, boolean isServer) {
+        super(null);
+        assert isServer;
         this.file = file;
         this.activeChangelist = changelist;
         this.action = action;
@@ -73,10 +91,6 @@ public final class P4FileUpdateState extends CachedState {
     @Nullable
     public FilePath getLocalFilePath() {
         return file.getLocalFilePath();
-    }
-
-    public void setFileUpdateAction(@NotNull FileUpdateAction action) {
-        this.action = action;
     }
 
     @Override

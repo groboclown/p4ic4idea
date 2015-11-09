@@ -24,7 +24,6 @@ import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
-import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
@@ -195,19 +194,11 @@ public class ClientCacheManager {
         return ignoreFiles.isFileIgnored(fp);
     }
 
-    /**
-     * Create a non-committed changelist ID.  It will still need to be created in a {@link PendingUpdateState}.
-     * @return change list ID
-     */
-    public P4ChangeListId reserveLocalChangelistId() {
-        int id = changeLists.reserveLocalChangelistId();
-        return new P4ChangeListIdImpl(state.getClientServerId(), id);
-    }
-
     @Nullable
-    public PendingUpdateState moveFilesToChangelist(@NotNull Collection<FilePath> files,
-            @NotNull LocalChangeList source, int changeListId) {
-        return changeLists.moveFileToChangelist(files, source, changeListId);
+    public PendingUpdateState moveFilesToChangelist(@NotNull Project project,
+            @NotNull Collection<FilePath> files,
+            @NotNull LocalChangeList source, @Nullable P4ChangeListId changelistId) {
+        return changeLists.moveFileToChangelist(project, files, source, changelistId);
     }
 
     @Nullable
@@ -278,14 +269,6 @@ public class ClientCacheManager {
 
     // ----------------------------------------------------------------------------------------
     // Package-level behaviors for use in an action
-
-    void markLocalChangelistStateCommitted(int changeListId) {
-        changeLists.markLocalStateCommitted(changeListId);
-    }
-
-    void markLocalFileStateCommitted(@NotNull FilePath file) {
-        fileActions.markLocalFileStateAsCommitted(file);
-    }
 
     private class CacheImpl implements Cache {
 

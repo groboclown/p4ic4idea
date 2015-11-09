@@ -42,7 +42,6 @@ import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterName
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
 import net.groboclown.idea.p4ic.v2.server.cache.state.*;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.AbstractServerUpdateAction.ExecutionStatus;
-import net.groboclown.idea.p4ic.v2.server.cache.sync.MappedUpdateHandler.StateClearHandler;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
@@ -228,23 +227,26 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         // the file is set to writable first.
         makeWritable(project, file);
 
-        // Check if it is already in an action state, and create it if necessary
-        final P4FileUpdateState action = createFileUpdateState(file, FileUpdateAction.ADD_EDIT_FILE, changeListId);
-        if (action == null) {
-            // nothing to do
-            return null;
-        }
-
         // Create the action.
         final HashMap<String, Object> params = new HashMap<String, Object>();
         // We don't know for sure the depot path, so use the file path.
         params.put(UpdateParameterNames.FILE.getKeyName(), file.getIOFile().getAbsolutePath());
         params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changeListId);
 
-        return new PendingUpdateState(
-                action.getFileUpdateAction().getUpdateAction(),
+        final PendingUpdateState ret = new PendingUpdateState(
+                FileUpdateAction.ADD_EDIT_FILE.getUpdateAction(),
                 Collections.singleton(file.getIOFile().getAbsolutePath()),
                 params);
+
+        // Check if it is already in an action state, and create it if necessary
+        final P4FileUpdateState action = createFileUpdateState(ret,
+                file, FileUpdateAction.ADD_EDIT_FILE, changeListId);
+        if (action == null) {
+            // nothing to do
+            return null;
+        }
+
+        return ret;
     }
 
 
@@ -263,12 +265,6 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         FilePath fp = FilePathUtil.getFilePath(file);
         makeWritable(project, fp);
 
-        // Check if it is already in an action state, and create it if necessary
-        final P4FileUpdateState action = createFileUpdateState(fp, FileUpdateAction.EDIT_FILE, changeListId);
-        if (action == null) {
-            // nothing to do
-            return null;
-        }
 
         // Create the action.
         final HashMap<String, Object> params = new HashMap<String, Object>();
@@ -276,10 +272,19 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         params.put(UpdateParameterNames.FILE.getKeyName(), fp.getIOFile().getAbsolutePath());
         params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changeListId);
 
-        return new PendingUpdateState(
-                action.getFileUpdateAction().getUpdateAction(),
+        final PendingUpdateState ret = new PendingUpdateState(
+                FileUpdateAction.EDIT_FILE.getUpdateAction(),
                 Collections.singleton(fp.getIOFile().getAbsolutePath()),
                 params);
+
+        // Check if it is already in an action state, and create it if necessary
+        final P4FileUpdateState action = createFileUpdateState(ret,
+                fp, FileUpdateAction.EDIT_FILE, changeListId);
+        if (action == null) {
+            // nothing to do
+            return null;
+        }
+        return ret;
     }
 
 
@@ -293,23 +298,25 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
         // TODO put the file in the local cache, or mark it in the IDEA built-in vcs.
 
-        // Check if it is already in an action state, and create it if necessary
-        final P4FileUpdateState action = createFileUpdateState(file, FileUpdateAction.DELETE_FILE, changeListId);
-        if (action == null) {
-            // nothing to do
-            return null;
-        }
-
         // Create the action.
         final HashMap<String, Object> params = new HashMap<String, Object>();
         // We don't know for sure the depot path, so use the file path.
         params.put(UpdateParameterNames.FILE.getKeyName(), file.getIOFile().getAbsolutePath());
         params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changeListId);
 
-        return new PendingUpdateState(
-                action.getFileUpdateAction().getUpdateAction(),
+        final PendingUpdateState ret = new PendingUpdateState(
+                FileUpdateAction.DELETE_FILE.getUpdateAction(),
                 Collections.singleton(file.getIOFile().getAbsolutePath()),
                 params);
+
+        // Check if it is already in an action state, and create it if necessary
+        final P4FileUpdateState action = createFileUpdateState(ret,
+                file, FileUpdateAction.DELETE_FILE, changeListId);
+        if (action == null) {
+            // nothing to do
+            return null;
+        }
+        return ret;
     }
 
     @Nullable
@@ -321,18 +328,6 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             makeWritable(project, file.getSourceFile());
         }
 
-
-        // Check if it is already in an action state, and create it if necessary
-        final P4FileUpdateState tgtAction = createFileUpdateState(file.getTargetFile(),
-                FileUpdateAction.MOVE_FILE, changelistId);
-        // Make a source action, too
-        createFileUpdateState(file.getSourceFile(),
-                FileUpdateAction.MOVE_DELETE_FILE, changelistId);
-        if (tgtAction == null) {
-            // nothing to do
-            return null;
-        }
-        // doesn't matter too much if the delete file is not null
 
         // TODO if the source file is on the same server but different
         // client, use a depot path as the source.  This requires being
@@ -348,12 +343,27 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 file.getSourceFile().getIOFile().getAbsolutePath());
         params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changelistId);
 
-        return new PendingUpdateState(
-                tgtAction.getFileUpdateAction().getUpdateAction(),
+        final PendingUpdateState ret = new PendingUpdateState(
+                FileUpdateAction.MOVE_FILE.getUpdateAction(),
                 new HashSet<String>(Arrays.asList(
                         file.getTargetFile().getIOFile().getAbsolutePath(),
                         file.getSourceFile().getIOFile().getAbsolutePath())),
                 params);
+
+        // Check if it is already in an action state, and create it if necessary
+        final P4FileUpdateState tgtAction = createFileUpdateState(ret,
+                file.getTargetFile(),
+                FileUpdateAction.MOVE_FILE, changelistId);
+        // Make a source action, too
+        createFileUpdateState(ret, file.getSourceFile(),
+                FileUpdateAction.MOVE_DELETE_FILE, changelistId);
+        if (tgtAction == null) {
+            // nothing to do
+            return null;
+        }
+        // doesn't matter too much if the delete file is not null
+
+        return ret;
     }
 
 
@@ -361,14 +371,6 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     public PendingUpdateState integrateFile(@NotNull final IntegrateFile file, final int changelistId) {
         // The destination file does not need to be writable
 
-
-        // Check if it is already in an action state, and create it if necessary
-        final P4FileUpdateState action = createFileUpdateState(file.getTargetFile(),
-                FileUpdateAction.INTEGRATE_FILE, changelistId);
-        if (action == null) {
-            // nothing to do
-            return null;
-        }
 
         // Create the action.
         final HashMap<String, Object> params = new HashMap<String, Object>();
@@ -379,11 +381,21 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 file.getSourceFile().getIOFile().getAbsolutePath());
         params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changelistId);
 
-        return new PendingUpdateState(
-                action.getFileUpdateAction().getUpdateAction(),
+        final PendingUpdateState ret = new PendingUpdateState(
+                FileUpdateAction.INTEGRATE_FILE.getUpdateAction(),
                 // Note that the source is not in the ID.
                 Collections.singleton(file.getTargetFile().getIOFile().getAbsolutePath()),
                 params);
+
+        // Check if it is already in an action state, and create it if necessary
+        final P4FileUpdateState action = createFileUpdateState(ret, file.getTargetFile(),
+                FileUpdateAction.INTEGRATE_FILE, changelistId);
+        if (action == null) {
+            // nothing to do
+            return null;
+        }
+
+        return ret;
     }
 
 
@@ -543,12 +555,6 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
 
-    void markLocalFileStateAsCommitted(@NotNull FilePath file) {
-        committed.add(file);
-    }
-
-
-
     @Nullable
     private P4FileUpdateState getCachedUpdateState(@NotNull final FilePath file) {
         P4FileUpdateState action = localClientUpdatedFiles.getUpdateStateFor(file);
@@ -672,7 +678,9 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
 
     @Nullable
-    private P4FileUpdateState createFileUpdateState(@NotNull FilePath file,
+    private P4FileUpdateState createFileUpdateState(
+            @NotNull PendingUpdateState pendingState,
+            @NotNull FilePath file,
             @NotNull FileUpdateAction fileUpdateAction, int changeListId) {
         // Check if it is already in an action state.
         P4FileUpdateState action = getCachedUpdateState(file);
@@ -685,7 +693,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         }
         // If the action already exists but isn't the right update action,
         // we still need to create a new one to put in our local cache.
-        P4FileUpdateState newAction = new P4FileUpdateState(
+        P4FileUpdateState newAction = new P4FileUpdateState(pendingState,
                 cache.getClientMappingFor(file), changeListId, fileUpdateAction);
         if (action != null) {
             if (LOG.isDebugEnabled()) {
@@ -968,6 +976,29 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         return false;
     }
 
+
+    @NotNull
+    private static Collection<PendingUpdateState> mapFilesToUpdates(
+            @NotNull Collection<FilePath> files,
+            @NotNull Collection<PendingUpdateState> updates) {
+        List<PendingUpdateState> ret = new ArrayList<PendingUpdateState>(updates.size());
+        for (PendingUpdateState update : updates) {
+            String f1 = UpdateParameterNames.FILE.getParameterValue(update);
+            FilePath p1 = FilePathUtil.getFilePath(f1);
+            if (files.contains(p1)) {
+                ret.add(update);
+            } else {
+                String f2 = UpdateParameterNames.FILE_SOURCE.getParameterValue(update);
+                FilePath p2 = FilePathUtil.getFilePath(f2);
+                if (files.contains(p2)) {
+                    ret.add(update);
+                }
+            }
+        }
+        return ret;
+    }
+
+
     // =======================================================================
     // ACTIONS
 
@@ -982,29 +1013,9 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     // FIXME all this logic below is really complicated.  Look at ways to
     // simplify it.
 
-    private static StateClearHandler<FilePath> CLEAR_HANDLER = new StateClearHandler<FilePath>() {
-        @Override
-        public void clearState(@NotNull final FilePath state, @NotNull final ClientCacheManager clientCacheManager) {
-            clientCacheManager.markLocalFileStateCommitted(state);
-        }
-    };
-
-    static abstract class AbstractFileAction extends AbstractServerUpdateAction<FilePath> {
+    static abstract class AbstractFileAction extends AbstractServerUpdateAction {
         protected AbstractFileAction(@NotNull final Collection<PendingUpdateState> pendingUpdateStates) {
             super(pendingUpdateStates);
-        }
-
-        @Nullable
-        @Override
-        protected StateClearHandler<FilePath> getStateClearHandler() {
-            return CLEAR_HANDLER;
-        }
-
-        @Nullable
-        @Override
-        protected FilePath mapToState(final PendingUpdateState update) {
-            String path = UpdateParameterNames.FILE.getParameterValue(update);
-            return FilePathUtil.getFilePath(path);
         }
 
         @Override
@@ -1014,19 +1025,22 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             return clientCacheManager.createFileActionsRefreshQuery();
         }
 
-        void markUpdated(@NotNull Set<FilePath> files, @NotNull List<P4StatusMessage> msgs) {
+        void markUpdated(@NotNull Collection<FilePath> files, @NotNull List<P4StatusMessage> msgs) {
             Set<FilePath> updated = new HashSet<FilePath>(files);
+            Set<FilePath> failed = new HashSet<FilePath>();
             for (P4StatusMessage msg : msgs) {
                 final FilePath fp = msg.getFilePath();
                 if (fp != null) {
-                    updated.remove(msg.getFilePath());
-                    // TODO get associated update
-                    markStateFailed(fp);
+                    updated.remove(fp);
+                    failed.add(fp);
                 }
             }
-            for (FilePath fp : updated) {
-                markStateSuccess(fp);
-            }
+            markSuccess(mapFilesToUpdates(updated, getPendingUpdateStates()));
+            markFailed(mapFilesToUpdates(failed, getPendingUpdateStates()));
+        }
+
+        void markFailedFiles(final Collection<FilePath> files) {
+            markFailed(mapFilesToUpdates(files, getPendingUpdateStates()));
         }
     }
 
@@ -1125,7 +1139,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                                 P4Bundle.message("error.add",
                                         FilePathUtil.toStringList(entry.getValue())),
                                 e, entry.getValue());
-                        markStateFailed(entry.getValue());
+                        markFailedFiles(entry.getValue());
                         returnCode = ExecutionStatus.FAIL;
                     }
                 }
@@ -1162,7 +1176,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             P4Bundle.message("error.edit",
                                     FilePathUtil.toStringList(entry.getValue())),
                             e, entry.getValue());
-                    markStateFailed(entry.getValue());
+                    markFailedFiles(entry.getValue());
                     returnCode = ExecutionStatus.FAIL;
                 }
             }
@@ -1204,7 +1218,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             P4Bundle.message("error.edit",
                                     FilePathUtil.toStringList(entry.getValue())),
                             e, entry.getValue());
-                    markStateFailed(entry.getValue());
+                    markFailedFiles(entry.getValue());
                     returnCode = ExecutionStatus.FAIL;
                 }
             }
@@ -1327,7 +1341,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             P4Bundle.message("error.delete",
                                     FilePathUtil.toStringList(entry.getValue())),
                             e, entry.getValue());
-                    markStateFailed(entry.getValue());
+                    markFailedFiles(entry.getValue());
                     returnCode = ExecutionStatus.FAIL;
                 }
             }
@@ -1644,7 +1658,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                             P4Bundle.message("error.revert",
                                     FilePathUtil.toStringList(reverts)),
                             e, reverts);
-                    markStateFailed(reverts);
+                    markFailedFiles(reverts);
                 }
             }
 

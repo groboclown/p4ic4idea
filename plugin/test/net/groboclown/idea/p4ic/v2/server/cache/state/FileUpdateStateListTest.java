@@ -14,12 +14,12 @@ public class FileUpdateStateListTest {
         FileUpdateStateList list = new FileUpdateStateList();
         P4FileUpdateState s1 = new P4FileUpdateState(
                 new P4ClientFileMapping(null, FilePathUtil.getFilePath("a.txt")),
-                1, FileUpdateAction.ADD_EDIT_FILE);
+                1, FileUpdateAction.ADD_EDIT_FILE, true);
         list.add(s1);
         assertThat("one add: " + list, list.copy().size(), is(1));
         P4FileUpdateState s2 = new P4FileUpdateState(
                 new P4ClientFileMapping(null, FilePathUtil.getFilePath("b.txt")),
-                1, FileUpdateAction.ADD_EDIT_FILE);
+                1, FileUpdateAction.ADD_EDIT_FILE, true);
         list.add(s2);
         assertThat("two adds: " + list, list.copy().size(), is(2));
     }
@@ -29,12 +29,12 @@ public class FileUpdateStateListTest {
         FileUpdateStateList list = new FileUpdateStateList();
         P4FileUpdateState s1 = new P4FileUpdateState(
                 new P4ClientFileMapping(null, FilePathUtil.getFilePath("a.txt")),
-                1, FileUpdateAction.ADD_EDIT_FILE);
+                1, FileUpdateAction.ADD_EDIT_FILE, true);
         list.add(s1);
         assertThat("one add: " + list, list.copy().size(), is(1));
         P4FileUpdateState s2 = new P4FileUpdateState(
                 new P4ClientFileMapping(null, FilePathUtil.getFilePath("a.txt")),
-                2, FileUpdateAction.DELETE_FILE);
+                2, FileUpdateAction.DELETE_FILE, true);
         list.add(s2);
         assertThat("two adds, same file: " + list, list.copy().size(), is(1));
     }

@@ -20,11 +20,13 @@ import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
+import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.impl.generic.core.ChangelistSummary;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
@@ -37,8 +39,8 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ChangeListState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
-import net.groboclown.idea.p4ic.v2.server.cache.sync.MappedUpdateHandler.StateClearHandler;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
+import net.groboclown.idea.p4ic.v2.server.util.ChangelistDescriptionGenerator;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,6 +52,11 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
     private static final Logger LOG = Logger.getInstance(ChangeListServerCacheSync.class);
 
     private final Cache cache;
+
+    // TODO unlike the files, a single changelist can have multiple actions
+    // associated with it.  Change from a set to a list, and the returned
+    // opened changelists will need to build up the objects based on the
+    // changes.
     private final Set<P4ChangeListState> localClientChanges;
     private final Set<P4ChangeListState> cachedServerChanges;
     private final Set<Integer> committed = new HashSet<Integer>();
@@ -89,8 +96,10 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         // Load up the cached server changes, then overlay with the
         // local changes.
 
-        // Ensure the default changelist is included.  This will be
-        ret.put(P4ChangeListId.P4_DEFAULT, new P4ChangeListValue(cache.getClientServerId(), P4ChangeListId.P4_DEFAULT));
+        // Ensure the default changelist is included.  This will be overwritten
+        // if there are files associated with it.
+        ret.put(P4ChangeListId.P4_DEFAULT, new P4ChangeListValue(
+                cache.getClientServerId(), true));
 
         for (P4ChangeListState change: cachedServerChanges) {
             ret.put(change.getChangelistId(), new P4ChangeListValue(cache.getClientServerId(), change));
@@ -116,62 +125,72 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
             // can't delete these ones
             return null;
         }
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changelistId);
+        final PendingUpdateState ret = new PendingUpdateState(UpdateAction.DELETE_CHANGELIST,
+                Collections.singleton(Integer.toString(changelistId)),
+                params);
 
-        final P4ChangeListState state = new P4ChangeListState(changelistId);
+        final P4ChangeListState state = new P4ChangeListState(ret, changelistId);
         state.setDeleted(true);
         localClientChanges.add(state);
         committed.remove(changelistId);
 
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changelistId);
-        return new PendingUpdateState(UpdateAction.DELETE_CHANGELIST,
-                Collections.singleton(Integer.toString(changelistId)),
-                params);
-    }
-
-    /**
-     * Allocate a new ID without actually creating it.
-     *
-     * @return the next reserved changelist ID.
-     */
-    public int reserveLocalChangelistId() {
-        synchronized (localCacheSync) {
-            previousLocalChangelistId -= 1;
-
-            P4ChangeListState tempState = new P4ChangeListState(previousLocalChangelistId);
-            localClientChanges.add(tempState);
-
-            return previousLocalChangelistId;
-        }
+        return ret;
     }
 
 
     @Nullable
-    public PendingUpdateState moveFileToChangelist(@NotNull Collection<FilePath> files,
-            @NotNull LocalChangeList source, final int changeListId) {
-        if (changeListId == P4ChangeListId.P4_UNKNOWN) {
-            throw new IllegalStateException("must create a changelist with a reserved local ID");
-        }
+    public PendingUpdateState moveFileToChangelist(final Project project, @NotNull Collection<FilePath> files,
+            @NotNull LocalChangeList source, @Nullable P4ChangeListId changelistId) {
         if (files.isEmpty()) {
             return null;
         }
 
-        String description = setDescription(changeListId, source);
+        // If the changelist is null, then we need to reserve one, as it will be the
+        // replacement that we use when the real changelist is eventually created.
 
-        // FIXME remove from committed
+        boolean locallyCreatedChangelist = false;
+        if (changelistId == null) {
+            locallyCreatedChangelist = true;
+            // allocate a local changelist id
+            synchronized (localCacheSync) {
+                previousLocalChangelistId -= 1;
+                changelistId = new P4ChangeListIdImpl(cache.getClientServerId(), previousLocalChangelistId);
+            }
+            // make sure we create this association in the changelist mapping.
+            P4ChangeListMapping.getInstance(project).bindChangelists(source, changelistId);
+        }
 
+        String description = ChangelistDescriptionGenerator.getDescription(source);
         Map<String, Object> params = new HashMap<String, Object>();
-        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changeListId);
+        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changelistId.getChangeListId());
         params.put(UpdateParameterNames.DESCRIPTION.getKeyName(), description);
         int index = 0;
-        for (FilePath file: files) {
+        for (FilePath file : files) {
             params.put(UpdateParameterNames.FIELD.getKeyName() + index, file.getIOFile().getAbsolutePath());
             index++;
         }
 
-        return new PendingUpdateState(UpdateAction.REOPEN_FILES_INTO_CHANGELIST,
-                Collections.singleton(Integer.toString(changeListId)),
+        final PendingUpdateState ret = new PendingUpdateState(UpdateAction.REOPEN_FILES_INTO_CHANGELIST,
+                Collections.singleton(Integer.toString(changelistId.getChangeListId())),
                 params);
+
+        // add the changelist into the altered changelist list.
+        // The description is updated, so the changelist needs to reflect this.
+        final P4ChangeListState local = getOrAddChangeState(ret, changelistId.getChangeListId());
+        if (! description.equals(local.getComment())) {
+            // FIXME this could be a duplicate add!!!
+            // This can be fixed by making the local cache building be incremental when
+            // returned above.
+            synchronized (localCacheSync) {
+                localClientChanges.add(local);
+            }
+        }
+        local.setComment(description);
+
+        return ret;
+
     }
 
     @Nullable
@@ -186,18 +205,20 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         // changelist will no longer be cached as deleted, but the pending
         // update could still exist.
 
-        final P4ChangeListState state = new P4ChangeListState(changelistId);
-        state.setComment(description);
-        localClientChanges.add(state);
-        committed.remove(changelistId);
-
         Map<String, Object> params = new HashMap<String, Object>();
         params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changelistId);
         params.put(UpdateParameterNames.DESCRIPTION.getKeyName(), description);
 
-        return new PendingUpdateState(UpdateAction.CHANGE_CHANGELIST_DESCRIPTION,
+        final PendingUpdateState ret = new PendingUpdateState(UpdateAction.CHANGE_CHANGELIST_DESCRIPTION,
                 Collections.singleton(Integer.toString(changelistId)),
                 params);
+
+        final P4ChangeListState state = new P4ChangeListState(ret, changelistId);
+        state.setComment(description);
+        localClientChanges.add(state);
+        committed.remove(changelistId);
+
+        return ret;
     }
 
 
@@ -248,8 +269,15 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
             }
         }
         if (! foundDefault) {
-            // This generally is always entered.
-            refreshed.add(new P4ChangeListState(P4ChangeListId.P4_DEFAULT));
+            // This generally is always entered.  Note that, because the
+            // default changelist ALWAYS exists for a client, we can safely
+            // create this "back door", that, and it's going in the server
+            // cache, so it needs to pending update.
+            ChangelistSummary summary = new ChangelistSummary(
+                    P4ChangeListId.P4_DEFAULT, exec.getClientName(),
+                    exec.getUsername(), ChangelistStatus.NEW, new Date(),
+                    "", false);
+            refreshed.add(new P4ChangeListState(summary));
         }
         cachedServerChanges.clear();
         cachedServerChanges.addAll(refreshed);
@@ -328,44 +356,33 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
      * state is only server cached, then a local copy is made.  If the
      * state is not in either one, it is created.
      *
-     * @param changeListId changelist id
+     *
+     * @param update update to which any added change will be added.
+     * @param changelistId changelist id
      * @return local changelist state
      */
     @NotNull
-    private P4ChangeListState getOrAddChangeState(int changeListId) {
+    private P4ChangeListState getOrAddChangeState(@NotNull PendingUpdateState update, int changelistId) {
         synchronized (localCacheSync) {
             for (P4ChangeListState local : localClientChanges) {
-                if (local.getChangelistId() == changeListId) {
+                if (local.getChangelistId() == changelistId) {
                     return local;
                 }
             }
             for (P4ChangeListState remote : cachedServerChanges) {
-                if (remote.getChangelistId() == changeListId) {
-                    P4ChangeListState local = new P4ChangeListState(remote);
+                if (remote.getChangelistId() == changelistId) {
+                    P4ChangeListState local = new P4ChangeListState(update, remote);
                     localClientChanges.add(local);
                     return local;
                 }
             }
-            LOG.info("Could not find a changelist numbered " + changeListId + "; creating one");
-            P4ChangeListState local = new P4ChangeListState(changeListId);
+            LOG.info("Could not find a changelist numbered " + changelistId + "; creating one");
+            P4ChangeListState local = new P4ChangeListState(update, changelistId);
             localClientChanges.add(local);
             return local;
         }
     }
 
-
-    @NotNull
-    private String setDescription(final int changeListId, @NotNull LocalChangeList source) {
-        // TODO there are other places where the description is joined together.
-        // Put them all here, or at least in one place.
-        String description = source.getName();
-        if (source.getComment() != null && source.getComment().length() > 0) {
-            description += "\n\n" + source.getComment();
-        }
-        final P4ChangeListState local = getOrAddChangeState(changeListId);
-        local.setComment(description);
-        return description;
-    }
 
     @NotNull
     public Collection<P4ChangeListJob> getJobsInChangelists(@NotNull final Collection<P4ChangeListId> changes) {
@@ -394,30 +411,14 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
     // The actions are also placed in here, rather than as stand-alone classes,
     // so that they have increased access to the cache objects.
 
-    private static StateClearHandler<Integer> CLEAR_HANDLER = new StateClearHandler<Integer>() {
-        @Override
-        public void clearState(@NotNull final Integer state,
-                @NotNull final ClientCacheManager clientCacheManager) {
-            clientCacheManager.markLocalChangelistStateCommitted(state);
-        }
-    };
-
-    static abstract class AbstractChangelistAction extends AbstractServerUpdateAction<Integer> {
+    static abstract class AbstractChangelistAction extends AbstractServerUpdateAction {
 
 
         protected AbstractChangelistAction(@NotNull final Collection<PendingUpdateState> pendingUpdateStates) {
             super(pendingUpdateStates);
         }
 
-
         @Nullable
-        @Override
-        protected StateClearHandler<Integer> getStateClearHandler() {
-            return CLEAR_HANDLER;
-        }
-
-        @Nullable
-        @Override
         protected Integer mapToState(final PendingUpdateState update) {
             return UpdateParameterNames.CHANGELIST.getParameterValue(update);
         }
@@ -573,7 +574,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                         P4ChangeListId oldCl = new P4ChangeListIdImpl(clientServerId, changelistId);
                         P4ChangeListId newCl = new P4ChangeListIdImpl(clientServerId, realChangeListId);
                         changeListMapping.replace(oldCl, newCl);
-                        markStateSuccess(realChangeListId);
+                        markSuccess(update);
                     } catch (VcsException e) {
                         alerts.addWarning(
                                 exec.getProject(),
@@ -618,13 +619,11 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                             P4Bundle.message("filestatus.error", files),
                             e, files);
                     markFailed(update);
-                    markStateFailed(realChangeListId);
                     continue;
                 }
                 if (status.isEmpty()) {
                     // no file motion to perform
                     markSuccess(update);
-                    markStateSuccess(realChangeListId);
                     continue;
                 }
 

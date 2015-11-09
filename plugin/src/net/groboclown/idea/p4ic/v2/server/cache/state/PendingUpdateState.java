@@ -21,22 +21,38 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Pending updates are descriptive, not prescriptive.  The reconcilers handle
  * changing the state based on updates and states.
  */
 public class PendingUpdateState extends CachedState {
+    private static final AtomicInteger ID_GEN = new AtomicInteger();
+    private final int refId;
     private final UpdateAction action;
     private final Set<String> ids;
     private final Map<String, Object> parameters;
 
     public PendingUpdateState(@NotNull final UpdateAction action, @NotNull final Set<String> ids,
             @NotNull Map<String, Object> parameters) {
+        this(ID_GEN.addAndGet(1), action, ids, parameters);
+    }
+
+
+    public int getRefId() {
+        return refId;
+    }
+
+
+    private PendingUpdateState(int refId,
+            @NotNull final UpdateAction action, @NotNull final Set<String> ids,
+            @NotNull Map<String, Object> parameters) {
+        this.refId = refId;
         this.action = action;
         this.ids = Collections.unmodifiableSet(ids);
         final HashMap<String, Object> p = new HashMap<String, Object>();
-        for (Map.Entry<String, Object> entry: parameters.entrySet()) {
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
             if (action.isValidParameterName(entry.getKey()) && entry.getValue() != null) {
                 p.put(entry.getKey(), entry.getValue());
             } else {
@@ -46,6 +62,7 @@ public class PendingUpdateState extends CachedState {
         }
         this.parameters = Collections.unmodifiableMap(p);
     }
+
 
     @NotNull
     public UpdateAction getUpdateAction() {
@@ -72,6 +89,7 @@ public class PendingUpdateState extends CachedState {
     @Override
     protected void serialize(@NotNull Element wrapper, @NotNull EncodeReferences refs) {
         wrapper.setAttribute("a", action.toString());
+        wrapper.setAttribute("z", Integer.toString(refId, Character.MAX_RADIX));
         serializeDate(wrapper);
         for (String id: ids) {
             Element el = new Element("i");
@@ -97,6 +115,20 @@ public class PendingUpdateState extends CachedState {
         } catch (IllegalArgumentException e) {
             return null;
         }
+        final String idStr = getAttribute(wrapper, "z");
+        if (idStr == null) {
+            return null;
+        }
+        int refId;
+        try {
+            refId = Integer.parseInt(idStr, Character.MAX_RADIX);
+            if (refId > ID_GEN.get()) {
+                ID_GEN.set(refId + 1);
+            }
+        } catch (NumberFormatException e) {
+            refId = ID_GEN.addAndGet(1);
+        }
+
         final Set<String> ids = new HashSet<String>();
         for (Element el: wrapper.getChildren("i")) {
             String id = getAttribute(el, "k");
@@ -112,7 +144,7 @@ public class PendingUpdateState extends CachedState {
                 params.put(key, val);
             }
         }
-        final PendingUpdateState ret = new PendingUpdateState(action, ids, params);
+        final PendingUpdateState ret = new PendingUpdateState(refId, action, ids, params);
         ret.deserializeDate(wrapper);
         return ret;
     }

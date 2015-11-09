@@ -711,11 +711,7 @@ public class P4Server {
                     // This can lead to all kinds of terrible performance issues.
 
                     P4ChangeListId clid = changeListMapping.getPerforceChangelistFor(P4Server.this, source);
-                    if (clid == null) {
-                        clid = mgr.reserveLocalChangelistId();
-                        // make sure we create this association in the changelist mapping.
-                        P4ChangeListMapping.getInstance(project).bindChangelists(source, clid);
-                    } else {
+                    if (clid != null) {
                         // quick check to see if we already have that file in that changelist.
                         final Collection<P4FileAction> opened = mgr.getCachedOpenFiles();
                         for (P4FileAction action : opened) {
@@ -730,7 +726,8 @@ public class P4Server {
                         }
                     }
 
-                    PendingUpdateState update = mgr.moveFilesToChangelist(filePathCopy, source, clid.getChangeListId());
+                    PendingUpdateState update = mgr.moveFilesToChangelist(
+                            project, filePathCopy, source, clid);
                     if (update == null) {
                         return Collections.emptyList();
                     }

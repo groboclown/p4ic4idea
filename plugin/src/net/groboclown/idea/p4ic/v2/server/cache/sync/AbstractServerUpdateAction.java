@@ -17,7 +17,6 @@ package net.groboclown.idea.p4ic.v2.server.cache.sync;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
-import net.groboclown.idea.p4ic.v2.server.cache.sync.MappedUpdateHandler.StateClearHandler;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,10 +24,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
+import java.util.List;
 
 
-public abstract class AbstractServerUpdateAction<T> implements ServerUpdateAction {
+public abstract class AbstractServerUpdateAction implements ServerUpdateAction {
     private static final Logger LOG = Logger.getInstance(AbstractServerUpdateAction.class);
 
     public enum ExecutionStatus {
@@ -40,13 +39,12 @@ public abstract class AbstractServerUpdateAction<T> implements ServerUpdateActio
 
 
     private final Collection<PendingUpdateState> pendingUpdateStates;
-    private MappedUpdateHandler<T> updateHandler;
-
+    private final List<PendingUpdateState> failed = new ArrayList<PendingUpdateState>();
+    private final List<PendingUpdateState> success = new ArrayList<PendingUpdateState>();
 
 
     protected AbstractServerUpdateAction(@NotNull Collection<PendingUpdateState> pendingUpdateStates) {
         this.pendingUpdateStates = new ArrayList<PendingUpdateState>(pendingUpdateStates);
-        this.updateHandler = new MappedUpdateHandler<T>(pendingUpdateStates);
     }
 
     @NotNull
@@ -70,15 +68,9 @@ public abstract class AbstractServerUpdateAction<T> implements ServerUpdateActio
         switch (result) {
             case NO_OP:
                 // don't update
-                if (getStateClearHandler() != null) {
-                    updateHandler.onSuccess(getStateClearHandler(), clientCacheManager);
-                }
                 break;
             case RELOAD_CACHE:
                 LOG.debug("Updating the cache");
-                if (getStateClearHandler() != null) {
-                    updateHandler.onSuccess(getStateClearHandler(), clientCacheManager);
-                }
                 ServerQuery query = updateCache(clientCacheManager, alerts);
                 if (query != null) {
                     connection.query(exec.getProject(), query);
@@ -86,17 +78,13 @@ public abstract class AbstractServerUpdateAction<T> implements ServerUpdateActio
                 break;
             case FAIL:
                 // don't retry, don't update
-                if (getStateClearHandler() != null) {
-                    updateHandler.onFailure(getStateClearHandler(), clientCacheManager);
-                }
                 break;
             case RETRY:
                 LOG.debug("Retrying the action");
-                if (getStateClearHandler() != null) {
-                    updateHandler = updateHandler.onRetry(getStateClearHandler(), clientCacheManager);
-                    pendingUpdateStates.clear();
-                    pendingUpdateStates.addAll(updateHandler.getPendingUpdateStates());
-                }
+                pendingUpdateStates.removeAll(success);
+                pendingUpdateStates.removeAll(failed);
+                success.clear();
+                failed.clear();
                 requeue(exec.getProject(), connection, alerts);
                 break;
             default:
@@ -107,20 +95,10 @@ public abstract class AbstractServerUpdateAction<T> implements ServerUpdateActio
 
     @Override
     public final void abort(@NotNull final ClientCacheManager clientCacheManager) {
-        if (getStateClearHandler() != null) {
-            for (PendingUpdateState update : pendingUpdateStates) {
-                markFailed(update);
-            }
-            updateHandler.onFailure(getStateClearHandler(), clientCacheManager);
+        for (PendingUpdateState update : pendingUpdateStates) {
+            markFailed(update);
         }
     }
-
-
-    @Nullable
-    protected abstract StateClearHandler<T> getStateClearHandler();
-
-    @Nullable
-    protected abstract T mapToState(PendingUpdateState update);
 
 
     /**
@@ -162,41 +140,18 @@ public abstract class AbstractServerUpdateAction<T> implements ServerUpdateActio
         connection.requeueAction(project, this);
     }
 
-
-    protected void map(@NotNull PendingUpdateState update, @NotNull T state) {
-        updateHandler.map(update, state);
-    }
-
     protected void markSuccess(@NotNull PendingUpdateState update) {
-        markSuccess(update, mapToState(update));
+        success.add(update);
     }
 
     protected void markSuccess(@NotNull Collection<PendingUpdateState> updates) {
         for (PendingUpdateState update : updates) {
-            markSuccess(update, mapToState(update));
+            markSuccess(update);
         }
-    }
-
-    protected void markSuccess(@NotNull PendingUpdateState update, @Nullable T state) {
-        if (state != null) {
-            updateHandler.map(update, state);
-        }
-        updateHandler.markSuccess(update);
-    }
-
-    protected void markStateSuccess(@NotNull T state) {
-        updateHandler.markStateSuccess(state);
     }
 
     protected void markFailed(@NotNull PendingUpdateState update) {
-        markFailed(update, mapToState(update));
-    }
-
-    protected void markFailed(@NotNull PendingUpdateState update, @Nullable T state) {
-        if (state != null) {
-            updateHandler.map(update, state);
-        }
-        updateHandler.markFailed(update);
+        failed.add(update);
     }
 
     protected void markFailed(final Collection<PendingUpdateState> values) {
@@ -204,17 +159,6 @@ public abstract class AbstractServerUpdateAction<T> implements ServerUpdateActio
             markFailed(update);
         }
     }
-
-    protected void markStateFailed(@NotNull T state) {
-        updateHandler.markStateFailed(state);
-    }
-
-    protected void markStateFailed(@NotNull Set<T> values) {
-        for (T state : values) {
-            markStateFailed(state);
-        }
-    }
-
 
     @Override
     public String toString() {

@@ -72,7 +72,12 @@ public class ClientLocalServerState {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Removing pending state " + pendingUpdateState);
         }
-        pendingUpdates.remove(pendingUpdateState);
+        if (pendingUpdates.remove(pendingUpdateState)) {
+            // strip the local cached pending updates
+            localClientState.stripStatesFor(pendingUpdateState);
+        } else {
+            LOG.debug(" - not a registered pending state");
+        }
     }
 
 

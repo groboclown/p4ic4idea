@@ -20,6 +20,7 @@ import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import static net.groboclown.idea.p4ic.v2.server.cache.state.CachedState.getAttribute;
@@ -87,6 +88,26 @@ public class P4ClientState {
         return jobs;
     }
 
+    /**
+     * Remove all the {@link UpdateRef} objects related to this state.
+     *
+     * @param pendingUpdateState state to remove referenced states
+     */
+    void stripStatesFor(@NotNull final PendingUpdateState pendingUpdateState) {
+        Iterator<P4ChangeListState> iter = changes.iterator();
+        while (iter.hasNext()) {
+            final P4ChangeListState next = iter.next();
+            if (next.getPendingUpdateRefId() == pendingUpdateState.getRefId()) {
+                iter.remove();
+            }
+        }
+        // we are iterating over a copy of the files, so this is fine.
+        for (P4FileUpdateState file : updatedFiles) {
+            if (file.getPendingUpdateRefId() == pendingUpdateState.getRefId()) {
+                updatedFiles.remove(file);
+            }
+        }
+    }
 
     public void serialize(@NotNull Element wrapper, @NotNull EncodeReferences refs) {
         wrapper.setAttribute("serverConnection", clientServerId.getServerConfigId());

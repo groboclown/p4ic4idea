@@ -33,7 +33,7 @@ import java.util.Set;
  * If used in a hash or set, the determining factor is the changelist number; it's up
  * the user of the instances to ensure data isn't lost.
  */
-public class P4ChangeListState extends CachedState {
+public class P4ChangeListState extends UpdateRef {
     private int id;
     private String comment;
     private final Set<P4JobState> jobs = new HashSet<P4JobState>();
@@ -44,18 +44,36 @@ public class P4ChangeListState extends CachedState {
 
     P4ChangeListState() {
         // intentionally empty
+        super(null);
     }
 
+
+    // This is a server-side state, which means no pending update is
+    // associated with it.
     public P4ChangeListState(@NotNull IChangelistSummary summary) {
+        super(null);
         id = summary.getId();
         comment = summary.getDescription();
         isRestricted = summary.getVisibility() == Visibility.RESTRICTED;
     }
 
-    public P4ChangeListState(int dummyChangeListId) {
+    public P4ChangeListState(@NotNull PendingUpdateState state, int dummyChangeListId) {
+        super(state);
         this.id = dummyChangeListId;
     }
 
+    public P4ChangeListState(@NotNull PendingUpdateState update, @NotNull P4ChangeListState remote) {
+        super(update);
+        this.id = remote.getChangelistId();
+        this.comment = remote.getComment();
+        this.jobs.addAll(remote.getJobs());
+        this.fixState = remote.fixState;
+        this.isShelved = remote.isShelved();
+        this.isRestricted = remote.isRestricted();
+        this.isDeleted = remote.isDeleted();
+    }
+
+    /*
     public P4ChangeListState(@NotNull P4ChangeListState remote) {
         this.id = remote.getChangelistId();
         this.comment = remote.getComment();
@@ -64,6 +82,7 @@ public class P4ChangeListState extends CachedState {
         this.isRestricted = remote.isRestricted();
         this.isDeleted = remote.isDeleted();
     }
+    */
 
 
     public boolean isDefault() {

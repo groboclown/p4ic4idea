@@ -22,12 +22,12 @@ import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.UpdateRef;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
@@ -41,9 +41,6 @@ import java.util.List;
 interface Cache {
     @NotNull
     List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts);
-
-    @Nullable
-    VirtualFile getBestClientRoot(@NotNull Project project, @NotNull File referenceDir, @NotNull AlertManager alerts);
 
 
     @NotNull
@@ -77,4 +74,11 @@ interface Cache {
     Collection<P4JobState> refreshJobState(@NotNull P4Exec2 exec, AlertManager alerts, @NotNull Collection<String> jobs);
 
     void updateDepotPathFor(@NotNull P4ClientFileMapping mapping, @NotNull String depotPathString);
+
+    /**
+     * Remove the local update, because of a revert.
+     *
+     * @param update update ref whose update needs to be removed.
+     */
+    void removeUpdateFor(@NotNull UpdateRef update);
 }

@@ -67,6 +67,8 @@ public enum UpdateAction {
     // it's considered keeping the current action but with a new changelist number.
     ADD_EDIT_FILE(UpdateGroup.FILE_ADD_EDIT,
             UpdateParameterNames.DEPOT, UpdateParameterNames.FILE, UpdateParameterNames.CHANGELIST),
+    ADD_FILE(UpdateGroup.FILE_ADD_EDIT,
+            UpdateParameterNames.DEPOT, UpdateParameterNames.FILE, UpdateParameterNames.CHANGELIST),
     DELETE_FILE(UpdateGroup.FILE_DELETE,
             UpdateParameterNames.DEPOT, UpdateParameterNames.FILE, UpdateParameterNames.CHANGELIST),
     MOVE_FILE(UpdateGroup.FILE_MOVE,

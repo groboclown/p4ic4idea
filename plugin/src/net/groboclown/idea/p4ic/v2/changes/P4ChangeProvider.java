@@ -232,10 +232,18 @@ public class P4ChangeProvider implements ChangeProvider {
     // that will cause duplicate entries.
     private void ensureOnlyIn(@NotNull P4FileAction action, @NotNull LocalChangeList changeList,
             @NotNull ChangelistBuilder builder) {
-        boolean movedChange = false;
         if (action.getFile() == null) {
             throw new IllegalStateException("File action " + action + " has no local file setting");
         }
+
+        /* We must explicitly add all changes into the changelists, otherwise
+        it doesn't show up in the changes.
+        If a file ends up being in two changes at once, then there's a bug in this
+        code.  This particular loop ends up just putting files into the wrong
+        state if the state changed (say, moved from edit to delete).
+
+        // FIXME remove this dead code, and rename the method
+        boolean movedChange = false;
         for (LocalChangeList cl : ChangeListManager.getInstance(project).getChangeLists()) {
             for (Change change : cl.getChanges()) {
                 if (change.affectsFile(action.getFile().getIOFile())) {
@@ -256,7 +264,8 @@ public class P4ChangeProvider implements ChangeProvider {
                 }
             }
         }
-        if (!movedChange) {
+        */
+        //if (!movedChange) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(" --- Put " + action.getFile() + " into " + changeList);
             }
@@ -264,7 +273,7 @@ public class P4ChangeProvider implements ChangeProvider {
                     changeListMatcher.createChange(action),
                     changeList,
                     P4Vcs.getKey());
-        }
+        //}
     }
 
 

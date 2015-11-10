@@ -523,7 +523,7 @@ public class P4Exec2 {
     }
 
 
-    @NotNull
+    @Nullable
     public byte[] loadFile(@NotNull final IFileSpec spec)
             throws VcsException, CancellationException, IOException {
         return exec.runWithClient(project, new ClientExec.WithClient<byte[]>() {

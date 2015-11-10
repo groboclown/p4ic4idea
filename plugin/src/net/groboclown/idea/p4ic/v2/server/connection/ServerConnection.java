@@ -19,6 +19,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
@@ -373,6 +374,10 @@ public class ServerConnection {
                                 // only remove the state once we've successfully
                                 // processed the action.
                                 cacheManager.removePendingUpdateStates(action.action.getPendingUpdateStates());
+
+                            // force a changelist refresh
+                            P4ChangesViewRefresher.refreshLater(exec.getProject());
+
                             return null;
                         }
                     });

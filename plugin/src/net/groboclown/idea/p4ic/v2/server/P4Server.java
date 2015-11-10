@@ -30,10 +30,7 @@ import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
-import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
-import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
-import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
+import net.groboclown.idea.p4ic.server.exceptions.*;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.history.P4AnnotatedLine;
@@ -443,6 +440,33 @@ public class P4Server {
     /**
      * Needs to be run immediately.
      *
+     * @param files        files to add or  edit
+     * @param changelistId changelist id
+     */
+    public void addFiles(@NotNull final List<VirtualFile> files, final int changelistId) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Add to " + changelistId + " files " + files);
+        }
+        if (files.isEmpty()) {
+            return;
+        }
+        connection.queueUpdates(project, new CreateUpdate() {
+            @NotNull
+            @Override
+            public Collection<PendingUpdateState> create(@NotNull final ClientCacheManager mgr) {
+                List<PendingUpdateState> updates = new ArrayList<PendingUpdateState>();
+                for (VirtualFile file : files) {
+                    addPendingUpdateState(updates,
+                            mgr.addFile(project, FilePathUtil.getFilePath(file), changelistId));
+                }
+                return updates;
+            }
+        });
+    }
+
+    /**
+     * Needs to be run immediately.
+     *
      * @param files files to add or  edit
      * @param changelistId changelist id
      */
@@ -526,6 +550,62 @@ public class P4Server {
         });
     }
 
+
+    public void revertFiles(@NotNull final List<FilePath> files, List<VcsException> exceptions) {
+        if (isWorkingOnline()) {
+            try {
+                revertFilesOnline(files);
+            } catch (InterruptedException e) {
+                LOG.warn(e);
+                exceptions.add(new VcsInterruptedException(e));
+            } catch (P4DisconnectedException e) {
+                LOG.warn(e);
+                exceptions.add(e);
+            }
+        } else {
+            Set<FilePath> unreverted = new HashSet<FilePath>(files);
+            try {
+                unreverted.removeAll(revertFilesOffline(files));
+                if (!unreverted.isEmpty()) {
+                    LOG.warn("Could not offline revert " + unreverted);
+                    // FIXME this is a terrible message to send to users.
+                    exceptions.add(new P4DisconnectedException());
+                }
+                //if (!unreverted.isEmpty()) {
+                //    alerts.addWarning(vcs.getProject(),
+                //            P4Bundle.message("revert.offline", server.getClientServerId()),
+                //            P4Bundle.message("revert.offline", server.getClientServerId()),
+                //            null, unreverted.toArray(new FilePath[unreverted.size()]));
+                //}
+            } catch (InterruptedException e) {
+                LOG.warn(e);
+                exceptions.add(new VcsInterruptedException(e));
+            }
+        }
+    }
+
+
+    /**
+     * Perform what can be done as an offline revert.
+     *
+     * @param files files to revert
+     * @return the files that were actually reverted.
+     */
+    @NotNull
+    public Collection<FilePath> revertFilesOffline(@NotNull final List<FilePath> files) throws InterruptedException {
+        if (files.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return connection.cacheQuery(new CacheQuery<Collection<FilePath>>() {
+            @NotNull
+            @Override
+            public Collection<FilePath> query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
+                return mgr.revertFilesOffline(files);
+            }
+        });
+    }
+
+
     /**
      *
      * @param files files to revert.
@@ -547,7 +627,7 @@ public class P4Server {
             public MessageResult<Collection<FilePath>> query(@NotNull final ClientCacheManager mgr)
                     throws InterruptedException {
                 Ref<MessageResult<Collection<FilePath>>> ret = new Ref<MessageResult<Collection<FilePath>>>();
-                ServerUpdateAction action = mgr.revertFileOnline(files, ret);
+                ServerUpdateAction action = mgr.revertFilesOnline(files, ret);
                 if (action != null) {
                     connection.runImmediately(project, action);
                 }
@@ -595,7 +675,7 @@ public class P4Server {
             public MessageResult<Collection<FilePath>> query(@NotNull final ClientCacheManager mgr)
                     throws InterruptedException {
                 Ref<MessageResult<Collection<FilePath>>> ret = new Ref<MessageResult<Collection<FilePath>>>();
-                ServerUpdateAction action = mgr.revertFileIfUnchangedOnline(files, changelistId, ret);
+                ServerUpdateAction action = mgr.revertFilesIfUnchangedOnline(files, changelistId, ret);
                 if (action != null) {
                     connection.runImmediately(project, action);
                 }

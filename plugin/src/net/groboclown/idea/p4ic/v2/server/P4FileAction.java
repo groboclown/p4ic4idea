@@ -80,6 +80,7 @@ public class P4FileAction {
             // offline
             switch (getFileUpdateAction()) {
                 case ADD_EDIT_FILE:
+                case ADD_FILE:
                 case MOVE_FILE:
                 case INTEGRATE_FILE:
                 case EDIT_FILE:
@@ -99,6 +100,8 @@ public class P4FileAction {
             case INTEGRATE_FILE:
                 // TODO determine if conflicts
                 return FileStatus.MERGE;
+            case ADD_FILE:
+                return FileStatus.ADDED;
             case ADD_EDIT_FILE:
                 // can't really tell here.
             case EDIT_FILE:

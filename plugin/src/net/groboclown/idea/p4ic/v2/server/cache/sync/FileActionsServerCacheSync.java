@@ -196,11 +196,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             if (fp != null) {
                 known.add(fp);
             }
-            path = UpdateParameterNames.FILE_SOURCE.getParameterValue(update);
-            fp = FilePathUtil.getFilePath(path);
-            if (fp != null) {
-                known.add(fp);
-            }
+            // source is handled in its own pending state.
         }
 
         for (P4FileUpdateState state: localClientUpdatedFiles) {
@@ -210,6 +206,45 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 localClientUpdatedFiles.remove(state);
             }
         }
+    }
+
+
+    /**
+     * Create the add file update state.  Called whether the file needs to be edited or added.
+     *
+     * @param file         file to add or edit
+     * @param changeListId P4 changelist to add the file into.
+     * @return the update state
+     */
+    @Nullable
+    public PendingUpdateState addFile(@NotNull Project project, @NotNull final FilePath file, int changeListId) {
+        // Edit operations will need to have the file be writable.  The Perforce
+        // command may delay when the edit action actually occurs, so ensure
+        // the file is set to writable first.
+        makeWritable(project, file);
+
+        undoPendingActionFor(file);
+
+        // Create the action.
+        final HashMap<String, Object> params = new HashMap<String, Object>();
+        // We don't know for sure the depot path, so use the file path.
+        params.put(UpdateParameterNames.FILE.getKeyName(), file.getIOFile().getAbsolutePath());
+        params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changeListId);
+
+        final PendingUpdateState ret = new PendingUpdateState(
+                FileUpdateAction.ADD_FILE.getUpdateAction(),
+                Collections.singleton(file.getIOFile().getAbsolutePath()),
+                params);
+
+        // Check if it is already in an action state, and create it if necessary
+        final P4FileUpdateState action = createFileUpdateState(ret,
+                file, FileUpdateAction.ADD_FILE, changeListId);
+        if (action == null) {
+            // nothing to do
+            return null;
+        }
+
+        return ret;
     }
 
 
@@ -226,6 +261,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         // command may delay when the edit action actually occurs, so ensure
         // the file is set to writable first.
         makeWritable(project, file);
+
+        undoPendingActionFor(file);
 
         // Create the action.
         final HashMap<String, Object> params = new HashMap<String, Object>();
@@ -265,6 +302,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         FilePath fp = FilePathUtil.getFilePath(file);
         makeWritable(project, fp);
 
+        undoPendingActionFor(FilePathUtil.getFilePath(file));
 
         // Create the action.
         final HashMap<String, Object> params = new HashMap<String, Object>();
@@ -295,6 +333,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         if (file.getIOFile().exists()) {
             makeWritable(project, file);
         }
+
+        undoPendingActionFor(file);
 
         // TODO put the file in the local cache, or mark it in the IDEA built-in vcs.
 
@@ -327,6 +367,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         if (file.getSourceFile().getIOFile().exists()) {
             makeWritable(project, file.getSourceFile());
         }
+
+
+        // If the source is open for pending action, revert it.
+        // We can safely do this for moving files.
+        undoPendingActionFor(file.getSourceFile());
 
 
         // TODO if the source file is on the same server but different
@@ -366,6 +411,16 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         return ret;
     }
 
+    private void undoPendingActionFor(@Nullable final FilePath file) {
+        if (file != null) {
+            final P4FileUpdateState existingAction =
+                    localClientUpdatedFiles.getUpdateStateFor(file);
+            if (existingAction != null) {
+                cache.removeUpdateFor(existingAction);
+            }
+        }
+    }
+
 
     @Nullable
     public PendingUpdateState integrateFile(@NotNull final IntegrateFile file, final int changelistId) {
@@ -399,8 +454,36 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
 
+    /**
+     * Revert what files it can while offline.
+     *
+     * @param files files to revert
+     * @return the files that were reverted.
+     */
+    @NotNull
+    public Collection<FilePath> revertFilesOffline(@NotNull final List<FilePath> files) {
+        List<FilePath> ret = new ArrayList<FilePath>(files.size());
+        Set<FilePath> toRevert = new HashSet<FilePath>(files);
+        for (P4FileUpdateState update : localClientUpdatedFiles) {
+            if (toRevert.remove(update.getLocalFilePath())) {
+                // supported actions for offline revert
+
+                switch (update.getFileUpdateAction()) {
+                    case ADD_FILE:
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Reverting local add for " + update);
+                        }
+                        cache.removeUpdateFor(update);
+                        break;
+                }
+            }
+        }
+        return ret;
+    }
+
+
     @Nullable
-    public ServerUpdateAction revertFileOnline(@NotNull final List<FilePath> files,
+    public ServerUpdateAction revertFilesOnline(@NotNull final List<FilePath> files,
             @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
         return new ImmediateServerUpdateAction() {
             @Override
@@ -425,7 +508,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
     @Nullable
-    public ServerUpdateAction revertFileIfUnchangedOnline(@NotNull Collection<FilePath> files,
+    public ServerUpdateAction revertFilesIfUnchangedOnline(@NotNull Collection<FilePath> files,
             final int changelistId,
             @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
         final List<FilePath> orderedFiles = new ArrayList<FilePath>(files);
@@ -525,7 +608,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
     @Nullable
-    public ServerUpdateAction submitChangelist(@NotNull final List<FilePath> files,
+    public ServerUpdateAction submitChangelistOnline(@NotNull final List<FilePath> files,
             @NotNull final List<P4ChangeListJob> jobs,
             @Nullable final String submitStatus, final int changelistId,
             @Nullable final String comment,
@@ -879,8 +962,20 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     FileAction action = spec.getAction();
                     if (action == null) {
                         // In perforce, not already opened.
-                        LOG.debug(" -+- not opened");
-                        container = notOpened;
+                        // It might be deleted on the server, in which case we need to
+                        // handle it the same as when it's not known to the server.
+                        switch (spec.getHeadAction()) {
+                            case DELETE:
+                            case DELETED:
+                            case MOVE_DELETE:
+                            case ABANDONED:
+                                LOG.debug(" -+- not opened but deleted on the server.");
+                                container = notInPerforce;
+                                break;
+                            default:
+                                LOG.debug(" -+- not opened and the file is unknown.");
+                                container = notOpened;
+                        }
                     } else {
                         switch (action) {
                             case ADD:

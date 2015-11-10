@@ -150,6 +150,8 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         // If the changelist is null, then we need to reserve one, as it will be the
         // replacement that we use when the real changelist is eventually created.
 
+        // FIXME see if we really need to use locallyCreatedChangelist
+
         boolean locallyCreatedChangelist = false;
         if (changelistId == null) {
             locallyCreatedChangelist = true;

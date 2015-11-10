@@ -115,7 +115,7 @@ public class P4VFSListener extends VcsVFSListener {
                     server.moveFiles(split.getFilePathMatch(server), changelistId);
 
                     // all the files that come from outside the server are just added.
-                    server.addOrEditFiles(split.getCrossTargetDifferentServerVirtualFilesFor(server), changelistId);
+                    server.addFiles(split.getCrossTargetDifferentServerVirtualFilesFor(server), changelistId);
 
 
                     // Cross client files.
@@ -176,7 +176,7 @@ public class P4VFSListener extends VcsVFSListener {
                             getProjectDefaultPerforceChangelist(server).getChangeListId();
                     vfsLock.lock();
                     try {
-                        server.addOrEditFiles(entry.getValue(), changelistId);
+                        server.addFiles(entry.getValue(), changelistId);
                     } finally {
                         vfsLock.unlock();
                     }
@@ -193,7 +193,6 @@ public class P4VFSListener extends VcsVFSListener {
                 try {
                     server.integrateFiles(split.getFilePathMatch(server), changelistId);
 
-
                     // Cross client files.
                     // This situation can happen if the file is moved either from or to outside P4 control,
                     // or if the file moves from one P4 client to another P4 client.
@@ -203,7 +202,7 @@ public class P4VFSListener extends VcsVFSListener {
                     server.integrateFiles(split.getSameServerCrossVirtualFilesForTarget(server), changelistId);
 
                     // all the files that come from outside the server are just added.
-                    server.addOrEditFiles(split.getCrossTargetDifferentServerVirtualFilesFor(server), changelistId);
+                    server.addFiles(split.getCrossTargetDifferentServerVirtualFilesFor(server), changelistId);
                 } finally {
                     vfsLock.unlock();
                 }

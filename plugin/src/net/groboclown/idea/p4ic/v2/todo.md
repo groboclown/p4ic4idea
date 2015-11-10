@@ -5,16 +5,10 @@
 
 These bugs need to be handled before release.
 
-1. Add a file while offline, then move it.  File stays added in old position.
-   Need to clear it out, both the file and the pending update.  This means a
-   minor offline mode revert (just for adds now, which is very doable).
 1. Files open for add seem to stick around in the local cache if the push to
    the server failed.
-1. Warnings then warnings means the old ones are removed.
+1. Warnings in batch followed immediately by warnings means the old ones are removed.
 1. Change view state doesn't correctly match what's in the actual changes.
-   This comes from a big problem with the design.  We need to properly map
-   state objects to the pending update objects, so that local caches can
-   correctly be cleaned up.
 1. When project root is at (say) c:\a\b\c\, and .p4config exists in c:\a\b\c\ and c:\a, the
    c:\a is picked up.  *TODO double check this*
 
@@ -44,7 +38,7 @@ that should be fixed up.
 
 1. Replace "IntelliJ" and "IDEA" from the strings with the actual IDE name.
    Text display should fetch the name of the IDE, and not hard-code "IntelliJ" or
-    "IDEA".
+   "IDEA".
 
 ## Long term features
 

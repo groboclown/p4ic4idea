@@ -100,16 +100,9 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
                 if (server != null && ! files.isEmpty()) {
                     hasRefreshedFiles = true;
                     LOG.info("Reverting in client " + server + ": " + files);
-                    try {
-                        server.revertFilesOnline(files);
-                    } catch (InterruptedException e) {
-                        LOG.warn(e);
-                        vcsExceptions.add(new VcsInterruptedException(e));
-                    } catch (P4DisconnectedException e) {
-                        LOG.warn(e);
-                        vcsExceptions.add(e);
-                    }
-                }
+
+                    server.revertFiles(files, vcsExceptions);
+               }
             }
         }
 

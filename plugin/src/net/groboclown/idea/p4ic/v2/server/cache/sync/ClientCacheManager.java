@@ -37,7 +37,6 @@ import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CreateUpda
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -138,6 +137,16 @@ public class ClientCacheManager {
      * so that the returned {@link PendingUpdateState} is handled correctly.
      */
     @Nullable
+    public PendingUpdateState addFile(@NotNull Project project, @NotNull FilePath file, int changeListId) {
+        return fileActions.addFile(project, file, changeListId);
+    }
+
+
+    /**
+     * Caller should be run through a {@link CreateUpdate},
+     * so that the returned {@link PendingUpdateState} is handled correctly.
+     */
+    @Nullable
     public PendingUpdateState editFile(@NotNull Project project, @NotNull VirtualFile file, int changeListId) {
         return fileActions.editFile(project, file, changeListId);
     }
@@ -221,16 +230,21 @@ public class ClientCacheManager {
         return fileActions.integrateFile(file, changelistId);
     }
 
-    @Nullable
-    public ServerUpdateAction revertFileOnline(@NotNull final List<FilePath> files,
-            @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
-        return fileActions.revertFileOnline(files, ret);
+    @NotNull
+    public Collection<FilePath> revertFilesOffline(@NotNull final List<FilePath> files) {
+        return fileActions.revertFilesOffline(files);
     }
 
     @Nullable
-    public ServerUpdateAction revertFileIfUnchangedOnline(@NotNull final Collection<FilePath> files,
+    public ServerUpdateAction revertFilesOnline(@NotNull final List<FilePath> files,
+            @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
+        return fileActions.revertFilesOnline(files, ret);
+    }
+
+    @Nullable
+    public ServerUpdateAction revertFilesIfUnchangedOnline(@NotNull final Collection<FilePath> files,
             int changelistId, @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
-        return fileActions.revertFileIfUnchangedOnline(files, changelistId, ret);
+        return fileActions.revertFilesIfUnchangedOnline(files, changelistId, ret);
     }
 
     @Nullable
@@ -247,7 +261,7 @@ public class ClientCacheManager {
             @Nullable String comment,
             @NotNull Ref<List<P4StatusMessage>> results,
             @NotNull Ref<VcsException> problem) {
-        return fileActions.submitChangelist(files, jobs, submitStatus, changelistId, comment,
+        return fileActions.submitChangelistOnline(files, jobs, submitStatus, changelistId, comment,
                 problem, results);
     }
 
@@ -276,12 +290,6 @@ public class ClientCacheManager {
         @Override
         public List<VirtualFile> getClientRoots(@NotNull final Project project, @NotNull AlertManager alerts) {
             return workspace.getClientRoots(project, alerts);
-        }
-
-        @Nullable
-        @Override
-        public VirtualFile getBestClientRoot(@NotNull Project project, @NotNull final File referenceDir, @NotNull AlertManager alerts) {
-            return workspace.getBestClientRoot(project, referenceDir, alerts);
         }
 
         @NotNull
@@ -340,6 +348,15 @@ public class ClientCacheManager {
         public void updateDepotPathFor(@NotNull final P4ClientFileMapping mapping,
                 @NotNull final String depotPathString) {
             workspace.updateDepotPathFor(mapping, depotPathString);
+        }
+
+        @Override
+        public void removeUpdateFor(@NotNull final UpdateRef updateRef) {
+            for (PendingUpdateState update : state.getPendingUpdates()) {
+                if (update.getRefId() == updateRef.getPendingUpdateRefId()) {
+                    state.removePendingUpdate(update);
+                }
+            }
         }
     }
 

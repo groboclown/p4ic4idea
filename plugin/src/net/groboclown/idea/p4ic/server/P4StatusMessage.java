@@ -70,7 +70,13 @@ public class P4StatusMessage {
     public FilePath getFilePath() {
         if (spec instanceof IFileSpec) {
             IFileSpec fs = (IFileSpec) spec;
-            return FilePathUtil.getFilePath(fs.getClientPathString());
+            if (fs.getClientPathString() != null) {
+                return FilePathUtil.getFilePath(fs.getClientPathString());
+            }
+            // TODO this is kind of a hack
+            if (fs.getOriginalPathString() != null && ! fs.getOriginalPathString().startsWith("//")) {
+                return FilePathUtil.getFilePath(fs.getClientPathString());
+            }
         }
         return null;
     }

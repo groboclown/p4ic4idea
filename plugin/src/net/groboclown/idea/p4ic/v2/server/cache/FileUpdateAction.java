@@ -27,6 +27,7 @@ public enum FileUpdateAction {
      * know yet if the server knows about the file. */
     ADD_EDIT_FILE(UpdateAction.ADD_EDIT_FILE),
 
+    ADD_FILE(UpdateAction.ADD_FILE),
     DELETE_FILE(UpdateAction.DELETE_FILE),
     MOVE_FILE(UpdateAction.MOVE_FILE),
     MOVE_DELETE_FILE(UpdateAction.MOVE_DELETE_FILE),

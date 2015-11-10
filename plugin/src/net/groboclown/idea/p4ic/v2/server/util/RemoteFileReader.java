@@ -95,9 +95,9 @@ public class RemoteFileReader {
                 throws InterruptedException {
             try {
                 byte[] bytes = exec.loadFile(spec);
-                //if (bytes == null) {
-                //    return null;
-                //}
+                if (bytes == null) {
+                    return null;
+                }
                 final List<IExtendedFileSpec> es =
                         exec.getFileStatus(Collections.singletonList(spec));
                 String encoding = null;

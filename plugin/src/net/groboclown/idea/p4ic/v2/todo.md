@@ -26,15 +26,6 @@ that should be fixed up.
    when state changes. *Fixed, needs check.*
 
 
-## Not-implemented behavior in existing features
-
-(see `// FIXME` comments)
-
-1. Remove the excessive logging.  Move down to debug if necessary,
-   and include `LOG.isDebugEnabled()` calls if debug is used.
-1. `ClientCacheManager`
-
-
 ## Smaller Bugs
 
 

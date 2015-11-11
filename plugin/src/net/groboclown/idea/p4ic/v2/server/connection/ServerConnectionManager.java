@@ -265,6 +265,9 @@ public class ServerConnectionManager implements ApplicationComponent {
 
         @Override
         public void onConfigInvalid() {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Marking config invalid: " + config);
+            }
             valid = false;
         }
 
@@ -299,12 +302,14 @@ public class ServerConnectionManager implements ApplicationComponent {
                         onlineChangedCondition.signal();
                         return true;
                     } else if (LOG.isDebugEnabled()) {
-                        LOG.debug("Already online; skipping going online");
+                        LOG.debug("Already online; skipping going online: " + config);
                     }
                 } finally {
                     onlineStatusLock.unlock();
                 }
                 // fall through
+            } else {
+                LOG.info("Could not go online; connection invalid for " + config);
             }
             return false;
         }

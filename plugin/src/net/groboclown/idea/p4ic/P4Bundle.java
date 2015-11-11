@@ -14,6 +14,7 @@
 package net.groboclown.idea.p4ic;
 
 import com.intellij.CommonBundle;
+import com.intellij.openapi.application.ApplicationNamesInfo;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.PropertyKey;
@@ -45,6 +46,11 @@ public class P4Bundle {
             @Nls
             @PropertyKey(resourceBundle = BUNDLE) String key) {
         return getBundle().getString(key);
+    }
+
+    @NonNls
+    public static String applicationName() {
+        return ApplicationNamesInfo.getInstance().getFullProductName();
     }
 
     private static ResourceBundle getBundle() {

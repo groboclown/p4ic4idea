@@ -15,7 +15,6 @@ package net.groboclown.idea.p4ic.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -28,12 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * For now, this action is based on all the servers.
- * TODO allow this to be one action per server.
+ * This action is based on all the servers.
  */
 public class P4WorkOfflineAction extends AnAction {
-    private final static Logger LOG = Logger.getInstance(P4WorkOfflineAction.class);
-
     public P4WorkOfflineAction() {
         super(P4Bundle.message("statusbar.connection.popup.offline-mode"));
     }
@@ -53,7 +49,7 @@ public class P4WorkOfflineAction extends AnAction {
         }
         if (! onlineServers.isEmpty()) {
             if (Messages.showOkCancelDialog(e.getProject(),
-                    P4Bundle.message("dialog.go-offline.message"),
+                    P4Bundle.message("dialog.go-offline.message", P4Bundle.applicationName()),
                     P4Bundle.message("dialog.go-offline.title"),
                     Messages.getQuestionIcon()) == Messages.CANCEL) {
                 return;

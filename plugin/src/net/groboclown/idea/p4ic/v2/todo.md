@@ -37,9 +37,6 @@ that should be fixed up.
 
 ## Smaller Bugs
 
-1. Replace "IntelliJ" and "IDEA" from the strings with the actual IDE name.
-   Text display should fetch the name of the IDE, and not hard-code "IntelliJ" or
-   "IDEA".
 
 ## Long term features
 

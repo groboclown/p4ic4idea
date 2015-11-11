@@ -173,7 +173,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
         int changeListId = p4cl.getChangeListId();
         if (changeListId <= P4ChangeListId.P4_DEFAULT) {
             for (LocalChangeList cl : clm.getChangeLists()) {
-                if (cl.getName().equals(P4ChangeListId.DEFAULT_CHANGE_NAME)) {
+                if (isIdeaDefaultChangelistName(cl.getName())) {
                     return cl;
                 }
             }

@@ -22,6 +22,9 @@ import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * This action is based on all the servers.
+ */
 public class P4WorkOnlineAction extends AnAction {
     public P4WorkOnlineAction() {
         super(P4Bundle.message("statusbar.connection.popup.reconnect"));

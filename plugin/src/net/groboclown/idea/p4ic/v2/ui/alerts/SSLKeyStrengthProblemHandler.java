@@ -41,6 +41,9 @@ public class SSLKeyStrengthProblemHandler extends AbstractErrorHandler {
             return;
         }
 
+        // FIXME there seems to be a bug here either with IntelliJ or with the
+        // usage of the API - the only way to close the dialog is by pressing escape.
+
         int result = Messages.showYesNoDialog(getProject(),
                 P4Bundle.message("exception.java.ssl.keystrength-ask",
                         System.getProperty("java.version") == null ? "<unknown>" : System.getProperty("java.version"),
@@ -51,6 +54,8 @@ public class SSLKeyStrengthProblemHandler extends AbstractErrorHandler {
                         System.getProperty("java.home") == null ? "<unknown>" : System.getProperty("java.home"),
                         getExceptionMessage()),
                 P4Bundle.message("exception.java.ssl.keystrength-ask.title"),
+                P4Bundle.message("dialog.confirm.edit-config"),
+                P4Bundle.message("dialog.confirm.work-offline"),
                 Messages.getErrorIcon());
         boolean changed = false;
         if (result == Messages.YES) {

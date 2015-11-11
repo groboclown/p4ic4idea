@@ -447,7 +447,10 @@ public class ClientExec {
 
             if (isSSLHandshakeProblem(e)) {
                 // SSL extensions are not installed.
-                connectedController.onConfigInvalid();
+                // But that may not be the real reason; there could just be
+                // a server disconnect.  Therefore don't mark the connection
+                // as invalid.
+                // connectedController.onConfigInvalid();
                 P4JavaSSLStrengthException ex = new P4JavaSSLStrengthException(e);
                 AlertManager.getInstance().addCriticalError(
                         new SSLKeyStrengthProblemHandler(project, connectedController, e),

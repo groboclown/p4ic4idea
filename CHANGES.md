@@ -45,7 +45,8 @@
     * Initial creation of file asks if it should be added to perforce, but it is not added (#66)
     * Files loaded from the Perforce server are restricted to the user-defined
       maximum file size (the `idea.max.vcs.loaded.size.kb` property).
-
+    * Falsely reporting that JCE is not present (#72)
+    
 
 ## ::v0.6.6.1::
 

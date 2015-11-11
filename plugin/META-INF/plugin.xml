@@ -1,12 +1,12 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.0-rc1</version>
+    <version>0.7.0-rc2</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
-            <li><em>0.7.0-rc1</em>
+            <li><em>0.7.0-rc2</em>
                 <ol>
                   <li>Major overhaul to the server connection logic.</li>
                   <li>Multiple server connection status in status bar widget.</li>
@@ -30,6 +30,8 @@
                   <li>Files loaded from the Perforce server are restricted to the
                   user-defined maximum file size (the
                   <tt>idea.max.vcs.loaded.size.kb</tt> property).</li>
+                  <li>Fixed the issue where the plugin falsely reporting that
+                  JCE is not present</li>
                 </ol>
             </li>
             <li><em>0.6.6.1</em>

@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.*;
 import com.perforce.p4java.core.file.*;
@@ -531,6 +532,7 @@ public class P4Exec2 {
             public byte[] run(@NotNull IOptionsServer server, @NotNull IClient client,
                     @NotNull ClientExec.ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+                int maxFileSize = VcsUtil.getMaxVcsLoadedFileSize();
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 GetFileContentsOptions fileContentsOptions = new GetFileContentsOptions(false, true);
                 // setting "don't annotate files" to true means we ignore the revision
@@ -545,7 +547,7 @@ public class P4Exec2 {
                 try {
                     byte[] buff = new byte[4096];
                     int len;
-                    while ((len = inp.read(buff, 0, 4096)) > 0) {
+                    while ((len = inp.read(buff, 0, 4096)) > 0 && baos.size() < maxFileSize) {
                         baos.write(buff, 0, len);
                     }
                 } finally {

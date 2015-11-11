@@ -17,7 +17,6 @@ package net.groboclown.idea.p4ic.v2.server;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
@@ -44,6 +43,7 @@ import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CacheQuery
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CreateUpdate;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import net.groboclown.idea.p4ic.v2.server.util.RemoteFileReader;
+import net.groboclown.idea.p4ic.v2.server.util.RootDiscoveryUtil;
 import net.groboclown.idea.p4ic.v2.ui.alerts.DisconnectedHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -184,9 +184,6 @@ public class P4Server {
      *      the client roots.  It returns -1 if there is no match.
      */
     int getFilePathMatchDepth(@NotNull FilePath file) throws InterruptedException {
-
-        // TODO move to another class; this logic is too complicated for this class.
-
         if (LOG.isDebugEnabled()) {
             LOG.debug("Finding depth for " + file + " in " + getClientName());
         }
@@ -194,50 +191,9 @@ public class P4Server {
             return -1;
         }
 
-        final List<File> inputParts = getPathParts(file);
-
-        boolean hadMatch = false;
-        int shallowest = Integer.MAX_VALUE;
-        for (List<File> rootParts: getRoots()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("- checking " + rootParts.get(rootParts.size() - 1));
-            }
-
-            if (inputParts.size() < rootParts.size()) {
-                // input is at a higher ancestor level than the root parts,
-                // so there's no way it could be in this root.
-
-                LOG.debug("-- input is parent of root");
-
-                continue;
-            }
-
-            // See if input is under the root.
-            // We should be able to just call input.isUnder(configRoot), but
-            // that seems to be buggy - it reported that "/a/b/c" was under "/a/b/d".
-
-            final File sameRootDepth = inputParts.get(rootParts.size() - 1);
-            if (FileUtil.filesEqual(sameRootDepth, rootParts.get(rootParts.size() - 1))) {
-                LOG.debug("-- matched");
-
-                // it's a match.  The input file ancestor path that is
-                // at the same directory depth as the config root is the same
-                // path.
-                if (shallowest > rootParts.size()) {
-                    shallowest = rootParts.size();
-                    LOG.debug("--- shallowest");
-                    hadMatch = true;
-                }
-
-                // Redundant - no code after this if block
-                //continue;
-            } else if (LOG.isDebugEnabled()) {
-                LOG.debug("-- not matched " + rootParts.get(rootParts.size() - 1) + " vs " + file + " (" + sameRootDepth + ")");
-            }
-
-            // Not under the same path, so it's not a match.  Advance to next root.
-        }
-        return hadMatch ? shallowest : -1;
+        return RootDiscoveryUtil.getFilePathMatchDepth(file,
+                source.getProjectSourceDirs(),
+                getProjectClientRoots());
     }
 
     /**
@@ -252,62 +208,8 @@ public class P4Server {
      */
     @NotNull
     public List<List<File>> getRoots() throws InterruptedException {
-
-        // TODO move to another class; this logic is too complicated for this class.
-
-        // use the ProjectConfigSource as the lowest level these can be under.
-        final Set<List<File>> ret = new HashSet<List<File>>();
-        final List<VirtualFile> projectRoots = source.getProjectSourceDirs();
-        List<List<File>> projectRootsParts = new ArrayList<List<File>>(projectRoots.size());
-        for (VirtualFile projectRoot: projectRoots) {
-            projectRootsParts.add(getPathParts(FilePathUtil.getFilePath(projectRoot)));
-        }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("- project roots: " + projectRoots);
-            LOG.debug("- client roots: " + getProjectClientRoots());
-        }
-
-        // VfsUtilCore.isAncestor seems to bug out at times.
-        // Use the File, File version instead.
-
-        for (VirtualFile root : getProjectClientRoots()) {
-            final List<File> rootParts = getPathParts(FilePathUtil.getFilePath(root));
-            for (List<File> projectRootParts : projectRootsParts) {
-                if (projectRootParts.size() >= rootParts.size()) {
-                    // projectRoot could be a child of (or is) root
-                    if (FileUtil.filesEqual(
-                            projectRootParts.get(rootParts.size() - 1),
-                            rootParts.get(rootParts.size() - 1))) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("-- projectRoot " + projectRootParts.get(projectRootParts.size() - 1) +
-                                    " child of " + root + ", so using the project root");
-                        }
-                        ret.add(projectRootParts);
-                    }
-                } else if (rootParts.size() >= projectRootParts.size()) {
-                    // root could be a child of (or is) projectRoot
-                    if (FileUtil.filesEqual(
-                            projectRootParts.get(projectRootParts.size() - 1),
-                            rootParts.get(projectRootParts.size() - 1))) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("-- root " + root +
-                                    " child of " + projectRootParts
-                                    .get(projectRootParts.size() - 1) + ", so using the root");
-                        }
-                        ret.add(rootParts);
-                    }
-                }
-            }
-
-            // If it is not in any project root, then ignore it.
-        }
-
-        // The list could be further simplified, but this should
-        // be sufficient.  (Simplification: remove directories that
-        // are children of existing directories in the list)
-
-        return new ArrayList<List<File>>(ret);
+        return RootDiscoveryUtil.getRoots(source.getProjectSourceDirs(),
+                getProjectClientRoots());
     }
 
 
@@ -1129,18 +1031,6 @@ public class P4Server {
     @Override
     public String toString() {
         return getClientServerId().toString();
-    }
-
-    @NotNull
-    private List<File> getPathParts(@NotNull final FilePath child) {
-        List<File> ret = new ArrayList<File>();
-        FilePath next = child;
-        while (next != null) {
-            ret.add(next.getIOFile());
-            next = next.getParentPath();
-        }
-        Collections.reverse(ret);
-        return ret;
     }
 
 

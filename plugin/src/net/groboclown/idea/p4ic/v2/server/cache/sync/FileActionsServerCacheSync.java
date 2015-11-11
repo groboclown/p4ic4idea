@@ -20,6 +20,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
@@ -408,6 +409,20 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         }
         // doesn't matter too much if the delete file is not null
 
+        // At this point, all the files are in the local cache, ready to
+        // be put in.  However, the IDE could have incorrectly marked the
+        // source file as open-for-edit, which means the changelist
+        // view is looking at an edited source file, not a deleted
+        // source file.  We'll mark the source file as dirty, because its
+        // state has changed.
+        // Try a hard refresh.  It's the sledgehammer approach, but sometimes
+        // that's all that will work when rebuilding a wall, not that the
+        // analogy makes much sense here.
+        VcsDirtyScopeManager.getInstance(project).markEverythingDirty();
+        // Marking the one file as dirty just won't cut it, because IDEA
+        // thinks that it's already done the refresh of that one dirty file.
+        // VcsUtil.markFileAsDirty(project, file.getSourceFile());
+
         return ret;
     }
 
@@ -541,20 +556,33 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             @Nullable final String syncSpec, final boolean force,
             final Ref<MessageResult<Collection<FileSyncResult>>> ref) {
         final List<FilePath> fileList = new ArrayList<FilePath>(files);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Synchronizing " + cache.getClientServerId() + " files " +
+                fileList + " at rev " + revisionNumber + "/" + syncSpec +
+                "; forced? " + force);
+        }
         return new ImmediateServerUpdateAction() {
             @Override
             public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
                     @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 try {
+                    // Synchronize can happen on a directory
                     List<IFileSpec> specs;
                     if (revisionNumber >= 0) {
                         specs = FileSpecUtil.getFromFilePathsAt(fileList,
-                                "#" + revisionNumber, false);
+                                "#" + revisionNumber, true);
                     } else if (syncSpec != null) {
-                        specs = FileSpecUtil.getFromFilePathsAt(fileList, syncSpec, false);
+                        if (syncSpec.startsWith("#") || syncSpec.startsWith("@")) {
+                            specs = FileSpecUtil.getFromFilePathsAt(fileList, syncSpec, true);
+                        } else {
+                            specs = FileSpecUtil.getFromFilePathsAt(fileList, '@' + syncSpec, true);
+                        }
                     } else {
-                        specs = FileSpecUtil.getFromFilePaths(fileList);
+                        specs = FileSpecUtil.getFromFilePathsAt(fileList, "", true);
+                    }
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("synchronizing " + specs);
                     }
                     final List<IFileSpec> results = exec.synchronizeFiles(specs, force);
                     Iterator<FilePath> srcIter = fileList.iterator();
@@ -576,8 +604,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                         } else if (P4StatusMessage.isErrorStatus(spec)) {
                             final P4StatusMessage msg = new P4StatusMessage(spec);
 
-                            // 17 = "file(s) up-to-date"
-                            if (msg.getErrorCode() != 17) {
+                            // 17 (x11) = "file(s) up-to-date"
+                            if (msg.getErrorCode() != MessageGenericCode.EV_EMPTY) {
                                 LOG.info(msg + ": error code " + msg.getErrorCode());
                                 messages.add(msg);
                             } else {

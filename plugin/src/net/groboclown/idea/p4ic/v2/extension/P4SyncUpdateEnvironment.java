@@ -29,11 +29,9 @@ import net.groboclown.idea.p4ic.ui.sync.SyncOptionConfigurable;
 import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.connection.MessageResult;
-import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -61,7 +59,9 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
         // Run the Perforce operation in the current thread, because that's the context in which this operation
         // is expected to run.
 
-        LOG.info("updateDirectories: sync options are " + syncOptions.getCurrentOptions());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("updateDirectories: sync options are " + syncOptions.getCurrentOptions());
+        }
 
         final SyncUpdateSession session = new SyncUpdateSession();
         final Map<String, FileGroup> groups = sortByFileGroupId(updatedFiles.getTopLevelGroups(), null);
@@ -128,7 +128,9 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
         if (file == null) {
             return null;
         }
-        LOG.info("sync: " + file.getFileAction() + " / " + file.getFilePath());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("sync: " + file.getFileAction() + " / " + file.getFilePath());
+        }
         return P4StatusUpdateEnvironment.getGroupId(file.getFileAction());
     }
 
@@ -176,43 +178,22 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
             final SyncUpdateSession session) {
         Map<P4Server, List<FilePath>> ret = new HashMap<P4Server, List<FilePath>>();
 
-        Set<FilePath> discoveredRoots = new HashSet<FilePath>();
-
-        for (P4Server server : vcs.getP4Servers()) {
-            final List<FilePath> clientPaths = new ArrayList<FilePath>();
-            final List<FilePath> clientRoots = new ArrayList<FilePath>();
+        for (FilePath root: contentRoots) {
             try {
-                for (List<File> roots : server.getRoots()) {
-                    for (File file : roots) {
-                        clientRoots.add(FilePathUtil.getFilePath(file));
-                    }
+                final P4Server server = vcs.getP4ServerFor(root);
+                List<FilePath> paths = ret.get(server);
+                if (paths == null) {
+                    paths = new ArrayList<FilePath>();
+                    ret.put(server, paths);
                 }
+                paths.add(root);
             } catch (InterruptedException e) {
                 session.exceptions.add(new VcsInterruptedException(e));
-                continue;
             }
+        }
 
-            // TODO re-examine this logic
-            // Find the double mapping - if a content root is a child of the client root, then add the
-            // content root.  If the client root is a child of the content root, then add the client root.
-            for (FilePath clientRoot : clientRoots) {
-                for (FilePath contentRoot : contentRoots) {
-                    if (contentRoot.isUnder(clientRoot, false) && !discoveredRoots.contains(contentRoot)) {
-                        clientPaths.add(contentRoot);
-                        discoveredRoots.add(contentRoot);
-                    } else if (clientRoot.isUnder(contentRoot, false) && !discoveredRoots.contains(clientRoot)) {
-                        clientPaths.add(clientRoot);
-                        discoveredRoots.add(clientRoot);
-                    }
-                }
-            }
-
-            // We could shrink the contents of the list - we don't want both a/b/c AND a/b in the list.
-            // However, the p4 command will shrink it for us.
-
-            if (!clientPaths.isEmpty()) {
-                ret.put(server, clientPaths);
-            }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Server to file mapping for sync: " + ret);
         }
 
         return ret;

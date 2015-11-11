@@ -69,6 +69,12 @@ import java.util.*;
 import java.util.Map.Entry;
 
 public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
+    public static final FileStatus ADDED_OFFLINE =
+            FileStatusFactory.getInstance().createFileStatus(
+                    "ADDED_OFFLINE",
+                    P4Bundle.message("filestatus.added_offline"),
+                    FileStatus.COLOR_ADDED
+            );
     public static final FileStatus MODIFIED_OFFLINE =
             FileStatusFactory.getInstance().createFileStatus(
                     "MODIFIED_OFFLINE",
@@ -97,6 +103,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             FileStatus.MODIFIED,
             FileStatus.NOT_CHANGED,
 
+            ADDED_OFFLINE,
             MODIFIED_OFFLINE,
             DELETED_OFFLINE,
             REVERTED_OFFLINE

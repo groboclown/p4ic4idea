@@ -71,7 +71,9 @@ public class SyncOptionConfigurable implements Configurable {
             pendingOptions = currentOptions;
         }
         currentOptions = pendingOptions;
-        LOG.info("SyncOptions set to " + currentOptions);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("SyncOptions set to " + currentOptions);
+        }
     }
 
     @Override
@@ -88,7 +90,9 @@ public class SyncOptionConfigurable implements Configurable {
 
 
     void onOptionChange(SyncOptions options) {
-        LOG.debug("SyncOptions pending to " + options);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("SyncOptions pending to " + options);
+        }
         pendingOptions = options;
     }
 

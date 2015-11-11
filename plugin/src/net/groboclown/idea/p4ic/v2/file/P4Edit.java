@@ -48,7 +48,9 @@ public class P4Edit extends BasicAction {
         // If an input file does not map to a server, then we still report enabled.  If all the files only map to
         // non-P4 files, then disable.
 
-        LOG.info("Checking enabled state for files " + Arrays.asList(vFiles));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Checking enabled state for files " + Arrays.asList(vFiles));
+        }
 
         try {
             final Map<P4Server, List<VirtualFile>> servers = vcs.mapVirtualFilesToP4Server(Arrays.asList(vFiles));

@@ -16,7 +16,8 @@
 
 * Major changes to the server connection logic. (#70)
     * Allows for limited offline work.  Edit, add, delete, and move operations are
-      cached for replay after you reconnect to the server.
+      cached for replay after you reconnect to the server.  Reverts only
+      have limited support.
     * Warnings are displayed in the messages docked view.
     * Errors are now more consistently displayed and handled.
 * Multiple server connection status in status bar widget. (#19)
@@ -42,7 +43,9 @@
     * Add trusted ticket file support (#4)
     * Changelist sync can discover null Idea changelists (#64)
     * Initial creation of file asks if it should be added to perforce, but it is not added (#66)
-    
+    * Files loaded from the Perforce server are restricted to the user-defined
+      maximum file size (the `idea.max.vcs.loaded.size.kb` property).
+
 
 ## ::v0.6.6.1::
 

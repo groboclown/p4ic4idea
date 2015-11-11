@@ -17,6 +17,7 @@ package net.groboclown.idea.p4ic.v2.server.util;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;

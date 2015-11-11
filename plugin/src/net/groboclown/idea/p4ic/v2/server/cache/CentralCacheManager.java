@@ -18,7 +18,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
-import net.groboclown.idea.p4ic.config.*;
+import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
@@ -78,8 +79,12 @@ public class CentralCacheManager {
                 if (disposed) {
                     return;
                 }
+                // Only invalid clients are given to this method, so there's
+                // a very good chance that the client ID will be null.
                 ClientServerId id = ClientServerId.create(project, config);
-                removeCache(id);
+                if (id != null) {
+                    removeCache(id);
+                }
             }
         });
     }
@@ -135,7 +140,7 @@ public class CentralCacheManager {
 
 
 
-    private void removeCache(ClientServerId id) {
+    private void removeCache(@NotNull ClientServerId id) {
         if (disposed) {
             // Coding error; no bundled message
             throw new IllegalStateException("disposed");

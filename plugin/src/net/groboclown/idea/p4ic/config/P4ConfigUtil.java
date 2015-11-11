@@ -394,6 +394,9 @@ public class P4ConfigUtil {
         if (!rootSearchPath.isDirectory() || !rootSearchPath.exists()) {
             throw new IllegalArgumentException(P4Bundle.message("error.roots.not-directory", rootSearchPath));
         }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Finding root directory for " + rootSearchPath + ", named " + configFileName);
+        }
         List<Iterator<VirtualFile>> depthStack = new ArrayList<Iterator<VirtualFile>>();
         depthStack.add(Arrays.asList(rootSearchPath.getChildren()).iterator());
         // bug #32 - make sure to add in the root directory, too.
@@ -402,16 +405,20 @@ public class P4ConfigUtil {
             Iterator<VirtualFile> iter = depthStack.remove(depthStack.size() - 1);
             if (iter.hasNext()) {
                 VirtualFile vFile = iter.next();
-                if (iter.hasNext()) {
-                    depthStack.add(iter);
-                }
+                // put our current directory scanner back into our depth stack
+                // for continued future searching.  Whether it has another
+                // item or not will be checked when it is pulled the next time.
+                depthStack.add(iter);
                 if (vFile != null) {
                     // Make sure we use the actual I/O file in order to avoid some
                     // IDEA refresh issues.
                     File file = new File(vFile.getPath());
                     if (file.isDirectory()) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("-- added scan for " + file);
+                        }
                         depthStack.add(Arrays.asList(vFile.getChildren()).iterator());
-                    } else if (!mapping.containsKey(vFile.getParent())) {
+                    } else if (mapping.containsKey(vFile.getParent())) {
                         // ignore, because this specific directory has a mapping
                         // already; don't perform the config file loading again.
                         if (LOG.isDebugEnabled()) {
@@ -419,7 +426,7 @@ public class P4ConfigUtil {
                         }
                     } else if (!file.exists()) {
                         if (LOG.isDebugEnabled()) {
-                            LOG.debug("Discovered non-existent file in IDEA cache: " + file);
+                            LOG.debug("-- discovered non-existent file in IDEA cache: " + file);
                         }
                     } else if (file.getName().equals(configFileName)) {
                         ManualP4Config config = new ManualP4Config();
@@ -431,8 +438,11 @@ public class P4ConfigUtil {
                             }
                             final P4Config loadedConfig = loadCmdP4Config(config);
                             mapping.put(vFile.getParent(), loadedConfig);
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("-/\\- " + loadedConfig.toString());
+                            }
                         } catch (IOException e) {
-                            LOG.error("Could not find or read config file " + file.getPath(), e);
+                            LOG.warn("Could not find or read config file " + file.getPath(), e);
                         }
                     }
                 }
@@ -445,6 +455,9 @@ public class P4ConfigUtil {
         // a tree isn't too bad performance-wise.
         VirtualFile parent = rootSearchPath.getParent();
         while (parent != null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("-- checking parent " + parent);
+            }
             VirtualFile configFile = parent.findChild(configFileName);
             if (configFile != null && !mapping.containsKey(parent)) {
                 File file = new File(configFile.getPath());

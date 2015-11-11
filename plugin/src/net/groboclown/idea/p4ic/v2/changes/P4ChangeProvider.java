@@ -142,20 +142,10 @@ public class P4ChangeProvider implements ChangeProvider {
         MappedOpenFiles mapped = getOpenedFiles(dirtyFiles, progress);
         progress.setFraction(0.80);
 
-        /* marking dirty may cause infinite loops.
-        This is why we have the special case for "everything is dirty",
-        as it is usually called at startup or at critical times, which allows
-        the change provider to mark anything as dirty.
-        List<VirtualFile> dirty = new ArrayList<VirtualFile>();
-        for (Entry<P4Server, Set<P4FileAction>> entry : mapped.notDirtyOpenedFiles.entrySet()) {
-            for (P4FileAction action : entry.getValue()) {
-                if (action.getFile() != null && action.getFile().getVirtualFile() != null) {
-                    dirty.add(action.getFile().getVirtualFile());
-                }
-            }
-        }
-        VfsUtil.markDirty(false, false, dirty.toArray(new VirtualFile[dirty.size()]));
-        */
+        // marking dirty may cause infinite loops.
+        // This is why we have the special case for "everything is dirty",
+        // as it is usually called at startup or at critical times, which allows
+        // the change provider to mark anything as dirty.
         if (LOG.isDebugEnabled()) {
             LOG.debug("ignoring files that should already be considered dirty: " +
                     mapped.notDirtyOpenedFiles);
@@ -206,8 +196,7 @@ public class P4ChangeProvider implements ChangeProvider {
                         LOG.info("Incorrectly tagged " + file + " as dirty.");
                     }
                 } else {
-                    // TODO this needs a special case, in that we can't
-                    // tell if it's different or not.
+                    // TODO this needs a special case, in that we can't tell if it's different or not.
                     builder.processModifiedWithoutCheckout(virt);
                 }
             }
@@ -236,44 +225,21 @@ public class P4ChangeProvider implements ChangeProvider {
             throw new IllegalStateException("File action " + action + " has no local file setting");
         }
 
-        /* We must explicitly add all changes into the changelists, otherwise
-        it doesn't show up in the changes.
-        If a file ends up being in two changes at once, then there's a bug in this
-        code.  This particular loop ends up just putting files into the wrong
-        state if the state changed (say, moved from edit to delete).
+        // We must explicitly add all changes into the changelists, otherwise
+        // it doesn't show up in the changes.
+        // If a file ends up being in two changes at once, then there's a bug in this
+        // code.  This particular loop ends up just putting files into the wrong
+        // state if the state changed (say, moved from edit to delete).
 
-        // FIXME remove this dead code, and rename the method
-        boolean movedChange = false;
-        for (LocalChangeList cl : ChangeListManager.getInstance(project).getChangeLists()) {
-            for (Change change : cl.getChanges()) {
-                if (change.affectsFile(action.getFile().getIOFile())) {
-                    if (changeList.equals(cl)) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug(" --- Keeping " + action.getFile() + " in " + changeList);
-                        }
-                        // null changelist: setting the changelist will cause infinite
-                        // reloads, because it means that the changelist has changed.
-                        builder.processChange(change, P4Vcs.getKey());
-                    } else {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug(" --- Moving " + action.getFile() + " out of " + cl + " into " + changeList);
-                        }
-                        builder.processChangeInList(change, changeList, P4Vcs.getKey());
-                    }
-                    movedChange = true;
-                }
-            }
+        final Change change = changeListMatcher.createChange(action);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(" --- Put " + action.getFile() + " into " + changeList + " as " +
+                change.getFileStatus() + "; input action: " + action.getFileUpdateAction());
         }
-        */
-        //if (!movedChange) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(" --- Put " + action.getFile() + " into " + changeList);
-            }
-            builder.processChangeInList(
-                    changeListMatcher.createChange(action),
-                    changeList,
-                    P4Vcs.getKey());
-        //}
+        builder.processChangeInList(
+                change,
+                changeList,
+                P4Vcs.getKey());
     }
 
 

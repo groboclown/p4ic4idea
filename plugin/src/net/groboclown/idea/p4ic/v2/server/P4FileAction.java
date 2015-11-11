@@ -79,9 +79,10 @@ public class P4FileAction {
         if (getChangeList() < P4ChangeListId.P4_DEFAULT) {
             // offline
             switch (getFileUpdateAction()) {
-                case ADD_EDIT_FILE:
                 case ADD_FILE:
                 case MOVE_FILE:
+                    return P4Vcs.ADDED_OFFLINE;
+                case ADD_EDIT_FILE:
                 case INTEGRATE_FILE:
                 case EDIT_FILE:
                     return P4Vcs.MODIFIED_OFFLINE;
@@ -117,4 +118,9 @@ public class P4FileAction {
         }
     }
 
+
+    @Override
+    public String toString() {
+        return local + "->" + action;
+    }
 }

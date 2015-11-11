@@ -6,17 +6,18 @@
 These bugs need to be handled before release.
 
 1. Files open for add seem to stick around in the local cache if the push to
-   the server failed.
-1. Warnings in batch followed immediately by warnings means the old ones are removed.
-1. Change view state doesn't correctly match what's in the actual changes.
-1. When project root is at (say) c:\a\b\c\, and .p4config exists in c:\a\b\c\ and c:\a, the
-   c:\a is picked up.  *TODO double check this*
+   the server failed. *TODO may be fixed; check*
 
 
 ## Big Bugs
 
 There are multiple "todos" and "fixmes" marked in the code, but these are the bugs
 that should be fixed up.
+
+1. Change view state doesn't correctly match what's in the actual changes.
+   *TODO partial fix; it requires a full "mark everything as dirty" call.
+   Double check what remains to fix with this.*
+1. Warnings in batch followed immediately by warnings means the old ones are removed.
 1. Open multiple files for edit, with one of them (the first one?) already
    open for edit, causes none of them to be opened.
    The first file is triggered to be opened for edit, but none of the
@@ -44,4 +45,5 @@ that should be fixed up.
 
 1. Keep backups of edited files, to allow for simulated reverts and limited diffs while in
    offline mode.  Maybe take advantage of IDEA's built-in VCS?
+
 

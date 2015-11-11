@@ -183,6 +183,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         String relClientPath = clientPath.substring(clientPrefix.length());
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
         if (workspaceRoots.isEmpty()) {
+            invalidRootsException.fillInStackTrace();
             alerts.addWarning(
                     project,
                     P4Bundle.message("error.config.invalid-roots.title", cache.getClientName()),
@@ -290,6 +291,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
             }
         }
         // no root found.
+        invalidRootsException.fillInStackTrace();
         alerts.addWarning(
                 project,
                 P4Bundle.message("error.config.invalid-roots.title", cache.getClientName()),
@@ -384,6 +386,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         }
         LOG.debug("Did not find roots matching " + referenceDir + "; roots = " + workspaceRoots);
         // no root found.
+        invalidRootsException.fillInStackTrace();
         alerts.addWarning(project,
                 P4Bundle.message("error.config.invalid-roots.title", cache.getClientName()),
                 P4Bundle.message("error.config.invalid-roots", cache.getClientName()),

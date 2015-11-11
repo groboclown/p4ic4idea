@@ -39,15 +39,11 @@ public class ChangeListMatcher {
     private static final Logger LOG = Logger.getInstance(ChangeListMatcher.class);
 
     private final Project project;
-    private final P4Vcs vcs;
-    private final AlertManager alerts;
     private final P4ChangeListMapping changeListMapping;
 
 
     public ChangeListMatcher(@NotNull final P4Vcs vcs, @NotNull AlertManager alerts) {
         this.project = vcs.getProject();
-        this.vcs = vcs;
-        this.alerts = alerts;
         this.changeListMapping = P4ChangeListMapping.getInstance(project);
     }
 
@@ -92,8 +88,24 @@ public class ChangeListMatcher {
 
     @NotNull
     public Change createChange(@NotNull P4FileAction file) {
-        ContentRevision beforeRev = new P4CurrentContentRevision(project, file);
-        ContentRevision afterRev = new CurrentContentRevision(file.getFile());
+        final ContentRevision beforeRev;
+        final ContentRevision afterRev;
+        switch (file.getFileUpdateAction()) {
+            case ADD_FILE:
+            case MOVE_FILE:
+                // TODO move file should be a single change
+                beforeRev = null;
+                afterRev = new CurrentContentRevision(file.getFile());
+                break;
+            case DELETE_FILE:
+            case MOVE_DELETE_FILE:
+                beforeRev = new P4CurrentContentRevision(project, file);
+                afterRev = null;
+                break;
+            default:
+                beforeRev = new P4CurrentContentRevision(project, file);
+                afterRev = new CurrentContentRevision(file.getFile());
+        }
         return new Change(beforeRev, afterRev, file.getClientFileStatus());
     }
 

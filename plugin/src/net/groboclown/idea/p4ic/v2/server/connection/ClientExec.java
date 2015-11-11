@@ -33,9 +33,11 @@ import net.groboclown.idea.p4ic.v2.ui.alerts.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.crypto.Cipher;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
@@ -446,16 +448,21 @@ public class ClientExec {
 
 
             if (isSSLHandshakeProblem(e)) {
-                // SSL extensions are not installed.
-                // But that may not be the real reason; there could just be
-                // a server disconnect.  Therefore don't mark the connection
-                // as invalid.
-                // connectedController.onConfigInvalid();
-                P4JavaSSLStrengthException ex = new P4JavaSSLStrengthException(e);
-                AlertManager.getInstance().addCriticalError(
-                        new SSLKeyStrengthProblemHandler(project, connectedController, e),
-                        ex);
-                throw ex;
+                if (isUnlimitedStrengthEncryptionInstalled()) {
+                    connectedController.onConfigInvalid();
+                    P4DisconnectedException ex = new P4DisconnectedException(e);
+                    AlertManager.getInstance()
+                            .addCriticalError(new DisconnectedHandler(project, connectedController, ex), ex);
+                    throw ex;
+                } else {
+                    // SSL extensions are not installed.
+                    connectedController.onConfigInvalid();
+                    P4JavaSSLStrengthException ex = new P4JavaSSLStrengthException(e);
+                    AlertManager.getInstance().addCriticalError(
+                            new SSLKeyStrengthProblemHandler(project, connectedController, e),
+                            ex);
+                    throw ex;
+                }
             }
 
             // Ask the user if it should be a real disconnect, or if we should
@@ -585,13 +592,20 @@ public class ClientExec {
 
 
     private boolean isSSLHandshakeProblem(@NotNull final ConnectionException e) {
-        // TODO replace with error code checking
-
-        // TODO this check isn't always right - it could be a fingerprint problem in disguise
+        // This check isn't always right - it could be a fingerprint problem in disguise
 
         String message = e.getMessage();
-        return message != null &&
-            message.contains("invalid SSL session");
+        return (message != null &&
+                message.contains("invalid SSL session"));
+    }
+
+
+    private boolean isUnlimitedStrengthEncryptionInstalled() {
+        try {
+            return Cipher.getMaxAllowedKeyLength("RC5") >= 256;
+        } catch (NoSuchAlgorithmException e) {
+            return false;
+        }
     }
 
 

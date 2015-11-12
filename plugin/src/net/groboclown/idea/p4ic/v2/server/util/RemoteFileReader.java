@@ -17,11 +17,9 @@ package net.groboclown.idea.p4ic.v2.server.util;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
@@ -106,10 +104,11 @@ public class RemoteFileReader {
                     encoding = es.get(0).getCharset();
                 }
                 if (encoding == null) {
-                    alerts.addNotice(exec.getProject(),
-                            P4Bundle.message("exception.load-file-encoding"),
-                            new P4FileException(file),
-                            file);
+                    LOG.info("No known encoding for " + file + "; using default");
+                    //alerts.addNotice(exec.getProject(),
+                    //        P4Bundle.message("exception.load-file-encoding"),
+                    //        new P4FileException(file),
+                    //        file);
                     return new String(bytes);
                 }
                 LOG.info("reading " + file + " with encoding " + encoding);

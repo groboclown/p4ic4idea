@@ -1,7 +1,6 @@
 # IDEA Community VCS Integration for Perforce
 
 
-
 ## ::v0.7.0::
 
 ### Overview
@@ -20,6 +19,8 @@
       have limited support.
     * Warnings are displayed in the messages docked view.
     * Errors are now more consistently displayed and handled.
+    * Note that changes to the client workspace spec will cause cached updates to be lost
+      (the plugin won't be able to figure out how the files now map to the server).
 * Multiple server connection status in status bar widget. (#19)
     * The online state can now be controlled per-server through
       the connection status widget.
@@ -46,6 +47,7 @@
     * Files loaded from the Perforce server are restricted to the user-defined
       maximum file size (the `idea.max.vcs.loaded.size.kb` property).
     * Falsely reporting that JCE is not present (#72)
+    * History difference did not work on IDEA 15.0 due to an IDEA API change.
     
 
 ## ::v0.6.6.1::

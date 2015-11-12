@@ -29,6 +29,7 @@ import net.groboclown.idea.p4ic.server.connection.EnvConnectionHandler;
 import net.groboclown.idea.p4ic.server.connection.TestConnectionHandler;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.Events;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -136,7 +137,8 @@ public abstract class ConnectionHandler {
      * @return false if authentication could not be done, or true if it was attempted.
      * @throws P4JavaException
      */
-    public abstract boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config) throws P4JavaException;
+    public abstract boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server,
+            @NotNull ServerConfig config, @NotNull AlertManager alerts) throws P4JavaException;
 
 
     /**

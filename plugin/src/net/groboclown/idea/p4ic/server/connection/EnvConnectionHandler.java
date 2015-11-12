@@ -19,6 +19,7 @@ import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.ConfigurationProblem;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,9 +51,10 @@ public class EnvConnectionHandler extends ConnectionHandler {
     }
 
     @Override
-    public boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config)
+    public boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server,
+            @NotNull ServerConfig config, @NotNull AlertManager alerts)
             throws P4JavaException {
-        return discoverConnectionMethod(config).forcedAuthentication(project, server, config);
+        return discoverConnectionMethod(config).forcedAuthentication(project, server, config, alerts);
     }
 
     @NotNull

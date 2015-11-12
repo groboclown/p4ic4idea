@@ -574,7 +574,8 @@ public class ClientExec {
             @Override
             public Boolean run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
                 count.invoke("forcedAuthentication");
-                return connectionHandler.forcedAuthentication(project, server, config);
+                return connectionHandler.forcedAuthentication(project, server, config,
+                        AlertManager.getInstance());
             }
         }, true);
         if (!res) {

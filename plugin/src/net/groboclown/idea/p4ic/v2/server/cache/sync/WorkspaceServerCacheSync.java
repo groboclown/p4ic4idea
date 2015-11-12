@@ -486,11 +486,16 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
 
         if (doRefresh) {
             cachedServerWorkspace.setUpdated();
-            alerts.addWarning(
-                    exec.getProject(),
-                    P4Bundle.message("warning.client.updated.title", getCachedClientName()),
-                    P4Bundle.message("warning.client.updated", getCachedClientName()),
-                    null, FilePathUtil.getFilePathsFsrStrings(roots));
+
+            // Don't automatically send the warning.  If there are no pending updates, then
+            // there's no reason for the user to see it.
+            if (cache.hasPendingUpdates()) {
+                alerts.addWarning(
+                        exec.getProject(),
+                        P4Bundle.message("warning.client.updated.title", getCachedClientName()),
+                        P4Bundle.message("warning.client.updated", getCachedClientName()),
+                        null, FilePathUtil.getFilePathsFsrStrings(roots));
+            }
             cache.refreshServerState(exec, alerts);
         }
     }

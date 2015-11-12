@@ -358,6 +358,11 @@ public class ClientCacheManager {
                 }
             }
         }
+
+        @Override
+        public boolean hasPendingUpdates() {
+            return ! state.getPendingUpdates().isEmpty();
+        }
     }
 
 }

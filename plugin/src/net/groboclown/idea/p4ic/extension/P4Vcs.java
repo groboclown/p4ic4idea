@@ -13,6 +13,8 @@
  */
 package net.groboclown.idea.p4ic.extension;
 
+import com.intellij.mock.MockProject;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
@@ -63,6 +65,9 @@ import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.picocontainer.alternatives.EmptyPicoContainer;
+import org.picocontainer.defaults.DefaultPicoContainer;
+import org.picocontainer.defaults.InstanceComponentAdapter;
 
 import java.io.File;
 import java.util.*;
@@ -162,7 +167,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
 
     @NotNull
-    public static P4Vcs getInstance(Project project) {
+    public static P4Vcs getInstance(@Nullable Project project) {
         if (project == null || project.isDisposed()) {
             throw new NullPointerException(P4Bundle.message("error.no-active-project"));
         }
@@ -184,9 +189,23 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
 
     public P4Vcs(
-            @NotNull Project project,
+            @Nullable Project project,
             @NotNull UserProjectPreferences preferences) {
         super(project, VCS_NAME);
+
+        // there is a situation where project can be null: when the config panel
+        // is loaded without a project loaded (e.g. "cancel" the loading screen,
+        // and Configure -> Settings).
+        if (project == null) {
+            DefaultPicoContainer container = new DefaultPicoContainer();
+            project = new MockProject(new EmptyPicoContainer(), new Disposable() {
+                @Override
+                public void dispose() {
+                    // ignore
+                }
+            });
+        }
+
 
         this.userPreferences = preferences;
         this.myConfigurable = new P4ProjectConfigurable(project);

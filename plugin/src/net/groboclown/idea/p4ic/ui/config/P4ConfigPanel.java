@@ -542,7 +542,7 @@ public class P4ConfigPanel {
                     }
                     if (found) {
                         myResolvePath.setSelectedItem(current);
-                    } else {
+                    } else if (myResolvePath.getItemCount() > 0) {
                         myResolvePath.setSelectedIndex(0);
                     }
                 }

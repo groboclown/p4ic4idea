@@ -7,6 +7,29 @@ These bugs need to be handled before release.
 
 1. Files open for add seem to stick around in the local cache if the push to
    the server failed. *TODO may be fixed; check*
+1. IDEA 150:
+```
+java.lang.NoSuchMethodError: com.intellij.openapi.vcs.history.VcsHistoryUtil.showDifferencesInBackground(Lcom/intellij/openapi/project/Project;Lcom/intellij/openapi/vcs/FilePath;Lcom/intellij/openapi/vcs/history/VcsFileRevision;Lcom/intellij/openapi/vcs/history/VcsFileRevision;Z)V
+    at net.groboclown.idea.p4ic.compat.idea150.HistoryCompat150$1.showDiffForOne(HistoryCompat150.java:33)
+```
+    *Fixed, need to check*
+1. *Fixed, need to check*
+```
+setSelectedIndex: 0 out of bounds
+java.lang.IllegalArgumentException: setSelectedIndex: 0 out of bounds
+    at javax.swing.JComboBox.setSelectedIndex(JComboBox.java:620)
+    at net.groboclown.idea.p4ic.ui.config.P4ConfigPanel$9.runAwtProcess(P4ConfigPanel.java:546)
+```
+1. *Fixed, need to check*
+```
+null
+java.lang.AssertionError
+    at net.groboclown.idea.p4ic.config.P4ConfigProject.announceBaseConfigUpdated(P4ConfigProject.java:107)
+    at net.groboclown.idea.p4ic.ui.config.P4ConfigurationProjectPanel.saveSettings(P4ConfigurationProjectPanel.java:51)
+    at net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable.apply(P4ProjectConfigurable.java:62)
+```
+1. Error dialog from config UI can report empty message.
+1. Warnings just show the exception message.  The whole UI needs to be revamped.
 
 
 ## Big Bugs
@@ -24,6 +47,9 @@ that should be fixed up.
    others are.  Looks like an IDEA bug.
 1. The working online/offline icon isn't being correctly updated
    when state changes. *Fixed, needs check.*
+1. Config panel can use ErrorDialog to show errors, which the user won't see until the dialog is dismissed.
+   Need to find out which dialog messages cause this issue.
+
 
 
 ## Smaller Bugs

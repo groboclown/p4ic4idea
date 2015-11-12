@@ -55,7 +55,12 @@ public class P4ServerManager implements ProjectComponent {
 
     @NotNull
     public static P4ServerManager getInstance(@NotNull Project project) {
-        return project.getComponent(P4ServerManager.class);
+        // a non-registered component can happen when the config is loaded outside a project.
+        P4ServerManager ret = project.getComponent(P4ServerManager.class);
+        if (ret == null) {
+            ret = new P4ServerManager(project);
+        }
+        return ret;
     }
 
 

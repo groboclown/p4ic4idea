@@ -15,17 +15,23 @@ package net.groboclown.idea.p4ic.server.connection;
 
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.ide.passwordSafe.PasswordSafeException;
+import com.intellij.ide.passwordSafe.ui.PasswordSafePromptDialog;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.exception.AccessException;
+import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.ConfigurationProblem;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
+import net.groboclown.idea.p4ic.v2.ui.alerts.PasswordRequiredHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -84,22 +90,33 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
     }
 
     @Override
-    public boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config) throws P4JavaException {
+    public boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server,
+            @NotNull ServerConfig config, @NotNull AlertManager alerts) throws P4JavaException {
         try {
-            //LOG.info("Asking PasswordSafe for the password");
+            LOG.debug("Asking PasswordSafe for the password");
             String password = PasswordSafe.getInstance().getPassword(project,
                     P4Vcs.class, config.getServiceName());
             if (password != null && password.length() > 0) {
                 // If the password is blank, then there's no need for the
                 // user to log in; in fact, that wil raise an error by Perforce
-                server.login(password, new LoginOptions(false, true));
+                try {
+                    server.login(password, new LoginOptions(false, true));
+                    LOG.debug("No issue logging in with stored password");
+                } catch (AccessException e) {
+                    LOG.debug("Stored password was bad; forgetting it");
+                    PasswordSafe.getInstance().removePassword(project,
+                            P4Vcs.class, config.getServiceName());
+                    throw e;
+                }
                 return true;
-            //} else {
-            //    LOG.info("No password found");
+            } else {
+                LOG.debug("No password found");
+                alerts.addCriticalError(new PasswordRequiredHandler(project, config), null);
             }
         } catch (PasswordSafeException e) {
-            // TODO handle better
-            LOG.error(e);
+            LOG.debug("PasswordSafe access caused an error", e);
+            // FIXME have a better exception
+            throw new ConnectionException(e);
         }
         return false;
     }
@@ -111,4 +128,22 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
         // server config.  No additional checks are needed.
         return Collections.emptyList();
     }
+
+
+    /**
+     * Not really the best place for this method, but it centralizes the PasswordSafe
+     * access.
+     *
+     * @return true if the user entered a password
+     */
+    public static boolean askPassword(@Nullable Project project, @NotNull final ServerConfig config) {
+        return PasswordSafePromptDialog.askPassword(project, ModalityState.any(),
+                P4Bundle.message("login.password.title"),
+                P4Bundle.message("login.password.message", config.getServiceName(), config.getUsername()),
+                P4Vcs.class, config.getServiceName(),
+                true,
+                P4Bundle.message("login.password.error")
+                ) != null;
+    }
+
 }

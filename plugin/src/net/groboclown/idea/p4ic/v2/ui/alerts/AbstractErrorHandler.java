@@ -73,6 +73,11 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
         return UICompat.getInstance().editVcsConfiguration(getProject(), getVcs().getConfigurable());
     }
 
+    static boolean tryConfigChangeFor(@NotNull Project project) {
+        return UICompat.getInstance().editVcsConfiguration(project,
+                P4Vcs.getInstance(project).getConfigurable());
+    }
+
     protected void goOffline() {
         serverConnectedController.disconnect();
     }

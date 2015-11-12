@@ -10,9 +10,11 @@
     <path id="production.classpath">
         <path refid="jdk.classpath"/>
         <path refid="${idea.lowest.classpath}"/>
+        <pathelement location="${rootdir}/lib/picocontainer/1.2/picocontainer.jar"/>
         <!-- <pathelement location="${lib.p4java}"/> -->
         <pathelement location="${rootdir}/idea-compat/work/production"/>
         <pathelement location="${rootdir}/p4java/work/production"/>
+
     </path>
 
     <path id="test.compile.classpath">

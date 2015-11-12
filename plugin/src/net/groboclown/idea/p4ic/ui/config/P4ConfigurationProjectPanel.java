@@ -14,9 +14,13 @@
 package net.groboclown.idea.p4ic.ui.config;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4ConfigProject;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -46,9 +50,23 @@ public class P4ConfigurationProjectPanel {
         }
         ManualP4Config saved = new ManualP4Config();
         myMainPanel.saveSettingsToConfig(saved, preferences);
+
         config.loadState(saved);
-        // Announce the change to state.
-        config.announceBaseConfigUpdated();
+
+        try {
+            // ensure the sources are loaded
+            config.loadProjectConfigSources();
+
+            // Announce the change to state.
+            config.announceBaseConfigUpdated();
+        } catch (P4InvalidConfigException e) {
+            // TODO ensure that this is the correct kind of error to show.
+            AlertManager.getInstance().addWarning(project,
+                    P4Bundle.message("error.config.load-sources"),
+                    P4Bundle.message("error.config.load-sources"),
+                    e, new FilePath[0]);
+        }
+
     }
 
     public void loadSettings(@NotNull ManualP4Config config, @NotNull UserProjectPreferences preferences) {

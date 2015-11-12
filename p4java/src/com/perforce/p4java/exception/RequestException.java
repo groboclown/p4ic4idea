@@ -95,7 +95,7 @@ public class RequestException extends P4JavaException {
 	*/
 	
 	public RequestException(IServerMessage message) {
-		super(message.toString());
+		super(message.getLocalizedMessage());
 		this.message = message;
 		this.rawCode = message.getRawCode();
 		this.subCode = message.getSubCode();
@@ -106,7 +106,7 @@ public class RequestException extends P4JavaException {
 	}
 
 	public RequestException(IServerMessage message, Throwable t) {
-		super(message.toString(), t);
+		super(message.getLocalizedMessage(), t);
 		this.message = message;
 		this.rawCode = message.getRawCode();
 		this.subCode = message.getSubCode();

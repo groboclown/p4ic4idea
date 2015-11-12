@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.v2.ui.alerts;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.v2.server.connection.CriticalErrorHandler;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +34,9 @@ public class ConfigPanelErrorHandler implements CriticalErrorHandler {
             @NotNull @Nls final String message) {
         this.project = project;
         this.title = title;
-        this.message = message;
+        this.message = message.length() > 0
+                ? message
+                : P4Bundle.message("config-panel.error.empty-message", title);
     }
 
 

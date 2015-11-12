@@ -81,4 +81,11 @@ interface Cache {
      * @param update update ref whose update needs to be removed.
      */
     void removeUpdateFor(@NotNull UpdateRef update);
+
+    /**
+     * Are there pending update states?
+     *
+     * @return true if there are pending update states.
+     */
+    boolean hasPendingUpdates();
 }

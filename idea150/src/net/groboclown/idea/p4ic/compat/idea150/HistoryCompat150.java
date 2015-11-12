@@ -30,7 +30,7 @@ public class HistoryCompat150 extends HistoryCompat {
             @Override
             public void showDiffForOne(@NotNull AnActionEvent e, @NotNull Project project, @NotNull FilePath filePath,
                                        @NotNull VcsFileRevision previousRevision, @NotNull VcsFileRevision revision) {
-                VcsHistoryUtil.showDifferencesInBackground(project, filePath, previousRevision, revision, true);
+                VcsHistoryUtil.showDifferencesInBackground(project, filePath, previousRevision, revision);
             }
 
             @Override
@@ -38,7 +38,7 @@ public class HistoryCompat150 extends HistoryCompat {
                                        @NotNull FilePath filePath,
                                        @NotNull VcsFileRevision revision1,
                                        @NotNull VcsFileRevision revision2) {
-                VcsHistoryUtil.showDifferencesInBackground(project, filePath, revision1, revision2, true);
+                VcsHistoryUtil.showDifferencesInBackground(project, filePath, revision1, revision2);
             }
         };
     }

@@ -11,7 +11,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-140.2285.5/annotations.jar!/" />
+          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-143.381.42/annotations.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -20,7 +20,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-140.2285.5/asm-all.jar!/" />
+          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-143.381.42/asm-all.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -29,7 +29,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-140.2285.5/extensions.jar!/" />
+          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-143.381.42/extensions.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -38,7 +38,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-140.2285.5/guava-17.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-143.381.42/guava-17.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -47,7 +47,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-140.2285.5/idea.jar!/" />
+          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-143.381.42/idea.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -56,7 +56,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-140.2285.5/javac2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-143.381.42/javac2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -65,7 +65,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-140.2285.5/jdom.jar!/" />
+          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-143.381.42/jdom.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -74,7 +74,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-140.2285.5/jgoodies-forms.jar!/" />
+          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-143.381.42/jgoodies-forms.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -83,7 +83,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-140.2285.5/openapi.jar!/" />
+          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-143.381.42/openapi.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -92,7 +92,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-140.2285.5/util.jar!/" />
+          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/IC-143.381.42/util.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

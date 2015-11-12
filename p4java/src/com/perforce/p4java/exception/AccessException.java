@@ -20,7 +20,7 @@ public class AccessException extends P4JavaException {
 	private IServerMessage err;
 
 	public AccessException(final IServerMessage err) {
-		super(err.toString());
+		super(err.getLocalizedMessage());
 		this.err = err;
 	}
 

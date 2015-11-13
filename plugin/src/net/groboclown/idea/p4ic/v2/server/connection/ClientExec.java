@@ -15,6 +15,7 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.Log;
 import com.perforce.p4java.PropertyDefs;
@@ -25,10 +26,12 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerInfo;
 import com.perforce.p4java.server.callback.ILogCallback;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
 import net.groboclown.idea.p4ic.server.exceptions.*;
+import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.ui.alerts.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -407,8 +410,8 @@ public class ClientExec {
             return p4RunFor(project, runner, retryCount, loginCount + 1);
         } catch (ConfigException e) {
             LOG.info("Problem with configuration", e);
-            connectedController.onConfigInvalid();
             P4InvalidConfigException ex = new P4InvalidConfigException(e);
+            configInvalid(project, ex);
             AlertManager.getInstance().addCriticalError(new ConfigurationProblemHandler(project, connectedController, e), ex);
             throw ex;
         } catch (ConnectionNotConnectedException e) {
@@ -425,8 +428,8 @@ public class ClientExec {
             }
         } catch (TrustException e) {
             LOG.info("SSL trust problem", e);
-            connectedController.onConfigInvalid();
             P4SSLFingerprintException ex = new P4SSLFingerprintException(config.getServerFingerprint(), e);
+            configInvalid(project, ex);
             AlertManager.getInstance().addCriticalError(
                     new SSLFingerprintProblemHandler(project, connectedController, e),
                     ex);
@@ -437,9 +440,9 @@ public class ClientExec {
 
             if (isSSLFingerprintProblem(e)) {
                 // incorrect or not set trust fingerprint
-                connectedController.onConfigInvalid();
                 P4SSLFingerprintException ex =
                        new P4SSLFingerprintException(config.getServerFingerprint(), e);
+                configInvalid(project, ex);
                 AlertManager.getInstance().addCriticalError(
                         new SSLFingerprintProblemHandler(project, connectedController, e),
                         ex);
@@ -449,15 +452,15 @@ public class ClientExec {
 
             if (isSSLHandshakeProblem(e)) {
                 if (isUnlimitedStrengthEncryptionInstalled()) {
-                    connectedController.onConfigInvalid();
+                    // config not invalid
                     P4DisconnectedException ex = new P4DisconnectedException(e);
                     AlertManager.getInstance()
                             .addCriticalError(new DisconnectedHandler(project, connectedController, ex), ex);
                     throw ex;
                 } else {
-                    // SSL extensions are not installed.
-                    connectedController.onConfigInvalid();
+                    // SSL extensions are not installed, so config is invalid.
                     P4JavaSSLStrengthException ex = new P4JavaSSLStrengthException(e);
+                    configInvalid(project, ex);
                     AlertManager.getInstance().addCriticalError(
                             new SSLKeyStrengthProblemHandler(project, connectedController, e),
                             ex);
@@ -494,8 +497,8 @@ public class ClientExec {
             LOG.info("Request problem", e);
             if (isPasswordProblem(e)) {
                 if (loginCount >= 1) {
-                    connectedController.onConfigInvalid();
                     P4LoginException ex = new P4LoginException(project, getServerConfig(), e);
+                    configInvalid(project, ex);
                     AlertManager.getInstance().addCriticalError(new LoginFailedHandler(
                             project, getServerConnectedController(), getServerConfig(), ex), ex);
                     throw ex;
@@ -523,8 +526,8 @@ public class ClientExec {
             throw new P4Exception(e);
         } catch (URISyntaxException e) {
             LOG.info("Invalid URI", e);
-            connectedController.onConfigInvalid();
             P4InvalidConfigException ex = new P4InvalidConfigException(e);
+            configInvalid(project, ex);
             AlertManager.getInstance().addCriticalError(new ConfigurationProblemHandler(project, connectedController, e), ex);
             throw ex;
         } catch (CancellationException e) {
@@ -565,6 +568,11 @@ public class ClientExec {
             LOG.warn("Unexpected exception", t);
             throw new P4Exception(t);
         }
+    }
+
+    private void configInvalid(@NotNull Project project, @NotNull VcsConnectionProblem e) {
+        Events.handledConfigInvalid(project, new ManualP4Config(config, clientName), e);
+        connectedController.onConfigInvalid();
     }
 
     private void onPasswordProblem(@NotNull final Project project, @NotNull P4LoginException e)

@@ -75,6 +75,7 @@ public class P4Server {
     private final ProjectConfigSource source;
 
     private boolean valid = true;
+    private boolean disposed = false;
 
 
     /**
@@ -148,26 +149,34 @@ public class P4Server {
 
 
     public boolean isValid() {
-        return valid;
+        return valid && ! disposed && connection.isValid();
+    }
+
+    public boolean isDisposed() {
+        return disposed;
+    }
+
+    public boolean isConnectionValid() {
+        return connection.isValid();
     }
 
     public boolean isWorkingOnline() {
-        return valid && connection.isWorkingOnline();
+        return isValid() && connection.isWorkingOnline();
     }
     public boolean isWorkingOffline() {
-        return ! valid || connection.isWorkingOffline();
+        return !isValid() || connection.isWorkingOffline();
     }
 
 
     public void workOffline() {
-        if (valid) {
+        if (isValid()) {
             connection.workOffline();
         }
     }
 
     public void workOnline() {
-        if (valid) {
-            connection.workOnline();
+        if (isValid()) {
+            connection.workOnline(project);
         } else {
             LOG.warn("Client " + source + " is invalid, so cannot go online");
         }
@@ -187,7 +196,7 @@ public class P4Server {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Finding depth for " + file + " in " + getClientName());
         }
-        if (! valid) {
+        if (! isValid()) {
             return -1;
         }
 
@@ -742,7 +751,7 @@ public class P4Server {
 
 
     public void dispose() {
-        valid = false;
+        disposed = true;
     }
 
     @NotNull
@@ -1031,6 +1040,11 @@ public class P4Server {
     @Override
     public String toString() {
         return getClientServerId().toString();
+    }
+
+    @NotNull
+    ProjectConfigSource getProjectConfigSource() {
+        return source;
     }
 
 

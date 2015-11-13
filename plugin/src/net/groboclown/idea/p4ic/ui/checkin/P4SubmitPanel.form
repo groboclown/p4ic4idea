@@ -31,6 +31,7 @@
                   <cellSelectionEnabled value="false"/>
                   <columnSelectionAllowed value="false"/>
                   <fillsViewportHeight value="true"/>
+                  <preferredScrollableViewportSize width="450" height="200"/>
                   <showVerticalLines value="false"/>
                   <surrendersFocusOnKeystroke value="true"/>
                 </properties>

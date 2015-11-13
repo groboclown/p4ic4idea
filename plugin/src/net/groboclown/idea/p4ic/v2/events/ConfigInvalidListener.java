@@ -14,9 +14,9 @@
 package net.groboclown.idea.p4ic.v2.events;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.util.messages.Topic;
 import net.groboclown.idea.p4ic.config.P4Config;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -27,5 +27,5 @@ public interface ConfigInvalidListener {
             new Topic<ConfigInvalidListener>("p4ic.config.invalid", ConfigInvalidListener.class);
 
     void configurationProblem(@NotNull Project project, @NotNull P4Config config,
-            @NotNull P4InvalidConfigException ex);
+            @NotNull VcsConnectionProblem ex);
 }

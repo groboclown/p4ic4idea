@@ -23,6 +23,8 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 public interface ServerStatusController extends ServerConnectedController {
     /**
      * The server is now actually connected.
+     *
+     *  FIXME see if this should require a Project
      */
     void onConnected();
 

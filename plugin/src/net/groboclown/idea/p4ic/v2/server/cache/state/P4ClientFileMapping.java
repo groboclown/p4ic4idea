@@ -126,7 +126,16 @@ public final class P4ClientFileMapping {
 
     @Override
     public String toString() {
-        return depotPath + ";" + localFilePath;
+        if (depotPath == null && localFilePath == null) {
+            return "null";
+        }
+        if (depotPath == null) {
+            return localFilePath.getIOFile().getAbsolutePath();
+        }
+        if (localFilePath == null) {
+            return depotPath;
+        }
+        return depotPath + " -> " + localFilePath.getIOFile().getAbsolutePath();
     }
 
 

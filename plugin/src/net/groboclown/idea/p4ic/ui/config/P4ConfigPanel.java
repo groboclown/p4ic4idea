@@ -694,7 +694,7 @@ public class P4ConfigPanel {
         String sep = "";
         for (Builder builder : problems) {
             //noinspection ThrowableResultOfMethodCallIgnored
-            message += sep + builder.toString() +
+            message += sep + builder.getPresentableName() +
                     ": " + (builder.getError() == null
                         ? "(unknown)"
                         : builder.getError().getMessage());

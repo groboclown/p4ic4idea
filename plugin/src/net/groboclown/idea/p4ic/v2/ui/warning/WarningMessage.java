@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.ui.warning;
 
+import com.intellij.ide.errorTreeView.ErrorTreeElementKind;
 import com.intellij.ide.errorTreeView.HotfixGate;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -107,6 +108,14 @@ public class WarningMessage {
     public Consumer<HotfixGate> getHotfix() {
         return hotfix;
     }
+
+    @NotNull
+    public ErrorTreeElementKind getErrorKind() {
+        // FIXME allow "notes" to return a warning
+        return ErrorTreeElementKind.ERROR;
+    }
+
+
 
 
     /*

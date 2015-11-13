@@ -28,6 +28,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.ui.popup.ListPopup;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.StatusBarWidget;
 import com.intellij.openapi.wm.WindowManager;
@@ -43,7 +44,6 @@ import net.groboclown.idea.p4ic.actions.P4WorkOnlineAction;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.actions.P4ServerWorkOfflineAction;
 import net.groboclown.idea.p4ic.v2.actions.P4ServerWorkOnlineAction;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
@@ -332,7 +332,7 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
 
         @Override
         public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
-                @NotNull final P4InvalidConfigException ex) {
+                @NotNull final VcsConnectionProblem ex) {
             if (project == P4MultipleConnectionWidget.this.project) {
                 update(true);
             }

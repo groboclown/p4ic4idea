@@ -16,13 +16,15 @@ package net.groboclown.idea.p4ic.v2.ui.warning;
 
 import com.intellij.ide.errorTreeView.HotfixData;
 import com.intellij.ide.errorTreeView.HotfixGate;
+import com.intellij.ide.errorTreeView.NewErrorTreeViewPanel;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.AbstractVcsHelper;
-import com.intellij.openapi.vcs.VcsBundle;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.content.Content;
+import com.intellij.ui.content.MessageView;
 import com.intellij.util.Consumer;
+import com.intellij.util.ui.ErrorTreeView;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
@@ -40,31 +42,31 @@ public class WarningUI {
         for (Entry<Project, List<WarningMessage>> entry : sorted.entrySet()) {
             showWarningPanel(entry.getKey(), entry.getValue());
         }
-
-
-
-        // The old crappy UI
-        /*
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                if (warningDialog == null || warningDialog.isDisposed()) {
-                    warningDialog = new WarningDialog(null);
-                    warningDialog.showDialog();
-                }
-                LOG.info("loading warnings " + warnings);
-                for (WarningMessage warning : warnings) {
-                    warningDialog.addWarningMessage(warning);
-                }
-            }
-        });
-        */
     }
 
-    private static void showWarningPanel(@NotNull Project project, final List<WarningMessage> warnings) {
-        final AbstractVcsHelper helper = AbstractVcsHelper.getInstance(project);
+    private static void showWarningPanel(@NotNull final Project project, final List<WarningMessage> warnings) {
+        //final AbstractVcsHelper helper = AbstractVcsHelper.getInstance(project);
+        //helper.showErrors(getErrorGroups(warnings), VcsBundle.message("message.title.annotate"));
 
-        helper.showErrors(getErrorGroups(warnings), VcsBundle.message("message.title.annotate"));
+        new WarningViewHandler(project).showWarnings(warnings);
+    }
+
+
+    private static ErrorTreeView getErrorTreeView(@NotNull Project project, @NotNull String tabDisplayName) {
+        MessageView messageView = MessageView.SERVICE.getInstance(project);
+        Content[] contents = messageView.getContentManager().getContents();
+        for (Content content : contents) {
+            if (content != null) {
+                if (tabDisplayName.equals(content.getDisplayName())) {
+                    ErrorTreeView listErrorView = (ErrorTreeView) content.getComponent();
+                    if (listErrorView != null) {
+                        return listErrorView;
+                    }
+                }
+            }
+        }
+        // no error view registered.  Create one.
+        return new NewErrorTreeViewPanel(project, null);
     }
 
 

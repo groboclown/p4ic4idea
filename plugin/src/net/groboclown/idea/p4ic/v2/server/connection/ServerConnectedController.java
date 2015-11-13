@@ -15,6 +15,9 @@
 package net.groboclown.idea.p4ic.v2.server.connection;
 
 
+import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Maintains the state of the server connection
  */
@@ -22,6 +25,7 @@ public interface ServerConnectedController {
     boolean isWorkingOnline();
     boolean isWorkingOffline();
     boolean isAutoOffline();
+    boolean isValid();
 
     /**
      * Tell the server connection to go offline.
@@ -32,6 +36,9 @@ public interface ServerConnectedController {
      * Ask the server connection to go online.  The implementation may immediately
      * attempt to reconnect, or it may just set a status flag to "online", and perform
      * the actual connection attempt later.
+     *
+     * @param project the project attempting to connect, so that errors can be reported to
+     *                the active project.
      */
-    void connect();
+    void connect(@NotNull Project project);
 }

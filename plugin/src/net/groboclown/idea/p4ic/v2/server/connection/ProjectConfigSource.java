@@ -17,12 +17,17 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.idea.p4ic.config.*;
+import net.groboclown.idea.p4ic.config.ManualP4Config;
+import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.config.P4ConfigProject;
+import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.*;
 
 /**
@@ -104,6 +109,31 @@ public class ProjectConfigSource {
             }
             return new ProjectConfigSource(project, new ArrayList<VirtualFile>(dirs),
                     clientName, serverConfig, baseConfig);
+        }
+
+        @NonNls
+        public String getPresentableName() {
+            // FIXME localize
+
+            StringBuilder ret = new StringBuilder();
+            if (serverConfig != null) {
+                ret.append(serverConfig.getServiceName());
+            }
+            String configFile = baseConfig.getConfigFile();
+            if (configFile != null) {
+                if (configFile.indexOf('/') >= 0 || configFile.indexOf('\\') >= 0 ||
+                        configFile.indexOf(File.separatorChar) >= 0) {
+                    ret.append(" from ").append(configFile);
+                } else if (dirs.isEmpty()) {
+                    ret.append(" from ").append(configFile);
+                } else {
+                    ret.append(" from ").append(new File(dirs.iterator().next().getPath(), configFile));
+                }
+            }
+            if (clientName != null) {
+                ret.append(" @").append(clientName);
+            }
+            return ret.toString().trim();
         }
 
         @Override

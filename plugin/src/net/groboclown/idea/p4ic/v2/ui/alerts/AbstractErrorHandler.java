@@ -83,7 +83,7 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
     }
 
     protected void connect() {
-        serverConnectedController.connect();
+        serverConnectedController.connect(project);
     }
 
 

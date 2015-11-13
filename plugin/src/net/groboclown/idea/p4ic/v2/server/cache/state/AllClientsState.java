@@ -19,10 +19,10 @@ import com.intellij.openapi.components.*;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
+import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
@@ -171,7 +171,7 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
         Events.appConfigInvalid(messageBus, new ConfigInvalidListener() {
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
-                    @NotNull final P4InvalidConfigException ex) {
+                    @NotNull final VcsConnectionProblem ex) {
                 // FIXME implement when project <-> client relationship is stored
                 // NOTE be project aware
                 // Currently, this is not possible to implement correctly.

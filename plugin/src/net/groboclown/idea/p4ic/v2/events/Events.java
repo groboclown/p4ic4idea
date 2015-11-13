@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.v2.events;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.ServerConfig;
@@ -41,11 +42,19 @@ public final class Events {
     }
 
 
-    public static void configInvalid(@NotNull Project project, @NotNull P4Config config, @NotNull P4InvalidConfigException e)
+    public static void configInvalid(@NotNull Project project, @NotNull P4Config config,
+            @NotNull P4InvalidConfigException e)
             throws P4InvalidConfigException {
         ApplicationManager.getApplication().getMessageBus().syncPublisher(ConfigInvalidListener.TOPIC).
                 configurationProblem(project, config, e);
         throw e;
+    }
+
+
+    public static void handledConfigInvalid(@NotNull Project project, @NotNull P4Config config,
+            @NotNull VcsConnectionProblem e) {
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(ConfigInvalidListener.TOPIC).
+                configurationProblem(project, config, e);
     }
 
 

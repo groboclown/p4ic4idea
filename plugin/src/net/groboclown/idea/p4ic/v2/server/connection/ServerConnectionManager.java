@@ -18,11 +18,13 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.util.messages.MessageBusConnection;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
@@ -30,6 +32,7 @@ import net.groboclown.idea.p4ic.v2.events.ServerConnectionStateListener;
 import net.groboclown.idea.p4ic.v2.server.cache.CentralCacheManager;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.connection.Synchronizer.ServerSynchronizer;
+import net.groboclown.idea.p4ic.v2.ui.alerts.DisconnectedHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -80,7 +83,7 @@ public class ServerConnectionManager implements ApplicationComponent {
         Events.appConfigInvalid(messageBus, new ConfigInvalidListener() {
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
-                    @NotNull final P4InvalidConfigException ex) {
+                    @NotNull final VcsConnectionProblem ex) {
                 // because this is selective on a config, we can safely ignore the project.
                 invalidateConfig(config);
             }
@@ -204,6 +207,7 @@ public class ServerConnectionManager implements ApplicationComponent {
         final ServerConfig config;
         final Synchronizer.ServerSynchronizer synchronizer;
         boolean valid = true;
+        boolean disposed = false;
 
         // assume we're online at the start.
         volatile boolean online = true;
@@ -225,6 +229,11 @@ public class ServerConnectionManager implements ApplicationComponent {
         }
 
         @Override
+        public boolean isValid() {
+            return valid && ! disposed;
+        }
+
+        @Override
         public void disconnect() {
             if (setOffline()) {
                 Events.serverDisconnected(config);
@@ -232,8 +241,8 @@ public class ServerConnectionManager implements ApplicationComponent {
         }
 
         @Override
-        public void connect() {
-            if (setOnline()) {
+        public void connect(@NotNull Project project) {
+            if (setOnline(project)) {
                 Events.serverConnected(config);
             }
         }
@@ -245,17 +254,17 @@ public class ServerConnectionManager implements ApplicationComponent {
 
         @Override
         public boolean isWorkingOffline() {
-            return ! valid || ! online;
+            return disposed || ! valid || ! online;
         }
 
         @Override
         public boolean isWorkingOnline() {
-            return valid && online;
+            return ! disposed && valid && online;
         }
 
         @Override
         public void onConnected() {
-            setOnline();
+            setOnline(null);
         }
 
         @Override
@@ -266,13 +275,13 @@ public class ServerConnectionManager implements ApplicationComponent {
         @Override
         public void onConfigInvalid() {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Marking config invalid: " + config);
+                LOG.debug("Marking config invalid: " + config, new Throwable("stack capture"));
             }
             valid = false;
         }
 
         void dispose() {
-            valid = false;
+            disposed = true;
             for (ServerConnection connection: clientNames.values()) {
                 connection.dispose();
             }
@@ -291,8 +300,10 @@ public class ServerConnectionManager implements ApplicationComponent {
             return conn;
         }
 
-        synchronized boolean setOnline() {
-            if (valid) {
+        synchronized boolean setOnline(@Nullable final Project project) {
+            if (disposed) {
+                LOG.error("Tried to go online for a disposed connection");
+            } else if (valid) {
                 onlineStatusLock.lock();
                 try {
                     if (!online) {
@@ -308,8 +319,14 @@ public class ServerConnectionManager implements ApplicationComponent {
                     onlineStatusLock.unlock();
                 }
                 // fall through
+            } else if (project != null) {
+                P4DisconnectedException ex = new P4DisconnectedException(
+                        P4Bundle.message("disconnected.server-invalid", config.getServiceName())
+                );
+                AlertManager.getInstance().addCriticalError(
+                        new DisconnectedHandler(project, this, ex), ex);
             } else {
-                LOG.info("Could not go online; connection invalid for " + config);
+                LOG.warn("Could not go online; connection invalid for " + config);
             }
             return false;
         }

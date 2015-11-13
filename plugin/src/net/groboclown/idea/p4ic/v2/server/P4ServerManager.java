@@ -20,6 +20,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupManager;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -92,9 +93,25 @@ public class P4ServerManager implements ProjectComponent {
                     }
                 }
                 ret = new ArrayList<P4Server>(servers.size());
+                List<P4Server> invalid = new ArrayList<P4Server>();
                 for (P4Server server: servers.values()) {
                     if (server.isValid()) {
                         ret.add(server);
+                    } else {
+                        invalid.add(server);
+                    }
+                }
+                for (P4Server server : invalid) {
+                    LOG.info("Reconnecting to " + server.getClientServerId());
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Valid? " + server.isValid() + "; disposed? " + server.isDisposed() +
+                            "; connection valid? " + server.isConnectionValid());
+                    }
+                    try {
+                        P4Server updated = new P4Server(server.getProject(), server.getProjectConfigSource());
+                        servers.put(updated.getClientServerId(), updated);
+                    } catch (P4InvalidClientException e) {
+                        LOG.info(e);
                     }
                 }
             }
@@ -184,8 +201,6 @@ public class P4ServerManager implements ProjectComponent {
             }
         });
 
-        // Make sure the events are correctly registered, too.
-
         Events.appBaseConfigUpdated(appMessageBus, new BaseConfigUpdatedListener() {
             @Override
             public void configUpdated(@NotNull final Project project,
@@ -235,7 +250,7 @@ public class P4ServerManager implements ProjectComponent {
         Events.appConfigInvalid(appMessageBus, new ConfigInvalidListener() {
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
-                    @NotNull final P4InvalidConfigException ex) {
+                    @NotNull final VcsConnectionProblem ex) {
                 if (project == P4ServerManager.this.project) {
                     final AllClientsState clientState = AllClientsState.getInstance();
 
@@ -278,6 +293,10 @@ public class P4ServerManager implements ProjectComponent {
         int minDepth = Integer.MAX_VALUE;
         P4Server minDepthServer = null;
         for (P4Server server : servers) {
+            if (! server.isValid()) {
+                LOG.warn("Tried to use an invalid server " + server);
+                continue;
+            }
             int depth = server.getFilePathMatchDepth(file);
             if (LOG.isDebugEnabled()) {
                 LOG.debug(" --- server " + server + " match depth: " + depth);

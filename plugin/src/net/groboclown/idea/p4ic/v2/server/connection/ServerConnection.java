@@ -210,8 +210,8 @@ public class ServerConnection {
     }
 
 
-    public void workOnline() {
-        statusController.connect();
+    public void workOnline(@NotNull Project project) {
+        statusController.connect(project);
     }
 
     public ServerConnectedController getServerConnectedController() {
@@ -219,6 +219,9 @@ public class ServerConnection {
     }
 
 
+    public boolean isValid() {
+        return statusController.isValid();
+    }
 
 
     public void queueUpdates(@NotNull Project project, @NotNull CreateUpdate update) {
@@ -341,7 +344,7 @@ public class ServerConnection {
                     // this is fine.
                     LOG.info(e);
                     continue;
-                };
+                }
 
                 try {
                     boolean didRun = synchronizer.runBackgroundAction(new ActionRunner<Void>() {

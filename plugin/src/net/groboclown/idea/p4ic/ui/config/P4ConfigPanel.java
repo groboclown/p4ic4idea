@@ -20,6 +20,7 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.CalledInAwt;
 import com.intellij.openapi.vcs.CalledInBackground;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ListCellRendererWrapper;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -32,6 +33,7 @@ import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4Config.ConnectionMethod;
 import net.groboclown.idea.p4ic.config.P4ConfigUtil;
+import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.connection.*;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
@@ -185,10 +187,17 @@ public class P4ConfigPanel {
         return connection.isModified(config);
     }
 
-    protected void loadSettingsIntoGUI(@NotNull P4Config config) {
+    protected void loadSettingsIntoGUI(@NotNull ManualP4Config config) {
         // ----------------------------------------------------------------
         // non-connection values
 
+        if (! config.isConfigured()) {
+            // Don't show a big nasty error message just because nothing is
+            // configured right.
+
+            LOG.info("Skipping setup because the configuration has nothing.");
+            return;
+        }
 
         initializeClientAndPathSelection(
                 config.hasClientnameSet() ? config.getClientname() : null,
@@ -281,8 +290,7 @@ public class P4ConfigPanel {
     // Connection utilities
 
     @NotNull
-    private Collection<Builder> createConnectionConfigs()
-            throws P4InvalidConfigException {
+    private Collection<Builder> createConnectionConfigs() {
         ManualP4Config partial = new ManualP4Config();
         saveSettingsToConfig(partial);
         if (LOG.isDebugEnabled()) {
@@ -299,50 +307,49 @@ public class P4ConfigPanel {
      * @return only the valid connections, or null if there are invalid ones.
      */
     @CalledInBackground
-    @Nullable
-    private Collection<ProjectConfigSource> getValidConfigs() {
+    @NotNull
+    private ConfigSet getValidConfigs() {
         if (!initialized) {
             LOG.debug("called getValidConfigs before configs were loaded");
-            return Collections.emptyList();
+            return new ConfigSet();
         }
 
-        try {
-            final Collection<Builder> sources = createConnectionConfigs();
-            final List<ProjectConfigSource> ret = new ArrayList<ProjectConfigSource>(sources.size());
-            final StringBuilder invalidConfigs = new StringBuilder();
-            String sep = "";
-            int invalidConfigCount = 0;
-            for (Builder source : sources) {
-                if (source.isInvalid()) {
-                    invalidConfigCount++;
-                    createSourceDisplay(invalidConfigs.append(sep), source);
-                    sep = "\n------------------\n";
-                } else {
-                    ret.add(source.create());
+        final Collection<Builder> sources = createConnectionConfigs();
+        final List<ProjectConfigSource> valid = new ArrayList<ProjectConfigSource>(sources.size());
+        final List<Builder> invalid = new ArrayList<Builder>();
+        for (Builder source : sources) {
+            if (source.isInvalid()) {
+                invalid.add(source);
+            } else {
+                try {
+                    final ProjectConfigSource config = source.create();
+                    valid.add(config);
+                } catch (P4InvalidConfigException e) {
+                    source.setError(e);
+                    invalid.add(source);
                 }
             }
-            if (invalidConfigCount <= 0) {
-                if (ret.isEmpty()) {
-                    alertManager.addCriticalError(new ConfigPanelErrorHandler(
-                            myProject,
-                            P4Bundle.message("configuration.error.title"),
-                            P4Bundle.message("configuration.error.no-config-defined")
-                    ), null);
-                    return null;
-                }
-                return ret;
-            }
-            alertManager.addCriticalError(new ConfigPanelErrorHandler(
-                    myProject,
-                    P4Bundle.message("configuration.error.title"),
-                    P4Bundle.message("configuration.error.problem-list",
-                            invalidConfigCount, invalidConfigs.toString())
-            ), null);
-            return null;
-        } catch (P4InvalidConfigException e) {
-            reportProblems(Collections.<Exception>singleton(e));
-            return null;
         }
+        return new ConfigSet(valid, invalid);
+            //if (invalidConfigCount <= 0) {
+            //    if (valid.isEmpty()) {
+            //        alertManager.addCriticalError(new ConfigPanelErrorHandler(
+            //                myProject,
+            //                P4Bundle.message("configuration.error.title"),
+            //                P4Bundle.message("configuration.error.no-config-defined")
+            //        ), null);
+            //        return null;
+            //    }
+            //    return valid;
+            //}
+            //alertManager.addCriticalError(new ConfigPanelErrorHandler(
+            //        myProject,
+            //        P4Bundle.message("configuration.error.title"),
+            //        P4Bundle.message("configuration.error.problem-list",
+            //                invalidConfigCount, invalidConfigs.toString())
+            //), null);
+            //return null;
+            //reportProblems(Collections.<Exception>singleton(e));
     }
 
 
@@ -352,29 +359,35 @@ public class P4ConfigPanel {
     @CalledInAwt
     private void checkConnection() {
         runBackgroundAwtAction(myCheckConnectionSpinner,
-                new BackgroundAwtAction<Map<ProjectConfigSource, Exception>>() {
+                new BackgroundAwtAction<Collection<Builder>>() {
                     @Override
-                    public Map<ProjectConfigSource, Exception> runBackgroundProcess() {
-                        final Collection<ProjectConfigSource> sources = getValidConfigs();
-                        final Map<ProjectConfigSource, Exception> problems;
-                        if (sources == null) {
-                            // errors already handled
-                            problems = null;
-                        } else {
-                            problems = ConnectionUIConfiguration.findConnectionProblems(sources);
+                    public Collection<Builder> runBackgroundProcess() {
+                        final ConfigSet sources = getValidConfigs();
+                        final List<Builder> problems = new ArrayList<Builder>();
+                        problems.addAll(sources.invalid);
+                        for (Entry<ProjectConfigSource, Exception> entry : ConnectionUIConfiguration
+                                .findConnectionProblems(sources.valid).entrySet()) {
+                            final VcsException err;
+                            //noinspection ThrowableResultOfMethodCallIgnored
+                            if (entry.getValue() instanceof VcsException) {
+                                err = (VcsException) entry.getValue();
+                            } else  {
+                                err = new P4FileException(entry.getValue());
+                            }
+                            problems.add(entry.getKey().causedError(err));
                         }
                         return problems;
                     }
 
                     @Override
-                    public void runAwtProcess(final Map<ProjectConfigSource, Exception> problems) {
+                    public void runAwtProcess(final Collection<Builder> problems) {
                         if (problems != null && problems.isEmpty()) {
                             Messages.showMessageDialog(myProject,
                                     P4Bundle.message("configuration.dialog.valid-connection.message"),
                                     P4Bundle.message("configuration.dialog.valid-connection.title"),
                                     Messages.getInformationIcon());
                         } else if (problems != null) {
-                            reportProblems(problems);
+                            reportConfigProblems(problems);
                         }
                     }
                 });
@@ -411,7 +424,7 @@ public class P4ConfigPanel {
     @CalledInBackground
     private List<String> loadClientList(@Nullable Object selected) {
         final Map<ProjectConfigSource, ClientResult> clientResults =
-                ConnectionUIConfiguration.getClients(getValidConfigs());
+                ConnectionUIConfiguration.getClients(getValidConfigs().valid);
 
         if (clientResults == null) {
             // Don't need a status update or any updates; the user should have
@@ -431,7 +444,7 @@ public class P4ConfigPanel {
             }
         }
         if (!problems.isEmpty()) {
-            reportProblems(problems);
+            reportExceptions(problems);
             return null;
         }
 
@@ -518,21 +531,21 @@ public class P4ConfigPanel {
      */
     @CalledInAwt
     private void refreshConfigPaths() {
-        runBackgroundAwtAction(myRefreshClientListSpinner, new BackgroundAwtAction<Collection<ProjectConfigSource>>() {
+        runBackgroundAwtAction(myRefreshClientListSpinner, new BackgroundAwtAction<ConfigSet>() {
             @Override
-            public Collection<ProjectConfigSource> runBackgroundProcess() {
+            public ConfigSet runBackgroundProcess() {
                 return getValidConfigs();
             }
 
             @Override
-            public void runAwtProcess(final Collection<ProjectConfigSource> sources) {
+            public void runAwtProcess(final ConfigSet sources) {
                 // load the drop-down list with the new values.
                 // Make sure to maintain the existing selected item.
                 Object current = myResolvePath.getSelectedItem();
                 myResolvePath.removeAllItems();
-                if (sources != null && !sources.isEmpty()) {
+                if (sources != null && !sources.valid.isEmpty()) {
                     boolean found = false;
-                    for (ProjectConfigSource source : sources) {
+                    for (ProjectConfigSource source : sources.valid) {
                         for (VirtualFile dir : source.getProjectSourceDirs()) {
                             if (dir.getPath().equals(current)) {
                                 found = true;
@@ -575,47 +588,59 @@ public class P4ConfigPanel {
             public StringBuilder runBackgroundProcess() {
                 // Find the source corresponding to the selected item
                 final StringBuilder displayText = new StringBuilder();
-                try {
-                    LOG.debug("creating connection configs");
-                    final Collection<Builder> sources = createConnectionConfigs();
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug(" - found sources " + sources);
-                    }
-                    Builder selectedSource = null;
-                    if (sources.isEmpty()) {
-                        selectedSource = null;
-                    } else if (sources.size() == 1 || selectedItem == null) {
-                        selectedSource = sources.iterator().next();
-                    } else {
-                        sourceLoop:
-                        for (Builder source : sources) {
-                            if (source.isInvalid()) {
-                                // skip
-                            } else {
-                                for (VirtualFile file : source.getDirs()) {
-                                    if (file.getPath().equals(selectedItem)) {
-                                        selectedSource = source;
-                                        break sourceLoop;
-                                    }
+                LOG.debug("creating connection configs");
+                final Collection<Builder> sources = createConnectionConfigs();
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(" - found sources " + sources);
+                }
+                Builder selectedSource = null;
+                if (sources.isEmpty()) {
+                    selectedSource = null;
+                } else if (sources.size() == 1 || selectedItem == null) {
+                    selectedSource = sources.iterator().next();
+                } else {
+                    sourceLoop:
+                    for (Builder source : sources) {
+                        if (source.isInvalid()) {
+                            // skip
+                        } else {
+                            for (VirtualFile file : source.getDirs()) {
+                                if (file.getPath().equals(selectedItem)) {
+                                    selectedSource = source;
+                                    break sourceLoop;
                                 }
                             }
                         }
                     }
+                }
 
+                if (selectedSource != null) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(" - selected source is " + selectedSource);
+                    }
+                    createSourceDisplay(displayText, selectedSource);
+                } else {
+                    // if there were config problems, report them.
+                    sourceLoop:
+                    for (Builder source : sources) {
+                        if (source.isInvalid()) {
+                            for (VirtualFile file : source.getDirs()) {
+                                if (file.getPath().equals(selectedItem)) {
+                                    selectedSource = source;
+                                    break sourceLoop;
+                                }
+                            }
+                        }
+                    }
                     if (selectedSource != null) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug(" - selected source is " + selectedSource);
                         }
                         createSourceDisplay(displayText, selectedSource);
                     } else {
-                        // don't know if this is right...
                         LOG.info("No selected source, and no sources found");
                         displayText.append(P4Bundle.message("config.display.properties.no_path"));
                     }
-                } catch (P4InvalidConfigException e) {
-                    LOG.info("Invalid config", e);
-                    displayText.append(P4Bundle.message("configuration.resolved.invalid-setup",
-                            e.getMessage()));
                 }
                 return displayText;
             }
@@ -633,7 +658,12 @@ public class P4ConfigPanel {
     private StringBuilder createSourceDisplay(@NotNull StringBuilder display,
             @NotNull Builder builder) {
         if (builder.isInvalid()) {
-            display.append(P4Bundle.message("config.display.invalid")).append("\n");
+            if (builder.getError() != null) {
+                display.append(P4Bundle.message("config.display.invalid.reason", builder.getError().getMessage())).
+                        append("\n");
+            } else {
+                display.append(P4Bundle.message("config.display.invalid")).append("\n");
+            }
         }
         final Map<String, String> props = P4ConfigUtil.getProperties(builder.getBaseConfig());
         List<String> keys = new ArrayList<String>(props.keySet());
@@ -657,16 +687,19 @@ public class P4ConfigPanel {
     }
 
 
-    private void reportProblems(@NotNull Map<ProjectConfigSource, Exception> problems) {
+    private void reportConfigProblems(@NotNull Collection<Builder> problems) {
         // TODO use better UI element
+        // FIXME localize
         String message = "";
         String sep = "";
-        for (Entry<ProjectConfigSource, Exception> entry : problems.entrySet()) {
+        for (Builder builder : problems) {
             //noinspection ThrowableResultOfMethodCallIgnored
-            message += sep + entry.getKey().toString() +
-                    ": " + entry.getValue().getMessage();
+            message += sep + builder.toString() +
+                    ": " + (builder.getError() == null
+                        ? "(unknown)"
+                        : builder.getError().getMessage());
             sep = "\n";
-            LOG.info("Config problem: " + entry.getKey(), entry.getValue());
+            LOG.info("Config problem: " + builder, builder.getError());
         }
         alertManager.addCriticalError(new ConfigPanelErrorHandler(
                         myProject,
@@ -675,7 +708,7 @@ public class P4ConfigPanel {
                 null);
     }
 
-    private void reportProblems(@NotNull Collection<Exception> problems) {
+    private void reportExceptions(@NotNull Collection<Exception> problems) {
         // TODO use better UI element
         String message = "";
         String sep = "";
@@ -691,6 +724,24 @@ public class P4ConfigPanel {
                         message),
                 null);
     }
+
+
+    private static class ConfigSet {
+        final Collection<ProjectConfigSource> valid;
+        final Collection<ProjectConfigSource.Builder> invalid;
+
+        ConfigSet() {
+            this.valid = Collections.emptyList();
+            this.invalid = Collections.emptyList();
+        }
+
+        ConfigSet(@NotNull Collection<ProjectConfigSource> valid, @NotNull Collection<Builder> invalid) {
+            this.valid = Collections.unmodifiableCollection(valid);
+            this.invalid = Collections.unmodifiableCollection(invalid);
+        }
+    }
+
+
 
     /**
      * Method generated by IntelliJ IDEA GUI Designer

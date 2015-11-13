@@ -5,25 +5,10 @@
 
 These bugs need to be handled before release.
 
+1. Initial loading of an empty config panel shows a fat error message.
+   That should only happen if the user initiates an action.
 1. Files open for add seem to stick around in the local cache if the push to
    the server failed. *TODO may be fixed; check*
-1. *Fixed, need to check*
-```
-setSelectedIndex: 0 out of bounds
-java.lang.IllegalArgumentException: setSelectedIndex: 0 out of bounds
-    at javax.swing.JComboBox.setSelectedIndex(JComboBox.java:620)
-    at net.groboclown.idea.p4ic.ui.config.P4ConfigPanel$9.runAwtProcess(P4ConfigPanel.java:546)
-```
-1. *Fixed, need to check*
-```
-null
-java.lang.AssertionError
-    at net.groboclown.idea.p4ic.config.P4ConfigProject.announceBaseConfigUpdated(P4ConfigProject.java:107)
-    at net.groboclown.idea.p4ic.ui.config.P4ConfigurationProjectPanel.saveSettings(P4ConfigurationProjectPanel.java:51)
-    at net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable.apply(P4ProjectConfigurable.java:62)
-```
-1. Error dialog from config UI can report empty message.
-1. Warnings just show the exception message.  The whole UI needs to be revamped.
 
 
 ## Big Bugs
@@ -31,6 +16,8 @@ java.lang.AssertionError
 There are multiple "todos" and "fixmes" marked in the code, but these are the bugs
 that should be fixed up.
 
+1. Error dialog from config UI can report empty message.
+1. Warnings just show the exception message.  The whole UI needs to be revamped.
 1. Change view state doesn't correctly match what's in the actual changes.
    *TODO partial fix; it requires a full "mark everything as dirty" call.
    Double check what remains to fix with this.*
@@ -39,10 +26,6 @@ that should be fixed up.
    open for edit, causes none of them to be opened.
    The first file is triggered to be opened for edit, but none of the
    others are.  Looks like an IDEA bug.
-1. The working online/offline icon isn't being correctly updated
-   when state changes. *Fixed, needs check.*
-1. Config panel can use ErrorDialog to show errors, which the user won't see until the dialog is dismissed.
-   Need to find out which dialog messages cause this issue.
 
 
 

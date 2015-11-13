@@ -232,20 +232,14 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
             throws P4InvalidConfigException {
 
         final Collection<Builder> sourceBuilders;
-        try {
-            sourceBuilders = ProjectConfigSourceLoader.loadSources(project, getBaseConfig());
-        } catch (P4InvalidConfigException ex) {
-            Events.configInvalid(project, getBaseConfig(), ex);
-
-            throw ex;
-        }
+        sourceBuilders = ProjectConfigSourceLoader.loadSources(project, getBaseConfig());
 
         List<ProjectConfigSource> ret = new ArrayList<ProjectConfigSource>(sourceBuilders.size());
         List<P4Config> invalidConfigs = new ArrayList<P4Config>();
         for (Builder sourceBuilder : sourceBuilders) {
             if (sourceBuilder.isInvalid()) {
                 LOG.warn("Invalid config: " +
-                        P4ConfigUtil.getProperties(sourceBuilder.getBaseConfig()));
+                        P4ConfigUtil.getProperties(sourceBuilder.getBaseConfig()), sourceBuilder.getError());
                 invalidConfigs.add(sourceBuilder.getBaseConfig());
             } else {
                 final ProjectConfigSource source = sourceBuilder.create();

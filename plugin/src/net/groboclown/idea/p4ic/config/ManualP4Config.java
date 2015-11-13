@@ -54,6 +54,8 @@ public class ManualP4Config implements P4Config {
     @Nullable
     private String ignoreFileName;
 
+    private boolean isConfigured;
+
 
     public ManualP4Config() {
         // do nothing
@@ -74,6 +76,7 @@ public class ManualP4Config implements P4Config {
         //this.storePassword = copy.isPasswordStoredLocally();
         this.clientHostname = copy.getClientHostname();
         this.ignoreFileName = copy.getIgnoreFileName();
+        this.isConfigured = true;
     }
 
     public ManualP4Config(@NotNull ServerConfig copy, @Nullable String clientName) {
@@ -91,6 +94,7 @@ public class ManualP4Config implements P4Config {
         //this.storePassword = copy.storePasswordLocally();
         this.clientHostname = copy.getClientHostname();
         this.ignoreFileName = copy.getIgnoreFileName();
+        this.isConfigured = true;
     }
 
     @Override
@@ -110,6 +114,7 @@ public class ManualP4Config implements P4Config {
 
     public void setAutoOffline(boolean autoOffline) {
         this.autoOffline = autoOffline;
+        this.isConfigured = true;
     }
 
     @Override
@@ -125,6 +130,7 @@ public class ManualP4Config implements P4Config {
 
     public void setPort(@Nullable String port) {
         this.port = port;
+        this.isConfigured = true;
     }
 
     @Override
@@ -140,6 +146,7 @@ public class ManualP4Config implements P4Config {
 
     public void setProtocol(@Nullable IServerAddress.Protocol protocol) {
         this.protocol = protocol;
+        this.isConfigured = true;
     }
 
     @Override
@@ -190,6 +197,7 @@ public class ManualP4Config implements P4Config {
 
     public void setPassword(@Nullable String password) {
         this.password = password;
+        this.isConfigured = true;
     }
 
     @Override
@@ -199,6 +207,7 @@ public class ManualP4Config implements P4Config {
 
     public void setAuthTicketPath(String authTicket) {
         this.authTicket = authTicket;
+        this.isConfigured = true;
     }
 
     @Override
@@ -214,6 +223,7 @@ public class ManualP4Config implements P4Config {
 
     public void setTrustTicketPath(@Nullable String trustTicket) {
         this.trustTicket = trustTicket;
+        this.isConfigured = true;
     }
 
     @Override
@@ -229,6 +239,7 @@ public class ManualP4Config implements P4Config {
 
     public void setServerFingerprint(@Nullable String fingerprint) {
         this.serverFingerprint = fingerprint;
+        this.isConfigured = true;
     }
 
 
@@ -240,6 +251,7 @@ public class ManualP4Config implements P4Config {
 
     public void setConfigFile(@Nullable String configFile) {
         this.configFile = configFile;
+        this.isConfigured = true;
     }
 
     //@Override
@@ -253,6 +265,7 @@ public class ManualP4Config implements P4Config {
         return clientHostname;
     }
 
+    @Nullable
     @Override
     public String getIgnoreFileName() {
         return ignoreFileName;
@@ -260,15 +273,17 @@ public class ManualP4Config implements P4Config {
 
     public void setIgnoreFileName(@Nullable String fileName) {
         ignoreFileName = fileName;
+        this.isConfigured = true;
     }
 
     public void setClientHostname(@Nullable final String name) {
         clientHostname = name;
+        this.isConfigured = true;
     }
 
-    //public void setPasswordStoredLocally(boolean store) {
-    //    this.storePassword = store;
-    //}
+    public boolean isConfigured() {
+        return isConfigured;
+    }
 
     @Override
     public boolean equals(Object o) {

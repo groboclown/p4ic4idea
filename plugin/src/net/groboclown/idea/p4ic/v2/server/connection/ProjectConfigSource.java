@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.config.*;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
@@ -36,6 +37,7 @@ public class ProjectConfigSource {
     private final String clientName;
     private final ServerConfig configuration;
     private final ClientServerId clientServerId;
+    private final P4Config baseConfig;
 
     public static class Builder {
         private final Project project;
@@ -43,6 +45,7 @@ public class ProjectConfigSource {
         private final ServerConfig serverConfig;
         private final P4Config baseConfig;
         private final Set<VirtualFile> dirs = new HashSet<VirtualFile>();
+        private VcsException error;
 
         public Builder(@NotNull Project project, @NotNull P4Config config) {
             this.project = project;
@@ -51,8 +54,24 @@ public class ProjectConfigSource {
             this.serverConfig = ServerConfig.createNewServerConfig(project, config);
         }
 
+        private Builder(@NotNull Project project, @NotNull P4Config baseConfig,
+                @Nullable String clientName, @NotNull ServerConfig serverConfig,
+                @NotNull Collection<VirtualFile> dirs, final VcsException error) {
+            this.project = project;
+            this.clientName = clientName;
+            this.serverConfig = serverConfig;
+            this.baseConfig = baseConfig;
+            this.dirs.addAll(dirs);
+            this.error = error;
+        }
+
         public boolean isInvalid() {
-            return serverConfig == null;
+            return serverConfig == null || error != null;
+        }
+
+        @Nullable
+        public VcsException getError() {
+            return error;
         }
 
 
@@ -63,6 +82,11 @@ public class ProjectConfigSource {
 
         public Collection<VirtualFile> getDirs() {
             return Collections.unmodifiableCollection(dirs);
+        }
+
+
+        public void setError(@NotNull VcsException error) {
+            this.error = error;
         }
 
 
@@ -79,7 +103,7 @@ public class ProjectConfigSource {
                 throw new IllegalStateException("must call isInvalid before calling this function");
             }
             return new ProjectConfigSource(project, new ArrayList<VirtualFile>(dirs),
-                    clientName, serverConfig);
+                    clientName, serverConfig, baseConfig);
         }
 
         @Override
@@ -90,12 +114,13 @@ public class ProjectConfigSource {
 
 
     ProjectConfigSource(@NotNull Project project, @NotNull List<VirtualFile> projectSourceDirs,
-            @Nullable String clientName, @NotNull ServerConfig configuration) {
+            @Nullable String clientName, @NotNull ServerConfig configuration, @NotNull P4Config baseConfig) {
         this.project = project;
         this.projectSourceDirs = Collections.unmodifiableList(projectSourceDirs);
         this.clientName = clientName;
         this.configuration = configuration;
         this.clientServerId = ClientServerId.create(configuration, clientName);
+        this.baseConfig = baseConfig;
     }
 
     @NotNull
@@ -121,6 +146,11 @@ public class ProjectConfigSource {
     @NotNull
     public List<VirtualFile> getProjectSourceDirs() {
         return projectSourceDirs;
+    }
+
+    @NotNull
+    public Builder causedError(@NotNull VcsException error) {
+        return new Builder(getProject(), baseConfig, getClientName(), getServerConfig(), getProjectSourceDirs(), error);
     }
 
     @Override

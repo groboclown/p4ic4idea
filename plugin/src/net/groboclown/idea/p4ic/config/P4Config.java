@@ -103,7 +103,7 @@ public interface P4Config {
     @Nullable
     String getClientHostname();
 
-
+    @Nullable
     String getIgnoreFileName();
 
 

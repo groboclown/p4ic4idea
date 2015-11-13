@@ -37,12 +37,9 @@ public class ProjectConfigSourceLoader {
      *
      * @param config base config to load
      * @return the builders related to the config, or null if no
-     * @throws P4InvalidConfigException this does NOT notify the events when thrown; the
-     *      caller must make that invocation.
      */
     @NotNull
-    public static Collection<Builder> loadSources(@NotNull Project project, @NotNull P4Config config)
-            throws P4InvalidConfigException {
+    public static Collection<Builder> loadSources(@NotNull Project project, @NotNull P4Config config) {
         // If the manual config defines a relative p4config file,
         // then find those under the root for the project.
         // Otherwise, just return the config.
@@ -52,16 +49,22 @@ public class ProjectConfigSourceLoader {
             String configFile = config.getConfigFile();
             if (configFile == null) {
                 LOG.info("Config invalid because p4config file was not specified");
-                throw new P4InvalidConfigException(P4Bundle.message("error.config.no-file"));
+                final Builder builder = new Builder(project, config);
+                builder.setError(new P4InvalidConfigException(P4Bundle.message("error.config.no-file")));
+                return Collections.singleton(builder);
             }
-            LOG.info(project.getName() + ": Config file: " + configFile + "; base config: " + config);
+            if (LOG.isDebugEnabled()) {
+                LOG.info(project.getName() + ": Config file: " + configFile + "; base config: " + config);
+            }
 
             // Relative config file.  Make sure that we use the version
             // that maps the correct root directory to the config file.
             Map<VirtualFile, P4Config> map = P4ConfigUtil.loadCorrectDirectoryP4Configs(project, configFile);
             if (map.isEmpty()) {
                 LOG.info("Config invalid because no p4config files were found");
-                throw new P4InvalidConfigException(P4Bundle.message("error.config.no-file"));
+                final Builder builder = new Builder(project, config);
+                builder.setError(new P4InvalidConfigException(P4Bundle.message("error.config.no-file")));
+                return Collections.singleton(builder);
             }
             // The map returns one virtual file for each config directory found (and/or VCS root directories).
             // These may be duplicate configs, so need to add them to the matching entry, if any.
@@ -72,7 +75,9 @@ public class ProjectConfigSourceLoader {
                 boolean found = false;
                 for (Builder sourceBuilder : sourceBuilders) {
                     if (sourceBuilder.isSame(en.getValue())) {
-                        LOG.info("found existing builder path " + en.getKey());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.info("found existing builder path " + en.getKey());
+                        }
                         sourceBuilder.add(en.getKey());
                         found = true;
                         break;
@@ -91,7 +96,9 @@ public class ProjectConfigSourceLoader {
                 fullConfig = P4ConfigUtil.loadCmdP4Config(config);
             } catch (IOException e) {
                 LOG.info("Config invalid because of an IO exception", e);
-                throw new P4InvalidConfigException(e);
+                final Builder builder = new Builder(project, config);
+                builder.setError(new P4InvalidConfigException(e));
+                return Collections.singleton(builder);
             }
 
             // Note that the roots may change, which is why we register a
@@ -102,7 +109,9 @@ public class ProjectConfigSourceLoader {
             for (VirtualFile root : roots) {
                 builder.add(root);
             }
-            LOG.info("Added source builder from config " + fullConfig + " with roots " + roots);
+            if (LOG.isDebugEnabled()){
+                LOG.info("Added source builder from config " + fullConfig + " with roots " + roots);
+            }
         }
         return sourceBuilders;
     }

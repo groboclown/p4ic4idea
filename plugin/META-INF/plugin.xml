@@ -32,6 +32,7 @@
                   <tt>idea.max.vcs.loaded.size.kb</tt> property).</li>
                   <li>Fixed the issue where the plugin falsely reporting that
                   JCE is not present</li>
+                  <li>Fixed history difference not working with IDEA 15.0</li>
                 </ol>
             </li>
             <li><em>0.6.6.1</em>

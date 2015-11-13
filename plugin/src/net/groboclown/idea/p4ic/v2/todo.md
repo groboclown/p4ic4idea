@@ -7,12 +7,6 @@ These bugs need to be handled before release.
 
 1. Files open for add seem to stick around in the local cache if the push to
    the server failed. *TODO may be fixed; check*
-1. IDEA 150:
-```
-java.lang.NoSuchMethodError: com.intellij.openapi.vcs.history.VcsHistoryUtil.showDifferencesInBackground(Lcom/intellij/openapi/project/Project;Lcom/intellij/openapi/vcs/FilePath;Lcom/intellij/openapi/vcs/history/VcsFileRevision;Lcom/intellij/openapi/vcs/history/VcsFileRevision;Z)V
-    at net.groboclown.idea.p4ic.compat.idea150.HistoryCompat150$1.showDiffForOne(HistoryCompat150.java:33)
-```
-    *Fixed, need to check*
 1. *Fixed, need to check*
 ```
 setSelectedIndex: 0 out of bounds

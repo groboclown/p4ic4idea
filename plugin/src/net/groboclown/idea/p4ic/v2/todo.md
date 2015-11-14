@@ -5,13 +5,17 @@
 
 These bugs need to be handled before release.
 
-1. Files open for add seem to stick around in the local cache if the push to
-   the server failed.
-   Change view state doesn't correctly match what's in the actual changes.
-   *TODO partial fix; it requires a full "mark everything as dirty" call.
-   Double check what remains to fix with this.*
-   These errors can happen with submits and reverts.
-
+1. Saving while in online mode causes a massive slowdown during the
+   changelist sync check.  Need to double check the sync check to
+   see:
+    1. Why is the sync check slowing down the editing?  Is it just
+       my virus checker?
+    1. Sync seems to take a long time to run anyway.  See where the
+       performance problems are.
+    1. The editor slowdown happens when the sync is running (changelists
+       have the "Updating..." text), and the changelist view does not
+       have the waiting spinner.  The waiting spinner only seems to
+       show up when the explicit refresh is pressed.
 
 
 ## Big Bugs
@@ -19,6 +23,7 @@ These bugs need to be handled before release.
 There are multiple "todos" and "fixmes" marked in the code, but these are the bugs
 that should be fixed up.
 
+1. There might be more "files stuck in cached state", but I haven't found more.
 1. Moved files should be grouped together:
     1. move between changelist: one moves, then the other should also move.
     1. revert: one is reverted, the other is also reverted.

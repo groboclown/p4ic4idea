@@ -48,6 +48,9 @@
       maximum file size (the `idea.max.vcs.loaded.size.kb` property).
     * Falsely reporting that JCE is not present (#72)
     * First time project configuration does not detect UI values (#65)
+    * Copy/paste and cut/paste of files do not trigger P4 actions (#71)
+    * "Move changes" action from non-active changelist modification action moves back into
+      original changelist (#68) 
     * History difference did not work on IDEA 15.0 due to an IDEA API change.
     
 

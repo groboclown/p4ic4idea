@@ -65,7 +65,6 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     private final Cache cache;
     private final FileUpdateStateList localClientUpdatedFiles;
     private final FileUpdateStateList cachedServerUpdatedFiles;
-    private final Set<FilePath> committed = new HashSet<FilePath>();
     private Date lastRefreshed;
 
 
@@ -108,37 +107,32 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         // Load our server cache.  Note that we only load specs that we consider to be in a
         // "valid" file action state.
 
+        MessageResult<List<IExtendedFileSpec>> results;
         try {
             // This is okay to run with the "-s" argument.
-            final MessageResult<List<IExtendedFileSpec>> results =
+            results =
                 exec.loadOpenedFiles(getClientRootSpecs(exec.getProject(), alerts), false);
-            if (!alerts.addWarnings(exec.getProject(),
-                    P4Bundle.message("error.load-opened", cache.getClientName()), results, true)) {
-                lastRefreshed = new Date();
-
-                // Only clear the cache once we know that we have valid results.
-
-                final List<IExtendedFileSpec> validSpecs = new ArrayList<IExtendedFileSpec>(results.getResult());
-                final List<IExtendedFileSpec> invalidSpecs = sortInvalidActions(validSpecs);
-                addInvalidActionAlerts(exec.getProject(), alerts, invalidSpecs);
-
-                cachedServerUpdatedFiles.replaceWith(cache.fromOpenedToAction(exec.getProject(), validSpecs, alerts));
-
-                // Flush out the local changes that have been updated.
-                final Iterator<P4FileUpdateState> iter = localClientUpdatedFiles.iterator();
-                while (iter.hasNext()) {
-                    final P4FileUpdateState next = iter.next();
-                    if (committed.remove(next.getLocalFilePath())) {
-                        iter.remove();
-                    }
-                }
-            }
         } catch (VcsException e) {
             alerts.addWarning(
                     exec.getProject(),
                     P4Bundle.message("error.load-opened.title", cache.getClientName()),
                     P4Bundle.message("error.load-opened", cache.getClientName()),
                     e, FilePathUtil.getFilePath(exec.getProject().getBaseDir()));
+            return;
+        }
+        if (!alerts.addWarnings(exec.getProject(),
+                P4Bundle.message("error.load-opened", cache.getClientName()), results, true)) {
+            lastRefreshed = new Date();
+
+            // Only clear the cache once we know that we have valid results.
+
+            final List<IExtendedFileSpec> validSpecs = new ArrayList<IExtendedFileSpec>(results.getResult());
+            final List<IExtendedFileSpec> invalidSpecs = sortInvalidActions(validSpecs);
+            addInvalidActionAlerts(exec.getProject(), alerts, invalidSpecs);
+
+            cachedServerUpdatedFiles.replaceWith(cache.fromOpenedToAction(exec.getProject(), validSpecs, alerts));
+
+            // Local change flush will happen later.
         }
     }
 
@@ -146,25 +140,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     protected void rectifyCache(@NotNull final Project project,
             @NotNull final Collection<PendingUpdateState> pendingUpdateStates,
             @NotNull final AlertManager alerts) {
-        Set<FilePath> pendingFileActions = new HashSet<FilePath>();
-        for (PendingUpdateState update: pendingUpdateStates) {
-            String srcPath = UpdateParameterNames.FILE_SOURCE.getParameterValue(update);
-            String tgtPath = UpdateParameterNames.FILE.getParameterValue(update);
-            FilePath src = FilePathUtil.getFilePath(srcPath);
-            FilePath tgt = FilePathUtil.getFilePath(tgtPath);
-            // nulls are okay
-            pendingFileActions.add(src);
-            pendingFileActions.add(tgt);
-        }
-        for (P4FileUpdateState fileState : localClientUpdatedFiles) {
-            final FilePath file = fileState.getLocalFilePath();
-            if (file != null && !pendingFileActions.contains(file)) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Out-of-sync local file state: " + fileState);
-                }
-                localClientUpdatedFiles.remove(fileState);
-            }
-        }
+        checkLocalIntegrity(new ArrayList<PendingUpdateState>(pendingUpdateStates));
     }
 
     private static final Collection<UpdateGroup> SUPPORTED_GROUPS =
@@ -190,6 +166,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     @Override
     protected void checkLocalIntegrity(@NotNull final List<PendingUpdateState> pendingUpdates) {
         // Find if there are any local actions that do not have corresponding pending updates
+        LOG.debug("Checking local integrity...");
+
         Set<FilePath> known = new HashSet<FilePath>();
         for (PendingUpdateState update : pendingUpdates) {
             String path = UpdateParameterNames.FILE.getParameterValue(update);
@@ -198,9 +176,16 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 known.add(fp);
             }
             // source is handled in its own pending state.
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(" - known pending update for " + path + " under " + fp + ": " + update);
+            }
         }
 
         for (P4FileUpdateState state: localClientUpdatedFiles) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(" - local client file state " + state + "; file " + state.getLocalFilePath());
+            }
             final FilePath fp = state.getLocalFilePath();
             if (fp != null && ! known.contains(fp)) {
                 LOG.warn("Incorrect mapping: pending change did not remove " + state);

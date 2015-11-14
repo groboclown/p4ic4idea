@@ -262,6 +262,7 @@ public enum UpdateAction {
         // the field "action" does not.
         switch (action) {
             case ADD:
+                return ADD_FILE;
             case ADD_EDIT:
                 return ADD_EDIT_FILE;
             case EDIT:

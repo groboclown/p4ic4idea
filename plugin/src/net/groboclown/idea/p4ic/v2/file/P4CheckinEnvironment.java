@@ -149,7 +149,6 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                     LOG.warn(e);
                     errors.add(new VcsInterruptedException(e));
                 }
-                //errors.addAll(P4StatusMessage.messagesAsErrors(messages));
             }
         }
 

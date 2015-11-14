@@ -134,7 +134,13 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                     if (action == null) {
                         alerts.addNotice(project, P4Bundle.message("error.spec.unknown-open-action", depotPath, spec.getAction()), null);
                     } else {
-                        ret.add(new P4FileUpdateState(fileState, spec.getChangelistId(), action, true));
+                        final P4FileUpdateState state =
+                                new P4FileUpdateState(fileState, spec.getChangelistId(), action, true);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Mapped " + spec + " to " + state + " with action " + action +
+                                " from " + spec.getAction());
+                        }
+                        ret.add(state);
                     }
                 }
 

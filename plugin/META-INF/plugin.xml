@@ -34,6 +34,9 @@
                   JCE is not present</li>
                   <li>Fixed issue where first time project configuration does
                   not detect UI values</li>
+                  <li>Copy/paste and cut/paste of files now trigger P4 actions</li>
+                  <li>"Move changes" action from non-active changelist modification
+                  action works correctly now</li>
                   <li>Fixed history difference not working with IDEA 15.0</li>
                 </ol>
             </li>

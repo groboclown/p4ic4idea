@@ -51,7 +51,7 @@ public class CentralCacheManager {
         allClientState = AllClientsState.getInstance();
         messageBus = ApplicationManager.getApplication().getMessageBus().connect();
 
-        Events.appBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
+        Events.registerAppBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
             @Override
             public void configUpdated(@NotNull final Project project,
                     @NotNull final List<ProjectConfigSource> sources) {
@@ -72,7 +72,7 @@ public class CentralCacheManager {
             }
         });
 
-        Events.appConfigInvalid(messageBus, new ConfigInvalidListener() {
+        Events.registerAppConfigInvalid(messageBus, new ConfigInvalidListener() {
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                     @NotNull final VcsConnectionProblem ex) {

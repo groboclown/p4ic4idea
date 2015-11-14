@@ -201,21 +201,47 @@ public class P4ServerManager implements ProjectComponent {
             }
         });
 
-        Events.appBaseConfigUpdated(appMessageBus, new BaseConfigUpdatedListener() {
+        Events.registerP4ServerAppBaseConfigUpdated(appMessageBus, new BaseConfigUpdatedListener() {
             @Override
             public void configUpdated(@NotNull final Project project,
                     @NotNull final List<ProjectConfigSource> sources) {
-                if (project != P4ServerManager.this.project) {
-                    // Does not affect this project
-                    return;
-                }
+
+                // FIXME at the moment, the underlying server connection
+                // is independent of the project.  Once that changes, we
+                // can be project aware.  Until then, every update causes
+                // the underlying connections to be invalid.
+
+                //if (project != P4ServerManager.this.project) {
+                //    // Does not affect this project
+                //    return;
+                //}
 
 
                 // Connections are potentially invalid.  Because the primary project config may be no longer
                 // valid, just mark all of the configs invalid.
                 // There may also be new connections.  This keeps it all up-to-date.
                 synchronized (servers) {
+                    // Rather than doing things the nice way, we'll
+
+                    for (P4Server server : servers.values()) {
+                        server.dispose();
+                    }
+                    servers.clear();
+                    for (ProjectConfigSource source : sources) {
+                        try {
+                            final P4Server server = new P4Server(project, source);
+                            servers.put(server.getClientServerId(), server);
+                        } catch (P4InvalidClientException e) {
+                            alertManager.addWarning(project,
+                                    P4Bundle.message("errors.no-client.source", source),
+                                    P4Bundle.message("errors.no-client.source", source),
+                                    e, new FilePath[0]);
+                        }
+                    }
+
+
                     // client/servers that are not in the new list are marked invalid.
+                    /* Old code that should work.  However, the server configs may all be different now.
                     Set<ClientServerId> knownServers = new HashSet<ClientServerId>(servers.keySet());
 
                     for (ProjectConfigSource source : sources) {
@@ -242,12 +268,13 @@ public class P4ServerManager implements ProjectComponent {
                         clientState.removeClientState(serverId);
                         servers.remove(serverId);
                     }
+                    */
                 }
                 connectionsValid = true;
             }
         });
 
-        Events.appConfigInvalid(appMessageBus, new ConfigInvalidListener() {
+        Events.registerP4ServerAppConfigInvalid(appMessageBus, new ConfigInvalidListener() {
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                     @NotNull final VcsConnectionProblem ex) {

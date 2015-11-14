@@ -104,9 +104,18 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
     }
 
     public void announceBaseConfigUpdated() {
+        LOG.debug("Sending announcement that the base config is updated");
         assert configSources != null;
+
+        // Must follow the strict ordering
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
-                BaseConfigUpdatedListener.TOPIC).
+                BaseConfigUpdatedListener.TOPIC_SERVERCONFIG).
+                configUpdated(project, configSources);
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                BaseConfigUpdatedListener.TOPIC_P4SERVER).
+                configUpdated(project, configSources);
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                BaseConfigUpdatedListener.TOPIC_NORMAL).
                 configUpdated(project, configSources);
     }
 
@@ -133,7 +142,11 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
         // save a copy of the config
         this.config = new ManualP4Config(state);
         synchronized (this) {
-            if (!original.equals(state)) {
+            // Just always change it.
+            // This can happen when the user wants to explicitly
+            // reset the connections.
+
+            //if (!original.equals(state)) {
                 // When loaded, this can cause errors if we actually initialize
                 // the values here, because the file system for the project isn't
                 // initialized yet.  That can lead to the project view being
@@ -141,7 +154,7 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
                 // 15 hides it.
                 sourcesInitialized = false;
                 clientsInitialized = false;
-            }
+            //}
         }
     }
 

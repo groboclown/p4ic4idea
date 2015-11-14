@@ -24,7 +24,12 @@ import java.util.List;
  * Project level topic.
  */
 public interface BaseConfigUpdatedListener {
-    Topic<BaseConfigUpdatedListener> TOPIC = new Topic<BaseConfigUpdatedListener>("p4ic.config.changed", BaseConfigUpdatedListener.class);
+    Topic<BaseConfigUpdatedListener> TOPIC_NORMAL =
+            new Topic<BaseConfigUpdatedListener>("p4ic.config.changed", BaseConfigUpdatedListener.class);
+    Topic<BaseConfigUpdatedListener> TOPIC_P4SERVER =
+            new Topic<BaseConfigUpdatedListener>("p4ic.config.changed-p4server", BaseConfigUpdatedListener.class);
+    Topic<BaseConfigUpdatedListener> TOPIC_SERVERCONFIG =
+            new Topic<BaseConfigUpdatedListener>("p4ic.config.changed-serverconfig", BaseConfigUpdatedListener.class);
 
 
     void configUpdated(@NotNull Project project, @NotNull List<ProjectConfigSource> sources);

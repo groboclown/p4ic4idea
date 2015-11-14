@@ -72,15 +72,16 @@ public class ServerConnectionManager implements ApplicationComponent {
 
     @Override
     public void initComponent() {
-        Events.appBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
+        Events.registerServerConnectionAppBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
             @Override
             public void configUpdated(@NotNull final Project project,
                     @NotNull final List<ProjectConfigSource> sources) {
                 // FIXME update ONLY for the project.
+                // This means we need a mapping between projects and sources.
                 invalidateAllConfigs();
             }
         });
-        Events.appConfigInvalid(messageBus, new ConfigInvalidListener() {
+        Events.registerServerConnectionAppConfigInvalid(messageBus, new ConfigInvalidListener() {
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                     @NotNull final VcsConnectionProblem ex) {

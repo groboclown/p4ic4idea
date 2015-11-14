@@ -23,8 +23,12 @@ import org.jetbrains.annotations.NotNull;
  * Project level topic.
  */
 public interface ConfigInvalidListener {
-    Topic<ConfigInvalidListener> TOPIC =
+    Topic<ConfigInvalidListener> TOPIC_NORMAL =
             new Topic<ConfigInvalidListener>("p4ic.config.invalid", ConfigInvalidListener.class);
+    Topic<ConfigInvalidListener> TOPIC_P4SERVER =
+            new Topic<ConfigInvalidListener>("p4ic.config.invalid.p4server", ConfigInvalidListener.class);
+    Topic<ConfigInvalidListener> TOPIC_SERVERCONNECTION =
+            new Topic<ConfigInvalidListener>("p4ic.config.invalid.p4server.serverconnection", ConfigInvalidListener.class);
 
     void configurationProblem(@NotNull Project project, @NotNull P4Config config,
             @NotNull VcsConnectionProblem ex);

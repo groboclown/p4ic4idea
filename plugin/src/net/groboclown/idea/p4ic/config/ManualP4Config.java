@@ -308,7 +308,7 @@ public class ManualP4Config implements P4Config {
                 Comparing.equal(trustTicket, that.getTrustTicketPath()) &&
                 Comparing.equal(configFile, that.getConfigFile()) &&
                 Comparing.equal(password, that.getPassword()) &&
-                Comparing.equal(clientHostname, that.getClientname()) &&
+                Comparing.equal(clientHostname, that.getClientHostname()) &&
                 Comparing.equal(ignoreFileName, that.getIgnoreFileName());
     }
 

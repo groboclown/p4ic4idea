@@ -47,6 +47,7 @@
     * Files loaded from the Perforce server are restricted to the user-defined
       maximum file size (the `idea.max.vcs.loaded.size.kb` property).
     * Falsely reporting that JCE is not present (#72)
+    * First time project configuration does not detect UI values (#65)
     * History difference did not work on IDEA 15.0 due to an IDEA API change.
     
 

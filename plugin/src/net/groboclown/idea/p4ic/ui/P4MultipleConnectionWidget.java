@@ -90,8 +90,8 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
         appMessageBus = ApplicationManager.getApplication().getMessageBus().connect();
 
         ConnectionStateListener listener = new ConnectionStateListener();
-        Events.appBaseConfigUpdated(appMessageBus, listener);
-        Events.appConfigInvalid(appMessageBus, listener);
+        Events.registerAppBaseConfigUpdated(appMessageBus, listener);
+        Events.registerAppConfigInvalid(appMessageBus, listener);
         Events.appServerConnectionState(appMessageBus, listener);
     }
 
@@ -325,9 +325,11 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
 
         @Override
         public void configUpdated(@NotNull final Project project, @NotNull final List<ProjectConfigSource> sources) {
-            if (project == P4MultipleConnectionWidget.this.project) {
+            // FIXME once the projects are linked to the connections,
+            // this can be project aware.
+            //if (project == P4MultipleConnectionWidget.this.project) {
                 update(true);
-            }
+            //}
         }
 
         @Override

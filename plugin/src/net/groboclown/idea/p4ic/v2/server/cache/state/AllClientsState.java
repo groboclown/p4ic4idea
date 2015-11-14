@@ -156,7 +156,7 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
         messageBus = ApplicationManager.getApplication().getMessageBus().connect();
 
         // TODO are these listeners necessary?
-        Events.appBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
+        Events.registerAppBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
             @Override
             public void configUpdated(@NotNull final Project project,
                     @NotNull final List<ProjectConfigSource> sources) {
@@ -168,7 +168,7 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
                 // needs to be created, associated with the project).
             }
         });
-        Events.appConfigInvalid(messageBus, new ConfigInvalidListener() {
+        Events.registerAppConfigInvalid(messageBus, new ConfigInvalidListener() {
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                     @NotNull final VcsConnectionProblem ex) {

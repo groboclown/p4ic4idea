@@ -31,21 +31,39 @@ public final class Events {
 
     /* Should only be called by the {@link P4ConfigProject}
     public static void baseConfigUpdated(@NotNull Project project, @NotNull List<ProjectConfigSource> sources) {
-        ApplicationManager.getApplication().getMessageBus().syncPublisher(BaseConfigUpdatedListener.TOPIC).
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(BaseConfigUpdatedListener.TOPIC_NORMAL).
                 configUpdated(project, sources);
     }
     */
 
+    // Unfortunately, there is very strict ordering to when the messages are sent.
+    // The low-level ServerConnection objects are called first,
+    // Then the P4Server objects, then everyone else.
 
-    public static void appBaseConfigUpdated(@NotNull MessageBusConnection appBus, @NotNull BaseConfigUpdatedListener listener) {
-        appBus.subscribe(BaseConfigUpdatedListener.TOPIC, listener);
+
+    public static void registerAppBaseConfigUpdated(@NotNull MessageBusConnection appBus, @NotNull BaseConfigUpdatedListener listener) {
+        appBus.subscribe(BaseConfigUpdatedListener.TOPIC_NORMAL, listener);
+    }
+
+    public static void registerP4ServerAppBaseConfigUpdated(@NotNull MessageBusConnection appBus,
+            @NotNull BaseConfigUpdatedListener listener) {
+        appBus.subscribe(BaseConfigUpdatedListener.TOPIC_P4SERVER, listener);
+    }
+
+    public static void registerServerConnectionAppBaseConfigUpdated(@NotNull MessageBusConnection appBus,
+            @NotNull BaseConfigUpdatedListener listener) {
+        appBus.subscribe(BaseConfigUpdatedListener.TOPIC_SERVERCONFIG, listener);
     }
 
 
     public static void configInvalid(@NotNull Project project, @NotNull P4Config config,
             @NotNull P4InvalidConfigException e)
             throws P4InvalidConfigException {
-        ApplicationManager.getApplication().getMessageBus().syncPublisher(ConfigInvalidListener.TOPIC).
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(ConfigInvalidListener.TOPIC_SERVERCONNECTION).
+                configurationProblem(project, config, e);
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(ConfigInvalidListener.TOPIC_P4SERVER).
+                configurationProblem(project, config, e);
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(ConfigInvalidListener.TOPIC_NORMAL).
                 configurationProblem(project, config, e);
         throw e;
     }
@@ -53,15 +71,32 @@ public final class Events {
 
     public static void handledConfigInvalid(@NotNull Project project, @NotNull P4Config config,
             @NotNull VcsConnectionProblem e) {
-        ApplicationManager.getApplication().getMessageBus().syncPublisher(ConfigInvalidListener.TOPIC).
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(ConfigInvalidListener.TOPIC_SERVERCONNECTION).
+                configurationProblem(project, config, e);
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(ConfigInvalidListener.TOPIC_P4SERVER).
+                configurationProblem(project, config, e);
+        ApplicationManager.getApplication().getMessageBus().syncPublisher(ConfigInvalidListener.TOPIC_NORMAL).
                 configurationProblem(project, config, e);
     }
 
 
-    public static void appConfigInvalid(@NotNull MessageBusConnection appBus, @NotNull ConfigInvalidListener listener) {
-        appBus.subscribe(ConfigInvalidListener.TOPIC, listener);
+    public static void registerAppConfigInvalid(@NotNull MessageBusConnection appBus, @NotNull ConfigInvalidListener listener) {
+        appBus.subscribe(ConfigInvalidListener.TOPIC_NORMAL, listener);
     }
 
+
+    public static void registerP4ServerAppConfigInvalid(@NotNull MessageBusConnection appBus,
+            @NotNull ConfigInvalidListener listener) {
+        appBus.subscribe(ConfigInvalidListener.TOPIC_P4SERVER, listener);
+    }
+
+
+    public static void registerServerConnectionAppConfigInvalid(@NotNull MessageBusConnection appBus,
+            @NotNull ConfigInvalidListener listener) {
+        appBus.subscribe(ConfigInvalidListener.TOPIC_SERVERCONNECTION, listener);
+    }
+
+    // These states don't require the strict ordering.
 
     public static void serverConnected(@NotNull ServerConfig config) {
         ApplicationManager.getApplication().getMessageBus().syncPublisher(ServerConnectionStateListener.TOPIC).

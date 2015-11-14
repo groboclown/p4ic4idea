@@ -320,6 +320,7 @@ public class P4SubmitPanel {
         myJobTable.setCellSelectionEnabled(false);
         myJobTable.setColumnSelectionAllowed(false);
         myJobTable.setFillsViewportHeight(true);
+        myJobTable.setPreferredScrollableViewportSize(new Dimension(450, 200));
         myJobTable.setShowVerticalLines(false);
         myJobTable.setSurrendersFocusOnKeystroke(true);
         scrollPane1.setViewportView(myJobTable);

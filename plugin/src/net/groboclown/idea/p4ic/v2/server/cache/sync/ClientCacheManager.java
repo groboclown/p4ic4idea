@@ -37,6 +37,7 @@ import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CreateUpda
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -352,7 +353,9 @@ public class ClientCacheManager {
 
         @Override
         public void removeUpdateFor(@NotNull final UpdateRef updateRef) {
-            for (PendingUpdateState update : state.getPendingUpdates()) {
+            // Use a copy so we don't get a concurrent modification exception
+            final ArrayList<PendingUpdateState> pendingUpdates = new ArrayList<PendingUpdateState>(state.getPendingUpdates());
+            for (PendingUpdateState update : pendingUpdates) {
                 if (update.getRefId() == updateRef.getPendingUpdateRefId()) {
                     state.removePendingUpdate(update);
                 }

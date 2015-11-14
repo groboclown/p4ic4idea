@@ -490,6 +490,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                         }
                         cache.removeUpdateFor(update);
                         break;
+                    // TODO if "moved" files are ever supported, then both sides need to be reverted.
                 }
             }
         }
@@ -510,6 +511,14 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     // FIXME if reverting both sides of a move operation, this
                     // can return invalid results
                     ret.set(MessageResult.createForFilePath(files, results, false));
+
+                    for (P4FileUpdateState update : localClientUpdatedFiles) {
+                        if (files.contains(update.getLocalFilePath())) {
+                            // Ensure all cached versions of the updates
+                            // are removed.
+                            cache.removeUpdateFor(update);
+                        }
+                    }
                 } catch (VcsException e) {
                     alerts.addWarning(exec.getProject(),
                             P4Bundle.message("error.revert-file.unchanged.title"),

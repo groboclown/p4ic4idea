@@ -101,6 +101,11 @@ public class P4ChangelistListener implements ChangeListListener {
         LOG.debug("changesAdded: changes " + changes);
         LOG.debug("changesAdded: changelist " + toList.getName() + "; [" + toList.getComment() + "]");
 
+
+        // FIXME if a file in a "move" operation is included, but not the
+        // other side, then ensure the other side is also moved along with this one.
+
+
         if (toList instanceof LocalChangeList) {
             final List<FilePath> paths = getPathsFromChanges(changes);
             if (paths.isEmpty()) {

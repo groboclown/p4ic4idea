@@ -19,6 +19,9 @@ These bugs need to be handled before release.
 There are multiple "todos" and "fixmes" marked in the code, but these are the bugs
 that should be fixed up.
 
+1. Moved files should be grouped together:
+    1. move between changelist: one moves, then the other should also move.
+    1. revert: one is reverted, the other is also reverted.
 1. Open multiple files for edit, with one of them (the first one?) already
    open for edit, causes none of them to be opened.
    The first file is triggered to be opened for edit, but none of the
@@ -32,6 +35,5 @@ that should be fixed up.
 ## Long term features
 
 1. Keep backups of edited files, to allow for simulated reverts and limited diffs while in
-   offline mode.  Maybe take advantage of IDEA's built-in VCS?
-
-
+   offline mode.  Maybe take advantage of IDEA's built-in VCS?  It allows for tagging
+   revisions, so maybe that could be done.

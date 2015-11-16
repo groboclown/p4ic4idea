@@ -552,7 +552,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 					throw new RequestException(err);
 				}
 			}
-			return new ServerInfo(resultMaps.toArray(new HashMap[resultMaps.size()]));
+			return new ServerInfo(resultMaps.toArray(new Map[resultMaps.size()]));
 		} else {
 			return new ServerInfo();
 		}

@@ -15,16 +15,16 @@ package net.groboclown.idea.p4ic.v2.server.cache.state;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FilePathImpl;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.io.File;
-import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 public class FileMappingRepoTest {
     @Test
@@ -103,60 +103,31 @@ public class FileMappingRepoTest {
         }
     }
 
-
-
-
-
-
     @Test
-    public void testGetByDepot() throws Exception {
-        fail("not implemented");
+    public void testGetByDepotLocation() throws Exception {
+        final FileMappingRepo repo = new FileMappingRepo(false);
+
+        final File f1 = new File("f1");
+        final FilePath fp1 = createFilePath(f1);
+        final P4ClientFileMapping expected = repo.getByDepotLocation("//depot/file1", fp1);
+
+        final P4ClientFileMapping actual = repo.getByDepotLocation("//depot/file1", null);
+
+        assertThat(actual, is(expected));
     }
 
     @Test
     public void testGetByLocalFilePath() throws Exception {
-        fail("not implemented");
+        final FileMappingRepo repo = new FileMappingRepo(false);
+
+        final File f1 = new File("f1");
+        final FilePath fp1 = createFilePath(f1);
+        final P4ClientFileMapping expected = repo.getByDepotLocation("//depot/file1", fp1);
+
+        final P4ClientFileMapping actual = repo.getByLocation(fp1);
+
+        assertThat(actual, is(expected));
     }
-
-    @Test
-    public void testAddLocation() throws Exception {
-        fail("not implemented");
-    }
-
-    @Test
-    public void testUpdateLocation() throws Exception {
-        fail("not implemented");
-    }
-
-    @Test
-    public void testUpdateLocations() throws Exception {
-        fail("not implemented");
-    }
-
-    @Test
-    public void testRefreshFiles() throws Exception {
-        fail("not implemented");
-    }
-
-    static class RefTestRepo extends FileMappingRepo {
-        final Map<P4ClientFileMapping, WeakReference<P4ClientFileMapping>> refs =
-                new HashMap<P4ClientFileMapping, WeakReference<P4ClientFileMapping>>();
-
-        RefTestRepo(boolean serverIsCaseInsensitive) {
-            super(serverIsCaseInsensitive);
-        }
-
-        @NotNull
-        WeakReference<P4ClientFileMapping> createRef(@NotNull P4ClientFileMapping map) {
-            final WeakReference<P4ClientFileMapping> ret = super.createRef(map);
-            refs.put(map, ret);
-            return ret;
-        }
-
-    }
-
-
-
 
 
     private FilePath createFilePath(File f) {

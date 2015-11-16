@@ -31,6 +31,9 @@ that should be fixed up.
    open for edit, causes none of them to be opened.
    The first file is triggered to be opened for edit, but none of the
    others are.  Looks like an IDEA bug.
+1. Per-file history shows the version as just the #revision number.  It
+   no longer describes the actual depot path (specifically, for integration
+   tracking).
 
 
 

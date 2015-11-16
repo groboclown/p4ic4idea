@@ -56,7 +56,7 @@ public class ProjectConfigSource {
             this.project = project;
             this.baseConfig = config;
             this.clientName = config.getClientname();
-            this.serverConfig = ServerConfig.createNewServerConfig(project, config);
+            this.serverConfig = ServerConfig.createNewServerConfig(config);
         }
 
         private Builder(@NotNull Project project, @NotNull P4Config baseConfig,

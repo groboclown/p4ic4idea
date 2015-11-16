@@ -13,7 +13,6 @@
  */
 package net.groboclown.idea.p4ic.config;
 
-import com.intellij.openapi.project.Project;
 import com.perforce.p4java.env.PerforceEnvironment;
 import com.perforce.p4java.server.IServerAddress;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +34,7 @@ import java.util.Map;
 public abstract class ServerConfig {
 
     @Nullable
-    public static ServerConfig createNewServerConfig(@NotNull Project project, @NotNull P4Config p4Config) {
+    public static ServerConfig createNewServerConfig(@NotNull P4Config p4Config) {
         if (! isValid(p4Config)) {
             return null;
         }

@@ -9,6 +9,7 @@
 * Multiple server connection status in status bar widget.
 * Passwords are now stored with better security.
 * P4IGNORE support.
+* Version selection for synchronize with depot.
 * Bug fixes.
 
 ### Details
@@ -32,6 +33,10 @@
     * Support the `P4IGNORE` environment variable.  The default filename is
       `.p4ignore`
     * Only files that are not known by the server are ignored.
+* Version selection for synchronize with depot. (#41)
+    * When "Update Directory" or "Update File" is run from the P4 context menu,
+      you are given the option to select which revision or changelist to
+      sync to.
 * Bug fixes.
     * The configuration UI could make UI requests outside the AWT event dispatch
       thread.

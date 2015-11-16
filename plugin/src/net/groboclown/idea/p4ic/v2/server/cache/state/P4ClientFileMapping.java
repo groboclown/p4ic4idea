@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jdom.Element;
@@ -110,6 +111,7 @@ public final class P4ClientFileMapping {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("comparing file paths:" + localFilePath + " vs " + that.localFilePath);
             }
+            return FileUtil.filesEqual(localFilePath.getIOFile(), that.localFilePath.getIOFile());
         }
         if (LOG.isDebugEnabled()) {
             LOG.debug("this (" + this + ") and that (" + that + ") don't have comparable contents");
@@ -121,7 +123,11 @@ public final class P4ClientFileMapping {
     public int hashCode() {
         // This means that changes to the depot path or local path will cause a hash
         // map value change!
-        return depotPath != null ? depotPath.hashCode() : (localFilePath == null ? 0 : localFilePath.hashCode());
+        return depotPath != null
+                ? depotPath.hashCode()
+                : (localFilePath == null
+                        ? 0
+                        : FileUtil.fileHashCode(localFilePath.getIOFile()));
     }
 
     @Override

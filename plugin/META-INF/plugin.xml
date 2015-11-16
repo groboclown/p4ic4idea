@@ -13,6 +13,7 @@
                   <li>Passwords are now stored with better security.  You will need to
                   re-enter your password if you save it in the IDE.</li>
                   <li>Some P4IGNORE support.</li>
+                  <li>Version selection for synchronize with depot.</li>
                   <li>Fixed issue where the configuration UI could make
                   UI requests outside the AWT event dispatch thread.</li>
                   <li>Finally identified the sources of the infinite

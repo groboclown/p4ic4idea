@@ -42,7 +42,7 @@ public final class ClientServerId {
     @Nullable
     public static ClientServerId create(@NotNull Project project, @NotNull P4Config config)
             throws NullPointerException {
-        final ServerConfig serverConfig = ServerConfig.createNewServerConfig(project, config);
+        final ServerConfig serverConfig = ServerConfig.createNewServerConfig(config);
         if (serverConfig == null || config.getClientname() == null) {
             return null;
         }

@@ -35,6 +35,7 @@ public class FileUpdateStateListTest {
         P4FileUpdateState s2 = new P4FileUpdateState(
                 new P4ClientFileMapping(null, FilePathUtil.getFilePath("a.txt")),
                 2, FileUpdateAction.DELETE_FILE, true);
+        assertThat(s1.hashCode(), is(s2.hashCode()));
         list.add(s2);
         assertThat("two adds, same file: " + list, list.copy().size(), is(1));
     }

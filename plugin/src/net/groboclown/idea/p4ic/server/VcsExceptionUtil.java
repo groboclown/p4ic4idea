@@ -43,6 +43,9 @@ public class VcsExceptionUtil {
         if (t instanceof VirtualMachineError) {
             throw (VirtualMachineError) t;
         }
+        if (t instanceof AssertionError) {
+            throw (AssertionError) t;
+        }
     }
 
     public static boolean isPasswordWrongMessage(@Nullable String message) {

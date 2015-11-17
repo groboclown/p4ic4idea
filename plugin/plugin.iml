@@ -24,6 +24,7 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="p4java" exported="" />
+    <orderEntry type="module" module-name="idea135" scope="TEST" />
   </component>
   <component name="org.twodividedbyzero.idea.findbugs">
     <option name="_basePreferences">

@@ -34,6 +34,13 @@ public class P4Request {
         this.inputData = inputData;
     }
 
+    public P4Request(@NotNull String cmd, @NotNull String... args) {
+        this.cmd = cmd;
+        this.args = args;
+        this.request = null;
+        this.inputData = null;
+    }
+
     @NotNull
     public String getCmd() {
         return cmd;

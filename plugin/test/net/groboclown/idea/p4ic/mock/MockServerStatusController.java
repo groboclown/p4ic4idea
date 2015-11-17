@@ -19,9 +19,9 @@ import net.groboclown.idea.p4ic.v2.server.connection.ServerStatusController;
 import org.jetbrains.annotations.NotNull;
 
 public class MockServerStatusController implements ServerStatusController {
-    public boolean connected;
-    public boolean autoOffline;
-    public boolean valid;
+    public boolean connected = true;
+    public boolean autoOffline = false;
+    public boolean valid = true;
 
 
 

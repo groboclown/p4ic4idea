@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.compat;
 
 import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -114,6 +115,13 @@ public class CompatFactoryLoader {
         if (factory == null) {
             return false;
         }
+
+        if (ApplicationManager.getApplication().isUnitTestMode()) {
+            // Unit test sets the API version to "999.SNAPSHOT"
+            return true;
+        }
+
+
         int minCompatibility = compareIdeaVersionNumbers(
                 factory.getMinCompatibleApiVersion(),
                 apiVersion);

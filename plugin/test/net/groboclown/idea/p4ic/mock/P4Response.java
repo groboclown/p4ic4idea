@@ -14,7 +14,9 @@
 
 package net.groboclown.idea.p4ic.mock;
 
+import com.intellij.openapi.vcs.FilePath;
 import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.server.IServer;
 import com.perforce.p4java.server.callback.IFilterCallback;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -68,8 +71,24 @@ public class P4Response {
         ));
     }
 
+    /**
+     * @return Client compatible response
+     * @see com.perforce.p4java.impl.mapbased.client.Client#Client(IServer, Map)
+     * @see com.perforce.p4java.impl.mapbased.client.ClientSummary#ClientSummary(Map, boolean)
+     */
+    @NotNull
+    public static P4Response client(@NotNull String clientName, @NotNull FilePath rootDir, @Nullable String stream) {
+        return new P4Response(values(
+                "Client", clientName,
+                "client", clientName,
+                "Root", rootDir.getIOFile().getAbsolutePath(),
+                "View0", "//... //...",
+                "Stream", stream,
 
-
+                // IMPORTANT
+                "Access", new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date())
+        ));
+    }
 
 
     public P4Response(@NotNull Map<String, Object>... values) {

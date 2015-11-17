@@ -14,6 +14,7 @@
 package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.openapi.vcs.VcsException;
@@ -30,6 +31,7 @@ import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
+import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.*;
 import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.ui.alerts.*;
@@ -552,13 +554,12 @@ public class ClientExec {
         } catch (VcsException e) {
             // Plugin code generated error
             throw e;
-        } catch (ThreadDeath e) {
-            // Never ever handle
-            throw e;
-        } catch (VirtualMachineError e) {
-            // Never ever handle
-            throw e;
+        } catch (ProcessCanceledException e) {
+            CancellationException ce = new CancellationException(e.getMessage());
+            ce.initCause(e);
+            throw ce;
         } catch (Throwable t) {
+            VcsExceptionUtil.alwaysThrown(t);
             if (t.getMessage() != null &&
                     t.getMessage().equals("Task was cancelled.")) {
                 CancellationException ce = new CancellationException(t.getMessage());

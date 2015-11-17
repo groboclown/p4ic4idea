@@ -43,7 +43,7 @@
         </dirset>
     </path>
 
-    <target name="all" depends="clean, main"/>
+    <target name="all" depends="clean, main, test"/>
     <!-- <target name="main" depends="compile, test, plugin.build.jar.p4ic4idea"/> -->
     <target name="main" depends="compile, package"/>
 

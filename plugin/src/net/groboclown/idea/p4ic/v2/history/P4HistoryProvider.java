@@ -171,7 +171,11 @@ public class P4HistoryProvider implements VcsHistoryProvider {
                     LOG.info("No file information for " + filePath);
                     return Collections.emptyList();
                 }
-                return server.getRevisionHistoryOnline(specs.get(filePath), limit);
+                List<P4FileRevision> ret = server.getRevisionHistoryOnline(specs.get(filePath), limit);
+                if (ret != null) {
+                    return ret;
+                }
+                // fall through
             }
         } catch (InterruptedException e) {
             throw new VcsInterruptedException(e);

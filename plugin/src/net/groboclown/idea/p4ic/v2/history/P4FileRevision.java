@@ -21,6 +21,8 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.IFileRevisionData;
+import com.perforce.p4java.core.file.IRevisionIntegrationData;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
@@ -79,7 +81,7 @@ public class P4FileRevision implements VcsFileRevision {
             this.revision = new P4RevisionNumber(baseFile, rootDepotPath, data);
         }
 
-        this.comment = data == null ? null : data.getDescription();
+        this.comment = createComment(data);
         this.author = data == null ? null : data.getUserName();
         this.date = data == null ? null : data.getDate();
         this.revisionData = data;
@@ -170,5 +172,32 @@ public class P4FileRevision implements VcsFileRevision {
     @Override
     public String toString() {
         return "#" + getRev();
+    }
+
+    @Nullable
+    private String createComment(@Nullable final IFileRevisionData data) {
+        if (data == null) {
+            return null;
+        }
+        StringBuilder comment = new StringBuilder();
+        if (data.getDescription() != null) {
+            comment.append(P4Bundle.message("file-revision.comment", data.getDescription().trim()));
+        }
+        comment.append(P4Bundle.message("file-revision.location",
+                data.getDepotFileName(),
+                data.getChangelistId()));
+        final List<IRevisionIntegrationData> integrations =
+                data.getRevisionIntegrationData();
+        if (integrations != null && ! integrations.isEmpty()) {
+            comment.append(P4Bundle.message("file-revision.integrations.header"));
+            for (IRevisionIntegrationData integration : integrations) {
+                comment.append(P4Bundle.message("file-revision.integrations.item",
+                        integration.getFromFile(),
+                        integration.getStartFromRev(),
+                        integration.getEndFromRev(),
+                        integration.getHowFrom()));
+            }
+        }
+        return comment.toString();
     }
 }

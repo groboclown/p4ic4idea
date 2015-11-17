@@ -13,54 +13,46 @@
  */
 package net.groboclown.idea.p4ic;
 
-import com.intellij.openapi.components.ProjectComponent;
-import com.intellij.openapi.module.Module;
+import com.intellij.idea.IdeaTestApplication;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.ProjectLevelVcsManager;
-import com.intellij.openapi.vcs.changes.ChangeListManager;
-import com.intellij.openapi.vcs.changes.ChangeListManagerImpl;
-import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.testFramework.PlatformTestCase;
 import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.testFramework.fixtures.TempDirTestFixture;
 import com.intellij.testFramework.fixtures.TestFixtureBuilder;
+import com.intellij.util.PlatformUtils;
+import com.intellij.util.ThrowableRunnable;
+import com.intellij.util.ui.UIUtil;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.junit.rules.ExternalResource;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ProjectRule extends ExternalResource {
     private final String name;
-    private IdeaProjectTestFixture projectFixture;
     private TempDirTestFixture dirFixture;
-    private TestFixtureBuilder<IdeaProjectTestFixture> projectFixtureBuilder;
+    private LocalFileSystem localFileSystem;
+    private IdeaProjectTestFixture projectFixture;
 
     public ProjectRule(String name) {
         this.name = name;
     }
 
 
-    public Project getProject() throws Exception {
-        return getProjectFixture().getProject();
+    public Project getProject() {
+        return projectFixture.getProject();
     }
 
 
-    public Module getModule() throws Exception {
-        return getProjectFixture().getModule();
-    }
-
-
-    public TempDirTestFixture createVcsRoot(String name) {
-        //VcsUtil.getVcsRootFor()
-        throw new NullPointerException();
-    }
-
-
+    @NotNull
     public FilePath createFilePath(String path, boolean exists, boolean isDirectory, boolean isReadable, boolean isWritable) {
         File file = new File(path);
         FilePath ret = mock(FilePath.class);
@@ -74,6 +66,7 @@ public class ProjectRule extends ExternalResource {
     }
 
 
+    @NotNull
     public VirtualFile createVirtualFile(String path, boolean exists, boolean isDirectory) {
         File file = new File(path);
         VirtualFile ret = mock(VirtualFile.class);
@@ -86,67 +79,71 @@ public class ProjectRule extends ExternalResource {
     }
 
 
+    @NotNull
+    public FilePath getVcsRoot() {
+        return FilePathUtil.getFilePath(getProject().getBaseDir());
+    }
+
 
     @Override
     protected void before() throws Throwable {
         super.before();
-        projectFixtureBuilder = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(name);
+
+        System.setProperty(PlatformUtils.PLATFORM_PREFIX_KEY, PlatformUtils.IDEA_CE_PREFIX);
+        PlatformTestCase.initPlatformLangPrefix();
+        IdeaTestApplication.getInstance(null);
+
         dirFixture = IdeaTestFixtureFactory.getFixtureFactory().createTempDirTestFixture();
         dirFixture.setUp();
-        projectFixture = null;
-        System.err.println("before!");
+
+        final TestFixtureBuilder<IdeaProjectTestFixture> testFixtureBuilder =
+                IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder();
+        projectFixture = testFixtureBuilder.getFixture();
+        projectFixture.setUp();
+
+        localFileSystem = LocalFileSystem.getInstance();
     }
 
 
     @Override
     protected void after() {
-        System.err.println("after!");
-        if (projectFixture != null) {
-            ((ProjectComponent) VcsDirtyScopeManager.getInstance(projectFixture.getProject())).projectClosed();
-            ((ProjectComponent) ChangeListManager.getInstance(projectFixture.getProject())).projectClosed();
-            ((ChangeListManagerImpl) ChangeListManager.getInstance(projectFixture.getProject())).stopEveryThingIfInTestMode();
-            ((ProjectComponent) ProjectLevelVcsManager.getInstance(projectFixture.getProject())).projectClosed();
-
-            try {
-                projectFixture.tearDown();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
         try {
             dirFixture.tearDown();
         } catch (Exception e) {
             e.printStackTrace();
         }
+        UIUtil.invokeAndWaitIfNeeded(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    projectFixture.tearDown();
+                } catch (Exception throwable) {
+                    throwable.printStackTrace();
+                }
+            }
+        });
+
+        dirFixture = null;
+        projectFixture = null;
         super.after();
     }
 
 
-    @NotNull
-    private IdeaProjectTestFixture getProjectFixture() throws Exception {
-        if (projectFixture == null) {
-            if (projectFixtureBuilder == null) {
+    public static void edt(@NotNull final ThrowableRunnable<Exception> runnable) throws Exception {
+        final AtomicReference<Exception> exception = new AtomicReference<Exception>();
+        UIUtil.invokeAndWaitIfNeeded(new Runnable() {
+            @Override
+            public void run() {
                 try {
-                    before();
-                } catch (Exception e) {
-                    throw e;
-                } catch (Error e) {
-                    throw e;
-                } catch (Throwable throwable) {
-                    throw new RuntimeException(throwable);
+                    runnable.run();
+                } catch (Exception throwable) {
+                    exception.set(throwable);
                 }
             }
-            projectFixture = projectFixtureBuilder.getFixture();
-            projectFixture.setUp();
-
-            // How to call setUp on the manager?
-            //VcsDirtyScopeManager.getInstance(projectFixture.getProject()).
-            ((ProjectComponent) ChangeListManager.getInstance(projectFixture.getProject())).projectOpened();
-            //((ChangeListManagerImpl) ChangeListManager.getInstance(projectFixture.getProject())).stopEveryThingIfInTestMode();
-            ((ProjectComponent) ProjectLevelVcsManager.getInstance(projectFixture.getProject())).projectOpened();
+        });
+        //noinspection ThrowableResultOfMethodCallIgnored
+        if (exception.get() != null) {
+            throw exception.get();
         }
-        return projectFixture;
     }
-
-
 }

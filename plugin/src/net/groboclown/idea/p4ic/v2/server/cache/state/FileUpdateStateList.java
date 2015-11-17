@@ -24,6 +24,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+// FIXME this is a source of many problems.  Instead of having a fancy
+// "set" and using the nature of the P4FileUpdateState to have equality
+// only on the file, keep the updated files as a map, relating the
+// file source to the state.
 public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
     private static final Logger LOG = Logger.getInstance(FileUpdateStateList.class);
 
@@ -62,6 +66,9 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
 
     public void add(@NotNull P4FileUpdateState state) {
         synchronized (sync) {
+            // Ensure any existing match is removed, so that we only keep the new state.
+            // This is due to how we perform equality checking.
+            updatedFiles.remove(state);
             updatedFiles.add(state);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Adding state file with " + state + "; now " + updatedFiles);

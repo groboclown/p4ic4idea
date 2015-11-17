@@ -191,11 +191,18 @@ public class P4FileRevision implements VcsFileRevision {
         if (integrations != null && ! integrations.isEmpty()) {
             comment.append(P4Bundle.message("file-revision.integrations.header"));
             for (IRevisionIntegrationData integration : integrations) {
-                comment.append(P4Bundle.message("file-revision.integrations.item",
-                        integration.getFromFile(),
-                        integration.getStartFromRev(),
-                        integration.getEndFromRev(),
-                        integration.getHowFrom()));
+                if (integration.getStartFromRev() <= 0) {
+                    comment.append(P4Bundle.message("file-revision.integrations.item-no_start",
+                            integration.getFromFile(),
+                            integration.getEndFromRev(),
+                            integration.getHowFrom()));
+                } else {
+                    comment.append(P4Bundle.message("file-revision.integrations.item-start",
+                            integration.getFromFile(),
+                            integration.getStartFromRev(),
+                            integration.getEndFromRev(),
+                            integration.getHowFrom()));
+                }
             }
         }
         return comment.toString();

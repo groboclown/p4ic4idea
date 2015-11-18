@@ -78,11 +78,7 @@ public class FileSpecUtil {
         }
         // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
         // use this instead: getIOFile().getAbsolutePath()
-        String path = escapeToP4Path(file.getIOFile().getAbsolutePath());
-        // Doesn't seem to set the values right.
-        if (rev > 0) {
-            path = path + '#' + Integer.toString(rev);
-        }
+        String path = getPathWithRev(escapeToP4Path(file.getIOFile().getAbsolutePath()), rev);
         final List<IFileSpec> spec = FileSpecBuilder.makeFileSpecList(path);
         if (spec.size() != 1) {
             throw new P4Exception(P4Bundle.message("error.annotate.multiple-files", path, spec));
@@ -98,10 +94,7 @@ public class FileSpecUtil {
 
     @NotNull
     public static IFileSpec getFromDepotPath(@NotNull final String depotPath, int rev) throws P4FileException {
-        String path = escapeToP4Path(depotPath);
-        if (rev > 0) {
-            path = path + '#' + Integer.toString(rev);
-        }
+        String path = getPathWithRev(escapeToP4Path(depotPath), rev);
         final List<IFileSpec> list = FileSpecBuilder.makeFileSpecList(path);
         if (list.size() != 1) {
             throw new P4FileException(P4Bundle.message("error.annotate.multiple-files", path, list));
@@ -344,5 +337,30 @@ public class FileSpecUtil {
                     spec.getOriginalPath().getPathString(), false));
         }
         throw new IllegalArgumentException("no path information in spec " + spec);
+    }
+
+
+    @NotNull
+    private static String getPathWithRev(@NotNull String path, int rev) {
+        if (rev > 0) {
+            path = path + '#' + Integer.toString(rev);
+        } else {
+            switch (rev) {
+                // ignore:
+                // case IFileSpec.NO_FILE_REVISION:
+                case IFileSpec.NONE_REVISION:
+                    path = path + '#' + IFileSpec.NONE_REVISION_STRING;
+                    break;
+
+                case IFileSpec.HAVE_REVISION:
+                    path = path + '#' + IFileSpec.HAVE_REVISION_STRING;
+                    break;
+
+                case IFileSpec.HEAD_REVISION:
+                    path = path + '#' + IFileSpec.HEAD_REVISION_STRING;
+                    break;
+            }
+        }
+        return path;
     }
 }

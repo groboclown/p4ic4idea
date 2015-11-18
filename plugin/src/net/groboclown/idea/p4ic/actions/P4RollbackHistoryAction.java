@@ -27,6 +27,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Rollback a file to a specific revision.
+ */
 public class P4RollbackHistoryAction extends BasicAction {
     private static final Logger LOG = Logger.getInstance(P4RollbackHistoryAction.class);
     public static final String ACTION_NAME = "Rollback";

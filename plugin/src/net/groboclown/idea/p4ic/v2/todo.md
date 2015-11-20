@@ -5,19 +5,6 @@
 
 These bugs need to be handled before release.
 
-1. Saving while in online mode causes a massive slowdown during the
-   changelist sync check.  Need to double check the sync check to
-   see:
-    1. Why is the sync check slowing down the editing?  Is it just
-       my virus checker?
-    1. Sync seems to take a long time to run anyway.  See where the
-       performance problems are.
-    1. The editor slowdown happens when the sync is running (changelists
-       have the "Updating..." text), and the changelist view does not
-       have the waiting spinner.  The waiting spinner only seems to
-       show up when the explicit refresh is pressed.
-
-
 ## Big Bugs
 
 There are multiple "todos" and "fixmes" marked in the code, but these are the bugs
@@ -31,6 +18,17 @@ that should be fixed up.
    open for edit, causes none of them to be opened.
    The first file is triggered to be opened for edit, but none of the
    others are.  Looks like an IDEA bug.
+1. Saving while in online mode causes a massive slowdown during the
+   changelist sync check.  Need to double check the sync check to
+   see:
+    1. Why is the sync check slowing down the editing?  Is it just
+       my virus checker?
+    1. Sync seems to take a long time to run anyway.  See where the
+       performance problems are.
+    1. The editor slowdown happens when the sync is running (changelists
+       have the "Updating..." text), and the changelist view does not
+       have the waiting spinner.  The waiting spinner only seems to
+       show up when the explicit refresh is pressed.
 
 
 

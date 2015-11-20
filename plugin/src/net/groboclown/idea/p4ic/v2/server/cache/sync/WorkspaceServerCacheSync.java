@@ -39,6 +39,7 @@ import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import net.groboclown.idea.p4ic.v2.ui.alerts.ClientNameMismatchHandler;
 import net.groboclown.idea.p4ic.v2.ui.alerts.InvalidClientHandler;
+import net.groboclown.idea.p4ic.v2.ui.alerts.InvalidRootsHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -190,12 +191,8 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
         if (workspaceRoots.isEmpty()) {
             invalidRootsException.fillInStackTrace();
-            alerts.addWarning(
-                    project,
-                    P4Bundle.message("error.config.invalid-roots.title", cache.getClientName()),
-                    P4Bundle.message("error.config.invalid-roots", cache.getClientName()),
-                    invalidRootsException,
-                    FilePathUtil.getFilePath(clientPath));
+            alerts.addCriticalError(new InvalidRootsHandler(project,
+                    cache.getClientServerId(), invalidRootsException), invalidRootsException);
             return null;
         }
         for (String workspaceRoot : workspaceRoots) {
@@ -298,11 +295,8 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         }
         // no root found.
         invalidRootsException.fillInStackTrace();
-        alerts.addWarning(
-                project,
-                P4Bundle.message("error.config.invalid-roots.title", cache.getClientName()),
-                P4Bundle.message("error.config.invalid-roots", cache.getClientName()),
-                invalidRootsException, FilePathUtil.getFilePathsForVirtualFiles(projectRoots));
+        alerts.addCriticalError(new InvalidRootsHandler(project,
+                cache.getClientServerId(), invalidRootsException), invalidRootsException);
         return Collections.emptyList();
     }
 
@@ -367,37 +361,6 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         }
         String unescaped = FileSpecUtil.unescapeP4Path(interestingStuff);
         return new File(unescaped);
-    }
-
-
-    @Nullable
-    VirtualFile getBestClientRoot(@NotNull Project project, @NotNull File referenceDir, @NotNull AlertManager alerts) {
-        final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
-        final FilePath reference = FilePathUtil.getFilePath(referenceDir);
-        for (String workspaceRoot : workspaceRoots) {
-            // Special case for a workspace root that spans windows directories.
-            if (workspaceRoot.equals("null")) {
-                return reference.getVirtualFile();
-            }
-            final FilePath fp = FilePathUtil.getFilePath(workspaceRoot);
-            if (fp.isDirectory() && fp.getVirtualFile() != null && fp.getVirtualFile().exists()) {
-                if (reference.isUnder(fp, false)) {
-                    // reference is more precise
-                    return reference.getVirtualFile();
-                } else if (fp.isUnder(reference, false)) {
-                    // workspace root is more precise
-                    return fp.getVirtualFile();
-                }
-            }
-        }
-        LOG.debug("Did not find roots matching " + referenceDir + "; roots = " + workspaceRoots);
-        // no root found.
-        invalidRootsException.fillInStackTrace();
-        alerts.addWarning(project,
-                P4Bundle.message("error.config.invalid-roots.title", cache.getClientName()),
-                P4Bundle.message("error.config.invalid-roots", cache.getClientName()),
-                invalidRootsException, reference);
-        return null;
     }
 
     @Override

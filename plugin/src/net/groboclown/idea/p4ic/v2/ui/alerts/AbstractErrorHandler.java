@@ -55,11 +55,6 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
         return P4Vcs.getInstance(project);
     }
 
-    @NotNull
-    protected ServerConnectedController getServerConnectedController() {
-        return serverConnectedController;
-    }
-
     public boolean isInvalid() {
         ApplicationManager.getApplication().assertIsDispatchThread();
         return project.isDisposed();

@@ -40,6 +40,7 @@
                   action works correctly now</li>
                   <li>Fixed history difference not working with IDEA 15.0</li>
                   <li>The changelist number is now shown in file history view</li>
+                  <li>Abort a submit if the checkin comment is empty.</li>
                 </ol>
             </li>
             <li><em>0.6.6.1</em>

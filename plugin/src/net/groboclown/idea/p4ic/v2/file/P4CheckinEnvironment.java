@@ -35,6 +35,7 @@ import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
+import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.ui.checkin.P4SubmitPanel;
@@ -64,6 +65,18 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     @Nullable
     @Override
     public RefreshableOnComponent createAdditionalOptionsPanel(CheckinProjectPanel panel, PairConsumer<Object, Object> additionalDataConsumer) {
+        // #52 - we could be able to monitor panel.getCommitMessage(); to ensure
+        // that there's a message, and when there isn't, disable the submit
+        // button.
+        // We can monitor the message (with a thread, disposing of it is
+        // a bit of a bother, but it's doable).  However, disabling the button
+        // currently requires:
+        //  1. Grabbing the owning dialog object of the panel.
+        //  2. Using reflection to make the protected "disableOKButton" method
+        //     accessible and callable.
+        // All of this means that this isn't a very good idea.
+        // The panel has a "setWarning" method, but that doesn't do anything.
+
         return new P4OnCheckinPanel(vcs, panel, additionalDataConsumer);
     }
 
@@ -97,6 +110,13 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             @NotNull NullableFunction<Object, Object> parametersHolder, Set<String> feedback) {
         LOG.info("Submit to server: " + changes);
         final List<VcsException> errors = new ArrayList<VcsException>();
+
+        if (preparedComment == null || preparedComment.length() <= 0) {
+            // Bug #52 - should not be able to submit with an empty comment
+            errors.add(new P4Exception(P4Bundle.message("exception.no-checkin-message")));
+            return errors;
+        }
+
 
         // Find all the files and their respective P4 changelists.
         // This method deals with the problem of discovering the

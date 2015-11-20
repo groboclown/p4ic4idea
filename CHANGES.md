@@ -57,7 +57,8 @@
     * "Move changes" action from non-active changelist modification action moves back into
       original changelist (#68) 
     * History difference did not work on IDEA 15.0 due to an IDEA API change.
-    * Show changelist number in file history view (#76) 
+    * Show changelist number in file history view (#76)
+    * Abort a submit if the checkin comment is empty. (#52)
     
 
 ## ::v0.6.6.1::

@@ -41,9 +41,6 @@ public class SSLKeyStrengthProblemHandler extends AbstractErrorHandler {
             return;
         }
 
-        // FIXME there seems to be a bug here either with IntelliJ or with the
-        // usage of the API - the only way to close the dialog is by pressing escape.
-
         int result = Messages.showYesNoDialog(getProject(),
                 P4Bundle.message("exception.java.ssl.keystrength-ask",
                         System.getProperty("java.version") == null ? "<unknown>" : System.getProperty("java.version"),
@@ -57,19 +54,13 @@ public class SSLKeyStrengthProblemHandler extends AbstractErrorHandler {
                 P4Bundle.message("dialog.confirm.edit-config"),
                 P4Bundle.message("dialog.confirm.work-offline"),
                 Messages.getErrorIcon());
-        boolean changed = false;
         if (result == Messages.YES) {
             // Signal to the API to try again only if
             // the user selected "okay".
-            changed = tryConfigChange();
-        }
-        if (!changed) {
+            tryConfigChange();
+        } else {
             // Work offline
             goOffline();
-            Messages.showMessageDialog(getProject(),
-                    P4Bundle.message("dialog.offline.went-offline.message"),
-                    P4Bundle.message("dialog.offline.went-offline.title"),
-                    Messages.getInformationIcon());
         }
     }
 }

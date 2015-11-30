@@ -1,12 +1,17 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.0</version>
+    <version>0.7.1-b1</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
-            <li><em>0.7.0</em>
+            <li><em>0.7.1</em>
+                <ol>
+                  <li>x.</li>
+                </ol>
+            </li>
+            <li><em>0.7.0`</em>
                 <ol>
                   <li>Major overhaul to the server connection logic.</li>
                   <li>Multiple server connection status in status bar widget.</li>
@@ -41,11 +46,6 @@
                   <li>Fixed history difference not working with IDEA 15.0</li>
                   <li>The changelist number is now shown in file history view</li>
                   <li>Abort a submit if the checkin comment is empty.</li>
-                </ol>
-            </li>
-            <li><em>0.6.6.1</em>
-                <ol>
-                  <li>Fixed infinite changelist refresh due to incorrect file mappings.</li>
                 </ol>
             </li>
         </ol>
@@ -246,6 +246,9 @@
         </component>
         <component>
             <implementation-class>net.groboclown.idea.p4ic.v2.historic_compat.ClearPasswordStoreService</implementation-class>
+        </component>
+        <component>
+            <implementation-class>net.groboclown.idea.p4ic.v2.server.connection.PasswordManager</implementation-class>
         </component>
     </application-components>
 </idea-plugin>

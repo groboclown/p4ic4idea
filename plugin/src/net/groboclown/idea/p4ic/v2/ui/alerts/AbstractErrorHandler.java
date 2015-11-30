@@ -16,6 +16,8 @@ package net.groboclown.idea.p4ic.v2.ui.alerts;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.compat.UICompat;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.connection.CriticalErrorHandler;
@@ -64,8 +66,22 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
         return serverConnectedController.isWorkingOnline();
     }
 
-    protected boolean tryConfigChange() {
-        return UICompat.getInstance().editVcsConfiguration(getProject(), getVcs().getConfigurable());
+    protected void tryConfigChange() {
+        tryConfigChange(true);
+    }
+
+    protected void tryConfigChange(final boolean goOffline) {
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
+            @Override
+            public void run() {
+               if (! UICompat.getInstance().editVcsConfiguration(
+                       getProject(), getVcs().getConfigurable())) {
+                   if (goOffline) {
+                       goOffline();
+                   }
+               }
+            }
+        });
     }
 
     static boolean tryConfigChangeFor(@NotNull Project project) {
@@ -75,6 +91,10 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
 
     protected void goOffline() {
         serverConnectedController.disconnect();
+        Messages.showMessageDialog(getProject(),
+                P4Bundle.message("dialog.offline.went-offline.message"),
+                P4Bundle.message("dialog.offline.went-offline.title"),
+                Messages.getInformationIcon());
     }
 
     protected void connect() {

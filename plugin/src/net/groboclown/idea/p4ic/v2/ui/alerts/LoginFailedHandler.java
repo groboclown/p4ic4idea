@@ -14,15 +14,16 @@
 
 package net.groboclown.idea.p4ic.v2.ui.alerts;
 
-import com.intellij.ide.passwordSafe.PasswordSafe;
-import com.intellij.ide.passwordSafe.PasswordSafeException;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.ui.ErrorDialog;
+import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
+import net.groboclown.idea.p4ic.v2.server.connection.PasswordManager;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
 import org.jetbrains.annotations.NotNull;
 
@@ -49,39 +50,37 @@ public class LoginFailedHandler extends AbstractErrorHandler {
             return;
         }
 
-        int result = Messages.showYesNoCancelDialog(getProject(),
+        int result = Messages.showDialog(getProject(),
                 P4Bundle.message("configuration.login-problem-ask", getExceptionMessage()),
                 P4Bundle.message("configuration.login-problem.title"),
-                P4Bundle.message("configuration.login-problem.yes"),
-                P4Bundle.message("configuration.login-problem.no"),
-                P4Bundle.message("configuration.login-problem.cancel"),
+                new String[] {
+                    P4Bundle.message("configuration.login-problem.yes"),
+                    P4Bundle.message("configuration.login-problem.no"),
+                    P4Bundle.message("configuration.login-problem.cancel")
+                },
+                0,
                 Messages.getErrorIcon());
-        boolean wentOffline = false;
-        if (result == Messages.YES) {
-            try {
-                PasswordSafe.getInstance().removePassword(getProject(),
-                        P4Vcs.class, config.getServiceName());
-                Messages.showMessageDialog(getProject(),
-                        P4Bundle.message("configuration.cleared-password.title"),
-                        P4Bundle.message("configuration.cleared-password.message"),
-                        Messages.getInformationIcon());
-            } catch (PasswordSafeException e) {
-                ErrorDialog.logError(getProject(), P4Bundle.message("configuration.cleared-password.error"), e);
-            }
-        } else if (result == Messages.NO) {
-            wentOffline = ! tryConfigChange();
-        } else {
-            wentOffline = true;
-        }
-
-        if (wentOffline) {
-            // Work offline
+        if (result == 0) { // first option: re-enter password
+            // This needs to run in another event, otherwise the
+            // message dialog will stay active forever.
+            ApplicationManager.getApplication().invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        PasswordManager.getInstance().askPassword(getProject(), config);
+                        connect();
+                    } catch (PasswordStoreException e) {
+                        AlertManager.getInstance().addWarning(getProject(),
+                                P4Bundle.message("password.store.error.title"),
+                                P4Bundle.message("password.store.error", e.getMessage()),
+                                e, new FilePath[0]);
+                    }
+                }
+            });
+        } else if (result == 1) { // 2nd option: update server config
+            tryConfigChange();
+        } else { // 3rd option: work offline
             goOffline();
-            Messages.showMessageDialog(getProject(),
-                    P4Bundle.message("dialog.offline.went-offline.message"),
-                    P4Bundle.message("dialog.offline.went-offline.title"),
-                    Messages.getInformationIcon());
         }
-
     }
 }

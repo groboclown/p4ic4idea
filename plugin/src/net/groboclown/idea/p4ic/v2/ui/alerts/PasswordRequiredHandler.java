@@ -16,9 +16,13 @@ package net.groboclown.idea.p4ic.v2.ui.alerts;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ServerConfig;
-import net.groboclown.idea.p4ic.server.connection.ClientPasswordConnectionHandler;
+import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.CriticalErrorHandler;
+import net.groboclown.idea.p4ic.v2.server.connection.PasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,10 +48,17 @@ public class PasswordRequiredHandler implements CriticalErrorHandler {
             return;
         }
 
-        if (! ClientPasswordConnectionHandler.askPassword(project, config)) {
-            if (project != null) {
-                AbstractErrorHandler.tryConfigChangeFor(project);
+        try {
+            if (! PasswordManager.getInstance().askPassword(project, config)) {
+                if (project != null) {
+                    AbstractErrorHandler.tryConfigChangeFor(project);
+                }
             }
+        } catch (PasswordStoreException e) {
+            AlertManager.getInstance().addWarning(project,
+                    P4Bundle.message("password.store.error.title"),
+                    P4Bundle.message("password.store.error", e.getMessage()),
+                    e, new FilePath[0]);
         }
     }
 }

@@ -49,19 +49,12 @@ public class ClientNameMismatchHandler extends AbstractErrorHandler {
                 P4Bundle.message("configuration.client-mismatch-ask", cachedClientName, p4ClientName),
                 P4Bundle.message("configuration.check-connection"),
                 Messages.getErrorIcon());
-        boolean changed = false;
         if (result == Messages.YES) {
             // Signal to the API to try again only if
             // the user selected "okay".
-            changed = tryConfigChange();
-        }
-        if (!changed) {
-            // Work offline
+            tryConfigChange();
+        } else {
             goOffline();
-            Messages.showMessageDialog(getProject(),
-                    P4Bundle.message("dialog.offline.went-offline.message"),
-                    P4Bundle.message("dialog.offline.went-offline.title"),
-                    Messages.getInformationIcon());
         }
     }
 }

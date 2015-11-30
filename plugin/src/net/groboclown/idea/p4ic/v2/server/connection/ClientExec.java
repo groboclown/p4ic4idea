@@ -399,17 +399,7 @@ public class ClientExec {
             throw new P4ApiException(e);
         } catch (AccessException e) {
             LOG.info("Problem accessing resources (password problem)", e);
-            if (loginCount >= 1) {
-                LOG.info("Gave up on trying to login.  Showing critical error.");
-                P4LoginException ex = new P4LoginException(project, getServerConfig(), e);
-                AlertManager.getInstance().addCriticalError(new LoginFailedHandler(project,
-                        getServerConnectedController(), getServerConfig(), e), ex);
-                throw ex;
-            } else {
-                LOG.info("Trying to log in");
-                onPasswordProblem(project, new P4LoginException(e));
-            }
-            return p4RunFor(project, runner, retryCount, loginCount + 1);
+            return onPasswordProblem(project, e, runner, retryCount, loginCount);
         } catch (ConfigException e) {
             LOG.info("Problem with configuration", e);
             P4InvalidConfigException ex = new P4InvalidConfigException(e);
@@ -498,16 +488,7 @@ public class ClientExec {
         } catch (RequestException e) {
             LOG.info("Request problem", e);
             if (isPasswordProblem(e)) {
-                if (loginCount >= 1) {
-                    P4LoginException ex = new P4LoginException(project, getServerConfig(), e);
-                    configInvalid(project, ex);
-                    AlertManager.getInstance().addCriticalError(new LoginFailedHandler(
-                            project, getServerConnectedController(), getServerConfig(), ex), ex);
-                    throw ex;
-                } else {
-                    onPasswordProblem(project, new P4LoginException(e));
-                }
-                return p4RunFor(project, runner, retryCount, loginCount + 1);
+                return onPasswordProblem(project, e, runner, retryCount, loginCount);
             } else {
                 // Don't know what it really is, but it's a problem
                 // with the server interpretation of the command, rather than
@@ -576,19 +557,31 @@ public class ClientExec {
         connectedController.onConfigInvalid();
     }
 
-    private void onPasswordProblem(@NotNull final Project project, @NotNull P4LoginException e)
-            throws VcsException {
-
-        boolean res = runWithServer(project, new WithServer<Boolean>() {
+    private <T> T onPasswordProblem(@NotNull final Project project, final P4JavaException e,
+            @NotNull final P4Runner<T> runner,
+            final int retryCount, final int loginCount) throws VcsException {
+        if (loginCount >= 1) {
+            LOG.info("Gave up on trying to login.  Showing critical error.");
+            P4LoginException ex = new P4LoginException(project, getServerConfig(), e);
+            AlertManager.getInstance().addCriticalError(new LoginFailedHandler(project,
+                    getServerConnectedController(), getServerConfig(), e), ex);
+            throw ex;
+        }
+        if (runWithServer(project, new WithServer<Boolean>() {
             @Override
             public Boolean run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
                 count.invoke("forcedAuthentication");
                 return connectionHandler.forcedAuthentication(project, server, config,
                         AlertManager.getInstance());
             }
-        }, true);
-        if (!res) {
-            throw e;
+        }, true)) {
+            return p4RunFor(project, runner, retryCount, loginCount + 1);
+        } else {
+            LOG.info("Gave up on trying to login.  Showing critical error.");
+            P4LoginException ex = new P4LoginException(project, getServerConfig(), e);
+            //AlertManager.getInstance().addCriticalError(new LoginFailedHandler(project,
+            //        getServerConnectedController(), getServerConfig(), e), ex);
+            throw ex;
         }
     }
 

@@ -52,7 +52,7 @@ public class InvalidRootsHandler extends AbstractErrorHandler {
         if (result == Messages.YES) {
             // Signal to the API to try again only if
             // the user selected "okay".
-            tryConfigChange();
+            tryConfigChange(false);
         }
         // Don't go offline if not changed.
     }

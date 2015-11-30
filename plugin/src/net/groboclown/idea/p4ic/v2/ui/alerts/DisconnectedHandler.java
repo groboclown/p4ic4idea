@@ -64,10 +64,6 @@ public class DisconnectedHandler extends AbstractErrorHandler {
             connect();
         } else {
             goOffline();
-            Messages.showMessageDialog(getProject(),
-                    P4Bundle.message("dialog.offline.went-offline.message"),
-                    P4Bundle.message("dialog.offline.went-offline.title"),
-                    Messages.getInformationIcon());
         }
     }
 }

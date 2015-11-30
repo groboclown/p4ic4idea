@@ -1,6 +1,20 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.7.1::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Some cases of the error dialog was staying active after selecting an option
+      until "Cancel" is selected.
+    * When the user selected to not store the password, it wouldn't be used.
+
+
 ## ::v0.7.0::
 
 ### Overview

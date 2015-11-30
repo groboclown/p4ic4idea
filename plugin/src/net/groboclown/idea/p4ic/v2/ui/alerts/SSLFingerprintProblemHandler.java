@@ -45,19 +45,13 @@ public class SSLFingerprintProblemHandler extends AbstractErrorHandler {
                 P4Bundle.message("configuration.ssl-fingerprint-problem.ask", getExceptionMessage()),
                 P4Bundle.message("configuration.ssl-fingerprint-problem.title"),
                 Messages.getErrorIcon());
-        boolean changed = false;
         if (result == Messages.YES) {
             // Signal to the API to try again only if
             // the user selected "okay".
-            changed = tryConfigChange();
-        }
-        if (!changed) {
+            tryConfigChange();
+        } else {
             // Work offline
             goOffline();
-            Messages.showMessageDialog(getProject(),
-                    P4Bundle.message("dialog.offline.went-offline.message"),
-                    P4Bundle.message("dialog.offline.went-offline.title"),
-                    Messages.getInformationIcon());
         }
     }
 }

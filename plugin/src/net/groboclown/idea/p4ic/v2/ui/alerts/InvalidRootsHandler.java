@@ -17,22 +17,26 @@ package net.groboclown.idea.p4ic.v2.ui.alerts;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Date;
+import java.util.*;
 
 public class InvalidRootsHandler extends AbstractErrorHandler {
     private static final Logger LOG = Logger.getInstance(InvalidRootsHandler.class);
 
     private final ClientServerId clientServerId;
+    private final Collection<String> workspaceRoots;
 
     public InvalidRootsHandler(@NotNull Project project,
+            @NotNull Collection<String> workspaceRoots,
             @NotNull ClientServerId clientServerId, @NotNull Exception ex) {
         super(project, FAKE_CONTROLLER, ex);
         this.clientServerId = clientServerId;
+        this.workspaceRoots = Collections.unmodifiableCollection(new ArrayList<String>(workspaceRoots));
     }
 
     @Override
@@ -42,13 +46,28 @@ public class InvalidRootsHandler extends AbstractErrorHandler {
         if (isInvalid()) {
             return;
         }
+        final List<VirtualFile> vcsRoots = getVcs().getVcsRoots();
+        List<String> vcsPresentableRoots = new ArrayList<String>(vcsRoots.size());
+        for (VirtualFile vcsRoot : vcsRoots) {
+            vcsPresentableRoots.add(vcsRoot.getPresentableName());
+        }
 
-        int result = Messages.showYesNoDialog(getProject(),
-                P4Bundle.message("error.config.invalid-roots"),
-                P4Bundle.message("error.config.invalid-roots.title", clientServerId.getClientId()),
-                P4Bundle.message("error.config.invalid-roots.yes"),
-                P4Bundle.message("error.config.invalid-roots.no"),
-                Messages.getErrorIcon());
+        int result;
+        if (workspaceRoots.isEmpty()) {
+            result = Messages.showYesNoDialog(getProject(),
+                    P4Bundle.message("error.config.no-workspace-roots"),
+                    P4Bundle.message("error.config.invalid-roots.title", clientServerId.getClientId()),
+                    P4Bundle.message("error.config.invalid-roots.yes"),
+                    P4Bundle.message("error.config.invalid-roots.no"),
+                    Messages.getErrorIcon());
+        } else {
+            result = Messages.showYesNoDialog(getProject(),
+                    P4Bundle.message("error.config.invalid-roots", workspaceRoots, vcsPresentableRoots),
+                    P4Bundle.message("error.config.invalid-roots.title", clientServerId.getClientId()),
+                    P4Bundle.message("error.config.invalid-roots.yes"),
+                    P4Bundle.message("error.config.invalid-roots.no"),
+                    Messages.getErrorIcon());
+        }
         if (result == Messages.YES) {
             // Signal to the API to try again only if
             // the user selected "okay".

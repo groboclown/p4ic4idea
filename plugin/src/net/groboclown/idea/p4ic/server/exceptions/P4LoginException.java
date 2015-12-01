@@ -14,6 +14,7 @@
 package net.groboclown.idea.p4ic.server.exceptions;
 
 import com.intellij.openapi.project.Project;
+import com.perforce.p4java.exception.P4JavaException;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,7 +24,7 @@ public class P4LoginException extends P4DisconnectedException {
         super(message);
     }
 
-    public P4LoginException(@NotNull Throwable cause) {
+    public P4LoginException(@NotNull P4JavaException cause) {
         super(cause);
     }
 
@@ -31,8 +32,14 @@ public class P4LoginException extends P4DisconnectedException {
         super(project, serverConfig, message);
     }
 
-    public P4LoginException(@Nullable Project project, @Nullable ServerConfig serverConfig, @NotNull Throwable cause) {
+    public P4LoginException(@Nullable Project project, @Nullable ServerConfig serverConfig, @NotNull P4JavaException cause) {
         super(project, serverConfig, cause);
     }
 
+    public P4JavaException getP4JavaException() {
+        if (getCause() != null && getCause() instanceof P4JavaException) {
+            return (P4JavaException) getCause();
+        }
+        return null;
+    }
 }

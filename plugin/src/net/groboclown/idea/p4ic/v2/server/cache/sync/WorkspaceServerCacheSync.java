@@ -192,6 +192,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         if (workspaceRoots.isEmpty()) {
             invalidRootsException.fillInStackTrace();
             alerts.addCriticalError(new InvalidRootsHandler(project,
+                    workspaceRoots,
                     cache.getClientServerId(), invalidRootsException), invalidRootsException);
             return null;
         }
@@ -259,6 +260,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
             LOG.debug(" - project roots: " + projectRoots);
             LOG.debug(" - workspace roots: " + workspaceRoots);
         }
+
         for (String workspaceRoot: workspaceRoots) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(" - root: " + workspaceRoot);
@@ -296,6 +298,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         // no root found.
         invalidRootsException.fillInStackTrace();
         alerts.addCriticalError(new InvalidRootsHandler(project,
+                workspaceRoots,
                 cache.getClientServerId(), invalidRootsException), invalidRootsException);
         return Collections.emptyList();
     }
@@ -485,7 +488,10 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
 
     @Override
     protected boolean needsRefresh() {
-        return getLastRefreshDate().equals(CachedState.NEVER_LOADED);
+        // Refresh if the roots are empty, which indicates a bad previous load,
+        // such as with an authentication issue.
+        return cachedServerWorkspace.getRoots().isEmpty() ||
+                getLastRefreshDate().equals(CachedState.NEVER_LOADED);
     }
 
 

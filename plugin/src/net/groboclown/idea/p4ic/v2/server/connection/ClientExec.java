@@ -114,15 +114,39 @@ public class ClientExec {
     }
 
 
-    static IServerInfo getServerInfo(@NotNull ServerConfig config)
-            throws IOException, P4JavaException, URISyntaxException {
-        final IOptionsServer server = connectTo(null, null, ConnectionHandler.getHandlerFor(config), config,
-                // temp dir doesn't matter for this call.
-                File.createTempFile("p4tempfile", "y"));
+    static IServerInfo getServerInfo(@Nullable Project project, @NotNull ServerConfig config)
+            throws IOException, P4JavaException, URISyntaxException, P4LoginException {
+        ConnectionHandler connectionHandler = ConnectionHandler.getHandlerFor(config);
+        final IOptionsServer server = connectTo(project, null, connectionHandler, config,
+                getTempDir(project));
         try {
             return server.getServerInfo();
+        } catch (RequestException e) {
+            if (isPasswordProblem(e)) {
+                return forceAuthenticationServerInfo(project, connectionHandler, server, config);
+            } else {
+                throw e;
+            }
+        } catch (AccessException e) {
+            return forceAuthenticationServerInfo(project, connectionHandler, server, config);
         } finally {
             server.disconnect();
+        }
+    }
+
+    private static IServerInfo forceAuthenticationServerInfo(@Nullable Project project,
+            @NotNull ConnectionHandler connectionHandler, @NotNull IOptionsServer server,
+            @NotNull ServerConfig config) throws P4JavaException, P4LoginException {
+        try {
+            connectionHandler.forcedAuthentication(project, server, config, AlertManager.getInstance());
+            return server.getServerInfo();
+        } catch (RequestException e) {
+            if (isPasswordProblem(e)) {
+                throw new P4LoginException(project, config, e);
+            }
+            throw e;
+        } catch (AccessException e) {
+            throw new P4LoginException(project, config, e);
         }
     }
 
@@ -132,7 +156,7 @@ public class ClientExec {
         Exception exception = null;
         boolean online = false;
         try {
-            final IServerInfo info = getServerInfo(config);
+            final IServerInfo info = getServerInfo(project, config);
             if (info != null) {
                 online = true;
             }
@@ -141,6 +165,9 @@ public class ClientExec {
         } catch (P4JavaException e) {
             exception = e;
         } catch (URISyntaxException e) {
+            exception = e;
+        } catch (P4LoginException e) {
+            // FIXME this should be a login request.
             exception = e;
         }
         if (! online) {
@@ -157,23 +184,54 @@ public class ClientExec {
     }
 
 
-    static List<String> getClientNames(@NotNull ServerConfig config)
-            throws IOException, P4JavaException, URISyntaxException {
-        final IOptionsServer server = connectTo(null, null, ConnectionHandler.getHandlerFor(config), config,
-                // temp dir doesn't matter for this call.
-                File.createTempFile("p4tempfile", "y"));
+    static List<String> getClientNames(@Nullable Project project, @NotNull ServerConfig config)
+            throws IOException, P4JavaException, URISyntaxException, P4LoginException {
+        ConnectionHandler connectionHandler = ConnectionHandler.getHandlerFor(config);
+        final IOptionsServer server = connectTo(project, null, connectionHandler, config,
+                getTempDir(project));
         try {
-            final List<IClientSummary> clients =
-                    server.getClients(config.getUsername(), null, 0);
-            List<String> ret = new ArrayList<String>(clients.size());
-            for (IClientSummary client : clients) {
-                if (client != null && client.getName() != null) {
-                    ret.add(client.getName());
-                }
+            return getClientNames(server, config.getUsername());
+        } catch (RequestException e) {
+            if (isPasswordProblem(e)) {
+                return forceAuthenticationGetClients(project, connectionHandler, server, config);
             }
-            return ret;
+            throw e;
+        } catch (AccessException e) {
+            return forceAuthenticationGetClients(project, connectionHandler, server, config);
         } finally {
             server.disconnect();
+        }
+    }
+
+
+    private static List<String> getClientNames(@NotNull IOptionsServer server, @NotNull String username)
+            throws ConnectionException, AccessException, RequestException {
+        final List<IClientSummary> clients =
+                server.getClients(username, null, 0);
+        List<String> ret = new ArrayList<String>(clients.size());
+        for (IClientSummary client : clients) {
+            if (client != null && client.getName() != null) {
+                ret.add(client.getName());
+            }
+        }
+        return ret;
+    }
+
+
+    private static List<String> forceAuthenticationGetClients(@Nullable final Project project,
+            @NotNull final ConnectionHandler connectionHandler,
+            @NotNull final IOptionsServer server, @NotNull final ServerConfig config)
+            throws P4JavaException, P4LoginException {
+        try {
+            connectionHandler.forcedAuthentication(project, server, config, AlertManager.getInstance());
+            return getClientNames(server, config.getUsername());
+        } catch (RequestException e) {
+            if (isPasswordProblem(e)) {
+                throw new P4LoginException(project, config, e);
+            }
+            throw e;
+        } catch (AccessException e) {
+            throw new P4LoginException(project, config, e);
         }
     }
 
@@ -218,7 +276,10 @@ public class ClientExec {
 
     // Seems like a hack...
     @NotNull
-    private File getTempDir(@NotNull Project project) {
+    private static File getTempDir(@Nullable Project project) throws IOException {
+        if (project == null) {
+            return File.createTempFile("p4tempfile", "y");
+        }
         return P4Vcs.getInstance(project).getTempDir();
     }
 
@@ -397,6 +458,11 @@ public class ClientExec {
             // some other client API issue
             LOG.warn("General error in P4JavaApi", e);
             throw new P4ApiException(e);
+        } catch (PasswordAccessedWrongException e) {
+            LOG.info("Could not get the password yet");
+            P4LoginException ex = new P4LoginException(e);
+            // Don't explicitly tell the user about this; it will show up eventually.
+            throw ex;
         } catch (AccessException e) {
             LOG.info("Problem accessing resources (password problem)", e);
             return onPasswordProblem(project, e, runner, retryCount, loginCount);
@@ -557,15 +623,11 @@ public class ClientExec {
         connectedController.onConfigInvalid();
     }
 
-    private <T> T onPasswordProblem(@NotNull final Project project, final P4JavaException e,
+    private <T> T onPasswordProblem(@NotNull final Project project, @NotNull final P4JavaException e,
             @NotNull final P4Runner<T> runner,
             final int retryCount, final int loginCount) throws VcsException {
         if (loginCount >= 1) {
-            LOG.info("Gave up on trying to login.  Showing critical error.");
-            P4LoginException ex = new P4LoginException(project, getServerConfig(), e);
-            AlertManager.getInstance().addCriticalError(new LoginFailedHandler(project,
-                    getServerConnectedController(), getServerConfig(), e), ex);
-            throw ex;
+            throw loginFailure(project, getServerConfig(), getServerConnectedController(), e);
         }
         if (runWithServer(project, new WithServer<Boolean>() {
             @Override
@@ -577,12 +639,18 @@ public class ClientExec {
         }, true)) {
             return p4RunFor(project, runner, retryCount, loginCount + 1);
         } else {
-            LOG.info("Gave up on trying to login.  Showing critical error.");
-            P4LoginException ex = new P4LoginException(project, getServerConfig(), e);
-            //AlertManager.getInstance().addCriticalError(new LoginFailedHandler(project,
-            //        getServerConnectedController(), getServerConfig(), e), ex);
-            throw ex;
+            throw loginFailure(project, getServerConfig(), getServerConnectedController(), e);
         }
+    }
+
+
+    static P4LoginException loginFailure(@NotNull Project project, @NotNull ServerConfig config,
+            @NotNull ServerConnectedController controller, @NotNull final P4JavaException e) {
+        LOG.info("Gave up on trying to login.  Showing critical error.");
+        P4LoginException ex = new P4LoginException(project, config, e);
+        AlertManager.getInstance().addCriticalError(
+                new LoginFailedHandler(project, controller, config, e), ex);
+        return ex;
     }
 
 

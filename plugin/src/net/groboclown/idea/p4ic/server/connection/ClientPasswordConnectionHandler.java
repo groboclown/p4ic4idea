@@ -93,9 +93,9 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
                 LOG.debug("No issue logging in with stored password");
                 return true;
             } catch (AccessException e) {
-                LOG.info("Stored password was bad; forgetting it");
+                LOG.info("Stored password was bad; forgetting it", e);
                 PasswordManager.getInstance().forgetPassword(project, config);
-                throw e;
+                return false;
             }
         }
         return false;

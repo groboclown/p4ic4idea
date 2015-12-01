@@ -26,6 +26,7 @@ import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4Config.ConnectionMethod;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -154,9 +155,9 @@ public class P4ConfigConnectionPanel implements ConnectionPanel {
             new FileP4Config(new File(config.getConfigFile()));
             setTextMessage("");
         } catch (IOException e) {
-            setTextMessage(
-                    P4Bundle.message("configuration.p4config.file-read-problem", config.getConfigFile(),
-                            e.getMessage()));
+            setTextMessage(AlertManager.injectReason(
+                    P4Bundle.message("configuration.p4config.file-read-problem", config.getConfigFile()),
+                    e));
         }
     }
 

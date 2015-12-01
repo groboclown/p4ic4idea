@@ -15,12 +15,16 @@
 package net.groboclown.idea.p4ic.compat.idea135;
 
 import com.intellij.ide.actions.ShowSettingsUtilImpl;
+import com.intellij.ide.passwordSafe.ui.PasswordSafePromptDialog;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.compat.UICompat;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class UICompat135 extends UICompat {
     @Override
@@ -34,6 +38,16 @@ public class UICompat135 extends UICompat {
                 project,
                 ShowSettingsUtilImpl.createDimensionKey(configurable),
                 configurable);
+    }
+
+    @Nullable
+    @Override
+    public String askPassword(@Nullable final Project project, @NotNull final String title,
+            @NotNull final String message,
+            final Class<?> requester, @NotNull final String key, final boolean resetPassword,
+            @NotNull final String error) {
+        return PasswordSafePromptDialog.askPassword(project, ModalityState.any(),
+                title, message, requester, key, resetPassword, error);
     }
 
 

@@ -21,6 +21,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
@@ -100,6 +101,8 @@ public class AlertManager implements ApplicationComponent {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Added warning " + details, ex == null ? new Throwable("stack capture") : ex);
         }
+        title = injectReason(title, ex);
+        details = injectReason(details, ex);
         eventLock.lock();
         try {
             LOG.warn(details, ex);
@@ -108,6 +111,21 @@ public class AlertManager implements ApplicationComponent {
         } finally {
             eventLock.unlock();
         }
+    }
+
+    @NotNull
+    public static String injectReason(@NotNull String message, @Nullable Throwable ex) {
+        if (message.contains("%%")) {
+            String inject = P4Bundle.message("error.unknown");
+            if (ex != null) {
+                String msg = ex.getMessage();
+                if (msg != null && msg.length() > 0) {
+                    inject = P4Bundle.message("error.injected", msg);
+                }
+            }
+            message = message.replaceFirst("%%", inject);
+        }
+        return message;
     }
 
     public void addWarning(@NotNull Project project, @Nls @NotNull String title, @Nls @NotNull String details,

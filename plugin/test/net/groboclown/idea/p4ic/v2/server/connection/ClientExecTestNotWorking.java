@@ -67,7 +67,7 @@ public class ClientExecTestNotWorking {
         server.add(new P4Request(CmdSpec.INFO.toString(), new String[0], null, null),
                 P4Response.serverInfo(serverConfig, true, false));
 
-        final IServerInfo info = ClientExec.getServerInfo(serverConfig);
+        final IServerInfo info = ClientExec.getServerInfo(null, serverConfig);
         assertThat(info, not(nullValue()));
     }
 

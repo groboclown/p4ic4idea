@@ -17,19 +17,23 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.ide.passwordSafe.PasswordSafeException;
 import com.intellij.ide.passwordSafe.impl.providers.memory.MemoryPasswordSafe;
-import com.intellij.ide.passwordSafe.ui.PasswordSafePromptDialog;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.compat.UICompat;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Returned passwords will always be either null or non-empty.
@@ -43,6 +47,9 @@ public class PasswordManager implements ApplicationComponent {
 
     @Nullable
     private MemoryPasswordSafe memoryPasswordSafe = new MemoryPasswordSafe();
+
+    // the keys that are saved into the in-memory safe.
+    private final Set<String> hasPasswordInMemory = Collections.synchronizedSet(new HashSet<String>());
 
 
     @NotNull
@@ -58,6 +65,8 @@ public class PasswordManager implements ApplicationComponent {
      */
     @Nullable
     public String getSimplePassword(@NotNull final ServerConfig config) {
+        // TODO look at storing these in the memory safe
+
         String ret = config.getPlaintextPassword();
         if (ret == null || ret.length() <= 0) {
             return null;
@@ -76,19 +85,29 @@ public class PasswordManager implements ApplicationComponent {
      */
     @Nullable
     public String getPassword(@Nullable final Project project, @NotNull final ServerConfig config)
-            throws PasswordStoreException {
+            throws PasswordStoreException, PasswordAccessedWrongException {
         if (memoryPasswordSafe == null) {
             LOG.warn("already disposed");
             return null;
         }
 
+        final String key = toKey(config);
+
         String ret = config.getPlaintextPassword();
         if (ret != null && ret.length() > 0) {
+            LOG.debug("Using plaintext for " + key);
             return config.getPlaintextPassword();
         }
         try {
-            ret = memoryPasswordSafe.getPassword(project, REQUESTOR_CLASS, toKey(config));
+            ret = memoryPasswordSafe.getPassword(project, REQUESTOR_CLASS, key);
             if (ret == null || ret.length() <= 0) {
+                if (hasPasswordInMemory.contains(toKey(config))) {
+                    // already set the value, and it's empty.
+                    LOG.debug("Using stored null password for " + key);
+                    return null;
+                }
+
+
                 // From the JavaDoc on the general password getter:
                 // This method may be called from the background,
                 // and it may need to ask user to enter the master password
@@ -101,15 +120,18 @@ public class PasswordManager implements ApplicationComponent {
                         ! ApplicationManager.getApplication().isReadAccessAllowed()) {
                     LOG.debug("Fetching password from PasswordSafe");
                     ret = PasswordSafe.getInstance().getPassword(project,
-                            REQUESTOR_CLASS, toKey(config));
+                            REQUESTOR_CLASS, key);
                     if (ret != null && ret.length() > 0) {
                         // keep a local copy of the password for future, outside the
                         // dispatch and in a read action, reference.
-                        memoryPasswordSafe.storePassword(project, REQUESTOR_CLASS, toKey(config), ret);
+                        memoryPasswordSafe.storePassword(project, REQUESTOR_CLASS, key, ret);
                     }
+                    hasPasswordInMemory.add(toKey(config));
                 } else {
-                    LOG.warn("Could not get password because the action is called from outside the dispatch thread and in a read action.",
-                            new Throwable("stack capture"));
+                    LOG.warn("Could not get password because the action is called from outside the dispatch thread and in a read action.");
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Read action for " + key, new Throwable());
+                    }
                     // Perform a post-action request for the password.
                     // This ruins some of the actions, but it at least pulls in the
                     // password for future requests.
@@ -117,20 +139,31 @@ public class PasswordManager implements ApplicationComponent {
                         @Override
                         public void run() {
                             try {
+                                LOG.debug("Fetching for " + key + " in background thread");
                                 String pw = PasswordSafe.getInstance().getPassword(project,
-                                        REQUESTOR_CLASS, toKey(config));
+                                        REQUESTOR_CLASS, key);
+                                hasPasswordInMemory.add(key);
                                 if (pw != null) {
                                     memoryPasswordSafe.storePassword(project,
-                                            REQUESTOR_CLASS, toKey(config), pw);
+                                            REQUESTOR_CLASS, key, pw);
+                                } else {
+                                    // force the login.
+                                    //P4LoginException ex = new P4LoginException(project, config,
+                                    //        P4Bundle.message("login.password.error"));
+                                    //AlertManager.getInstance().addCriticalError(
+                                    //        new PasswordRequiredHandler(project, config), ex);
+                                    LOG.warn("Not forcing a login");
                                 }
                             } catch (PasswordSafeException e) {
                                 AlertManager.getInstance().addWarning(project,
                                         P4Bundle.message("password.store.error.title"),
-                                        P4Bundle.message("password.store.error", e.getMessage()),
+                                        P4Bundle.message("password.store.error"),
                                         e, new FilePath[0]);
                             }
                         }
                     });
+
+                    throw new PasswordAccessedWrongException();
                 }
             }
             if (ret == null || ret.length() <= 0) {
@@ -145,19 +178,25 @@ public class PasswordManager implements ApplicationComponent {
 
     public void forgetPassword(@Nullable Project project, @NotNull final ServerConfig config)
             throws PasswordStoreException {
+        final String key = toKey(config);
+        LOG.debug("Forgetting for " + key);
+
         PasswordStoreException ex = null;
+
+        // Do not remove the password from the "has password", because we still "have" it
+        // pulled into the memory safe.
 
         // Critical call; do not fail just because it's been disposed.
         if (memoryPasswordSafe != null) {
             try {
-                memoryPasswordSafe.removePassword(project, REQUESTOR_CLASS, toKey(config));
+                memoryPasswordSafe.removePassword(project, REQUESTOR_CLASS, key);
             } catch (PasswordSafeException e) {
                 ex = new PasswordStoreException(e);
             }
         }
 
         try {
-            PasswordSafe.getInstance().removePassword(project, REQUESTOR_CLASS, toKey(config));
+            PasswordSafe.getInstance().removePassword(project, REQUESTOR_CLASS, key);
         } catch (PasswordSafeException e) {
             ex = new PasswordStoreException(e);
         }
@@ -181,17 +220,19 @@ public class PasswordManager implements ApplicationComponent {
             return false;
         }
 
+        final String key = toKey(config);
+
         // clear out the memory password.
         try {
-            memoryPasswordSafe.removePassword(project, REQUESTOR_CLASS, toKey(config));
+            memoryPasswordSafe.removePassword(project, REQUESTOR_CLASS, key);
         } catch (PasswordSafeException e) {
             throw new PasswordStoreException(e);
         }
 
-        String password = PasswordSafePromptDialog.askPassword(project, ModalityState.any(),
+        String password = UICompat.getInstance().askPassword(project,
                 P4Bundle.message("login.password.title"),
                 P4Bundle.message("login.password.message", config.getServiceName(), config.getUsername()),
-                REQUESTOR_CLASS, toKey(config),
+                REQUESTOR_CLASS, key,
                 true,
                 P4Bundle.message("login.password.error")
         );
@@ -205,12 +246,13 @@ public class PasswordManager implements ApplicationComponent {
             // saved, because the user could have selected to not
             // store it.
             LOG.info("New password stored");
+            hasPasswordInMemory.add(key);
             try {
                 memoryPasswordSafe.storePassword(
-                        project, REQUESTOR_CLASS, toKey(config),
+                        project, REQUESTOR_CLASS, key,
                         password);
             } catch (PasswordSafeException e) {
-                LOG.info("Did not store password", e);
+                LOG.info("Did not store password for " + key, e);
                 throw new PasswordStoreException(e);
             }
             return true;

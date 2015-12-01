@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class P4SSLException extends VcsConnectionProblem {
     public P4SSLException(@NotNull ConnectionException e) {
-        super(P4Bundle.message("exception.java.ssl", e.getMessage()));
+        super(P4Bundle.message("exception.java.ssl"));
         initCause(e);
     }
 

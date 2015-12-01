@@ -359,7 +359,8 @@ public class ServerConnectionManager implements ApplicationComponent {
 
         @Override
         public Boolean call() throws Exception {
-            return ! ClientExec.getServerInfo(config).isCaseSensitive();
+            // no project is available at this level.
+            return ! ClientExec.getServerInfo(null, config).isCaseSensitive();
         }
     }
 

@@ -10,9 +10,10 @@
 ### Details
 
 * Bug fixes.
-    * Some cases of the error dialog was staying active after selecting an option
-      until "Cancel" is selected.
+    * In some circumstances, the error dialog was only closing when "Cancel" was selected.
+    * Some circumstances cause the user to not be prompted for the password. (#80)
     * When the user selected to not store the password, it wouldn't be used.
+    * Added the underlying problem to the error report in the warnings panel.
 
 
 ## ::v0.7.0::

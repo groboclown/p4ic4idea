@@ -81,27 +81,33 @@ public class ClientCacheManager {
 
     @NotNull
     public ServerQuery createWorkspaceRefreshQuery() {
-        return workspace.createRefreshQuery();
+        return workspace.createRefreshQuery(false);
+    }
+
+
+    @NotNull
+    public ServerQuery createForcedWorkspaceRefreshQuery() {
+        return workspace.createRefreshQuery(true);
     }
 
     @NotNull
     public ServerQuery createFileActionsRefreshQuery() {
-        return fileActions.createRefreshQuery();
+        return fileActions.createRefreshQuery(false);
     }
 
     @NotNull
     public ServerQuery createChangeListRefreshQuery() {
-        return changeLists.createRefreshQuery();
+        return changeLists.createRefreshQuery(false);
     }
 
     @NotNull
     public ServerQuery createJobStatusListRefreshQuery() {
-        return jobStatusList.createRefreshQuery();
+        return jobStatusList.createRefreshQuery(false);
     }
 
     @NotNull
     public ServerQuery createJobListRefreshQuery() {
-        return jobs.createRefreshQuery();
+        return jobs.createRefreshQuery(false);
     }
 
     /**

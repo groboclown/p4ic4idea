@@ -43,8 +43,10 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
     private final P4Vcs myVcs;
     @NotNull
     private final P4ChangelistNumber myRevision;
+    private final boolean hasShelved;
 
     public P4CommittedChangeList(@NotNull P4Vcs vcs, @NotNull P4Server server, @NotNull IChangelist changelist) throws VcsException {
+        // TODO format via bundle
         super(changelist.getId() + ": " + changelist.getDescription(),
                 changelist.getDescription(),
                 changelist.getUsername(),
@@ -52,6 +54,7 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
                 changelist.getDate(),
                 createChanges(vcs, server, changelist.getId()));
         myVcs = vcs;
+        hasShelved = changelist.isShelved();
 
         // Does not use the P4CurrentRevisionNumber, because this is for changelist
         myRevision = new P4ChangelistNumber(changelist);
@@ -71,6 +74,10 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
     @Override
     public VcsRevisionNumber getRevisionNumber() {
         return myRevision;
+    }
+
+    public boolean hasShelved() {
+        return hasShelved;
     }
 
 

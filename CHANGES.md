@@ -1,6 +1,22 @@
 # IDEA Community VCS Integration for Perforce
 
 
+
+## ::v0.7.2::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * P4ProjectConfigurable can save settings without reading config sources. (#82)
+    * On startup, workspaces do not load root paths if password stored in IDEA. (#81)
+    * Changing the Perforce workspace root and moving the project directory to
+      the new location no longer reports a directory mismatch. (#84) 
+
+
 ## ::v0.7.1::
 
 ### Overview

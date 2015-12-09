@@ -22,35 +22,79 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.ChangeBrowserSettings;
 import com.intellij.openapi.vcs.versionBrowser.ChangesBrowserSettingsEditor;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
+import com.intellij.openapi.vcs.versionBrowser.StandardVersionFilterComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.AsynchConsumer;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
+import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.extension.P4CommittedChangesProvider.P4ChangeBrowserSettings;
+import net.groboclown.idea.p4ic.v2.changes.P4CommittedChangeList;
+import net.groboclown.idea.p4ic.v2.history.P4RepositoryLocation;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-public class P4CommittedChangesProvider implements CommittedChangesProvider<CommittedChangeList, ChangeBrowserSettings> {
+public class P4CommittedChangesProvider implements CommittedChangesProvider<P4CommittedChangeList, P4ChangeBrowserSettings> {
+    private final P4Vcs vcs;
+
+    public P4CommittedChangesProvider(@NotNull final P4Vcs vcs) {
+        this.vcs = vcs;
+    }
+
+
     @NotNull
     @Override
-    public ChangeBrowserSettings createDefaultSettings() {
-        return new ChangeBrowserSettings();
+    public P4ChangeBrowserSettings createDefaultSettings() {
+        return new P4ChangeBrowserSettings();
     }
 
     @Override
-    public ChangesBrowserSettingsEditor<ChangeBrowserSettings> createFilterUI(boolean showDateFilter) {
-        return null;
+    public ChangesBrowserSettingsEditor<P4ChangeBrowserSettings> createFilterUI(boolean showDateFilter) {
+        return new StandardVersionFilterComponent<P4ChangeBrowserSettings>() {
+            @Override
+            public JComponent getComponent() {
+                return (JComponent) getStandardPanel();
+            }
+        };
     }
 
     @Nullable
     @Override
     public RepositoryLocation getLocationFor(FilePath root) {
+        // FIXME cache the values?
+
+        try {
+            final P4Server server = vcs.getP4ServerFor(root);
+            if (server == null) {
+                return null;
+            }
+            final Map<FilePath, IExtendedFileSpec> specMap =
+                    server.getFileStatus(Collections.singletonList(root));
+            if (specMap == null) {
+                return null;
+            }
+            IExtendedFileSpec spec = specMap.get(root);
+            if (spec == null) {
+                return null;
+            }
+            return new P4RepositoryLocation(spec);
+        } catch (InterruptedException e) {
+            // FIXME alert the error
+        }
+
         return null;
     }
 
     @Nullable
     @Override
     public RepositoryLocation getLocationFor(FilePath root, String repositoryPath) {
-        return null;
+        return getLocationFor(root);
     }
 
     @Nullable
@@ -60,18 +104,26 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<Comm
     }
 
     @Override
-    public List<CommittedChangeList> getCommittedChanges(ChangeBrowserSettings settings, RepositoryLocation location, int maxCount) throws VcsException {
+    public List<P4CommittedChangeList> getCommittedChanges(P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount) throws VcsException {
+        // FIXME implement
+
         return null;
     }
 
     @Override
-    public void loadCommittedChanges(ChangeBrowserSettings settings, RepositoryLocation location, int maxCount, AsynchConsumer<CommittedChangeList> consumer) throws VcsException {
-
+    public void loadCommittedChanges(P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount, AsynchConsumer<CommittedChangeList> consumer) throws VcsException {
+        // FIXME
     }
 
     @Override
     public ChangeListColumn[] getColumns() {
-        return new ChangeListColumn[0];
+        return new ChangeListColumn[] {
+                ChangeListColumn.NUMBER,
+                ChangeListColumn.NAME,
+                ChangeListColumn.DESCRIPTION,
+                ChangeListColumn.DATE,
+                HAS_SHELVED,
+        };
     }
 
     @Nullable
@@ -95,13 +147,34 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<Comm
      */
     @Nullable
     @Override
-    public Pair<CommittedChangeList, FilePath> getOneList(VirtualFile file, VcsRevisionNumber number) throws VcsException {
-        return null;
+    public Pair<P4CommittedChangeList, FilePath> getOneList(VirtualFile file, VcsRevisionNumber number) throws VcsException {
+        FilePath fp = FilePathUtil.getFilePath(file);
+        try {
+            final P4Server server = vcs.getP4ServerFor(fp);
+            if (server == null) {
+                return new Pair<P4CommittedChangeList, FilePath>(null, fp);
+            }
+            if (number != null) {
+                String revision = number.asString();
+                if (revision != null && revision.length() > 0 && (revision.charAt(0) == '@' || revision
+                        .charAt(0) == '#')) {
+                    P4CommittedChangeList changeList = server.getChangelistForOnline(fp, revision);
+
+                    return Pair.create(changeList, fp);
+                }
+            }
+            // FIXME use the correct string
+            P4CommittedChangeList changeList = server.getChangelistForOnline(fp, "#head");
+            return Pair.create(changeList, fp);
+        } catch (InterruptedException e) {
+            // FIXME show alert
+            return null;
+        }
     }
 
     @Override
     public RepositoryLocation getForNonLocal(VirtualFile file) {
-        return null;
+        return getLocationFor(FilePathUtil.getFilePath(file));
     }
 
     /**
@@ -112,4 +185,54 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<Comm
     public boolean supportsIncomingChanges() {
         return false;
     }
+
+
+    public static class P4ChangeBrowserSettings extends ChangeBrowserSettings {
+        public String SHOW_ONLY_SHELVED_FILTER = "false";
+
+        public void setShowOnlyShelvedFilter(@Nullable String showFilter) {
+            SHOW_ONLY_SHELVED_FILTER = showFilter == null ? "false" :
+                    Boolean.valueOf(Boolean.parseBoolean(showFilter)).toString();
+        }
+
+        public boolean isShowOnlyShelvedFilter() {
+            return SHOW_ONLY_SHELVED_FILTER != null && Boolean.parseBoolean(SHOW_ONLY_SHELVED_FILTER);
+        }
+
+        @NotNull
+        @Override
+        protected List<Filter> createFilters() {
+            final List<Filter> ret = super.createFilters();
+
+            if (isShowOnlyShelvedFilter()) {
+                ret.add(new Filter() {
+                    @Override
+                    public boolean accepts(final CommittedChangeList change) {
+                        if (change != null && change instanceof P4CommittedChangeList) {
+                            P4CommittedChangeList p4cl = (P4CommittedChangeList) change;
+                            return p4cl.hasShelved();
+                        }
+                        return true;
+                    }
+                });
+            }
+
+            return ret;
+        }
+
+
+    }
+
+
+    static final ChangeListColumn<P4CommittedChangeList> HAS_SHELVED = new ChangeListColumn<P4CommittedChangeList>() {
+        @Override
+        public String getTitle() {
+            return P4Bundle.message("changelist.shelved");
+        }
+
+        @Override
+        public Object getValue(final P4CommittedChangeList changeList) {
+            return changeList.hasShelved();
+        }
+    };
 }

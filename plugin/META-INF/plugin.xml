@@ -6,6 +6,21 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.7.2</em>
+                <ol>
+                  <li>If the user stores the
+                  connection password with the IDE, then the initial project
+                  load no longer reports that it couldn't load the passwords
+                  at that time.</li>
+                  <li>The P4 configuration UI could attempt to save values
+                  while the configuration was being loaded, causing a
+                  null pointer exception.  This is now fixed.</li>
+                  <li>Changing the workspace root directory no longer
+                  complains that the workspace root and project directory
+                  mismatch (if the new workspace root is under a new
+                  project directory).</li>
+                </ol>
+            </li>
             <li><em>0.7.1</em>
                 <ol>
                   <li>Ensured that the user is properly prompted for the password if it
@@ -15,43 +30,6 @@
                   <li>Fixed the issue when the user selected to not store the password,
                   it wouldn't be used.</li>
                   <li>Added the underlying problem to the error report in the warnings panel.</li>
-                </ol>
-            </li>
-            <li><em>0.7.0</em>
-                <ol>
-                  <li>Major overhaul to the server connection logic.</li>
-                  <li>Multiple server connection status in status bar widget.</li>
-                  <li>Passwords are now stored with better security.  You will need to
-                  re-enter your password if you save it in the IDE.</li>
-                  <li>Some P4IGNORE support.</li>
-                  <li>Version selection for synchronize with depot.</li>
-                  <li>Fixed issue where the configuration UI could make
-                  UI requests outside the AWT event dispatch thread.</li>
-                  <li>Finally identified the sources of the infinite
-                  changelist refresh issues and fixed it, so that new
-                  improvements to the changelist sorting code can
-                  be attempted.</li>
-                  <lil>Internal communication of events are now handled in the
-                  correct message bus, which should lead to more consistent
-                  responses to going offline or changing configuration.</li>
-                  <li>Add trusted ticket file support</li>
-                  <li>Fixed an issue where changelist sync could discover null IDEA
-                  changelists</li>
-                  <li>Fixed an issue where initial creation of file asks if it should
-                  be added to Perforce, but it is not added.</li>
-                  <li>Files loaded from the Perforce server are restricted to the
-                  user-defined maximum file size (the
-                  <tt>idea.max.vcs.loaded.size.kb</tt> property).</li>
-                  <li>Fixed the issue where the plugin falsely reporting that
-                  JCE is not present</li>
-                  <li>Fixed issue where first time project configuration does
-                  not detect UI values</li>
-                  <li>Copy/paste and cut/paste of files now trigger P4 actions</li>
-                  <li>"Move changes" action from non-active changelist modification
-                  action works correctly now</li>
-                  <li>Fixed history difference not working with IDEA 15.0</li>
-                  <li>The changelist number is now shown in file history view</li>
-                  <li>Abort a submit if the checkin comment is empty.</li>
                 </ol>
             </li>
         </ol>

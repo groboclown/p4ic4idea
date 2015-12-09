@@ -42,7 +42,7 @@ abstract class CacheFrontEnd {
     static final long MIN_REFRESH_INTERVAL_MS = 1000L;
 
 
-    protected final ServerQuery<CacheFrontEnd> createRefreshQuery() {
+    protected final ServerQuery<CacheFrontEnd> createRefreshQuery(final boolean forceRefresh) {
         return new ServerQuery<CacheFrontEnd>() {
             @Nullable
             @Override
@@ -50,7 +50,7 @@ abstract class CacheFrontEnd {
                     @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 ServerConnection.assertInServerConnection();
-                loadServerCache(exec, cacheManager, alerts);
+                loadServerCache(exec, cacheManager, alerts, forceRefresh);
                 return CacheFrontEnd.this;
             }
         };
@@ -58,8 +58,8 @@ abstract class CacheFrontEnd {
 
 
     protected final void loadServerCache(@NotNull P4Exec2 exec, @NotNull ClientCacheManager cacheManager,
-            @NotNull AlertManager alerts) {
-        if (needsRefresh()) {
+            @NotNull AlertManager alerts, boolean forceRefresh) {
+        if (forceRefresh || needsRefresh()) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Refreshing the cache for " +
                         getClass().getSimpleName() + "; last refresh was " +

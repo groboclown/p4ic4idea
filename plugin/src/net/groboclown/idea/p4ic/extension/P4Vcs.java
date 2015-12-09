@@ -61,13 +61,13 @@ import net.groboclown.idea.p4ic.v2.history.P4HistoryProvider;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.P4ServerManager;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
+import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
+import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.picocontainer.alternatives.EmptyPicoContainer;
-import org.picocontainer.defaults.DefaultPicoContainer;
-import org.picocontainer.defaults.InstanceComponentAdapter;
 
 import java.io.File;
 import java.util.*;
@@ -197,7 +197,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         // is loaded without a project loaded (e.g. "cancel" the loading screen,
         // and Configure -> Settings).
         if (project == null) {
-            DefaultPicoContainer container = new DefaultPicoContainer();
             project = new MockProject(new EmptyPicoContainer(), new Disposable() {
                 @Override
                 public void dispose() {
@@ -215,7 +214,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         this.diffProvider = new P4DiffProvider(project);
         this.statusUpdateEnvironment = new P4StatusUpdateEnvironment(project);
         this.annotationProvider = new P4AnnotationProvider(this);
-        this.committedChangesProvider = new P4CommittedChangesProvider();
+        this.committedChangesProvider = new P4CommittedChangesProvider(this);
 
         this.serverManager = P4ServerManager.getInstance(project);
 
@@ -309,6 +308,11 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
                 }
             }
         });
+
+        // FIXME this may be a good time to check for passwords and connectivity
+        // See bugs #81, #84
+
+        refreshServerConnectivity();
 
         /*
 
@@ -657,5 +661,35 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @Nullable
     public P4Server getP4ServerFor(@NotNull VirtualFile vf) throws InterruptedException {
         return serverManager.getForVirtualFile(vf);
+    }
+
+    private void refreshServerConnectivity() {
+        // Perform the connectivity in an explicit check outside the manager
+        // API, so that password queries can be run (they can only be done outside
+        // the read-lock, which the manager API runs commands in).
+        // See bug #81.
+        List<ProjectConfigSource> configSources = new ArrayList<ProjectConfigSource>();
+        for (P4Server server: getP4Servers()) {
+            if (server.isConnectionValid()) {
+                configSources.add(server.getProjectConfigSource());
+            }
+        }
+        ConnectionUIConfiguration.getClients(configSources);
+
+        // Now that the servers are connected, or at least the connection
+        // status is known, we can refresh the workspace view.
+        // See bug #84.
+
+        for (P4Server server : getP4Servers()) {
+            if (server.isConnectionValid()) {
+                try {
+                    server.forceWorkspaceRefresh();
+                } catch (InterruptedException e) {
+                    AlertManager.getInstance().addNotice(myProject,
+                            P4Bundle.message("exception.refresh.workspace", server.getClientServerId()),
+                            e);
+                }
+            }
+        }
     }
 }

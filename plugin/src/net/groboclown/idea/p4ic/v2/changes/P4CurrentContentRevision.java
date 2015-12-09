@@ -97,7 +97,7 @@ public class P4CurrentContentRevision implements ContentRevision {
 
     private static final CurrentRevisionNumber HAVE_REV = new CurrentRevisionNumber();
 
-    private static final class CurrentRevisionNumber implements VcsRevisionNumber {
+    public static final class CurrentRevisionNumber implements VcsRevisionNumber {
 
         @Override
         public String asString() {

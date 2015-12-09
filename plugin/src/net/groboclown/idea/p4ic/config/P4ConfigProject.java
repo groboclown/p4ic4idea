@@ -103,9 +103,23 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
         return configSources;
     }
 
-    public void announceBaseConfigUpdated() {
+    public void announceBaseConfigUpdated()
+            throws P4InvalidConfigException {
         LOG.debug("Sending announcement that the base config is updated");
-        assert configSources != null;
+
+        // This is a really rare circumstance, but it can happen.  It seems
+        // to be due to a synchronization issue, so rather than just checking
+        // whether the config sources have been setup right, we need to wrap
+        // it in a synchronized block to ensure all initialization is
+        // finished before checking the config sources state.
+        // Bug #82
+        synchronized (this) {
+            if (configSources == null) {
+                loadProjectConfigSources();
+            }
+            assert configSources != null;
+        }
+
 
         // Must follow the strict ordering
         ApplicationManager.getApplication().getMessageBus().syncPublisher(

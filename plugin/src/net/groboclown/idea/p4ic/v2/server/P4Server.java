@@ -21,17 +21,20 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.*;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
+import net.groboclown.idea.p4ic.v2.changes.P4CommittedChangeList;
 import net.groboclown.idea.p4ic.v2.history.P4AnnotatedLine;
 import net.groboclown.idea.p4ic.v2.history.P4FileRevision;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
@@ -985,6 +988,68 @@ public class P4Server {
         });
     }
 
+    @Nullable
+    public P4CommittedChangeList getChangelistForOnline(@NotNull final FilePath file, @NotNull final String revision)
+            throws InterruptedException {
+        return connection.query(project, new ServerQuery<P4CommittedChangeList>() {
+            @Nullable
+            @Override
+            public P4CommittedChangeList query(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager cacheManager,
+                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    throws InterruptedException {
+                final List<IFileSpec> specs;
+                try {
+                    specs = FileSpecUtil.getFromFilePathsAt(Collections.singletonList(file), revision, false);
+                } catch (P4Exception e) {
+                    alertManager.addWarning(project,
+                            P4Bundle.message("exception.filespec.title"),
+                            P4Bundle.message("exception.filespec", revision),
+                            e, file);
+                    return null;
+                }
+                if (specs.size() != 1) {
+                    return null;
+                }
+                final List<IExtendedFileSpec> status;
+                try {
+                    status = exec.getFileStatus(specs);
+                } catch (VcsException e) {
+                    alertManager.addWarning(project,
+                            P4Bundle.message("exception.filespec.title"),
+                            P4Bundle.message("exception.filespec", revision),
+                            e, file);
+                    return null;
+                }
+                if (status.size() != 1) {
+                    return null;
+                }
+                int change = status.get(0).getChangelistId();
+                final IChangelist changelist;
+                try {
+                    changelist = exec.getChangelist(change);
+                } catch (VcsException e) {
+                    alertManager.addWarning(project,
+                            P4Bundle.message("exception.changelist-fetch", change),
+                            P4Bundle.message("exception.changelist-fetch", change),
+                            e, file);
+                    return null;
+                }
+                if (changelist == null) {
+                    return null;
+                }
+                try {
+                    return new P4CommittedChangeList(P4Vcs.getInstance(project), P4Server.this, changelist);
+                } catch (VcsException e) {
+                    alertManager.addWarning(project,
+                            P4Bundle.message("exception.changelist-fetch", change),
+                            P4Bundle.message("exception.changelist-fetch", change),
+                            e, file);
+                    return null;
+                }
+            }
+        });
+    }
+
     @NotNull
     public Collection<String> getJobStatusValues() throws InterruptedException {
         final Collection<String> ret = connection.cacheQuery(new CacheQuery<Collection<String>>() {
@@ -1037,13 +1102,33 @@ public class P4Server {
         return ret;
     }
 
+    public void forceWorkspaceRefresh() throws InterruptedException {
+        connection.cacheQuery(new CacheQuery<Void>() {
+            @Override
+            public Void query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
+                if (isWorkingOnline()) {
+                    LOG.debug("working online; forcing a workspace refresh");
+                    connection.query(project, mgr.createForcedWorkspaceRefreshQuery());
+                } else {
+                    LOG.debug("working offline; using cached workspace settings.");
+                }
+                return null;
+            }
+        });
+    }
+
     @Override
     public String toString() {
         return getClientServerId().toString();
     }
 
+    /**
+     *
+     * @return source for the config
+     */
+    // FIXME return an immutable wrapper
     @NotNull
-    ProjectConfigSource getProjectConfigSource() {
+    public ProjectConfigSource getProjectConfigSource() {
         return source;
     }
 

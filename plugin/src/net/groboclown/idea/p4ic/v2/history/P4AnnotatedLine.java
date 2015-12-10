@@ -154,15 +154,14 @@ public class P4AnnotatedLine {
     @Nullable
     private static IFileRevisionData getLocalHistoryFor(final P4Exec2 exec, @NotNull IExtendedFileSpec depotRev) {
         return new FileRevisionData(
-                isDeletedLine ? 0 : -1,
-                isDeletedLine ? 0 : -1,
-                depotRev.getAction(),
-                depotRev.getDate(),
-                depotRev.getUserName(),
+                -1, -1,
+                FileAction.EDIT,
+                new Date(), // IntelliJ probably has a better date value in its local history
+                exec.getUsername(),
                 depotRev.getFileType(),
-                depotRev.getDesc(),
+                depotRev.getDesc(), // Should use active Idea changelist name
                 depotRev.getDepotPathString(),
-                depotRev.getClientName());
+                exec.getClientName());
     }
 
 

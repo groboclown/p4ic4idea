@@ -19,6 +19,18 @@ First, you need to install the prerequisite software.
 
 # Contributing
 
+## Incremental Changes
+
+If you have a bug fix or feature that you'd like to see added to the plugin,
+please follow these steps:
+
+1. Fork the project on Github.
+1. Make your changes in your fork, making sure to include the Apache license header
+   and follow the formatting standard for the project.
+1. Commit your changes and push them up into your Github repository.
+1. Make a *pull request* in the parent project.
+
+
 ## Updating the IntelliJ Libraries
 
 Because the IntelliJ libraries are stored in the separate SourceForge Git project
@@ -37,3 +49,12 @@ Because the IntelliJ libraries are stored in the separate SourceForge Git projec
     $ cd ..
     $ git commit -m 'Updated IntelliJ libraries to version X' intellij-lib
     ```
+
+
+# Source Code Documentation
+
+The source code contains JavaDoc and comments to help in understanding the immediate
+concerns of the code, but the general overall documentation is located under the
+[developer documentation](plugin/docs/developers).
+There's also a few notes in [todo.md](plugin/src/net/groboclown/idea/p4ic/vc/todo.md),
+but that needs to be moved out into more formal places.

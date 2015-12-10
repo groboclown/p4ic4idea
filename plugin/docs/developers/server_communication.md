@@ -1,4 +1,5 @@
-(This file is in context of the new **v2** design.)
+(This file is in context of the new **v2** design.  It was written before the
+code was written, so it might be out of date.)
 
 
 # Perforce Server State Caching

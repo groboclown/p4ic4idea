@@ -194,16 +194,23 @@ public class P4FileAnnotation extends FileAnnotation {
 
     @Override
     public boolean revisionsNotEmpty() {
-        // TODO this is a slow implementation.  There should be some easy speed-up opportunities here.
-        List<VcsFileRevision> revs = getRevisions();
-        return revs != null && !revs.isEmpty();
+        for (P4AnnotatedLine line: annotations) {
+            if (line != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Nullable
     @Override
     public AnnotationSourceSwitcher getAnnotationSourceSwitcher() {
+        // This is not needed.  It is used to swap between
+        // the merged files and the local files; Perforce doesn't
+        // work that way.
 
-        // TODO this needs an implementation
+        // TODO if the merge conflict code is implemented, this might
+        // have a reason for being implemented as well.
 
         return null;
     }

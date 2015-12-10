@@ -17,6 +17,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.core.file.*;
+import com.perforce.p4java.impl.generic.core.file.FileRevisionData;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
@@ -33,11 +34,9 @@ public class P4AnnotatedLine {
     private final String depotPath;
     private final IFileAnnotation ann;
     private final int lineNumber;
-
-    @Nullable
     private final IFileRevisionData revisionData;
 
-    public P4AnnotatedLine(@NotNull FilePath baseFile, int lineNumber, @NotNull IFileAnnotation ann, @Nullable IFileRevisionData data) {
+    public P4AnnotatedLine(@NotNull FilePath baseFile, int lineNumber, @NotNull IFileAnnotation ann, @NotNull IFileRevisionData data) {
         this.baseFile = baseFile;
         this.depotPath = ann.getDepotPath();
         this.ann = ann;
@@ -52,17 +51,17 @@ public class P4AnnotatedLine {
 
     @Nullable
     public String getAuthor() {
-        return revisionData == null ? null : revisionData.getUserName();
+        return revisionData.getUserName();
     }
 
     @Nullable
     public Date getDate() {
-        return revisionData == null ? null : revisionData.getDate();
+        return revisionData.getDate();
     }
 
     @Nullable
     public String getComment() {
-        return revisionData == null ? null : revisionData.getDescription();
+        return revisionData.getDescription();
     }
 
     @Nullable
@@ -96,10 +95,6 @@ public class P4AnnotatedLine {
 
         int lineNumber = 0;
         for (IFileAnnotation ann : annotations) {
-            // It will most always be different
-            //if (ann.getUpper() != ann.getLower()) {
-            //    LOG.info("upper/lower response: " + ann.getUpper() + "/" + ann.getLower());
-            //}
             if (ann.getDepotPath() == null) {
                 LOG.info("Annotation encountered null depot path for line " + lineNumber);
                 continue;
@@ -111,21 +106,31 @@ public class P4AnnotatedLine {
                         "; but instead found paths " + fileSpecs.keySet());
             }
 
-            if (ann.getUpper() > 0) {
-                String depotRev = ann.getDepotPath() + '#' + ann.getUpper();
+            // See bug #86
+            // ann.getUpper() - return the most recent version of the file to
+            //      contain the line.  If the line is still present in the file,
+            //      it will return the highest revision number.  In most cases,
+            //      this is NOT what we want.
+            // ann.getLower() - return the first revision of the file that contained
+            //      the line's value.
+
+            int blameRev = ann.getLower();
+            if (blameRev > 0) {
+                String depotRev = ann.getDepotPath() + '#' + blameRev;
                 IFileRevisionData data = revisions.get(depotRev);
-                if (ann.getUpper() > 0 && data == null) {
+                if (blameRev > 0 && data == null) {
                     data = getHistoryFor(exec, depotRev);
                     revisions.put(depotRev, data);
                 }
                 ret.add(new P4AnnotatedLine(baseFile, lineNumber++, ann, data));
-            } else if (ann.getUpper() == 0) {
-                // TODO this is the source of "null" rev data
-                ret.add(new P4AnnotatedLine(baseFile, lineNumber++, ann, getUnknownHistoryFor(spec)));
-                //LOG.info("deleted file");
+            } else if (blameRev == 0) {
+                LOG.info("Annotated line for " + ann.getDepotPath() + '@' + lineNumber + " [" +
+                        ann.getLine() + "] has a 0 revision number");
+                // deleted file; this should never happen
+                ret.add(new P4AnnotatedLine(baseFile, lineNumber++, ann, getDeletedHistoryFor(spec)));
             } else {
-                ret.add(new P4AnnotatedLine(baseFile, lineNumber++, ann, getUnknownHistoryFor(spec)));
-                //LOG.info("current revision");
+                // local revision; this may happen relatively frequently
+                ret.add(new P4AnnotatedLine(baseFile, lineNumber++, ann, getLocalHistoryFor(exec, spec)));
             }
         }
         return ret;
@@ -133,9 +138,31 @@ public class P4AnnotatedLine {
 
 
     @Nullable
-    private static IFileRevisionData getUnknownHistoryFor(@NotNull IExtendedFileSpec depotRev) {
-        // TODO this is the source of "null" rev data
-        return null;
+    private static IFileRevisionData getDeletedHistoryFor(@NotNull IExtendedFileSpec depotRev) {
+        return new FileRevisionData(
+                0, 0,
+                depotRev.getAction(),
+                depotRev.getDate(),
+                depotRev.getUserName(),
+                depotRev.getFileType(),
+                depotRev.getDesc(),
+                depotRev.getDepotPathString(),
+                depotRev.getClientName());
+    }
+
+
+    @Nullable
+    private static IFileRevisionData getLocalHistoryFor(final P4Exec2 exec, @NotNull IExtendedFileSpec depotRev) {
+        return new FileRevisionData(
+                isDeletedLine ? 0 : -1,
+                isDeletedLine ? 0 : -1,
+                depotRev.getAction(),
+                depotRev.getDate(),
+                depotRev.getUserName(),
+                depotRev.getFileType(),
+                depotRev.getDesc(),
+                depotRev.getDepotPathString(),
+                depotRev.getClientName());
     }
 
 
@@ -144,9 +171,10 @@ public class P4AnnotatedLine {
             throws VcsException {
         // The "depotRev" came from a Perforce named depot file,
         // so it is already escaped.  Therefore it's okay to use
-        // FileSpecBuilder.
-        List<IFileSpec> depotFiles = FileSpecBuilder.makeFileSpecList(depotRev);
-        Map<IFileSpec, List<IFileRevisionData>> history = exec.getRevisionHistory(depotFiles, 1);
+        // getAlreadyEscapedSpec.
+        IFileSpec depotFile = FileSpecUtil.getAlreadyEscapedSpec(depotRev);
+        Map<IFileSpec, List<IFileRevisionData>> history = exec.getRevisionHistory(
+                Collections.singletonList(depotFile), 1);
         for (Map.Entry<IFileSpec, List<IFileRevisionData>> en : history.entrySet()) {
             List<IFileRevisionData> ret = en.getValue();
             // it can return empty values for a server message

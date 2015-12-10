@@ -901,7 +901,7 @@ public class P4Server {
     }
 
     @NotNull
-    public List<P4AnnotatedLine> getAnnotationsFor(@NotNull final FilePath baseFile,
+    public List<P4AnnotatedLine> getAnnotationsForOnline(@NotNull final FilePath baseFile,
             @NotNull final IFileSpec spec, final int revNumber)
             throws VcsException, InterruptedException {
         validateOnline();

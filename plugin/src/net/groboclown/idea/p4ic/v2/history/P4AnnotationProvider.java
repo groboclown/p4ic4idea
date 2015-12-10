@@ -67,7 +67,7 @@ public class P4AnnotationProvider implements AnnotationProvider {
                 // TODO right way to handle this?
                 contents = "";
             }
-            return createAnnotation(server, file, server.getAnnotationsFor(filePath, spec, spec.getHaveRev()),
+            return createAnnotation(server, file, server.getAnnotationsForOnline(filePath, spec, spec.getHaveRev()),
                     rev, contents);
 
         } catch (InterruptedException e) {
@@ -78,7 +78,7 @@ public class P4AnnotationProvider implements AnnotationProvider {
     @Override
     public FileAnnotation annotate(VirtualFile file, VcsFileRevision revision) throws VcsException {
         FilePath filePath = VcsUtil.getFilePath(file);
-        P4Server server = null;
+        P4Server server;
         try {
             server = vcs.getP4ServerFor(file);
         } catch (InterruptedException e) {
@@ -93,7 +93,7 @@ public class P4AnnotationProvider implements AnnotationProvider {
         }
         P4RevisionNumber p4rev = (P4RevisionNumber) vcsRev;
         int revNumber = p4rev.getRev();
-        String contents = null;
+        String contents;
         try {
             contents = server.loadFileAsStringOnline(filePath, revNumber);
         } catch (InterruptedException e) {
@@ -105,7 +105,7 @@ public class P4AnnotationProvider implements AnnotationProvider {
         }
         IFileSpec annotatedSpec = FileSpecUtil.getOneSpecWithRev(filePath, revNumber);
         try {
-            return createAnnotation(server, file, server.getAnnotationsFor(filePath, annotatedSpec, revNumber),
+            return createAnnotation(server, file, server.getAnnotationsForOnline(filePath, annotatedSpec, revNumber),
                     p4rev, contents);
         } catch (InterruptedException e) {
             throw new VcsInterruptedException(e);

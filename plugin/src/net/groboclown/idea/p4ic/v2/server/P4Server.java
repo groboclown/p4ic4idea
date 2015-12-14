@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.v2.server;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -301,36 +302,74 @@ public class P4Server {
                 }
             }
         });
+        return mapExtendedFileSpecs(filePathList, extended);
+    }
+
+
+    public Map<IExtendedFileSpec, FilePath> mapSpecsToPath(@NotNull final Collection<IExtendedFileSpec> specs)
+            throws InterruptedException {
+        if (specs.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return connection.query(project, new ServerQuery<Map<IExtendedFileSpec, FilePath>>() {
+            @Nullable
+            @Override
+            public Map<IExtendedFileSpec, FilePath> query(@NotNull final P4Exec2 exec,
+                    @NotNull final ClientCacheManager cacheManager,
+                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    throws InterruptedException {
+                return cacheManager.mapSpecsToPath(specs);
+            }
+        });
+    }
+
+
+
+    @Nullable
+    private Map<FilePath, IExtendedFileSpec> mapExtendedFileSpecs(
+            @Nullable List<FilePath> filePathList,
+            @Nullable List<IExtendedFileSpec> extended) {
         if (extended == null) {
             return null;
         }
 
-        // TODO perform better matching
-        // Logic is a bit complex; move to another class?
+        Map<FilePath, IExtendedFileSpec> ret = new HashMap<FilePath, IExtendedFileSpec>();
 
         // should be a 1-to-1 mapping
-        if (filePathList.size() != extended.size()) {
-            StringBuilder sb = new StringBuilder("did not match ");
-            sb.append(filePathList).append(" against [");
-            for (IExtendedFileSpec extendedFileSpec: extended) {
-                sb
-                    .append(" {")
-                    .append(extendedFileSpec.getOpStatus()).append(":")
-                    .append(extendedFileSpec.getStatusMessage()).append("::")
-                    .append(extendedFileSpec.getDepotPath())
-                    .append("} ");
+        if (filePathList != null) {
+            // TODO perform better matching
+            // Logic is a bit complex; move to another class?
+            if (filePathList.size() != extended.size()) {
+                StringBuilder sb = new StringBuilder("did not match ");
+                sb.append(filePathList).append(" against [");
+                for (IExtendedFileSpec extendedFileSpec : extended) {
+                    sb
+                            .append(" {")
+                            .append(extendedFileSpec.getOpStatus()).append(":")
+                            .append(extendedFileSpec.getStatusMessage()).append("::")
+                            .append(extendedFileSpec.getDepotPath())
+                            .append("} ");
+                }
+                sb.append("]");
+                throw new IllegalStateException(sb.toString());
             }
-            sb.append("]");
-            throw new IllegalStateException(sb.toString());
-        }
-
-        Map<FilePath, IExtendedFileSpec> ret = new HashMap<FilePath, IExtendedFileSpec>();
-        for (int i = 0; i < filePathList.size(); i++) {
-            LOG.info("Mapped " + filePathList.get(i) + " to " + extended.get(i));
-            ret.put(filePathList.get(i), extended.get(i));
+            for (int i = 0; i < filePathList.size(); i++) {
+                LOG.info("Mapped " + filePathList.get(i) + " to " + extended.get(i));
+                ret.put(filePathList.get(i), extended.get(i));
+            }
+        } else {
+            for (IExtendedFileSpec spec : extended) {
+                String path = spec.getClientPathString();
+                if (path == null) {
+                    // FIXME
+                    throw new IllegalStateException("Bad client path in extended spec " + spec);
+                }
+                ret.put(FilePathUtil.getFilePath(path), spec);
+            }
         }
         return ret;
     }
+
 
 
     /**
@@ -999,7 +1038,9 @@ public class P4Server {
                     throws InterruptedException {
                 final List<IFileSpec> specs;
                 try {
-                    specs = FileSpecUtil.getFromFilePathsAt(Collections.singletonList(file), revision, false);
+                    final MessageResult<List<IFileSpec>> result = MessageResult.create(
+                            FileSpecUtil.getFromFilePathsAt(Collections.singletonList(file), revision, false));
+                    specs = result.getResult();
                 } catch (P4Exception e) {
                     alertManager.addWarning(project,
                             P4Bundle.message("exception.filespec.title"),
@@ -1008,11 +1049,12 @@ public class P4Server {
                     return null;
                 }
                 if (specs.size() != 1) {
+                    LOG.warn("Changelist for " + file + " returned invalid spec count: " + specs);
                     return null;
                 }
                 final List<IExtendedFileSpec> status;
                 try {
-                    status = exec.getFileStatus(specs);
+                    status = MessageResult.create(exec.getFileStatus(specs)).getResult();
                 } catch (VcsException e) {
                     alertManager.addWarning(project,
                             P4Bundle.message("exception.filespec.title"),
@@ -1021,12 +1063,29 @@ public class P4Server {
                     return null;
                 }
                 if (status.size() != 1) {
+                    LOG.warn("Status for specs " + specs + " returned invalid status count: " + status);
                     return null;
                 }
-                int change = status.get(0).getChangelistId();
+
+                // p4 fstat on a specific rev returns all the status
+                // in the "HeadX" field.  See bug #86.
+                int change = status.get(0).getHeadChange();
+                if (change <= 0) {
+                    change = status.get(0).getChangelistId();
+                    if (change <= 0) {
+                        LOG.warn("FileStat for " + file + " rev " + revision + " has invalid changelist number; " +
+                                status);
+                        return null;
+                    }
+                }
                 final IChangelist changelist;
+                List<Pair<IExtendedFileSpec, IExtendedFileSpec>> changelistFiles;
                 try {
                     changelist = exec.getChangelist(change);
+                    if (changelist == null) {
+                        return null;
+                    }
+                    changelistFiles = exec.getFileStatusForChangelist(changelist.getId());
                 } catch (VcsException e) {
                     alertManager.addWarning(project,
                             P4Bundle.message("exception.changelist-fetch", change),
@@ -1034,11 +1093,13 @@ public class P4Server {
                             e, file);
                     return null;
                 }
-                if (changelist == null) {
-                    return null;
-                }
                 try {
-                    return new P4CommittedChangeList(P4Vcs.getInstance(project), P4Server.this, changelist);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Returning committed changelist for " +
+                            changelist.getId() + ": " + changelistFiles);
+                    }
+                    return new P4CommittedChangeList(P4Vcs.getInstance(project), P4Server.this,
+                            changelist, changelistFiles);
                 } catch (VcsException e) {
                     alertManager.addWarning(project,
                             P4Bundle.message("exception.changelist-fetch", change),

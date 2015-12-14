@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.extension;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.committed.DecoratorManager;
@@ -41,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 
 public class P4CommittedChangesProvider implements CommittedChangesProvider<P4CommittedChangeList, P4ChangeBrowserSettings> {
+    private static final Logger LOG = Logger.getInstance(P4CommittedChangesProvider.class);
+
     private final P4Vcs vcs;
 
     public P4CommittedChangesProvider(@NotNull final P4Vcs vcs) {
@@ -158,16 +161,19 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
                 String revision = number.asString();
                 if (revision != null && revision.length() > 0 && (revision.charAt(0) == '@' || revision
                         .charAt(0) == '#')) {
+                    LOG.info("Getting changelist for revision " + revision + "; " + fp);
                     P4CommittedChangeList changeList = server.getChangelistForOnline(fp, revision);
 
                     return Pair.create(changeList, fp);
                 }
             }
             // FIXME use the correct string
+            LOG.info("Getting changelist for head reivision; " + fp);
             P4CommittedChangeList changeList = server.getChangelistForOnline(fp, "#head");
             return Pair.create(changeList, fp);
         } catch (InterruptedException e) {
-            // FIXME show alert
+            // FIXME use alert manager to report it
+            LOG.warn(e);
             return null;
         }
     }

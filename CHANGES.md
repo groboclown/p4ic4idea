@@ -2,6 +2,21 @@
 
 
 
+## ::v0.7.3::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Annotated lines would show the most recent revision to have the line, rather than
+      when it first appeared. (#86)
+    * Changelist details display for an annotated line would use wrong changelist number
+      from the file status. (#86)
+
+
 ## ::v0.7.2::
 
 ### Overview

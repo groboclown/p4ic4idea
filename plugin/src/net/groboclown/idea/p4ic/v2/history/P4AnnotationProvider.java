@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.v2.history;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
@@ -36,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 
 public class P4AnnotationProvider implements AnnotationProvider {
+    private static final Logger LOG = Logger.getInstance(P4AnnotationProvider.class);
+
     private final P4Vcs vcs;
 
     public P4AnnotationProvider(@NotNull P4Vcs vcs) {

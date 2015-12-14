@@ -15,7 +15,9 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.*;
@@ -30,14 +32,12 @@ import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.option.server.GetExtendedFilesOptions;
-import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
-import com.perforce.p4java.option.server.GetFileContentsOptions;
-import com.perforce.p4java.option.server.OpenedFilesOptions;
+import com.perforce.p4java.option.server.*;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
@@ -55,6 +55,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
@@ -140,6 +141,9 @@ public class P4Exec2 {
     @Nullable
     public IChangelist getChangelist(final int id)
             throws VcsException, CancellationException {
+        if (id <= 0) {
+            throw new IllegalStateException("Invalid changelist id " + id);
+        }
         return exec.runWithClient(project, new ClientExec.WithClient<IChangelist>() {
             @Override
             public IChangelist run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ClientExec.ServerCount count)
@@ -151,6 +155,8 @@ public class P4Exec2 {
                     cl.setId(id);
                 }
 
+                cl.getJobs();
+
                 // The server connection cannot leave this context.
                 cl.setServer(null);
                 if (cl instanceof Changelist) {
@@ -160,7 +166,143 @@ public class P4Exec2 {
                 return cl;
             }
         });
+    }
 
+    /**
+     * Finds the file status for all the files in the given change list.  The Pair returned will have the
+     * <tt>first</tt> set to the base file, and if it moved from another location, its source will be the
+     * <tt>second</tt>; otherwise, the second will be <tt>null</tt>.
+     *
+     * @param changeListNumber
+     * @return
+     * @throws VcsException
+     * @throws CancellationException
+     */
+    @NotNull
+    public List<Pair<IExtendedFileSpec, IExtendedFileSpec>> getFileStatusForChangelist(final int changeListNumber)
+            throws VcsException, CancellationException {
+
+        // TODO the only way I've figured out how to get the integration
+        // status of a file (a moved/integrated file, where its source was) is from the
+        // "p4 filelog -s (each file added/moved)", then map those moved-from files to
+        // the ones in the changelist.
+
+        // FIXME limit the output of files (-m X)
+
+        final GetExtendedFilesOptions opts = new GetExtendedFilesOptions(
+                "-e", Integer.toString(changeListNumber),
+                "-Of",
+                "-T", "depotFile,clientFile,isMapped,headAction,headRev,movedFile"
+        );
+        return exec.runWithClient(project, new WithClient<List<Pair<IExtendedFileSpec, IExtendedFileSpec>>>() {
+            @Override
+            public List<Pair<IExtendedFileSpec, IExtendedFileSpec>> run(@NotNull final IOptionsServer server, @NotNull final IClient client,
+                    @NotNull final ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                count.invoke("getFileStatusForChangelist");
+
+                final List<VirtualFile> vcsRoots = P4Vcs.getInstance(project).getVcsRoots();
+                final List<IExtendedFileSpec> first = getExtendedFiles(
+                        FileSpecUtil.makeRootFileSpecs(vcsRoots.toArray(new VirtualFile[vcsRoots.size()])),
+                        server, opts);
+
+                // Get the filelog of the files who have an action of "Move/add" or "branch"; these indicate files whose
+                // previous version was a different location (rename or move).
+
+                // In order to prevent n*n looping, we'll capture the depot path of the specs we just fetched.
+                Map<String, IExtendedFileSpec> depotToSpec = new HashMap<String, IExtendedFileSpec>();
+
+                // Find the list of files that we need to get the renamed-from history.
+                List<IFileSpec> filelogRequest = new ArrayList<IFileSpec>();
+
+                List<Pair<IExtendedFileSpec, IExtendedFileSpec>> ret =
+                        new ArrayList<Pair<IExtendedFileSpec, IExtendedFileSpec>>(first.size());
+
+                for (IExtendedFileSpec spec : first) {
+                    if (spec.getOpStatus() == FileSpecOpStatus.VALID) {
+                        depotToSpec.put(spec.getDepotPathString(), spec);
+
+                        // TODO check if there are more states that match
+                        switch (spec.getHeadAction()) {
+                            case BRANCH:
+                            case MOVE_ADD:
+                                filelogRequest.add(FileSpecUtil.getFromDepotPath(spec.getDepotPathString(),
+                                        IFileSpec.NO_FILE_REVISION));
+                                break;
+                            case INTEGRATE:
+                                // Integrate can be a move of sorts.
+                                if (spec.getHeadRev() == 1) {
+                                    filelogRequest.add(FileSpecUtil.getFromDepotPath(spec.getDepotPathString(),
+                                            IFileSpec.NO_FILE_REVISION));
+                                } else {
+                                    ret.add(Pair.create(spec, (IExtendedFileSpec) null));
+                                }
+                                break;
+                            default:
+                                ret.add(Pair.create(spec, (IExtendedFileSpec) null));
+                        }
+                    }
+                }
+
+                if (! filelogRequest.isEmpty()) {
+                    GetRevisionHistoryOptions historyOptions = new GetRevisionHistoryOptions(
+                            "-c", Integer.toString(changeListNumber),
+                            "-s", "-m", "1"
+                    );
+                    final Map<IFileSpec, List<IFileRevisionData>> fileLog =
+                            server.getRevisionHistory(filelogRequest, historyOptions);
+
+                    // For the files we don't already have captured in the getExtendedFiles first call, we'll need
+                    // to grab it the second time around.
+                    Map<String, List<IExtendedFileSpec>> needsExtended = new HashMap<String, List<IExtendedFileSpec>>();
+
+                    for (Entry<IFileSpec, List<IFileRevisionData>> entry : fileLog.entrySet()) {
+                        if (entry.getKey().getOpStatus() == FileSpecOpStatus.VALID) {
+                            final IExtendedFileSpec srcSpec = depotToSpec.get(entry.getKey().getDepotPathString());
+                            final IFileRevisionData revData = entry.getValue().get(0);
+                            if (depotToSpec.containsKey(revData.getDepotFileName())) {
+                                ret.add(Pair.create(srcSpec,
+                                        depotToSpec.get(revData.getDepotFileName())));
+                            } else {
+                                List<IExtendedFileSpec> toSpecs = needsExtended.get(revData.getDepotFileName());
+                                if (toSpecs == null) {
+                                    toSpecs = new ArrayList<IExtendedFileSpec>();
+                                    needsExtended.put(revData.getDepotFileName(), toSpecs);
+                                }
+                                toSpecs.add(srcSpec);
+                            }
+                        }
+                    }
+
+                    if (! needsExtended.isEmpty()) {
+                        final GetExtendedFilesOptions opts = new GetExtendedFilesOptions(
+                                "-Of",
+                                "-T", "depotFile,clientFile,isMapped,headAction,headRev,movedFile"
+                        );
+                        List<IExtendedFileSpec> second = getExtendedFiles(
+                                FileSpecUtil.getAlreadyEscapedSpecs(needsExtended.keySet()),
+                                server, opts);
+
+                        // map the second list, through the needsExtended map, into the ret.
+                        for (IExtendedFileSpec secondSpec : second) {
+                            if (secondSpec.getOpStatus() == FileSpecOpStatus.VALID) {
+                                List<IExtendedFileSpec> toSpecs = needsExtended.get(secondSpec.getDepotPathString());
+                                if (toSpecs == null) {
+                                    LOG.warn("Unexpected result " + secondSpec.getDepotPathString());
+                                } else {
+                                    for (IExtendedFileSpec spec: toSpecs) {
+                                        ret.add(Pair.create(spec, secondSpec));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return ret;
+            }
+        });
     }
 
 
@@ -474,7 +616,9 @@ public class P4Exec2 {
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
                     P4Exception {
                 count.invoke("getFileStatus");
-                return getExtendedFiles(files, server);
+                GetExtendedFilesOptions opts = new GetExtendedFilesOptions(
+                        "-m", Integer.toString(files.size()));
+                return getExtendedFiles(files, server, opts);
             }
         });
     }
@@ -862,7 +1006,9 @@ public class P4Exec2 {
             }
         }
         if (! fstatSpecs.isEmpty()) {
-            final List<IExtendedFileSpec> fstatRet = getExtendedFiles(fstatSpecs, server);
+            GetExtendedFilesOptions opts = new GetExtendedFilesOptions(
+                    "-m", Integer.toString(files.size()));
+            final List<IExtendedFileSpec> fstatRet = getExtendedFiles(fstatSpecs, server, opts);
             retSpecs.addAll(fstatRet);
         }
         return MessageResult.create(retSpecs, markFileNotFoundAsValid);
@@ -871,9 +1017,7 @@ public class P4Exec2 {
 
 
     private List<IExtendedFileSpec> getExtendedFiles(@NotNull List<IFileSpec> fstatSpecs,
-            @NotNull IOptionsServer server) throws P4JavaException {
-        GetExtendedFilesOptions opts = new GetExtendedFilesOptions(
-                "-m", Integer.toString(fstatSpecs.size()));
+            @NotNull IOptionsServer server, @NotNull GetExtendedFilesOptions opts) throws P4JavaException {
         final List<IExtendedFileSpec> specs = server.getExtendedFiles(fstatSpecs, opts);
 
         // Make sure the specs are unescaped on return

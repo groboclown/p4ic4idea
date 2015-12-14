@@ -341,6 +341,12 @@ public class FileSpecUtil {
 
 
     @NotNull
+    public static List<IFileSpec> getAlreadyEscapedSpecs(@NotNull final Collection<String> specs) {
+        return FileSpecBuilder.makeFileSpecList(specs.toArray(new String[specs.size()]));
+    }
+
+
+    @NotNull
     private static String getPathWithRev(@NotNull String path, int rev) {
         if (rev > 0) {
             path = path + '#' + Integer.toString(rev);

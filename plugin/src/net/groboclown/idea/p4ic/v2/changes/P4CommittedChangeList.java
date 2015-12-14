@@ -13,10 +13,11 @@
  */
 package net.groboclown.idea.p4ic.v2.changes;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
@@ -26,18 +27,17 @@ import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.extension.P4ChangelistNumber;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.history.P4ContentRevision;
-import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.Map.Entry;
 
 public class P4CommittedChangeList extends CommittedChangeListImpl implements VcsRevisionNumberAware {
+    private static final Logger LOG = Logger.getInstance(P4CommittedChangeList.class);
+
 
     @NotNull
     private final P4Vcs myVcs;
@@ -45,14 +45,15 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
     private final P4ChangelistNumber myRevision;
     private final boolean hasShelved;
 
-    public P4CommittedChangeList(@NotNull P4Vcs vcs, @NotNull P4Server server, @NotNull IChangelist changelist) throws VcsException {
+    public P4CommittedChangeList(@NotNull P4Vcs vcs, @NotNull P4Server server, @NotNull IChangelist changelist,
+            final List<Pair<IExtendedFileSpec, IExtendedFileSpec>> changelistFiles) throws VcsException {
         // TODO format via bundle
         super(changelist.getId() + ": " + changelist.getDescription(),
                 changelist.getDescription(),
                 changelist.getUsername(),
                 changelist.getId(),
                 changelist.getDate(),
-                createChanges(vcs, server, changelist.getId()));
+                createChanges(vcs, server, changelist, changelistFiles));
         myVcs = vcs;
         hasShelved = changelist.isShelved();
 
@@ -82,60 +83,67 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
 
 
     @NotNull
-    private static Collection<Change> createChanges(@NotNull P4Vcs vcs, @NotNull P4Server server, int changelistId) throws VcsException {
-        final Collection<P4FileAction> files;
-        try {
-            files = server.getOpenFiles();
-        } catch (InterruptedException e) {
-            throw new VcsInterruptedException(e);
-        }
-        List<FilePath> inChange = new ArrayList<FilePath>(files.size());
-        for (P4FileAction file : files) {
-            if (file.getChangeList() == changelistId) {
-                inChange.add(file.getFile());
+    private static Collection<Change> createChanges(@NotNull P4Vcs vcs, @NotNull P4Server server,
+            @NotNull IChangelist changelist, final List<Pair<IExtendedFileSpec, IExtendedFileSpec>> changelistFiles)
+            throws VcsException {
+        final Project project = vcs.getProject();
+        final List<Change> ret = new ArrayList<Change>(changelistFiles.size());
+        final Set<IExtendedFileSpec> allSpecs = new HashSet<IExtendedFileSpec>();
+        for (Pair<IExtendedFileSpec, IExtendedFileSpec> specPair : changelistFiles) {
+            if (specPair.getFirst() != null) {
+                allSpecs.add(specPair.getFirst());
+            }
+            if (specPair.getSecond() != null) {
+                allSpecs.add(specPair.getSecond());
             }
         }
         try {
-            final Map<FilePath, IExtendedFileSpec> status =
-                    server.getFileStatus(inChange);
-            if (status == null) {
-                throw new P4DisconnectedException();
-            }
-            Map<P4FileAction, IExtendedFileSpec> actionStatus = new HashMap<P4FileAction, IExtendedFileSpec>();
-            for (P4FileAction file : files) {
-                IExtendedFileSpec spec = status.remove(file.getFile());
-                if (spec != null) {
-                    actionStatus.put(file, spec);
+            final Map<IExtendedFileSpec, FilePath> mappedTo = server.mapSpecsToPath(allSpecs);
+            for (Pair<IExtendedFileSpec, IExtendedFileSpec> specPair : changelistFiles) {
+                final IExtendedFileSpec primary = specPair.getFirst();
+                assert primary != null: "Null source spec in " + changelistFiles;
+                P4ContentRevision before;
+                P4ContentRevision after;
+                if (specPair.getSecond() != null) {
+                    // copied from second
+                    before = new P4ContentRevision(project, mappedTo.get(specPair.getSecond()), specPair.getSecond());
+                    after = new P4ContentRevision(project, mappedTo.get(primary), primary);
+                } else {
+                    switch (primary.getHeadAction()) {
+                        case ADD:
+                        case ADDED:
+                            before = null;
+                            after = new P4ContentRevision(project, mappedTo.get(primary), primary);
+                            break;
+                        case DELETE:
+                        case DELETED:
+                        case MOVE_DELETE:
+                            before = new P4ContentRevision(project, mappedTo.get(primary),
+                                    primary, primary.getHaveRev() - 1);
+                            after = null;
+                            break;
+                        case BRANCH:
+                        case MOVE_ADD:
+                            throw new IllegalStateException("should already be handled with second");
+                        default:
+                            if (primary.getHaveRev() <= 1) {
+                                LOG.info("action: " + primary.getHeadAction() + ", but rev is " + primary.getHaveRev());
+                                before = null;
+                            } else {
+                                before = new P4ContentRevision(project, mappedTo.get(primary),
+                                        primary, primary.getHaveRev() - 1);
+                            }
+                            after = new P4ContentRevision(project, mappedTo.get(primary), primary);
+                    }
                 }
+
+                Change c = new Change(before, after);
+                ret.add(c);
             }
-            return createChanges(vcs.getProject(), actionStatus);
         } catch (InterruptedException e) {
             throw new VcsInterruptedException(e);
         }
-    }
-
-    @NotNull
-    private static Collection<Change> createChanges(@NotNull Project project,
-            @NotNull Map<P4FileAction, IExtendedFileSpec> files) {
-        List<Change> ret = new ArrayList<Change>(files.size());
-        for (Entry<P4FileAction, IExtendedFileSpec> entry : files.entrySet()) {
-            P4ContentRevision before = null;
-            P4ContentRevision after = null;
-
-            assert entry.getKey().getFile() != null: "file is null";
-            final FileStatus fileStatus = entry.getKey().getClientFileStatus();
-            if (fileStatus != P4Vcs.DELETED_OFFLINE && fileStatus != FileStatus.DELETED) {
-                // not open for delete
-                after = new P4ContentRevision(project, entry.getKey().getFile(), entry.getValue());
-            }
-            if (entry.getValue().getHaveRev() > 0) {
-                before = new P4ContentRevision(project, entry.getKey().getFile(), entry.getValue(),
-                        entry.getValue().getHaveRev() - 1);
-            }
-
-            Change c = new Change(before, after);
-            ret.add(c);
-        }
+        LOG.info("Changes for @" + changelist.getId() + ": " + ret);
         return ret;
     }
 }

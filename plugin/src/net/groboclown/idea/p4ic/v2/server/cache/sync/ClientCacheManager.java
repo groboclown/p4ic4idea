@@ -34,13 +34,12 @@ import net.groboclown.idea.p4ic.v2.server.cache.local.IgnoreFiles;
 import net.groboclown.idea.p4ic.v2.server.cache.state.*;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CreateUpdate;
+import net.groboclown.idea.p4ic.v2.server.util.DepotFilePath;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Public front-end to the cache infrastructure.
@@ -285,6 +284,37 @@ public class ClientCacheManager {
         jobStatusList.checkLocalIntegrity(state.getPendingUpdates());
         jobs.checkLocalIntegrity(state.getPendingUpdates());
         //ignoreFiles.checkLocalIntegrity(state.getPendingUpdates());
+    }
+
+    /**
+     * Maps 1-for-1 the inputs to a FilePath.  If no local file path is
+     * known, then a surrogate file path is used, so that it will always do the right
+     * thing.
+     *
+     * @param specs
+     * @return
+     */
+    @NotNull
+    public Map<IExtendedFileSpec, FilePath> mapSpecsToPath(@NotNull final Collection<IExtendedFileSpec> specs) {
+        final FileMappingRepo mappingRepo = state.getFileMappingRepo();
+        Map<IExtendedFileSpec, FilePath> ret = new HashMap<IExtendedFileSpec, FilePath>();
+        for (IExtendedFileSpec spec : specs) {
+            FilePath filePath = null;
+            if (spec.getClientPathString() != null) {
+                filePath = FilePathUtil.getFilePath(spec.getClientPathString());
+            }
+            final P4ClientFileMapping clientMapping = mappingRepo.getByDepotLocation(
+                    spec.getDepotPathString(), filePath);
+            if (clientMapping.getLocalFilePath() != null) {
+                ret.put(spec, clientMapping.getLocalFilePath());
+            } else {
+                // No known mapping for the spec.
+                // But we need something!
+                ret.put(spec, new DepotFilePath(state.getClientServerId(), spec.getDepotPathString()));
+            }
+        }
+
+        return ret;
     }
 
 

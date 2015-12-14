@@ -30,6 +30,7 @@ import java.util.*;
 public class P4AnnotatedLine {
     private static final Logger LOG = Logger.getInstance(P4AnnotatedLine.class);
 
+
     private final FilePath baseFile;
     private final String depotPath;
     private final IFileAnnotation ann;
@@ -74,6 +75,9 @@ public class P4AnnotatedLine {
         return depotPath;
     }
 
+    public int getLineNumber() {
+        return lineNumber;
+    }
 
     public static List<P4AnnotatedLine> loadAnnotatedLines(@NotNull P4Exec2 exec,
             @NotNull FilePath baseFile, @NotNull List<IFileAnnotation> annotations) throws VcsException {
@@ -102,8 +106,9 @@ public class P4AnnotatedLine {
 
             IExtendedFileSpec spec = fileSpecs.get(ann.getDepotPath());
             if (spec == null) {
-                throw new IllegalStateException("should have already found path " + ann.getDepotPath() +
+                LOG.error("should have already found path " + ann.getDepotPath() +
                         "; but instead found paths " + fileSpecs.keySet());
+                return Collections.emptyList();
             }
 
             // See bug #86
@@ -122,6 +127,10 @@ public class P4AnnotatedLine {
                     data = getHistoryFor(exec, depotRev);
                     revisions.put(depotRev, data);
                 }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Annotating line " + (lineNumber + 1) + " from " + depotRev + " || " +
+                            baseFile + " with " + data.getRevision() + "//" + data.getDate());
+                }
                 ret.add(new P4AnnotatedLine(baseFile, lineNumber++, ann, data));
             } else if (blameRev == 0) {
                 LOG.info("Annotated line for " + ann.getDepotPath() + '@' + lineNumber + " [" +
@@ -130,12 +139,14 @@ public class P4AnnotatedLine {
                 ret.add(new P4AnnotatedLine(baseFile, lineNumber++, ann, getDeletedHistoryFor(spec)));
             } else {
                 // local revision; this may happen relatively frequently
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Annotating line " + (lineNumber + 1) + " from local change");
+                }
                 ret.add(new P4AnnotatedLine(baseFile, lineNumber++, ann, getLocalHistoryFor(exec, spec)));
             }
         }
         return ret;
     }
-
 
     @Nullable
     private static IFileRevisionData getDeletedHistoryFor(@NotNull IExtendedFileSpec depotRev) {
@@ -179,11 +190,14 @@ public class P4AnnotatedLine {
             // it can return empty values for a server message
             if (ret != null && !ret.isEmpty()) {
                 if (ret.size() != 1) {
+                    LOG.warn("unexpected revision data for " + depotRev + ": " + ret);
                     throw new P4FileException(P4Bundle.message("error.annotate.revision", depotRev, ret));
                 }
                 return ret.get(0);
             }
         }
+        LOG.warn("No revision for " + depotRev);
         throw new P4FileException(P4Bundle.message("error.annotate.no-revision", depotRev));
     }
+
 }

@@ -182,7 +182,7 @@ public class P4Exec2 {
     public List<Pair<IExtendedFileSpec, IExtendedFileSpec>> getFileStatusForChangelist(final int changeListNumber)
             throws VcsException, CancellationException {
 
-        // TODO the only way I've figured out how to get the integration
+        // The only way I've figured out how to get the integration
         // status of a file (a moved/integrated file, where its source was) is from the
         // "p4 filelog -s (each file added/moved)", then map those moved-from files to
         // the ones in the changelist.
@@ -232,7 +232,7 @@ public class P4Exec2 {
                                 break;
                             case INTEGRATE:
                                 // Integrate can be a move of sorts.
-                                if (spec.getHeadRev() == 1) {
+                                if (spec.getHeadRev() <= 1) {
                                     filelogRequest.add(FileSpecUtil.getFromDepotPath(spec.getDepotPathString(),
                                             IFileSpec.NO_FILE_REVISION));
                                 } else {

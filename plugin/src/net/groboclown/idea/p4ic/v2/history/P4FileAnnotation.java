@@ -29,9 +29,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 
-// FIXME there's a nasty bug where the revision number is shown to be the exact same for every
-// line, even though each line is returning a different number.
-// #86.
+// FIXME the annotations still have issues:
+//  1. The show before / show after doesn't list the file history right.
+//          This looks like an issue with getRevisions().  It should return
+//          the list of the full file revision history for the file.
+//  2. The show diff doesn't always show the right thing.  It rarely works right.
 
 
 public class P4FileAnnotation extends FileAnnotation {

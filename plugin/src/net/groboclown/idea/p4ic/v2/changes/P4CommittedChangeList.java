@@ -118,8 +118,17 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
                         case DELETE:
                         case DELETED:
                         case MOVE_DELETE:
+                            int beforeRev = primary.getHaveRev() - 1;
+                            if (beforeRev < 0) {
+                                beforeRev = primary.getHeadRev();
+                                if (beforeRev < 0) {
+                                    beforeRev = 0;
+                                }
+                                LOG.info("Before delete revision " + primary.getHeadRev() +
+                                    "; using rev " + beforeRev + " (action " + primary.getHeadAction() + ")");
+                            }
                             before = new P4ContentRevision(project, mappedTo.get(primary),
-                                    primary, primary.getHaveRev() - 1);
+                                    primary, beforeRev);
                             after = null;
                             break;
                         case BRANCH:

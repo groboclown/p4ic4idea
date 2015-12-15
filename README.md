@@ -5,7 +5,9 @@
 The plugin allows for associating an [IntelliJ IDEA Community Edition IDE](https://www.jetbrains.com/idea/)
 project with a Perforce repository through IDEA's built-in VCS support.
 
-**Currently Supported IDEA versions: 13.5 through 15** *which includes Android Studio 1.0 and many other 
+**Currently Supported IDEA versions: 13.5 through 15** *which includes Android Studio 1.0 and many other products.*
+For a full list of supported products, please see
+[the JetBrains plugin page](https://plugins.jetbrains.com/update/index?pr=&updateId=22898)
 
 
 

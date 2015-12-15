@@ -15,6 +15,7 @@
       when it first appeared. (#86)
     * Changelist details display for an annotated line would use wrong changelist number
       from the file status. (#86)
+    * Clicking on the annotated line could generate a "changelist -1" error. (#86)
 
 
 ## ::v0.7.2::

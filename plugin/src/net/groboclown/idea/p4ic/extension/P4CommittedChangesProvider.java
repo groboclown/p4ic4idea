@@ -167,8 +167,8 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
                     return Pair.create(changeList, fp);
                 }
             }
-            // FIXME use the correct string
-            LOG.info("Getting changelist for head reivision; " + fp);
+            LOG.info("Getting changelist for head revision; " + fp);
+            // FIXME use the correct constant string
             P4CommittedChangeList changeList = server.getChangelistForOnline(fp, "#head");
             return Pair.create(changeList, fp);
         } catch (InterruptedException e) {

@@ -47,7 +47,7 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
 
     public P4CommittedChangeList(@NotNull P4Vcs vcs, @NotNull P4Server server, @NotNull IChangelist changelist,
             final List<Pair<IExtendedFileSpec, IExtendedFileSpec>> changelistFiles) throws VcsException {
-        // TODO format via bundle
+        // FIXME format via bundle
         super(changelist.getId() + ": " + changelist.getDescription(),
                 changelist.getDescription(),
                 changelist.getUsername(),

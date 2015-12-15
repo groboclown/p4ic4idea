@@ -79,6 +79,10 @@ public class P4AnnotatedLine {
         return lineNumber;
     }
 
+    public int getRevNumber() {
+        return revisionData.getRevision();
+    }
+
     public static List<P4AnnotatedLine> loadAnnotatedLines(@NotNull P4Exec2 exec,
             @NotNull FilePath baseFile, @NotNull List<IFileAnnotation> annotations) throws VcsException {
         Map<String, IFileRevisionData> revisions = new HashMap<String, IFileRevisionData>();

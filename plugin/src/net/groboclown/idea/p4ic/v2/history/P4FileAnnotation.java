@@ -28,6 +28,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+
+// FIXME there's a nasty bug where the revision number is shown to be the exact same for every
+// line, even though each line is returning a different number.
+// #86.
+
+
 public class P4FileAnnotation extends FileAnnotation {
     private static final Logger LOG = Logger.getInstance(P4FileAnnotation.class);
 
@@ -55,7 +61,9 @@ public class P4FileAnnotation extends FileAnnotation {
             new P4LineAnnotationAspect(LineAnnotationAspect.REVISION, true) {
                 @Override
                 String getValue(@NotNull P4AnnotatedLine ann) {
-                    return '#' + Integer.toString(ann.getRev().getRev());
+                    // TODO look at allowing the user to view changelists instead of revs.
+
+                    return '#' + Integer.toString(ann.getRevNumber());
                 }
             }
     };
@@ -134,7 +142,12 @@ public class P4FileAnnotation extends FileAnnotation {
         if (line == null) {
             return null;
         }
-        return line.getRev();
+        // NOTE we are using a simple revision for the annotations.
+        // return line.getRev();
+        // DEBUG
+        // This returns the right number, but it seems to nly display
+        // the highest number.
+        return new VcsRevisionNumber.Int(line.getRevNumber());
     }
 
     @Nullable
@@ -155,11 +168,7 @@ public class P4FileAnnotation extends FileAnnotation {
     @Nullable
     @Override
     public VcsRevisionNumber originalRevision(int lineNumber) {
-        P4AnnotatedLine line = getOrNull(lineNumber);
-        if (line == null) {
-            return null;
-        }
-        return line.getRev();
+        return getLineRevisionNumber(lineNumber);
     }
 
     /**
@@ -171,7 +180,9 @@ public class P4FileAnnotation extends FileAnnotation {
     @Nullable
     @Override
     public VcsRevisionNumber getCurrentRevision() {
-        return fileRev;
+        // For annotations, we use the simple revision number
+        // return fileRev;
+        return new VcsRevisionNumber.Int(fileRev.getRev());
     }
 
     /**

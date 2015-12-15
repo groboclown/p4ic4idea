@@ -1,11 +1,21 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.2</version>
+    <version>0.7.3</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.7.3</em>
+                <ol>
+                    <li>Fixed an issue where annotated lines would show the most recent
+                    revision to have the line, rather than when it first appeared.</li>
+                    <li>Fixed an issue where the changelist details display for an
+                    annotated line would use wrong changelist number from the file status.</li>
+                    <li>Corrected an issue where clicking on the annotated line
+                    could generate a "changelist -1" error.</li>
+                </ol>
+            </li>
             <li><em>0.7.2</em>
                 <ol>
                   <li>If the user stores the
@@ -19,17 +29,6 @@
                   complains that the workspace root and project directory
                   mismatch (if the new workspace root is under a new
                   project directory).</li>
-                </ol>
-            </li>
-            <li><em>0.7.1</em>
-                <ol>
-                  <li>Ensured that the user is properly prompted for the password if it
-                  is required by Perforce, and it isn't specified in the config file.</li>
-                  <li>Fixed some cases where the error dialog only close when
-                  "Cancel" was selected.</li>
-                  <li>Fixed the issue when the user selected to not store the password,
-                  it wouldn't be used.</li>
-                  <li>Added the underlying problem to the error report in the warnings panel.</li>
                 </ol>
             </li>
         </ol>

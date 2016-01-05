@@ -53,6 +53,21 @@ public class P4ClientState {
         this.jobs = jobs;
     }
 
+
+    /**
+     * Empty out the values, and go back to a clean slate.
+     */
+    void flush() {
+        // All read-only objects are not flushed.
+        //      - workspace
+        //      - job status
+        changes.clear();
+        knownHave.clear();
+        updatedFiles.flush();
+        jobs.flush();
+    }
+
+
     @NotNull
     public ClientServerId getClientServerId() {
         return clientServerId;

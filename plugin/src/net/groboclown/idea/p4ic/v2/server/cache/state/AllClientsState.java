@@ -66,6 +66,14 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
     }
 
 
+    @Nullable
+    public ClientLocalServerState getCachedStateForClient(@NotNull ClientServerId clientServerId) {
+        synchronized (clientStates) {
+            return clientStates.get(clientServerId);
+        }
+    }
+
+
     @NotNull
     public ClientLocalServerState getStateForClient(@NotNull ClientServerId clientServerId,
             Callable<Boolean> isServerCaseInsensitiveCallable) throws P4InvalidClientException {

@@ -45,6 +45,16 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
     }
 
 
+    /**
+     * Empty out the cached state.
+     */
+    void flush() {
+        synchronized (sync) {
+            updatedFiles.clear();
+        }
+    }
+
+
     @NotNull
     public Set<P4FileUpdateState> copy() {
         synchronized (sync) {

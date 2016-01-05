@@ -127,6 +127,9 @@ public class P4ChangeProvider implements ChangeProvider {
             // local cache matches up with the remaining actions.
             for (P4Server server : vcs.getP4Servers()) {
                 server.checkLocalIntegrity();
+                if (dirtyFiles == null && server.isWorkingOnline()) {
+                    server.flushCache(true, false);
+                }
             }
 
             syncChanges(dirtyFiles, builder, addGate, progress);

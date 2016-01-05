@@ -17,9 +17,12 @@ package net.groboclown.idea.p4ic.v2.server.cache.state;
 import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import org.jdom.Element;
+import org.jdom.output.XMLOutputter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,6 +49,50 @@ public class ClientLocalServerState {
         this.pendingUpdates = pendingUpdates;
         this.fileRepo = new FileMappingRepo(cachedServerState.isServerCaseInsensitive());
     }
+
+    /**
+     * Remove all pending states, and go back to a clean slate
+     */
+    public void flush(boolean includeLocal, boolean force) {
+        if (pendingUpdates.isEmpty() || force) {
+            if (includeLocal) {
+                LOG.info("Flushing local and server cached states for " + getClientServerId());
+                if (LOG.isDebugEnabled()) {
+                    Element wrapper = new Element("cached");
+                    EncodeReferences refs = new EncodeReferences();
+                    serialize(wrapper, refs);
+                    ByteArrayOutputStream serialized = new ByteArrayOutputStream();
+                    try {
+                        new XMLOutputter().output(wrapper, serialized);
+                        LOG.debug("All cached data was " + new String(serialized.toByteArray()));
+                    } catch (IOException e) {
+                        LOG.warn("Debugging issue", e);
+                    }
+                }
+                localClientState.flush();
+                pendingUpdates.clear();
+                fileRepo.clearLocations();
+            } else {
+                LOG.info("Flushing local and server cached states for " + getClientServerId());
+                if (LOG.isDebugEnabled()) {
+                    Element wrapper = new Element("server");
+                    EncodeReferences refs = new EncodeReferences();
+                    cachedServerState.serialize(wrapper, refs);
+                    ByteArrayOutputStream serialized = new ByteArrayOutputStream();
+                    try {
+                        new XMLOutputter().output(wrapper, serialized);
+                        LOG.debug("Cached server data was " + new String(serialized.toByteArray()));
+                    } catch (IOException e) {
+                        LOG.warn("Debugging issue", e);
+                    }
+                }
+            }
+
+            // Both w/ and w/o local flush will clear out the server cache.
+            cachedServerState.flush();
+        }
+    }
+
 
     @NotNull
     public ClientServerId getClientServerId() {

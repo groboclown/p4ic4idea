@@ -6,6 +6,18 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.7.4</em>
+                <ol>
+                  <li>Changelist refresh now cleans out the cached data
+                  if the user is online and there are no pending updates
+                  to send to the server.  This should prevent the
+                  "old data" syndrome that would sometimes creep in, and it
+                  should make the synchronize file action work as expected.</li>
+                  <li>Fixed a bug with the "Silently go offline on disconnect"
+                  option.  It no longer causes the gone-offline dialog to
+                  show repeatedly.</li>
+                </ol>
+            </li>
             <li><em>0.7.3</em>
                 <ol>
                     <li>Fixed an issue where annotated lines would show the most recent
@@ -14,21 +26,6 @@
                     annotated line would use wrong changelist number from the file status.</li>
                     <li>Corrected an issue where clicking on the annotated line
                     could generate a "changelist -1" error.</li>
-                </ol>
-            </li>
-            <li><em>0.7.2</em>
-                <ol>
-                  <li>If the user stores the
-                  connection password with the IDE, then the initial project
-                  load no longer reports that it couldn't load the passwords
-                  at that time.</li>
-                  <li>The P4 configuration UI could attempt to save values
-                  while the configuration was being loaded, causing a
-                  null pointer exception.  This is now fixed.</li>
-                  <li>Changing the workspace root directory no longer
-                  complains that the workspace root and project directory
-                  mismatch (if the new workspace root is under a new
-                  project directory).</li>
                 </ol>
             </li>
         </ol>

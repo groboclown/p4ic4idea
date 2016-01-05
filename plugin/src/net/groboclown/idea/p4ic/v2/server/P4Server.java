@@ -1194,6 +1194,12 @@ public class P4Server {
     }
 
 
+    public void flushCache(boolean includeLocal, boolean force) throws InterruptedException {
+        connection.flushCache(project, includeLocal, force);
+    }
+
+
+
     private static void addPendingUpdateState(@NotNull final List<PendingUpdateState> updates,
             @Nullable final PendingUpdateState pendingUpdateState) {
         if (pendingUpdateState != null) {

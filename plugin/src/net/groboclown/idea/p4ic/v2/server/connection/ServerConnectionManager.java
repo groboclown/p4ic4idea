@@ -147,6 +147,11 @@ public class ServerConnectionManager implements ApplicationComponent {
     }
 
 
+    void flushCache(@NotNull ClientServerId clientServerId, boolean includeLocal, boolean force) {
+        cacheManager.flushState(clientServerId, includeLocal, force);
+    }
+
+
     void invalidateConfig(@NotNull P4Config client) {
         serverCacheLock.lock();
         try {

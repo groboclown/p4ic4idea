@@ -2,6 +2,23 @@
 
 
 
+## ::v0.7.4::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Changelist refresh now cleans out the cached data if the user is online and
+      there are no pending updates to send to the server.  This should prevent the
+      "old data" syndrome that would sometimes creep in, and it should make
+      the synchronize file action work as expected.  (#87 and #90)
+    * "Silently go offline on disconnect" option causes the gone offline
+      dialog to repeatedly show up on disconnect.  (#83)
+
+
 ## ::v0.7.3::
 
 ### Overview

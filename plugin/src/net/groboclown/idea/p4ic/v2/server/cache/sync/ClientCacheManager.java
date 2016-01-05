@@ -318,6 +318,12 @@ public class ClientCacheManager {
     }
 
 
+    @NotNull
+    public ClientServerId getClientServerId() {
+        return state.getClientServerId();
+    }
+
+
     // ----------------------------------------------------------------------------------------
     // Package-level behaviors for use in an action
 

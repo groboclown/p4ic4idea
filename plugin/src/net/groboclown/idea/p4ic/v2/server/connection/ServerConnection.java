@@ -195,6 +195,33 @@ public class ServerConnection {
     }
 
 
+    // FIXME see if this is the right place for this action.
+    public void flushCache(@NotNull Project project, final boolean includeLocal, final boolean force) throws InterruptedException {
+        if (isWorkingOnline()) {
+            runImmediately(project, new ServerUpdateAction() {
+                @NotNull
+                @Override
+                public Collection<PendingUpdateState> getPendingUpdateStates() {
+                    return Collections.emptyList();
+                }
+
+                @Override
+                public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
+                        @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                        throws InterruptedException {
+                    ServerConnectionManager.getInstance().flushCache(
+                            clientCacheManager.getClientServerId(), includeLocal, force);
+                }
+
+                @Override
+                public void abort(@NotNull final ClientCacheManager clientCacheManager) {
+
+                }
+            });
+        }
+    }
+
+
     public boolean isWorkingOnline() {
         return statusController.isWorkingOnline();
     }

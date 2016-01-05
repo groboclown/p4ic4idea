@@ -37,6 +37,15 @@ public class JobStateList implements Iterable<P4JobState> {
         this.jobs = new HashMap<String, P4JobState>();
     }
 
+    /**
+     * Clear out the cached state
+     */
+    void flush() {
+        synchronized (sync) {
+            jobs.clear();
+        }
+    }
+
     @NotNull
     @Override
     public Iterator<P4JobState> iterator() {

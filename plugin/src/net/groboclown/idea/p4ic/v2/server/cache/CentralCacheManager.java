@@ -101,6 +101,28 @@ public class CentralCacheManager {
     }
 
 
+    // NOTE this must be done inside a ServerConnection
+    public void flushState(@NotNull ClientServerId clientServerId,
+            boolean includeLocal, boolean force) {
+        if (disposed) {
+            // Coding error; no bundled message
+            throw new IllegalStateException("disposed");
+        }
+        final ClientLocalServerState state;
+        cacheLock.lock();
+        try {
+            state = allClientState.getCachedStateForClient(clientServerId);
+            if (state == null) {
+                LOG.info("No state to clear");
+                return;
+            }
+            state.flush(includeLocal, force);
+        } finally {
+            cacheLock.unlock();
+        }
+    }
+
+
     /**
      *
      * @param clientServerId client / server name

@@ -8,7 +8,6 @@
               value="work/test/p4ic4idea"/>
 
     <path id="production.classpath">
-        <path refid="jdk.classpath"/>
         <path refid="${idea.lowest.classpath}"/>
         <pathelement location="${rootdir}/lib/picocontainer/1.2/picocontainer.jar"/>
         <!-- <pathelement location="${lib.p4java}"/> -->
@@ -55,9 +54,9 @@
         <mkdir dir="${output.dir}"/>
         <javac2 destdir="${output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}"
                 memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
-                includeantruntime="false">
+                includeantruntime="false" target="1.6" source="1.6">
             <compilerarg line="${compiler.args}"/>
-            <bootclasspath refid="bootclasspath"/>
+            <bootclasspath refid="bootclasspath.6"/>
             <classpath refid="production.classpath"/>
             <src refid="production.sourcepath"/>
             <patternset refid="excluded.from.compilation"/>
@@ -85,9 +84,9 @@
         <mkdir dir="${testoutput.dir}"/>
         <javac2 destdir="${testoutput.dir}" debug="${compiler.debug}"
                 nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true"
-                executable="${jdk.bin}/javac" includeantruntime="false">
+                executable="${jdk.bin}/javac" includeantruntime="false" target="1.6" source="1.6">
             <compilerarg line="${compiler.args}"/>
-            <bootclasspath refid="bootclasspath"/>
+            <bootclasspath refid="bootclasspath.6"/>
             <classpath refid="test.compile.classpath"/>
             <src refid="test.sourcepath"/>
             <patternset refid="excluded.from.compilation"/>
@@ -170,6 +169,7 @@
                 <path location="${testoutput.dir}"/>
                 <path refid="test.runtime.classpath"/>
             </classpath>
+            <bootclasspath refid="bootclasspath.6"/>
 
             <!-- Add the plain output to allow for step-by-step reporting of tests -->
             <formatter type="plain" usefile="no"/>

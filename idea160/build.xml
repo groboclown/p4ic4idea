@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="p4ic4idea" default="main">
+<project name="p4ic4idea-160" default="main">
     <import file="../build/common.xml"/>
 
     <property name="output.dir"
@@ -8,7 +8,7 @@
               value="work/test"/>
 
     <path id="production.classpath">
-        <path refid="idea140.classpath"/>
+        <path refid="idea160.classpath"/>
         <pathelement location="../idea-compat/work/production"/>
         <pathelement location="${lib.p4java}"/>
     </path>
@@ -51,10 +51,10 @@
             description="Compile module p4ic4idea; production classes">
         <mkdir dir="${output.dir}"/>
         <javac2 destdir="${output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}"
-                memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
-                includeantruntime="false" target="1.6" source="1.6">
+                memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk8.bin}/javac"
+                includeantruntime="false" target="1.8" source="1.8">
             <compilerarg line="${compiler.args}"/>
-            <bootclasspath refid="bootclasspath.6"/>
+            <bootclasspath refid="bootclasspath.8"/>
             <classpath refid="production.classpath"/>
             <src refid="production.sourcepath"/>
             <patternset refid="excluded.from.compilation"/>
@@ -103,7 +103,7 @@
 
 
     <target name="package" depends="compile.production">
-        <jar file="work/p4ic4idea.idea140-compat.jar" basedir="${output.dir}">
+        <jar file="work/p4ic4idea.idea160-compat.jar" basedir="${output.dir}">
         </jar>
     </target>
 
@@ -112,3 +112,4 @@
         <!-- no tests right now -->
     </target>
 </project>
+

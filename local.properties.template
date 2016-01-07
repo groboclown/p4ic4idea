@@ -1,7 +1,13 @@
+
+# This should be JDK 1.8 or higher
 project.jdk.home=/opt/jdk
-project.jdk.bin=${project.jdk.home}/bin
 
-javac2.instrumentation.includeJavaRuntime=false
+# Source compatible JDK 1.6 library path
+java6.lib=/opt/jdk1.6/jre/lib
 
-# For integration tests
-p4d=/usr/local/bin/p4d-2.6_x64-2014.2.962050
+# Source compatible JDK 1.8 library path
+# If you don't define this, the path will
+# be based off of the project.jdk.home
+# location.
+java8.lib=/opt/jdk1.8/jre/lib
+

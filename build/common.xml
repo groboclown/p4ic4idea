@@ -60,31 +60,12 @@
 
     <!-- JDK definitions -->
 
-    <property name="jdk.bin" location="${project.jdk.bin}"/>
+    <property name="project.jdk.bin" location="${project.jdk.home}/bin"/>
     <property name="jdk.home" location="${project.jdk.home}"/>
-    <path id="jdk.classpath">
-        <fileset dir="${jdk.home}">
-            <include name="jre/lib/charsets.jar"/>
-            <include name="jre/lib/deploy.jar"/>
-            <include name="jre/lib/javaws.jar"/>
-            <include name="jre/lib/jce.jar"/>
-            <include name="jre/lib/jfr.jar"/>
-            <include name="jre/lib/jfxrt.jar"/>
-            <include name="jre/lib/jsse.jar"/>
-            <include name="jre/lib/management-agent.jar"/>
-            <include name="jre/lib/plugin.jar"/>
-            <include name="jre/lib/resources.jar"/>
-            <include name="jre/lib/rt.jar"/>
-            <include name="jre/lib/ext/access-bridge-64.jar"/>
-            <include name="jre/lib/ext/dnsns.jar"/>
-            <include name="jre/lib/ext/jaccess.jar"/>
-            <include name="jre/lib/ext/localedata.jar"/>
-            <include name="jre/lib/ext/sunec.jar"/>
-            <include name="jre/lib/ext/sunjce_provider.jar"/>
-            <include name="jre/lib/ext/sunmscapi.jar"/>
-            <include name="jre/lib/ext/zipfs.jar"/>
-        </fileset>
-    </path>
+    <property name="jdk.bin" location="${project.jdk.bin}"/>
+    <property name="java8.lib" location="${jdk.home}/jre/lib"/>
+
+    <property name="javac2.instrumentation.includeJavaRuntime" value="false"/>
 
     <path id="idea135.classpath">
         <fileset dir="${rootdir}/intellij-lib/intellij/AI-135.1653844">
@@ -141,8 +122,22 @@
 
     <property name="all.compiler.args" value="-encoding UTF-8 -source 1.6 ${compiler.args}"/>
 
-    <path id="bootclasspath">
-        <!-- Paths to be included in compilation bootclasspath -->
+    <path id="bootclasspath.6">
+        <!-- Paths to be included in compilation bootclasspath for JDK 1.6 -->
+        <fileset dir="${java6.lib}">
+            <include name="jce.jar"/>
+            <include name="jsse.jar"/>
+            <include name="rt.jar"/>
+        </fileset>
+    </path>
+
+    <path id="bootclasspath.8">
+        <!-- Paths to be included in compilation bootclasspath for JDK 1.8 -->
+        <fileset dir="${java8.lib}">
+            <include name="jce.jar"/>
+            <include name="jsse.jar"/>
+            <include name="rt.jar"/>
+        </fileset>
     </path>
 
     <patternset id="excluded.from">

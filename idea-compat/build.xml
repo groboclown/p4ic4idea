@@ -8,7 +8,6 @@
               value="work/test"/>
 
     <path id="production.classpath">
-        <path refid="jdk.classpath"/>
         <path refid="${idea.lowest.classpath}"/>
         <pathelement location="${lib.p4java}"/>
     </path>
@@ -49,9 +48,9 @@
         <mkdir dir="${output.dir}"/>
         <javac2 destdir="${output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}"
                 memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
-                includeantruntime="false">
+                includeantruntime="false" target="1.6" source="1.6">
             <compilerarg line="${compiler.args}"/>
-            <bootclasspath refid="bootclasspath"/>
+            <bootclasspath refid="bootclasspath.6"/>
             <classpath refid="production.classpath"/>
             <src refid="production.sourcepath"/>
             <patternset refid="excluded.from.compilation"/>

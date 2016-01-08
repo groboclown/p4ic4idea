@@ -108,8 +108,7 @@ public class FileP4Config implements P4Config {
    TMP, TEMP        Directory for temporary files   Perforce Command Reference
          */
         // Look into parsing these:
-        // "P4ENVIRO"
-        // "P4IGNORE"
+        // "P4ENVIRO" (see bug #94)
         // "P4LOGINSSO"
         // "P4SSLDIR"
         // "TMP", "TEMP"

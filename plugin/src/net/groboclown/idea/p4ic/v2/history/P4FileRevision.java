@@ -174,6 +174,28 @@ public class P4FileRevision implements VcsFileRevision {
         return "#" + getRev();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        if (o.getClass().equals(P4FileRevision.class)) {
+            P4FileRevision that = (P4FileRevision) o;
+            return baseFile.equals(that.baseFile) &&
+                    revision.getRev() == that.revision.getRev();
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return baseFile.hashCode() + revision.getRev();
+    }
+
+
     @Nullable
     private String createComment(@Nullable final IFileRevisionData data) {
         if (data == null) {

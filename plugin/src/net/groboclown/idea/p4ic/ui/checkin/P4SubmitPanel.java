@@ -97,15 +97,18 @@ public class P4SubmitPanel {
             public void actionPerformed(final ActionEvent e) {
                 String jobId = getJobIdFieldText();
                 if (jobId != null) {
-                    if (context.addJobId(jobId) != null) {
-                        // job was added successfully
-                        myJobIdField.setText("");
-                        jobTableModel.fireTableDataChanged();
-                    } else {
-                        Messages.showMessageDialog(context.getProject(),
-                                P4Bundle.message("submit.job.error.notfound.message", jobId),
-                                P4Bundle.getString("submit.job.error.notfound.title"),
-                                Messages.getErrorIcon());
+                    jobId = jobId.trim();
+                    if (jobId.length() > 0) {
+                        if (context.addJobId(jobId) != null) {
+                            // job was added successfully
+                            myJobIdField.setText("");
+                            jobTableModel.fireTableDataChanged();
+                        } else {
+                            Messages.showMessageDialog(context.getProject(),
+                                    P4Bundle.message("submit.job.error.notfound.message", jobId),
+                                    P4Bundle.getString("submit.job.error.notfound.title"),
+                                    Messages.getErrorIcon());
+                        }
                     }
                 }
             }

@@ -30,10 +30,9 @@ import java.util.*;
 
 
 // FIXME the annotations still have issues:
-//  1. The show before / show after doesn't list the file history right.
-//          This looks like an issue with getRevisions().  It should return
-//          the list of the full file revision history for the file.
+//  1. The set before / after doesn't change the display. (#89)
 //  2. The show diff doesn't always show the right thing.  It rarely works right.
+//          (#88)
 
 
 public class P4FileAnnotation extends FileAnnotation {
@@ -196,6 +195,10 @@ public class P4FileAnnotation extends FileAnnotation {
     @Nullable
     @Override
     public List<VcsFileRevision> getRevisions() {
+
+        // Possibly look into using P4HistoryProvider#getHistory instead,
+        // however that wouldn't conform to the API.
+
         Set<VcsFileRevision> revs = new HashSet<VcsFileRevision>();
         for (P4AnnotatedLine line : annotations) {
             if (line != null) {

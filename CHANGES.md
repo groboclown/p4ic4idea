@@ -1,6 +1,24 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.7.5::
+
+### Overview
+
+* Switched to JDK 1.8 for compiling in order to support IDEA 16.
+* Bug fixes.
+
+### Details
+
+* Switched to JDK 1.8 for compiling in order to support IDEA 16.
+    Only future API changes in IDEA will be compiled with JDK 1.8,
+    so that older IDE versions will continue to work. (#92)
+* Bug fixes.
+    * Trimmed whitespace on job IDs in the submit dialog (#96).
+    * Annotation set before / after popup now shows correct list of
+      revisions.
+
+
 
 ## ::v0.7.4::
 

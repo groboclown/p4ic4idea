@@ -1,21 +1,18 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.4</version>
+    <version>0.7.5</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
-            <li><em>0.7.4</em>
+            <li><em>0.7.5</em>
                 <ol>
-                  <li>Changelist refresh now cleans out the cached data
-                  if the user is online and there are no pending updates
-                  to send to the server.  This should prevent the
-                  "old data" syndrome that would sometimes creep in, and it
-                  should make the synchronize file action work as expected.</li>
-                  <li>Fixed a bug with the "Silently go offline on disconnect"
-                  option.  It no longer causes the gone-offline dialog to
-                  show repeatedly.</li>
+                  <li>Switched to JDK 1.8 compiler for IDEA 16
+                  support.  The primary components of the plugin are
+                  still built with 1.6 compatibility, so older IDEs
+                  should continue to work.</li>
+                  <li>Trimmed whitespace on job IDs in the submit dialog.</li>
                 </ol>
             </li>
             <li><em>0.7.3</em>

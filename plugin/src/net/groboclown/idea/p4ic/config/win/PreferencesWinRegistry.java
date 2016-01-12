@@ -185,6 +185,7 @@ public class PreferencesWinRegistry {
                 root, new Object[]{new Integer(handles[0]), toCstr(value)}
         );
         regCloseKey.invoke(root, new Object[]{new Integer(handles[0])});
+        // TODO replace with local
         return (valb != null ? new String(valb).trim() : null);
     }
 
@@ -211,6 +212,7 @@ public class PreferencesWinRegistry {
                             new Integer(handles[0]), new Integer(index), new Integer(maxlen + 1)
                     }
             );
+            // TODO replace with local
             String value = readString(hkey, key, new String(name));
             results.put(new String(name).trim(), value);
         }
@@ -241,6 +243,7 @@ public class PreferencesWinRegistry {
                             new Integer(handles[0]), new Integer(index), new Integer(maxlen + 1)
                     }
             );
+            // TODO replace with locale
             results.add(new String(name).trim());
         }
         regCloseKey.invoke(root, new Object[]{new Integer(handles[0])});

@@ -89,6 +89,11 @@ class Synchronizer {
                     if (now > expires) {
                         throw new InterruptedException("timed out waiting for critical alerts to clear");
                     }
+                    // Ignore return code.
+                    // If this times out, then the loop will
+                    // cause an InterruptedException.
+                    // If it doesn't time out, the loop will
+                    // cause a return value.
                     alertCriticalActiveCondition.await(expires - now, TimeUnit.MILLISECONDS);
                 }
             }

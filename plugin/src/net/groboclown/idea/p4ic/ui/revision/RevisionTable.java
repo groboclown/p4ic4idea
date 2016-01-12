@@ -272,13 +272,17 @@ public class RevisionTable extends JPanel {
                 switch (column) {
                     case COL_REV:
                         revCellLabel.setText('#' + Integer.toString(data.rev.getRev()));
+                        break;
                     case COL_DATE:
                         // TODO get the right presentation of dates
                         revCellLabel.setText(dateFormatter.format(data.rev.getRevisionDate()));
+                        break;
                     case COL_AUTH:
                         revCellLabel.setText(data.rev.getAuthor());
+                        break;
                     case COL_COMMENT:
                         revCellLabel.setText(data.rev.getCommitMessage());
+                        break;
                     default:
                         return null;
                 }

@@ -106,19 +106,11 @@ public enum UpdateAction {
             public boolean matches(@NotNull String key) {
                 return key.toLowerCase().startsWith(getKeyName());
             }
-
-            public String getKeyName(@NotNull String suffix) {
-                return getKeyName() + suffix;
-            }
         },
         VALUE {
             @Override
             public boolean matches(@NotNull String key) {
                 return key.toLowerCase().startsWith(getKeyName());
-            }
-
-            public String getKeyName(@NotNull String suffix) {
-                return getKeyName() + suffix;
             }
         },
         DEPOT,

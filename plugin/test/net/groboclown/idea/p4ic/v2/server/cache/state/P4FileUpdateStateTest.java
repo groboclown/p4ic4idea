@@ -39,8 +39,6 @@ public class P4FileUpdateStateTest {
 
     @Test
     public void testHashCode() throws Exception {
-        final FileMappingRepo repo = new FileMappingRepo(false);
-        FilePath f1 = createFilePath("a1");
         P4FileUpdateState s1 = new P4FileUpdateState(
                 new P4ClientFileMapping(null, FilePathUtil.getFilePath("a.txt")),
                 1, FileUpdateAction.ADD_EDIT_FILE, true);

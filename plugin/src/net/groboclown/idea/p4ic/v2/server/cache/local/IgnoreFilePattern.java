@@ -40,7 +40,7 @@ public class IgnoreFilePattern {
 
     public static List<IgnoreFilePattern> parseFile(@NotNull VirtualFile ignoreFile) throws IOException {
         final BufferedReader lineReader =
-                new BufferedReader(new InputStreamReader(ignoreFile.getInputStream()));
+                new BufferedReader(new InputStreamReader(ignoreFile.getInputStream(), "utf-8"));
         try {
             // TODO update this file to match the expected behavior.
             // Note: there is now a "p4 ignores" command, and "p4 ignore" is now

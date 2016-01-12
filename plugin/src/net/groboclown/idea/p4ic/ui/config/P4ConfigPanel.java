@@ -1104,7 +1104,7 @@ public class P4ConfigPanel {
     }
 
 
-    private class AuthenticationMethodRenderer extends ListCellRendererWrapper<ConnectionPanel> {
+    private static class AuthenticationMethodRenderer extends ListCellRendererWrapper<ConnectionPanel> {
         @Override
         public void customize(JList list, ConnectionPanel value, int index, boolean isSelected, boolean hasFocus) {
             if (isSelected || hasFocus) {

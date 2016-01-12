@@ -322,7 +322,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     }
 
 
-    private class P4OnCheckinPanel implements CheckinChangeListSpecificComponent {
+    private static class P4OnCheckinPanel implements CheckinChangeListSpecificComponent {
         private final CheckinProjectPanel parentPanel;
         private final PairConsumer<Object, Object> dataConsumer;
         private final SubmitContext context;

@@ -35,7 +35,7 @@ public class P4ConfigurationProjectPanel {
         this.project = project;
     }
 
-    public boolean isModified(@NotNull ManualP4Config myConfig, @NotNull UserProjectPreferences preferences) {
+    public synchronized boolean isModified(@NotNull ManualP4Config myConfig, @NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
             return false;
         }
@@ -43,7 +43,7 @@ public class P4ConfigurationProjectPanel {
         return myMainPanel.isModified(myConfig, preferences);
     }
 
-    public void saveSettings(@NotNull P4ConfigProject config, @NotNull UserProjectPreferences preferences) {
+    public synchronized void saveSettings(@NotNull P4ConfigProject config, @NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
             // nothing to do
             return;
@@ -69,7 +69,7 @@ public class P4ConfigurationProjectPanel {
 
     }
 
-    public void loadSettings(@NotNull ManualP4Config config, @NotNull UserProjectPreferences preferences) {
+    public synchronized void loadSettings(@NotNull ManualP4Config config, @NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
             getPanel(config, preferences);
             return;
@@ -88,7 +88,7 @@ public class P4ConfigurationProjectPanel {
         return myMainPanel.getPanel();
     }
 
-    public void dispose() {
+    public synchronized void dispose() {
         //myMainPanel.dispose();
         myMainPanel = null;
         isInitialized = false;

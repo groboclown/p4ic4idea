@@ -93,7 +93,8 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             LOG.warn(e);
             return;
         }
-        synchronized (vfsLock) {
+        vfsLock.lock();
+        try {
             for (Entry<P4Server, List<FilePath>> entry : mapping.entrySet()) {
                 final P4Server server = entry.getKey();
                 final List<FilePath> files = entry.getValue();
@@ -104,6 +105,8 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
                     server.revertFiles(files, vcsExceptions);
                }
             }
+        } finally {
+            vfsLock.unlock();
         }
 
         if (hasRefreshedFiles) {
@@ -197,7 +200,8 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             return;
         }
         boolean reverted = true;
-        synchronized (vfsLock) {
+        vfsLock.lock();
+        try {
             try {
                 // The changelist doesn't matter, so pass in a
                 // negative number which will mean it doesn't use
@@ -211,6 +215,8 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
                 LOG.warn(e);
                 reverted = false;
             }
+        } finally {
+            vfsLock.unlock();
         }
 
         if (reverted) {

@@ -182,6 +182,6 @@ public class P4Response {
             throw exception;
         }
         assertThat(responseStream, not(nullValue()));
-        return new ByteArrayInputStream(responseStream.getBytes());
+        return new ByteArrayInputStream(responseStream.getBytes("utf-8"));
     }
 }

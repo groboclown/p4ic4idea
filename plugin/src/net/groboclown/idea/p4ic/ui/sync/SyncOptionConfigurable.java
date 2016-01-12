@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
-public class SyncOptionConfigurable implements Configurable {
+public final class SyncOptionConfigurable implements Configurable {
     private static final Logger LOG = Logger.getInstance(SyncOptionConfigurable.class);
 
     @NotNull

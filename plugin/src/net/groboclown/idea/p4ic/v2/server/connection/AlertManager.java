@@ -35,6 +35,7 @@ import javax.swing.*;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -60,7 +61,7 @@ public class AlertManager implements ApplicationComponent {
     private final Condition eventPending = eventLock.newCondition();
     private Thread handlerThread;
     private final Synchronizer synchronizer = new Synchronizer();
-    private volatile int criticalErrorCount = 0;
+    private volatile AtomicInteger criticalErrorCount = new AtomicInteger(0);
     private volatile boolean disposed;
 
 
@@ -210,7 +211,7 @@ public class AlertManager implements ApplicationComponent {
         LOG.info("Critical error", src);
         eventLock.lock();
         try {
-            criticalErrorCount++;
+            criticalErrorCount.incrementAndGet();
             synchronizer.criticalErrorActive();
             criticalErrorHandlers.add(new ErrorMsg(error, src));
             eventPending.signal();
@@ -272,9 +273,12 @@ public class AlertManager implements ApplicationComponent {
         } finally {
             eventLock.lock();
             try {
-                criticalErrorCount--;
-                if (criticalErrorCount <= 0) {
-                    criticalErrorCount = 0;
+                int count = criticalErrorCount.decrementAndGet();
+                // Note: this comparison and set is done separately,
+                // but it's within the eventLock, so it should be
+                // thread safe.
+                if (count <= 0) {
+                    criticalErrorCount.set(0);
                     synchronizer.criticalErrorsCleared();
                 }
             } finally {

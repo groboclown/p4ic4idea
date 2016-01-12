@@ -67,6 +67,8 @@ public class ServerConnection {
 
     public static void assertInServerConnection() {
         ThreadGroup currentGroup = Thread.currentThread().getThreadGroup();
+        // We want to compare the get() against an actual value;
+        // this means that the comparison will include null value checks.
         if (currentGroup != CONNECTION_THREAD_GROUP && THREAD_EXECUTION_ACTIVE.get() != Boolean.TRUE) {
             throw new IllegalStateException("Activity can only be run from within the ServerConnection action thread");
         }

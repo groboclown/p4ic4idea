@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.Map;
 
-public class P4Request {
+public final class P4Request {
     private final String cmd;
     private final String[] args;
     private final Map<String, ?> request;

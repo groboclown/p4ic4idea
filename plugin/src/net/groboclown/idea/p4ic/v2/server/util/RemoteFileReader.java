@@ -104,12 +104,12 @@ public class RemoteFileReader {
                     encoding = es.get(0).getCharset();
                 }
                 if (encoding == null) {
-                    LOG.info("No known encoding for " + file + "; using default");
+                    LOG.info("No known encoding for " + file + "; using utf-8");
                     //alerts.addNotice(exec.getProject(),
                     //        P4Bundle.message("exception.load-file-encoding"),
                     //        new P4FileException(file),
                     //        file);
-                    return new String(bytes);
+                    return new String(bytes, "utf-8");
                 }
                 LOG.info("reading " + file + " with encoding " + encoding);
                 return new String(bytes, encoding);

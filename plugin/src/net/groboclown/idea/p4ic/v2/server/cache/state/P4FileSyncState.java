@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Encompasses all the information about a "have" version of a file.
  */
-public class P4FileSyncState extends CachedState {
+public final class P4FileSyncState extends CachedState {
     @NotNull
     private final P4ClientFileMapping file;
     private int rev;

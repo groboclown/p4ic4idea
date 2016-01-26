@@ -6,6 +6,8 @@
 ### Overview
 
 * Switched to JDK 1.8 for compiling in order to support IDEA 16.
+* Allow for pushing the open-for-edit on keystroke to operate
+  in a background thread (#99), as a **User Preference** option.
 * Bug fixes.
 
 ### Details
@@ -13,17 +15,17 @@
 * Switched to JDK 1.8 for compiling in order to support IDEA 16.
     Only future API changes in IDEA will be compiled with JDK 1.8,
     so that older IDE versions will continue to work. (#92)
+* Allow for pushing the open-for-edit on keystroke to be pushed
+    out to a background thread.  Some users were encountering
+    performance issues when opening a file for edit (#99),
+    and this new option will allow for moving as much of that
+    processing to away from the event thread.  The option is
+    in the **User Preferences** of the Perforce VCS panel, titled
+    "Open for edit in background."
 * Bug fixes.
     * Trimmed whitespace on job IDs in the submit dialog (#96).
     * Annotation set before / after popup now shows correct list of
       revisions.
-    * Allow for pushing the open-for-edit on keystroke to be pushed
-      out to a background thread.  Some users were encountering
-      performance issues when opening a file for edit (#99),
-      and this new option will allow for moving as much of that
-      processing to away from the event thread.  The option is
-      in the **User Preferences** of the Perforce VCS panel, titled
-      "Open for edit in background."
     * Removed the obsolete user preference for setting the maximum
       number of concurrent connections.  This is now limited to one
       per workspace.

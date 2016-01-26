@@ -13,6 +13,18 @@
                   still built with 1.6 compatibility, so older IDEs
                   should continue to work.</li>
                   <li>Trimmed whitespace on job IDs in the submit dialog.</li>
+                  <li>Annotation set before / after popup now shows correct list of
+                  revisions.</li>
+                  <li>Allow for pushing the open-for-edit on keystroke to be pushed
+                  out to a background thread.  Some users were encountering
+                  performance issues when opening a file for edit (#99),
+                  and this new option will allow for moving as much of that
+                  processing to away from the event thread.  The option is
+                  in the **User Preferences** of the Perforce VCS panel, titled
+                  "Open for edit in background."</li>
+                  <li>Removed the obsolete user preference for setting the maximum
+                  number of concurrent connections.  This is now limited to one
+                  per workspace.</li>
                   <li>Fixed an IllegalStateException that could occur when refreshing
                   the changelist view, when the P4 changelist was submitted or deleted on the
                   server.</li>

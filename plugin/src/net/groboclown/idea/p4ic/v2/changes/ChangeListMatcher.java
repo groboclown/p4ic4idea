@@ -65,7 +65,9 @@ public class ChangeListMatcher {
     }
 
 
-    @NotNull
+    // This can return null if a changelist was submitted, and there is no corresponding real p4 change
+    // anymore.
+    @Nullable
     public LocalChangeList getChangeList(@NotNull P4FileAction action, @NotNull P4Server server,
             @NotNull Map<P4Server, Map<P4ChangeListValue, LocalChangeList>> mappedChanges) {
         final Map<P4ChangeListValue, LocalChangeList> changes = mappedChanges.get(server);
@@ -82,8 +84,10 @@ public class ChangeListMatcher {
             }
         }
 
-        throw new IllegalStateException("Bad setup: no matching changelist for server " + server.getClientServerId() +
-                " changelist " + action.getChangeList() + " (known changes for server: " + changes.keySet() + ")");
+        return null;
+        //
+        //throw new IllegalStateException("Bad setup: no matching changelist for server " + server.getClientServerId() +
+        //        " changelist " + action.getChangeList() + " (known changes for server: " + changes.keySet() + ")");
     }
 
     @NotNull

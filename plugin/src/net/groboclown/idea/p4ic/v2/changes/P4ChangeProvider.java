@@ -213,7 +213,12 @@ public class P4ChangeProvider implements ChangeProvider {
         for (Entry<FilePath, ServerAction> entry : mapped.dirtyP4Files.entrySet()) {
             LocalChangeList changeList = changeListMatcher.getChangeList(
                     entry.getValue().action, entry.getValue().server, changeListMappings);
-            ensureOnlyIn(entry.getValue().action, changeList, builder);
+            if (changeList != null) {
+                ensureOnlyIn(entry.getValue().action, changeList, builder);
+            } else {
+                LOG.info("Changelist " + entry.getValue().action.getChangeList() +
+                        " no longer exists; it was either submitted or deleted on the server");
+            }
         }
 
         progress.setFraction(1.0);

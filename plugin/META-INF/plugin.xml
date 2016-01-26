@@ -13,6 +13,9 @@
                   still built with 1.6 compatibility, so older IDEs
                   should continue to work.</li>
                   <li>Trimmed whitespace on job IDs in the submit dialog.</li>
+                  <li>Fixed an IllegalStateException that could occur when refreshing
+                  the changelist view, when the P4 changelist was submitted or deleted on the
+                  server.</li>
                 </ol>
             </li>
             <li><em>0.7.4</em>

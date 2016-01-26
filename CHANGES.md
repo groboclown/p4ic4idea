@@ -27,6 +27,9 @@
     * Removed the obsolete user preference for setting the maximum
       number of concurrent connections.  This is now limited to one
       per workspace.
+    * Fixed an IllegalStateException that could occur when refreshing
+      the changelist view, when the P4 changelist was submitted or
+      deleted on the server.
 
 
 ## ::v0.7.4::

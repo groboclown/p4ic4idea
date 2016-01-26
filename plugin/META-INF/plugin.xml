@@ -15,14 +15,14 @@
                   <li>Trimmed whitespace on job IDs in the submit dialog.</li>
                 </ol>
             </li>
-            <li><em>0.7.3</em>
+            <li><em>0.7.4</em>
                 <ol>
-                    <li>Fixed an issue where annotated lines would show the most recent
-                    revision to have the line, rather than when it first appeared.</li>
-                    <li>Fixed an issue where the changelist details display for an
-                    annotated line would use wrong changelist number from the file status.</li>
-                    <li>Corrected an issue where clicking on the annotated line
-                    could generate a "changelist -1" error.</li>
+                  <li>Changelist refresh now cleans out the cached data if the user is online and
+                  there are no pending updates to send to the server.  This should prevent the
+                  "old data" syndrome that would sometimes creep in, and it should make
+                  the synchronize file action work as expected.</li>
+                  <li>"Silently go offline on disconnect" option could cause the gone offline
+                  dialog to repeatedly show up on disconnect.</li>
                 </ol>
             </li>
         </ol>

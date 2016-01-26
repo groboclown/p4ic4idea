@@ -17,7 +17,16 @@
     * Trimmed whitespace on job IDs in the submit dialog (#96).
     * Annotation set before / after popup now shows correct list of
       revisions.
-
+    * Allow for pushing the open-for-edit on keystroke to be pushed
+      out to a background thread.  Some users were encountering
+      performance issues when opening a file for edit (#99),
+      and this new option will allow for moving as much of that
+      processing to away from the event thread.  The option is
+      in the **User Preferences** of the Perforce VCS panel, titled
+      "Open for edit in background."
+    * Removed the obsolete user preference for setting the maximum
+      number of concurrent connections.  This is now limited to one
+      per workspace.
 
 
 ## ::v0.7.4::

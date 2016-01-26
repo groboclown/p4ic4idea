@@ -29,17 +29,12 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class UserPreferencesPanel {
-    private JSpinner myMaxServerConnections;
     private JSpinner myMaxTimeout;
     private JPanel myRootPanel;
+    private JCheckBox openForEditInCheckBox;
 
 
     public UserPreferencesPanel() {
-        myMaxServerConnections.setModel(new MinMaxSpinnerModel(
-                UserProjectPreferences.MIN_SERVER_CONNECTIONS,
-                UserProjectPreferences.MAX_SERVER_CONNECTIONS,
-                1,
-                UserProjectPreferences.DEFAULT_SERVER_CONNECTIONS));
         myMaxTimeout.setModel(new MinMaxSpinnerModel(
                 UserProjectPreferences.MIN_CONNECTION_WAIT_TIME_MILLIS,
                 UserProjectPreferences.MAX_CONNECTION_WAIT_TIME_MILLIS,
@@ -49,25 +44,25 @@ public class UserPreferencesPanel {
 
 
     protected void loadSettingsIntoGUI(@NotNull UserProjectPreferences userPrefs) {
-        myMaxServerConnections.setValue(userPrefs.getMaxServerConnections());
+        openForEditInCheckBox.setSelected(userPrefs.getEditInSeparateThread());
         myMaxTimeout.setValue(userPrefs.getMaxConnectionWaitTimeMillis());
     }
 
 
     protected void saveSettingsToConfig(@NotNull UserProjectPreferences userPrefs) {
-        userPrefs.setMaxServerConnections(getMaxServerConnections());
+        userPrefs.setDefaultEditInSeparateThread(getOpenForEditInSeparateThread());
         userPrefs.setMaxConnectionWaitTimeMillis(getMaxTimeout());
     }
 
     boolean isModified(@NotNull final UserProjectPreferences preferences) {
         return
-                getMaxServerConnections() != preferences.getMaxServerConnections() ||
+                getOpenForEditInSeparateThread() != preferences.getEditInSeparateThread() ||
                         getMaxTimeout() != preferences.getMaxConnectionWaitTimeMillis();
     }
 
 
-    int getMaxServerConnections() {
-        return (Integer) myMaxServerConnections.getModel().getValue();
+    boolean getOpenForEditInSeparateThread() {
+        return openForEditInCheckBox.isSelected();
     }
 
 
@@ -92,32 +87,28 @@ public class UserPreferencesPanel {
     private void $$$setupUI$$$() {
         myRootPanel = new JPanel();
         myRootPanel.setLayout(new GridLayoutManager(3, 2, new Insets(0, 0, 0, 0), -1, -1));
-        final JLabel label1 = new JLabel();
-        this.$$$loadLabelText$$$(label1,
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.max_connections"));
-        myRootPanel.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
-                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
         myRootPanel.add(spacer1,
                 new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
                         GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        myMaxServerConnections = new JSpinner();
-        myRootPanel.add(myMaxServerConnections,
-                new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
-                        false));
-        final JLabel label2 = new JLabel();
-        this.$$$loadLabelText$$$(label2,
+        final JLabel label1 = new JLabel();
+        this.$$$loadLabelText$$$(label1,
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.max_timeout"));
-        myRootPanel.add(label2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+        myRootPanel.add(label1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myMaxTimeout = new JSpinner();
         myRootPanel.add(myMaxTimeout,
                 new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
-        label1.setLabelFor(myMaxServerConnections);
-        label2.setLabelFor(myMaxTimeout);
+        openForEditInCheckBox = new JCheckBox();
+        this.$$$loadButtonText$$$(openForEditInCheckBox, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("user.prefs.edit_in_separate_thread"));
+        myRootPanel.add(openForEditInCheckBox,
+                new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        label1.setLabelFor(myMaxTimeout);
     }
 
     /**
@@ -145,6 +136,35 @@ public class UserPreferencesPanel {
         component.setText(result.toString());
         if (haveMnemonic) {
             component.setDisplayedMnemonic(mnemonic);
+            component.setDisplayedMnemonicIndex(mnemonicIndex);
+        }
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    private void $$$loadButtonText$$$(AbstractButton component, String text) {
+        StringBuffer result = new StringBuffer();
+        boolean haveMnemonic = false;
+        char mnemonic = '\0';
+        int mnemonicIndex = -1;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == '&') {
+                i++;
+                if (i == text.length()) {
+                    break;
+                }
+                if (!haveMnemonic && text.charAt(i) != '&') {
+                    haveMnemonic = true;
+                    mnemonic = text.charAt(i);
+                    mnemonicIndex = result.length();
+                }
+            }
+            result.append(text.charAt(i));
+        }
+        component.setText(result.toString());
+        if (haveMnemonic) {
+            component.setMnemonic(mnemonic);
             component.setDisplayedMnemonicIndex(mnemonicIndex);
         }
     }

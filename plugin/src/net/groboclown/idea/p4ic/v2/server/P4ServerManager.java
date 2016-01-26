@@ -157,6 +157,35 @@ public class P4ServerManager implements ProjectComponent {
         }
     }
 
+    public Map<P4Server, List<VirtualFile>> mapVirtualFilesToP4Server(final Collection<VirtualFile> files)
+            throws InterruptedException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("mapping to servers: " + new ArrayList<VirtualFile>(files));
+        }
+        if (connectionsValid) {
+            Map<P4Server, List<VirtualFile>> ret = new HashMap<P4Server, List<VirtualFile>>();
+            List<P4Server> servers = getServers();
+            if (servers.isEmpty()) {
+                LOG.info("no valid servers registered");
+                return ret;
+            }
+            // Find the shallowest match.
+            for (VirtualFile file : files) {
+                P4Server minDepthServer = getServerForPath(servers, FilePathUtil.getFilePath(file));
+                List<VirtualFile> match = ret.get(minDepthServer);
+                if (match == null) {
+                    match = new ArrayList<VirtualFile>();
+                    ret.put(minDepthServer, match);
+                }
+                match.add(file);
+            }
+            return ret;
+        } else {
+            LOG.info("configs not valid");
+            return Collections.emptyMap();
+        }
+    }
+
 
     @Nullable
     public P4Server getForFilePath(@NotNull FilePath fp) throws InterruptedException {

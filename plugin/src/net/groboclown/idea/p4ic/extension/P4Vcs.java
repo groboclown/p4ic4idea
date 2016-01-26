@@ -63,7 +63,6 @@ import net.groboclown.idea.p4ic.v2.server.P4ServerManager;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
-import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -71,7 +70,6 @@ import org.picocontainer.alternatives.EmptyPicoContainer;
 
 import java.io.File;
 import java.util.*;
-import java.util.Map.Entry;
 
 public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     public static final FileStatus ADDED_OFFLINE =
@@ -630,21 +628,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @NotNull
     public Map<P4Server, List<VirtualFile>> mapVirtualFilesToP4Server(Collection<VirtualFile> files)
             throws InterruptedException {
-        // TODO make more efficient.  This currently just remaps.
-        Map<FilePath, VirtualFile> input = new HashMap<FilePath, VirtualFile>(files.size());
-        for (VirtualFile file : files) {
-            input.put(FilePathUtil.getFilePath(file), file);
-        }
-        final Map<P4Server, List<FilePath>> output = serverManager.mapFilePathsToP4Server(input.keySet());
-        final Map<P4Server, List<VirtualFile>> ret = new HashMap<P4Server, List<VirtualFile>>();
-        for (Entry<P4Server, List<FilePath>> entry : output.entrySet()) {
-            List<VirtualFile> vfList = new ArrayList<VirtualFile>(entry.getValue().size());
-            for (FilePath filePath : entry.getValue()) {
-                vfList.add(filePath.getVirtualFile());
-            }
-            ret.put(entry.getKey(), vfList);
-        }
-        return ret;
+        return serverManager.mapVirtualFilesToP4Server(files);
     }
 
 

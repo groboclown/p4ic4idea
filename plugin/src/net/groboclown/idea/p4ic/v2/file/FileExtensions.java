@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+// TODO eliminate this lock; it could make for a significant performance impact on some systems.
+// (the new design means that this lock isn't necessary)
 public class FileExtensions {
     private final P4Vcs vcs;
     private final AlertManager alerts;

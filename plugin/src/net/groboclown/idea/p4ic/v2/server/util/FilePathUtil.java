@@ -14,15 +14,20 @@
 
 package net.groboclown.idea.p4ic.v2.server.util;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FilePathImpl;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -101,5 +106,98 @@ public final class FilePathUtil {
             }
         }
         return ret;
+    }
+
+    /**
+     *
+     * @param project
+     * @param files
+     */
+    public static void makeWritable(@NotNull final Project project, @NotNull final VirtualFile[] files) {
+        // write actions can only be in the dispatch thread.
+        if (ApplicationManager.getApplication().isDispatchThread()) {
+            ApplicationManager.getApplication().runWriteAction(new Runnable() {
+                @Override
+                public void run() {
+                    for (VirtualFile file : files) {
+                        innerMakeWritable(project, file);
+                    }
+                }
+            });
+        } else {
+            for (VirtualFile file : files) {
+                innerMakeWritable(project, file);
+            }
+        }
+    }
+
+    /**
+     * @param project
+     * @param file
+     * @return true if there was no failure on changing the state, or false if there was a failure.  Only local files
+     * that are not writable will have this action be run; all other virtual files will cause this to return true.
+     */
+    public static void makeWritable(@NotNull final Project project, @NotNull final FilePath file) {
+        // write actions can only be in the dispatch thread.
+        if (ApplicationManager.getApplication().isDispatchThread()) {
+            ApplicationManager.getApplication().runWriteAction(new Runnable() {
+                @Override
+                public void run() {
+                    innerMakeWritable(project, file);
+                }
+            });
+        } else {
+            innerMakeWritable(project, file);
+        }
+    }
+
+
+    private static boolean innerMakeWritable(@NotNull final Project project, @NotNull final FilePath file) {
+        VirtualFile vf = file.getVirtualFile();
+        if (vf != null) {
+            if (innerMakeWritable(project, vf)) {
+                return true;
+            }
+        }
+        File f = file.getIOFile();
+        if (f.isFile() && f.exists() && !f.canWrite()) {
+            if (!f.setWritable(false)) {
+                LOG.info("Problem making writable: " + file);
+                AlertManager.getInstance().addWarning(project,
+                        P4Bundle.message("error.writable.failed.title"),
+                        P4Bundle.message("error.writable.failed", file),
+                        null, file);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @param project
+     * @param file
+     * @return true if there was no failure on changing the state, or false if there was a failure.  Only local files
+     * that are not writable will have this action be run; all other virtual files will cause this to return true.
+     */
+    private static boolean innerMakeWritable(@NotNull final Project project, @NotNull final VirtualFile file) {
+        if (file.exists() && !file.isDirectory() && file.isInLocalFileSystem() &&
+                !file.isWritable()) {
+            try {
+                file.setWritable(true);
+                return true;
+            } catch (IOException e) {
+                LOG.info("Problem making writable: " + file, e);
+                AlertManager.getInstance().addWarning(project,
+                        P4Bundle.message("error.writable.failed.title"),
+                        P4Bundle.message("error.writable.failed", file),
+                        null, new VirtualFile[]{file});
+
+                // Keep going with the action, even though we couldn't set it to
+                // writable...
+                return false;
+            }
+        }
+        // Return true here, to indicate that there was no failure.
+        return true;
     }
 }

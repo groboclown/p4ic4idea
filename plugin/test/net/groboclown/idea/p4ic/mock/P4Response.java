@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
@@ -182,6 +183,10 @@ public class P4Response {
             throw exception;
         }
         assertThat(responseStream, not(nullValue()));
-        return new ByteArrayInputStream(responseStream.getBytes("utf-8"));
+        try {
+            return new ByteArrayInputStream(responseStream.getBytes("utf-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new P4JavaException(e);
+        }
     }
 }

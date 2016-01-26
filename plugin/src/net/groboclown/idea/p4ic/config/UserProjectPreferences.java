@@ -36,14 +36,21 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public static final int MAX_CONNECTION_WAIT_TIME_MILLIS = 5 * 60 * 1000;
     public static final int DEFAULT_CONNECTION_WAIT_TIME_MILLIS = 30 * 1000;
     public static final boolean DEFAULT_INTEGRATE_ON_COPY = false;
+    public static final boolean DEFAULT_EDIT_IN_SEPARATE_THREAD = false;
 
     @NotNull
     private State state = new State();
 
     public static class State {
+        @Deprecated
         public int maxServerConnections = DEFAULT_SERVER_CONNECTIONS;
+
+        @Deprecated
         public int maxConnectionWaitTimeMillis = DEFAULT_CONNECTION_WAIT_TIME_MILLIS;
+
         public boolean integrateOnCopy = DEFAULT_INTEGRATE_ON_COPY;
+
+        public boolean editInSeparateThread = DEFAULT_EDIT_IN_SEPARATE_THREAD;
     }
 
     @Nullable
@@ -105,5 +112,24 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
 
     public void setIntegrateOnCopy(boolean value) {
         state.integrateOnCopy = value;
+    }
+
+
+    public static boolean getEditInSeparateThread(@NotNull Project project) {
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return DEFAULT_EDIT_IN_SEPARATE_THREAD;
+        }
+        return prefs.getEditInSeparateThread();
+    }
+
+
+    public boolean getEditInSeparateThread() {
+        return state.editInSeparateThread;
+    }
+
+
+    public void setDefaultEditInSeparateThread(boolean value) {
+        state.editInSeparateThread = value;
     }
 }

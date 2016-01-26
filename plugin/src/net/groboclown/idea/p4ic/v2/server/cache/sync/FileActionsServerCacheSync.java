@@ -14,7 +14,6 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.sync;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
@@ -48,8 +47,6 @@ import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -748,37 +745,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
     private void makeWritable(@NotNull final Project project, @NotNull final FilePath file) {
-        // write actions can only be in the dispatch thread.
-        if (ApplicationManager.getApplication().isDispatchThread()) {
-            ApplicationManager.getApplication().runWriteAction(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        if (file.getVirtualFile() != null) {
-                            file.getVirtualFile().setWritable(true);
-                        }
-                    } catch (IOException e) {
-                        // ignore for now
-                        LOG.info(e);
-                    }
-                }
-            });
-        }
-
-
-        File f = file.getIOFile();
-        if (f.exists() && f.isFile() && !f.canWrite()) {
-            if (!f.setWritable(true)) {
-                // TODO get access to the alerts in a better way
-                AlertManager.getInstance().addWarning(project,
-                        P4Bundle.message("error.writable.failed.title"),
-                        P4Bundle.message("error.writable.failed", file),
-                        null, file);
-
-                // Keep going with the action, even though we couldn't set it to
-                // writable...
-            }
-        }
+        FilePathUtil.makeWritable(project, file);
     }
 
 

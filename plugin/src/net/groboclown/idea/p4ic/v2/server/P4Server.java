@@ -771,7 +771,10 @@ public class P4Server {
     }
 
     // FIXME this method is kind of a hack.
-    // This needs to be performed in a more robust manner.
+    // This needs to be performed in a more robust manner, meaning
+    // that there shouldn't need to be this integrity check in the
+    // first place.  The system should be able to maintain the state
+    // correctly on its own.
     public void checkLocalIntegrity() throws InterruptedException {
         connection.cacheQuery(new CacheQuery<Void>() {
             @Override

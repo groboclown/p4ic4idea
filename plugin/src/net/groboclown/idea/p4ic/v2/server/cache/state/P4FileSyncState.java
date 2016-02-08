@@ -25,11 +25,19 @@ public final class P4FileSyncState extends CachedState {
     @NotNull
     private final P4ClientFileMapping file;
     private int rev;
+    private String md5;
 
     public P4FileSyncState(@NotNull final P4ClientFileMapping file) {
         this.file = file;
     }
 
+    void setRev(int rev) {
+        this.rev = rev;
+    }
+
+    void setMd5(String md5) {
+        this.md5 = md5;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -55,6 +63,7 @@ public final class P4FileSyncState extends CachedState {
     protected void serialize(@NotNull final Element wrapper, @NotNull final EncodeReferences refs) {
         wrapper.setAttribute("f", refs.getFileMappingId(file));
         wrapper.setAttribute("r", encodeLong(rev));
+        wrapper.setAttribute("m5", md5 == null ? "" : md5);
         serializeDate(wrapper);
     }
 
@@ -69,6 +78,8 @@ public final class P4FileSyncState extends CachedState {
         ret.deserializeDate(wrapper);
         Long r = decodeLong(getAttribute(wrapper, "r"));
         ret.rev = (r == null) ? -1 : r.intValue();
+        String md5 = getAttribute(wrapper, "m5");
+        ret.md5 = md5 == null || md5.length() <= 0 ? null : md5;
         return ret;
     }
 }

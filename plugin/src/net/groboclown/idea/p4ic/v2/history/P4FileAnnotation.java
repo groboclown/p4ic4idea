@@ -144,11 +144,7 @@ public class P4FileAnnotation extends FileAnnotation {
             return null;
         }
         // NOTE we are using a simple revision for the annotations.
-        // return line.getRev();
-        // DEBUG
-        // This returns the right number, but it seems to nly display
-        // the highest number.
-        return new VcsRevisionNumber.Int(line.getRevNumber());
+        return new P4SimpleRevisionNumber(project, line.getRev());
     }
 
     @Nullable
@@ -182,8 +178,8 @@ public class P4FileAnnotation extends FileAnnotation {
     @Override
     public VcsRevisionNumber getCurrentRevision() {
         // For annotations, we use the simple revision number
-        // return fileRev;
-        return new VcsRevisionNumber.Int(fileRev.getRev());
+        // return new VcsRevisionNumber.Int(fileRev.getRev());
+        return new P4SimpleRevisionNumber(project, fileRev);
     }
 
     /**
@@ -199,6 +195,8 @@ public class P4FileAnnotation extends FileAnnotation {
         // Possibly look into using P4HistoryProvider#getHistory instead,
         // however that wouldn't conform to the API.
 
+        // FIXME this can report multiple versions of the same file, for some reason.
+
         Set<VcsFileRevision> revs = new HashSet<VcsFileRevision>();
         for (P4AnnotatedLine line : annotations) {
             if (line != null) {
@@ -208,6 +206,8 @@ public class P4FileAnnotation extends FileAnnotation {
                 revs.add(fileRev);
             }
         }
+        // FIXME DEBUG
+        LOG.info("getRevisions(): " + revs.size() + " " + revs);
         return new ArrayList<VcsFileRevision>(revs);
     }
 

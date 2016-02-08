@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.5</version>
+    <version>0.7.6</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.7.6</em>
+                <ol>
+                  <li>?</li>
+                </ol>
+            </li>
             <li><em>0.7.5</em>
                 <ol>
                   <li>Switched to JDK 1.8 compiler for IDEA 16
@@ -28,16 +33,6 @@
                   <li>Fixed an IllegalStateException that could occur when refreshing
                   the changelist view, when the P4 changelist was submitted or deleted on the
                   server.</li>
-                </ol>
-            </li>
-            <li><em>0.7.4</em>
-                <ol>
-                  <li>Changelist refresh now cleans out the cached data if the user is online and
-                  there are no pending updates to send to the server.  This should prevent the
-                  "old data" syndrome that would sometimes creep in, and it should make
-                  the synchronize file action work as expected.</li>
-                  <li>"Silently go offline on disconnect" option could cause the gone offline
-                  dialog to repeatedly show up on disconnect.</li>
                 </ol>
             </li>
         </ol>

@@ -108,7 +108,7 @@ public class P4ChangeProvider implements ChangeProvider {
         // avoided.  An example of this is where a file is mis-marked to be in
         // a different changelist.  It's up to this method to correctly sort
         // files into their IDEA changelists, but sometimes, there can be an
-        // existing change in another changelist.
+        // existing change in the wrong changelist.
 
         final Set<FilePath> dirtyFiles;
         if (dirtyScope.wasEveryThingDirty()) {
@@ -235,9 +235,8 @@ public class P4ChangeProvider implements ChangeProvider {
 
         // We must explicitly add all changes into the changelists, otherwise
         // it doesn't show up in the changes.
-        // If a file ends up being in two changes at once, then there's a bug in this
-        // code.  This particular loop ends up just putting files into the wrong
-        // state if the state changed (say, moved from edit to delete).
+        // If a file ends up being in two changes at once, then there's a bug in the code.
+        // Specifically, if the state changed, say moved from edit to delete.
 
         final Change change = changeListMatcher.createChange(action);
         if (LOG.isDebugEnabled()) {
@@ -251,8 +250,13 @@ public class P4ChangeProvider implements ChangeProvider {
     }
 
 
+    // TODO this has the potential to be a huge time sink.
+    // Look at optimizing this with cached server checksums.
     private boolean isDifferentThanServerCopy(@NotNull P4Server server, @NotNull FilePath file) {
         try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Performing file bytes comparison for " + file);
+            }
             assert file.getVirtualFile() != null;
             final byte[] serverCopy = server.loadFileAsBytesOnline(file, P4ChangeListId.P4_UNKNOWN);
             final byte[] localCopy = file.getVirtualFile().contentsToByteArray();

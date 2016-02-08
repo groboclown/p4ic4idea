@@ -33,24 +33,5 @@ public class P4ChangesViewRefresher implements ChangesViewRefresher {
         LOG.debug("Refreshing changelist view", new Throwable());
 
         ChangeListManager.getInstance(project).scheduleUpdate(true);
-
-        // TODO remove if the above line works fine
-        /* Old code; works, but may be too much.
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                ChangeListManager.getInstance(project).invokeAfterUpdate(new Runnable() {
-                        @Override
-                        public void run() {
-                            // This will perform all the right logic to refresh the
-                            // change lists and refresh the UI.
-                            RefreshAction.doRefresh(project);
-                        }
-                    }, InvokeAfterUpdateMode.BACKGROUND_CANCELLABLE,
-                    P4Bundle.getString("change.view.refresh.title"),
-                    ModalityState.NON_MODAL);
-            }
-        });
-        */
     }
 }

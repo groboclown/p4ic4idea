@@ -37,6 +37,7 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public static final int DEFAULT_CONNECTION_WAIT_TIME_MILLIS = 30 * 1000;
     public static final boolean DEFAULT_INTEGRATE_ON_COPY = false;
     public static final boolean DEFAULT_EDIT_IN_SEPARATE_THREAD = false;
+    public static final boolean DEFAULT_PREFER_REVISIONS_FOR_FILES = true;
 
     @NotNull
     private State state = new State();
@@ -51,6 +52,8 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         public boolean integrateOnCopy = DEFAULT_INTEGRATE_ON_COPY;
 
         public boolean editInSeparateThread = DEFAULT_EDIT_IN_SEPARATE_THREAD;
+
+        public boolean preferRevisionsForFiles = DEFAULT_PREFER_REVISIONS_FOR_FILES;
     }
 
     @Nullable
@@ -115,7 +118,10 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     }
 
 
-    public static boolean getEditInSeparateThread(@NotNull Project project) {
+    public static boolean getEditInSeparateThread(@Nullable Project project) {
+        if (project == null) {
+            return DEFAULT_EDIT_IN_SEPARATE_THREAD;
+        }
         UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
         if (prefs == null) {
             return DEFAULT_EDIT_IN_SEPARATE_THREAD;
@@ -129,7 +135,26 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     }
 
 
-    public void setDefaultEditInSeparateThread(boolean value) {
+    public void setEditInSeparateThread(boolean value) {
         state.editInSeparateThread = value;
+    }
+
+    public static boolean getPreferRevisionsForFiles(@Nullable Project project) {
+        if (project == null) {
+            return DEFAULT_PREFER_REVISIONS_FOR_FILES;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return DEFAULT_PREFER_REVISIONS_FOR_FILES;
+        }
+        return prefs.getPreferRevisionsForFiles();
+    }
+
+    public boolean getPreferRevisionsForFiles() {
+        return state.preferRevisionsForFiles;
+    }
+
+    public void setPreferRevisionsForFiles(boolean value) {
+        state.preferRevisionsForFiles = value;
     }
 }

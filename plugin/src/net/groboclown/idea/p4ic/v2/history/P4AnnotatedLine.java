@@ -50,6 +50,10 @@ public class P4AnnotatedLine {
         return new P4RevisionNumber(baseFile, depotPath, ann);
     }
 
+    public int getChangelist() {
+        return revisionData.getChangelistId();
+    }
+
     @Nullable
     public String getAuthor() {
         return revisionData.getUserName();

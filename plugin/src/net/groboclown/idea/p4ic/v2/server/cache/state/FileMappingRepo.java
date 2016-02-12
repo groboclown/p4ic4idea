@@ -245,6 +245,36 @@ public class FileMappingRepo {
         }
     }
 
+    public void updateLocation(@NotNull P4ClientFileMapping mapping, @NotNull FilePath path) {
+        if (path.equals(mapping.getLocalFilePath())) {
+            // nothing to do
+            return;
+        }
+        lock.lock();
+        try {
+            WeakReference<P4ClientFileMapping> ref;
+            if (mapping.getLocalFilePath() != null) {
+                ref = filesByLocal.get(mapping.getLocalFilePath());
+            } else if (mapping.getDepotPath() != null) {
+                ref = getWeakRefByDepot(mapping.getDepotPath());
+            } else {
+                throw new IllegalArgumentException("bad mapping: " + mapping);
+            }
+            if (ref != null) {
+                filesByLocal.remove(mapping.getLocalFilePath());
+            }
+            if (ref == null) {
+                ref = createRef(mapping);
+                files.add(ref);
+                addByDepot(mapping.getDepotPath(), ref);
+            }
+            mapping.updateLocalPath(path);
+            filesByLocal.put(path, ref);
+        } finally {
+            lock.unlock();
+        }
+    }
+
 
     /**
      * Replace the entire collection of file mappings with these new objects.

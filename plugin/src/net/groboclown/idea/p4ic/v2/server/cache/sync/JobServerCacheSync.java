@@ -92,7 +92,7 @@ public class JobServerCacheSync extends CacheFrontEnd {
     }
 
     @Override
-    protected void checkLocalIntegrity(final List<PendingUpdateState> pendingUpdates) {
+    protected void checkLocalIntegrity(@NotNull final List<PendingUpdateState> pendingUpdates) {
         // do nothing - no local changes are stored.
     }
 

@@ -103,6 +103,11 @@ public class P4ClientState {
         return jobs;
     }
 
+    @NotNull
+    public Set<P4FileSyncState> getKnownHave() {
+        return knownHave;
+    }
+
     /**
      * Remove all the {@link UpdateRef} objects related to this state.
      *

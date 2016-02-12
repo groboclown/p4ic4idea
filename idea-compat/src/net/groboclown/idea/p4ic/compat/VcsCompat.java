@@ -15,9 +15,11 @@
 package net.groboclown.idea.p4ic.compat;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.util.Collection;
 
 public abstract class VcsCompat {
@@ -30,4 +32,14 @@ public abstract class VcsCompat {
 
 
     public abstract void refreshFiles(@NotNull Project project, final Collection<VirtualFile> affectedFiles);
+
+
+    /**
+     * Work-around for running in unit test mode, when VcsUtil.getFilePath doesn't always do
+     * what we want.
+     *
+     * @param file
+     * @return file path for the local file
+     */
+    public abstract FilePath getLowLevelFilePath(File file);
 }

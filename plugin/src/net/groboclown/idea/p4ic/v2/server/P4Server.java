@@ -26,6 +26,7 @@ import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.impl.mapbased.rpc.func.helper.MD5Digester;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
@@ -40,6 +41,7 @@ import net.groboclown.idea.p4ic.v2.history.P4AnnotatedLine;
 import net.groboclown.idea.p4ic.v2.history.P4FileRevision;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileSyncState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
@@ -53,6 +55,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.util.*;
 import java.util.Map.Entry;
@@ -1181,6 +1185,34 @@ public class P4Server {
         });
     }
 
+    /**
+     * Find all the virtual files that are different than the server's
+     * have version.  If we're working online, we first check what the
+     * "have" version is, otherwise we assume the P4FileSyncState is
+     * correct.  If we have a P4FileSyncState, then that is used to
+     * determine the MD5.
+     *
+     * @param files
+     * @return
+     */
+    @NotNull
+    public List<VirtualFile> getVirtualFilesDifferentThanServerHaveVersion(
+            @NotNull final List<VirtualFile> files) throws InterruptedException {
+        final Map<VirtualFile, P4FileSyncState> syncState =
+                connection.cacheQuery(new CacheQuery<Map<VirtualFile, P4FileSyncState>>() {
+                @Override
+                public Map<VirtualFile, P4FileSyncState> query(@NotNull final ClientCacheManager mgr)
+                        throws InterruptedException {
+                    if (isWorkingOnline()) {
+                        return connection.query(project, mgr.createHaveFileRefreshQuery(files));
+                    } else {
+                        return mgr.getCachedHaveVersions(files);
+                    }
+                }
+            });
+        return getFilesDifferentThanServer(syncState);
+    }
+
     @Override
     public String toString() {
         return getClientServerId().toString();
@@ -1200,7 +1232,6 @@ public class P4Server {
     public void flushCache(boolean includeLocal, boolean force) throws InterruptedException {
         connection.flushCache(project, includeLocal, force);
     }
-
 
 
     private static void addPendingUpdateState(@NotNull final List<PendingUpdateState> updates,
@@ -1255,4 +1286,84 @@ public class P4Server {
             return o2.getRevisionDate().compareTo(o1.getRevisionDate());
         }
     }
+
+    @NotNull
+    private List<VirtualFile> getFilesDifferentThanServer(@NotNull final Map<VirtualFile, P4FileSyncState> syncState)
+            throws InterruptedException {
+        // Check the virtual files' MD5 against the cached server MD5.
+
+        List<VirtualFile> ret = new ArrayList<VirtualFile>(syncState.size());
+        for (Entry<VirtualFile, P4FileSyncState> entry : syncState.entrySet()) {
+            final VirtualFile vf = entry.getKey();
+            String vfMd5 = null;
+            try {
+                vfMd5 = readMd5(entry.getKey());
+            } catch (IOException e) {
+                alertManager.addWarning(project,
+                        P4Bundle.message("error.read-file.title"),
+                        P4Bundle.message("error.read-file", vf),
+                        e, new VirtualFile[] { vf });
+                ret.add(vf);
+                continue;
+            }
+            String fsMd5 = entry.getValue().getMd5();
+            if (fsMd5 == null) {
+                final IFileSpec spec;
+                try {
+                    spec = entry.getValue().getFileSpec();
+                } catch (P4Exception e) {
+                    alertManager.addWarning(project,
+                            P4Bundle.message("exception.filespec.title"),
+                            P4Bundle.message("exception.filespec", vf),
+                            e, new VirtualFile[]{ vf });
+                    ret.add(entry.getKey());
+                    continue;
+                }
+                LOG.info("Gathering server MD5 for " + spec);
+                final Ref<VcsException> ex = new Ref<VcsException>();
+                fsMd5 = connection.query(project, new ServerQuery<String>() {
+                    @Nullable
+                    @Override
+                    public String query(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager cacheManager,
+                            @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                            throws InterruptedException {
+                        try {
+                            return exec.loadMd5For(spec);
+                        } catch (VcsException e) {
+                            alertManager.addWarning(project,
+                                    P4Bundle.message("error.read-server-file.title"),
+                                    P4Bundle.message("error.read-server-file", vf),
+                                    e, new VirtualFile[]{ vf });
+                            return null;
+                        }
+                    }
+                });
+                entry.getValue().setMd5(fsMd5);
+            }
+            // Includes null check
+            if (! vfMd5.equals(fsMd5)) {
+                ret.add(entry.getKey());
+            }
+        }
+        return ret;
+    }
+
+
+    private static final int BUFFER_SIZE = 4 * 1024;
+    @NotNull
+    private static String readMd5(@NotNull VirtualFile vf) throws IOException {
+        final MD5Digester digester = new MD5Digester();
+        InputStream in = vf.getInputStream();
+        try {
+            byte[] buff = new byte[BUFFER_SIZE];
+            int len;
+            while ((len = in.read(buff, 0, BUFFER_SIZE)) > 0) {
+                digester.update(buff, 0, len);
+            }
+        } finally {
+            in.close();
+        }
+        return digester.digestAs32ByteHex();
+    }
+
 }

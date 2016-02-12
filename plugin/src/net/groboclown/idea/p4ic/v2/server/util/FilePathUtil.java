@@ -22,6 +22,7 @@ import com.intellij.openapi.vcs.FilePathImpl;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.compat.VcsCompat;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -55,7 +56,7 @@ public final class FilePathUtil {
         } catch (Exception ex) {
             // This can happen when in unit test mode
             LOG.debug("VcsUtil.getFilePath raised an exception for " + f, ex);
-            return new FilePathImpl(f, f.isDirectory());
+            return VcsCompat.getInstance().getLowLevelFilePath(f);
         }
     }
 

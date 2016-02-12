@@ -23,9 +23,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
@@ -34,7 +32,6 @@ import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -177,6 +174,8 @@ public class P4ChangeProvider implements ChangeProvider {
         }
         progress.setFraction(0.84);
 
+        Map<P4Server, List<VirtualFile>> notCheckedOutServerFiles =
+                new HashMap<P4Server, List<VirtualFile>>();
         for (FilePath file : mapped.notEditedDirtyFiles.keySet()) {
             VirtualFile virt = file.getVirtualFile();
             if (virt == null) {
@@ -191,19 +190,21 @@ public class P4ChangeProvider implements ChangeProvider {
                 // online.
 
                 final P4Server server = mapped.notEditedDirtyFiles.get(file);
-                if (server.isWorkingOnline()) {
-                    if (isDifferentThanServerCopy(server, file)) {
-                        builder.processModifiedWithoutCheckout(virt);
-                    } else {
-                        // do nothing with the file.
-                        LOG.info("Incorrectly tagged " + file + " as dirty.");
-                    }
-                } else {
-                    // TODO this needs a special case, in that we can't tell if it's different or not.
-                    builder.processModifiedWithoutCheckout(virt);
+                List<VirtualFile> filesToDiff = notCheckedOutServerFiles.get(server);
+                if (filesToDiff == null) {
+                    filesToDiff = new ArrayList<VirtualFile>();
+                    notCheckedOutServerFiles.put(server, filesToDiff);
                 }
+                filesToDiff.add(virt);
             }
         }
+        for (Entry<P4Server, List<VirtualFile>> serverToFiles : notCheckedOutServerFiles.entrySet()) {
+            for (VirtualFile file : serverToFiles.getKey().
+                    getVirtualFilesDifferentThanServerHaveVersion(serverToFiles.getValue())) {
+                builder.processModifiedWithoutCheckout(file);
+            }
+        }
+
 
         progress.setFraction(0.85);
         final Map<P4Server, Map<P4ChangeListValue, LocalChangeList>> changeListMappings =
@@ -247,30 +248,6 @@ public class P4ChangeProvider implements ChangeProvider {
                 change,
                 changeList,
                 P4Vcs.getKey());
-    }
-
-
-    // TODO this has the potential to be a huge time sink.
-    // Look at optimizing this with cached server checksums.
-    private boolean isDifferentThanServerCopy(@NotNull P4Server server, @NotNull FilePath file) {
-        try {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Performing file bytes comparison for " + file);
-            }
-            assert file.getVirtualFile() != null;
-            final byte[] serverCopy = server.loadFileAsBytesOnline(file, P4ChangeListId.P4_UNKNOWN);
-            final byte[] localCopy = file.getVirtualFile().contentsToByteArray();
-            return Arrays.equals(serverCopy, localCopy);
-        } catch (P4DisconnectedException e) {
-            LOG.info("Could not check online state, as the server just went offline", e);
-            return true;
-        } catch (InterruptedException e) {
-            LOG.info("Could not get server bytes from " + file, e);
-            return true;
-        } catch (IOException e) {
-            LOG.info("Could not get local bytes from " + file, e);
-            return true;
-        }
     }
 
 

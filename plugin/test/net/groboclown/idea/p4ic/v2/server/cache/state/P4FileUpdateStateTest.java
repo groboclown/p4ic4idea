@@ -14,9 +14,8 @@
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FilePathImpl;
+import net.groboclown.idea.p4ic.mock.MockFilePath;
 import net.groboclown.idea.p4ic.v2.server.cache.FileUpdateAction;
-import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.junit.Test;
 
 import java.io.File;
@@ -40,10 +39,10 @@ public class P4FileUpdateStateTest {
     @Test
     public void testHashCode() throws Exception {
         P4FileUpdateState s1 = new P4FileUpdateState(
-                new P4ClientFileMapping(null, FilePathUtil.getFilePath("a.txt")),
+                new P4ClientFileMapping(null, createFilePath("a.txt")),
                 1, FileUpdateAction.ADD_EDIT_FILE, true);
         P4FileUpdateState s2 = new P4FileUpdateState(
-                new P4ClientFileMapping(null, FilePathUtil.getFilePath("a.txt")),
+                new P4ClientFileMapping(null, createFilePath("a.txt")),
                 2, FileUpdateAction.DELETE_FILE, true);
         assertThat(s1.hashCode(), is(s2.hashCode()));
     }
@@ -52,6 +51,6 @@ public class P4FileUpdateStateTest {
         return createFilePath(new File(f));
     }
     private FilePath createFilePath(File f) {
-        return new FilePathImpl(f, f.isDirectory());
+        return new MockFilePath(f);
     }
 }

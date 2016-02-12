@@ -502,7 +502,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
     }
 
     @Override
-    protected void checkLocalIntegrity(final List<PendingUpdateState> pendingUpdates) {
+    protected void checkLocalIntegrity(@NotNull final List<PendingUpdateState> pendingUpdates) {
         // ignore, because there's no local changed versions
     }
 }

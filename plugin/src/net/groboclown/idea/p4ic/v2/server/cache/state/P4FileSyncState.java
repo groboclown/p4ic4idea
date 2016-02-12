@@ -14,6 +14,11 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import com.intellij.openapi.vfs.VirtualFile;
+import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.idea.p4ic.server.P4StatusMessage;
+import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,8 +40,58 @@ public final class P4FileSyncState extends CachedState {
         this.rev = rev;
     }
 
-    void setMd5(String md5) {
+    public void setMd5(String md5) {
         this.md5 = md5;
+        setUpdated();
+    }
+
+    public String getMd5() {
+        return this.md5;
+    }
+
+    public int getRev() {
+        return this.rev;
+    }
+
+    @Nullable
+    public VirtualFile getVirtualFile() {
+        if (file.getLocalFilePath() == null) {
+            return null;
+        }
+        return file.getLocalFilePath().getVirtualFile();
+    }
+
+    @NotNull
+    public IFileSpec getFileSpec() throws P4Exception {
+        return file.getFileSpec();
+    }
+
+    public void update(@NotNull final IFileSpec fileSpec, @NotNull final FileMappingRepo fileMappingRepo) {
+        if (P4StatusMessage.isValid(fileSpec)) {
+            if (fileSpec.getDepotPathString() != null) {
+                fileMappingRepo.updateDepotPath(file, fileSpec.getDepotPathString());
+            }
+            if (fileSpec.getLocalPathString() != null) {
+                fileMappingRepo.updateLocation(file,
+                        FilePathUtil.getFilePath(fileSpec.getLocalPathString()));
+            }
+            if (fileSpec.getEndRevision() >= 0) {
+                // the md5 is a delicate thing
+                if (rev != fileSpec.getEndRevision()) {
+                    md5 = null;
+                }
+                this.rev = fileSpec.getEndRevision();
+            } else {
+                // Unknown problem, probably not on client
+                rev = IFileSpec.NONE_REVISION;
+                md5 = null;
+            }
+        } else {
+            // not on client
+            rev = IFileSpec.NONE_REVISION;
+            md5 = null;
+        }
+        setUpdated();
     }
 
     @Override

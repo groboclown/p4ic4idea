@@ -43,11 +43,10 @@ import java.util.List;
  */
 @State(
     name = "P4ConfigProject",
-    roamingType = RoamingType.DISABLED,
     reloadable = true,
     storages = {
         @Storage(
-            file = StoragePathMacros.WORKSPACE_FILE
+                file = StoragePathMacros.WORKSPACE_FILE
         )
     }
 )

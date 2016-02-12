@@ -7,22 +7,45 @@
     <property name="testoutput.dir"
               value="work/test/p4ic4idea"/>
 
-    <path id="production.classpath">
-        <path refid="${idea.lowest.classpath}"/>
+    <path id="base.compile.classpath">
         <pathelement location="${rootdir}/lib/picocontainer/1.2/picocontainer.jar"/>
         <!-- <pathelement location="${lib.p4java}"/> -->
         <pathelement location="${rootdir}/idea-compat/work/production"/>
         <pathelement location="${rootdir}/p4java/work/production"/>
+    </path>
 
+    <path id="production.classpath">
+        <path refid="${idea.lowest.classpath}"/>
+        <path refid="base.compile.classpath"/>
     </path>
 
     <path id="test.compile.classpath">
         <path refid="production.classpath"/>
         <path refid="unittest.classpath"/>
         <pathelement location="${output.dir}"/>
+        <pathelement location="../idea135/work/production"/>
     </path>
 
-    <!-- FIXME needs to include the pico container jar -->
+    <path id="trial-idea135.classpath">
+        <path refid="idea135.classpath"/>
+        <path refid="base.compile.classpath"/>
+    </path>
+
+    <path id="trial-idea140.classpath">
+        <path refid="idea140.classpath"/>
+        <path refid="base.compile.classpath"/>
+    </path>
+
+    <path id="trial-idea150.classpath">
+        <path refid="idea150.classpath"/>
+        <path refid="base.compile.classpath"/>
+    </path>
+
+    <path id="trial-idea160.classpath">
+        <path refid="idea160.classpath"/>
+        <path refid="base.compile.classpath"/>
+    </path>
+
     <path id="test.runtime.classpath">
         <path refid="test.compile.classpath"/>
         <path refid="unittest-runtime.classpath"/>
@@ -42,7 +65,7 @@
         </dirset>
     </path>
 
-    <target name="all" depends="clean, main, test"/>
+    <target name="all" depends="clean, main, test, compile-api-compat"/>
     <!-- <target name="main" depends="compile, test, plugin.build.jar.p4ic4idea"/> -->
     <target name="main" depends="compile, package"/>
 
@@ -76,6 +99,67 @@
                 <type type="file"/>
             </fileset>
         </copy>
+    </target>
+
+    <target name="compile-api-compat"
+            depends="
+                compile-api-compat-135,
+                compile-api-compat-140,
+                compile-api-compat-150,
+                compile-api-compat-160"/>
+
+    <target name="compile-api-compat-135"
+            depends="register.custom.compilers">
+        <mkdir dir="work/test-compile-135"/>
+        <javac2 destdir="work/test-compile-135" nowarn="${compiler.generate.no.warnings}"
+                memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
+                includeantruntime="false" target="1.6" source="1.6">
+            <compilerarg line="${compiler.args}"/>
+            <bootclasspath refid="bootclasspath.6"/>
+            <classpath refid="trial-idea135.classpath"/>
+            <src refid="production.sourcepath"/>
+            <patternset refid="excluded.from.compilation"/>
+        </javac2>
+    </target>
+    <target name="compile-api-compat-140"
+            depends="register.custom.compilers">
+        <mkdir dir="work/test-compile-140"/>
+        <javac2 destdir="work/test-compile-140" nowarn="${compiler.generate.no.warnings}"
+                memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
+                includeantruntime="false" target="1.6" source="1.6">
+            <compilerarg line="${compiler.args}"/>
+            <bootclasspath refid="bootclasspath.6"/>
+            <classpath refid="trial-idea140.classpath"/>
+            <src refid="production.sourcepath"/>
+            <patternset refid="excluded.from.compilation"/>
+        </javac2>
+    </target>
+    <target name="compile-api-compat-150"
+            depends="register.custom.compilers">
+        <mkdir dir="work/test-compile-150"/>
+        <javac2 destdir="work/test-compile-150" nowarn="${compiler.generate.no.warnings}"
+                memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
+                includeantruntime="false" target="1.6" source="1.6">
+            <compilerarg line="${compiler.args}"/>
+            <bootclasspath refid="bootclasspath.6"/>
+            <classpath refid="trial-idea150.classpath"/>
+            <src refid="production.sourcepath"/>
+            <patternset refid="excluded.from.compilation"/>
+        </javac2>
+    </target>
+    <target name="compile-api-compat-160"
+            depends="register.custom.compilers">
+        <mkdir dir="work/test-compile-160"/>
+        <!-- Note jdk 1.8 -->
+        <javac2 destdir="work/test-compile-160" nowarn="${compiler.generate.no.warnings}"
+                memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
+                includeantruntime="false" target="1.8" source="1.8">
+            <compilerarg line="${compiler.args}"/>
+            <bootclasspath refid="bootclasspath.8"/>
+            <classpath refid="trial-idea160.classpath"/>
+            <src refid="production.sourcepath"/>
+            <patternset refid="excluded.from.compilation"/>
+        </javac2>
     </target>
 
     <target name="compile.tests"
@@ -150,6 +234,8 @@
             file="${rootdir}/idea140/work/p4ic4idea.idea140-compat.jar"/>
         <copy todir="${tmp.dir.p4ic4idea}/lib"
             file="${rootdir}/idea150/work/p4ic4idea.idea150-compat.jar"/>
+        <copy todir="${tmp.dir.p4ic4idea}/lib"
+            file="${rootdir}/idea160/work/p4ic4idea.idea160-compat.jar"/>
         <zip destfile="${plugin.jar}">
             <fileset dir="${base.tmp.dir.p4ic4idea}"/>
         </zip>

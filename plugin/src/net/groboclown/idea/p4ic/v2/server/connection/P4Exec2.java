@@ -28,6 +28,7 @@ import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.generic.core.file.ExtendedFileSpec;
 import com.perforce.p4java.impl.generic.core.file.FilePath;
 import com.perforce.p4java.impl.generic.core.file.FilePath.PathType;
+import com.perforce.p4java.impl.mapbased.rpc.func.helper.MD5Digester;
 import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
@@ -66,6 +67,7 @@ import static net.groboclown.idea.p4ic.server.P4StatusMessage.getErrors;
  */
 public class P4Exec2 {
     private static final Logger LOG = Logger.getInstance(P4Exec2.class);
+    private static final int BUFFER_SIZE = 4 * 1024;
 
     private final Project project;
     private final ClientExec exec;
@@ -689,9 +691,9 @@ public class P4Exec2 {
                 }
 
                 try {
-                    byte[] buff = new byte[4096];
+                    byte[] buff = new byte[BUFFER_SIZE];
                     int len;
-                    while ((len = inp.read(buff, 0, 4096)) > 0 && baos.size() < maxFileSize) {
+                    while ((len = inp.read(buff, 0, BUFFER_SIZE)) > 0 && baos.size() < maxFileSize) {
                         baos.write(buff, 0, len);
                     }
                 } finally {
@@ -974,6 +976,51 @@ public class P4Exec2 {
                 }
 
                 return newChange.getId();
+            }
+        });
+    }
+
+
+    @NotNull
+    public List<IFileSpec> getHaveList(@NotNull final List<IFileSpec> specs)
+            throws VcsException, CancellationException {
+        return exec.runWithClient(project, new WithClient<List<IFileSpec>>() {
+            @Override
+            public List<IFileSpec> run(@NotNull final IOptionsServer server, @NotNull final IClient client,
+                    @NotNull final ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                return client.haveList(specs);
+            }
+        });
+    }
+
+
+    @NotNull
+    public String loadMd5For(final IFileSpec spec) throws VcsException {
+        return exec.runWithClient(project, new WithClient<String>() {
+            @Override
+            public String run(@NotNull final IOptionsServer server, @NotNull final IClient client,
+                    @NotNull final ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                final MD5Digester digester = new MD5Digester();
+                GetFileContentsOptions fileContentsOptions = new GetFileContentsOptions(false, true);
+                // setting "don't annotate files" to true means we ignore the revision
+                fileContentsOptions.setDontAnnotateFiles(false);
+                count.invoke("getFileContents");
+                InputStream in = server.getFileContents(Collections.singletonList(spec),
+                        fileContentsOptions);
+                try {
+                    byte[] buff = new byte[BUFFER_SIZE];
+                    int len;
+                    while ((len = in.read(buff, 0, BUFFER_SIZE)) > 0) {
+                        digester.update(buff, 0, len);
+                    }
+                } finally {
+                    in.close();
+                }
+                return digester.digestAs32ByteHex();
             }
         });
     }

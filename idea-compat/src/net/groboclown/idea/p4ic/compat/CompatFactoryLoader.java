@@ -30,6 +30,12 @@ import java.util.ServiceLoader;
 public class CompatFactoryLoader {
     private static final Logger LOG = Logger.getInstance(CompatFactoryLoader.class);
     private static final Object sync = new Object();
+
+    // Used for unit test situations, when we don't have access
+    // to the application api version.
+    private static final String DEFAULT_API_VERSION = "135.1286";
+    private static String cachedApiVersion;
+
     private static CompatManager manager;
 
 
@@ -94,8 +100,22 @@ public class CompatFactoryLoader {
         return best;
     }
 
+
     @NotNull
     private static String getApiVersion() {
+        /*
+        if (cachedApiVersion == null) {
+            // Allow for the async duplicate load time impact,
+            // as it's relatively cheap anyway.
+            try {
+                cachedApiVersion = ApplicationInfo.getInstance().getApiVersion();
+            } catch (NullPointerException e) {
+                LOG.error("Could not load the current IDE API version; assuming " + DEFAULT_API_VERSION, e);
+                cachedApiVersion = DEFAULT_API_VERSION;
+            }
+        }
+        return cachedApiVersion;
+        */
         return ApplicationInfo.getInstance().getApiVersion();
     }
 
@@ -108,7 +128,6 @@ public class CompatFactoryLoader {
                 ClassLoader.getSystemClassLoader()
         };
     }
-
 
 
     private static boolean isCompatible(@NotNull String apiVersion, @Nullable CompatFactory factory) {

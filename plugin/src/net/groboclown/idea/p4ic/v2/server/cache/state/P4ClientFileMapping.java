@@ -17,6 +17,9 @@ package net.groboclown.idea.p4ic.v2.server.cache.state;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
+import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.idea.p4ic.server.FileSpecUtil;
+import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -77,6 +80,17 @@ public final class P4ClientFileMapping {
     @Nullable
     public FilePath getLocalFilePath() {
         return localFilePath;
+    }
+
+    @NotNull
+    public IFileSpec getFileSpec() throws P4Exception {
+        if (depotPath != null) {
+            return FileSpecUtil.getFromDepotPath(depotPath, IFileSpec.NO_FILE_REVISION);
+        }
+        if (localFilePath != null) {
+            return FileSpecUtil.getFromFilePath(localFilePath);
+        }
+        throw new IllegalStateException("no valid path for " + this);
     }
 
     // called by FileMappingRepo; requires local path maps to be updated

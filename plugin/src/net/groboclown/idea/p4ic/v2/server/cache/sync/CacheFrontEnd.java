@@ -42,7 +42,7 @@ abstract class CacheFrontEnd {
     static final long MIN_REFRESH_INTERVAL_MS = 1000L;
 
 
-    protected final ServerQuery<CacheFrontEnd> createRefreshQuery(final boolean forceRefresh) {
+    final ServerQuery<CacheFrontEnd> createRefreshQuery(final boolean forceRefresh) {
         return new ServerQuery<CacheFrontEnd>() {
             @Nullable
             @Override
@@ -57,7 +57,7 @@ abstract class CacheFrontEnd {
     }
 
 
-    protected final void loadServerCache(@NotNull P4Exec2 exec, @NotNull ClientCacheManager cacheManager,
+    private void loadServerCache(@NotNull P4Exec2 exec, @NotNull ClientCacheManager cacheManager,
             @NotNull AlertManager alerts, boolean forceRefresh) {
         if (forceRefresh || needsRefresh()) {
             if (LOG.isDebugEnabled()) {

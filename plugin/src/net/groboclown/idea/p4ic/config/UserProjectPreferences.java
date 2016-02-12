@@ -21,10 +21,9 @@ import org.jetbrains.annotations.Nullable;
 
 @State(
     name = "UserProjectPreferences",
-    roamingType = RoamingType.PER_USER,
     storages = {
         @Storage(
-            file = StoragePathMacros.PROJECT_FILE
+                file = StoragePathMacros.PROJECT_FILE
         )
     }
 )

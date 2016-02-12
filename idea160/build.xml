@@ -60,6 +60,7 @@
             <patternset refid="excluded.from.compilation"/>
         </javac2>
 
+        <!-- uncomment when code is added
         <copy todir="${output.dir}">
             <fileset dir="${basedir}/src">
                 <patternset refid="compiler.resources"/>
@@ -69,6 +70,7 @@
                 <type type="file"/>
             </fileset>
         </copy>
+        -->
     </target>
 
     <target name="compile.tests"

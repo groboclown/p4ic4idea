@@ -41,7 +41,6 @@ import java.util.Map.Entry;
  */
 @State(
         name = "P4ChangeListMapping",
-        roamingType = RoamingType.DISABLED,
         storages = {
                 @Storage(
                         file = StoragePathMacros.WORKSPACE_FILE

@@ -16,12 +16,15 @@ package net.groboclown.idea.p4ic.compat.idea140;
 
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FilePathImpl;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcs.log.VcsUserRegistry;
 import com.intellij.vcsUtil.VcsFileUtil;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.util.Collection;
 
 public class VcsCompat140 extends VcsCompat {
@@ -33,5 +36,10 @@ public class VcsCompat140 extends VcsCompat {
     @Override
     public void refreshFiles(@NotNull final Project project, final Collection<VirtualFile> affectedFiles) {
         VcsFileUtil.refreshFiles(project, affectedFiles);
+    }
+
+    @Override
+    public FilePath getLowLevelFilePath(final File file) {
+        return new FilePathImpl(file, file.isDirectory());
     }
 }

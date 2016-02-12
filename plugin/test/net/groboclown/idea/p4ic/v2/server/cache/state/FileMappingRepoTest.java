@@ -14,7 +14,7 @@
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FilePathImpl;
+import net.groboclown.idea.p4ic.mock.MockFilePath;
 import org.junit.Test;
 
 import java.io.File;
@@ -131,6 +131,6 @@ public class FileMappingRepoTest {
 
 
     private FilePath createFilePath(File f) {
-        return new FilePathImpl(f, f.isDirectory());
+        return new MockFilePath(f);
     }
 }

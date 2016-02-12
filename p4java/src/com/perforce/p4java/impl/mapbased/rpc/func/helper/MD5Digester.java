@@ -3,12 +3,14 @@
  */
 package com.perforce.p4java.impl.mapbased.rpc.func.helper;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import com.perforce.p4java.CharsetDefs;
+import com.perforce.p4java.Log;
+import com.perforce.p4java.exception.NullPointerError;
+import com.perforce.p4java.exception.P4JavaError;
+import com.perforce.p4java.impl.generic.client.ClientLineEnding;
+import com.perforce.p4java.impl.mapbased.rpc.sys.RpcUnicodeInputStream;
+
+import java.io.*;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -18,13 +20,6 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
-import com.perforce.p4java.CharsetDefs;
-import com.perforce.p4java.Log;
-import com.perforce.p4java.exception.P4JavaError;
-import com.perforce.p4java.exception.NullPointerError;
-import com.perforce.p4java.impl.generic.client.ClientLineEnding;
-import com.perforce.p4java.impl.mapbased.rpc.sys.RpcUnicodeInputStream;
 
 /**
  * Provide MD5 digest methods for the rest of the RPC implementation. Basically
@@ -103,14 +98,25 @@ public class MD5Digester {
 		
 		if (retStr.length() != 32) {
 			// Usually a sign that we need to add leading zeroes...
-			
+
 			if ((retStr.length() > 0) && (retStr.length() < 32)) {
-				for (int i = retStr.length(); i < 32; i++) {
-			
-					// What a hack!
-					
-					retStr = "0" + retStr;
-				}
+				// p4ic4idea change:
+				// optimize this bit of code:
+				//for (int i = retStr.length(); i < 32; i++) {
+				//
+				//	// What a hack!
+				//
+				//	retStr = "0" + retStr;
+				//}
+
+				// Instead, we'll create a 32 character long string of zeros, and
+				// paste the string right-justified.
+				// Count our zeros with the old, trusty, usenet ruler
+				//                                              1         2         3
+				//                                    01234567890123456789012345678901
+				StringBuilder sb = new StringBuilder("00000000000000000000000000000000");
+				sb.insert(32 - retStr.length(), retStr);
+				retStr = sb.toString();
 			} else {
 				// Panicable offense...
 				

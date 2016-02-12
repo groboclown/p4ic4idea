@@ -97,7 +97,7 @@ public class ProjectRule extends ExternalResource {
         dirFixture.setUp();
 
         final TestFixtureBuilder<IdeaProjectTestFixture> testFixtureBuilder =
-                IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder();
+                IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder("");
         projectFixture = testFixtureBuilder.getFixture();
         projectFixture.setUp();
 

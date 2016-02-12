@@ -51,6 +51,7 @@ public class ClientCacheManager {
     private final ChangeListServerCacheSync changeLists;
     private final JobStatusListStateServerCacheSync jobStatusList;
     private final JobServerCacheSync jobs;
+    private final KnownHaveStateServerCacheSync haveFiles;
     private final IgnoreFiles ignoreFiles;
 
     // Jobs are only stored in terms of their association with the
@@ -73,6 +74,8 @@ public class ClientCacheManager {
                 state.getCachedServerState().getChanges());
         jobStatusList = new JobStatusListStateServerCacheSync(
                 state.getCachedServerState().getJobStatusList());
+        haveFiles = new KnownHaveStateServerCacheSync(
+                state.getCachedServerState().getKnownHave(), state.getFileMappingRepo());
         jobs = new JobServerCacheSync(state.getCachedServerState().getJobs());
         ignoreFiles = new IgnoreFiles(config);
     }
@@ -107,6 +110,11 @@ public class ClientCacheManager {
     @NotNull
     public ServerQuery createJobListRefreshQuery() {
         return jobs.createRefreshQuery(false);
+    }
+
+    @NotNull
+    public ServerQuery<Map<VirtualFile, P4FileSyncState>> createHaveFileRefreshQuery(Collection<VirtualFile> haves) {
+        return haveFiles.createRefreshQuery(haves);
     }
 
     /**
@@ -185,6 +193,11 @@ public class ClientCacheManager {
     @NotNull
     public Collection<String> getCachedJobStatusList() {
         return jobStatusList.getJobStatusList();
+    }
+
+    @NotNull
+    public Map<VirtualFile, P4FileSyncState> getCachedHaveVersions(@NotNull Collection<VirtualFile> haves) {
+        return haveFiles.getHaveFiles(haves);
     }
 
     /**

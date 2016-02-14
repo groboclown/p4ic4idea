@@ -59,6 +59,19 @@ $ $ANT_HOME/bin/ant all
 ```
 
 
+## Debugging In IDEA
+
+The IDEA project is constructed differently than how the Ant build constructs the
+project, so that it is possible to debug the plugin in IDEA.
+
+The biggest difficulty is in constructing your Java configuration so that it
+will actually run the plugin.  In my environment, every time IDEA tries to
+launch the plugin sandbox environment, it thinks the IDEA bootstrap jars
+exist in the JDK lib directory.  To work around this, I copied my JDK
+to a new location, and explicitly copied the IDEA lib files it expected,
+into the JDK lib directory.
+
+
 # Contributing
 
 ## Incremental Changes

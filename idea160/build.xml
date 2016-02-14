@@ -51,7 +51,7 @@
             description="Compile module p4ic4idea; production classes">
         <mkdir dir="${output.dir}"/>
         <javac2 destdir="${output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}"
-                memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk8.bin}/javac"
+                memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
                 includeantruntime="false" target="1.8" source="1.8">
             <compilerarg line="${compiler.args}"/>
             <bootclasspath refid="bootclasspath.8"/>
@@ -60,7 +60,6 @@
             <patternset refid="excluded.from.compilation"/>
         </javac2>
 
-        <!-- uncomment when code is added
         <copy todir="${output.dir}">
             <fileset dir="${basedir}/src">
                 <patternset refid="compiler.resources"/>
@@ -70,7 +69,6 @@
                 <type type="file"/>
             </fileset>
         </copy>
-        -->
     </target>
 
     <target name="compile.tests"

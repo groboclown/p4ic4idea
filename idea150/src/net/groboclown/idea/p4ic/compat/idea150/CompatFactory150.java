@@ -28,7 +28,7 @@ public class CompatFactory150 implements CompatFactory {
     @NotNull
     @Override
     public String getMaxCompatibleApiVersion() {
-        return "159.99999";
+        return "143.99999";
     }
 
     @NotNull

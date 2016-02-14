@@ -155,6 +155,7 @@ public class ClientExec {
             @NotNull ServerStatusController statusController) {
         Exception exception = null;
         boolean online = false;
+        boolean needsAuthentication = false;
         try {
             final IServerInfo info = getServerInfo(project, config);
             if (info != null) {
@@ -162,23 +163,33 @@ public class ClientExec {
             }
         } catch (IOException e) {
             exception = e;
+        } catch (AccessException e) {
+            needsAuthentication = true;
+            exception = e;
         } catch (P4JavaException e) {
             exception = e;
         } catch (URISyntaxException e) {
             exception = e;
         } catch (P4LoginException e) {
-            // FIXME this should be a login request.
+            needsAuthentication = true;
             exception = e;
         }
         if (! online) {
             statusController.onDisconnected();
-            final P4DisconnectedException ex;
-            if (exception == null) {
-                ex = new P4DisconnectedException();
+            final CriticalErrorHandler errorHandler;
+            if (needsAuthentication) {
+                errorHandler = new LoginFailedHandler(project, statusController, config, exception);
             } else {
-                ex = new P4DisconnectedException(exception);
+                final P4DisconnectedException ex;
+                if (exception == null) {
+                    ex = new P4DisconnectedException();
+                } else {
+                    ex = new P4DisconnectedException(exception);
+                }
+                exception = ex;
+                errorHandler = new DisconnectedHandler(project, statusController, ex);
             }
-            AlertManager.getInstance().addCriticalError(new DisconnectedHandler(project, statusController, ex), ex);
+            AlertManager.getInstance().addCriticalError(errorHandler, exception);
         }
         return online;
     }
@@ -633,8 +644,13 @@ public class ClientExec {
             @Override
             public Boolean run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
                 count.invoke("forcedAuthentication");
-                return connectionHandler.forcedAuthentication(project, server, config,
+                boolean forced = connectionHandler.forcedAuthentication(project, server, config,
                         AlertManager.getInstance());
+                if (forced) {
+                    // FIXME
+                    // FIXME
+                }
+                return forced;
             }
         }, true)) {
             return p4RunFor(project, runner, retryCount, loginCount + 1);

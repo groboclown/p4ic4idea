@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.project.Project;
+import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.P4JavaException;
 import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
 import org.jetbrains.annotations.NotNull;
@@ -77,6 +78,10 @@ public class ConnectionUIConfiguration {
                 final List<String> clients = ClientExec.getClientNames(source.getProject(), source.getServerConfig());
                 ret.put(source, new ClientResult(clients));
             } catch (IOException e) {
+                ret.put(source, new ClientResult(e));
+            } catch (AccessException e) {
+                ClientExec.loginFailure(source.getProject(), source.getServerConfig(),
+                        NOOP_CONTROLLER, e);
                 ret.put(source, new ClientResult(e));
             } catch (P4JavaException e) {
                 ret.put(source, new ClientResult(e));

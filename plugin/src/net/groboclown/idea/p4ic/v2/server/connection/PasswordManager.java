@@ -18,7 +18,7 @@ import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.ide.passwordSafe.PasswordSafeException;
 import com.intellij.ide.passwordSafe.impl.providers.memory.MemoryPasswordSafe;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ApplicationComponent;
+import com.intellij.openapi.components.*;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
@@ -28,6 +28,7 @@ import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
+import net.groboclown.idea.p4ic.v2.server.connection.PasswordManager.HasIdeaPasswordState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,7 +41,16 @@ import java.util.Set;
  * Perforce will raise an error if there is an attempt to login with
  * an empty password.
  */
-public class PasswordManager implements ApplicationComponent {
+@State(
+        name = "P4ConfigProject",
+        reloadable = true,
+        storages = {
+                @Storage(
+                        file = StoragePathMacros.WORKSPACE_FILE
+                )
+        }
+)
+public class PasswordManager implements ApplicationComponent, PersistentStateComponent<HasIdeaPasswordState> {
     private static final Logger LOG = Logger.getInstance(PasswordManager.class);
 
     private static Class REQUESTOR_CLASS = P4Vcs.class;
@@ -49,29 +59,37 @@ public class PasswordManager implements ApplicationComponent {
     private MemoryPasswordSafe memoryPasswordSafe = new MemoryPasswordSafe();
 
     // the keys that are saved into the in-memory safe.
-    private final Set<String> hasPasswordInMemory = Collections.synchronizedSet(new HashSet<String>());
+    @NotNull
+    private HasIdeaPasswordState state = new HasIdeaPasswordState();
+
+    public static class HasIdeaPasswordState {
+        public Set<String> hasPasswordInMemory;
+    }
+
+    public PasswordManager() {
+        state.hasPasswordInMemory = Collections.synchronizedSet(new HashSet<String>());
+    }
+
+    @Override
+    public HasIdeaPasswordState getState() {
+        return state;
+    }
+
+    @Override
+    public void loadState(HasIdeaPasswordState hasIdeaPasswordState) {
+        if (hasIdeaPasswordState == null) {
+            hasIdeaPasswordState = new HasIdeaPasswordState();
+        }
+        if (hasIdeaPasswordState.hasPasswordInMemory == null) {
+            hasIdeaPasswordState.hasPasswordInMemory = new HashSet<String>();
+        }
+        state.hasPasswordInMemory = Collections.synchronizedSet(hasIdeaPasswordState.hasPasswordInMemory);
+    }
 
 
     @NotNull
     public static PasswordManager getInstance() {
         return ApplicationManager.getApplication().getComponent(PasswordManager.class);
-    }
-
-    /**
-     *
-     *
-     * @param config connection config
-     * @return password which is null or non-empty.
-     */
-    @Nullable
-    public String getSimplePassword(@NotNull final ServerConfig config) {
-        // TODO look at storing these in the memory safe
-
-        String ret = config.getPlaintextPassword();
-        if (ret == null || ret.length() <= 0) {
-            return null;
-        }
-        return ret;
     }
 
 
@@ -84,7 +102,8 @@ public class PasswordManager implements ApplicationComponent {
      * @throws PasswordStoreException
      */
     @Nullable
-    public String getPassword(@Nullable final Project project, @NotNull final ServerConfig config)
+    public String getPassword(@Nullable final Project project, @NotNull final ServerConfig config,
+            boolean forceLogin)
             throws PasswordStoreException, PasswordAccessedWrongException {
         if (memoryPasswordSafe == null) {
             LOG.warn("already disposed");
@@ -93,15 +112,23 @@ public class PasswordManager implements ApplicationComponent {
 
         final String key = toKey(config);
 
+        // TODO look at storing these in the memory safe
         String ret = config.getPlaintextPassword();
         if (ret != null && ret.length() > 0) {
             LOG.debug("Using plaintext for " + key);
             return config.getPlaintextPassword();
         }
+        if (! forceLogin && ! state.hasPasswordInMemory.contains(key)) {
+            // do not inspect the password safes
+            LOG.debug("Skipping the password safe check for " + key);
+            return null;
+        }
+
+
         try {
             ret = memoryPasswordSafe.getPassword(project, REQUESTOR_CLASS, key);
             if (ret == null || ret.length() <= 0) {
-                if (hasPasswordInMemory.contains(toKey(config))) {
+                if (state.hasPasswordInMemory.contains(toKey(config))) {
                     // already set the value, and it's empty.
                     LOG.debug("Using stored null password for " + key);
                     return null;
@@ -126,7 +153,7 @@ public class PasswordManager implements ApplicationComponent {
                         // dispatch and in a read action, reference.
                         memoryPasswordSafe.storePassword(project, REQUESTOR_CLASS, key, ret);
                     }
-                    hasPasswordInMemory.add(toKey(config));
+                    state.hasPasswordInMemory.add(key);
                 } else {
                     LOG.warn("Could not get password because the action is called from outside the dispatch thread and in a read action.");
                     if (LOG.isDebugEnabled()) {
@@ -142,7 +169,7 @@ public class PasswordManager implements ApplicationComponent {
                                 LOG.debug("Fetching for " + key + " in background thread");
                                 String pw = PasswordSafe.getInstance().getPassword(project,
                                         REQUESTOR_CLASS, key);
-                                hasPasswordInMemory.add(key);
+                                state.hasPasswordInMemory.add(key);
                                 if (pw != null) {
                                     memoryPasswordSafe.storePassword(project,
                                             REQUESTOR_CLASS, key, pw);
@@ -176,7 +203,7 @@ public class PasswordManager implements ApplicationComponent {
     }
 
 
-    public void forgetPassword(@Nullable Project project, @NotNull final ServerConfig config)
+    public void forgetPassword(@Nullable final Project project, @NotNull final ServerConfig config)
             throws PasswordStoreException {
         final String key = toKey(config);
         LOG.debug("Forgetting for " + key);
@@ -195,11 +222,19 @@ public class PasswordManager implements ApplicationComponent {
             }
         }
 
-        try {
-            PasswordSafe.getInstance().removePassword(project, REQUESTOR_CLASS, key);
-        } catch (PasswordSafeException e) {
-            ex = new PasswordStoreException(e);
-        }
+        // this can wait on shared resources, so make sure
+        // it runs in the background, to avoid deadlocks.
+        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    PasswordSafe.getInstance().removePassword(project, REQUESTOR_CLASS, key);
+                } catch (PasswordSafeException e) {
+                    LOG.error(e);
+                    // ex = new PasswordStoreException(e);
+                }
+            }
+        });
 
         if (ex != null) {
             throw ex;
@@ -246,7 +281,7 @@ public class PasswordManager implements ApplicationComponent {
             // saved, because the user could have selected to not
             // store it.
             LOG.info("New password stored");
-            hasPasswordInMemory.add(key);
+            state.hasPasswordInMemory.add(key);
             try {
                 memoryPasswordSafe.storePassword(
                         project, REQUESTOR_CLASS, key,

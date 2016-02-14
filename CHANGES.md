@@ -5,11 +5,33 @@
 
 ### Overview
 
+* Switched to using MD5 hash codes when comparing if a file is actually
+  edited but not checked out.
 * Bug fixes.
 
 ### Details
 
+* Switched to using MD5 hash codes when comparing if a file is actually
+  edited but not checked out.
+    * Before, when a file was noted by IDEA as being edited, and
+      the file was not open for edit, the plugin would call out
+      to the server to verify that it was in fact not changed.
+      This behavior has been altered to instead cache the server's
+      HAVE version's MD5, and compares that instead against the
+      local file.
 * Bug fixes.
+    * Fixed the build so that it will correctly check the primary
+      plugin against all supported IDEA versions, rather than just
+      the earliest.
+    * Fixed compilation errors against the latest IDEA version of the
+      primary plugin.  This may result in you needing to reload your
+      Perforce configuration.
+    * Updated the project to enable better plugin debugging.
+    * Should now always authenticate once the server reports that the
+      user requires authentication. (#95)  This should also fix the
+      issue where the plugin can continuously ask for the password;
+      this could happen if you use the configuration file without
+      specifying an authentication ticket or a password.
 
 
 ## ::v0.7.5::

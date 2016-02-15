@@ -23,12 +23,15 @@ import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.ConfigurationProblem;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
+import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.PasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * Does not look at the P4CONFIG.  Uses a password for authentication.
@@ -100,6 +103,11 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
                 server.login(password, new LoginOptions(false, true));
                 LOG.debug("No issue logging in with stored password");
                 return null;
+            } catch (PasswordAccessedWrongException ex) {
+                // The current thread is in a wrong state, which prevents
+                // the password from being accessed.  Do not forget the password.
+                LOG.debug("can't access password yet", ex);
+                throw ex;
             } catch (AccessException ex) {
                 LOG.info("Stored password was bad; forgetting it", ex);
                 PasswordManager.getInstance().forgetPassword(project, config);

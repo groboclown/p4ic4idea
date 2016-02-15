@@ -46,6 +46,7 @@ import java.util.List;
     reloadable = true,
     storages = {
         @Storage(
+                id = "other",
                 file = StoragePathMacros.WORKSPACE_FILE
         )
     }

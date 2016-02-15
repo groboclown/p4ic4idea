@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
     name = "UserProjectPreferences",
     storages = {
         @Storage(
+                id = "default",
                 file = StoragePathMacros.PROJECT_FILE
         )
     }

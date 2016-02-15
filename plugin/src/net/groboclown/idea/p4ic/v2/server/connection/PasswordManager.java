@@ -42,11 +42,12 @@ import java.util.Set;
  * an empty password.
  */
 @State(
-        name = "P4ConfigProject",
+        name = "PasswordManager",
         reloadable = true,
         storages = {
                 @Storage(
-                        file = StoragePathMacros.WORKSPACE_FILE
+                        id = "default",
+                        file = StoragePathMacros.APP_CONFIG + "/perforce-servers.xml"
                 )
         }
 )

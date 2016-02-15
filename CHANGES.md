@@ -7,6 +7,8 @@
 
 * Switched to using MD5 hash codes when comparing if a file is actually
   edited but not checked out.
+* Added user preference to disable server-side file comparison when checking
+  for edited but not checked out status.
 * Bug fixes.
 
 ### Details

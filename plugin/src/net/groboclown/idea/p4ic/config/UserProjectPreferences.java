@@ -37,6 +37,7 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public static final boolean DEFAULT_INTEGRATE_ON_COPY = false;
     public static final boolean DEFAULT_EDIT_IN_SEPARATE_THREAD = false;
     public static final boolean DEFAULT_PREFER_REVISIONS_FOR_FILES = true;
+    public static final boolean DEFAULT_EDITED_WITHOUT_CHECKOUT_DONT_VERIFY = false;
 
     @NotNull
     private State state = new State();
@@ -53,6 +54,12 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         public boolean editInSeparateThread = DEFAULT_EDIT_IN_SEPARATE_THREAD;
 
         public boolean preferRevisionsForFiles = DEFAULT_PREFER_REVISIONS_FOR_FILES;
+
+        // This value needs to default to "false" so that existing
+        // users of the plugin will continue to work as it was before.
+        // This makes for the cumbersome naming here, and the inverse
+        // getter / setter.
+        public boolean editedWithoutCheckoutDontVerify = DEFAULT_EDITED_WITHOUT_CHECKOUT_DONT_VERIFY;
     }
 
     @Nullable
@@ -80,17 +87,6 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         this.state = state;
     }
 
-
-    public int getMaxServerConnections() {
-        return Math.max(MIN_SERVER_CONNECTIONS,
-                Math.min(MAX_SERVER_CONNECTIONS, state.maxServerConnections));
-    }
-
-    public void setMaxServerConnections(int maxServerConnections) {
-        state.maxServerConnections =
-                Math.max(MIN_SERVER_CONNECTIONS,
-                    Math.min(MAX_SERVER_CONNECTIONS, maxServerConnections));
-    }
 
 
     public int getMaxConnectionWaitTimeMillis() {
@@ -156,4 +152,24 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public void setPreferRevisionsForFiles(boolean value) {
         state.preferRevisionsForFiles = value;
     }
+
+    public static boolean getEditedWithoutCheckoutVerify(@Nullable Project project) {
+        if (project == null) {
+            return ! DEFAULT_EDITED_WITHOUT_CHECKOUT_DONT_VERIFY;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return ! DEFAULT_EDITED_WITHOUT_CHECKOUT_DONT_VERIFY;
+        }
+        return prefs.getEditedWithoutCheckoutVerify();
+    }
+
+    public boolean getEditedWithoutCheckoutVerify() {
+        return ! state.editedWithoutCheckoutDontVerify;
+    }
+
+    public void setEditedWithoutCheckoutVerify(boolean value) {
+        state.editedWithoutCheckoutDontVerify = ! value;
+    }
+
 }

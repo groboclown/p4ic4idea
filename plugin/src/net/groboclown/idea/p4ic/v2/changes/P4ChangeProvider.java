@@ -23,6 +23,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
@@ -199,8 +200,17 @@ public class P4ChangeProvider implements ChangeProvider {
             }
         }
         for (Entry<P4Server, List<VirtualFile>> serverToFiles : notCheckedOutServerFiles.entrySet()) {
-            for (VirtualFile file : serverToFiles.getKey().
-                    getVirtualFilesDifferentThanServerHaveVersion(serverToFiles.getValue())) {
+            final List<VirtualFile> differentThanServerHaveVersion;
+            if (UserProjectPreferences.getEditedWithoutCheckoutVerify(project)) {
+                // This can be a big performance hog for environments where the IDE
+                // thinks many files are edited, but actually aren't edited.
+                // So we wrap it in a user preference check.
+                differentThanServerHaveVersion = serverToFiles.getKey().
+                        getVirtualFilesDifferentThanServerHaveVersion(serverToFiles.getValue());
+            } else {
+                differentThanServerHaveVersion = serverToFiles.getValue();
+            }
+            for (VirtualFile file : differentThanServerHaveVersion) {
                 builder.processModifiedWithoutCheckout(file);
             }
         }

@@ -21,6 +21,14 @@
       This behavior has been altered to instead cache the server's
       HAVE version's MD5, and compares that instead against the
       local file.
+* Added user preference to disable server-side file comparison when checking
+  for edited but not checked out status.
+    * This may be less necessary now that the MD5 comparison is in place,
+      but for Perforce depots that have very large files, or where the IDE
+      marks many things as edited, it could still be a major performance
+      drag.  This checkbox will turn that functionality off.
+    * Note that with this functionality off, you may see files incorrectly
+      marked as "changed but not open for edit". 
 * Bug fixes.
     * Fixed the build so that it will correctly check the primary
       plugin against all supported IDEA versions, rather than just

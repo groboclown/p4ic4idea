@@ -28,7 +28,7 @@ import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
-import net.groboclown.idea.p4ic.v2.server.connection.PasswordManager.HasIdeaPasswordState;
+import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,8 +51,11 @@ import java.util.Set;
                 )
         }
 )
-public class PasswordManager implements ApplicationComponent, PersistentStateComponent<HasIdeaPasswordState> {
+public class PasswordManager implements ApplicationComponent, PersistentStateComponent<Element> {
     private static final Logger LOG = Logger.getInstance(PasswordManager.class);
+    private static final String PASSWORD_MANAGER_TAG = "password-manager";
+    private static final String HAS_PASSWORD_IN_MEMORY_TAG = "has-password-in-memory";
+    private static final String SERVER_KEY_TAG = "server-key";
 
     private static Class REQUESTOR_CLASS = P4Vcs.class;
 
@@ -61,30 +64,10 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
 
     // the keys that are saved into the in-memory safe.
     @NotNull
-    private HasIdeaPasswordState state = new HasIdeaPasswordState();
-
-    public static class HasIdeaPasswordState {
-        public Set<String> hasPasswordInMemory;
-    }
+    private Set<String> hasPasswordInMemory;
 
     public PasswordManager() {
-        state.hasPasswordInMemory = Collections.synchronizedSet(new HashSet<String>());
-    }
-
-    @Override
-    public HasIdeaPasswordState getState() {
-        return state;
-    }
-
-    @Override
-    public void loadState(HasIdeaPasswordState hasIdeaPasswordState) {
-        if (hasIdeaPasswordState == null) {
-            hasIdeaPasswordState = new HasIdeaPasswordState();
-        }
-        if (hasIdeaPasswordState.hasPasswordInMemory == null) {
-            hasIdeaPasswordState.hasPasswordInMemory = new HashSet<String>();
-        }
-        state.hasPasswordInMemory = Collections.synchronizedSet(hasIdeaPasswordState.hasPasswordInMemory);
+        hasPasswordInMemory = Collections.synchronizedSet(new HashSet<String>());
     }
 
 
@@ -119,7 +102,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
             LOG.debug("Using plaintext for " + key);
             return config.getPlaintextPassword();
         }
-        if (! forceLogin && ! state.hasPasswordInMemory.contains(key)) {
+        if (! forceLogin && ! hasPasswordInMemory.contains(key)) {
             // do not inspect the password safes
             LOG.debug("Skipping the password safe check for " + key);
             return null;
@@ -129,7 +112,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
         try {
             ret = memoryPasswordSafe.getPassword(project, REQUESTOR_CLASS, key);
             if (ret == null || ret.length() <= 0) {
-                if (state.hasPasswordInMemory.contains(toKey(config))) {
+                if (hasPasswordInMemory.contains(toKey(config))) {
                     // already set the value, and it's empty.
                     LOG.debug("Using stored null password for " + key);
                     return null;
@@ -154,7 +137,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                         // dispatch and in a read action, reference.
                         memoryPasswordSafe.storePassword(project, REQUESTOR_CLASS, key, ret);
                     }
-                    state.hasPasswordInMemory.add(key);
+                    hasPasswordInMemory.add(key);
                 } else {
                     LOG.warn("Could not get password because the action is called from outside the dispatch thread and in a read action.");
                     if (LOG.isDebugEnabled()) {
@@ -170,7 +153,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                                 LOG.debug("Fetching for " + key + " in background thread");
                                 String pw = PasswordSafe.getInstance().getPassword(project,
                                         REQUESTOR_CLASS, key);
-                                state.hasPasswordInMemory.add(key);
+                                hasPasswordInMemory.add(key);
                                 if (pw != null) {
                                     memoryPasswordSafe.storePassword(project,
                                             REQUESTOR_CLASS, key, pw);
@@ -282,7 +265,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
             // saved, because the user could have selected to not
             // store it.
             LOG.info("New password stored");
-            state.hasPasswordInMemory.add(key);
+            hasPasswordInMemory.add(key);
             try {
                 memoryPasswordSafe.storePassword(
                         project, REQUESTOR_CLASS, key,
@@ -318,4 +301,30 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
         return "P4PasswordManager";
     }
 
+
+    @Override
+    public Element getState() {
+        Element ret = new Element(PASSWORD_MANAGER_TAG);
+        Element hpm = new Element(HAS_PASSWORD_IN_MEMORY_TAG);
+        ret.addContent(hpm);
+        for (String key : hasPasswordInMemory) {
+            Element sk = new Element(SERVER_KEY_TAG);
+            hpm.addContent(sk);
+            sk.addContent(key);
+        }
+        return ret;
+    }
+
+    @Override
+    public void loadState(Element state) {
+        hasPasswordInMemory.clear();
+        for (Element hpm: state.getChildren(HAS_PASSWORD_IN_MEMORY_TAG)) {
+            for (Element sk: hpm.getChildren(SERVER_KEY_TAG)) {
+                String key = sk.getText().trim();
+                if (key.length() > 0) {
+                    hasPasswordInMemory.add(key);
+                }
+            }
+        }
+    }
 }

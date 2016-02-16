@@ -8,7 +8,18 @@
         <ol>
             <li><em>0.7.6</em>
                 <ol>
-                  <li>?</li>
+                    <li>Switched to using MD5 hash codes when comparing if a file is actually
+                    edited but not checked out.</li>
+                    <li>Added user preference to disable server-side file comparison when checking
+                    for edited but not checked out status.</li>
+                    <li>Fixed compilation errors against the latest IDEA version of the
+                    primary plugin.  This may result in you needing to reload your
+                    Perforce configuration.</li>
+                    <li>Should now always authenticate once the server reports that the
+                    user requires authentication.  This should also fix the
+                    issue where the plugin can continuously ask for the password;
+                    this could happen if you use the configuration file without
+                    specifying an authentication ticket or a password.</li>
                 </ol>
             </li>
             <li><em>0.7.5</em>

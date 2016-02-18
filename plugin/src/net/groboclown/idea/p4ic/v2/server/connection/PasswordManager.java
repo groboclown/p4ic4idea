@@ -192,6 +192,12 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
         final String key = toKey(config);
         LOG.debug("Forgetting for " + key);
 
+        String ret = config.getPlaintextPassword();
+        if (ret != null && ret.length() > 0) {
+            LOG.debug("Cannot forget password, as it is a plaintext password");
+            return;
+        }
+
         PasswordStoreException ex = null;
 
         // Do not remove the password from the "has password", because we still "have" it

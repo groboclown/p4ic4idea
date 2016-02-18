@@ -70,6 +70,8 @@ public class ClientExec {
     @Nullable
     private IOptionsServer cachedServer;
 
+    private boolean performLogin = true;
+
 
     public ClientExec(@NotNull ServerConfig config, @NotNull ServerStatusController connectedController,
             @Nullable String clientName)
@@ -114,6 +116,20 @@ public class ClientExec {
     }
 
 
+    /**
+     *
+     * @param project
+     * @param config
+     * @return
+     * @throws IOException
+     * @throws P4JavaException
+     * @throws URISyntaxException
+     * @throws P4LoginException
+     * @deprecated this uses a static context, which means it must create
+     *    a new server object for each call.  This should instead be moved
+     *    into the ClientExec non-static.
+     */
+    @Deprecated
     static IServerInfo getServerInfo(@Nullable Project project, @NotNull ServerConfig config)
             throws IOException, P4JavaException, URISyntaxException, P4LoginException {
         ConnectionHandler connectionHandler = ConnectionHandler.getHandlerFor(config);
@@ -151,6 +167,17 @@ public class ClientExec {
     }
 
 
+    /**
+     *
+     * @param project
+     * @param config
+     * @param statusController
+     * @deprecated this call creates a new server object, which should instead
+     *      only be done within a ClientExec instance (so that the connection can
+     *      be cached).
+     * @return
+     */
+    @Deprecated
     static boolean checkIfOnline(@NotNull Project project, @NotNull ServerConfig config,
             @NotNull ServerStatusController statusController) {
         Exception exception = null;
@@ -195,6 +222,19 @@ public class ClientExec {
     }
 
 
+    /**
+     *
+     * @param project
+     * @param config
+     * @return
+     * @throws IOException
+     * @throws P4JavaException
+     * @throws URISyntaxException
+     * @throws P4LoginException
+     * @deprecated this is called in a static context, which means that it creates a
+     *      new server object, which should really only be done within a ClientExec.
+     */
+    @Deprecated
     static List<String> getClientNames(@Nullable Project project, @NotNull ServerConfig config)
             throws IOException, P4JavaException, URISyntaxException, P4LoginException {
         ConnectionHandler connectionHandler = ConnectionHandler.getHandlerFor(config);
@@ -320,7 +360,11 @@ public class ClientExec {
             if (disposed) {
                 throw new ConnectionException(P4Bundle.message("error.p4exec.disposed"));
             }
-            if (cachedServer == null || ! cachedServer.isConnected()) {
+            if (cachedServer != null && ! cachedServer.isConnected()) {
+                cachedServer.disconnect();
+                cachedServer = null;
+            }
+            if (cachedServer == null) {
                 cachedServer = connectTo(project, clientName, connectionHandler, config, tempDir);
             }
         }
@@ -475,7 +519,7 @@ public class ClientExec {
             // Don't explicitly tell the user about this; it will show up eventually.
             throw ex;
         } catch (AccessException e) {
-            LOG.info("Problem accessing resources (password problem)", e);
+            LOG.info("Problem accessing resources (password problem, with " + loginCount + " retries)", e);
             return onPasswordProblem(project, e, runner, retryCount, loginCount);
         } catch (ConfigException e) {
             LOG.info("Problem with configuration", e);
@@ -637,8 +681,13 @@ public class ClientExec {
     private <T> T onPasswordProblem(@NotNull final Project project, @NotNull final P4JavaException e,
             @NotNull final P4Runner<T> runner,
             final int retryCount, final int loginCount) throws VcsException {
-        if (loginCount >= 1) {
+        if (loginCount >= 3) {
             throw loginFailure(project, getServerConfig(), getServerConnectedController(), e);
+        }
+        if (loginCount >= 1) {
+            // attempt to disconnect the server first, then retry the login.
+            // it appears that, after some time, the connection gets unstable.
+            invalidateCache();
         }
         if (runWithServer(project, new WithServer<Boolean>() {
             @Override

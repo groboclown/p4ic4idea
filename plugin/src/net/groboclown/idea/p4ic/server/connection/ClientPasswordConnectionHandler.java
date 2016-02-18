@@ -73,7 +73,7 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
     @Override
     public boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server,
             @NotNull ServerConfig config, @NotNull AlertManager alerts) throws P4JavaException {
-        final AccessException ex = authenticate(project, server, config, false);
+        final AccessException ex = authenticate(project, server, config, true);
         if (ex != null) {
             LOG.info(ex);
         }
@@ -94,7 +94,15 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
             @NotNull ServerConfig config, boolean force)
             throws P4JavaException {
         // Default login - use the simple password
-        String password = PasswordManager.getInstance().getPassword(project, config, force);
+        final String password;
+        try {
+            password = PasswordManager.getInstance().getPassword(project, config, force);
+        } catch (PasswordAccessedWrongException ex) {
+            // The current thread is in a wrong state, which prevents
+            // the password from being accessed.  Do not forget the password.
+            LOG.debug("can't access password yet", ex);
+            throw ex;
+        }
 
         if (password != null) {
             // If the password is blank, then there's no need for the
@@ -103,11 +111,6 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
                 server.login(password, new LoginOptions(false, true));
                 LOG.debug("No issue logging in with stored password");
                 return null;
-            } catch (PasswordAccessedWrongException ex) {
-                // The current thread is in a wrong state, which prevents
-                // the password from being accessed.  Do not forget the password.
-                LOG.debug("can't access password yet", ex);
-                throw ex;
             } catch (AccessException ex) {
                 LOG.info("Stored password was bad; forgetting it", ex);
                 PasswordManager.getInstance().forgetPassword(project, config);

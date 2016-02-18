@@ -317,14 +317,13 @@ public class ServerConnectionManager implements ApplicationComponent {
                         online = true;
                         synchronizer.wentOnline();
                         onlineChangedCondition.signal();
-                        return true;
                     } else if (LOG.isDebugEnabled()) {
                         LOG.debug("Already online; skipping going online: " + config);
                     }
+                    return true;
                 } finally {
                     onlineStatusLock.unlock();
                 }
-                // fall through
             } else if (project != null) {
                 P4DisconnectedException ex = new P4DisconnectedException(
                         P4Bundle.message("disconnected.server-invalid", config.getServiceName())

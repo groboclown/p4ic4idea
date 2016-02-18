@@ -201,13 +201,15 @@ public class P4ChangeProvider implements ChangeProvider {
         }
         for (Entry<P4Server, List<VirtualFile>> serverToFiles : notCheckedOutServerFiles.entrySet()) {
             final List<VirtualFile> differentThanServerHaveVersion;
-            if (UserProjectPreferences.getEditedWithoutCheckoutVerify(project)) {
+            if (serverToFiles.getKey().isWorkingOnline() &&
+                    UserProjectPreferences.getEditedWithoutCheckoutVerify(project)) {
                 // This can be a big performance hog for environments where the IDE
                 // thinks many files are edited, but actually aren't edited.
                 // So we wrap it in a user preference check.
                 differentThanServerHaveVersion = serverToFiles.getKey().
-                        getVirtualFilesDifferentThanServerHaveVersion(serverToFiles.getValue());
+                        getVirtualFilesDifferentThanServerHaveVersionOnline(serverToFiles.getValue());
             } else {
+                // can't tell, so just mark it as different
                 differentThanServerHaveVersion = serverToFiles.getValue();
             }
             for (VirtualFile file : differentThanServerHaveVersion) {

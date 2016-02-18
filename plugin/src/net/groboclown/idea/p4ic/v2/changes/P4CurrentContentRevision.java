@@ -61,6 +61,10 @@ public class P4CurrentContentRevision implements ContentRevision {
         try {
             final P4Server server = vcs.getP4ServerFor(filePath);
             if (server != null) {
+                if (server.isWorkingOffline()) {
+                    LOG.debug("Offline: Ignoring request for content for " + filePath + " from " + server.getClientServerId());
+                    return null;
+                }
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Extracting content for " + filePath + " from " + server.getClientServerId());
                 }

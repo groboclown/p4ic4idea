@@ -1196,7 +1196,7 @@ public class P4Server {
      * @return
      */
     @NotNull
-    public List<VirtualFile> getVirtualFilesDifferentThanServerHaveVersion(
+    public List<VirtualFile> getVirtualFilesDifferentThanServerHaveVersionOnline(
             @NotNull final List<VirtualFile> files) throws InterruptedException {
         final Map<VirtualFile, P4FileSyncState> syncState =
                 connection.cacheQuery(new CacheQuery<Map<VirtualFile, P4FileSyncState>>() {
@@ -1210,7 +1210,7 @@ public class P4Server {
                     }
                 }
             });
-        return getFilesDifferentThanServer(syncState);
+        return getFilesDifferentThanServerOnline(syncState);
     }
 
     @Override
@@ -1288,7 +1288,7 @@ public class P4Server {
     }
 
     @NotNull
-    private List<VirtualFile> getFilesDifferentThanServer(@NotNull final Map<VirtualFile, P4FileSyncState> syncState)
+    private List<VirtualFile> getFilesDifferentThanServerOnline(@NotNull final Map<VirtualFile, P4FileSyncState> syncState)
             throws InterruptedException {
         // Check the virtual files' MD5 against the cached server MD5.
 

@@ -133,6 +133,7 @@ public class ClientExec {
     static IServerInfo getServerInfo(@Nullable Project project, @NotNull ServerConfig config)
             throws IOException, P4JavaException, URISyntaxException, P4LoginException {
         ConnectionHandler connectionHandler = ConnectionHandler.getHandlerFor(config);
+
         final IOptionsServer server = connectTo(project, null, connectionHandler, config,
                 getTempDir(project));
         try {
@@ -449,9 +450,14 @@ public class ClientExec {
 
         server.connect();
 
-        // if there is a password problem, we still want
+        // If there is a password problem, we still want
         // to maintain our cached server, so a retry doesn't
         // recreate the server connection again.
+
+        // However, the way this is written allows for
+        // an invalid password to cause the server connection
+        // to never be returned.
+
         connectionHandler.defaultAuthentication(project, server, config);
 
         return server;

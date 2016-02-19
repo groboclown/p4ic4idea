@@ -63,12 +63,10 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
     private MemoryPasswordSafe memoryPasswordSafe = new MemoryPasswordSafe();
 
     // the keys that are saved into the in-memory safe.
-    @NotNull
-    private Set<String> hasPasswordInMemory;
+    private final Set<String> hasPasswordInMemory = Collections.synchronizedSet(new HashSet<String>());
 
-    public PasswordManager() {
-        hasPasswordInMemory = Collections.synchronizedSet(new HashSet<String>());
-    }
+    // the keys that are saved into the password data store persistence.
+    private final Set<String> hasPasswordInStorage = Collections.synchronizedSet(new HashSet<String>());
 
 
     @NotNull
@@ -102,7 +100,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
             LOG.debug("Using plaintext for " + key);
             return config.getPlaintextPassword();
         }
-        if (! forceLogin && ! hasPasswordInMemory.contains(key)) {
+        if (! forceLogin && ! hasPasswordInStorage.contains(key)) {
             // do not inspect the password safes
             LOG.debug("Skipping the password safe check for " + key);
             return null;
@@ -210,6 +208,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
             } catch (PasswordSafeException e) {
                 ex = new PasswordStoreException(e);
             }
+            hasPasswordInMemory.remove(key);
         }
 
         // this can wait on shared resources, so make sure
@@ -223,6 +222,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                     LOG.error(e);
                     // ex = new PasswordStoreException(e);
                 }
+                hasPasswordInStorage.remove(key);
             }
         });
 
@@ -253,6 +253,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
         } catch (PasswordSafeException e) {
             throw new PasswordStoreException(e);
         }
+        hasPasswordInMemory.remove(key);
 
         String password = UICompat.getInstance().askPassword(project,
                 P4Bundle.message("login.password.title"),
@@ -271,11 +272,12 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
             // saved, because the user could have selected to not
             // store it.
             LOG.info("New password stored");
-            hasPasswordInMemory.add(key);
+            hasPasswordInStorage.add(key);
             try {
                 memoryPasswordSafe.storePassword(
                         project, REQUESTOR_CLASS, key,
                         password);
+                hasPasswordInMemory.add(key);
             } catch (PasswordSafeException e) {
                 LOG.info("Did not store password for " + key, e);
                 throw new PasswordStoreException(e);
@@ -313,7 +315,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
         Element ret = new Element(PASSWORD_MANAGER_TAG);
         Element hpm = new Element(HAS_PASSWORD_IN_MEMORY_TAG);
         ret.addContent(hpm);
-        for (String key : hasPasswordInMemory) {
+        for (String key : hasPasswordInStorage) {
             Element sk = new Element(SERVER_KEY_TAG);
             hpm.addContent(sk);
             sk.addContent(key);
@@ -323,12 +325,12 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
 
     @Override
     public void loadState(Element state) {
-        hasPasswordInMemory.clear();
+        hasPasswordInStorage.clear();
         for (Element hpm: state.getChildren(HAS_PASSWORD_IN_MEMORY_TAG)) {
             for (Element sk: hpm.getChildren(SERVER_KEY_TAG)) {
                 String key = sk.getText().trim();
                 if (key.length() > 0) {
-                    hasPasswordInMemory.add(key);
+                    hasPasswordInStorage.add(key);
                 }
             }
         }

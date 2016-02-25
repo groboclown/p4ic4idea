@@ -18,8 +18,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.vcs.CalledInAwt;
-import com.intellij.openapi.vcs.CalledInBackground;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ListCellRendererWrapper;
@@ -306,7 +304,7 @@ public class P4ConfigPanel {
      *
      * @return only the valid connections, or null if there are invalid ones.
      */
-    @CalledInBackground
+    // CalledInBackground
     @NotNull
     private ConfigSet getValidConfigs() {
         if (!initialized) {
@@ -356,7 +354,7 @@ public class P4ConfigPanel {
     // ---------------------------------------------------------
     // UI callbacks
 
-    @CalledInAwt
+    // CalledInAwt
     private void checkConnection() {
         runBackgroundAwtAction(myCheckConnectionSpinner,
                 new BackgroundAwtAction<Collection<Builder>>() {
@@ -396,7 +394,7 @@ public class P4ConfigPanel {
     /**
      * Reloads the displayed list of clients.
      */
-    @CalledInAwt
+    // CalledInAwt
     private void refreshClientList() {
         final Object selected = myClientList.getSelectedItem();
         runBackgroundAwtAction(myRefreshClientListSpinner, new BackgroundAwtAction<List<String>>() {
@@ -421,7 +419,7 @@ public class P4ConfigPanel {
         });
     }
 
-    @CalledInBackground
+    // CalledInBackground
     private List<String> loadClientList(@Nullable Object selected) {
         final Map<ProjectConfigSource, ClientResult> clientResults =
                 ConnectionUIConfiguration.getClients(getValidConfigs().valid);
@@ -467,7 +465,7 @@ public class P4ConfigPanel {
         return orderedClients;
     }
 
-    @CalledInAwt
+    // CalledInAwt
     private void changeConnectionSelection() {
         int currentSelectedIndex = myConnectionChoice.getSelectedIndex();
         ConnectionPanel selected = (ConnectionPanel) myConnectionChoice.getItemAt(currentSelectedIndex);
@@ -475,7 +473,7 @@ public class P4ConfigPanel {
         showConnectionPanel(selected);
     }
 
-    @CalledInAwt
+    // CalledInAwt
     private void initializeClientAndPathSelection(@Nullable String currentClientName,
             @NotNull final ConnectionMethod connectionMethod) {
         if (connectionMethod.isRelativeToPath()) {
@@ -514,7 +512,7 @@ public class P4ConfigPanel {
         }
     }
 
-    @CalledInAwt
+    // CalledInAwt
     private void showConnectionPanel(@NotNull ConnectionPanel panel) {
         myConnectionDescriptionLabel.setText("<html>" + panel.getDescription());
         ((CardLayout) myConnectionTypeContainerPanel.getLayout()).show(
@@ -529,7 +527,7 @@ public class P4ConfigPanel {
      * Refresh the list of config file paths.  This will indirectly invoke
      * the refreshResolvedProperties
      */
-    @CalledInAwt
+    // CalledInAwt
     private void refreshConfigPaths() {
         runBackgroundAwtAction(myRefreshClientListSpinner, new BackgroundAwtAction<ConfigSet>() {
             @Override
@@ -569,7 +567,7 @@ public class P4ConfigPanel {
     /**
      * Refresh just the list of resolved properties.
      */
-    @CalledInAwt
+    // CalledInAwt
     private void refreshResolvedProperties() {
         // This is actually invoked when the config directory drop-down is changed,
         // or when the connection is changed, but this spinner is fine.
@@ -1007,7 +1005,7 @@ public class P4ConfigPanel {
     }
 
 
-    @CalledInAwt
+    // CalledInAwt
     private <T> void runBackgroundAwtAction(@NotNull final AsyncProcessIcon icon,
             @NotNull final BackgroundAwtAction<T> action) {
         if (LOG.isDebugEnabled()) {

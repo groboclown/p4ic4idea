@@ -176,6 +176,37 @@ public class P4StatusMessage {
     }
 
 
+    public static <T extends IFileOperationResult> boolean hasErrors(
+            @Nullable Collection<T> specs) {
+        if (specs != null) {
+            for (T spec : specs) {
+                if (P4StatusMessage.isErrorStatus(spec)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    @NotNull
+    public static <T extends IFileOperationResult> List<P4StatusMessage> getErrorsAndWarnings(
+            @Nullable Collection<T> specs) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Operation result: " + specs);
+        }
+        List<P4StatusMessage> ret = new ArrayList<P4StatusMessage>();
+        if (specs != null) {
+            for (T spec : specs) {
+                if (spec.getOpStatus() != FileSpecOpStatus.VALID) {
+                    ret.add(new P4StatusMessage(spec));
+                }
+            }
+        }
+        return ret;
+    }
+
+
     @NotNull
     public static <T extends IFileOperationResult> List<T> getNonErrors(@Nullable Collection<T> specs) {
         List<T> ret = new ArrayList<T>();

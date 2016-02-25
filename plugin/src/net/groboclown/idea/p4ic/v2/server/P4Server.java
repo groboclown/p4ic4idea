@@ -157,7 +157,8 @@ public class P4Server {
 
 
     public boolean isValid() {
-        return valid && ! disposed && connection.isValid();
+        return valid && ! disposed && connection.isValid() &&
+                ! project.isDisposed();
     }
 
     public boolean isDisposed() {
@@ -173,6 +174,10 @@ public class P4Server {
     }
     public boolean isWorkingOffline() {
         return !isValid() || connection.isWorkingOffline();
+    }
+
+    public boolean isSameSource(@Nullable ProjectConfigSource pcs) {
+        return source.equals(pcs);
     }
 
 
@@ -365,7 +370,7 @@ public class P4Server {
             for (IExtendedFileSpec spec : extended) {
                 String path = spec.getClientPathString();
                 if (path == null) {
-                    // FIXME
+                    // TODO report a better error message than this
                     throw new IllegalStateException("Bad client path in extended spec " + spec);
                 }
                 ret.put(FilePathUtil.getFilePath(path), spec);
@@ -525,7 +530,7 @@ public class P4Server {
                 unreverted.removeAll(revertFilesOffline(files));
                 if (!unreverted.isEmpty()) {
                     LOG.warn("Could not offline revert " + unreverted);
-                    // FIXME this is a terrible message to send to users.
+                    // TODO this is a terrible message to send to users.  Make it user friendly.
                     exceptions.add(new P4DisconnectedException());
                 }
                 //if (!unreverted.isEmpty()) {
@@ -774,7 +779,7 @@ public class P4Server {
         }
     }
 
-    // FIXME this method is kind of a hack.
+    // TODO this method is kind of a hack.
     // This needs to be performed in a more robust manner, meaning
     // that there shouldn't need to be this integrity check in the
     // first place.  The system should be able to maintain the state
@@ -1222,7 +1227,7 @@ public class P4Server {
      *
      * @return source for the config
      */
-    // FIXME return an immutable wrapper
+    // TODO return an immutable wrapper
     @NotNull
     public ProjectConfigSource getProjectConfigSource() {
         return source;

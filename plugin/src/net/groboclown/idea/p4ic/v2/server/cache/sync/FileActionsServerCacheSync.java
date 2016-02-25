@@ -759,7 +759,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         if (action != null && fileUpdateAction.equals(action.getFileUpdateAction())) {
             LOG.info("Already opened for " + fileUpdateAction + " " + file);
 
-            // FIXME this might be wrong - the file may need to move to a different changelist.
+            // TODO this might be wrong - the file may need to move to a different changelist.
 
             return null;
         }
@@ -1094,8 +1094,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     // so that they have increased access to the cache objects.
 
 
-    // FIXME all this logic below is really complicated.  Look at ways to
-    // simplify it.
+    // TODO all this logic below is really complicated.  Look at ways to simplify it.
 
     static abstract class AbstractFileAction extends AbstractServerUpdateAction {
         protected AbstractFileAction(@NotNull final Collection<PendingUpdateState> pendingUpdateStates) {

@@ -230,6 +230,7 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
             return;
         }
 
+        boolean announce = false;
         synchronized (this) {
             if (!sourcesInitialized) {
                 if (LOG.isDebugEnabled()) {
@@ -243,12 +244,24 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
                     sourceConfigEx = null;
                     configSources = readProjectConfigSources();
                     // now that the sources are reloaded, we can make the announcement
-                    announceBaseConfigUpdated();
+                    announce = true;
                 } catch (P4InvalidConfigException e) {
                     // ignore; already sent notifications
                     configSources = null;
                     sourceConfigEx = e;
                 }
+            }
+        }
+        // Perform this logic outside the synchronization block.
+        // However, this can still block many other things because it can
+        // result in a password update request during initialization.
+        if (announce) {
+            try {
+                announceBaseConfigUpdated();
+            } catch (P4InvalidConfigException e) {
+                // ignore; already sent notifications
+                configSources = null;
+                sourceConfigEx = e;
             }
         }
     }

@@ -61,6 +61,8 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
 import static net.groboclown.idea.p4ic.server.P4StatusMessage.getErrors;
+import static net.groboclown.idea.p4ic.server.P4StatusMessage.getErrorsAndWarnings;
+import static net.groboclown.idea.p4ic.server.P4StatusMessage.hasErrors;
 
 /**
  * A project-aware command executor against the server/client.
@@ -823,7 +825,11 @@ public class P4Exec2 {
                     options.setJobStatus(jobStatus);
                 }
                 count.invoke("submit");
-                return getErrors(changelist.submit(options));
+                final List<IFileSpec> results = changelist.submit(options);
+                if (hasErrors(results)) {
+                    return getErrorsAndWarnings(results);
+                }
+                return Collections.emptyList();
             }
         });
     }

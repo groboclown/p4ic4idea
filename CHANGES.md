@@ -33,15 +33,17 @@
     * Fixed the build so that it will correctly check the primary
       plugin against all supported IDEA versions, rather than just
       the earliest.
-    * Fixed compilation errors against the latest IDEA version of the
-      primary plugin.  This may result in you needing to reload your
-      Perforce configuration.
-    * Updated the project to enable better plugin debugging.
     * Should now always authenticate once the server reports that the
       user requires authentication. (#95)  This should also fix the
       issue where the plugin can continuously ask for the password;
       this could happen if you use the configuration file without
       specifying an authentication ticket or a password.
+    * Fixed a deadlock associated with initial startup when asking the
+      user for the master IDEA password.
+    * Fixed compilation errors against the latest IDEA version of the
+      primary plugin.  This may result in you needing to reload your
+      Perforce configuration.
+    * Updated the project to enable better plugin debugging.
 
 
 ## ::v0.7.5::

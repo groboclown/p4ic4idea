@@ -40,6 +40,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The owner for the {@link P4Server} instances.
@@ -51,6 +53,13 @@ public class P4ServerManager implements ProjectComponent {
     private final MessageBusConnection appMessageBus;
     private final Map<ClientServerId, P4Server> servers = new HashMap<ClientServerId, P4Server>();
     private final AlertManager alertManager;
+
+    // big note on this lock: posting alerts while inside a lock
+    // can cause deadlocks, due to the way the timing works while
+    // waiting on the master password to be entered.
+    private final Lock serverLock = new ReentrantLock();
+
+    private volatile boolean hasServers = false;
     private volatile boolean connectionsValid = true;
 
 
@@ -75,50 +84,77 @@ public class P4ServerManager implements ProjectComponent {
 
     @NotNull
     public List<P4Server> getServers() {
-        if (connectionsValid) {
-            List<P4Server> ret;
-            synchronized (servers) {
-                if (servers.isEmpty()) {
-                    // This happens at startup before the system has loaded,
-                    // or right after an announcement is sent out, before
-                    // we had a chance to reload our server connections.
-
-                    LOG.info("No server connections known for project " + project.getName() + "; forcing an early reload");
-
-                    initializeServers();
-                    // Only the events will reload our servers.
-                } else {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Found server configs " + servers);
-                    }
-                }
-                ret = new ArrayList<P4Server>(servers.size());
-                List<P4Server> invalid = new ArrayList<P4Server>();
-                for (P4Server server: servers.values()) {
-                    if (server.isValid()) {
-                        ret.add(server);
-                    } else {
-                        invalid.add(server);
-                    }
-                }
-                for (P4Server server : invalid) {
-                    LOG.info("Reconnecting to " + server.getClientServerId());
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Valid? " + server.isValid() + "; disposed? " + server.isDisposed() +
-                            "; connection valid? " + server.isConnectionValid());
-                    }
-                    try {
-                        P4Server updated = new P4Server(server.getProject(), server.getProjectConfigSource());
-                        servers.put(updated.getClientServerId(), updated);
-                    } catch (P4InvalidClientException e) {
-                        LOG.info(e);
-                    }
-                }
-            }
-            return ret;
-        } else {
+        if (! connectionsValid) {
             return Collections.emptyList();
         }
+        List<P4Server> ret;
+        if (! hasServers) {
+            // This happens at startup before the system has loaded,
+            // or right after an announcement is sent out, before
+            // we had a chance to reload our server connections.
+
+            // Make sure this runs outside the lock; it will
+            // handle its own locking.
+
+            LOG.info("No server connections known for project " + project.getName() + "; forcing an early reload");
+            initializeServers();
+        }
+        List<P4Server> invalid = new ArrayList<P4Server>();
+        serverLock.lock();
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Found server configs " + servers);
+            }
+            ret = new ArrayList<P4Server>(servers.size());
+
+            for (P4Server server: servers.values()) {
+                if (server.isValid()) {
+                    ret.add(server);
+                } else {
+                    invalid.add(server);
+                }
+            }
+        } finally {
+            serverLock.unlock();
+        }
+
+        // Break that into two separate blocks, so that the
+        // invalid servers are handled on their own.
+        Map<ClientServerId, P4Server> updated = new HashMap<ClientServerId, P4Server>();
+        Set<ClientServerId> removed = new HashSet<ClientServerId>();
+        for (P4Server server : invalid) {
+            LOG.info("Reconnecting to " + server.getClientServerId());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Valid? " + server.isValid() + "; disposed? " + server.isDisposed() +
+                        "; connection valid? " + server.isConnectionValid());
+            }
+            if (server.getProject().isDisposed()) {
+                removed.add(server.getClientServerId());
+            } else {
+                try {
+                    P4Server updatedServer = new P4Server(server.getProject(), server.getProjectConfigSource());
+                    updated.put(updatedServer.getClientServerId(), updatedServer);
+                } catch (P4InvalidClientException e) {
+                    LOG.info(e);
+                    removed.add(server.getClientServerId());
+                }
+            }
+        }
+
+        serverLock.lock();
+        try {
+            for (ClientServerId clientServerId : removed) {
+                servers.remove(clientServerId);
+            }
+            servers.putAll(updated);
+
+            // reset the has server value, since we've updated the list.
+            hasServers = ! servers.isEmpty();
+        } finally {
+            serverLock.unlock();
+        }
+
+        return ret;
     }
 
 
@@ -133,31 +169,31 @@ public class P4ServerManager implements ProjectComponent {
         if (LOG.isDebugEnabled()) {
             LOG.debug("mapping to servers: " + new ArrayList<FilePath>(files));
         }
-        if (connectionsValid) {
-            Map<P4Server, List<FilePath>> ret = new HashMap<P4Server, List<FilePath>>();
-            List<P4Server> servers = getServers();
-            if (servers.isEmpty()) {
-                LOG.info("no valid servers registered");
-                return ret;
-            }
-            // Find the shallowest match.
-            for (FilePath file : files) {
-                P4Server minDepthServer = getServerForPath(servers, file);
-                List<FilePath> match = ret.get(minDepthServer);
-                if (match == null) {
-                    match = new ArrayList<FilePath>();
-                    ret.put(minDepthServer, match);
-                }
-                match.add(file);
-            }
-            return ret;
-        } else {
+        if (! connectionsValid) {
             LOG.info("configs not valid");
             return Collections.emptyMap();
         }
+        Map<P4Server, List<FilePath>> ret = new HashMap<P4Server, List<FilePath>>();
+        List<P4Server> servers = getServers();
+        if (servers.isEmpty()) {
+            LOG.info("no valid servers registered");
+            return ret;
+        }
+        // Find the shallowest match.
+        for (FilePath file : files) {
+            P4Server minDepthServer = getServerForPath(servers, file);
+            List<FilePath> match = ret.get(minDepthServer);
+            if (match == null) {
+                match = new ArrayList<FilePath>();
+                ret.put(minDepthServer, match);
+            }
+            match.add(file);
+        }
+        return ret;
     }
 
-    public Map<P4Server, List<VirtualFile>> mapVirtualFilesToP4Server(final Collection<VirtualFile> files)
+    @NotNull
+    public Map<P4Server, List<VirtualFile>> mapVirtualFilesToP4Server(@NotNull final Collection<VirtualFile> files)
             throws InterruptedException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("mapping to servers: " + new ArrayList<VirtualFile>(files));
@@ -235,71 +271,48 @@ public class P4ServerManager implements ProjectComponent {
             public void configUpdated(@NotNull final Project project,
                     @NotNull final List<ProjectConfigSource> sources) {
 
-                // FIXME at the moment, the underlying server connection
-                // is independent of the project.  Once that changes, we
-                // can be project aware.  Until then, every update causes
-                // the underlying connections to be invalid.
-
-                //if (project != P4ServerManager.this.project) {
-                //    // Does not affect this project
-                //    return;
-                //}
-
-
                 // Connections are potentially invalid.  Because the primary project config may be no longer
                 // valid, just mark all of the configs invalid.
                 // There may also be new connections.  This keeps it all up-to-date.
-                synchronized (servers) {
-                    // Rather than doing things the nice way, we'll
 
-                    for (P4Server server : servers.values()) {
-                        server.dispose();
-                    }
-                    servers.clear();
-                    for (ProjectConfigSource source : sources) {
-                        try {
-                            final P4Server server = new P4Server(project, source);
-                            servers.put(server.getClientServerId(), server);
-                        } catch (P4InvalidClientException e) {
-                            alertManager.addWarning(project,
-                                    P4Bundle.message("errors.no-client.source", source),
-                                    P4Bundle.message("errors.no-client.source", source),
-                                    e, new FilePath[0]);
-                        }
-                    }
+                List<Warning> warnings = new ArrayList<Warning>();
 
-
-                    // client/servers that are not in the new list are marked invalid.
-                    /* Old code that should work.  However, the server configs may all be different now.
-                    Set<ClientServerId> knownServers = new HashSet<ClientServerId>(servers.keySet());
-
-                    for (ProjectConfigSource source : sources) {
-                        final ClientServerId id = source.getClientServerId();
-                        if (knownServers.contains(id)) {
-                            knownServers.remove(id);
-                            servers.get(id).setValid(true);
-                        } else {
-                            try {
-                                final P4Server server = new P4Server(project, source);
-                                servers.put(server.getClientServerId(), server);
-                            } catch (P4InvalidClientException e) {
-                                alertManager.addWarning(project,
-                                        P4Bundle.message("errors.no-client.source", source),
-                                        P4Bundle.message("errors.no-client.source", source),
-                                        e, new FilePath[0]);
+                serverLock.lock();
+                try {
+                    final List<P4Server> serverCopy = new ArrayList<P4Server>(servers.values());
+                    for (P4Server server : serverCopy) {
+                        if (server.getProject().equals(project)) {
+                            server.dispose();
+                            boolean foundSource = false;
+                            for (ProjectConfigSource source : sources) {
+                                if (server.isSameSource(source)) {
+                                    foundSource = true;
+                                    try {
+                                        final P4Server newServer = new P4Server(project, source);
+                                        servers.put(newServer.getClientServerId(), newServer);
+                                    } catch (P4InvalidClientException e) {
+                                        servers.remove(server.getClientServerId());
+                                        warnings.add(new Warning(project,
+                                                P4Bundle.message("errors.no-client.source", source),
+                                                P4Bundle.message("errors.no-client.source", source),
+                                                e));
+                                    }
+                                }
+                            }
+                            if (! foundSource) {
+                                servers.remove(server.getClientServerId());
                             }
                         }
                     }
-                    final AllClientsState clientState = AllClientsState.getInstance();
-                    for (ClientServerId serverId : knownServers) {
-                        // TODO check if this is too aggressive.
-                        servers.get(serverId).setValid(false);
-                        clientState.removeClientState(serverId);
-                        servers.remove(serverId);
-                    }
-                    */
+                    hasServers = ! servers.isEmpty();
+                } finally {
+                    serverLock.unlock();
                 }
                 connectionsValid = true;
+
+                for (Warning warning : warnings) {
+                    warning.post(alertManager);
+                }
             }
         });
 
@@ -312,12 +325,15 @@ public class P4ServerManager implements ProjectComponent {
 
                     // Connections are temporarily invalid.
                     connectionsValid = false;
-                    synchronized (servers) {
+                    serverLock.lock();
+                    try {
                         // TODO examine whether this is appropriate to keep calling.
                         for (P4Server server : servers.values()) {
                             server.setValid(false);
                             clientState.removeClientState(server.getClientServerId());
                         }
+                    } finally {
+                        serverLock.unlock();
                     }
                 }
             }
@@ -326,10 +342,15 @@ public class P4ServerManager implements ProjectComponent {
 
     @Override
     public void disposeComponent() {
-        for (P4Server p4Server : servers.values()) {
-            // Note: don't remove the server from the cache at this point, because
-            // it can be used later
-            p4Server.dispose();
+        serverLock.lock();
+        try {
+            for (P4Server p4Server : servers.values()) {
+                // Note: don't remove the server from the cache at this point, because
+                // it can be used later
+                p4Server.dispose();
+            }
+        } finally {
+            serverLock.lock();
         }
         if (appMessageBus != null) {
             appMessageBus.disconnect();
@@ -376,24 +397,56 @@ public class P4ServerManager implements ProjectComponent {
             sources = cp.loadProjectConfigSources();
         } catch (P4InvalidConfigException e) {
             LOG.info("source load caused error", e);
-            synchronized (servers) {
+            serverLock.lock();
+            try {
                 servers.clear();
+            } finally {
+                serverLock.unlock();
             }
             return;
         }
-        synchronized (servers) {
-            servers.clear();
-            for (ProjectConfigSource source : sources) {
-                try {
-                    final P4Server server = new P4Server(project, source);
-                    servers.put(server.getClientServerId(), server);
-                } catch (P4InvalidClientException e) {
-                    alertManager.addWarning(project,
-                            P4Bundle.message("errors.no-client.source", source),
-                            P4Bundle.message("errors.no-client.source", source),
-                            e, new FilePath[0]);
-                }
+
+        // If this was inside the lock, it could cause a deadlock if waiting on
+        // IDE master password
+        Map<ClientServerId, P4Server> newServers = new HashMap<ClientServerId, P4Server>();
+        for (ProjectConfigSource source : sources) {
+            try {
+                final P4Server server = new P4Server(project, source);
+                newServers.put(server.getClientServerId(), server);
+            } catch (P4InvalidClientException e) {
+                alertManager.addWarning(project,
+                        P4Bundle.message("errors.no-client.source", source),
+                        P4Bundle.message("errors.no-client.source", source),
+                        e, new FilePath[0]);
             }
+        }
+        serverLock.lock();
+        try {
+            servers.clear();
+            servers.putAll(newServers);
+        } finally {
+            serverLock.unlock();
+        }
+    }
+
+    private static class Warning {
+        private final Project project;
+        private final String title;
+        private final String details;
+        private final P4InvalidClientException exception;
+
+        Warning(final Project project, final String title, final String details,
+                final P4InvalidClientException exception) {
+            this.project = project;
+            this.title = title;
+            this.details = details;
+            this.exception = exception;
+        }
+
+        private void post(final AlertManager alertManager) {
+            alertManager.addWarning(this.project,
+                    this.title, this.details, this.exception,
+                    new FilePath[0]);
         }
     }
 }

@@ -61,6 +61,7 @@ public class ServerConnection {
     private final Synchronizer.ServerSynchronizer.ConnectionSynchronizer synchronizer;
     private volatile boolean disposed = false;
     private boolean loadedPendingUpdateStates = false;
+    private volatile boolean setup = false;
     @Nullable
     private ClientExec clientExec;
 
@@ -105,21 +106,34 @@ public class ServerConnection {
     }
 
 
-    public synchronized void postSetup(@NotNull Project project) {
-        // First, check if the server is reachable.
-        // This is necessary to keep the pending changes from being gobbled
-        // up if we have a mistaken online mode set.  If we know we're
-        // working offline, then don't check if we're online (especially since
-        // the user can manually switch to offline mode).
-        if (isWorkingOnline()) {
-            ClientExec.checkIfOnline(project, config, statusController);
+    public void postSetup(@NotNull Project project) {
+        if (setup) {
+            // Already setup, or in the process of being
+            // setup.
+            return;
         }
 
-        // Push all the cached pending updates into the queue for future
-        // processing.
-        if (! loadedPendingUpdateStates) {
-            queueUpdateActions(project, cacheManager.getCachedPendingUpdates());
-            loadedPendingUpdateStates = true;
+        synchronized (clientExecLock) {
+            // Mark the connection has having been setup,
+            // so that we don't try to re-enter this
+            // method and possibly deadlock.
+            setup = true;
+
+            // First, check if the server is reachable.
+            // This is necessary to keep the pending changes from being gobbled
+            // up if we have a mistaken online mode set.  If we know we're
+            // working offline, then don't check if we're online (especially since
+            // the user can manually switch to offline mode).
+            if (isWorkingOnline()) {
+                ClientExec.checkIfOnline(project, config, statusController);
+            }
+
+            // Push all the cached pending updates into the queue for future
+            // processing.
+            if (!loadedPendingUpdateStates) {
+                queueUpdateActions(project, cacheManager.getCachedPendingUpdates());
+                loadedPendingUpdateStates = true;
+            }
         }
     }
 

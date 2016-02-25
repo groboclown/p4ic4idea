@@ -524,6 +524,11 @@ public class ClientExec {
             P4LoginException ex = new P4LoginException(e);
             // Don't explicitly tell the user about this; it will show up eventually.
             throw ex;
+        } catch (LoginRequiresPasswordException e) {
+            LOG.info("No password known, and the server requires a password.");
+            P4LoginException ex = new P4LoginException(e);
+            // Don't explicitly tell the user about this; it will show up eventually.
+            throw ex;
         } catch (AccessException e) {
             LOG.info("Problem accessing resources (password problem, with " + loginCount + " retries)", e);
             return onPasswordProblem(project, e, runner, retryCount, loginCount);

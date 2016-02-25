@@ -23,6 +23,7 @@ import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.ConfigurationProblem;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
+import net.groboclown.idea.p4ic.server.exceptions.LoginRequiresPasswordException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.PasswordManager;
@@ -131,7 +132,7 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
             } catch (AccessException ex) {
                 LOG.info("Stored password was bad; forgetting it", ex);
                 PasswordManager.getInstance().forgetPassword(project, config);
-                return ex;
+                return new LoginRequiresPasswordException(ex);
             }
         }
     }

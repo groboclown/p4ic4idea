@@ -40,6 +40,7 @@
       specifying an authentication ticket or a password.
     * Fixed a deadlock associated with initial startup when asking the
       user for the master IDEA password.
+    * Fixed ignored tick marks (') in messages.
     * Fixed compilation errors against the latest IDEA version of the
       primary plugin.  This may result in you needing to reload your
       Perforce configuration.

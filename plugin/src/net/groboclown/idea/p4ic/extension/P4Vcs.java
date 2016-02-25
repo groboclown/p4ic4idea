@@ -307,7 +307,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             }
         });
 
-        // FIXME this may be a good time to check for passwords and connectivity
+        // This is a good time to check for passwords and connectivity
         // See bugs #81, #84
 
         refreshServerConnectivity();

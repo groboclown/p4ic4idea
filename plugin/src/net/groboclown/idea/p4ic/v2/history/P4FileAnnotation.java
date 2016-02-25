@@ -206,8 +206,7 @@ public class P4FileAnnotation extends FileAnnotation {
                 revs.add(fileRev);
             }
         }
-        // FIXME DEBUG
-        LOG.info("getRevisions(): " + revs.size() + " " + revs);
+        LOG.debug("getRevisions(): " + revs.size() + " " + revs);
         return new ArrayList<VcsFileRevision>(revs);
     }
 

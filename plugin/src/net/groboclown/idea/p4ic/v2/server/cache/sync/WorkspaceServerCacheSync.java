@@ -144,21 +144,6 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                         ret.add(state);
                     }
                 }
-
-                // Check for move source file
-                // FIXME debug
-                /*
-                LOG.info("depot path: " + depotPath);
-                LOG.info("from path: " + spec.getFromFile());
-                LOG.info("base path: " + spec.getBaseFile());
-                String fromPath = spec.getFromFile();
-                if (fromPath != null) {
-
-                    FilePath clientFromPath = clientSpecToFilePath(project,
-                            FileSpecUtil.getFromDepotPath(fromPath, -1));
-                }
-                */
-
             }
         }
         return ret;

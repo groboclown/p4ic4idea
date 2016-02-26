@@ -29,8 +29,6 @@ import org.jetbrains.annotations.Nullable;
     }
 )
 public class UserProjectPreferences implements PersistentStateComponent<UserProjectPreferences.State> {
-    public static final int MIN_SERVER_CONNECTIONS = 1;
-    public static final int MAX_SERVER_CONNECTIONS = 5;
     public static final int DEFAULT_SERVER_CONNECTIONS = 2;
     public static final int MIN_CONNECTION_WAIT_TIME_MILLIS = 500;
     public static final int MAX_CONNECTION_WAIT_TIME_MILLIS = 5 * 60 * 1000;

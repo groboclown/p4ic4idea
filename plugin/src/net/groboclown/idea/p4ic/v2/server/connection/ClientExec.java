@@ -706,10 +706,8 @@ public class ClientExec {
                 count.invoke("forcedAuthentication");
                 boolean forced = connectionHandler.forcedAuthentication(project, server, config,
                         AlertManager.getInstance());
-                if (forced) {
-                    // FIXME
-                    // FIXME
-                }
+                // TODO check if a forced authentication
+                // requires a specific action.
                 return forced;
             }
         }, true)) {

@@ -20,6 +20,9 @@
                     issue where the plugin can continuously ask for the password;
                     this could happen if you use the configuration file without
                     specifying an authentication ticket or a password.</li>
+                    <li>Fixed a deadlock associated with initial startup when asking the
+                    user for the master IDEA password.</li>
+                    <li>Fixed ignored tick marks (') in messages.</li>
                 </ol>
             </li>
             <li><em>0.7.5</em>

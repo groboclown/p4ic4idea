@@ -46,6 +46,10 @@ public class P4StatusMessage {
                 spec.getOpStatus() != FileSpecOpStatus.INFO;
     }
 
+    public boolean isWarningOrError() {
+        return spec.getOpStatus() != FileSpecOpStatus.VALID;
+    }
+
     public int getErrorCode() {
         return spec.getGenericCode();
     }
@@ -201,6 +205,23 @@ public class P4StatusMessage {
                 if (spec.getOpStatus() != FileSpecOpStatus.VALID) {
                     ret.add(new P4StatusMessage(spec));
                 }
+            }
+        }
+        return ret;
+    }
+
+
+    @NotNull
+    public static List<? extends VcsException> getErrorsAndWarningsAsExceptions(
+            @Nullable List<P4StatusMessage> p4StatusMessages, boolean ignoreFileNotFoundErrors) {
+        if (p4StatusMessages == null || p4StatusMessages.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<VcsException> ret = new ArrayList<VcsException>(p4StatusMessages.size());
+        for (P4StatusMessage msg : p4StatusMessages) {
+            if (msg.isWarningOrError() && msg.toString().length() > 0 &&
+                    (!ignoreFileNotFoundErrors || !msg.isFileNotFoundError())) {
+                ret.add(new VcsException(msg.toString()));
             }
         }
         return ret;

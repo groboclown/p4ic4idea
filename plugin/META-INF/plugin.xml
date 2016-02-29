@@ -22,6 +22,8 @@
                     specifying an authentication ticket or a password.</li>
                     <li>Fixed a deadlock associated with initial startup when asking the
                     user for the master IDEA password.</li>
+                    <li>Fixed submit issue where only the error would be reported;
+                    now, all messages are reported to the user.</li>
                     <li>Fixed ignored tick marks (') in messages.</li>
                 </ol>
             </li>

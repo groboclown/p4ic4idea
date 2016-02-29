@@ -161,7 +161,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                     if (! problem.isNull()) {
                         errors.add(problem.get());
                     }
-                    errors.addAll(P4StatusMessage.messagesAsErrors(results.get()));
+                    errors.addAll(P4StatusMessage.getErrorsAndWarningsAsExceptions(results.get(), false));
                 } catch (P4DisconnectedException e) {
                     LOG.warn(e);
                     errors.add(e);

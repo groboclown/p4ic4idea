@@ -12,6 +12,8 @@
                     edited but not checked out.</li>
                     <li>Added user preference to disable server-side file comparison when checking
                     for edited but not checked out status.</li>
+                    <li>Added user preference for switching between showing revision numbers and
+                    changelist numbers.</li>
                     <li>Fixed compilation errors against the latest IDEA version of the
                     primary plugin.  This may result in you needing to reload your
                     Perforce configuration.</li>

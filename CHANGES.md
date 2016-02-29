@@ -9,6 +9,8 @@
   edited but not checked out.
 * Added user preference to disable server-side file comparison when checking
   for edited but not checked out status.
+* Added user preference for switching between showing revision numbers and
+  changelist numbers.
 * Bug fixes.
 
 ### Details
@@ -29,6 +31,9 @@
       drag.  This checkbox will turn that functionality off.
     * Note that with this functionality off, you may see files incorrectly
       marked as "changed but not open for edit". 
+* Added user preference for switching between showing revision numbers and
+  changelist numbers.
+    * Changes which numbers are shown in annotations and history.
 * Bug fixes.
     * Fixed the build so that it will correctly check the primary
       plugin against all supported IDEA versions, rather than just

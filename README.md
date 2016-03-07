@@ -92,6 +92,11 @@ standard keys:
   config files referencing other config files.
 * `P4CLIENT`: Default client workspace name.  You can override this
   in the UI.
+* `P4HOST`: Your computer's host name.  This only needs to be set if you
+  see an error message in the form "Your workspace can only be used from
+  host (hostname)."  This stems from a problem where Java doesn't recognize
+  your hostname in the same form and case as the Perforce workspace
+  setting.
 
 
 ### Environment Variables

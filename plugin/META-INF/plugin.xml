@@ -1,11 +1,18 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.6</version>
+    <version>0.7.7</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.7.7</em>
+                <ol>
+                  <li>Fixed an issue where the user may be
+                  told repeatedly that their password is wrong,
+                  even though it's correct.</li>
+                </ol>
+            </li>
             <li><em>0.7.6</em>
                 <ol>
                     <li>Switched to using MD5 hash codes when comparing if a file is actually
@@ -27,30 +34,6 @@
                     <li>Fixed submit issue where only the error would be reported;
                     now, all messages are reported to the user.</li>
                     <li>Fixed ignored tick marks (') in messages.</li>
-                </ol>
-            </li>
-            <li><em>0.7.5</em>
-                <ol>
-                  <li>Switched to JDK 1.8 compiler for IDEA 16
-                  support.  The primary components of the plugin are
-                  still built with 1.6 compatibility, so older IDEs
-                  should continue to work.</li>
-                  <li>Trimmed whitespace on job IDs in the submit dialog.</li>
-                  <li>Annotation set before / after popup now shows correct list of
-                  revisions.</li>
-                  <li>Allow for pushing the open-for-edit on keystroke to be pushed
-                  out to a background thread.  Some users were encountering
-                  performance issues when opening a file for edit (#99),
-                  and this new option will allow for moving as much of that
-                  processing to away from the event thread.  The option is
-                  in the **User Preferences** of the Perforce VCS panel, titled
-                  "Open for edit in background."</li>
-                  <li>Removed the obsolete user preference for setting the maximum
-                  number of concurrent connections.  This is now limited to one
-                  per workspace.</li>
-                  <li>Fixed an IllegalStateException that could occur when refreshing
-                  the changelist view, when the P4 changelist was submitted or deleted on the
-                  server.</li>
                 </ol>
             </li>
         </ol>

@@ -17,7 +17,9 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.exception.AccessException;
+import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.config.ServerConfig;
@@ -30,9 +32,7 @@ import net.groboclown.idea.p4ic.v2.server.connection.PasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Does not look at the P4CONFIG.  Uses a password for authentication.
@@ -41,6 +41,23 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
     private static final Logger LOG = Logger.getInstance(ClientPasswordConnectionHandler.class);
 
     public static ClientPasswordConnectionHandler INSTANCE = new ClientPasswordConnectionHandler();
+
+    // TODO this is a poor work-around for bugs #105 and #107
+    // Essentially, a loop starts occurring where the initial
+    // login attempt triggers a false authentication request.
+    // This work-around keeps track of the servers that have
+    // already had their authentication called (in a weak
+    // map, to hopefully keep the memory leaks low), and will
+    // make an attempt to validate whether it really is
+    // in need of authentication or not.
+
+    // There is a gap in functionality here, when a
+    // user who isn't authorized to act upon a part of the
+    // registry gets a correct unauthorized error, but the
+    // check that we make ("getUser") passes without issue.
+    // That could be alleviated, possibly, by keeping a record
+    // of the number of invalid requests.
+    private Map<IOptionsServer, Throwable> authenticatedServers = new WeakHashMap<IOptionsServer, Throwable>();
 
     ClientPasswordConnectionHandler() {
         // stateless utility class
@@ -94,6 +111,18 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
     private AccessException authenticate(@Nullable Project project, @NotNull IOptionsServer server,
             @NotNull ServerConfig config, boolean force)
             throws P4JavaException {
+        if (authenticatedServers.containsKey(server))
+        {
+            LOG.info(authenticatedServers.get(server));
+            AccessException ex = testLogin(server, config.getUsername());
+            if (ex == null)
+            {
+                LOG.warn("Already authenticated server correctly!");
+                return null;
+            }
+            LOG.warn("login attempts have been wrong; try again", ex);
+        }
+
         // Default login - use the simple password
         final String password;
         try {
@@ -111,7 +140,7 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
             try {
                 server.login(password, new LoginOptions(false, true));
                 LOG.debug("No issue logging in with stored password");
-                return null;
+                return testLogin(server, config.getUsername());
             } catch (AccessException ex) {
                 LOG.info("Stored password was bad; forgetting it", ex);
                 PasswordManager.getInstance().forgetPassword(project, config);
@@ -124,17 +153,33 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
                 }
             }
         } else {
-            try {
-                // Perform an operation that should succeed, and only fail if the
-                // login is wrong.
-                server.getUser(config.getUsername());
-                return null;
-            } catch (AccessException ex) {
+            AccessException ex = testLogin(server, config.getUsername());
+            if (ex != null)
+            {
                 LOG.info("Stored password was bad; forgetting it", ex);
                 PasswordManager.getInstance().forgetPassword(project, config);
                 return new LoginRequiresPasswordException(ex);
             }
+            return null;
         }
+    }
+
+
+    private AccessException testLogin(final IOptionsServer server, final String username)
+            throws ConnectionException, RequestException {
+        try {
+            // Perform an operation that should succeed, and only fail if the
+            // login is wrong.
+            server.getUser(username);
+            if (!authenticatedServers.containsKey(server)) {
+                authenticatedServers.put(server, new Throwable());
+            }
+            return null;
+        } catch (AccessException ex) {
+            authenticatedServers.remove(server);
+            return ex;
+        }
+
     }
 
 }

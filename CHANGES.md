@@ -1,5 +1,18 @@
 # IDEA Community VCS Integration for Perforce
 
+## ::v0.7.7::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Fixed an issue where the user may be
+      told repeatedly that their password is wrong,
+      even though it's correct. (#105, #107)
+
 
 ## ::v0.7.6::
 

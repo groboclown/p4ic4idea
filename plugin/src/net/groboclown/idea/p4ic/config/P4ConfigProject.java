@@ -21,7 +21,6 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsListener;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
@@ -223,7 +222,14 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
     }
 
     private void initializeConfigSources() {
-        if (!P4Vcs.isProjectValid(project)) {
+        // This situation can happen if the user is in the middle
+        // of configuring the plugin as the new, active vcs.
+        // if (!P4Vcs.isProjectValid(project)) {
+        // So, instead, we'll only check to ensure that the
+        // project is not disposed.
+        // See bug #111
+
+        if (project.isDisposed()) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Ignoring reload for invalid project " + project.getName());
             }

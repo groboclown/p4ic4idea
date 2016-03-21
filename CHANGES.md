@@ -1,5 +1,18 @@
 # IDEA Community VCS Integration for Perforce
 
+## ::v0.7.8::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    *  Initial project VCS setup causes "OK" and "Apply"
+       buttons to not react. (#111)
+
+
 ## ::v0.7.7::
 
 ### Overview

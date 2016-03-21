@@ -1,11 +1,18 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.7</version>
+    <version>0.7.8</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.7.8</em>
+                <ol>
+                  <li>Initial project VCS setup no longer
+                  causes "OK" and "Apply"
+                  buttons to not react.</li>
+                </ol>
+            </li>
             <li><em>0.7.7</em>
                 <ol>
                   <li>Fixed an issue where the user may be

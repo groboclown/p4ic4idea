@@ -148,7 +148,6 @@ class AuthenticatedServer {
                 try {
                     // Sleeping a bit may cause the server to reauthenticate
                     // correctly.
-                    Thread.sleep(RECONNECTION_WAIT_MILLIS);
                     server = reconnect(project, clientName, connectionHandler, config, tempDir,
                             serverInstance);
                     connectedCount++;
@@ -160,8 +159,6 @@ class AuthenticatedServer {
                         return true;
                     }
                 } catch (URISyntaxException e) {
-                    throw new P4JavaException(e);
-                } catch (InterruptedException e) {
                     throw new P4JavaException(e);
                 }
             }
@@ -176,6 +173,10 @@ class AuthenticatedServer {
 
     private void forceAuthenticate() throws P4JavaException {
         try {
+            // It looks like forced authentication can fail due to too many
+            // quick requests to the server.  So wait a little bit to
+            // give the server time to recover.
+            Thread.sleep(RECONNECTION_WAIT_MILLIS);
             CONNECT_LOCK.lockInterruptibly();
             try {
                 connectionHandler.forcedAuthentication(project, server, config, AlertManager.getInstance());

@@ -149,7 +149,8 @@ public class CentralCacheManager {
         try {
             cacheManager = clientManagers.get(clientServerId);
             if (cacheManager == null) {
-                final ClientLocalServerState state = allClientState.getStateForClient(clientServerId,
+                final ClientLocalServerState state = allClientState.getStateForClient(
+                        clientServerId,
                         isServerCaseInsensitiveCallable);
                 cacheManager = new ClientCacheManager(config, state);
                 clientManagers.put(clientServerId, cacheManager);

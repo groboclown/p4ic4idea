@@ -18,14 +18,11 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.openapi.vcs.VcsException;
-import com.perforce.p4java.Log;
-import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerInfo;
-import com.perforce.p4java.server.callback.ILogCallback;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.ServerConfig;
@@ -43,14 +40,17 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
 /**
  * A client-aware connection to a Perforce server.
  */
-public class ClientExec {
+class ClientExec {
     private static final Logger LOG = Logger.getInstance(ClientExec.class);
     private static final AllServerCount SERVER_COUNT = new AllServerCount();
 
@@ -68,12 +68,10 @@ public class ClientExec {
     private boolean disposed = false;
 
     @Nullable
-    private IOptionsServer cachedServer;
-
-    private boolean performLogin = true;
+    private AuthenticatedServer cachedServer;
 
 
-    public ClientExec(@NotNull ServerConfig config, @NotNull ServerStatusController connectedController,
+    ClientExec(@NotNull ServerConfig config, @NotNull ServerStatusController connectedController,
             @Nullable String clientName)
             throws P4InvalidConfigException {
         this.connectedController = connectedController;
@@ -130,40 +128,27 @@ public class ClientExec {
      *    into the ClientExec non-static.
      */
     @Deprecated
-    static IServerInfo getServerInfo(@Nullable Project project, @NotNull ServerConfig config)
+    static IServerInfo getServerInfo(@NotNull Project project, @NotNull ServerConfig config)
             throws IOException, P4JavaException, URISyntaxException, P4LoginException {
         ConnectionHandler connectionHandler = ConnectionHandler.getHandlerFor(config);
 
-        final IOptionsServer server = connectTo(project, null, connectionHandler, config,
+        final AuthenticatedServer server = connectTo(project, null, connectionHandler, config,
                 getTempDir(project));
         try {
-            return server.getServerInfo();
-        } catch (RequestException e) {
-            if (isPasswordProblem(e)) {
-                return forceAuthenticationServerInfo(project, connectionHandler, server, config);
-            } else {
-                throw e;
+            try {
+                return server.getServer().getServerInfo();
+            } catch (P4JavaException e) {
+                if (isPasswordProblem(e)) {
+                    if (!server.authenticate()) {
+                        throw new P4LoginException(project, config, e);
+                    }
+                    return server.getServer().getServerInfo();
+                } else {
+                    throw e;
+                }
             }
-        } catch (AccessException e) {
-            return forceAuthenticationServerInfo(project, connectionHandler, server, config);
         } finally {
             server.disconnect();
-        }
-    }
-
-    private static IServerInfo forceAuthenticationServerInfo(@Nullable Project project,
-            @NotNull ConnectionHandler connectionHandler, @NotNull IOptionsServer server,
-            @NotNull ServerConfig config) throws P4JavaException, P4LoginException {
-        try {
-            connectionHandler.forcedAuthentication(project, server, config, AlertManager.getInstance());
-            return server.getServerInfo();
-        } catch (RequestException e) {
-            if (isPasswordProblem(e)) {
-                throw new P4LoginException(project, config, e);
-            }
-            throw e;
-        } catch (AccessException e) {
-            throw new P4LoginException(project, config, e);
         }
     }
 
@@ -239,17 +224,20 @@ public class ClientExec {
     static List<String> getClientNames(@Nullable Project project, @NotNull ServerConfig config)
             throws IOException, P4JavaException, URISyntaxException, P4LoginException {
         ConnectionHandler connectionHandler = ConnectionHandler.getHandlerFor(config);
-        final IOptionsServer server = connectTo(project, null, connectionHandler, config,
+        final AuthenticatedServer server = connectTo(project, null, connectionHandler, config,
                 getTempDir(project));
         try {
-            return getClientNames(server, config.getUsername());
-        } catch (RequestException e) {
-            if (isPasswordProblem(e)) {
-                return forceAuthenticationGetClients(project, connectionHandler, server, config);
+            try {
+                return getClientNames(server.getServer(), config.getUsername());
+            } catch (P4JavaException e) {
+                if (isPasswordProblem(e)) {
+                    if (! server.authenticate()) {
+                        throw new P4LoginException(project, config, e);
+                    }
+                    return getClientNames(server.getServer(), config.getUsername());
+                }
+                throw e;
             }
-            throw e;
-        } catch (AccessException e) {
-            return forceAuthenticationGetClients(project, connectionHandler, server, config);
         } finally {
             server.disconnect();
         }
@@ -270,59 +258,36 @@ public class ClientExec {
     }
 
 
-    private static List<String> forceAuthenticationGetClients(@Nullable final Project project,
-            @NotNull final ConnectionHandler connectionHandler,
-            @NotNull final IOptionsServer server, @NotNull final ServerConfig config)
-            throws P4JavaException, P4LoginException {
-        try {
-            connectionHandler.forcedAuthentication(project, server, config, AlertManager.getInstance());
-            return getClientNames(server, config.getUsername());
-        } catch (RequestException e) {
-            if (isPasswordProblem(e)) {
-                throw new P4LoginException(project, config, e);
-            }
-            throw e;
-        } catch (AccessException e) {
-            throw new P4LoginException(project, config, e);
-        }
-    }
-
-
     <T> T runWithClient(@NotNull final Project project, @NotNull final WithClient<T> runner)
             throws VcsException, CancellationException {
         return p4RunFor(project, new P4Runner<T>() {
             @Override
             public T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
-                final IOptionsServer server = connectServer(project, getTempDir(project));
+                final AuthenticatedServer server = connectServer(project, getTempDir(project));
 
                 // note: we're not caching the client
-                final IClient client = loadClient(server);
+                final IClient client = loadClient(server.getServer());
                 if (client == null) {
                     throw new ConfigException(P4Bundle.message("error.run-client.invalid-client", clientName));
                 }
 
                 // disconnect happens as a separate activity.
-                return runner.run(server, client, new WithClientCount(config.getServiceName(), clientName));
+                return runner.run(server.getServer(), client,
+                        new WithClientCount(config.getServiceName(), clientName));
             }
         });
     }
 
-
-    <T> T runWithServer(@NotNull Project project, @NotNull final WithServer<T> runner)
-            throws VcsException, CancellationException {
-        return runWithServer(project, runner, false);
-    }
-
-
-    private <T> T runWithServer(@NotNull final Project project, @NotNull final WithServer<T> runner, boolean triedLogin)
+    <T> T runWithServer(@NotNull final Project project, @NotNull final WithServer<T> runner)
             throws VcsException, CancellationException {
         return p4RunFor(project, new P4Runner<T>() {
             @Override
             public T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 // disconnect happens as a separate activity.
-                return runner.run(connectServer(project, getTempDir(project)), new WithClientCount(config.getServiceName()));
+                return runner.run(connectServer(project, getTempDir(project)).getServer(),
+                        new WithClientCount(config.getServiceName()));
             }
-        }, 0, triedLogin ? 1 : 0);
+        }, 0);
     }
 
 
@@ -355,14 +320,14 @@ public class ClientExec {
 
 
     @NotNull
-    private IOptionsServer connectServer(@Nullable Project project, @NotNull final File tempDir)
+    private AuthenticatedServer connectServer(@Nullable Project project, @NotNull final File tempDir)
             throws P4JavaException, URISyntaxException {
         synchronized (sync) {
             if (disposed) {
                 throw new ConnectionException(P4Bundle.message("error.p4exec.disposed"));
             }
-            if (cachedServer != null && ! cachedServer.isConnected()) {
-                cachedServer.disconnect();
+            if (cachedServer != null && cachedServer.isDisconnected()) {
+                // cachedServer.disconnect();
                 cachedServer = null;
             }
             if (cachedServer == null) {
@@ -370,97 +335,18 @@ public class ClientExec {
             }
         }
 
-
         return cachedServer;
     }
 
 
     @NotNull
-    private static IOptionsServer connectTo(@Nullable Project project,
+    private static AuthenticatedServer connectTo(@Nullable Project project,
             @Nullable String clientName, @NotNull ConnectionHandler connectionHandler,
             @NotNull ServerConfig config, @NotNull File tempDir)
             throws P4JavaException, URISyntaxException {
-        // Setup logging
-        if (Log.getLogCallback() == null) {
-            Log.setLogCallback(new ILogCallback() {
-                // errors are pushed up to the normal logging mechanisms,
-                // so no need to mark it as error here.
 
-                @Override
-                public void internalError(final String errorString) {
-                    LOG.warn("p4java error: " + errorString);
-                }
-
-                @Override
-                public void internalException(final Throwable thr) {
-                    LOG.info("p4java error", thr);
-                }
-
-                @Override
-                public void internalWarn(final String warnString) {
-                    LOG.info("p4java warning: " + warnString);
-                }
-
-                @Override
-                public void internalInfo(final String infoString) {
-                    LOG.debug("p4java info: " + infoString);
-                }
-
-                @Override
-                public void internalStats(final String statsString) {
-                    LOG.debug("p4java stats: " + statsString);
-                }
-
-                @Override
-                public void internalTrace(final LogTraceLevel traceLevel, final String traceMessage) {
-                    LOG.debug("p4java trace: " + traceMessage);
-                }
-
-                @Override
-                public LogTraceLevel getTraceLevel() {
-                    return LOG.isDebugEnabled() ? LogTraceLevel.ALL : LogTraceLevel.FINE;
-                }
-            });
-        }
-
-
-
-        final Properties properties;
-        final String url;
-        final IOptionsServer server;
-        properties = connectionHandler.getConnectionProperties(config, clientName);
-        properties.setProperty(PropertyDefs.P4JAVA_TMP_DIR_KEY, tempDir.getAbsolutePath());
-        url = connectionHandler.createUrl(config);
-        LOG.info("Opening connection to " + url + " with " + config.getUsername());
-
-        // see bug #61
-        // Hostname as used by the Java code:
-        //   Mac clients can incorrectly set the hostname.
-        //   The underlying code will use:
-        //      InetAddress.getLocalHost().getHostName()
-        //   or from the UsageOptions passed into the
-        //   server configuration `init` method.
-
-        // Use the ConnectionHandler so that mock objects can work better
-        server = connectionHandler.getOptionsServer(url, properties, config);
-
-        // These seem to cause issues.
-        //server.registerCallback(new LoggingCommandCallback());
-        //server.registerProgressCallback(new LoggingProgressCallback());
-
-        server.connect();
-
-        // If there is a password problem, we still want
-        // to maintain our cached server, so a retry doesn't
-        // recreate the server connection again.
-
-        // However, the way this is written allows for
-        // an invalid password to cause the server connection
-        // to never be returned.
-
-        connectionHandler.defaultAuthentication(project, server, config);
-
-        return server;
+        return new AuthenticatedServer(project, clientName, connectionHandler,
+                config, tempDir);
     }
 
 
@@ -480,12 +366,35 @@ public class ClientExec {
 
     private <T> T p4RunFor(@NotNull Project project, @NotNull P4Runner<T> runner)
             throws VcsException, CancellationException {
-        return p4RunFor(project, runner, 0, 0);
+        return p4RunFor(project, runner, 0);
     }
 
 
-    private <T> T p4RunFor(@NotNull Project project, @NotNull P4Runner<T> runner, int retryCount, int loginCount)
+    private <T> T p4RunFor(@NotNull Project project, @NotNull P4Runner<T> runner, int retryCount)
             throws VcsException, CancellationException {
+        try {
+            return p4RunWithSkippedPasswordCheck(project, runner, retryCount);
+        } catch (P4JavaException e) {
+            if (isPasswordProblem(e)) {
+                try {
+                    return onPasswordProblem(project, e, runner, retryCount);
+                } catch (P4JavaException pwEx) {
+                    if (isPasswordProblem(pwEx)) {
+                        // just bad.
+                        throw loginFailure(project, getServerConfig(), getServerConnectedController(), e);
+                    }
+                    throw new P4Exception(pwEx);
+                }
+            }
+            // Probably a problem with the user unable to perform an operation because
+            // they don't have explicit permissions to perform it (such as writing to
+            // a part of the depot that's protected).
+            throw new P4Exception(e);
+        }
+    }
+
+    private <T> T p4RunWithSkippedPasswordCheck(@NotNull Project project, @NotNull P4Runner<T> runner, int retryCount)
+            throws VcsException, CancellationException, P4JavaException {
         // Must check offline status
         if (connectedController.isWorkingOffline()) {
             // should never get to this point; the online/offline status should
@@ -521,17 +430,18 @@ public class ClientExec {
             throw new P4ApiException(e);
         } catch (PasswordAccessedWrongException e) {
             LOG.info("Could not get the password yet");
-            P4LoginException ex = new P4LoginException(e);
             // Don't explicitly tell the user about this; it will show up eventually.
-            throw ex;
+            throw new P4LoginException(e);
         } catch (LoginRequiresPasswordException e) {
             LOG.info("No password known, and the server requires a password.");
             P4LoginException ex = new P4LoginException(e);
             // Don't explicitly tell the user about this; it will show up eventually.
             throw ex;
         } catch (AccessException e) {
-            LOG.info("Problem accessing resources (password problem, with " + loginCount + " retries)", e);
-            return onPasswordProblem(project, e, runner, retryCount, loginCount);
+            // Most probably a password problem.
+            LOG.info("Problem accessing resources (password problem?) with " + cachedServer, e);
+            // This is handled by the outside caller
+            throw e;
         } catch (ConfigException e) {
             LOG.info("Problem with configuration", e);
             P4InvalidConfigException ex = new P4InvalidConfigException(e);
@@ -548,7 +458,7 @@ public class ClientExec {
                         .addCriticalError(new DisconnectedHandler(project, connectedController, ex), ex);
                 throw ex;
             } else {
-                return p4RunFor(project, runner, retryCount + 1, loginCount);
+                return p4RunFor(project, runner, retryCount + 1);
             }
         } catch (TrustException e) {
             LOG.info("SSL trust problem", e);
@@ -600,7 +510,7 @@ public class ClientExec {
                 AlertManager.getInstance().addCriticalError(new DisconnectedHandler(project, connectedController, ex), ex);
                 throw ex;
             }
-            return p4RunFor(project, runner, retryCount + 1, loginCount);
+            return p4RunFor(project, runner, retryCount + 1);
         } catch (FileDecoderException e) {
             // Server -> client encoding problem
             LOG.info("File decoder problem", e);
@@ -619,14 +529,11 @@ public class ClientExec {
             throw new P4Exception(e);
         } catch (RequestException e) {
             LOG.info("Request problem", e);
-            if (isPasswordProblem(e)) {
-                return onPasswordProblem(project, e, runner, retryCount, loginCount);
-            } else {
-                // Don't know what it really is, but it's a problem
-                // with the server interpretation of the command, rather than
-                // the connection.
-                throw new P4Exception(e);
-            }
+
+            // This is handled by the parent, as it's most
+            // likely a password problem.  The other possibility
+            // is the client API implementation is bad.
+            throw e;
         } catch (ResourceException e) {
             // The ServerFactory doesn't have the resources available to create a
             // new connection to the server.
@@ -690,31 +597,23 @@ public class ClientExec {
     }
 
     private <T> T onPasswordProblem(@NotNull final Project project, @NotNull final P4JavaException e,
-            @NotNull final P4Runner<T> runner,
-            final int retryCount, final int loginCount) throws VcsException {
-        if (loginCount >= 3) {
-            throw loginFailure(project, getServerConfig(), getServerConnectedController(), e);
+            @NotNull final P4Runner<T> runner, final int retryCount) throws VcsException, P4JavaException {
+        if (e.getCause() != null && (e.getCause() instanceof PasswordAccessedWrongException)) {
+            // not a login failure.
+            throw e;
         }
-        if (loginCount >= 1) {
-            // attempt to disconnect the server first, then retry the login.
-            // it appears that, after some time, the connection gets unstable.
-            invalidateCache();
-        }
-        if (runWithServer(project, new WithServer<Boolean>() {
+        if (p4RunWithSkippedPasswordCheck(project, new P4Runner<Boolean>() {
             @Override
-            public Boolean run(@NotNull IOptionsServer server, @NotNull ServerCount count) throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
-                count.invoke("forcedAuthentication");
-                boolean forced = connectionHandler.forcedAuthentication(project, server, config,
-                        AlertManager.getInstance());
-                // TODO check if a forced authentication
-                // requires a specific action.
-                return forced;
+            public Boolean run()
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                LOG.info("Encountered password issue; attempting to reauthenticate " + cachedServer);
+                return cachedServer.authenticate();
             }
-        }, true)) {
-            return p4RunFor(project, runner, retryCount, loginCount + 1);
-        } else {
-            throw loginFailure(project, getServerConfig(), getServerConnectedController(), e);
+        }, /* first attempt at this login attempt, so retry is 0 */0)) {
+            return p4RunWithSkippedPasswordCheck(project, runner, retryCount + 1);
         }
+        throw loginFailure(project, getServerConfig(), getServerConnectedController(), e);
     }
 
 
@@ -728,11 +627,24 @@ public class ClientExec {
     }
 
 
-    private static boolean isPasswordProblem(@NotNull RequestException e) {
+    private static boolean isPasswordProblem(@NotNull P4JavaException ex) {
         // TODO replace with error code checking
 
-        return (e.hasMessageFragment("Your session has expired, please login again.")
-                || e.hasMessageFragment("Perforce password (P4PASSWD) invalid or unset."));
+        if (ex instanceof RequestException) {
+            RequestException rex = (RequestException) ex;
+            return (rex.hasMessageFragment("Your session has expired, please login again.")
+                    || rex.hasMessageFragment("Perforce password (P4PASSWD) invalid or unset."));
+        }
+        if (ex instanceof AccessException) {
+            AccessException aex = (AccessException) ex;
+            // see Server for a list of the authentication failure messages.
+            return aex.hasMessageFragment("Perforce password (P4PASSWD)");
+        }
+        //if (ex instanceof LoginRequiresPasswordException) {
+        //    LOG.info("No password specified, but one is needed", ex);
+        //    return false;
+        //}
+        return false;
     }
 
 

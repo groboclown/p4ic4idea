@@ -86,7 +86,11 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
     public P4MultipleConnectionWidget(@NotNull P4Vcs vcs, @NotNull Project project) {
         myVcs = vcs;
         this.project = project;
-        setValues();
+
+        // Setting values requires connecting to the servers, which cannot be
+        // done at startup time (see bug #110).
+        // setValues();
+
         appMessageBus = ApplicationManager.getApplication().getMessageBus().connect();
 
         ConnectionStateListener listener = new ConnectionStateListener();
@@ -220,7 +224,10 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
         });
     }
 
-    private void setValues() {
+    // MUST BE RUN IN THE EDT!!!
+    public void setValues() {
+        ApplicationManager.getApplication().assertIsDispatchThread();
+
         int online = 0;
         int offline = 0;
         if (myVcs != null) {

@@ -278,20 +278,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         VcsCompat.getInstance().setupPlugin(myProject);
         ChangeListManager.getInstance(myProject).addChangeListListener(changelistListener);
 
-        if (!ApplicationManager.getApplication().isHeadlessEnvironment()) {
-            final StatusBar statusBar = WindowManager.getInstance().getStatusBar(myProject);
-            if (statusBar != null) {
-                connectionWidget = new P4MultipleConnectionWidget(this, myProject);
-                ApplicationManager.getApplication().invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                    statusBar.addWidget(connectionWidget,
-                            "after " + (SystemInfo.isMac ? "Encoding" : "InsertOverwrite"), myProject);
-                    }
-                }, ModalityState.NON_MODAL);
-            }
-        }
-
         projectMessageBusConnection = myProject.getMessageBus().connect();
         appMessageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
 
@@ -307,10 +293,23 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             }
         });
 
-        // This is a good time to check for passwords and connectivity
-        // See bugs #81, #84
 
-        refreshServerConnectivity();
+        if (!ApplicationManager.getApplication().isHeadlessEnvironment()) {
+            final StatusBar statusBar = WindowManager.getInstance().getStatusBar(myProject);
+            if (statusBar != null) {
+                connectionWidget = new P4MultipleConnectionWidget(this, myProject);
+                ApplicationManager.getApplication().invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        statusBar.addWidget(connectionWidget,
+                                "after " + (SystemInfo.isMac ? "Encoding" : "InsertOverwrite"), myProject);
+                    }
+                }, ModalityState.NON_MODAL);
+                // Initialize the widget separately.
+            }
+        }
+
+
 
         /*
 
@@ -321,6 +320,33 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
         // Activate any other services that are required.
         */
+
+
+        // This is a good time to check for passwords and connectivity
+        // See bugs #81, #84
+        // But, additionally, bug #110 which can cause a deadlock when this
+        // is done in the activation thread.  So instead, push this to the
+        // background.
+
+        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+            @Override
+            public void run() {
+                refreshServerConnectivity();
+
+                if (connectionWidget != null) {
+                    // This widget needs to be initialized outside the activation thread.
+                    // Do not block on running this, as it can indirectly run the password
+                    // store, and cause a deadlock (bug #110).
+                    ApplicationManager.getApplication().invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            connectionWidget.setValues();
+                        }
+                    });
+                }
+            }
+        });
+
     }
 
     @Override

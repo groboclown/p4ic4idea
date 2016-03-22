@@ -142,7 +142,7 @@ public class P4Server {
         this.alertManager = AlertManager.getInstance();
         this.source = source;
         //this.clientState = AllClientsState.getInstance().getStateForClient(clientServerId);
-        this.connection = ServerConnectionManager.getInstance().getConnectionFor(
+        this.connection = ServerConnectionManager.getInstance().getConnectionFor(project,
                 source.getClientServerId(), source.getServerConfig());
         connection.postSetup(project);
 

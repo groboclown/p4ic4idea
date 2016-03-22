@@ -27,4 +27,14 @@ public class AccessException extends P4JavaException {
 	public IServerMessage getServerMessage() {
 		return err;
 	}
+
+
+	/**
+	 * @deprecated use the server code instead
+	 */
+	public boolean hasMessageFragment(String fragment) {
+		return err == null
+				? (getMessage() != null && getMessage().toLowerCase().equals(fragment.toLowerCase()))
+				: err.hasMessageFragment(fragment);
+	}
 }

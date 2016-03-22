@@ -113,7 +113,7 @@ public class ProjectConfigSource {
 
         @NonNls
         public String getPresentableName() {
-            // FIXME localize
+            // TODO localize
 
             StringBuilder ret = new StringBuilder();
             if (serverConfig != null) {

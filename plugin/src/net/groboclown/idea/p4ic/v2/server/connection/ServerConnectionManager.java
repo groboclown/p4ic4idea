@@ -131,7 +131,8 @@ public class ServerConnectionManager implements ApplicationComponent {
      * @return connection
      */
     @NotNull
-    public ServerConnection getConnectionFor(@NotNull ClientServerId clientServerId, @NotNull ServerConfig config)
+    public ServerConnection getConnectionFor(@NotNull Project project,
+            @NotNull ClientServerId clientServerId, @NotNull ServerConfig config)
             throws P4InvalidClientException {
         serverCacheLock.lock();
         try {
@@ -140,7 +141,7 @@ public class ServerConnectionManager implements ApplicationComponent {
                 status = new ServerConfigStatus(config, alerts.createServerSynchronizer());
                 serverCache.put(config, status);
             }
-            return status.getConnectionFor(clientServerId, alerts, cacheManager);
+            return status.getConnectionFor(project, clientServerId, alerts, cacheManager);
         } finally {
             serverCacheLock.unlock();
         }
@@ -293,13 +294,16 @@ public class ServerConnectionManager implements ApplicationComponent {
             }
         }
 
-        synchronized ServerConnection getConnectionFor(@NotNull final ClientServerId clientServer,
+        synchronized ServerConnection getConnectionFor(
+                @NotNull final Project project,
+                @NotNull final ClientServerId clientServer,
                 @NotNull AlertManager alerts, @NotNull CentralCacheManager cacheManager)
                 throws P4InvalidClientException {
             ServerConnection conn = clientNames.get(clientServer.getClientId());
             if (conn == null) {
                 conn = new ServerConnection(alerts, clientServer,
-                        cacheManager.getClientCacheManager(clientServer, config, new CaseInsensitiveCheck(config)),
+                        cacheManager.getClientCacheManager(
+                                clientServer, config, new CaseInsensitiveCheck(project, config)),
                         config, this, synchronizer.createConnectionSynchronizer());
                 clientNames.put(clientServer.getClientId(), conn);
             }
@@ -355,16 +359,18 @@ public class ServerConnectionManager implements ApplicationComponent {
 
 
     private static class CaseInsensitiveCheck implements Callable<Boolean> {
+        private final Project project;
         private final ServerConfig config;
 
-        private CaseInsensitiveCheck(final ServerConfig config) {
+        private CaseInsensitiveCheck(@NotNull final Project project, @NotNull final ServerConfig config) {
+            this.project = project;
             this.config = config;
         }
 
         @Override
         public Boolean call() throws Exception {
             // no project is available at this level.
-            return ! ClientExec.getServerInfo(null, config).isCaseSensitive();
+            return ! ClientExec.getServerInfo(project, config).isCaseSensitive();
         }
     }
 

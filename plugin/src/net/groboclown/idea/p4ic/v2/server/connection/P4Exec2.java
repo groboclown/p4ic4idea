@@ -799,7 +799,7 @@ public class P4Exec2 {
     public void getServerInfo() throws VcsException, CancellationException {
         exec.runWithServer(project, new ClientExec.WithServer<Void>() {
             @Override
-            public Void run(@NotNull IOptionsServer server, @NotNull ClientExec.ServerCount count)
+            public Void run(@NotNull IOptionsServer server, @NotNull ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 count.invoke("getServerInfo");
                 server.getServerInfo();
@@ -846,7 +846,7 @@ public class P4Exec2 {
         try {
             return exec.runWithServer(project, new ClientExec.WithServer<List<String>>() {
                 @Override
-                public List<String> run(@NotNull final IOptionsServer server, @NotNull ClientExec.ServerCount count)
+                public List<String> run(@NotNull final IOptionsServer server, @NotNull ServerCount count)
                         throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                     count.invoke("getJobSpec");
                     final IJobSpec spec = server.getJobSpec();
@@ -883,7 +883,7 @@ public class P4Exec2 {
         }
         return exec.runWithServer(project, new ClientExec.WithServer<List<String>>() {
             @Override
-            public List<String> run(@NotNull final IOptionsServer server, @NotNull ClientExec.ServerCount count)
+            public List<String> run(@NotNull final IOptionsServer server, @NotNull ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException {
                 count.invoke("getChangelist");
                 final IChangelist changelist = server.getChangelist(changelistId);
@@ -904,7 +904,7 @@ public class P4Exec2 {
     public P4JobState getJobForId(@NotNull final String jobId) throws VcsException, CancellationException {
         return exec.runWithServer(project, new ClientExec.WithServer<P4JobState>() {
             @Override
-            public P4JobState run(@NotNull final IOptionsServer server, @NotNull ClientExec.ServerCount count)
+            public P4JobState run(@NotNull final IOptionsServer server, @NotNull ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 P4JobState job = null;
                 LOG.debug("Loading information for job " + jobId);

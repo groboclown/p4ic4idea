@@ -11,6 +11,10 @@
                   <li>Initial project VCS setup no longer
                   causes "OK" and "Apply"
                   buttons to not react.</li>
+                  <li>Initial project loading in Android Studio 1.5.1 with a master password
+                  store no longer causes the project to deadlock on startup.</li>
+                  <li>Better handling of false authentication failures
+                  reported by the server.</li>
                 </ol>
             </li>
             <li><em>0.7.7</em>

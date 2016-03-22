@@ -87,6 +87,9 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
     public String getPassword(@Nullable final Project project, @NotNull final ServerConfig config,
             boolean forceLogin)
             throws PasswordStoreException, PasswordAccessedWrongException {
+
+// FIXME remove after debugging
+
         if (memoryPasswordSafe == null) {
             LOG.warn("already disposed");
             return null;
@@ -105,7 +108,6 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
             LOG.debug("Skipping the password safe check for " + key);
             return null;
         }
-
 
         try {
             ret = memoryPasswordSafe.getPassword(project, REQUESTOR_CLASS, key);

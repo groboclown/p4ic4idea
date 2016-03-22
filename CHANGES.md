@@ -9,8 +9,12 @@
 ### Details
 
 * Bug fixes.
-    *  Initial project VCS setup causes "OK" and "Apply"
-       buttons to not react. (#111)
+    * Initial project VCS setup causes "OK" and "Apply"
+      buttons to not react. (#111)
+    * Initial project loading in Android Studio 1.5.1 with a master password
+      store causes the project to deadlock on startup. (#110 and #112)
+    * Further progress on fixing the false password authentication
+      reporting issues (#109 and #108).
 
 
 ## ::v0.7.7::

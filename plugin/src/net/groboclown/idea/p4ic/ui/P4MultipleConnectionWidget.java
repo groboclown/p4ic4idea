@@ -78,7 +78,8 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
     @Nullable
     private StatusBar statusBar;
 
-    private volatile Icon icon;
+    @NotNull
+    private volatile Icon icon = P4Icons.UNKNOWN;
     private volatile String toolTip;
 
 
@@ -253,9 +254,7 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
             icon = P4Icons.CONNECTED;
         } else {
             toolTip = P4Bundle.message("statusbar.connection.none");
-
-            // FIXME use a unknown server icon
-            icon = P4Icons.DISCONNECTED;
+            icon = P4Icons.UNKNOWN;
         }
 
         if (!isDisposed() && statusBar != null) {

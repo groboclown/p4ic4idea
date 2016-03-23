@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.compat;
 
+import com.intellij.diagnostic.PluginException;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -91,6 +92,13 @@ public class CompatFactoryLoader {
             } catch (ServiceConfigurationError e) {
                 LOG.error(e);
             } catch (LinkageError e) {
+                // bug #113
+                // The IDE classes aren't matching up with the expected signatures,
+                // the classes are compiled with an incompatible JRE,
+                // or any number of other issues that shouldn't stop
+                // the plugin from loading.
+                LOG.warn(e);
+            } catch (PluginException e) {
                 // bug #113
                 // The IDE classes aren't matching up with the expected signatures,
                 // the classes are compiled with an incompatible JRE,

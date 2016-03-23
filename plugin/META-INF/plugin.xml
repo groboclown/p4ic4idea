@@ -1,11 +1,19 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.8</version>
+    <version>0.7.9</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.7.9</em>
+                <ol>
+                  <li>Android Studio and other non-JRE 8 IDEs can
+                  fail to load the plugin.  Now, all the class
+                  loading errors should be caught when loading the
+                  compatibility libraries.</li>
+                </ol>
+            </li>
             <li><em>0.7.8</em>
                 <ol>
                   <li>Initial project VCS setup no longer
@@ -15,36 +23,6 @@
                   store no longer causes the project to deadlock on startup.</li>
                   <li>Better handling of false authentication failures
                   reported by the server.</li>
-                </ol>
-            </li>
-            <li><em>0.7.7</em>
-                <ol>
-                  <li>Fixed an issue where the user may be
-                  told repeatedly that their password is wrong,
-                  even though it's correct.</li>
-                </ol>
-            </li>
-            <li><em>0.7.6</em>
-                <ol>
-                    <li>Switched to using MD5 hash codes when comparing if a file is actually
-                    edited but not checked out.</li>
-                    <li>Added user preference to disable server-side file comparison when checking
-                    for edited but not checked out status.</li>
-                    <li>Added user preference for switching between showing revision numbers and
-                    changelist numbers.</li>
-                    <li>Fixed compilation errors against the latest IDEA version of the
-                    primary plugin.  This may result in you needing to reload your
-                    Perforce configuration.</li>
-                    <li>Should now always authenticate once the server reports that the
-                    user requires authentication.  This should also fix the
-                    issue where the plugin can continuously ask for the password;
-                    this could happen if you use the configuration file without
-                    specifying an authentication ticket or a password.</li>
-                    <li>Fixed a deadlock associated with initial startup when asking the
-                    user for the master IDEA password.</li>
-                    <li>Fixed submit issue where only the error would be reported;
-                    now, all messages are reported to the user.</li>
-                    <li>Fixed ignored tick marks (') in messages.</li>
                 </ol>
             </li>
         </ol>

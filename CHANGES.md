@@ -1,5 +1,19 @@
 # IDEA Community VCS Integration for Perforce
 
+## ::v0.7.9::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Android Studio and other non-JRE 8 IDEs can fail to load the
+      plugin.  Now, all the class loading errors should be caught
+      when loading the compatibility libraries. (#113)
+
+
 ## ::v0.7.8::
 
 ### Overview

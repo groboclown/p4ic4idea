@@ -82,19 +82,21 @@ public class CompatFactoryLoader {
     private static CompatFactory loadCompatFactory(@NotNull String apiVersion, ClassLoader[] loaders) {
         CompatFactory best = null;
         for (ClassLoader loader: loaders) {
-            try
-            {
-                for (CompatFactory factory : ServiceLoader.load(CompatFactory.class, loader))
-                {
-                    if (isCompatible(apiVersion, factory) && isBetterVersion(best, factory))
-                    {
+            try {
+                for (CompatFactory factory : ServiceLoader.load(CompatFactory.class, loader)) {
+                    if (isCompatible(apiVersion, factory) && isBetterVersion(best, factory)) {
                         best = factory;
                     }
                 }
-            }
-            catch (ServiceConfigurationError e)
-            {
+            } catch (ServiceConfigurationError e) {
                 LOG.error(e);
+            } catch (LinkageError e) {
+                // bug #113
+                // The IDE classes aren't matching up with the expected signatures,
+                // the classes are compiled with an incompatible JRE,
+                // or any number of other issues that shouldn't stop
+                // the plugin from loading.
+                LOG.warn(e);
             }
         }
         return best;

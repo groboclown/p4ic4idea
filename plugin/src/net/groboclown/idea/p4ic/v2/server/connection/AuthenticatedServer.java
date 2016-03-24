@@ -136,20 +136,25 @@ class AuthenticatedServer {
             return false;
         }
 
-        if (! hasPassedAuthentication) {
-            // We have not attempted to authenticate this connection.
-            isInvalidLogin = true;
-            hasValidatedAuthentication = false;
-            forceAuthenticate();
-
-            // If the forced authentication fails (throws an
-            // exception), then the connection is marked as
-            // invalid, and we will never attempt to
-            // re-login again.
-
-            isInvalidLogin = false;
-            hasPassedAuthentication = true;
-        }
+        // The default authentication has already run, but it may
+        // be invalid.  However, all that checking will be in the
+        // shared logic
+        //if (! hasPassedAuthentication) {
+        //    // We have not attempted to force authenticate this connection, but the default
+        //    // authentication has run.
+        //
+        //    isInvalidLogin = true;
+        //    hasValidatedAuthentication = false;
+        //    forceAuthenticate();
+        //
+        //    // If the forced authentication fails (throws an
+        //    // exception), then the connection is marked as
+        //    // invalid, and we will never attempt to
+        //    // re-login again.
+        //
+        //    isInvalidLogin = false;
+        //    hasPassedAuthentication = true;
+        //}
 
         if (! validateLogin()) {
             loginFailedCount++;
@@ -181,7 +186,7 @@ class AuthenticatedServer {
 
             for (int i = 0; i < MAX_AUTHENTICATION_RETRIES; i++) {
                 try {
-                    // Sleeping a bit may cause the server to reauthenticate
+                    // Sleeping a bit may cause the server to re-authenticate
                     // correctly.
                     server = reconnect(project, clientName, connectionHandler, config, tempDir,
                             serverInstance);
@@ -212,6 +217,9 @@ class AuthenticatedServer {
             // quick requests to the server.  So wait a little bit to
             // give the server time to recover.
             Thread.sleep(RECONNECTION_WAIT_MILLIS);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("forcing authentication with " + this);
+            }
             CONNECT_LOCK.lockInterruptibly();
             try {
                 connectionHandler.forcedAuthentication(project, server, config, AlertManager.getInstance());
@@ -248,7 +256,7 @@ class AuthenticatedServer {
             }
             return true;
         } catch (AccessException ex) {
-            LOG.info("Authentication failed", ex);
+            LOG.info("Server forgot connection login", ex);
             disconnect();
             return false;
         }
@@ -332,16 +340,22 @@ class AuthenticatedServer {
             CONNECT_LOCK.lockInterruptibly();
             try {
                 // Use the ConnectionHandler so that mock objects can work better
-                LOG.debug("calling connectionHandler.getOptionsServer");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("calling connectionHandler.getOptionsServer");
+                }
                 final IOptionsServer server = connectionHandler.getOptionsServer(url, properties, config);
 
                 // These seem to cause issues.
                 //server.registerCallback(new LoggingCommandCallback());
                 //server.registerProgressCallback(new LoggingProgressCallback());
 
-                LOG.debug("calling connect");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("calling connect");
+                }
                 server.connect();
-                LOG.debug("calling activeConnectionCount incrementAndGet");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("calling activeConnectionCount incrementAndGet");
+                }
                 activeConnectionCount.incrementAndGet();
 
                 // If there is a password problem, we still want
@@ -352,11 +366,11 @@ class AuthenticatedServer {
                 // an invalid password to cause the server connection
                 // to never be returned.
 
-
-                LOG.debug("calling defaultAuthentication on " + connectionHandler.getClass().getSimpleName());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("calling defaultAuthentication on " + connectionHandler.getClass().getSimpleName());
+                }
                 connectionHandler.defaultAuthentication(project, server, config);
 
-                LOG.debug("Returning the authenticated server object");
                 return server;
             } finally {
                 CONNECT_LOCK.unlock();

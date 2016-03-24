@@ -1,5 +1,17 @@
 # IDEA Community VCS Integration for Perforce
 
+## ::v0.7.12::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * More fixes for the authentication prompting problem. (#109)
+
+
 ## ::v0.7.11::
 
 ### Overview
@@ -9,10 +21,9 @@
 ### Details
 
 * Bug fixes.
-    * Aleviated some of the issues surrounding the plugin
+    * Alleviated some of the issues surrounding the plugin
       constantly reporting that the password is invalid.
       (#109)
-
 
 
 ## ::v0.7.10::

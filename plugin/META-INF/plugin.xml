@@ -1,24 +1,21 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.11</version>
+    <version>0.7.12</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+            <li><em>0.7.12</em>
+                <ol>
+                  <li>More fixes for the authentication prompting problem.</li>
+                </ol>
+            </li>
             <li><em>0.7.11</em>
               <ol>
                 <li>Aleviated some of the issues surrounding the plugin
                 constantly reporting that the password is invalid.</li>
               </ol>
-            </li>
-            <li><em>0.7.9 &amp; 0.7.10</em>
-                <ol>
-                  <li>Android Studio and other non-JRE 8 IDEs can
-                  fail to load the plugin.  Now, all the class
-                  loading errors should be caught when loading the
-                  compatibility libraries.</li>
-                </ol>
             </li>
         </ol>
     ]]></change-notes>

@@ -44,7 +44,7 @@ class AuthenticatedServer {
     private static final Logger LOG = Logger.getInstance(AuthenticatedServer.class);
     private static final Logger P4LOG = Logger.getInstance("p4");
     private static final Lock CONNECT_LOCK = new ReentrantLock();
-    public static final int MAX_AUTHENTICATION_RETRIES = 3;
+    public static final int MAX_AUTHENTICATION_RETRIES = 2;
 
     private static final AtomicInteger serverCount = new AtomicInteger(0);
     private static final AtomicInteger activeConnectionCount = new AtomicInteger(0);
@@ -62,8 +62,10 @@ class AuthenticatedServer {
     @NotNull
     private IOptionsServer server;
 
-    private boolean forcedAuthentication = false;
+    private P4JavaException authenticationException = null;
     private boolean hasPassedAuthentication = false;
+    private boolean hasValidatedAuthentication = false;
+    private boolean isInvalidLogin = false;
 
     // metrics for debugging
     private int loginFailedCount = 0;
@@ -83,6 +85,9 @@ class AuthenticatedServer {
         this.tempDir = tempDir;
         this.server = reconnect(project, clientName, connectionHandler,
                 config, tempDir, serverInstance);
+
+        // Note: at this point, the
+
         connectedCount++;
     }
 
@@ -102,7 +107,16 @@ class AuthenticatedServer {
 
 
     @NotNull
-    IOptionsServer getServer() {
+    IOptionsServer getServer() throws P4JavaException {
+        if (isInvalidLogin) {
+            if (authenticationException != null) {
+                throw new P4JavaException(authenticationException);
+            }
+            throw new P4JavaException("invalid login credentials");
+        }
+        if (! hasValidatedAuthentication) {
+            authenticate();
+        }
         return server;
     }
 
@@ -116,15 +130,34 @@ class AuthenticatedServer {
         if (! server.isConnected() || (project != null && project.isDisposed())) {
             return false;
         }
-        if (! forcedAuthentication) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Attempting to force an authentication for " + this);
-            }
-            forceAuthenticate();
+
+        if (isInvalidLogin) {
+            LOG.info("Previous login attempts failed.  Assuming authentication is invalid.");
+            return false;
         }
-        if (! testLogin()) {
+
+        if (! hasPassedAuthentication) {
+            // We have not attempted to authenticate this connection.
+            isInvalidLogin = true;
+            hasValidatedAuthentication = false;
+            forceAuthenticate();
+
+            // If the forced authentication fails (throws an
+            // exception), then the connection is marked as
+            // invalid, and we will never attempt to
+            // re-login again.
+
+            isInvalidLogin = false;
+            hasPassedAuthentication = true;
+        }
+
+        if (! validateLogin()) {
             loginFailedCount++;
-            if (! hasPassedAuthentication) {
+
+            // the forced authentication has passed, but the
+            // validation failed.
+
+            if (! hasValidatedAuthentication) {
                 // we have never been authenticated by the server,
                 // and this situation means that we still aren't
                 // even after a forced authentication.  So, we'll
@@ -132,8 +165,10 @@ class AuthenticatedServer {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Assuming actual authentication issue");
                 }
-                forcedAuthentication = false;
-                return false;
+
+                // TODO see if this assumption that the authentication is invalid
+                // is too quick to judge.
+                // return false;
             }
 
             // we have had a valid connection before, so we'll
@@ -152,7 +187,7 @@ class AuthenticatedServer {
                             serverInstance);
                     connectedCount++;
                     forceAuthenticate();
-                    if (testLogin()) {
+                    if (validateLogin()) {
                         LOG.info("Authorization successful after " + i +
                                 " unauthorized connections (but a valid one was seen earlier) for " +
                                 this);
@@ -167,7 +202,7 @@ class AuthenticatedServer {
                     this);
             return false;
         }
-        hasPassedAuthentication = true;
+        hasValidatedAuthentication = true;
         return true;
     }
 
@@ -181,10 +216,13 @@ class AuthenticatedServer {
             try {
                 connectionHandler.forcedAuthentication(project, server, config, AlertManager.getInstance());
                 forcedAuthenticationCount++;
-                forcedAuthentication = true;
             } finally {
                 CONNECT_LOCK.unlock();
             }
+        } catch (P4JavaException e) {
+            // capture the exception for future use
+            authenticationException = e;
+            throw e;
         } catch (InterruptedException e) {
             throw new P4JavaException(e);
         }
@@ -199,7 +237,7 @@ class AuthenticatedServer {
     }
 
 
-    private boolean testLogin()
+    private boolean validateLogin()
             throws ConnectionException, RequestException, AccessException {
         try {
             // Perform an operation that should succeed, and only fail if the
@@ -314,6 +352,7 @@ class AuthenticatedServer {
                 // an invalid password to cause the server connection
                 // to never be returned.
 
+
                 LOG.debug("calling defaultAuthentication on " + connectionHandler.getClass().getSimpleName());
                 connectionHandler.defaultAuthentication(project, server, config);
 
@@ -344,10 +383,13 @@ class AuthenticatedServer {
     @Override
     public String toString() {
         return "Server" + serverInstance +
-                " (lf#: " + loginFailedCount +
-                ", c#: " + connectedCount +
-                ", d#: " + disconnectedCount +
-                ", fa#: " + forcedAuthenticationCount +
+                " (loginFailed# " + loginFailedCount +
+                ", connected# " + connectedCount +
+                ", disconnected# " + disconnectedCount +
+                ", forcedLogin# " + forcedAuthenticationCount +
+                ", invalidLogin? " + isInvalidLogin +
+                ", passedLogin? " + hasPassedAuthentication +
+                ", validatedLogin? " + hasValidatedAuthentication +
                 ")";
     }
 }

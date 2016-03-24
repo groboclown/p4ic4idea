@@ -1,5 +1,20 @@
 # IDEA Community VCS Integration for Perforce
 
+## ::v0.7.11::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Aleviated some of the issues surrounding the plugin
+      constantly reporting that the password is invalid.
+      (#109)
+
+
+
 ## ::v0.7.10::
 
 ### Overview

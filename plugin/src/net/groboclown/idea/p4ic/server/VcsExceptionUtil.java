@@ -14,16 +14,9 @@
 package net.groboclown.idea.p4ic.server;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.vcs.VcsConnectionProblem;
-import com.perforce.p4java.exception.AccessException;
-import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.P4JavaError;
-import com.perforce.p4java.exception.P4JavaException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
@@ -46,55 +39,6 @@ public class VcsExceptionUtil {
         if (t instanceof AssertionError) {
             throw (AssertionError) t;
         }
-    }
-
-    public static boolean isPasswordWrongMessage(@Nullable String message) {
-        if (message == null) {
-            return false;
-        }
-        return message.contains("Perforce password (P4PASSWD) invalid or unset.");
-    }
-
-
-    public static boolean isLoginWrongMessage(@Nullable String message) {
-        if (message == null) {
-            return false;
-        }
-        return (message.contains("Access for user '") &&
-                message.contains("' has not been enabled by 'p4 protect'") ||
-                message.contains("Unable to resolve Perforce server host name '"));
-    }
-
-
-    public static boolean isDisconnectErrorMessage(@Nullable String message) {
-        return (message != null && ("Disconnected from Perforce server".equals(message) ||
-                "Not currently connected to a Perforce server".equals(message) ||
-                message.contains("Unable to connect to Perforce server at ") ||
-                message.endsWith("Read timed out") ||
-                isPasswordWrongMessage(message) ||
-                isLoginWrongMessage(message)));
-    }
-
-
-    public static boolean isDisconnectError(@Nullable Throwable t) {
-        if (t == null) {
-            return false;
-        }
-        if (t instanceof VcsConnectionProblem || t instanceof ConnectionException ||
-                t instanceof AccessException || t instanceof URISyntaxException) {
-            return true;
-        }
-
-        if (t.getCause() != null && t.getCause() != t) {
-            Throwable cause = t.getCause();
-            if (t instanceof P4JavaException || t instanceof P4JavaError) {
-                if (cause instanceof IOException) {
-                    return true;
-                }
-            }
-        }
-
-        return isDisconnectErrorMessage(t.getMessage());
     }
 
 

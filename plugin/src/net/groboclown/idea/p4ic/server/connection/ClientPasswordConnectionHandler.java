@@ -18,7 +18,6 @@ import com.intellij.openapi.project.Project;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.ConfigurationProblem;
@@ -52,6 +51,19 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
         if (clientName != null) {
             ret.setProperty(PropertyDefs.CLIENT_NAME_KEY, clientName);
         }
+
+        // We will explicitly log in when ready.
+        // This key is set to null to mean false.  Note that any other
+        // value means true (even the text "false").
+        ret.remove(PropertyDefs.AUTO_LOGIN_KEY);
+
+        // Turning this flag on means that the server connection
+        // will attempt to get the client object without having
+        // logged in first, so we want it turned off.
+        // This key is set to null to mean false.  Note that any other
+        // value means true (even the text "false").
+        ret.remove(PropertyDefs.AUTO_CONNECT_KEY);
+
 
         // This property key doesn't actually seem to do anything.
         // A real login is still required.
@@ -109,14 +121,17 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
             // If the password is blank, then there's no need for the
             // user to log in; in fact, that wil raise an error by Perforce
             try {
-                server.login(password, new LoginOptions(false, true));
+                // server.login(password, new LoginOptions(false, true));
+                server.login(password);
                 LOG.debug("No issue logging in with stored password");
                 return null;
             } catch (AccessException ex) {
                 // This seems to happen on a rare occasion on the
                 // first attempt at logging in.  Don't automatically
                 // forget the password.
-                LOG.debug("login failed", ex);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("login failed", ex);
+                }
                 if (ex.getServerMessage().hasMessageFragment("'login' not necessary")) {
                     // ignore login and keep going
                     PasswordManager.getInstance().forgetPassword(project, config);

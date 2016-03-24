@@ -177,7 +177,9 @@ class ClientExec {
         } catch (IOException e) {
             exception = e;
         } catch (AccessException e) {
-            needsAuthentication = true;
+            if (isPasswordProblem(e)) {
+                needsAuthentication = true;
+            }
             exception = e;
         } catch (P4JavaException e) {
             exception = e;
@@ -393,7 +395,9 @@ class ClientExec {
         }
     }
 
-    private <T> T p4RunWithSkippedPasswordCheck(@NotNull Project project, @NotNull P4Runner<T> runner, int retryCount)
+
+    // TODO experimental synchronized here.
+    private synchronized <T> T p4RunWithSkippedPasswordCheck(@NotNull Project project, @NotNull P4Runner<T> runner, int retryCount)
             throws VcsException, CancellationException, P4JavaException {
         // Must check offline status
         if (connectedController.isWorkingOffline()) {

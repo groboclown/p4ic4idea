@@ -10,6 +10,8 @@
 
 * Bug fixes.
     * More fixes for the authentication prompting problem. (#109)
+      Includes re-introducing proper identification and handling of
+      real password issues.
 
 
 ## ::v0.7.11::

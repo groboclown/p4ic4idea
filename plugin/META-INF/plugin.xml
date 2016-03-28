@@ -6,17 +6,19 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
-            <li><em>0.7.12</em>
-                <ol>
-                  <li>More fixes for the authentication prompting problem.</li>
-                </ol>
-            </li>
-            <li><em>0.7.11</em>
-              <ol>
-                <li>Aleviated some of the issues surrounding the plugin
-                constantly reporting that the password is invalid.</li>
-              </ol>
-            </li>
+          <li><em>0.7.12</em>
+            <ol>
+              <li>More fixes for the authentication prompting problem.
+              Includes re-introducing proper identification and handling of
+              real password issues.</li>
+            </ol>
+          </li>
+          <li><em>0.7.11</em>
+            <ol>
+              <li>Aleviated some of the issues surrounding the plugin
+              constantly reporting that the password is invalid.</li>
+            </ol>
+          </li>
         </ol>
     ]]></change-notes>
     <description><![CDATA[

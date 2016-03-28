@@ -17,14 +17,13 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.perforce.p4java.Log;
 import com.perforce.p4java.PropertyDefs;
-import com.perforce.p4java.exception.AccessException;
-import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.RequestException;
+import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.callback.ILogCallback;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
+import net.groboclown.idea.p4ic.server.exceptions.LoginRequiresPasswordException;
+import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -109,17 +108,13 @@ class AuthenticatedServer {
     @NotNull
     IOptionsServer getServer() throws P4JavaException {
         if (isInvalidLogin) {
-            if (authenticationException != null) {
-                throw new P4JavaException(authenticationException);
-            }
-            throw new P4JavaException("invalid login credentials");
+            throw remakeException(authenticationException);
         }
         if (! hasValidatedAuthentication) {
             authenticate();
         }
         return server;
     }
-
 
     /**
      *
@@ -171,9 +166,8 @@ class AuthenticatedServer {
                     LOG.debug("Assuming actual authentication issue");
                 }
 
-                // TODO see if this assumption that the authentication is invalid
-                // is too quick to judge.
-                // return false;
+                // This assumption that the authentication is invalid is too quick to judge.
+                // Do not return false yet
             }
 
             // we have had a valid connection before, so we'll
@@ -188,9 +182,18 @@ class AuthenticatedServer {
                 try {
                     // Sleeping a bit may cause the server to re-authenticate
                     // correctly.
+                    if (server.isConnected()) {
+                        server.disconnect();
+                    }
                     server = reconnect(project, clientName, connectionHandler, config, tempDir,
                             serverInstance);
                     connectedCount++;
+                    if (validateLogin()) {
+                        LOG.info("Authorization successful after " + i +
+                                " unauthorized connections (but a valid one was seen earlier) for " +
+                                this);
+                        return true;
+                    }
                     forceAuthenticate();
                     if (validateLogin()) {
                         LOG.info("Authorization successful after " + i +
@@ -202,6 +205,8 @@ class AuthenticatedServer {
                     throw new P4JavaException(e);
                 }
             }
+            // Don't keep trying the same bad config.
+            isInvalidLogin = true;
             LOG.info("Failed authentication after " + MAX_AUTHENTICATION_RETRIES +
                     " unauthorized connections (but a valid one was seen earlier) for " +
                     this);
@@ -227,6 +232,10 @@ class AuthenticatedServer {
             } finally {
                 CONNECT_LOCK.unlock();
             }
+        } catch (PasswordAccessedWrongException e) {
+            // do not capture this specific exception
+            authenticationException = null;
+            throw e;
         } catch (P4JavaException e) {
             // capture the exception for future use
             authenticationException = e;
@@ -247,6 +256,9 @@ class AuthenticatedServer {
 
     private boolean validateLogin()
             throws ConnectionException, RequestException, AccessException {
+        if (! server.isConnected()) {
+            return false;
+        }
         try {
             // Perform an operation that should succeed, and only fail if the
             // login is wrong.
@@ -257,7 +269,10 @@ class AuthenticatedServer {
             return true;
         } catch (AccessException ex) {
             LOG.info("Server forgot connection login", ex);
-            disconnect();
+            // Do not disconnect here..  If it's not a real authentication
+            // issue, then we will need to stay connected to re-authorize
+            // the connection.
+            // disconnect();
             return false;
         }
     }
@@ -406,4 +421,47 @@ class AuthenticatedServer {
                 ", validatedLogin? " + hasValidatedAuthentication +
                 ")";
     }
+
+    @NotNull
+    private static P4JavaException remakeException(@Nullable final P4JavaException authenticationException) {
+        if (authenticationException == null) {
+            return new P4JavaException("invalid login credentials");
+        }
+        // TODO This is an implicit tight coupling with ClientExec.  However, we want to
+        // throw a fresh exception so we record the real source of the error and the
+        // actual where-we-are-throwing-it-now location.
+        if (authenticationException instanceof PasswordAccessedWrongException) {
+            final PasswordAccessedWrongException ret = new PasswordAccessedWrongException();
+            ret.initCause(authenticationException);
+            return ret;
+        }
+        if (authenticationException instanceof LoginRequiresPasswordException) {
+            return new LoginRequiresPasswordException(
+                    (AccessException) ((LoginRequiresPasswordException) authenticationException).getCause());
+        }
+        if (authenticationException instanceof AccessException) {
+            return new AccessException((AccessException) authenticationException);
+        }
+        if (authenticationException instanceof ConfigException) {
+            return new ConfigException(authenticationException);
+        }
+        if (authenticationException instanceof ConnectionNotConnectedException) {
+            return new ConnectionNotConnectedException(authenticationException);
+        }
+        if (authenticationException instanceof TrustException) {
+            return new TrustException((TrustException) authenticationException);
+        }
+        if (authenticationException instanceof ConnectionException) {
+            return new ConnectionException(authenticationException);
+        }
+        if (authenticationException instanceof RequestException) {
+            return new RequestException(
+                    ((RequestException) authenticationException).getServerMessage(),
+                    authenticationException);
+        }
+
+        // generic p4 java exception.  The other kinds are sort of ignored.
+        return new P4JavaException(authenticationException);
+    }
+
 }

@@ -49,6 +49,11 @@ public class TrustException extends ConnectionException {
 		this.fingerprint = fingerprint;
 	}
 
+	public TrustException(final TrustException source) {
+		this(source.type, source.serverHostPort, source.serverIpPort,
+				source.fingerprint, source.getMessage(), source);
+	}
+
 	public Type getType() {
 		return type;
 	}

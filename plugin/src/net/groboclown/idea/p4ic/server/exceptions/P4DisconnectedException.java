@@ -75,7 +75,7 @@ public class P4DisconnectedException extends VcsConnectionProblem {
 
 
     @NotNull
-    private static String getMessageFor(@Nullable Throwable t) {
+    static String getMessageFor(@Nullable Throwable t) {
         Throwable prev = null;
         while (t != null && t != prev) {
             if (t.getMessage() != null && t.getMessage().length() > 0) {

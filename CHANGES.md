@@ -1,5 +1,19 @@
 # IDEA Community VCS Integration for Perforce
 
+## ::v0.7.13::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Add configurable "max retry authentication" parameter to control how many times
+      to retry logging into the server once it unauthorizes the active connection.
+    * Improved responses to the retry login failures to display a different dialog.
+    
+
 ## ::v0.7.12::
 
 ### Overview

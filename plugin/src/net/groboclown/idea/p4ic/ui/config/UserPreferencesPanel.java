@@ -36,6 +36,7 @@ public class UserPreferencesPanel {
     private JRadioButton myPreferRevisionNumber;
     private JRadioButton myPreferChangelist;
     private JCheckBox myEditedWithoutCheckoutCheckBox;
+    private JSpinner myMaxRetryAuthenticationSpinner;
     private ButtonGroup myPreferRevisionGroup;
 
 
@@ -45,6 +46,11 @@ public class UserPreferencesPanel {
                 UserProjectPreferences.MAX_CONNECTION_WAIT_TIME_MILLIS,
                 500,
                 UserProjectPreferences.DEFAULT_CONNECTION_WAIT_TIME_MILLIS));
+        myMaxRetryAuthenticationSpinner.setModel(new MinMaxSpinnerModel(
+                UserProjectPreferences.MIN_MAX_AUTHENTICATION_RETRIES,
+                UserProjectPreferences.MAX_MAX_AUTHENTICATION_RETRIES,
+                1,
+                UserProjectPreferences.DEFAULT_MAX_AUTHENTICATION_RETRIES));
         myPreferRevisionGroup = new ButtonGroup();
         myPreferRevisionGroup.add(myPreferChangelist);
         myPreferRevisionGroup.add(myPreferRevisionNumber);
@@ -54,6 +60,7 @@ public class UserPreferencesPanel {
     protected void loadSettingsIntoGUI(@NotNull UserProjectPreferences userPrefs) {
         myOpenForEditInCheckBox.setSelected(userPrefs.getEditInSeparateThread());
         myMaxTimeout.setValue(userPrefs.getMaxConnectionWaitTimeMillis());
+        myMaxRetryAuthenticationSpinner.setValue(userPrefs.getMaxAuthenticationRetries());
         myPreferRevisionGroup.setSelected(
                 userPrefs.getPreferRevisionsForFiles()
                         ? myPreferRevisionNumber.getModel()
@@ -68,6 +75,7 @@ public class UserPreferencesPanel {
         userPrefs.setMaxConnectionWaitTimeMillis(getMaxTimeout());
         userPrefs.setPreferRevisionsForFiles(getPreferRevisionsForFiles());
         userPrefs.setEditedWithoutCheckoutVerify(getEditedWithoutCheckoutVerify());
+        userPrefs.setMaxAuthenticationRetries(getMaxAuthenticationRetries());
     }
 
     boolean isModified(@NotNull final UserProjectPreferences preferences) {
@@ -75,7 +83,8 @@ public class UserPreferencesPanel {
                 getOpenForEditInSeparateThread() != preferences.getEditInSeparateThread() ||
                         getMaxTimeout() != preferences.getMaxConnectionWaitTimeMillis() ||
                         getPreferRevisionsForFiles() != preferences.getPreferRevisionsForFiles() ||
-                        getEditedWithoutCheckoutVerify() != preferences.getEditedWithoutCheckoutVerify();
+                        getEditedWithoutCheckoutVerify() != preferences.getEditedWithoutCheckoutVerify() ||
+                        getMaxAuthenticationRetries() != preferences.getMaxAuthenticationRetries();
     }
 
 
@@ -95,6 +104,10 @@ public class UserPreferencesPanel {
 
     private boolean getEditedWithoutCheckoutVerify() {
         return myEditedWithoutCheckoutCheckBox.isSelected();
+    }
+
+    private int getMaxAuthenticationRetries() {
+        return (Integer) myMaxRetryAuthenticationSpinner.getModel().getValue();
     }
 
     private void createUIComponents() {

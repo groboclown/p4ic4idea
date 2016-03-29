@@ -21,6 +21,7 @@ import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.callback.ILogCallback;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
 import net.groboclown.idea.p4ic.server.exceptions.LoginRequiresPasswordException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
@@ -40,10 +41,17 @@ import java.util.concurrent.locks.ReentrantLock;
  * class.
  */
 class AuthenticatedServer {
+    enum AuthenticationResult {
+        AUTHENTICATED,
+        INVALID_LOGIN,
+        RELOGIN_FAILED,
+        NOT_CONNECTED
+    };
+
+
     private static final Logger LOG = Logger.getInstance(AuthenticatedServer.class);
     private static final Logger P4LOG = Logger.getInstance("p4");
     private static final Lock CONNECT_LOCK = new ReentrantLock();
-    public static final int MAX_AUTHENTICATION_RETRIES = 2;
 
     private static final AtomicInteger serverCount = new AtomicInteger(0);
     private static final AtomicInteger activeConnectionCount = new AtomicInteger(0);
@@ -111,6 +119,7 @@ class AuthenticatedServer {
             throw remakeException(authenticationException);
         }
         if (! hasValidatedAuthentication) {
+            // Note: does not check the authentication result.
             authenticate();
         }
         return server;
@@ -121,35 +130,19 @@ class AuthenticatedServer {
      * @return true if authentication was successful.
      * @throws P4JavaException
      */
-    boolean authenticate() throws P4JavaException {
+    AuthenticationResult authenticate() throws P4JavaException {
         if (! server.isConnected() || (project != null && project.isDisposed())) {
-            return false;
+            return AuthenticationResult.NOT_CONNECTED;
         }
 
         if (isInvalidLogin) {
             LOG.info("Previous login attempts failed.  Assuming authentication is invalid.");
-            return false;
+            return AuthenticationResult.INVALID_LOGIN;
         }
 
         // The default authentication has already run, but it may
         // be invalid.  However, all that checking will be in the
         // shared logic
-        //if (! hasPassedAuthentication) {
-        //    // We have not attempted to force authenticate this connection, but the default
-        //    // authentication has run.
-        //
-        //    isInvalidLogin = true;
-        //    hasValidatedAuthentication = false;
-        //    forceAuthenticate();
-        //
-        //    // If the forced authentication fails (throws an
-        //    // exception), then the connection is marked as
-        //    // invalid, and we will never attempt to
-        //    // re-login again.
-        //
-        //    isInvalidLogin = false;
-        //    hasPassedAuthentication = true;
-        //}
 
         if (! validateLogin()) {
             loginFailedCount++;
@@ -167,7 +160,7 @@ class AuthenticatedServer {
                 }
 
                 // This assumption that the authentication is invalid is too quick to judge.
-                // Do not return false yet
+                // Do not return not-authorized yet
             }
 
             // we have had a valid connection before, so we'll
@@ -178,7 +171,7 @@ class AuthenticatedServer {
             // in between, in cas ethe error comes from too frequent
             // requests.
 
-            for (int i = 0; i < MAX_AUTHENTICATION_RETRIES; i++) {
+            for (int i = 0; i < getMaxAuthenticationRetries(); i++) {
                 try {
                     // Sleeping a bit may cause the server to re-authenticate
                     // correctly.
@@ -192,14 +185,14 @@ class AuthenticatedServer {
                         LOG.info("Authorization successful after " + i +
                                 " unauthorized connections (but a valid one was seen earlier) for " +
                                 this);
-                        return true;
+                        return AuthenticationResult.AUTHENTICATED;
                     }
-                    forceAuthenticate();
+                    forceAuthenticate(i);
                     if (validateLogin()) {
                         LOG.info("Authorization successful after " + i +
                                 " unauthorized connections (but a valid one was seen earlier) for " +
                                 this);
-                        return true;
+                        return AuthenticationResult.AUTHENTICATED;
                     }
                 } catch (URISyntaxException e) {
                     throw new P4JavaException(e);
@@ -207,21 +200,21 @@ class AuthenticatedServer {
             }
             // Don't keep trying the same bad config.
             isInvalidLogin = true;
-            LOG.info("Failed authentication after " + MAX_AUTHENTICATION_RETRIES +
+            LOG.info("Failed authentication after " + getMaxAuthenticationRetries() +
                     " unauthorized connections (but a valid one was seen earlier) for " +
                     this);
-            return false;
+            return AuthenticationResult.RELOGIN_FAILED;
         }
         hasValidatedAuthentication = true;
-        return true;
+        return AuthenticationResult.AUTHENTICATED;
     }
 
-    private void forceAuthenticate() throws P4JavaException {
+    private void forceAuthenticate(int count) throws P4JavaException {
         try {
             // It looks like forced authentication can fail due to too many
             // quick requests to the server.  So wait a little bit to
             // give the server time to recover.
-            Thread.sleep(RECONNECTION_WAIT_MILLIS);
+            Thread.sleep(RECONNECTION_WAIT_MILLIS * (count + 1));
             if (LOG.isDebugEnabled()) {
                 LOG.debug("forcing authentication with " + this);
             }
@@ -462,6 +455,11 @@ class AuthenticatedServer {
 
         // generic p4 java exception.  The other kinds are sort of ignored.
         return new P4JavaException(authenticationException);
+    }
+
+
+    private int getMaxAuthenticationRetries() {
+        return UserProjectPreferences.getMaxAuthenticationRetries(project);
     }
 
 }

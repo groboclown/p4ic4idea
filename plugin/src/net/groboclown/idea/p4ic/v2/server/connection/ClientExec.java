@@ -31,6 +31,8 @@ import net.groboclown.idea.p4ic.server.ConnectionHandler;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.*;
 import net.groboclown.idea.p4ic.v2.events.Events;
+import net.groboclown.idea.p4ic.v2.server.connection.AuthenticatedServer.AuthenticationResult;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerRunner.P4Runner;
 import net.groboclown.idea.p4ic.v2.ui.alerts.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -129,7 +131,7 @@ class ClientExec {
      */
     @Deprecated
     static IServerInfo getServerInfo(@NotNull Project project, @NotNull ServerConfig config)
-            throws IOException, P4JavaException, URISyntaxException, P4LoginException {
+            throws IOException, P4JavaException, URISyntaxException, P4DisconnectedException {
         ConnectionHandler connectionHandler = ConnectionHandler.getHandlerFor(config);
 
         final AuthenticatedServer server = connectTo(project, null, connectionHandler, config,
@@ -139,9 +141,7 @@ class ClientExec {
                 return server.getServer().getServerInfo();
             } catch (P4JavaException e) {
                 if (isPasswordProblem(e)) {
-                    if (!server.authenticate()) {
-                        throw new P4LoginException(project, config, e);
-                    }
+                    authenticateServer(project, server, config, e);
                     return server.getServer().getServerInfo();
                 } else {
                     throw e;
@@ -188,6 +188,11 @@ class ClientExec {
         } catch (P4LoginException e) {
             needsAuthentication = true;
             exception = e;
+        } catch (P4RetryAuthenticationException e) {
+            needsAuthentication = true;
+            exception = e;
+        } catch (P4DisconnectedException e) {
+            exception = e;
         }
         if (! online) {
             statusController.onDisconnected();
@@ -198,6 +203,8 @@ class ClientExec {
                 final P4DisconnectedException ex;
                 if (exception == null) {
                     ex = new P4DisconnectedException();
+                } else if (exception instanceof P4DisconnectedException) {
+                    ex = (P4DisconnectedException) exception;
                 } else {
                     ex = new P4DisconnectedException(exception);
                 }
@@ -224,7 +231,7 @@ class ClientExec {
      */
     @Deprecated
     static List<String> getClientNames(@Nullable Project project, @NotNull ServerConfig config)
-            throws IOException, P4JavaException, URISyntaxException, P4LoginException {
+            throws IOException, P4JavaException, URISyntaxException, P4DisconnectedException {
         ConnectionHandler connectionHandler = ConnectionHandler.getHandlerFor(config);
         final AuthenticatedServer server = connectTo(project, null, connectionHandler, config,
                 getTempDir(project));
@@ -233,9 +240,7 @@ class ClientExec {
                 return getClientNames(server.getServer(), config.getUsername());
             } catch (P4JavaException e) {
                 if (isPasswordProblem(e)) {
-                    if (! server.authenticate()) {
-                        throw new P4LoginException(project, config, e);
-                    }
+                    authenticateServer(project, server, config, e);
                     return getClientNames(server.getServer(), config.getUsername());
                 }
                 throw e;
@@ -606,18 +611,33 @@ class ClientExec {
             // not a login failure.
             throw e;
         }
-        if (p4RunWithSkippedPasswordCheck(project, new P4Runner<Boolean>() {
+        final AuthenticatedServer server = cachedServer;
+        if (server == null) {
+            throw new P4JavaException("Disconnected server", e);
+        }
+        final AuthenticationResult authenticationResult = p4RunWithSkippedPasswordCheck(project, new P4Runner<AuthenticationResult>() {
             @Override
-            public Boolean run()
+            public AuthenticationResult run()
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
                     P4Exception {
                 LOG.info("Encountered password issue; attempting to reauthenticate " + cachedServer);
-                return cachedServer.authenticate();
+                return server.authenticate();
             }
-        }, /* first attempt at this login attempt, so retry is 0 */0)) {
-            return p4RunWithSkippedPasswordCheck(project, runner, retryCount + 1);
+        }, /* first attempt at this login attempt, so retry is 0 */ 0);
+        switch (authenticationResult) {
+            case AUTHENTICATED:
+                // Just fine; no errors.
+                return p4RunWithSkippedPasswordCheck(project, runner, retryCount + 1);
+            case INVALID_LOGIN:
+                throw loginFailure(project, getServerConfig(), getServerConnectedController(), e);
+            case NOT_CONNECTED:
+                throw disconnectedFailure(project, getServerConfig(), getServerConnectedController(), e);
+            case RELOGIN_FAILED:
+                // FIXME
+                throw new P4RetryAuthenticationException(project, config, e);
+            default:
+                throw e;
         }
-        throw loginFailure(project, getServerConfig(), getServerConnectedController(), e);
     }
 
 
@@ -628,6 +648,33 @@ class ClientExec {
         AlertManager.getInstance().addCriticalError(
                 new LoginFailedHandler(project, controller, config, e), ex);
         return ex;
+    }
+
+
+    static P4DisconnectedException disconnectedFailure(@NotNull Project project, @NotNull ServerConfig config,
+            @NotNull ServerConnectedController controller, @NotNull final P4JavaException e) {
+        P4DisconnectedException ret = new P4DisconnectedException(project, config, e);
+        AlertManager.getInstance().addCriticalError(
+                new DisconnectedHandler(project, controller, ret), ret);
+        return ret;
+    }
+
+
+    private static void authenticateServer(@Nullable Project project, @NotNull AuthenticatedServer server,
+            @NotNull ServerConfig config, @Nullable P4JavaException e) throws P4JavaException, P4DisconnectedException {
+        switch (server.authenticate()) {
+            case AUTHENTICATED:
+                // Just fine; no errors.
+                return;
+            case INVALID_LOGIN:
+                throw new P4LoginException(project, config, e);
+            case NOT_CONNECTED:
+                throw new P4DisconnectedException(project, config, e);
+            case RELOGIN_FAILED:
+                throw new P4RetryAuthenticationException(project, config, e);
+            default:
+                throw e;
+        }
     }
 
 
@@ -678,14 +725,10 @@ class ClientExec {
                 message.contains("The fingerprint for the public key sent to your client is");
     }
 
+
     @NotNull
     ServerConnectedController getServerConnectedController() {
         return connectedController;
-    }
-
-
-    interface P4Runner<T> {
-        T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception;
     }
 
 

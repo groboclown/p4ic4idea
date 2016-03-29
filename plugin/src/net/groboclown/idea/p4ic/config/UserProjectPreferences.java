@@ -37,6 +37,9 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public static final boolean DEFAULT_EDIT_IN_SEPARATE_THREAD = false;
     public static final boolean DEFAULT_PREFER_REVISIONS_FOR_FILES = true;
     public static final boolean DEFAULT_EDITED_WITHOUT_CHECKOUT_DONT_VERIFY = false;
+    public static final int DEFAULT_MAX_AUTHENTICATION_RETRIES = 3;
+    public static final int MIN_MAX_AUTHENTICATION_RETRIES = 0;
+    public static final int MAX_MAX_AUTHENTICATION_RETRIES = 5;
 
     @NotNull
     private State state = new State();
@@ -59,6 +62,7 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         // This makes for the cumbersome naming here, and the inverse
         // getter / setter.
         public boolean editedWithoutCheckoutDontVerify = DEFAULT_EDITED_WITHOUT_CHECKOUT_DONT_VERIFY;
+        public int maxAuthenticationRetries = DEFAULT_MAX_AUTHENTICATION_RETRIES;
     }
 
     @Nullable
@@ -169,6 +173,25 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
 
     public void setEditedWithoutCheckoutVerify(boolean value) {
         state.editedWithoutCheckoutDontVerify = ! value;
+    }
+
+    public static int getMaxAuthenticationRetries(@Nullable final Project project) {
+        if (project == null) {
+            return DEFAULT_MAX_AUTHENTICATION_RETRIES;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return DEFAULT_MAX_AUTHENTICATION_RETRIES;
+        }
+        return prefs.getMaxAuthenticationRetries();
+    }
+
+    public int getMaxAuthenticationRetries() {
+        return state.maxAuthenticationRetries;
+    }
+
+    public void setMaxAuthenticationRetries(int value) {
+        state.maxAuthenticationRetries = value;
     }
 
 }

@@ -19,7 +19,7 @@ import net.groboclown.idea.p4ic.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class P4LoginException extends P4DisconnectedException {
+public class P4LoginException extends P4PasswordException {
     public P4LoginException(@NotNull String message) {
         super(message);
     }

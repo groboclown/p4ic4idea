@@ -4,14 +4,30 @@
 
 ### Overview
 
+* Additional user preferences for controlling the connection management.
+* Changed the default p4java API connection implementation.
 * Bug fixes.
 
 ### Details
 
-* Bug fixes.
+* Additional user preferences for controlling the connection management.
     * Add configurable "max retry authentication" parameter to control how many times
-      to retry logging into the server once it unauthorizes the active connection.
+      to retry logging into the server after it reports an unauthorized connection.
+      This can help those users who experience frequent issues around the server
+      dropping the authentication token.
+    * Add configurable "Always reconnect for each request", which closes the server
+      connection after each server group of commands.
+* Changed the default p4java API connection implementation.
+    * The default p4java API connection implementation has switched from the
+      `OneShotServerImpl` to the `NtsServerImpl`, due to connection usage pattern
+      changes that causes the old implementation to incorrectly handle authentication.
+      To change back to the old connection, use the "java:" or "javassl" protocol
+      prefix; so if your connection is `localhost:1666` and you want to go back to
+      the old protocol, use `java://localhost:1666`. (#109)
+* Bug fixes.
     * Improved responses to the retry login failures to display a different dialog.
+    * Fixed the issue where files with a special character in the name (e.g.
+      `@` and `#`) can now be moved between changelists. (#103)
     
 
 ## ::v0.7.12::

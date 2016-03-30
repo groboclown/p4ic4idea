@@ -340,6 +340,38 @@ public class FileSpecUtil {
     }
 
 
+    /**
+     * For use when the spec pulled from one request is reused for another request.
+     *
+     * @param spec
+     * @return
+     */
+    @NotNull
+    public static IFileSpec escapeAndStripSpec(@NotNull IFileSpec spec) throws P4FileException {
+        if (spec.getDepotPathString() != null) {
+            return new FileSpec(new com.perforce.p4java.impl.generic.core.file.FilePath(
+                    PathType.DEPOT,
+                    escapeToP4Path(spec.getDepotPath().getPathString()), false));
+        }
+        if (spec.getLocalPathString() != null) {
+            return new FileSpec(new com.perforce.p4java.impl.generic.core.file.FilePath(
+                    PathType.LOCAL,
+                    escapeToP4Path(spec.getLocalPath().getPathString()), false));
+        }
+        if (spec.getClientPathString() != null) {
+            return new FileSpec(new com.perforce.p4java.impl.generic.core.file.FilePath(
+                    PathType.CLIENT,
+                    escapeToP4Path(spec.getClientPath().getPathString()), false));
+        }
+        if (spec.getOriginalPathString() != null) {
+            return new FileSpec(new com.perforce.p4java.impl.generic.core.file.FilePath(
+                    PathType.CLIENT,
+                    escapeToP4Path(spec.getOriginalPath().getPathString()), false));
+        }
+        throw new IllegalArgumentException("no path information in spec " + spec);
+    }
+
+
     @NotNull
     public static List<IFileSpec> getAlreadyEscapedSpecs(@NotNull final Collection<String> specs) {
         return FileSpecBuilder.makeFileSpecList(specs.toArray(new String[specs.size()]));

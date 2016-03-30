@@ -30,6 +30,7 @@ import com.perforce.p4java.impl.generic.core.ChangelistSummary;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
+import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
@@ -150,11 +151,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         // If the changelist is null, then we need to reserve one, as it will be the
         // replacement that we use when the real changelist is eventually created.
 
-        // FIXME see if we really need to use locallyCreatedChangelist
-
-        boolean locallyCreatedChangelist = false;
         if (changelistId == null) {
-            locallyCreatedChangelist = true;
             // allocate a local changelist id
             synchronized (localCacheSync) {
                 previousLocalChangelistId -= 1;
@@ -634,18 +631,33 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 List<IFileSpec> add = new ArrayList<IFileSpec>(status.size());
 
                 for (IExtendedFileSpec spec: status) {
+
+                    // the spec file will need to be re-escaped and stripped of annotations (#103)
+                    final IFileSpec forServer;
+                    try {
+                        forServer = FileSpecUtil.escapeAndStripSpec(spec);
+                    } catch (P4FileException e) {
+                        alerts.addWarning(
+                                exec.getProject(),
+                                P4Bundle.message("filestatus.error.title"),
+                                P4Bundle.message("filestatus.error", files),
+                                e, files);
+                        markFailed(update);
+                        continue;
+                    }
+
                     if (spec.getOpStatus() != FileSpecOpStatus.VALID) {
                         LOG.debug("File status: " + spec.getOpStatus() + ": " + spec.getStatusMessage());
                     } else if (spec.getOpenAction() != null || spec.getAction() != null) {
                         if (spec.getOpenChangelistId() != changelistId) {
                             // already opened; reopen it
-                            reopen.add(spec);
+                            reopen.add(forServer);
                         } else {
                             LOG.info("Ignoring reopen request for " + spec.getDepotPathString() + "; already in the right changelist");
                         }
                     } else if (spec.getHeadRev() <= 0) {
                         // add
-                        add.add(spec);
+                        add.add(forServer);
                     } else {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Marking as edit: " + spec +
@@ -653,7 +665,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                                     .getHeadAction() + "/" + spec.getOtherAction() +
                                     "; change: " + spec.getOpenChangelistId());
                         }
-                        edit.add(FileSpecUtil.stripAnnotations(spec));
+                        edit.add(forServer);
                     }
                 }
 

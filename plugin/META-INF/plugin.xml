@@ -6,17 +6,26 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.7.13</em>
+            <ol>
+              <li>Added configurable "max retry authentication" parameter to control how many times
+              to retry logging into the server after it reports an unauthorized connection.
+              This can help those users who experience frequent issues around the server
+              dropping the authentication token.</li>
+              <li>Add configurable "Always reconnect for each request", which closes the server
+              connection after each server group of commands.</li>
+              <li>Changed the default p4java API connection implementation to
+              better handle server authentication retention.</li>
+              <li>Improved responses to the retry login failures to display a different dialog.</li>
+              <li>Fixed the issue where files with a special character in the name (e.g.
+              "@" and "#") can now be moved between changelists.</li>
+            </ol>
+          </li>
           <li><em>0.7.12</em>
             <ol>
               <li>More fixes for the authentication prompting problem.
               Includes re-introducing proper identification and handling of
               real password issues.</li>
-            </ol>
-          </li>
-          <li><em>0.7.11</em>
-            <ol>
-              <li>Aleviated some of the issues surrounding the plugin
-              constantly reporting that the password is invalid.</li>
             </ol>
           </li>
         </ol>

@@ -37,6 +37,7 @@ public class UserPreferencesPanel {
     private JRadioButton myPreferChangelist;
     private JCheckBox myEditedWithoutCheckoutCheckBox;
     private JSpinner myMaxRetryAuthenticationSpinner;
+    private JCheckBox myReconnectWithEachRequest;
     private ButtonGroup myPreferRevisionGroup;
 
 
@@ -67,6 +68,7 @@ public class UserPreferencesPanel {
                         : myPreferChangelist.getModel()
                 , true);
         myEditedWithoutCheckoutCheckBox.setSelected(userPrefs.getEditedWithoutCheckoutVerify());
+        myReconnectWithEachRequest.setSelected(userPrefs.getReconnectWithEachRequest());
     }
 
 
@@ -76,6 +78,7 @@ public class UserPreferencesPanel {
         userPrefs.setPreferRevisionsForFiles(getPreferRevisionsForFiles());
         userPrefs.setEditedWithoutCheckoutVerify(getEditedWithoutCheckoutVerify());
         userPrefs.setMaxAuthenticationRetries(getMaxAuthenticationRetries());
+        userPrefs.setReconnectWithEachRequest(getReconnectWithEachRequest());
     }
 
     boolean isModified(@NotNull final UserProjectPreferences preferences) {
@@ -84,7 +87,8 @@ public class UserPreferencesPanel {
                         getMaxTimeout() != preferences.getMaxConnectionWaitTimeMillis() ||
                         getPreferRevisionsForFiles() != preferences.getPreferRevisionsForFiles() ||
                         getEditedWithoutCheckoutVerify() != preferences.getEditedWithoutCheckoutVerify() ||
-                        getMaxAuthenticationRetries() != preferences.getMaxAuthenticationRetries();
+                        getMaxAuthenticationRetries() != preferences.getMaxAuthenticationRetries() ||
+                        getReconnectWithEachRequest() != preferences.getReconnectWithEachRequest();
     }
 
 
@@ -110,6 +114,10 @@ public class UserPreferencesPanel {
         return (Integer) myMaxRetryAuthenticationSpinner.getModel().getValue();
     }
 
+    private boolean getReconnectWithEachRequest() {
+        return myReconnectWithEachRequest.isSelected();
+    }
+
     private void createUIComponents() {
         // TODO: place custom component creation code here
     }
@@ -130,10 +138,12 @@ public class UserPreferencesPanel {
      */
     private void $$$setupUI$$$() {
         myRootPanel = new JPanel();
-        myRootPanel.setLayout(new GridLayoutManager(4, 2, new Insets(0, 0, 0, 0), -1, -1));
+        myRootPanel.setLayout(new GridLayoutManager(5, 2, new Insets(0, 0, 0, 0), -1, -1));
         final JLabel label1 = new JLabel();
         this.$$$loadLabelText$$$(label1,
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.max_timeout"));
+        label1.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("user.prefs.max_timeout.tooltip"));
         myRootPanel.add(label1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myMaxTimeout = new JSpinner();
@@ -142,7 +152,7 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         myRootPanel.add(panel1,
                 new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
@@ -167,10 +177,19 @@ public class UserPreferencesPanel {
                 new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        myReconnectWithEachRequest = new JCheckBox();
+        this.$$$loadButtonText$$$(myReconnectWithEachRequest,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.always_reconnect"));
+        myReconnectWithEachRequest.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("user.prefs.always_reconnect.tooltip"));
+        panel1.add(myReconnectWithEachRequest,
+                new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         myRootPanel.add(panel2,
-                new GridConstraints(2, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                new GridConstraints(3, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
                         0, false));
@@ -198,9 +217,22 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         myRootPanel.add(spacer2,
-                new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
+                new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
                         GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JLabel label2 = new JLabel();
+        this.$$$loadLabelText$$$(label2,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.max_auth_retry"));
+        myRootPanel.add(label2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myMaxRetryAuthenticationSpinner = new JSpinner();
+        myMaxRetryAuthenticationSpinner.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("user.prefs.max_auth_retry.tooltip"));
+        myRootPanel.add(myMaxRetryAuthenticationSpinner,
+                new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         label1.setLabelFor(myMaxTimeout);
+        label2.setLabelFor(myMaxRetryAuthenticationSpinner);
     }
 
     /**

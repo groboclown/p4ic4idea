@@ -69,6 +69,8 @@ class AuthenticatedServer {
     @NotNull
     private IOptionsServer server;
 
+    private Thread checkedOutBy;
+
     private P4JavaException authenticationException = null;
     private boolean hasPassedAuthentication = false;
     private boolean hasValidatedAuthentication = false;
@@ -79,6 +81,7 @@ class AuthenticatedServer {
     private int forcedAuthenticationCount = 0;
     private int connectedCount = 0;
     private int disconnectedCount = 0;
+
 
 
     AuthenticatedServer(@Nullable Project project,
@@ -92,8 +95,6 @@ class AuthenticatedServer {
         this.tempDir = tempDir;
         this.server = reconnect(project, clientName, connectionHandler,
                 config, tempDir, serverInstance);
-
-        // Note: at this point, the
 
         connectedCount++;
     }
@@ -112,17 +113,49 @@ class AuthenticatedServer {
         }
     }
 
+    // experimental workflow
 
     @NotNull
-    IOptionsServer getServer() throws P4JavaException {
+    synchronized IOptionsServer checkoutServer() throws P4JavaException, URISyntaxException {
         if (isInvalidLogin) {
             throw remakeException(authenticationException);
         }
-        if (! hasValidatedAuthentication) {
+        if (checkedOutBy != null) {
+            throw new P4JavaException("Server object already checked out by " + checkedOutBy);
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Checking out server " + this + " in " + Thread.currentThread());
+        }
+
+        if (! server.isConnected()) {
+            reconnect();
+        }
+        //if (! hasValidatedAuthentication) {
             // Note: does not check the authentication result.
             authenticate();
-        }
+        //}
+        checkedOutBy = Thread.currentThread();
         return server;
+    }
+
+    synchronized void checkinServer(@NotNull IOptionsServer server) throws P4JavaException {
+        if (checkedOutBy != Thread.currentThread()) {
+            throw new P4JavaException("Server object not checked out by current thread (current thread: " +
+                Thread.currentThread() + "; checked out by " + checkedOutBy + ")");
+        }
+        if (this.server != server) {
+            throw new P4JavaException("Incorrect server instance check-in");
+        }
+        checkedOutBy = null;
+        if (UserProjectPreferences.getReconnectWithEachRequest(project)) {
+            // Note that this isn't going to be an absolute reconnect with
+            // each request, but a general one.  One or more server requests
+            // will actually be associated with this server object, but they
+            // should all run within the same small time frame.
+
+            disconnect();
+        }
     }
 
     /**
@@ -175,12 +208,7 @@ class AuthenticatedServer {
                 try {
                     // Sleeping a bit may cause the server to re-authenticate
                     // correctly.
-                    if (server.isConnected()) {
-                        server.disconnect();
-                    }
-                    server = reconnect(project, clientName, connectionHandler, config, tempDir,
-                            serverInstance);
-                    connectedCount++;
+                    reconnect();
                     if (validateLogin()) {
                         LOG.info("Authorization successful after " + i +
                                 " unauthorized connections (but a valid one was seen earlier) for " +
@@ -234,6 +262,7 @@ class AuthenticatedServer {
             authenticationException = e;
             throw e;
         } catch (InterruptedException e) {
+            // TODO should not be wrapping in a P4JavaException
             throw new P4JavaException(e);
         }
     }
@@ -244,6 +273,27 @@ class AuthenticatedServer {
         disconnect();
 
         super.finalize();
+    }
+
+
+    private void reconnect() throws P4JavaException, URISyntaxException {
+        if (checkedOutBy != null) {
+            throw new P4JavaException("Server instance already checked out by " + checkedOutBy);
+        }
+        try {
+            CONNECT_LOCK.lockInterruptibly();
+            try {
+                disconnect();
+                server = reconnect(project, clientName, connectionHandler, config, tempDir,
+                        serverInstance);
+                connectedCount++;
+            } finally {
+                CONNECT_LOCK.unlock();
+            }
+        } catch (InterruptedException e) {
+            // TODO should not be wrapping in a P4JavaException
+            throw new P4JavaException(e);
+        }
     }
 
 
@@ -420,7 +470,7 @@ class AuthenticatedServer {
         if (authenticationException == null) {
             return new P4JavaException("invalid login credentials");
         }
-        // TODO This is an implicit tight coupling with ClientExec.  However, we want to
+        // TODO This is an implicit tight coupling with ServerRunner.  However, we want to
         // throw a fresh exception so we record the real source of the error and the
         // actual where-we-are-throwing-it-now location.
         if (authenticationException instanceof PasswordAccessedWrongException) {
@@ -430,7 +480,7 @@ class AuthenticatedServer {
         }
         if (authenticationException instanceof LoginRequiresPasswordException) {
             return new LoginRequiresPasswordException(
-                    (AccessException) ((LoginRequiresPasswordException) authenticationException).getCause());
+                    (AccessException) authenticationException.getCause());
         }
         if (authenticationException instanceof AccessException) {
             return new AccessException((AccessException) authenticationException);

@@ -78,30 +78,41 @@ public class P4ConfigUtil {
     @Nullable
     public static IServerAddress.Protocol getProtocolFromPort(String port) {
         String protocol = portSplit(port)[0];
+
+        // Bug #109: Switch the default connections over to the Nts server impl.
+        // Only if the user explicitly requests the old one do we use it.
+
         if (protocol == null) {
-            return IServerAddress.Protocol.P4JAVA;
-        }
-        protocol = protocol.toLowerCase();
-        if (protocol.equals("ssl") ||
-                protocol.equals("javassl") ||
-                protocol.equals("javas")) {
-            return IServerAddress.Protocol.P4JAVASSL;
-        }
-        if (protocol.equals("java") || protocol.equals("tcp")) {
-            return IServerAddress.Protocol.P4JAVA;
-        }
-        if (protocol.equals("rpc")) {
-            return IServerAddress.Protocol.P4JRPC;
-        }
-        if (protocol.equals("rpcs") ||
-                protocol.equals("rpcssl")) {
-            return IServerAddress.Protocol.P4JRPCSSL;
-        }
-        if (protocol.equals("nts")) {
             return IServerAddress.Protocol.P4JRPCNTS;
         }
-        if (protocol.equals("ntss") ||
-                protocol.equals("ntsssl")) {
+        protocol = protocol.toLowerCase();
+        if ("ssl".equals(protocol)) {
+            return IServerAddress.Protocol.P4JRPCNTSSSL;
+        }
+        if ("tcp".equals(protocol)) {
+            return IServerAddress.Protocol.P4JRPCNTS;
+        }
+        if ("javassl".equals(protocol) ||
+                "javas".equals(protocol)) {
+            // explicit request for the old ones
+            return IServerAddress.Protocol.P4JAVASSL;
+        }
+        if ("java".equals(protocol)) {
+            // explicit request for the old ones
+            return IServerAddress.Protocol.P4JAVA;
+        }
+        if ("rpc".equals(protocol)) {
+            return IServerAddress.Protocol.P4JRPC;
+        }
+        if ("rpcs".equals(protocol) ||
+                "rpcssl".equals(protocol)) {
+            return IServerAddress.Protocol.P4JRPCSSL;
+        }
+        if ("nts".equals(protocol)) {
+            return IServerAddress.Protocol.P4JRPCNTS;
+        }
+        if ("ntss".equals(protocol) ||
+                "ntsssl".equals(protocol)) {
             return IServerAddress.Protocol.P4JRPCNTSSSL;
         }
         return null;

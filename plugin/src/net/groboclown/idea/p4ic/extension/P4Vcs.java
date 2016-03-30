@@ -63,6 +63,7 @@ import net.groboclown.idea.p4ic.v2.server.P4ServerManager;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -684,7 +685,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
                 configSources.add(server.getProjectConfigSource());
             }
         }
-        ConnectionUIConfiguration.getClients(configSources);
+        ConnectionUIConfiguration.getClients(
+                configSources, ServerConnectionManager.getInstance());
 
         // Now that the servers are connected, or at least the connection
         // status is known, we can refresh the workspace view.

@@ -20,7 +20,6 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerAddress.Protocol;
-import com.perforce.p4java.server.IServerInfo;
 import net.groboclown.idea.p4ic.ProjectRule;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4Config.ConnectionMethod;
@@ -43,10 +42,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.concurrent.TimeoutException;
 
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
-
 /**
  * This requires getting a valid Project instance.  Once that part of the ProjectRule is working
  * correctly, this this can be renamed to "ClientExecTest".
@@ -60,16 +55,6 @@ public class ClientExecTestNotWorking {
     private MockServerStatusController controller;
     private ServerConfig serverConfig;
     private ClientExec exec;
-
-
-    @Test
-    public void testGetServerInfo() throws Exception {
-        server.add(new P4Request(CmdSpec.INFO.toString(), new String[0], null, null),
-                P4Response.serverInfo(serverConfig, true, false));
-
-        final IServerInfo info = ClientExec.getServerInfo(project.getProject(), serverConfig);
-        assertThat(info, not(nullValue()));
-    }
 
     @Test
     public void testRunWithClient() throws Exception {

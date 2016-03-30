@@ -19,7 +19,7 @@ import net.groboclown.idea.p4ic.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class P4PasswordException extends P4DisconnectedException {
+public class P4PasswordException extends P4VcsConnectionException {
     public P4PasswordException(@NotNull String message) {
         super(message);
     }
@@ -28,18 +28,15 @@ public class P4PasswordException extends P4DisconnectedException {
         super(cause);
     }
 
+    public P4PasswordException(@NotNull P4VcsConnectionException cause) {
+        super(cause.getProject(), cause.getServerConfig(), cause);
+    }
+
     public P4PasswordException(@Nullable Project project, @Nullable ServerConfig serverConfig, @NotNull String message) {
         super(project, serverConfig, message);
     }
 
     public P4PasswordException(@Nullable Project project, @Nullable ServerConfig serverConfig, @NotNull P4JavaException cause) {
         super(project, serverConfig, cause);
-    }
-
-    public P4JavaException getP4JavaException() {
-        if (getCause() != null && getCause() instanceof P4JavaException) {
-            return (P4JavaException) getCause();
-        }
-        return null;
     }
 }

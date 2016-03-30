@@ -40,6 +40,7 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public static final int DEFAULT_MAX_AUTHENTICATION_RETRIES = 3;
     public static final int MIN_MAX_AUTHENTICATION_RETRIES = 0;
     public static final int MAX_MAX_AUTHENTICATION_RETRIES = 5;
+    public static final boolean DEFAULT_RECONNECT_WITH_EACH_REQUEST = false;
 
     @NotNull
     private State state = new State();
@@ -62,7 +63,10 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         // This makes for the cumbersome naming here, and the inverse
         // getter / setter.
         public boolean editedWithoutCheckoutDontVerify = DEFAULT_EDITED_WITHOUT_CHECKOUT_DONT_VERIFY;
+
         public int maxAuthenticationRetries = DEFAULT_MAX_AUTHENTICATION_RETRIES;
+
+        public boolean reconnectWithEachRequest = DEFAULT_RECONNECT_WITH_EACH_REQUEST;
     }
 
     @Nullable
@@ -194,4 +198,23 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         state.maxAuthenticationRetries = value;
     }
 
+
+    public static boolean getReconnectWithEachRequest(@Nullable final Project project) {
+        if (project == null) {
+            return DEFAULT_RECONNECT_WITH_EACH_REQUEST;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return DEFAULT_RECONNECT_WITH_EACH_REQUEST;
+        }
+        return prefs.getReconnectWithEachRequest();
+    }
+
+    public boolean getReconnectWithEachRequest() {
+        return state.reconnectWithEachRequest;
+    }
+
+    public void setReconnectWithEachRequest(boolean value) {
+        state.reconnectWithEachRequest = value;
+    }
 }

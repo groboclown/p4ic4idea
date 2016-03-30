@@ -28,6 +28,10 @@ public class P4RetryAuthenticationException extends P4PasswordException {
         super(cause);
     }
 
+    public P4RetryAuthenticationException(@NotNull P4VcsConnectionException cause) {
+        super(cause);
+    }
+
     public P4RetryAuthenticationException(@Nullable Project project, @Nullable ServerConfig serverConfig, @NotNull String message) {
         super(project, serverConfig, message);
     }

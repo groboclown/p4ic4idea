@@ -20,6 +20,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.*;
 import com.perforce.p4java.core.file.*;
 import com.perforce.p4java.exception.P4JavaException;
@@ -35,6 +36,7 @@ import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.*;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.server.IServerInfo;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ServerConfig;
@@ -60,9 +62,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
-import static net.groboclown.idea.p4ic.server.P4StatusMessage.getErrors;
-import static net.groboclown.idea.p4ic.server.P4StatusMessage.getErrorsAndWarnings;
-import static net.groboclown.idea.p4ic.server.P4StatusMessage.hasErrors;
+import static net.groboclown.idea.p4ic.server.P4StatusMessage.*;
 
 /**
  * A project-aware command executor against the server/client.
@@ -796,17 +796,37 @@ public class P4Exec2 {
         });
     }
 
-    public void getServerInfo() throws VcsException, CancellationException {
-        exec.runWithServer(project, new ClientExec.WithServer<Void>() {
+    public IServerInfo getServerInfo() throws VcsException, CancellationException {
+        return exec.runWithServer(project, new ClientExec.WithServer<IServerInfo>() {
             @Override
-            public Void run(@NotNull IOptionsServer server, @NotNull ServerCount count)
+            public IServerInfo run(@NotNull IOptionsServer server, @NotNull ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 count.invoke("getServerInfo");
-                server.getServerInfo();
-                return null;
+                return server.getServerInfo();
             }
         });
     }
+
+
+    public List<String> getClientNames() throws VcsException, CancellationException {
+        return exec.runWithServer(project, new ClientExec.WithServer<List<String>>() {
+            @Override
+            public List<String> run(@NotNull IOptionsServer server, @NotNull ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                count.invoke("getClients");
+                final List<IClientSummary> clients =
+                        server.getClients(getUsername(), null, 0);
+                List<String> ret = new ArrayList<String>(clients.size());
+                for (IClientSummary client : clients) {
+                    if (client != null && client.getName() != null) {
+                        ret.add(client.getName());
+                    }
+                }
+                return ret;            }
+        });
+    }
+
 
     @NotNull
     public List<P4StatusMessage> submit(final int changelistId,

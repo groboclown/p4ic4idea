@@ -34,12 +34,10 @@ import net.groboclown.idea.p4ic.config.P4ConfigUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.connection.*;
-import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
+import net.groboclown.idea.p4ic.v2.server.cache.CentralCacheManager;
+import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration.ClientResult;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource.Builder;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSourceLoader;
 import net.groboclown.idea.p4ic.v2.ui.alerts.ConfigPanelErrorHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -364,7 +362,9 @@ public class P4ConfigPanel {
                         final List<Builder> problems = new ArrayList<Builder>();
                         problems.addAll(sources.invalid);
                         for (Entry<ProjectConfigSource, Exception> entry : ConnectionUIConfiguration
-                                .findConnectionProblems(sources.valid).entrySet()) {
+                                .findConnectionProblems(
+                                        sources.valid, ServerConnectionManager.getInstance())
+                                .entrySet()) {
                             final VcsException err;
                             //noinspection ThrowableResultOfMethodCallIgnored
                             if (entry.getValue() instanceof VcsException) {
@@ -422,7 +422,8 @@ public class P4ConfigPanel {
     // CalledInBackground
     private List<String> loadClientList(@Nullable Object selected) {
         final Map<ProjectConfigSource, ClientResult> clientResults =
-                ConnectionUIConfiguration.getClients(getValidConfigs().valid);
+                ConnectionUIConfiguration.getClients(getValidConfigs().valid,
+                        ServerConnectionManager.getInstance());
 
         if (clientResults == null) {
             // Don't need a status update or any updates; the user should have
@@ -1125,4 +1126,5 @@ public class P4ConfigPanel {
         }
     }
 
+    private static CentralCacheManager MOCK_CACHE_MANAGER;
 }

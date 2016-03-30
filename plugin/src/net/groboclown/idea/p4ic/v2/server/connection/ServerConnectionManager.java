@@ -25,6 +25,7 @@ import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
@@ -59,6 +60,7 @@ public class ServerConnectionManager implements ApplicationComponent {
         return ApplicationManager.getApplication().getComponent(ServerConnectionManager.class);
     }
 
+    // Used by PicoContainer
     public ServerConnectionManager() {
         this(new CentralCacheManager(), AlertManager.getInstance());
     }
@@ -85,7 +87,7 @@ public class ServerConnectionManager implements ApplicationComponent {
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                     @NotNull final VcsConnectionProblem ex) {
-                // because this is selective on a config, we can safely ignore the project.
+                // because this is selective on a exec, we can safely ignore the project.
                 invalidateConfig(config);
             }
         });
@@ -282,7 +284,7 @@ public class ServerConnectionManager implements ApplicationComponent {
         @Override
         public void onConfigInvalid() {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Marking config invalid: " + config, new Throwable("stack capture"));
+                LOG.debug("Marking exec invalid: " + config, new Throwable("stack capture"));
             }
             valid = false;
         }
@@ -301,10 +303,17 @@ public class ServerConnectionManager implements ApplicationComponent {
                 throws P4InvalidClientException {
             ServerConnection conn = clientNames.get(clientServer.getClientId());
             if (conn == null) {
+                final ClientExec exec;
+                try {
+                    exec = new ClientExec(config, this, clientServer.getClientId());
+                } catch (P4InvalidConfigException e) {
+                    LOG.warn(e);
+                    throw new P4InvalidClientException(clientServer);
+                }
                 conn = new ServerConnection(alerts, clientServer,
                         cacheManager.getClientCacheManager(
-                                clientServer, config, new CaseInsensitiveCheck(project, config)),
-                        config, this, synchronizer.createConnectionSynchronizer());
+                                clientServer, config, new CaseInsensitiveCheck(project, exec)),
+                        config, this, synchronizer.createConnectionSynchronizer(), exec);
                 clientNames.put(clientServer.getClientId(), conn);
             }
             return conn;
@@ -360,17 +369,16 @@ public class ServerConnectionManager implements ApplicationComponent {
 
     private static class CaseInsensitiveCheck implements Callable<Boolean> {
         private final Project project;
-        private final ServerConfig config;
+        private final ClientExec exec;
 
-        private CaseInsensitiveCheck(@NotNull final Project project, @NotNull final ServerConfig config) {
+        private CaseInsensitiveCheck(@NotNull final Project project, @NotNull final ClientExec exec) {
             this.project = project;
-            this.config = config;
+            this.exec = exec;
         }
 
         @Override
         public Boolean call() throws Exception {
-            // no project is available at this level.
-            return ! ClientExec.getServerInfo(project, config).isCaseSensitive();
+            return ! (new P4Exec2(project, exec)).getServerInfo().isCaseSensitive();
         }
     }
 

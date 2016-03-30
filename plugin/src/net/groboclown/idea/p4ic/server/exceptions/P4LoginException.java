@@ -20,16 +20,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class P4LoginException extends P4PasswordException {
-    public P4LoginException(@NotNull String message) {
-        super(message);
-    }
-
     public P4LoginException(@NotNull P4JavaException cause) {
         super(cause);
     }
 
-    public P4LoginException(@Nullable Project project, @Nullable ServerConfig serverConfig, @NotNull String message) {
-        super(project, serverConfig, message);
+    public P4LoginException(@NotNull final P4UnknownLoginException e) {
+        super(e);
     }
 
     public P4LoginException(@Nullable Project project, @Nullable ServerConfig serverConfig, @NotNull P4JavaException cause) {

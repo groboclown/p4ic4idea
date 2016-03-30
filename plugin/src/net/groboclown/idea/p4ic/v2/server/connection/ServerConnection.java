@@ -18,10 +18,12 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.perforce.p4java.server.IServerInfo;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
@@ -91,13 +93,15 @@ public class ServerConnection {
     public ServerConnection(@NotNull final AlertManager alertManager,
             @NotNull ClientServerId clientServerId, @NotNull ClientCacheManager cacheManager,
             @NotNull ServerConfig config, @NotNull ServerStatusController statusController,
-            @NotNull Synchronizer.ServerSynchronizer.ConnectionSynchronizer synchronizer) {
+            @NotNull Synchronizer.ServerSynchronizer.ConnectionSynchronizer synchronizer,
+            @Nullable ClientExec initial) {
         this.synchronizer = synchronizer;
         this.alertManager = alertManager;
         this.cacheManager = cacheManager;
         this.config = config;
         this.statusController = statusController;
         this.clientName = clientServerId.getClientId();
+        this.clientExec = initial;
 
         background = new Thread(new QueueRunner());
         background.setDaemon(false);
@@ -125,7 +129,7 @@ public class ServerConnection {
             // working offline, then don't check if we're online (especially since
             // the user can manually switch to offline mode).
             if (isWorkingOnline()) {
-                ClientExec.checkIfOnline(project, config, statusController);
+                checkIfOnline(project);
             }
 
             // Push all the cached pending updates into the queue for future
@@ -151,7 +155,7 @@ public class ServerConnection {
 
 
 
-    public void queueAction(@NotNull Project project, @NotNull ServerUpdateAction action) {
+    private void queueAction(@NotNull Project project, @NotNull ServerUpdateAction action) {
         LOG.info("Queueing action for execution: " + action);
         pendingUpdates.add(new UpdateAction(project, action));
     }
@@ -285,6 +289,22 @@ public class ServerConnection {
     }
 
 
+    /**
+     * Used in the few rare cases where the client connection is used outside the
+     * scope of the P4Server objects.  If we don't have this method, and instead
+     * require use of the getExec method, then there will be giant threading issues.
+     *
+     * Callers must call {@link ClientExec#dispose()} when finished using it.
+     *
+     * @return the exec object to use in a one-off.
+     * @throws P4InvalidConfigException
+     */
+    @Deprecated
+    ClientExec oneOffClientExec() throws P4InvalidConfigException {
+        return new ClientExec(config, statusController, clientName);
+    }
+
+
     P4Exec2 getExec(@NotNull Project project) throws P4InvalidConfigException {
         if (disposed) {
             throw new IllegalStateException("connection disposed");
@@ -296,6 +316,21 @@ public class ServerConnection {
             }
             return new P4Exec2(project, clientExec);
         }
+    }
+
+    private boolean checkIfOnline(@NotNull Project project) {
+        try {
+            final IServerInfo info = getExec(project).getServerInfo();
+            if (info != null) {
+                return true;
+            }
+        } catch (P4DisconnectedException e) {
+            final DisconnectedHandler errorHandler = new DisconnectedHandler(project, statusController, e);
+            AlertManager.getInstance().addCriticalError(errorHandler, e);
+        } catch (VcsException e) {
+            LOG.warn(e);
+        }
+        return false;
     }
 
 
@@ -368,7 +403,7 @@ public class ServerConnection {
     }
 
 
-    class QueueRunner implements Runnable {
+    private class QueueRunner implements Runnable {
         @Override
         public void run() {
             while (!disposed) {
@@ -473,7 +508,7 @@ public class ServerConnection {
     }
 
 
-    static class UpdateAction {
+    private static class UpdateAction {
         final ServerUpdateAction action;
         final Project project;
 

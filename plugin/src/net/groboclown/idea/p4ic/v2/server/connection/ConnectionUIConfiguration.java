@@ -15,9 +15,9 @@
 package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.project.Project;
-import com.perforce.p4java.exception.AccessException;
-import com.perforce.p4java.exception.P4JavaException;
-import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
+import com.intellij.openapi.vcs.VcsException;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,34 +32,37 @@ import java.util.Map;
  * Handles the server connection code when setting up an initial connection.
  */
 public class ConnectionUIConfiguration {
-    public static void checkConnection(@NotNull ProjectConfigSource source)
-            throws P4JavaException, IOException, URISyntaxException, P4LoginException {
+    public static void checkConnection(@NotNull ProjectConfigSource source,
+            @NotNull ServerConnectionManager connectionManager)
+            throws IOException, URISyntaxException,
+                VcsException {
+        final Project project = source.getProject();
+        final ServerConnection connection =
+                connectionManager.getConnectionFor(project,
+                        source.getClientServerId(),
+                        source.getServerConfig());
+        ClientExec exec = connection.oneOffClientExec();
         try {
-            ClientExec.getServerInfo(source.getProject(), source.getServerConfig());
-        } catch (P4LoginException e) {
-            ClientExec.loginFailure(source.getProject(), source.getServerConfig(),
-                    NOOP_CONTROLLER, e.getP4JavaException());
-            throw e;
+            new P4Exec2(source.getProject(), exec).getServerInfo();
+        } finally {
+            exec.dispose();
         }
     }
 
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     @NotNull
-    public static Map<ProjectConfigSource, Exception> findConnectionProblems(@NotNull
-            Collection<ProjectConfigSource> sources) {
+    public static Map<ProjectConfigSource, Exception> findConnectionProblems(
+            @NotNull Collection<ProjectConfigSource> sources,
+            @NotNull ServerConnectionManager connectionManager) {
         final Map<ProjectConfigSource, Exception> ret = new HashMap<ProjectConfigSource, Exception>();
         for (ProjectConfigSource source : sources) {
             try {
-                checkConnection(source);
-            } catch (P4JavaException e) {
-                ret.put(source, e);
+                checkConnection(source, connectionManager);
             } catch (IOException e) {
                 ret.put(source, e);
             } catch (URISyntaxException e) {
                 ret.put(source, e);
-            } catch (P4LoginException e) {
-                ClientExec.loginFailure(source.getProject(), source.getServerConfig(),
-                        NOOP_CONTROLLER, e.getP4JavaException());
+            } catch (VcsException e) {
                 ret.put(source, e);
             }
         }
@@ -67,29 +70,32 @@ public class ConnectionUIConfiguration {
     }
 
     @Nullable
-    public static Map<ProjectConfigSource, ClientResult> getClients(@Nullable
-            Collection<ProjectConfigSource> sources) {
+    public static Map<ProjectConfigSource, ClientResult> getClients(
+            @Nullable Collection<ProjectConfigSource> sources,
+            @NotNull ServerConnectionManager connectionManager) {
         final Map<ProjectConfigSource, ClientResult> ret = new HashMap<ProjectConfigSource, ClientResult>();
         if (sources == null) {
             return null;
         }
         for (ProjectConfigSource source : sources) {
             try {
-                final List<String> clients = ClientExec.getClientNames(source.getProject(), source.getServerConfig());
-                ret.put(source, new ClientResult(clients));
-            } catch (IOException e) {
+                final ServerConnection connection =
+                        connectionManager.getConnectionFor(source.getProject(),
+                                source.getClientServerId(),
+                                source.getServerConfig());
+                final ClientExec exec = connection.oneOffClientExec();
+                try {
+                    final List<String> clients = new P4Exec2(source.getProject(), exec).
+                            getClientNames();
+                    ret.put(source, new ClientResult(clients));
+                } finally {
+                    exec.dispose();
+                }
+            } catch (P4InvalidConfigException e) {
                 ret.put(source, new ClientResult(e));
-            } catch (AccessException e) {
-                ClientExec.loginFailure(source.getProject(), source.getServerConfig(),
-                        NOOP_CONTROLLER, e);
+            } catch (P4InvalidClientException e) {
                 ret.put(source, new ClientResult(e));
-            } catch (P4JavaException e) {
-                ret.put(source, new ClientResult(e));
-            } catch (URISyntaxException e) {
-                ret.put(source, new ClientResult(e));
-            } catch (P4LoginException e) {
-                ClientExec.loginFailure(source.getProject(), source.getServerConfig(),
-                        NOOP_CONTROLLER, e.getP4JavaException());
+            } catch (VcsException e) {
                 ret.put(source, new ClientResult(e));
             }
         }
@@ -122,42 +128,6 @@ public class ConnectionUIConfiguration {
 
         public Exception getConnectionProblem() {
             return connectionProblem;
-        }
-    }
-
-
-    private static final NoOpServerConnectedController NOOP_CONTROLLER = new NoOpServerConnectedController();
-
-    private static class NoOpServerConnectedController implements ServerConnectedController {
-
-        @Override
-        public boolean isWorkingOnline() {
-            return false;
-        }
-
-        @Override
-        public boolean isWorkingOffline() {
-            return false;
-        }
-
-        @Override
-        public boolean isAutoOffline() {
-            return false;
-        }
-
-        @Override
-        public boolean isValid() {
-            return false;
-        }
-
-        @Override
-        public void disconnect() {
-
-        }
-
-        @Override
-        public void connect(@NotNull final Project project) {
-
         }
     }
 }

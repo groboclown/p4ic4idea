@@ -44,6 +44,8 @@ public class P4ConfigUtil {
             ret = simplePort;
         }
         if (protocol != null) {
+            // Bug #109: Switch the default connections over to the Nts server impl.
+            // Only if the user explicitly requests the old one do we use it.
             switch (protocol) {
                 case P4JRPC:
                     ret = "rpc" + PROTOCOL_SEP + ret;
@@ -51,16 +53,15 @@ public class P4ConfigUtil {
                 case P4JRPCSSL:
                     ret = "rpcssl" + PROTOCOL_SEP + ret;
                     break;
-                case P4JRPCNTS:
-                    ret = "nts" + PROTOCOL_SEP + ret;
-                    break;
-                case P4JRPCNTSSSL:
-                    ret = "ntsssl" + PROTOCOL_SEP + ret;
-                    break;
                 case P4JAVASSL:
-                    ret = "ssl" + PROTOCOL_SEP + ret;
+                    ret = "javassl" + PROTOCOL_SEP + ret;
                     break;
                 case P4JAVA:
+                    ret = "java" + PROTOCOL_SEP + ret;
+                case P4JRPCNTSSSL:
+                    ret = "ssl" + PROTOCOL_SEP + ret;
+                    break;
+                case P4JRPCNTS:
                 default:
                     // do nothing - it's the default
                     break;

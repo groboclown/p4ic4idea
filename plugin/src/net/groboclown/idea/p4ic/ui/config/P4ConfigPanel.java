@@ -34,7 +34,6 @@ import net.groboclown.idea.p4ic.config.P4ConfigUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.connection.*;
-import net.groboclown.idea.p4ic.v2.server.cache.CentralCacheManager;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration.ClientResult;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource.Builder;
@@ -587,7 +586,9 @@ public class P4ConfigPanel {
             public StringBuilder runBackgroundProcess() {
                 // Find the source corresponding to the selected item
                 final StringBuilder displayText = new StringBuilder();
-                LOG.debug("creating connection configs");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("creating connection configs");
+                }
                 final Collection<Builder> sources = createConnectionConfigs();
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(" - found sources " + sources);
@@ -1125,6 +1126,4 @@ public class P4ConfigPanel {
             }
         }
     }
-
-    private static CentralCacheManager MOCK_CACHE_MANAGER;
 }

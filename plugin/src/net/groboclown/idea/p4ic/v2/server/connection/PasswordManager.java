@@ -88,8 +88,6 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
             boolean forceLogin)
             throws PasswordStoreException, PasswordAccessedWrongException {
 
-// FIXME remove after debugging
-
         if (memoryPasswordSafe == null) {
             LOG.warn("already disposed");
             return null;

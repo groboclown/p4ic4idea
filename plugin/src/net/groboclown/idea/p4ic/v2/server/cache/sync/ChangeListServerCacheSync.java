@@ -510,7 +510,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
 
     // -----------------------------------------------------------------------
     // -----------------------------------------------------------------------
-    // Delete Action
+    // Move File Between Changelists Action
 
     public static class MoveFileFactory implements ServerUpdateActionFactory {
         @NotNull
@@ -739,7 +739,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
 
     // -----------------------------------------------------------------------
     // -----------------------------------------------------------------------
-    // Delete Action
+    // Update Action
 
     public static class UpdateChangelistFactory implements ServerUpdateActionFactory {
         @NotNull

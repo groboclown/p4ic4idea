@@ -58,6 +58,16 @@ class AuthenticatedServer {
     private static final AtomicInteger activeConnectionCount = new AtomicInteger(0);
     private static final int RECONNECTION_WAIT_MILLIS = 10;
 
+    // At one point, the CONNECT_LOCK was a static variable.  However, there's
+    // no need to make this anything other than a class variable, especially
+    // now with the enforced logic of the server object checkout concept.
+    // If future issues with the connections seem to pop up again, this
+    // may be a good place to initially look for solutions (change it
+    // back to static).  Note that by being static, there are certain
+    // situations (such as startup time) where the lock can be in
+    // contention and cause a possible deadlock.  New usage of the
+    // lock (tryLock with a timer) should help keep this from being an issue,
+    // though.
     private final Lock CONNECT_LOCK = new ReentrantLock();
     private static final long CONNECT_LOCK_TIMEOUT_MILLIS = 30 * 1000L;
 

@@ -14,6 +14,7 @@
 package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
+
 import com.intellij.openapi.project.Project;
 import com.perforce.p4java.Log;
 import com.perforce.p4java.PropertyDefs;
@@ -31,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -46,16 +48,18 @@ class AuthenticatedServer {
         INVALID_LOGIN,
         RELOGIN_FAILED,
         NOT_CONNECTED
-    };
+    }
 
 
     private static final Logger LOG = Logger.getInstance(AuthenticatedServer.class);
     private static final Logger P4LOG = Logger.getInstance("p4");
-    private static final Lock CONNECT_LOCK = new ReentrantLock();
 
     private static final AtomicInteger serverCount = new AtomicInteger(0);
     private static final AtomicInteger activeConnectionCount = new AtomicInteger(0);
-    public static final int RECONNECTION_WAIT_MILLIS = 10;
+    private static final int RECONNECTION_WAIT_MILLIS = 10;
+
+    private final Lock CONNECT_LOCK = new ReentrantLock();
+    private static final long CONNECT_LOCK_TIMEOUT_MILLIS = 30 * 1000L;
 
     private final ConnectionHandler connectionHandler;
     private final ServerConfig config;
@@ -72,7 +76,6 @@ class AuthenticatedServer {
     private Thread checkedOutBy;
 
     private P4JavaException authenticationException = null;
-    private boolean hasPassedAuthentication = false;
     private boolean hasValidatedAuthentication = false;
     private boolean isInvalidLogin = false;
 
@@ -246,13 +249,14 @@ class AuthenticatedServer {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("forcing authentication with " + this);
             }
-            CONNECT_LOCK.lockInterruptibly();
-            try {
-                connectionHandler.forcedAuthentication(project, server, config, AlertManager.getInstance());
-                forcedAuthenticationCount++;
-            } finally {
-                CONNECT_LOCK.unlock();
-            }
+            withConnectionLock(new WithConnectionLock<Void>() {
+                @Override
+                public Void call() throws P4JavaException {
+                    connectionHandler.forcedAuthentication(project, server, config, AlertManager.getInstance());
+                    forcedAuthenticationCount++;
+                    return null;
+                }
+            });
         } catch (PasswordAccessedWrongException e) {
             // do not capture this specific exception
             authenticationException = null;
@@ -262,7 +266,10 @@ class AuthenticatedServer {
             authenticationException = e;
             throw e;
         } catch (InterruptedException e) {
-            // TODO should not be wrapping in a P4JavaException
+            // TODO should not be wrapping this exception in a P4JavaException
+            throw new P4JavaException(e);
+        } catch (URISyntaxException e) {
+            // Should not actually happen, but the withConnectionLock declares it...
             throw new P4JavaException(e);
         }
     }
@@ -281,15 +288,16 @@ class AuthenticatedServer {
             throw new P4JavaException("Server instance already checked out by " + checkedOutBy);
         }
         try {
-            CONNECT_LOCK.lockInterruptibly();
-            try {
-                disconnect();
-                server = reconnect(project, clientName, connectionHandler, config, tempDir,
-                        serverInstance);
-                connectedCount++;
-            } finally {
-                CONNECT_LOCK.unlock();
-            }
+            withConnectionLock(new WithConnectionLock<Void>() {
+                @Override
+                public Void call() throws P4JavaException, URISyntaxException {
+                    disconnect();
+                    server = reconnect(project, clientName, connectionHandler, config, tempDir,
+                            serverInstance);
+                    connectedCount++;
+                    return null;
+                }
+            });
         } catch (InterruptedException e) {
             // TODO should not be wrapping in a P4JavaException
             throw new P4JavaException(e);
@@ -321,9 +329,9 @@ class AuthenticatedServer {
     }
 
 
-    private static IOptionsServer reconnect(@Nullable Project project,
-            @Nullable String clientName, @NotNull ConnectionHandler connectionHandler,
-            @NotNull ServerConfig config, @NotNull File tempDir,
+    private IOptionsServer reconnect(@Nullable final Project project,
+            @Nullable String clientName, final @NotNull ConnectionHandler connectionHandler,
+            @NotNull final ServerConfig config, @NotNull File tempDir,
             int serverInstance)
             throws P4JavaException, URISyntaxException {
         // Setup logging
@@ -395,47 +403,77 @@ class AuthenticatedServer {
         // issues, such as "password invalid" when using
         // a valid password.  This
         try {
-            CONNECT_LOCK.lockInterruptibly();
-            try {
-                // Use the ConnectionHandler so that mock objects can work better
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("calling connectionHandler.getOptionsServer");
+            return withConnectionLock(new WithConnectionLock<IOptionsServer>() {
+                @Override
+                public IOptionsServer call() throws P4JavaException, URISyntaxException {
+                    // Use the ConnectionHandler so that mock objects can work better
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("calling connectionHandler.getOptionsServer");
+                    }
+                    final IOptionsServer server = connectionHandler.getOptionsServer(url, properties, config);
+
+                    // These seem to cause issues.
+                    //server.registerCallback(new LoggingCommandCallback());
+                    //server.registerProgressCallback(new LoggingProgressCallback());
+
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("calling connect");
+                    }
+                    server.connect();
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("calling activeConnectionCount incrementAndGet");
+                    }
+                    activeConnectionCount.incrementAndGet();
+
+                    // If there is a password problem, we still want
+                    // to maintain our cached server, so a retry doesn't
+                    // recreate the server connection again.
+
+                    // However, the way this is written allows for
+                    // an invalid password to cause the server connection
+                    // to never be returned.
+
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("calling defaultAuthentication on " + connectionHandler.getClass().getSimpleName());
+                    }
+                    connectionHandler.defaultAuthentication(project, server, config);
+
+                    return server;
                 }
-                final IOptionsServer server = connectionHandler.getOptionsServer(url, properties, config);
-
-                // These seem to cause issues.
-                //server.registerCallback(new LoggingCommandCallback());
-                //server.registerProgressCallback(new LoggingProgressCallback());
-
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("calling connect");
-                }
-                server.connect();
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("calling activeConnectionCount incrementAndGet");
-                }
-                activeConnectionCount.incrementAndGet();
-
-                // If there is a password problem, we still want
-                // to maintain our cached server, so a retry doesn't
-                // recreate the server connection again.
-
-                // However, the way this is written allows for
-                // an invalid password to cause the server connection
-                // to never be returned.
-
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("calling defaultAuthentication on " + connectionHandler.getClass().getSimpleName());
-                }
-                connectionHandler.defaultAuthentication(project, server, config);
-
-                return server;
-            } finally {
-                CONNECT_LOCK.unlock();
-            }
+            });
         } catch (InterruptedException e) {
             throw new P4JavaException(e);
         }
+    }
+
+
+    /**
+     * Ensures that the CONNECT_LOCK is correctly used so it doesn't cause deadlocks.
+     *
+     * @param callable
+     * @param <T>
+     * @return
+     * @throws InterruptedException
+     * @throws P4JavaException
+     * @throws URISyntaxException
+     */
+    private <T> T withConnectionLock(WithConnectionLock<T> callable)
+            throws InterruptedException, P4JavaException, URISyntaxException {
+        final boolean locked = CONNECT_LOCK.tryLock(CONNECT_LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+        if (! locked) {
+            // no need for finally stuff here.
+            throw new InterruptedException("Could not acquire connection lock in time.");
+        }
+        try {
+            return callable.call();
+        } finally {
+            CONNECT_LOCK.unlock();
+        }
+    }
+
+
+    private interface WithConnectionLock<T> {
+        T call() throws P4JavaException, URISyntaxException;
     }
 
 
@@ -460,7 +498,6 @@ class AuthenticatedServer {
                 ", disconnected# " + disconnectedCount +
                 ", forcedLogin# " + forcedAuthenticationCount +
                 ", invalidLogin? " + isInvalidLogin +
-                ", passedLogin? " + hasPassedAuthentication +
                 ", validatedLogin? " + hasValidatedAuthentication +
                 ")";
     }

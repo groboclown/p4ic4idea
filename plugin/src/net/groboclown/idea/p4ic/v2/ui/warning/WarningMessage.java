@@ -36,6 +36,7 @@ public class WarningMessage {
     private final Collection<VirtualFile> affectedFiles;
     private final Consumer<HotfixGate> hotfix;
     private final Date when = new Date();
+    private final ErrorTreeElementKind kind;
 
     public WarningMessage(@NotNull Project project, @Nls @NotNull String summary,
             @Nls @NotNull final String message,
@@ -66,6 +67,8 @@ public class WarningMessage {
                 ? Collections.<VirtualFile>emptyList()
                 : Collections.unmodifiableCollection(affectedFiles);
         this.hotfix = hotfix;
+        // TODO allow "notes" to return a NOTE
+        this.kind = ErrorTreeElementKind.ERROR;
     }
 
     public WarningMessage(@NotNull Project project, @Nls @NotNull String summary,
@@ -111,20 +114,6 @@ public class WarningMessage {
 
     @NotNull
     public ErrorTreeElementKind getErrorKind() {
-        // FIXME allow "notes" to return a warning
-        return ErrorTreeElementKind.ERROR;
+        return kind;
     }
-
-
-
-
-    /*
-    public void addToMessages() {
-        // See AbstractVcsHelperImpl and AbstractVcsHelper
-        // tab name VcsBundle.message("message.title.annotate")
-        // this requires storing a project with the warning.
-
-        AbstractVcsHelper.getInstance(project).showError(x, VcsBundle.message("message.title.annotate"));
-    }
-    */
 }

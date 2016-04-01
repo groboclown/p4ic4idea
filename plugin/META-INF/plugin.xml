@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.13</version>
+    <version>0.7.14</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.7.14</em>
+            <ol>
+              <li>Fixed a possible deadlock with server connection checking.</li>
+            </ol>
+          </li>
           <li><em>0.7.13</em>
             <ol>
               <li>Added configurable "max retry authentication" parameter to control how many times
@@ -19,13 +24,6 @@
               <li>Improved responses to the retry login failures to display a different dialog.</li>
               <li>Fixed the issue where files with a special character in the name (e.g.
               "@" and "#") can now be moved between changelists.</li>
-            </ol>
-          </li>
-          <li><em>0.7.12</em>
-            <ol>
-              <li>More fixes for the authentication prompting problem.
-              Includes re-introducing proper identification and handling of
-              real password issues.</li>
             </ol>
           </li>
         </ol>

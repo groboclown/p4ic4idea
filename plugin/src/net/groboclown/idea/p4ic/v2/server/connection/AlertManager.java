@@ -119,7 +119,7 @@ public class AlertManager implements ApplicationComponent {
         if (message.contains("%%")) {
             String inject = P4Bundle.message("error.unknown");
             if (ex != null) {
-                String msg = ex.getMessage();
+                String msg = getErrorMessage(ex);
                 if (msg != null && msg.length() > 0) {
                     inject = P4Bundle.message("error.injected", msg);
                 }
@@ -255,6 +255,32 @@ public class AlertManager implements ApplicationComponent {
         return synchronizer.createServerSynchronizer();
     }
 
+    /**
+     * Find some kind of error message to report to the user.  Sometimes it can be hidden deep in the
+     * trace.  Even if there is no error message precisely, we can at least use the class name to give
+     * some kind of feedback.
+     *
+     * @param ex exception to check
+     * @return the exception description text
+     */
+    @NotNull
+    private static String getErrorMessage(@NotNull final Throwable ex) {
+        Set<Throwable> seen = new HashSet<Throwable>();
+        Throwable cause = ex;
+        Throwable lowest = cause;
+        while (cause != null && ! seen.contains(cause)) {
+            seen.add(cause);
+            if (cause.getMessage() != null && cause.getMessage().length() > 0) {
+                return cause.getMessage();
+            }
+            cause = cause.getCause();
+            if (cause != null) {
+                lowest = cause;
+            }
+        }
+        // Use the root exception as the reason for the error.
+        return lowest.getClass().getSimpleName();
+    }
 
     private void handleWarnings(@NotNull final List<WarningMessage> warnings) {
         // See AbstractVcsHelperImpl and AbstractVcsHelper

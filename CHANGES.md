@@ -14,6 +14,12 @@
     * Fixed automatic add to VCS option fails on copy (#102)
     * Fixed a rare concurrent modification exception (#106)
     * Fixed one place where disposed projects are attempted to be used (#104)
+    * Fixed an issue where the plugin would not allow loading
+      the list of clients unless you had a client set. (#115)
+    * Fixed an issue where the changelist name and description can be concatenated
+      together.  Now, changelists will be updated to use the comment, and only use
+      the name if no comment is given.  This better matches the behavior of
+      submit. (#91)
 
 
 ## ::v0.7.13::

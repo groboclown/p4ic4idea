@@ -102,7 +102,7 @@ public class P4ChangelistListener implements ChangeListListener {
         LOG.debug("changesAdded: changelist " + toList.getName() + "; [" + toList.getComment() + "]");
 
 
-        // FIXME if a file in a "move" operation is included, but not the
+        // TODO if a file in a "move" operation is included, but not the
         // other side, then ensure the other side is also moved along with this one.
 
 
@@ -278,7 +278,7 @@ public class P4ChangelistListener implements ChangeListListener {
     }
 
 
-    static String toDescription(@NotNull ChangeList changeList) {
+    private static String toDescription(@NotNull ChangeList changeList) {
         return ChangelistDescriptionGenerator.getDescription(changeList);
     }
 }

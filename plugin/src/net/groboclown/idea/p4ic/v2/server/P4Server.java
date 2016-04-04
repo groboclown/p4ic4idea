@@ -143,7 +143,7 @@ public class P4Server {
         this.source = source;
         //this.clientState = AllClientsState.getInstance().getStateForClient(clientServerId);
         this.connection = ServerConnectionManager.getInstance().getConnectionFor(project,
-                source.getClientServerId(), source.getServerConfig());
+                source.getClientServerId(), source.getServerConfig(), true);
         connection.postSetup(project);
 
         // Do not reload the caches early.

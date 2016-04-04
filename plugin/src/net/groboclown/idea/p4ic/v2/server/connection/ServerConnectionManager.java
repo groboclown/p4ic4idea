@@ -32,6 +32,8 @@ import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.events.ServerConnectionStateListener;
 import net.groboclown.idea.p4ic.v2.server.cache.CentralCacheManager;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.state.*;
+import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.connection.Synchronizer.ServerSynchronizer;
 import net.groboclown.idea.p4ic.v2.ui.alerts.DisconnectedHandler;
 import org.jetbrains.annotations.NotNull;
@@ -134,7 +136,8 @@ public class ServerConnectionManager implements ApplicationComponent {
      */
     @NotNull
     public ServerConnection getConnectionFor(@NotNull Project project,
-            @NotNull ClientServerId clientServerId, @NotNull ServerConfig config)
+            @NotNull ClientServerId clientServerId, @NotNull ServerConfig config,
+            boolean requiresClient)
             throws P4InvalidClientException {
         serverCacheLock.lock();
         try {
@@ -143,7 +146,8 @@ public class ServerConnectionManager implements ApplicationComponent {
                 status = new ServerConfigStatus(config, alerts.createServerSynchronizer());
                 serverCache.put(config, status);
             }
-            return status.getConnectionFor(project, clientServerId, alerts, cacheManager);
+            return status.getConnectionFor(project, clientServerId, alerts, cacheManager,
+                    requiresClient);
         } finally {
             serverCacheLock.unlock();
         }
@@ -299,7 +303,8 @@ public class ServerConnectionManager implements ApplicationComponent {
         synchronized ServerConnection getConnectionFor(
                 @NotNull final Project project,
                 @NotNull final ClientServerId clientServer,
-                @NotNull AlertManager alerts, @NotNull CentralCacheManager cacheManager)
+                @NotNull AlertManager alerts, @NotNull CentralCacheManager cacheManager,
+                boolean requiresClient)
                 throws P4InvalidClientException {
             ServerConnection conn = clientNames.get(clientServer.getClientId());
             if (conn == null) {
@@ -310,11 +315,19 @@ public class ServerConnectionManager implements ApplicationComponent {
                     LOG.warn(e);
                     throw new P4InvalidClientException(clientServer);
                 }
-                conn = new ServerConnection(alerts, clientServer,
-                        cacheManager.getClientCacheManager(
-                                clientServer, config, new CaseInsensitiveCheck(project, exec)),
-                        config, this, synchronizer.createConnectionSynchronizer(), exec);
-                clientNames.put(clientServer.getClientId(), conn);
+                if (! requiresClient && clientServer.getClientId() == null) {
+                    conn = new ServerConnection(alerts, clientServer,
+                            new ClientCacheManager(config, createEmptyClientLocalState(clientServer)),
+                            config, this, synchronizer.createConnectionSynchronizer(), exec);
+                    // Do not add the connection to the client names
+                    // store, because we don't have a client.
+                } else {
+                    conn = new ServerConnection(alerts, clientServer,
+                            cacheManager.getClientCacheManager(
+                                    clientServer, config, new CaseInsensitiveCheck(project, exec)),
+                            config, this, synchronizer.createConnectionSynchronizer(), exec);
+                    clientNames.put(clientServer.getClientId(), conn);
+                }
             }
             return conn;
         }
@@ -382,4 +395,20 @@ public class ServerConnectionManager implements ApplicationComponent {
         }
     }
 
+
+    private static ClientLocalServerState createEmptyClientLocalState(
+            @NotNull final ClientServerId clientServer) {
+        // don't care what the case sensitivity is for this particular imitation
+        // state.
+        return new ClientLocalServerState(
+                new P4ClientState(false, clientServer,
+                        new P4WorkspaceViewState("workspace"),
+                        new JobStatusListState(),
+                        new JobStateList()),
+                new P4ClientState(false, clientServer,
+                        new P4WorkspaceViewState("workspace"),
+                        new JobStatusListState(),
+                        new JobStateList()),
+                new ArrayList<PendingUpdateState>());
+    }
 }

@@ -38,9 +38,12 @@ public class ConnectionUIConfiguration {
                 VcsException {
         final Project project = source.getProject();
         final ServerConnection connection =
+                // Bug #115: getting the clients should not require that a
+                // client is present.
                 connectionManager.getConnectionFor(project,
                         source.getClientServerId(),
-                        source.getServerConfig());
+                        source.getServerConfig(),
+                        false);
         ClientExec exec = connection.oneOffClientExec();
         try {
             new P4Exec2(source.getProject(), exec).getServerInfo();
@@ -79,10 +82,13 @@ public class ConnectionUIConfiguration {
         }
         for (ProjectConfigSource source : sources) {
             try {
+                // Bug #115: getting the clients should not require that a
+                // client is present.
                 final ServerConnection connection =
                         connectionManager.getConnectionFor(source.getProject(),
                                 source.getClientServerId(),
-                                source.getServerConfig());
+                                source.getServerConfig(),
+                                false);
                 final ClientExec exec = connection.oneOffClientExec();
                 try {
                     final List<String> clients = new P4Exec2(source.getProject(), exec).

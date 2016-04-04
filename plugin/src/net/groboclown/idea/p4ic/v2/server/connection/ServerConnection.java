@@ -450,14 +450,16 @@ public class ServerConnection {
                                 pushAbortedAction(action);
                                 return null;
                             }
-                            action.action.perform(exec,
+                            if (! action.project.isDisposed()) {
+                                action.action.perform(exec,
                                         cacheManager, ServerConnection.this, alertManager);
                                 // only remove the state once we've successfully
                                 // processed the action.
                                 cacheManager.removePendingUpdateStates(action.action.getPendingUpdateStates());
 
-                            // force a changelist refresh
-                            P4ChangesViewRefresher.refreshLater(exec.getProject());
+                                // force a changelist refresh
+                                P4ChangesViewRefresher.refreshLater(action.project);
+                            }
 
                             return null;
                         }

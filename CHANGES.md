@@ -13,6 +13,7 @@
     * Fixed a possible deadlock with server connection checking.
     * Fixed automatic add to VCS option fails on copy (#102)
     * Fixed a rare concurrent modification exception (#106)
+    * Fixed one place where disposed projects are attempted to be used (#104)
 
 
 ## ::v0.7.13::

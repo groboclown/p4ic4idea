@@ -148,6 +148,10 @@ public class P4VFSListener extends VcsVFSListener {
             @NotNull final Map<VirtualFile, VirtualFile> copyFromMap) {
         // IDEA 140.2110.5 changed the markFilesDirty API to just take FilePath objects.
 
+        // Bug #102: The keys in the "copyFromMap" will also be in the "addedFiles"
+        // list.  If copy rather than integrate is supported, this will need to be
+        // changed.
+
         LOG.info("Adding files " + addedFiles);
 
         List<FilePath> dirtyFilePaths = new ArrayList<FilePath>(addedFiles.size());
@@ -184,6 +188,10 @@ public class P4VFSListener extends VcsVFSListener {
             }
 
 
+            // Copies are handled as add commands, so we don't need to worry about
+            // performing integrations.  This could eventually be supported as a
+            // feature flag if the user really wants it.
+            /*
             final SplitServerFileMap split = splitMap(copyFromMap);
             for (P4Server server : split.getServers()) {
                 int changelistId = changeListMapping.
@@ -207,6 +215,7 @@ public class P4VFSListener extends VcsVFSListener {
                     vfsLock.unlock();
                 }
             }
+            */
         } catch (InterruptedException e) {
             // TODO better error message
             alerts.addNotice(vcs.getProject(),

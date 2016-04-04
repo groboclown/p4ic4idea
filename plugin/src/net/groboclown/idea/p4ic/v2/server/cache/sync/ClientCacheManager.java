@@ -291,12 +291,14 @@ public class ClientCacheManager {
     // FIXME this method is kind of a hack.
     // This needs to be performed in a more robust manner.
     public void checkLocalIntegrity() {
-        workspace.checkLocalIntegrity(state.getPendingUpdates());
-        fileActions.checkLocalIntegrity(state.getPendingUpdates());
-        changeLists.checkLocalIntegrity(state.getPendingUpdates());
-        jobStatusList.checkLocalIntegrity(state.getPendingUpdates());
-        jobs.checkLocalIntegrity(state.getPendingUpdates());
-        //ignoreFiles.checkLocalIntegrity(state.getPendingUpdates());
+        // Bug #106: concurrent exception can happen if the pending updates are directly referenced.
+        final List<PendingUpdateState> pendingUpdates = new ArrayList<PendingUpdateState>(state.getPendingUpdates());
+        workspace.checkLocalIntegrity(pendingUpdates);
+        fileActions.checkLocalIntegrity(pendingUpdates);
+        changeLists.checkLocalIntegrity(pendingUpdates);
+        jobStatusList.checkLocalIntegrity(pendingUpdates);
+        jobs.checkLocalIntegrity(pendingUpdates);
+        //ignoreFiles.checkLocalIntegrity(pendingUpdates);
     }
 
     /**

@@ -10,6 +10,7 @@
             <ol>
               <li>Fixed a possible deadlock with server connection checking.</li>
               <li>Fixed an issue where copied files were not opened for add.</li>
+              <li>Fixed a rare concurrent modification exception.</li>
             </ol>
           </li>
           <li><em>0.7.13</em>

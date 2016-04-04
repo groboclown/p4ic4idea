@@ -11,7 +11,8 @@
 
 * Bug fixes.
     * Fixed a possible deadlock with server connection checking.
-    * Fixed automatic add to VCS option fails on copy (#102) 
+    * Fixed automatic add to VCS option fails on copy (#102)
+    * Fixed a rare concurrent modification exception (#106)
 
 
 ## ::v0.7.13::

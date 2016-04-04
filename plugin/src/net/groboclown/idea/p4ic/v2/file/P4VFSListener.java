@@ -190,7 +190,8 @@ public class P4VFSListener extends VcsVFSListener {
 
             // Copies are handled as add commands, so we don't need to worry about
             // performing integrations.  This could eventually be supported as a
-            // feature flag if the user really wants it.
+            // feature flag if the user really wants it.  If they are implemented,
+            // then the "add" files should first be pruned of the "integrate" files.
             /*
             final SplitServerFileMap split = splitMap(copyFromMap);
             for (P4Server server : split.getServers()) {

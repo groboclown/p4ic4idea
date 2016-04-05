@@ -17,12 +17,15 @@
     * Fixed an issue where the plugin would not allow loading
       the list of clients unless you had a client set. (#115)
     * Fixed an issue where the changelist name and description can be concatenated
-      together.  Now, changelists will be updated to use the comment, and only use
-      the name if no comment is given.  This better matches the behavior of
+      together (#91).  Now, changelists will be updated to use the comment, and only
+      use the name if no comment is given.  This better matches the behavior of
       submit. If you want the old behavior back, there's a user preference to
       concatenate the two strings together, but note that this will not
       affect the behavior of the submit dialog - it will still only show the
-      comment. (#91)
+      comment.  This may have also fixed an issue where a second changelist
+      would be created incorrectly.
+    * Fixed a configuration panel issue for the multi-p4config file setup
+      did not show the config settings for a selected path.
 
 
 ## ::v0.7.13::

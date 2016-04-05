@@ -18,6 +18,8 @@
               together.  Now, changelists will be updated to use the comment, and only use
               the name if no comment is given.  This better matches the behavior of
               submit.</li>
+              <li>Fixed a configuration panel issue for the multi-p4config file setup
+              did not show the config settings for a selected path.</li>
             </ol>
           </li>
           <li><em>0.7.13</em>

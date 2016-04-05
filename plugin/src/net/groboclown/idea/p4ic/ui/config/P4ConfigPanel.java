@@ -605,7 +605,7 @@ public class P4ConfigPanel {
                             // skip
                         } else {
                             for (VirtualFile file : source.getDirs()) {
-                                if (file.getPath().equals(selectedItem)) {
+                                if (file.equals(selectedItem)) {
                                     selectedSource = source;
                                     break sourceLoop;
                                 }

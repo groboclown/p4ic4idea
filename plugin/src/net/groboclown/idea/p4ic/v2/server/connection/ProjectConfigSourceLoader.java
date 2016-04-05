@@ -55,12 +55,13 @@ public class ProjectConfigSourceLoader {
             }
             if (LOG.isDebugEnabled()) {
                 LOG.info(project.getName() + ": Config file: " + configFile + "; base config: " + config);
+
+                LOG.debug("Loading p4config files named " + configFile + " under " +
+                        P4Vcs.getInstance(project).getVcsRoots());
             }
 
             // Relative config file.  Make sure that we use the version
             // that maps the correct root directory to the config file.
-            LOG.debug("Loading p4config files named " + configFile + " under " +
-                    P4Vcs.getInstance(project).getVcsRoots());
             Map<VirtualFile, P4Config> map = P4ConfigUtil.loadCorrectDirectoryP4Configs(project, configFile);
             if (map.isEmpty()) {
                 LOG.info("Config invalid because no p4config files were found.  Searching for config files named " +

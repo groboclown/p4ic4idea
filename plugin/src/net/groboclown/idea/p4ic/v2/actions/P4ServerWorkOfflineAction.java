@@ -32,7 +32,7 @@ public class P4ServerWorkOfflineAction extends AnAction {
 
     public P4ServerWorkOfflineAction(@NotNull ClientServerId serverId) {
         super(P4Bundle.message("statusbar.connection.popup.server-offline-mode",
-                serverId.getClientId(), serverId.getServerConfigId()));
+                serverId.getClientId(), serverId.getServerDisplayId()));
         this.serverId = serverId;
     }
 

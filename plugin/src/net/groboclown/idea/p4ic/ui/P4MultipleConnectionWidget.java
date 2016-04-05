@@ -249,9 +249,7 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
             icon = P4Icons.DISCONNECTED;
         } else if (offline > 0 && online > 0) {
             toolTip = P4Bundle.message("statusbar.connection.mixed");
-
-            // FIXME use a mixed-mode icon
-            icon = P4Icons.CONNECTED;
+            icon = P4Icons.MIXED;
         } else {
             toolTip = P4Bundle.message("statusbar.connection.none");
             icon = P4Icons.UNKNOWN;

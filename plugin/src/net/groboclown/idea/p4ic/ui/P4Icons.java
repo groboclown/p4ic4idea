@@ -22,5 +22,6 @@ public interface P4Icons {
     Icon DISCONNECTED = IconLoader.getIcon("/icons/p4disconnected.png");
 
     // TODO make this its own icon
+    Icon MIXED = CONNECTED;
     Icon UNKNOWN = DISCONNECTED;
 }

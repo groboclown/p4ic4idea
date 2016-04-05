@@ -70,7 +70,7 @@ public class DepotFilePath implements FilePath {
 
     @Override
     public String getPresentableUrl() {
-        return clientServerId.getServerConfigId() + "/" + clientServerId.getClientId() + depotPath;
+        return clientServerId.getServerDisplayId() + "/" + clientServerId.getClientId() + depotPath;
     }
 
     @Nullable

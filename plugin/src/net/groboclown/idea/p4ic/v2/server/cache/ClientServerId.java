@@ -56,10 +56,19 @@ public final class ClientServerId {
     }
 
 
+    // TODO replace usage of this method with getServerDisplayId()
     @NotNull
     public String getServerConfigId() {
         return serverConfigId;
     }
+
+
+    @NotNull
+    public String getServerDisplayId() {
+        // TODO return a user friendly id
+        return serverConfigId;
+    }
+
 
 
     @Nullable

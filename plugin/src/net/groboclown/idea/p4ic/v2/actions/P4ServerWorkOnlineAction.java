@@ -32,7 +32,7 @@ public class P4ServerWorkOnlineAction extends AnAction {
 
     public P4ServerWorkOnlineAction(@NotNull ClientServerId serverId) {
         super(P4Bundle.message("statusbar.connection.popup.server-online-mode",
-                serverId.getClientId(), serverId.getServerConfigId()));
+                serverId.getClientId(), serverId.getServerDisplayId()));
         this.serverId = serverId;
     }
 

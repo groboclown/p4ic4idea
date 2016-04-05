@@ -161,7 +161,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
             P4ChangeListMapping.getInstance(project).bindChangelists(source, changelistId);
         }
 
-        String description = ChangelistDescriptionGenerator.getDescription(source);
+        String description = ChangelistDescriptionGenerator.getDescription(project, source);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put(UpdateParameterNames.CHANGELIST.getKeyName(), changelistId.getChangeListId());
         params.put(UpdateParameterNames.DESCRIPTION.getKeyName(), description);

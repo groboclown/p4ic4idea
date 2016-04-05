@@ -32,6 +32,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.util.ChangelistDescriptionGenerator;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -212,7 +213,7 @@ public class P4ChangelistListener implements ChangeListListener {
         for (P4Server server : myVcs.getP4Servers()) {
             final P4ChangeListId p4cl = changeListMapping.getPerforceChangelistFor(server, (LocalChangeList) list);
             if (p4cl != null) {
-                server.renameChangelist(p4cl.getChangeListId(), toDescription(list));
+                server.renameChangelist(p4cl.getChangeListId(), toDescription(server.getProject(), list));
             }
         }
     }
@@ -278,7 +279,7 @@ public class P4ChangelistListener implements ChangeListListener {
     }
 
 
-    private static String toDescription(@NotNull ChangeList changeList) {
-        return ChangelistDescriptionGenerator.getDescription(changeList);
+    private static String toDescription(@Nullable Project project, @NotNull ChangeList changeList) {
+        return ChangelistDescriptionGenerator.getDescription(project, changeList);
     }
 }

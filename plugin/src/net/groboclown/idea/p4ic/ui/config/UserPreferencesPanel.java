@@ -38,6 +38,7 @@ public class UserPreferencesPanel {
     private JCheckBox myEditedWithoutCheckoutCheckBox;
     private JSpinner myMaxRetryAuthenticationSpinner;
     private JCheckBox myReconnectWithEachRequest;
+    private JCheckBox myConcatenateChangelistNameComment;
     private ButtonGroup myPreferRevisionGroup;
 
 
@@ -69,6 +70,7 @@ public class UserPreferencesPanel {
                 , true);
         myEditedWithoutCheckoutCheckBox.setSelected(userPrefs.getEditedWithoutCheckoutVerify());
         myReconnectWithEachRequest.setSelected(userPrefs.getReconnectWithEachRequest());
+        myConcatenateChangelistNameComment.setSelected(userPrefs.getConcatenateChangelistNameComment());
     }
 
 
@@ -79,7 +81,9 @@ public class UserPreferencesPanel {
         userPrefs.setEditedWithoutCheckoutVerify(getEditedWithoutCheckoutVerify());
         userPrefs.setMaxAuthenticationRetries(getMaxAuthenticationRetries());
         userPrefs.setReconnectWithEachRequest(getReconnectWithEachRequest());
+        userPrefs.setConcatenateChangelistNameComment(getConcatenateChangelistNameComment());
     }
+
 
     boolean isModified(@NotNull final UserProjectPreferences preferences) {
         return
@@ -88,7 +92,8 @@ public class UserPreferencesPanel {
                         getPreferRevisionsForFiles() != preferences.getPreferRevisionsForFiles() ||
                         getEditedWithoutCheckoutVerify() != preferences.getEditedWithoutCheckoutVerify() ||
                         getMaxAuthenticationRetries() != preferences.getMaxAuthenticationRetries() ||
-                        getReconnectWithEachRequest() != preferences.getReconnectWithEachRequest();
+                        getReconnectWithEachRequest() != preferences.getReconnectWithEachRequest() ||
+                        getConcatenateChangelistNameComment() != preferences.getConcatenateChangelistNameComment();
     }
 
 
@@ -116,6 +121,10 @@ public class UserPreferencesPanel {
 
     private boolean getReconnectWithEachRequest() {
         return myReconnectWithEachRequest.isSelected();
+    }
+
+    private boolean getConcatenateChangelistNameComment() {
+        return myConcatenateChangelistNameComment.isSelected();
     }
 
     private void createUIComponents() {
@@ -152,7 +161,7 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
         myRootPanel.add(panel1,
                 new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
@@ -184,6 +193,16 @@ public class UserPreferencesPanel {
                 .getString("user.prefs.always_reconnect.tooltip"));
         panel1.add(myReconnectWithEachRequest,
                 new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        myConcatenateChangelistNameComment = new JCheckBox();
+        this.$$$loadButtonText$$$(myConcatenateChangelistNameComment,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                        .getString("user.prefs.concatenate-changelist"));
+        myConcatenateChangelistNameComment.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("user.prefs.concatenate-changelist.tooltip"));
+        panel1.add(myConcatenateChangelistNameComment,
+                new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         final JPanel panel2 = new JPanel();

@@ -19,7 +19,10 @@
     * Fixed an issue where the changelist name and description can be concatenated
       together.  Now, changelists will be updated to use the comment, and only use
       the name if no comment is given.  This better matches the behavior of
-      submit. (#91)
+      submit. If you want the old behavior back, there's a user preference to
+      concatenate the two strings together, but note that this will not
+      affect the behavior of the submit dialog - it will still only show the
+      comment. (#91)
 
 
 ## ::v0.7.13::

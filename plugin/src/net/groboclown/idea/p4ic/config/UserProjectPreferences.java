@@ -41,6 +41,7 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public static final int MIN_MAX_AUTHENTICATION_RETRIES = 0;
     public static final int MAX_MAX_AUTHENTICATION_RETRIES = 5;
     public static final boolean DEFAULT_RECONNECT_WITH_EACH_REQUEST = false;
+    public static final boolean DEFAULT_CONCATENATE_CHANGELIST_NAME_COMMENT = false;
 
     @NotNull
     private State state = new State();
@@ -67,6 +68,8 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         public int maxAuthenticationRetries = DEFAULT_MAX_AUTHENTICATION_RETRIES;
 
         public boolean reconnectWithEachRequest = DEFAULT_RECONNECT_WITH_EACH_REQUEST;
+
+        public boolean concatenateChangelistNameComment = DEFAULT_CONCATENATE_CHANGELIST_NAME_COMMENT;
     }
 
     @Nullable
@@ -216,5 +219,25 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
 
     public void setReconnectWithEachRequest(boolean value) {
         state.reconnectWithEachRequest = value;
+    }
+
+
+    public static boolean getConcatenateChangelistNameComment(@Nullable final Project project) {
+        if (project == null) {
+            return DEFAULT_CONCATENATE_CHANGELIST_NAME_COMMENT;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return DEFAULT_CONCATENATE_CHANGELIST_NAME_COMMENT;
+        }
+        return prefs.getConcatenateChangelistNameComment();
+    }
+
+    public boolean getConcatenateChangelistNameComment() {
+        return state.concatenateChangelistNameComment;
+    }
+
+    public void setConcatenateChangelistNameComment(final boolean concatenateChangelistNameComment) {
+        state.concatenateChangelistNameComment = concatenateChangelistNameComment;
     }
 }

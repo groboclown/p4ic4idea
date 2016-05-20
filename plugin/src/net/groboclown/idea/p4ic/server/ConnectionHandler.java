@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.server;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.perforce.p4java.PropertyDefs;
@@ -29,6 +30,7 @@ import net.groboclown.idea.p4ic.server.connection.EnvConnectionHandler;
 import net.groboclown.idea.p4ic.server.connection.TestConnectionHandler;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.Events;
+import net.groboclown.idea.p4ic.v2.extension.P4PluginVersion;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,6 +45,8 @@ public abstract class ConnectionHandler {
 
     public static final String PLUGIN_P4HOST_KEY = "P4HOST";
     public static final String PLUGIN_LANGUAGE_KEY = "P4LANG";
+
+    private static final String PLUGIN_VERSION = P4PluginVersion.getPluginVersion();
 
 
     @NotNull
@@ -173,9 +177,10 @@ public abstract class ConnectionHandler {
 
     protected Properties initializeConnectionProperties(@NotNull ServerConfig config) {
         Properties ret = new Properties();
-
-        ret.setProperty(PropertyDefs.PROG_NAME_KEY, "IntelliJ Perforce Community Plugin");
-        ret.setProperty(PropertyDefs.PROG_VERSION_KEY, "1");
+        ret.setProperty(PropertyDefs.PROG_NAME_KEY, "intellij-perforce-community-plugin-connection");
+        // Find the version of our application, as it registered itself.
+        ApplicationManager.getApplication().getComponent("PerforceIC");
+        ret.setProperty(PropertyDefs.PROG_VERSION_KEY, PLUGIN_VERSION);
 
         if (config.getIgnoreFileName() != null) {
             ret.setProperty(PropertyDefs.IGNORE_FILE_NAME_KEY, config.getIgnoreFileName());
@@ -237,4 +242,5 @@ public abstract class ConnectionHandler {
             return null;
         }
     }
+
 }

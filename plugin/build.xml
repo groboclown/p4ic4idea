@@ -193,7 +193,7 @@
     <property name="plugin.jar" value="${rootdir}/p4ic4idea.zip"/>
 
     <!-- Build archive for plugin 'p4ic4idea' -->
-    <target name="package" depends="compile.production"
+    <target name="package" depends="compile.production, package.version"
             description="Build plugin archive for module &#39;p4ic4idea&#39;">
         <property name="base.tmp.dir.p4ic4idea" location="${basedir}/work/temp"/>
         <property name="tmp.dir.p4ic4idea" location="${base.tmp.dir.p4ic4idea}/p4ic4idea"/>
@@ -207,14 +207,6 @@
                 <attribute name="Manifest-Version" value="1.0"/>
             </manifest>
         </jar>
-        <!--
-        <copy todir="${tmp.dir.p4ic4idea}/lib" flatten="true">
-            <fileset dir="${rootdir}/lib">
-                <include name="p4java/**/*.jar"/>
-                <include name="p4java/**/*.txt"/>
-            </fileset>
-        </copy>
-        -->
         <copy todir="${tmp.dir.p4ic4idea}">
             <fileset dir="${rootdir}">
                 <include name="README.md"/>
@@ -265,6 +257,17 @@
                 <fileset dir="${testoutput.dir}" includes="**/*Test.class"/>
             </batchtest>
         </junit>
+    </target>
+
+
+    <target name="package.version" description="Create the version description">
+        <mkdir dir="${output.dir}"/>
+        <!-- Load the version number from the plugin file. -->
+        <xmlproperty prefix="pluginfile" file="${basedir}/META-INF/plugin.xml"/>
+        <!-- Overwrite the existing file, which is probably the placeholder version. -->
+        <echoproperties/>
+        <echo file="${output.dir}/p4ic-version.txt"
+              message="${pluginfile.idea-plugin.version}" />
     </target>
 
 

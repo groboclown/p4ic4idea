@@ -78,15 +78,17 @@ public class MessageResult<T> {
             if (P4StatusMessage.isValid(spec) ||
                     (markFileNotFoundAsValid && P4StatusMessage.isFileNotFoundError(spec))) {
                 if (!iter.hasNext()) {
-                    // FIXME this can happen when reverting both sides of the
+                    // This can happen when reverting both sides of the
                     // move operation at the same time.
+                    // TODO figure out how to handle this situation better.
                     LOG.warn("No direct mapping between files " + originalFiles +
                         " to messages " + specs);
                 } else {
                     results.add(iter.next());
                 }
             } else {
-                if (spec.getSeverityCode() != MessageSeverityCode.E_FATAL) {
+                // Bug #121 - need to check if the iterator has a next.
+                if (spec.getSeverityCode() != MessageSeverityCode.E_FATAL && iter.hasNext()) {
                     // advance but don't use the file reference
                     iter.next();
                 }

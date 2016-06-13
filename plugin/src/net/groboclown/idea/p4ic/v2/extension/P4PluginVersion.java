@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.extension;
 
+import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,6 +25,8 @@ import java.io.InputStream;
  * Loads the plugin version from the plugin.xml file.
  */
 public class P4PluginVersion {
+    private static final Logger LOG = Logger.getInstance(P4PluginVersion.class);
+
     private static volatile String version;
 
     public static String getPluginVersion() {
@@ -31,6 +34,7 @@ public class P4PluginVersion {
             synchronized (P4PluginVersion.class) {
                 version = loadPluginVersion();
             }
+            LOG.info("Running plugin version " + version);
         }
         return version;
     }

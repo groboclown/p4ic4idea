@@ -275,43 +275,16 @@ public class P4ServerManager implements ProjectComponent {
                 // valid, just mark all of the configs invalid.
                 // There may also be new connections.  This keeps it all up-to-date.
 
-                List<Warning> warnings = new ArrayList<Warning>();
-
-                serverLock.lock();
-                try {
-                    final List<P4Server> serverCopy = new ArrayList<P4Server>(servers.values());
-                    for (P4Server server : serverCopy) {
-                        if (server.getProject().equals(project)) {
-                            server.dispose();
-                            boolean foundSource = false;
-                            for (ProjectConfigSource source : sources) {
-                                if (server.isSameSource(source)) {
-                                    foundSource = true;
-                                    try {
-                                        final P4Server newServer = new P4Server(project, source);
-                                        servers.put(newServer.getClientServerId(), newServer);
-                                    } catch (P4InvalidClientException e) {
-                                        servers.remove(server.getClientServerId());
-                                        warnings.add(new Warning(project,
-                                                P4Bundle.message("errors.no-client.source", source),
-                                                P4Bundle.message("errors.no-client.source", source),
-                                                e));
-                                    }
-                                }
-                            }
-                            if (! foundSource) {
-                                servers.remove(server.getClientServerId());
-                            }
+                if (ApplicationManager.getApplication().isDispatchThread()) {
+                    // Run in the background
+                    ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            updateConfigurations(project, sources);
                         }
-                    }
-                    hasServers = ! servers.isEmpty();
-                } finally {
-                    serverLock.unlock();
-                }
-                connectionsValid = true;
-
-                for (Warning warning : warnings) {
-                    warning.post(alertManager);
+                    });
+                } else {
+                    updateConfigurations(project, sources);
                 }
             }
         });
@@ -320,21 +293,21 @@ public class P4ServerManager implements ProjectComponent {
             @Override
             public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
                     @NotNull final VcsConnectionProblem ex) {
-                if (project == P4ServerManager.this.project) {
-                    final AllClientsState clientState = AllClientsState.getInstance();
+                final AllClientsState clientState = AllClientsState.getInstance();
 
-                    // Connections are temporarily invalid.
-                    connectionsValid = false;
-                    serverLock.lock();
-                    try {
-                        // TODO examine whether this is appropriate to keep calling.
-                        for (P4Server server : servers.values()) {
+                // Connections are temporarily invalid.
+                connectionsValid = false;
+                serverLock.lock();
+                try {
+                    // TODO examine whether this is appropriate to keep calling.
+                    for (P4Server server : servers.values()) {
+                        if (server.getProject().equals(project)) {
                             server.setValid(false);
                             clientState.removeClientState(server.getClientServerId());
                         }
-                    } finally {
-                        serverLock.unlock();
                     }
+                } finally {
+                    serverLock.unlock();
                 }
             }
         });
@@ -428,6 +401,50 @@ public class P4ServerManager implements ProjectComponent {
             serverLock.unlock();
         }
     }
+
+
+    private void updateConfigurations(@NotNull final Project project,
+            @NotNull final List<ProjectConfigSource> sources) {
+        List<Warning> warnings = new ArrayList<Warning>();
+
+        serverLock.lock();
+        try {
+            final List<P4Server> serverCopy = new ArrayList<P4Server>(servers.values());
+            for (P4Server server : serverCopy) {
+                if (server.getProject().equals(project)) {
+                    server.dispose();
+                    boolean foundSource = false;
+                    for (ProjectConfigSource source : sources) {
+                        if (server.isSameSource(source)) {
+                            foundSource = true;
+                            try {
+                                final P4Server newServer = new P4Server(project, source);
+                                servers.put(newServer.getClientServerId(), newServer);
+                            } catch (P4InvalidClientException e) {
+                                servers.remove(server.getClientServerId());
+                                warnings.add(new Warning(project,
+                                        P4Bundle.message("errors.no-client.source", source),
+                                        P4Bundle.message("errors.no-client.source", source),
+                                        e));
+                            }
+                        }
+                    }
+                    if (!foundSource) {
+                        servers.remove(server.getClientServerId());
+                    }
+                }
+            }
+            hasServers = !servers.isEmpty();
+        } finally {
+            serverLock.unlock();
+        }
+        connectionsValid = true;
+
+        for (Warning warning : warnings) {
+            warning.post(alertManager);
+        }
+    }
+
 
     private static class Warning {
         private final Project project;

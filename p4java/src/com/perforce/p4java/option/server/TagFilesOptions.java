@@ -12,7 +12,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * Options class for the IOptionsServer.tagFiles method.
  * 
- * @see com.perforce.p4java.server.IOptionsServer#tagFiles(List, String, com.perforce.p4java.option.server.TagFilesOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#tagFiles(java.util.List, java.lang.String, com.perforce.p4java.option.server.TagFilesOptions)
  */
 public class TagFilesOptions extends Options {
 	
@@ -47,7 +47,7 @@ public class TagFilesOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public TagFilesOptions(String... options) {
 		super(options);

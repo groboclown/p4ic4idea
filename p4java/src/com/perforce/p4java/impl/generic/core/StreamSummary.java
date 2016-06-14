@@ -250,7 +250,7 @@ public class StreamSummary extends ServerResource implements IStreamSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IStreamSummary#setAccessed(Date)
+	 * @see com.perforce.p4java.core.IStreamSummary#setAccessed(java.util.Date)
 	 */
 	public void setAccessed(Date accessed) {
 		this.accessed = accessed;
@@ -264,7 +264,7 @@ public class StreamSummary extends ServerResource implements IStreamSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IStreamSummary#setUpdated(Date)
+	 * @see com.perforce.p4java.core.IStreamSummary#setUpdated(java.util.Date)
 	 */
 	public void setUpdated(Date updated) {
 		this.updated = updated;
@@ -278,7 +278,7 @@ public class StreamSummary extends ServerResource implements IStreamSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IStreamSummary#setName(String)
+	 * @see com.perforce.p4java.core.IStreamSummary#setName(java.lang.String)
 	 */
 	public void setName(String name) {
 		this.name = name;
@@ -292,7 +292,7 @@ public class StreamSummary extends ServerResource implements IStreamSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IStreamSummary#setOwnerName(String)
+	 * @see com.perforce.p4java.core.IStreamSummary#setOwnerName(java.lang.String)
 	 */
 	public void setOwnerName(String ownerName) {
 		this.ownerName = ownerName;
@@ -306,7 +306,7 @@ public class StreamSummary extends ServerResource implements IStreamSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IStreamSummary#setDescription(String)
+	 * @see com.perforce.p4java.core.IStreamSummary#setDescription(java.lang.String)
 	 */
 	public void setDescription(String description) {
 		this.description = description;
@@ -320,7 +320,7 @@ public class StreamSummary extends ServerResource implements IStreamSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IStreamSummary#setParent(String)
+	 * @see com.perforce.p4java.core.IStreamSummary#setParent(java.lang.String)
 	 */
 	public void setParent(String parent) {
 		this.parent = parent;
@@ -404,7 +404,7 @@ public class StreamSummary extends ServerResource implements IStreamSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IStreamSummary#setBaseParent(String)
+	 * @see com.perforce.p4java.core.IStreamSummary#setBaseParent(java.lang.String)
 	 */
 	public void setBaseParent(String baseParent) {
 		this.baseParent = baseParent;

@@ -65,7 +65,7 @@ public class ReviewChangelist implements IReviewChangelist {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IReviewChangelist#setUser(String)
+	 * @see com.perforce.p4java.core.IReviewChangelist#setUser(java.lang.String)
 	 */
 	public void setUser(String user) {
 		this.user = user;
@@ -79,7 +79,7 @@ public class ReviewChangelist implements IReviewChangelist {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IReviewChangelist#setEmail(String)
+	 * @see com.perforce.p4java.core.IReviewChangelist#setEmail(java.lang.String)
 	 */
 	public void setEmail(String email) {
 		this.email = email;
@@ -93,7 +93,7 @@ public class ReviewChangelist implements IReviewChangelist {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IReviewChangelist#setName(String)
+	 * @see com.perforce.p4java.core.IReviewChangelist#setName(java.lang.String)
 	 */
 	public void setName(String name) {
 		this.name = name;

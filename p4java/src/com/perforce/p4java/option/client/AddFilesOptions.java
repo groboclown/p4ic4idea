@@ -12,7 +12,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * IClient addFiles method Options definitions.
  * 
- * @see com.perforce.p4java.client.IClient#addFiles(List, com.perforce.p4java.option.client.AddFilesOptions)
+ * @see com.perforce.p4java.client.IClient#addFiles(java.util.List, com.perforce.p4java.option.client.AddFilesOptions) 
  */
 public class AddFilesOptions extends Options {
 	
@@ -86,7 +86,7 @@ public class AddFilesOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public AddFilesOptions(String... options) {
 		super(options);

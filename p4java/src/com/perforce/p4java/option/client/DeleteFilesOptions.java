@@ -13,7 +13,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * Options-based method options for IClient deleteFiles method(s).
  *
- * @see com.perforce.p4java.client.IClient#deleteFiles(List, com.perforce.p4java.option.client.DeleteFilesOptions)
+ * @see com.perforce.p4java.client.IClient#deleteFiles(java.util.List, com.perforce.p4java.option.client.DeleteFilesOptions)
  */
 public class DeleteFilesOptions extends Options {
 
@@ -75,7 +75,7 @@ public class DeleteFilesOptions extends Options {
     	 * string's setting. Do not use this constructor unless you know what you're
     	 * doing and / or you do not also use the field getters and setters.</b>
     	 * 
-    	 * @see com.perforce.p4java.option.Options#Options(String...)
+    	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
     	 */
         public DeleteFilesOptions(String... options) {
                 super(options);

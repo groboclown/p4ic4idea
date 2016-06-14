@@ -107,7 +107,7 @@ public class LabelSummary extends ServerResource implements ILabelSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.ILabelSummary#setName(String)
+	 * @see com.perforce.p4java.core.ILabelSummary#setName(java.lang.String)
 	 */
 	public void setName(String name) {
 		this.name = name;
@@ -121,7 +121,7 @@ public class LabelSummary extends ServerResource implements ILabelSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.ILabelSummary#setOwnerName(String)
+	 * @see com.perforce.p4java.core.ILabelSummary#setOwnerName(java.lang.String)
 	 */
 	public void setOwnerName(String ownerName) {
 		this.ownerName = ownerName;
@@ -135,7 +135,7 @@ public class LabelSummary extends ServerResource implements ILabelSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.ILabelSummary#setLastAccess(Date)
+	 * @see com.perforce.p4java.core.ILabelSummary#setLastAccess(java.util.Date)
 	 */
 	public void setLastAccess(Date lastAccess) {
 		this.lastAccess = lastAccess;
@@ -149,7 +149,7 @@ public class LabelSummary extends ServerResource implements ILabelSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.ILabelSummary#setLastUpdate(Date)
+	 * @see com.perforce.p4java.core.ILabelSummary#setLastUpdate(java.util.Date)
 	 */
 	public void setLastUpdate(Date lastUpdate) {
 		this.lastUpdate = lastUpdate;
@@ -163,7 +163,7 @@ public class LabelSummary extends ServerResource implements ILabelSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.ILabelSummary#setDescription(String)
+	 * @see com.perforce.p4java.core.ILabelSummary#setDescription(java.lang.String)
 	 */
 	public void setDescription(String description) {
 		this.description = description;
@@ -177,7 +177,7 @@ public class LabelSummary extends ServerResource implements ILabelSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.ILabelSummary#setRevisionSpec(String)
+	 * @see com.perforce.p4java.core.ILabelSummary#setRevisionSpec(java.lang.String)
 	 */
 	public void setRevisionSpec(String revisionSpec) {
 		this.revisionSpec = revisionSpec;

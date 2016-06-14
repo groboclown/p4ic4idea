@@ -153,7 +153,7 @@ public enum CmdSpec {
 	 * off default locales like Turkish (with its dotted-i issue -- see e.g.
 	 * job037128).
 	 * 
-	 * @see Enum#toString()
+	 * @see java.lang.Enum#toString()
 	 */
 	public String toString() {
 		return this.name().toLowerCase(Locale.ENGLISH);

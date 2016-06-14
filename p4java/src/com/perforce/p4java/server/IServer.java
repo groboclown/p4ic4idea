@@ -585,7 +585,7 @@ public interface IServer {
 	 */
 	
 	List<IUserGroup> getUserGroups(String userOrGroupName, boolean indirect, boolean displayValues,
-			int maxGroups)
+							int maxGroups)
 						throws ConnectionException, RequestException, AccessException;
 	
 	/**
@@ -683,8 +683,8 @@ public interface IServer {
 	 */
 	
 	List<IProtectionEntry> getProtectionEntries(boolean allUsers, String hostName,
-			String userName, String groupName,
-			List<IFileSpec> fileList)
+										String userName, String groupName,
+										List<IFileSpec> fileList)
 						throws ConnectionException, RequestException, AccessException;
 
 	/**
@@ -737,7 +737,7 @@ public interface IServer {
 	 * @throws AccessException if the Perforce server denies access to the caller 
 	 */
 	List<ILabelSummary> getLabels(String user, int maxLabels, String nameFilter,
-			List<IFileSpec> fileList)
+											List<IFileSpec> fileList)
 							throws ConnectionException, RequestException, AccessException;
 	
 	/**
@@ -825,7 +825,7 @@ public interface IServer {
 	 * @throws AccessException if the Perforce server denies access to the caller
 	 */
 	List<IFileSpec> tagFiles(List<IFileSpec> fileSpecs, String labelName,
-			boolean listOnly, boolean delete)
+								boolean listOnly, boolean delete)
 						throws ConnectionException, RequestException, AccessException;
 	
 	/**
@@ -1142,7 +1142,7 @@ public interface IServer {
 	 */
 	
 	List<IFileAnnotation> getFileAnnotations(List<IFileSpec> fileSpecs, DiffType wsOpts,
-			boolean allResults, boolean useChangeNumbers, boolean followBranches)
+					boolean allResults, boolean useChangeNumbers, boolean followBranches)
 								throws ConnectionException, RequestException, AccessException;
 	
 	/**
@@ -1184,7 +1184,7 @@ public interface IServer {
 	 * @throws AccessException if the Perforce server denies access to the caller
 	 */
 	List<IFileSpec> moveFile(int changelistId, boolean listOnly, boolean noClientMove,
-			String fileType, IFileSpec fromFile, IFileSpec toFile)
+								String fileType, IFileSpec fromFile,IFileSpec toFile)
 							throws ConnectionException, RequestException, AccessException;
 	
 	/**
@@ -1203,7 +1203,7 @@ public interface IServer {
 	 */
 	
 	List<IFileSpec> getDirectories(List<IFileSpec> fileSpecs, boolean clientOnly, boolean deletedOnly,
-			boolean haveListOnly)
+													boolean haveListOnly)
 									throws ConnectionException,  AccessException;
 	
 	/**
@@ -1240,7 +1240,7 @@ public interface IServer {
 	
 	List<IChangelistSummary> getChangelists(int maxMostRecent, List<IFileSpec> fileSpecs, String clientName,
 			String userName, boolean includeIntegrated,
-			IChangelist.Type type, boolean longDesc)
+						IChangelist.Type type, boolean longDesc) 
 				throws ConnectionException, RequestException, AccessException;
 	
 	/**
@@ -1277,8 +1277,8 @@ public interface IServer {
 	 */
 	
 	List<IChangelistSummary> getChangelists(int maxMostRecent, List<IFileSpec> fileSpecs, String clientName,
-			String userName, boolean includeIntegrated,
-			boolean submittedOnly, boolean pendingOnly, boolean longDesc)
+							String userName, boolean includeIntegrated,
+										boolean submittedOnly, boolean pendingOnly, boolean longDesc) 
 								throws ConnectionException, RequestException, AccessException;
 	
 	/**
@@ -1465,7 +1465,7 @@ public interface IServer {
 	
 	Map<IFileSpec, List<IFileRevisionData>> getRevisionHistory(List<IFileSpec> fileSpecs,
 			int maxRevs, boolean contentHistory, boolean includeInherited, boolean longOutput,
-			boolean truncatedLongOutput) throws ConnectionException, AccessException;
+					boolean truncatedLongOutput) throws ConnectionException, AccessException;
 	
 	/**
 	 * Get a list of all users who have subscribed to review the named files,
@@ -1512,7 +1512,7 @@ public interface IServer {
 	 */
 	
 	List<IFileSpec> getOpenedFiles(List<IFileSpec> fileSpecs, boolean allClients, String clientName,
-			int maxFiles, int changeListId)
+											int maxFiles, int changeListId)
 							throws ConnectionException, AccessException;
 	
 	/**
@@ -1550,8 +1550,8 @@ public interface IServer {
 	 */
 	
 	List<IExtendedFileSpec> getExtendedFiles(List<IFileSpec> fileSpecs, int maxFiles,
-			int sinceChangelist, int affectedByChangelist,
-			FileStatOutputOptions outputOptions, FileStatAncilliaryOptions ancilliaryOptions)
+						int sinceChangelist, int affectedByChangelist,
+						FileStatOutputOptions outputOptions, FileStatAncilliaryOptions ancilliaryOptions)
 								throws ConnectionException, AccessException;
 	
 	/**
@@ -1575,7 +1575,7 @@ public interface IServer {
 	 */
 	
 	List<IFileSpec> getSubmittedIntegrations(List<IFileSpec> fileSpecs,
-			String branchSpec, boolean reverseMappings)
+						String branchSpec, boolean reverseMappings)
 								throws ConnectionException, RequestException, AccessException;
 	
 	/**
@@ -1610,7 +1610,7 @@ public interface IServer {
 	 */
 	
 	List<IChangelist> getInterchanges(IFileSpec fromFile, IFileSpec toFile, boolean showFiles,
-			boolean longDesc, int maxChangelistId)
+										boolean longDesc, int maxChangelistId)
 								throws ConnectionException, RequestException, AccessException;
 	
 	/**
@@ -1650,9 +1650,9 @@ public interface IServer {
 	 */
 	
 	List<IChangelist> getInterchanges(String branchSpecName,
-			List<IFileSpec> fromFileList, List<IFileSpec> toFileList,
-			boolean showFiles, boolean longDesc, int maxChangelistId,
-			boolean reverseMapping, boolean biDirectional)
+										List<IFileSpec> fromFileList, List<IFileSpec> toFileList,
+										boolean showFiles, boolean longDesc, int maxChangelistId,
+										boolean reverseMapping, boolean biDirectional)
 								throws ConnectionException, RequestException, AccessException;
 	
 	/**
@@ -1683,8 +1683,8 @@ public interface IServer {
 	 */
 	
 	List<IJob> getJobs(List<IFileSpec> fileSpecs, int maxJobs, boolean longDescriptions,
-			boolean reverseOrder, boolean includeIntegrated,
-			String jobView)
+								boolean reverseOrder, boolean includeIntegrated,
+								String jobView)
 					throws ConnectionException, RequestException, AccessException;
 	
 	/**
@@ -1810,7 +1810,7 @@ public interface IServer {
 	 */
 	
 	List<IFix> getFixList(List<IFileSpec> fileSpecs, int changeListId, String jobId,
-			boolean includeIntegrations, int maxFixes)
+							boolean includeIntegrations, int maxFixes)
 					throws ConnectionException, RequestException, AccessException;
 	
 	/**
@@ -1878,7 +1878,7 @@ public interface IServer {
 	 */
 	
 	InputStream getServerFileDiffs(IFileSpec file1, IFileSpec file2, String branchSpecName,
-			DiffType diffType, boolean quiet, boolean includeNonTextDiffs, boolean gnuDiffs)
+							DiffType diffType, boolean quiet, boolean includeNonTextDiffs, boolean gnuDiffs)
 					throws ConnectionException, RequestException, AccessException;
 	
 	
@@ -2112,7 +2112,7 @@ public interface IServer {
 	 */
 	
 	void execStreamingMapCommand(String cmdName, String[] cmdArgs, Map<String, Object> inMap,
-			IStreamingCallback callback, int key) throws P4JavaException;
+											IStreamingCallback callback, int key) throws P4JavaException;
 	
 	/**
 	 * Issue a streaming map command to the Perforce server, using an optional string
@@ -2153,11 +2153,11 @@ public interface IServer {
 	 * 				call.
 	 * @throws P4JavaException if an error occurs processing this method and its parameters.
 	 * 
-	 * @deprecated As of release 2013.1, replaced by {@link com.perforce.p4java.server.IOptionsServer#execInputStringStreamingMapCmd(String, String[], String, com.perforce.p4java.server.callback.IStreamingCallback, int)}
+	 * @deprecated As of release 2013.1, replaced by {@link com.perforce.p4java.server.IOptionsServer#execInputStringStreamingMapCmd(java.lang.String, java.lang.String[], java.lang.String, com.perforce.p4java.server.callback.IStreamingCallback, int)}
  	 */
 	@Deprecated
 	void execInputStringStreamingMapComd(String cmdName, String[] cmdArgs, String inString,
-			IStreamingCallback callback, int key) throws P4JavaException;
+											IStreamingCallback callback, int key) throws P4JavaException;
 
 	/**
 	 * Get the value of a named Perforce counter from the Perforce server. Note that this
@@ -2244,6 +2244,6 @@ public interface IServer {
 	 */
 	
 	List<Map<String, Object>> getExportRecords(boolean useJournal, long maxRecs, int sourceNum, long offset,
-			boolean format, String journalPrefix, String filter)
+									boolean format, String journalPrefix, String filter)
 					throws ConnectionException, RequestException, AccessException;
 }

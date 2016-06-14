@@ -139,7 +139,7 @@ public class PopulateFilesOptions extends Options {
 	 * 
 	 * @param options
 	 *            the options
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public PopulateFilesOptions(String... options) {
 		super(options);

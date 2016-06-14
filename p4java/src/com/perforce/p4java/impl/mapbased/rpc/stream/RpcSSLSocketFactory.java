@@ -132,7 +132,7 @@ public class RpcSSLSocketFactory extends SSLSocketFactory {
 	}
 	
 	/**
-	 * @see SSLSocketFactory#createSocket(Socket, String, int, boolean)
+	 * @see javax.net.ssl.SSLSocketFactory#createSocket(java.net.Socket, java.lang.String, int, boolean)
 	 */
 	@Override
 	public Socket createSocket(Socket socket, String host, int port,
@@ -149,7 +149,7 @@ public class RpcSSLSocketFactory extends SSLSocketFactory {
 	}
 
 	/**
-	 * @see javax.net.SocketFactory#createSocket(String, int)
+	 * @see javax.net.SocketFactory#createSocket(java.lang.String, int)
 	 */
 	@Override
 	public Socket createSocket(String host, int port) throws IOException,
@@ -158,7 +158,7 @@ public class RpcSSLSocketFactory extends SSLSocketFactory {
 	}
 
 	/**
-	 * @see javax.net.SocketFactory#createSocket(InetAddress, int)
+	 * @see javax.net.SocketFactory#createSocket(java.net.InetAddress, int)
 	 */
 	@Override
 	public Socket createSocket(InetAddress host, int port) throws IOException {
@@ -166,7 +166,7 @@ public class RpcSSLSocketFactory extends SSLSocketFactory {
 	}
 
 	/**
-	 * @see javax.net.SocketFactory#createSocket(String, int, InetAddress, int)
+	 * @see javax.net.SocketFactory#createSocket(java.lang.String, int, java.net.InetAddress, int)
 	 */
 	@Override
 	public Socket createSocket(String host, int port, InetAddress localHost,
@@ -175,7 +175,7 @@ public class RpcSSLSocketFactory extends SSLSocketFactory {
 	}
 
 	/**
-	 * @see javax.net.SocketFactory#createSocket(InetAddress, int, InetAddress, int)
+	 * @see javax.net.SocketFactory#createSocket(java.net.InetAddress, int, java.net.InetAddress, int)
 	 */
 	@Override
 	public Socket createSocket(InetAddress address, int port,
@@ -184,7 +184,7 @@ public class RpcSSLSocketFactory extends SSLSocketFactory {
 	}
 
 	/**
-	 * @see SSLSocketFactory#getDefaultCipherSuites()
+	 * @see javax.net.ssl.SSLSocketFactory#getDefaultCipherSuites()
 	 */
 	@Override
 	public String[] getDefaultCipherSuites() {
@@ -192,7 +192,7 @@ public class RpcSSLSocketFactory extends SSLSocketFactory {
 	}
 
 	/**
-	 * @see SSLSocketFactory#getSupportedCipherSuites()
+	 * @see javax.net.ssl.SSLSocketFactory#getSupportedCipherSuites()
 	 */
 	@Override
 	public String[] getSupportedCipherSuites() {

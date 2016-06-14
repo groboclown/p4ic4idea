@@ -12,7 +12,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * Options class for IOptionsServer getDirectories method.
  * 
- * @see com.perforce.p4java.server.IOptionsServer#getDirectories(List, com.perforce.p4java.option.server.GetDirectoriesOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#getDirectories(java.util.List, com.perforce.p4java.option.server.GetDirectoriesOptions)
  */
 public class GetDirectoriesOptions extends Options {
 	
@@ -68,7 +68,7 @@ public class GetDirectoriesOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public GetDirectoriesOptions(String... options) {
 		super(options);

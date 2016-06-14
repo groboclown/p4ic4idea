@@ -39,7 +39,7 @@ public class ProtectionsTable implements IProtectionsTable {
 	}
 
 	/**
-	 * @see com.perforce.p4java.admin.IProtectionTable#setEntries(List)
+	 * @see com.perforce.p4java.admin.IProtectionTable#setEntries(java.util.List)
 	 */
 	public void setEntries(List<IProtectionEntry> entries) {
 		this.entries = entries;

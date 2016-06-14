@@ -34,7 +34,7 @@ public class ReviewSubscription extends MapEntry implements IReviewSubscription 
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IReviewSubscription#setSubscription(String)
+	 * @see com.perforce.p4java.core.IReviewSubscription#setSubscription(java.lang.String)
 	 */
 	public void setSubscription(String subscription) {
 		this.setLeft(subscription);

@@ -152,35 +152,35 @@ public class UserSummary extends ServerResource implements IUserSummary {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IUserSummary#setAccess(Date)
+	 * @see com.perforce.p4java.core.IUserSummary#setAccess(java.util.Date)
 	 */
 	public void setAccess(Date access) {
 		this.access = access;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IUserSummary#setEmail(String)
+	 * @see com.perforce.p4java.core.IUserSummary#setEmail(java.lang.String)
 	 */
 	public void setEmail(String email) {
 		this.email = email;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IUserSummary#setFullName(String)
+	 * @see com.perforce.p4java.core.IUserSummary#setFullName(java.lang.String)
 	 */
 	public void setFullName(String fullName) {
 		this.fullName = fullName;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IUserSummary#setLoginName(String)
+	 * @see com.perforce.p4java.core.IUserSummary#setLoginName(java.lang.String)
 	 */
 	public void setLoginName(String loginName) {
 		this.loginName = loginName;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IUserSummary#setUpdate(Date)
+	 * @see com.perforce.p4java.core.IUserSummary#setUpdate(java.util.Date)
 	 */
 	public void setUpdate(Date update) {
 		this.update = update;

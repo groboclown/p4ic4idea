@@ -117,7 +117,7 @@ public class BranchSpec extends BranchSpecSummary implements IBranchSpec {
 			return this.left;
 		}
 		/**
-		 * @see com.perforce.p4java.core.IBranchMapping#setSourceSpec(String)
+		 * @see com.perforce.p4java.core.IBranchMapping#setSourceSpec(java.lang.String)
 		 */
 		public void setSourceSpec(String sourceSpec) {
 			this.left = sourceSpec;
@@ -129,7 +129,7 @@ public class BranchSpec extends BranchSpecSummary implements IBranchSpec {
 			return this.right;
 		}
 		/**
-		 * @see com.perforce.p4java.core.IBranchMapping#setTargetSpec(String)
+		 * @see com.perforce.p4java.core.IBranchMapping#setTargetSpec(java.lang.String)
 		 */
 		public void setTargetSpec(String targetSpec) {
 			this.right = targetSpec;

@@ -16,7 +16,7 @@ import com.perforce.p4java.server.IServer;
  * Note that behavior is undefined if both longOutput and truncatedLongOutput are true.
  * If both are false, a short form of the description (prepared by the server) is returned.
  * 
- * @see com.perforce.p4java.server.IOptionsServer#getRevisionHistory(List, com.perforce.p4java.option.server.GetRevisionHistoryOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#getRevisionHistory(java.util.List, com.perforce.p4java.option.server.GetRevisionHistoryOptions)
  */
 public class GetRevisionHistoryOptions extends Options {
 	
@@ -92,7 +92,7 @@ public class GetRevisionHistoryOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public GetRevisionHistoryOptions(String... options) {
 		super(options);

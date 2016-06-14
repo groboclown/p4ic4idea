@@ -67,6 +67,7 @@ public class Log {
 	}
 
 
+	// p4ic4idea: add in error logging for an IServerMessage
 	public static void error(final IServerMessage err) {
 		if (logCallback != null) {
 			logCallback.internalError(err.toString());
@@ -100,6 +101,7 @@ public class Log {
 	 *
 	 * @param info non-null info message.
 	 */
+	// p4ic4idea: add in info logging for an IServerMessage
 	public static void info(IServerMessage info) {
 		if (logCallback != null) {
 			logCallback.internalInfo(info.toString());

@@ -553,7 +553,7 @@ public class ExtendedFileSpec extends FileSpec implements
 	}
 	
 	/**
-	 * @see com.perforce.p4java.core.file.IExtendedFileSpec#setResolveRecords(List)
+	 * @see com.perforce.p4java.core.file.IExtendedFileSpec#setResolveRecords(java.util.List)
 	 */
 	public void setResolveRecords(List<IResolveRecord> resolveRecords) {
 		this.resolveRecords = resolveRecords;

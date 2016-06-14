@@ -13,7 +13,7 @@ import com.perforce.p4java.server.IServer;
  * Options class for the IClient.unshelveFiles method and associated
  * convenience methods.
  * 
- * @see com.perforce.p4java.client.IClient#unshelveFiles(List, int, int, com.perforce.p4java.option.client.UnshelveFilesOptions)
+ * @see com.perforce.p4java.client.IClient#unshelveFiles(java.util.List, int, int, com.perforce.p4java.option.client.UnshelveFilesOptions)
  */
 public class UnshelveFilesOptions extends Options {
 
@@ -53,7 +53,7 @@ public class UnshelveFilesOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public UnshelveFilesOptions(String... options) {
 		super(options);

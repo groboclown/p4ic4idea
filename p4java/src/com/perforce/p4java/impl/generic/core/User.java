@@ -117,7 +117,7 @@ public class User extends UserSummary implements IUser {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IUser#setPassword(String)
+	 * @see com.perforce.p4java.core.IUser#setPassword(java.lang.String)
 	 */
 	public void setPassword(String password) {
 		this.password = password;
@@ -131,7 +131,7 @@ public class User extends UserSummary implements IUser {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IUser#setJobView(String)
+	 * @see com.perforce.p4java.core.IUser#setJobView(java.lang.String)
 	 */
 	public void setJobView(String jobView) {
 		this.jobView = jobView;

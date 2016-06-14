@@ -12,7 +12,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * Options class for server getUsers method.
  * 
- * @see com.perforce.p4java.server.IOptionsServer#getUsers(List, com.perforce.p4java.option.server.GetUsersOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#getUsers(java.util.List, com.perforce.p4java.option.server.GetUsersOptions)
  */
 public class GetUsersOptions extends Options {
 	
@@ -66,7 +66,7 @@ public class GetUsersOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public GetUsersOptions(String... options) {
 		super(options);

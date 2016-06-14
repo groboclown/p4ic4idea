@@ -39,7 +39,7 @@ public class TriggersTable implements ITriggersTable {
 	}
 
 	/**
-	 * @see com.perforce.p4java.admin.ITriggersTable#setEntries(List)
+	 * @see com.perforce.p4java.admin.ITriggersTable#setEntries(java.util.List)
 	 */
 	public void setEntries(List<ITriggerEntry> entries) {
 		this.entries = entries;

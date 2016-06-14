@@ -96,7 +96,7 @@ public class ResolveRecord implements IResolveRecord {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.core.file.IResolveRecord#setResolveBaseFile(String)
+	 * @see com.perforce.p4java.core.file.IResolveRecord#setResolveBaseFile(java.lang.String)
 	 */
 	public void setResolveBaseFile(String resolveBaseFile) {
 		this.resolveBaseFile = resolveBaseFile;
@@ -138,7 +138,7 @@ public class ResolveRecord implements IResolveRecord {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.core.file.IResolveRecord#setResolveFromFile(String)
+	 * @see com.perforce.p4java.core.file.IResolveRecord#setResolveFromFile(java.lang.String)
 	 */
 	public void setResolveFromFile(String resolveFromFile) {
 		this.resolveFromFile = resolveFromFile;
@@ -166,7 +166,7 @@ public class ResolveRecord implements IResolveRecord {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.core.file.IResolveRecord#setResolveType(String)
+	 * @see com.perforce.p4java.core.file.IResolveRecord#setResolveType(java.lang.String)
 	 */
 	public void setResolveType(String resolveType) {
 		this.resolveType = resolveType;

@@ -12,7 +12,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * Options class for the IOptionsServer.getFileContents method.
  * 
- * @see com.perforce.p4java.server.IOptionsServer#getFileContents(List, com.perforce.p4java.option.server.GetFileContentsOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#getFileContents(java.util.List, com.perforce.p4java.option.server.GetFileContentsOptions)
  */
 public class GetFileContentsOptions extends Options {
 	
@@ -68,7 +68,7 @@ public class GetFileContentsOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public GetFileContentsOptions(String... options) {
 		super(options);

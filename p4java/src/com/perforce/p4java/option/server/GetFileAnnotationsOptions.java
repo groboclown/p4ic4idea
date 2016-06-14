@@ -17,7 +17,7 @@ import com.perforce.p4java.server.IServer;
  * versions (-dw, etc.); mixing them up carelessly probably isn't a
  * good idea.
  * 
- * @see com.perforce.p4java.server.IOptionsServer#getFileAnnotations(List, com.perforce.p4java.option.server.GetFileAnnotationsOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#getFileAnnotations(java.util.List, com.perforce.p4java.option.server.GetFileAnnotationsOptions)
  */
 public class GetFileAnnotationsOptions extends Options {
 	
@@ -105,7 +105,7 @@ public class GetFileAnnotationsOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public GetFileAnnotationsOptions(String... options) {
 		super(options);

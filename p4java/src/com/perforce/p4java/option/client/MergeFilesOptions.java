@@ -17,7 +17,7 @@ import com.perforce.p4java.server.IServer;
  * to validate the sanity or otherwise of the various options and
  * their combination.
  *
- * @see com.perforce.p4java.client.IClient#mergeFiles(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, String, com.perforce.p4java.option.client.MergeFilesOptions)
+ * @see com.perforce.p4java.client.IClient#mergeFiles(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, java.lang.String, com.perforce.p4java.option.client.MergeFilesOptions)
  */
 public class MergeFilesOptions extends Options {
 
@@ -120,7 +120,7 @@ public class MergeFilesOptions extends Options {
     	 * string's setting. Do not use this constructor unless you know what you're
     	 * doing and / or you do not also use the field getters and setters.</b>
     	 * 
-    	 * @see com.perforce.p4java.option.Options#Options(String...)
+    	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
     	 */
         public MergeFilesOptions(String... options) {
                 super(options);

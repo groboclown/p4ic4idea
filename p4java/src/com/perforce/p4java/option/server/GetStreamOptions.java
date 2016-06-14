@@ -12,7 +12,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * Options class for IOptionsServer.getStream method.
  *
- * @see com.perforce.p4java.server.IOptionsServer#getStream(String, com.perforce.p4java.option.server.GetStreamOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#getStream(java.lang.String, com.perforce.p4java.option.server.GetStreamOptions)
  */
 public class GetStreamOptions extends Options {
 
@@ -50,7 +50,7 @@ public class GetStreamOptions extends Options {
     	 * string's setting. Do not use this constructor unless you know what you're
     	 * doing and / or you do not also use the field getters and setters.</b>
     	 * 
-    	 * @see com.perforce.p4java.option.Options#Options(String...)
+    	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
     	 */
         public GetStreamOptions(String... options) {
                 super(options);

@@ -12,7 +12,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * Options-based method options for IOptionsServer obliterateFiles method(s).
  * 
- * @see com.perforce.p4java.server.IOptionsServer#obliterateFiles(List, com.perforce.p4java.option.server.ObliterateFilesOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#obliterateFiles(java.util.List, com.perforce.p4java.option.server.ObliterateFilesOptions)
  */
 public class ObliterateFilesOptions extends Options {
 
@@ -86,7 +86,7 @@ public class ObliterateFilesOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public ObliterateFilesOptions(String... options) {
 		super(options);

@@ -13,7 +13,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * Options subclass for IClient.lockFiles.
  * 
- * @see com.perforce.p4java.client.IClient#lockFiles(List, com.perforce.p4java.option.client.LockFilesOptions)
+ * @see com.perforce.p4java.client.IClient#lockFiles(java.util.List, com.perforce.p4java.option.client.LockFilesOptions)
  */
 public class LockFilesOptions extends Options {
 	
@@ -51,7 +51,7 @@ public class LockFilesOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public LockFilesOptions(String... options) {
 		super(options);

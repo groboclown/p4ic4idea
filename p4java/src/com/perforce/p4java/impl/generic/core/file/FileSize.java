@@ -68,7 +68,7 @@ public class FileSize implements IFileSize {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.file.IFileSize#setDepotFile(String)
+	 * @see com.perforce.p4java.core.file.IFileSize#setDepotFile(java.lang.String)
 	 */
 	public void setDepotFile(String depotFile) {
 		this.depotFile = depotFile;
@@ -110,7 +110,7 @@ public class FileSize implements IFileSize {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.file.IFileSize#setPath(String)
+	 * @see com.perforce.p4java.core.file.IFileSize#setPath(java.lang.String)
 	 */
 	public void setPath(String path) {
 		this.path = path;

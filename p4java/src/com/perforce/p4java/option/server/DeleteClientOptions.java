@@ -12,7 +12,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * Options object for the IOptionsServer deleteClient method.
  * 
- * @see com.perforce.p4java.server.IOptionsServer#deleteClient(String, com.perforce.p4java.option.server.DeleteClientOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#deleteClient(java.lang.String, com.perforce.p4java.option.server.DeleteClientOptions)
  */
 public class DeleteClientOptions extends Options {
 	
@@ -49,7 +49,7 @@ public class DeleteClientOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public DeleteClientOptions(String... options) {
 		super(options);

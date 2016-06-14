@@ -77,7 +77,7 @@ public class Label extends LabelSummary implements ILabel {
 			if (map == null) {
 				throw new NullPointerError("null mapping element in Label.newLabel()");
 			}
-			LabelMapping entry = new LabelMapping();
+			Label.LabelMapping entry = new Label.LabelMapping();
 			entry.setLeft(map);
 			viewMapping.addEntry(entry);
 		}
@@ -125,7 +125,7 @@ public class Label extends LabelSummary implements ILabel {
 		}
 
 		/**
-		 * @see com.perforce.p4java.core.ILabelMapping#setViewMapping(String)
+		 * @see com.perforce.p4java.core.ILabelMapping#setViewMapping(java.lang.String)
 		 */
 		public void setViewMapping(String entry) {
 			this.left = entry;

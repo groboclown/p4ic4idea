@@ -58,7 +58,7 @@ import com.perforce.p4java.server.IServer;
  * 	scanning will stop on the first match.
  * </pre>
  * 
- * @see com.perforce.p4java.server.IOptionsServer#getMatchingLines(List, String, com.perforce.p4java.option.server.MatchingLinesOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#getMatchingLines(java.util.List, java.lang.String, com.perforce.p4java.option.server.MatchingLinesOptions)
  */
 public class MatchingLinesOptions extends Options {
 	
@@ -138,7 +138,7 @@ public class MatchingLinesOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public MatchingLinesOptions(String ... options) {
 		super(options);

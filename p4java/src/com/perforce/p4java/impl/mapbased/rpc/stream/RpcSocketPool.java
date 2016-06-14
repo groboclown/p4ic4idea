@@ -105,7 +105,7 @@ public class RpcSocketPool {
 		}
 
 		/**
-		 * @see Runnable#run()
+		 * @see java.lang.Runnable#run()
 		 */
 		public void run() {
 			while (true) {

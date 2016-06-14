@@ -137,21 +137,21 @@ public class Job extends ServerResource implements IJob {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IJob#setId(String)
+	 * @see com.perforce.p4java.core.IJob#setId(java.lang.String)
 	 */
 	public void setId(String id) {
 		this.id = id;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IJob#setRawFields(Map)
+	 * @see com.perforce.p4java.core.IJob#setRawFields(java.util.Map)
 	 */
 	public void setRawFields(Map<String, Object> rawFields) {
 		this.rawFields = rawFields;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IJob#setDescription(String)
+	 * @see com.perforce.p4java.core.IJob#setDescription(java.lang.String)
 	 */
 	public void setDescription(String description) {
 		this.description = description;

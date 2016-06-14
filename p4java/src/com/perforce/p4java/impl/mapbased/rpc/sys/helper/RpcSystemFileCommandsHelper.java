@@ -106,7 +106,7 @@ public class RpcSystemFileCommandsHelper extends SymbolicLinkHelper implements
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper#canExecute(String)
+	 * @see com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper#canExecute(java.lang.String)
 	 */
 	public boolean canExecute(String fileName) {
 		if (canExecuteMethod != null) {
@@ -127,7 +127,7 @@ public class RpcSystemFileCommandsHelper extends SymbolicLinkHelper implements
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper#setExecutable(String, boolean, boolean)
+	 * @see com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper#setExecutable(java.lang.String, boolean, boolean)
 	 */
 	public boolean setExecutable(String fileName, boolean executable, boolean ownerOnly) {
 		if (setExecutableMethod != null) {
@@ -147,7 +147,7 @@ public class RpcSystemFileCommandsHelper extends SymbolicLinkHelper implements
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper#setWritable(String, boolean)
+	 * @see com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper#setWritable(java.lang.String, boolean)
 	 */
 	public boolean setWritable(String fileName, boolean writable) {
 		if (setWritableMethod != null) {
@@ -167,14 +167,14 @@ public class RpcSystemFileCommandsHelper extends SymbolicLinkHelper implements
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper#isSymlink(String)
+	 * @see com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper#isSymlink(java.lang.String)
 	 */
 	public boolean isSymlink(String fileName) {
 		return isSymbolicLink(fileName);
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper#setReadable(String,
+	 * @see com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper#setReadable(java.lang.String,
 	 *      boolean, boolean)
 	 */
 	public boolean setReadable(String fileName, boolean readable,
@@ -196,7 +196,7 @@ public class RpcSystemFileCommandsHelper extends SymbolicLinkHelper implements
 	}
 	
 	/**
-	 * @see com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper#setOwnerReadOnly(String)
+	 * @see com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper#setOwnerReadOnly(java.lang.String)
 	 */
 	public boolean setOwnerReadOnly(String fileName) {
 		boolean set = setReadable(fileName, false, false);

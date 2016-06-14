@@ -25,7 +25,7 @@ import com.perforce.p4java.server.IServer;
  * Please consult the main p4 documentation for detailed options
  * semantics and option / server compatibility details.
  * 
- * @see com.perforce.p4java.server.IOptionsServer#getExtendedFiles(List, com.perforce.p4java.option.server.GetExtendedFilesOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#getExtendedFiles(java.util.List, com.perforce.p4java.option.server.GetExtendedFilesOptions)
  */
 public class GetExtendedFilesOptions extends Options {
 	
@@ -100,7 +100,7 @@ public class GetExtendedFilesOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public GetExtendedFilesOptions(String... options) {
 		super(options);

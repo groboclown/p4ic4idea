@@ -62,7 +62,7 @@ public class RpcGZIPOutputStream extends FilterOutputStream {
 	/**
 	 * A convenience method for write(bytes, 0, bytes.length).
 	 * 
-	 * @see FilterOutputStream#write(byte[])
+	 * @see java.io.FilterOutputStream#write(byte[])
 	 */
 	@Override
 	public void write(byte[] bytes) throws IOException {
@@ -84,7 +84,7 @@ public class RpcGZIPOutputStream extends FilterOutputStream {
 	 * a suitable flush is done at a suitable (packet) boundary. See
 	 * the comments for flush() below.
 	 * 
-	 * @see FilterOutputStream#write(byte[], int, int)
+	 * @see java.io.FilterOutputStream#write(byte[], int, int)
 	 */
 	@Override
 	public void write(byte[] bytes, int offset, int len) throws IOException {
@@ -122,7 +122,7 @@ public class RpcGZIPOutputStream extends FilterOutputStream {
 	 * Not used. Will cause a UnimplementedError to be thrown
 	 * if called.
 	 * 
-	 * @see FilterOutputStream#write(int)
+	 * @see java.io.FilterOutputStream#write(int)
 	 */
 	@Override
 	public void write(int b) throws IOException {
@@ -142,7 +142,7 @@ public class RpcGZIPOutputStream extends FilterOutputStream {
 	 * this stream -- i.e. users of this stream must call flush appropriately, or the
 	 * server may not see packets at all.
 	 * 
-	 * @see FilterOutputStream#flush()
+	 * @see java.io.FilterOutputStream#flush()
 	 */
 	@Override
 	public void flush() throws IOException {
@@ -178,7 +178,7 @@ public class RpcGZIPOutputStream extends FilterOutputStream {
 	 * if you don't call this properly, but it certainly helps to close the
 	 * stream cleanly.
 	 * 
-	 * @see FilterOutputStream#close()
+	 * @see java.io.FilterOutputStream#close()
 	 */
 	@Override
 	public void close() throws IOException {

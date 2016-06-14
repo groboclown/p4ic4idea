@@ -266,7 +266,7 @@ public class RpcPerforceFile extends File {
 	}
 
 	/**
-	 * @see File#equals()
+	 * @see java.io.File#equals()
 	 */
 	@Override
     public boolean equals(Object obj) {
@@ -281,7 +281,7 @@ public class RpcPerforceFile extends File {
     }
 
 	/**
-	 * @see File#hashCode()
+	 * @see java.io.File#hashCode()
 	 */
 	@Override
     public int hashCode() {

@@ -12,7 +12,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * Options object for the IOptionsServer switchClientView method.
  * 
- * @see com.perforce.p4java.server.IOptionsServer#switchClientView(String, com.perforce.p4java.option.server.SwitchClientViewOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#switchClientView(java.lang.String, com.perforce.p4java.option.server.SwitchClientViewOptions)
  */
 public class SwitchClientViewOptions extends Options {
 	
@@ -49,7 +49,7 @@ public class SwitchClientViewOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public SwitchClientViewOptions(String... options) {
 		super(options);

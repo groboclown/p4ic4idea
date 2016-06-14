@@ -114,7 +114,7 @@ public class TriggerEntry extends MapEntry implements ITriggerEntry {
 	}
 
 	/**
-	 * @see com.perforce.p4java.admin.ITriggerEntry#setName(String)
+	 * @see com.perforce.p4java.admin.ITriggerEntry#setName(java.lang.String)
 	 */
 	public void setName(String name) {
 		this.name = name;
@@ -142,7 +142,7 @@ public class TriggerEntry extends MapEntry implements ITriggerEntry {
 	}
 
 	/**
-	 * @see com.perforce.p4java.admin.ITriggerEntry#setPath(String)
+	 * @see com.perforce.p4java.admin.ITriggerEntry#setPath(java.lang.String)
 	 */
 	public void setPath(String path) {
 		this.path = quoteWhitespaceString(path);
@@ -156,7 +156,7 @@ public class TriggerEntry extends MapEntry implements ITriggerEntry {
 	}
 
 	/**
-	 * @see com.perforce.p4java.admin.ITriggerEntry#setCommand(String)
+	 * @see com.perforce.p4java.admin.ITriggerEntry#setCommand(java.lang.String)
 	 */
 	public void setCommand(String command) {
 		this.command = quoteWhitespaceString(command);
@@ -189,7 +189,7 @@ public class TriggerEntry extends MapEntry implements ITriggerEntry {
     }
 
     /**
-     * @see Object#toString()
+     * @see java.lang.Object#toString()
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();

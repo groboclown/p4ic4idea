@@ -3,12 +3,12 @@
  */
 package com.perforce.p4java.core;
 
-import com.perforce.p4java.exception.NullPointerError;
-import com.perforce.p4java.exception.P4JavaError;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import com.perforce.p4java.exception.NullPointerError;
+import com.perforce.p4java.exception.P4JavaError;
 
 /**
  * Defines the common operations to Perforce view maps. View maps are
@@ -195,7 +195,7 @@ public class ViewMap<E extends IMapEntry> implements Iterable<E> {
 	}
 
 	/**
-	 * @see Iterable#iterator()
+	 * @see java.lang.Iterable#iterator()
 	 */
 	public Iterator<E> iterator() {
 		return this.entryList.iterator();

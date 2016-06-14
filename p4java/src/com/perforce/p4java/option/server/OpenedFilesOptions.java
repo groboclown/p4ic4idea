@@ -18,8 +18,8 @@ import com.perforce.p4java.server.IServer;
  * allClients and clientName options are ignored; the clientName
  * is (of course) filled in using the client's own name.<p>
  * 
- * @see com.perforce.p4java.server.IServer#getOpenedFiles(List, com.perforce.p4java.core.option.OpenedFilesOptions)
- * @see com.perforce.p4java.client.IClient#openedFiles(List, com.perforce.p4java.option.server.OpenedFilesOptions)
+ * @see com.perforce.p4java.server.IServer#getOpenedFiles(java.util.List, com.perforce.p4java.core.option.OpenedFilesOptions)
+ * @see com.perforce.p4java.client.IClient#openedFiles(java.util.List, com.perforce.p4java.option.server.OpenedFilesOptions)
  */
 public class OpenedFilesOptions extends Options {
 	
@@ -86,7 +86,7 @@ public class OpenedFilesOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public OpenedFilesOptions(String... options) {
 		super(options);

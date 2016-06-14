@@ -89,7 +89,7 @@ public class RpcUserAuthCounter {
 
 		Iterator<Entry<String, AtomicInteger>> it = this.counterMap.entrySet().iterator();
 	    while (it.hasNext()) {
-	        Entry<String, AtomicInteger> entry = (Entry<String, AtomicInteger>)it.next();
+	        Map.Entry<String, AtomicInteger> entry = (Map.Entry<String, AtomicInteger>)it.next();
 	        if (entry != null && entry.getKey() != null && entry.getValue() != null) {
 	        	sb.append(entry.getKey()).append(": ").append(entry.getValue()).append(LINE_SEPARATOR);
 	        }

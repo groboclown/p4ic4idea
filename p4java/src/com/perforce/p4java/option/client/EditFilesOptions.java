@@ -12,7 +12,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * Options subclass for use with IClient editFiles method(s).
  * 
- * @see com.perforce.p4java.client.IClient#editFiles(List, com.perforce.p4java.option.client.EditFilesOptions)
+ * @see com.perforce.p4java.client.IClient#editFiles(java.util.List, com.perforce.p4java.option.client.EditFilesOptions)
  */
 public class EditFilesOptions extends Options {
 	
@@ -82,7 +82,7 @@ public class EditFilesOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public EditFilesOptions(String... options) {
 		super(options);

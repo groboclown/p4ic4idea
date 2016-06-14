@@ -17,7 +17,7 @@ import com.perforce.p4java.server.IServer;
  * Note that absolutely no sanity checking is performed in the current default
  * implementation for clashing options, etc.
  *
- * @see com.perforce.p4java.client.IClient#resolveFilesAuto(List, com.perforce.p4java.option.client.ResolveFilesAutoOptions)
+ * @see com.perforce.p4java.client.IClient#resolveFilesAuto(java.util.List, com.perforce.p4java.option.client.ResolveFilesAutoOptions)
  */
 public class ResolveFilesAutoOptions extends Options {
 
@@ -136,7 +136,7 @@ public class ResolveFilesAutoOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
     public ResolveFilesAutoOptions(String... options) {
         super(options);

@@ -175,28 +175,28 @@ public class ProtectionEntry extends MapEntry implements IProtectionEntry {
 	}
 
 	/**
-	 * @see com.perforce.p4java.admin.IProtectionEntry#setHost(String)
+	 * @see com.perforce.p4java.admin.IProtectionEntry#setHost(java.lang.String)
 	 */
 	public void setHost(String host) {
 		this.host = host;
 	}
 
 	/**
-	 * @see com.perforce.p4java.admin.IProtectionEntry#setMode(String)
+	 * @see com.perforce.p4java.admin.IProtectionEntry#setMode(java.lang.String)
 	 */
 	public void setMode(String mode) {
 		this.mode = mode;
 	}
 
 	/**
-	 * @see com.perforce.p4java.admin.IProtectionEntry#setName(String)
+	 * @see com.perforce.p4java.admin.IProtectionEntry#setName(java.lang.String)
 	 */
 	public void setName(String name) {
 		this.name = name;
 	}
 
 	/**
-	 * @see com.perforce.p4java.admin.IProtectionEntry#setPath(String)
+	 * @see com.perforce.p4java.admin.IProtectionEntry#setPath(java.lang.String)
 	 */
 	public void setPath(String path) {
 		this.left = quoteWhitespaceString(path);

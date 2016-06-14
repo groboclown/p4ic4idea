@@ -120,7 +120,7 @@ public class Fix extends ServerResource implements IFix {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IFix#setJobId(String)
+	 * @see com.perforce.p4java.core.IFix#setJobId(java.lang.String)
 	 */
 	public void setJobId(String jobId) {
 		this.jobId = jobId;
@@ -134,35 +134,35 @@ public class Fix extends ServerResource implements IFix {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IFix#setClientName(String)
+	 * @see com.perforce.p4java.core.IFix#setClientName(java.lang.String)
 	 */
 	public void setClientName(String clientName) {
 		this.clientName = clientName;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IFix#setDate(Date)
+	 * @see com.perforce.p4java.core.IFix#setDate(java.util.Date)
 	 */
 	public void setDate(Date date) {
 		this.date = date;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IFix#setStatus(String)
+	 * @see com.perforce.p4java.core.IFix#setStatus(java.lang.String)
 	 */
 	public void setStatus(String status) {
 		this.status = status;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IFix#setUserName(String)
+	 * @see com.perforce.p4java.core.IFix#setUserName(java.lang.String)
 	 */
 	public void setUserName(String userName) {
 		this.userName = userName;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IFix#setAction(String)
+	 * @see com.perforce.p4java.core.IFix#setAction(java.lang.String)
 	 */
 	public void setAction(String action) {
 		this.action = action;

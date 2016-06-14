@@ -541,7 +541,7 @@ public class FileSpec extends ServerResource implements IFileSpec {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.core.file.IFileSpec#move(int, boolean, boolean, String, com.perforce.p4java.core.file.IFileSpec)
+	 * @see com.perforce.p4java.core.file.IFileSpec#move(int, boolean, boolean, java.lang.String, com.perforce.p4java.core.file.IFileSpec)
 	 */
 	public List<IFileSpec> move(int changelistId, boolean listOnly, boolean noClientMove, String fileType, IFileSpec toFile)
 					throws ConnectionException, RequestException, AccessException {
@@ -949,14 +949,14 @@ public class FileSpec extends ServerResource implements IFileSpec {
 	/**
 	 * Alias for getAnnotatedPreferredPathString().
 	 * 
-	 * @see Object#toString()
+	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
 		return getAnnotatedPreferredPathString();
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.file.IFileSpec#setPathFromString(com.perforce.p4java.impl.generic.core.file.FilePath.PathType, String)
+	 * @see com.perforce.p4java.core.file.IFileSpec#setPathFromString(com.perforce.p4java.impl.generic.core.file.FilePath.PathType, java.lang.String)
 	 */
 	public void setPathFromString(PathType pathType, String pathStr) {
 		FilePath path = new FilePath(pathType, pathStr);
@@ -971,21 +971,21 @@ public class FileSpec extends ServerResource implements IFileSpec {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.file.IFileSpec#setClientPath(String)
+	 * @see com.perforce.p4java.core.file.IFileSpec#setClientPath(java.lang.String)
 	 */
 	public void setClientPath(String pathStr) {
 		setPath(new FilePath(PathType.CLIENT, pathStr));
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.file.IFileSpec#setDepotPath(String)
+	 * @see com.perforce.p4java.core.file.IFileSpec#setDepotPath(java.lang.String)
 	 */
 	public void setDepotPath(String pathStr) {
 		setPath(new FilePath(PathType.DEPOT, pathStr));
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.file.IFileSpec#setLocalPath(String)
+	 * @see com.perforce.p4java.core.file.IFileSpec#setLocalPath(java.lang.String)
 	 */
 	public void setLocalPath(String pathStr) {
 		// groboclown: fix how nulls work
@@ -997,7 +997,7 @@ public class FileSpec extends ServerResource implements IFileSpec {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.file.IFileSpec#setOriginalPath(String)
+	 * @see com.perforce.p4java.core.file.IFileSpec#setOriginalPath(java.lang.String)
 	 */
 	public void setOriginalPath(String pathStr) {
 		setPath(new FilePath(PathType.ORIGINAL, pathStr));
@@ -1025,7 +1025,7 @@ public class FileSpec extends ServerResource implements IFileSpec {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.file.IFileSpec#setBaseName(String)
+	 * @see com.perforce.p4java.core.file.IFileSpec#setBaseName(java.lang.String)
 	 */
 	public void setBaseName(String baseName) {
 		this.baseName = baseName;
@@ -1039,7 +1039,7 @@ public class FileSpec extends ServerResource implements IFileSpec {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.file.IFileSpec#setBaseFile(String)
+	 * @see com.perforce.p4java.core.file.IFileSpec#setBaseFile(java.lang.String)
 	 */
 	public void setBaseFile(String baseFile) {
 		this.baseFile = baseFile;

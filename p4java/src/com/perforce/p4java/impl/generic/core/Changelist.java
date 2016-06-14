@@ -420,7 +420,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.core.IChangelist#submit(boolean, List, String)
+	 * @see com.perforce.p4java.core.IChangelist#submit(boolean, java.util.List, java.lang.String)
 	 */
 	
 	public List<IFileSpec> submit(boolean reOpen, List<String> jobIds, String jobStatus)

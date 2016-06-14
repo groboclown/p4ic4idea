@@ -12,7 +12,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * Options class for the server's deleteLabel method.
  * 
- * @see com.perforce.p4java.server.IOptionsServer#deleteLabel(String, com.perforce.p4java.option.server.DeleteLabelOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#deleteLabel(java.lang.String, com.perforce.p4java.option.server.DeleteLabelOptions)
  */
 public class DeleteLabelOptions extends Options {
 	
@@ -46,7 +46,7 @@ public class DeleteLabelOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public DeleteLabelOptions(String... options) {
 		super(options);

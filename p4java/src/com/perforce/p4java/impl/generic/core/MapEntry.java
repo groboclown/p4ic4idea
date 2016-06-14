@@ -139,7 +139,7 @@ public class MapEntry implements IMapEntry {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IMapEntry#setLeft(String)
+	 * @see com.perforce.p4java.core.IMapEntry#setLeft(java.lang.String)
 	 */
 	public void setLeft(String left) {
 		this.left = left;
@@ -163,14 +163,14 @@ public class MapEntry implements IMapEntry {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.core.IMapEntry#setRight(String)
+	 * @see com.perforce.p4java.core.IMapEntry#setRight(java.lang.String)
 	 */
 	public void setRight(String right) {
 		this.right = right;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IMapEntry#toString(String)
+	 * @see com.perforce.p4java.core.IMapEntry#toString(java.lang.String)
 	 */
 	public String toString(String sepString, boolean quoteBlanks) {
 		StringBuilder retVal = new StringBuilder();
@@ -208,7 +208,7 @@ public class MapEntry implements IMapEntry {
 	/**
 	 * An alias for this.toString(" ", true).
 	 * 
-	 * @see Object#toString()
+	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
 		return toString(" ", true);

@@ -229,42 +229,42 @@ public class JobSpec extends ServerResource implements IJobSpec {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.core.IJobSpec#getFieldValues(String)
+	 * @see com.perforce.p4java.core.IJobSpec#getFieldValues(java.lang.String)
 	 */
 	public List<String> getFieldValues(String fieldName) {
 		return this.values.get(fieldName);
 	}
 	
 	/**
-	 * @see com.perforce.p4java.core.IJobSpec#getFieldPreset(String)
+	 * @see com.perforce.p4java.core.IJobSpec#getFieldPreset(java.lang.String)
 	 */
 	public String getFieldPreset(String fieldName) {
 		return this.presets.get(fieldName);
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IJobSpec#setComments(String)
+	 * @see com.perforce.p4java.core.IJobSpec#setComments(java.lang.String)
 	 */
 	public void setComments(String comments) {
 		this.comments = comments;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IJobSpec#setFields(List)
+	 * @see com.perforce.p4java.core.IJobSpec#setFields(java.util.List)
 	 */
 	public void setFields(List<IJobSpecField> fields) {
 		this.fields = fields;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IJobSpec#setPresets(Map)
+	 * @see com.perforce.p4java.core.IJobSpec#setPresets(java.util.Map)
 	 */
 	public void setPresets(Map<String, String> presets) {
 		this.presets = presets;
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IJobSpec#setValues(Map)
+	 * @see com.perforce.p4java.core.IJobSpec#setValues(java.util.Map)
 	 */
 	public void setValues(Map<String, List<String>> values) {
 		this.values = values;

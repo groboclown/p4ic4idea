@@ -205,7 +205,7 @@ public class ChangelistSummary extends ServerResource implements IChangelistSumm
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IChangelistSummary#setClientId(String)
+	 * @see com.perforce.p4java.core.IChangelistSummary#setClientId(java.lang.String)
 	 */
 	public void setClientId(String clientId) {
 		this.clientId = clientId;
@@ -219,7 +219,7 @@ public class ChangelistSummary extends ServerResource implements IChangelistSumm
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IChangelistSummary#setUsername(String)
+	 * @see com.perforce.p4java.core.IChangelistSummary#setUsername(java.lang.String)
 	 */
 	public void setUsername(String username) {
 		this.username = username;
@@ -244,7 +244,7 @@ public class ChangelistSummary extends ServerResource implements IChangelistSumm
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IChangelistSummary#setDate(Date)
+	 * @see com.perforce.p4java.core.IChangelistSummary#setDate(java.util.Date)
 	 */
 	public void setDate(Date date) {
 		this.date = date;
@@ -258,7 +258,7 @@ public class ChangelistSummary extends ServerResource implements IChangelistSumm
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IChangelistSummary#setDescription(String)
+	 * @see com.perforce.p4java.core.IChangelistSummary#setDescription(java.lang.String)
 	 */
 	public String setDescription(String description) {
 		String oldDesc = this.description;

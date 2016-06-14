@@ -13,7 +13,7 @@ import com.perforce.p4java.server.IServer;
 /**
  * Options class for IOptionsServer.getClientTemplate method.
  * 
- * @see com.perforce.p4java.server.IOptionsServer#getClientTemplate(String, com.perforce.p4java.option.server.GetClientTemplateOptions)
+ * @see com.perforce.p4java.server.IOptionsServer#getClientTemplate(java.lang.String, com.perforce.p4java.option.server.GetClientTemplateOptions)
  */
 public class GetClientTemplateOptions extends Options {
 	
@@ -65,7 +65,7 @@ public class GetClientTemplateOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public GetClientTemplateOptions(String... options) {
 		super(options);

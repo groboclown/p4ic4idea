@@ -109,7 +109,7 @@ public class BranchSpecSummary extends ServerResource implements IBranchSpecSumm
 		return accessed;
 	}
 	/**
-	 * @see com.perforce.p4java.core.IBranchSpecSummary#setAccessed(Date)
+	 * @see com.perforce.p4java.core.IBranchSpecSummary#setAccessed(java.util.Date)
 	 */
 	public void setAccessed(Date accessed) {
 		this.accessed = accessed;
@@ -121,7 +121,7 @@ public class BranchSpecSummary extends ServerResource implements IBranchSpecSumm
 		return updated;
 	}
 	/**
-	 * @see com.perforce.p4java.core.IBranchSpecSummary#setUpdated(Date)
+	 * @see com.perforce.p4java.core.IBranchSpecSummary#setUpdated(java.util.Date)
 	 */
 	public void setUpdated(Date updated) {
 		this.updated = updated;
@@ -133,7 +133,7 @@ public class BranchSpecSummary extends ServerResource implements IBranchSpecSumm
 		return name;
 	}
 	/**
-	 * @see com.perforce.p4java.core.IBranchSpecSummary#setName(String)
+	 * @see com.perforce.p4java.core.IBranchSpecSummary#setName(java.lang.String)
 	 */
 	public void setName(String name) {
 		this.name = name;
@@ -145,7 +145,7 @@ public class BranchSpecSummary extends ServerResource implements IBranchSpecSumm
 		return ownerName;
 	}
 	/**
-	 * @see com.perforce.p4java.core.IBranchSpecSummary#setOwnerName(String)
+	 * @see com.perforce.p4java.core.IBranchSpecSummary#setOwnerName(java.lang.String)
 	 */
 	public void setOwnerName(String ownerName) {
 		this.ownerName = ownerName;
@@ -157,7 +157,7 @@ public class BranchSpecSummary extends ServerResource implements IBranchSpecSumm
 		return description;
 	}
 	/**
-	 * @see com.perforce.p4java.core.IBranchSpecSummary#setDescription(String)
+	 * @see com.perforce.p4java.core.IBranchSpecSummary#setDescription(java.lang.String)
 	 */
 	public void setDescription(String description) {
 		this.description = description;

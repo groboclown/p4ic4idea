@@ -78,7 +78,7 @@ public class AuthTicket {
 	}
 
 	/**
-	 * @see Object#equals(Object)
+	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	public boolean equals(Object obj) {
 		if (obj == this) {
@@ -91,14 +91,14 @@ public class AuthTicket {
 	}
 
 	/**
-	 * @see Object#hashCode()
+	 * @see java.lang.Object#hashCode()
 	 */
 	public int hashCode() {
 		return toString().hashCode();
 	}
 
 	/**
-	 * @see Object#toString()
+	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
 		return this.serverAddress + "=" + this.userName + ":"

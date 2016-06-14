@@ -196,8 +196,10 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	protected boolean useAuthMemoryStore = false;
 
 	protected String ignoreFileName = null;
-	
-    /**
+
+	protected String rsh = null;
+
+	/**
      * Useful source of random integers, etc.
      */
     protected Random rand = new Random(System.currentTimeMillis());
@@ -222,7 +224,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#registerSSOCallback(com.perforce.p4java.server.callback.ISSOCallback, String)
+	 * @see com.perforce.p4java.server.IServer#registerSSOCallback(com.perforce.p4java.server.callback.ISSOCallback, java.lang.String)
 	 */
 	public ISSOCallback registerSSOCallback(ISSOCallback callback, String ssoKey) {
 		ISSOCallback oldCallback = this.ssoCallback;
@@ -253,7 +255,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#setCharsetName(String)
+	 * @see com.perforce.p4java.server.IServer#setCharsetName(java.lang.String)
 	 */
 	public boolean setCharsetName(String charsetName) throws UnsupportedCharsetException {
 		if (charsetName != null) {
@@ -333,7 +335,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.IServerControl#init(String, int, Properties)
+	 * @see com.perforce.p4java.impl.mapbased.server.IServerControl#init(java.lang.String, int, java.util.Properties)
 	 */
 	public ServerStatus init(String host, int port, Properties props)
 							throws ConfigException, ConnectionException {
@@ -341,7 +343,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.IServerControl#init(String, int, Properties, com.perforce.p4java.option.UsageOptions)
+	 * @see com.perforce.p4java.impl.mapbased.server.IServerControl#init(java.lang.String, int, java.util.Properties, com.perforce.p4java.option.UsageOptions)
 	 */
 	public ServerStatus init(String host, int port, Properties props, UsageOptions opts)
 			throws ConfigException, ConnectionException {
@@ -349,7 +351,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.IServerControl#init(String, int, Properties, com.perforce.p4java.option.UsageOptions, boolean)
+	 * @see com.perforce.p4java.impl.mapbased.server.IServerControl#init(java.lang.String, int, java.util.Properties, com.perforce.p4java.option.UsageOptions, boolean)
 	 */
 	public ServerStatus init(String host, int port, Properties props, UsageOptions opts, boolean secure)
 			throws ConfigException, ConnectionException {
@@ -506,7 +508,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#setUserName(String)
+	 * @see com.perforce.p4java.server.IServer#setUserName(java.lang.String)
 	 */
 	public void setUserName(String userName) {
 		this.userName = userName;
@@ -521,7 +523,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#setAuthTicket(String)
+	 * @see com.perforce.p4java.server.IServer#setAuthTicket(java.lang.String)
 	 */
 	public void setAuthTicket(String authTicket) {
 		if (this.userName != null) {
@@ -547,6 +549,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
+				// p4ic4idea: use IServerMessage
 				final IServerMessage err = getErrorStr(map);
 				if (err != null) {
 					throw new RequestException(err);
@@ -559,7 +562,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#login(String)
+	 * @see com.perforce.p4java.server.IServer#login(java.lang.String)
 	 */
 	public void login(String password) throws ConnectionException,
 							RequestException, AccessException, ConfigException {
@@ -570,7 +573,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	 * Works by retrieving the auth ticket and storing it away for use on all future
 	 * commands.
 	 *
-	 * @see com.perforce.p4java.server.IServer#login(String)
+	 * @see com.perforce.p4java.server.IServer#login(java.lang.String)
 	 */
 	public void login(String password, boolean allHosts) throws ConnectionException,
 							RequestException, AccessException, ConfigException {
@@ -584,6 +587,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -600,6 +604,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 			if (statusStr == null) {
 				// it's probably an error message:
 
+				// p4ic4idea: use the IServerMessage
 				final IServerMessage error = getErrorStr(resultMaps.get(0));
 				if (error != null) {
 					statusStr = error.toString();
@@ -611,14 +616,14 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#login(String, com.perforce.p4java.option.server.LoginOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#login(java.lang.String, com.perforce.p4java.option.server.LoginOptions)
 	 */
 	public void login(String password, LoginOptions opts) throws P4JavaException {
 		login(password, null, opts);
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#login(String, StringBuffer, com.perforce.p4java.option.server.LoginOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#login(java.lang.String, java.lang.StringBuffer, com.perforce.p4java.option.server.LoginOptions)
 	 */
 	public void login(String password, StringBuffer ticket, LoginOptions opts) throws P4JavaException {
 		if (password != null) {
@@ -689,7 +694,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#login(com.perforce.p4java.core.IUser, StringBuffer, com.perforce.p4java.option.server.LoginOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#login(com.perforce.p4java.core.IUser, java.lang.StringBuffer, com.perforce.p4java.option.server.LoginOptions)
 	 */
 	public void login(IUser user, StringBuffer ticket, LoginOptions opts) throws P4JavaException {
 		if (user == null) {
@@ -736,6 +741,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -759,7 +765,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#changePassword(String, String, String)
+	 * @see com.perforce.p4java.server.IOptionsServer#changePassword(java.lang.String, java.lang.String, java.lang.String)
 	 */
 	public String changePassword(String oldPassword, String newPassword, String userName) throws P4JavaException {
 
@@ -803,7 +809,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#getClients(String, String, int)
+	 * @see com.perforce.p4java.server.IServer#getClients(java.lang.String, java.lang.String, int)
 	 */
 	public List<IClientSummary> getClients(String userName, String queryString, int maxResults)
 					throws ConnectionException, RequestException, AccessException {
@@ -846,6 +852,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -866,6 +873,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		List<IClientSummary> specList = new ArrayList<IClientSummary>();
 		
 		for (Map<String, Object> map : resultMaps) {
+			// p4ic4idea: use the IServerMessage instead of a string
 			final IServerMessage err = getErrorStr(map);
 			
 			if (err != null) {
@@ -879,7 +887,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getLabels(String, int, String, List)
+	 * @see com.perforce.p4java.server.IServer#getLabels(java.lang.String, int, java.lang.String, java.util.List)
 	 */
 	public List<ILabelSummary> getLabels(String user, int maxLabels, String nameFilter,
 			List<IFileSpec> fileList)
@@ -921,12 +929,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getLabels(List, GetLabelsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getLabels(com.perforce.p4java.option.server.GetLabelsOptions)
 	 */
 	public List<ILabelSummary> getLabels(List<IFileSpec> fileList, GetLabelsOptions opts)
 									throws P4JavaException {
@@ -949,7 +958,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getLabel(String)
+	 * @see com.perforce.p4java.server.IServer#getLabel(java.lang.String)
 	 */
 	public ILabel getLabel(String labelName)
 					throws ConnectionException, RequestException, AccessException {
@@ -1021,7 +1030,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#deleteLabel(String, boolean)
+	 * @see com.perforce.p4java.server.IServer#deleteLabel(java.lang.String, boolean)
 	 */
 	public String deleteLabel(String labelName, boolean force)
 					throws ConnectionException, RequestException, AccessException {
@@ -1034,12 +1043,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#deleteLabel(String, com.perforce.p4java.option.server.DeleteLabelOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#deleteLabel(java.lang.String, com.perforce.p4java.option.server.DeleteLabelOptions)
 	 */
 	public String deleteLabel(String labelName, DeleteLabelOptions opts)
 								throws P4JavaException {
@@ -1100,7 +1110,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#getDepotFiles(List, boolean)
+	 * @see com.perforce.p4java.server.IServer#getDepotFiles(java.util.List, boolean)
 	 */
 	public List<IFileSpec> getDepotFiles(List<IFileSpec> fileSpecs, boolean allRevs)
 									throws ConnectionException, AccessException {
@@ -1117,7 +1127,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getDepotFiles(List, com.perforce.p4java.option.server.GetDepotFilesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getDepotFiles(java.util.List, com.perforce.p4java.option.server.GetDepotFilesOptions)
 	 */
 	public List<IFileSpec> getDepotFiles(List<IFileSpec> fileSpecs, GetDepotFilesOptions opts)
 								throws P4JavaException {
@@ -1140,7 +1150,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getFileAnnotations(List, com.perforce.p4java.core.file.DiffType, boolean, boolean, boolean)
+	 * @see com.perforce.p4java.server.IServer#getFileAnnotations(java.util.List, com.perforce.p4java.core.file.DiffType, boolean, boolean, boolean)
 	 */
 	public List<IFileAnnotation> getFileAnnotations(List<IFileSpec> fileSpecs, DiffType wsOpts,
 									boolean allResults, boolean useChangeNumbers, boolean followBranches)
@@ -1163,12 +1173,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getFileAnnotations(List, com.perforce.p4java.option.server.GetFileAnnotationsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getFileAnnotations(java.util.List, com.perforce.p4java.option.server.GetFileAnnotationsOptions)
 	 */
 	public List<IFileAnnotation> getFileAnnotations(List<IFileSpec> fileSpecs, GetFileAnnotationsOptions opts)
 															throws P4JavaException {
@@ -1185,6 +1196,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 					// RPC version returns info, cmd version returns error... we throw
 					// an exception in either case.
 
+					// p4ic4idea: use an IServerMessage instead of a string
 					final IServerMessage err = getErrorStr(map);
 					if (err != null) {
 						throw new RequestException(err);
@@ -1230,7 +1242,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#tagFiles(List, String, boolean, boolean)
+	 * @see com.perforce.p4java.server.IServer#tagFiles(java.util.List, java.lang.String, boolean, boolean)
 	 */
 	public List<IFileSpec> tagFiles(List<IFileSpec> fileSpecs, String labelName,
 			boolean listOnly, boolean delete)
@@ -1248,7 +1260,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#tagFiles(List, String, com.perforce.p4java.option.server.TagFilesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#tagFiles(java.util.List, java.lang.String, com.perforce.p4java.option.server.TagFilesOptions)
 	 */
 	public List<IFileSpec> tagFiles(List<IFileSpec> fileSpecs, String labelName,
 								TagFilesOptions opts) throws P4JavaException {
@@ -1270,7 +1282,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getReviews(int, List)
+	 * @see com.perforce.p4java.server.IServer#getReviews(int, java.util.List)
 	 */
 	public List<IUserSummary> getReviews(int changelistId, List<IFileSpec> fileSpecs)
 					throws ConnectionException, RequestException, AccessException {
@@ -1283,12 +1295,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getReviews(List, com.perforce.p4java.option.server.GetReviewsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getReviews(java.util.List, com.perforce.p4java.option.server.GetReviewsOptions)
 	 */
 	public List<IUserSummary> getReviews(List<IFileSpec> fileSpecs, GetReviewsOptions opts)
 						throws P4JavaException {
@@ -1351,7 +1364,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#moveFile(int, boolean, boolean, String, com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec)
+	 * @see com.perforce.p4java.server.IServer#moveFile(int, boolean, boolean, java.lang.String, com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec)
 	 */
 	public List<IFileSpec> moveFile(int changeListId, boolean listOnly, boolean noClientMove,
 							String fileType, IFileSpec fromFile, IFileSpec toFile)
@@ -1364,6 +1377,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		final int MIN_SUPPORTED_SERVER_OPTION_K = 20092;
 		
 		if (this.serverVersion < MIN_SUPPORTED_SERVER) {
+			// p4ic4idea: include message codes
 			throw new RequestException(
 					"command requires a Perforce server version 2009.1 or later",
 					MessageGenericCode.EV_UPGRADE,
@@ -1371,6 +1385,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		}
 		
 		if ((this.serverVersion < MIN_SUPPORTED_SERVER_OPTION_K) && noClientMove) {
+			// p4ic4idea: include message codes
 			throw new RequestException(
 					"command option noClientMove requires a Perforce server version 2009.2 or later",
 					MessageGenericCode.EV_UPGRADE,
@@ -1426,7 +1441,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getUser(String)
+	 * @see com.perforce.p4java.server.IServer#getUser(java.lang.String)
 	 */
 	public IUser getUser(String userName)
 					throws ConnectionException, RequestException, AccessException {
@@ -1486,6 +1501,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -1523,7 +1539,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#deleteUser(String, boolean)
+	 * @see com.perforce.p4java.server.IServer#deleteUser(java.lang.String, boolean)
 	 */
 	public String deleteUser(String userName, boolean force)
 						throws ConnectionException, RequestException, AccessException {
@@ -1536,12 +1552,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#deleteUser(String, com.perforce.p4java.option.server.UpdateUserOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#deleteUser(java.lang.String, com.perforce.p4java.option.server.UpdateUserOptions)
 	 */
 	public String deleteUser(String userName, UpdateUserOptions opts) throws P4JavaException {
 		if (userName == null) {
@@ -1573,7 +1590,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#renameUser(String, String)
+	 * @see com.perforce.p4java.server.IOptionsServer#renameUser(java.lang.String, java.lang.String)
 	 */
 	public String renameUser(String oldUserName, String newUserName) throws P4JavaException {
 		if (oldUserName == null) {
@@ -1608,7 +1625,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getUsers(List, int)
+	 * @see com.perforce.p4java.server.IServer#getUsers(java.util.List, int)
 	 */
 	public List<IUserSummary> getUsers(List<String> userList, int maxUsers)
 						throws ConnectionException, RequestException, AccessException {
@@ -1621,12 +1638,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getUsers(List, com.perforce.p4java.option.server.GetUsersOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getUsers(java.util.List, com.perforce.p4java.option.server.GetUsersOptions)
 	 */
 	public List<IUserSummary> getUsers(List<String> userList, GetUsersOptions opts)
 								throws P4JavaException {
@@ -1653,7 +1671,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getUserGroups(String, boolean, boolean, int)
+	 * @see com.perforce.p4java.server.IServer#getUserGroups(java.lang.String, boolean, boolean, int)
 	 */
 	public List<IUserGroup> getUserGroups(String userOrGroupName, boolean indirect,
 												boolean displayValues, int maxGroups)
@@ -1670,12 +1688,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getUserGroups(String, com.perforce.p4java.option.server.GetUserGroupsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getUserGroups(java.lang.String, com.perforce.p4java.option.server.GetUserGroupsOptions)
 	 */
 	public List<IUserGroup> getUserGroups(String userOrGroupName, GetUserGroupsOptions opts)
 							throws P4JavaException {
@@ -1772,7 +1791,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		return resultsList;
 	}
 	/**
-	 * @see com.perforce.p4java.server.IServer#getUserGroup(String)
+	 * @see com.perforce.p4java.server.IServer#getUserGroup(java.lang.String)
 	 */
 	public IUserGroup getUserGroup(String name) 
 							throws ConnectionException, RequestException, AccessException {
@@ -1823,6 +1842,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -1841,6 +1861,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -1927,7 +1948,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getProtectionEntries(boolean, String, String, String, List)
+	 * @see com.perforce.p4java.server.IServer#getProtectionEntries(boolean, java.lang.String, java.lang.String, java.lang.String, java.util.List)
 	 */
 	public List<IProtectionEntry> getProtectionEntries(boolean allUsers, String hostName,
 									String userName, String groupName,
@@ -1947,12 +1968,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getProtectionEntries(List, com.perforce.p4java.option.server.GetProtectionEntriesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getProtectionEntries(java.util.List, com.perforce.p4java.option.server.GetProtectionEntriesOptions)
 	 */
 	public List<IProtectionEntry> getProtectionEntries(List<IFileSpec> fileList,
 							GetProtectionEntriesOptions opts) throws P4JavaException {
@@ -1979,7 +2001,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#createProtectionEntries(List)
+	 * @see com.perforce.p4java.server.IOptionsServer#createProtectionEntries(java.util.List)
 	 */
 	public String createProtectionEntries(List<IProtectionEntry> entryList) throws P4JavaException {
 		if (entryList == null) {
@@ -2007,7 +2029,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#updateProtectionEntries(List)
+	 * @see com.perforce.p4java.server.IOptionsServer#updateProtectionEntries(java.util.List)
 	 */
 	public String updateProtectionEntries(List<IProtectionEntry> entryList)
 										throws P4JavaException {
@@ -2036,7 +2058,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#getBranchSpecs(String, String, int)
+	 * @see com.perforce.p4java.server.IServer#getBranchSpecs(java.lang.String, java.lang.String, int)
 	 */
 	public List<IBranchSpecSummary> getBranchSpecs(String userName, String nameFilter, int maxReturns)
 						throws ConnectionException, RequestException, AccessException {
@@ -2078,6 +2100,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -2103,7 +2126,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getBranchSpec(String)
+	 * @see com.perforce.p4java.server.IServer#getBranchSpec(java.lang.String)
 	 */
 	public IBranchSpec getBranchSpec(String name) 
 							throws ConnectionException, RequestException, AccessException {
@@ -2116,12 +2139,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getBranchSpec(String, com.perforce.p4java.option.server.GetBranchSpecOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getBranchSpec(java.lang.String, com.perforce.p4java.option.server.GetBranchSpecOptions)
 	 */
 	public IBranchSpec getBranchSpec(String name, GetBranchSpecOptions opts)
 								throws P4JavaException {
@@ -2215,7 +2239,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#deleteBranchSpec(String, boolean)
+	 * @see com.perforce.p4java.server.IServer#deleteBranchSpec(java.lang.String, boolean)
 	 */
 	public String deleteBranchSpec(String branchSpecName, boolean force)
 						throws ConnectionException, RequestException, AccessException {
@@ -2228,12 +2252,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#deleteBranchSpec(String, com.perforce.p4java.option.server.DeleteBranchSpecOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#deleteBranchSpec(java.lang.String, com.perforce.p4java.option.server.DeleteBranchSpecOptions)
 	 */
 	public String deleteBranchSpec(String branchSpecName, DeleteBranchSpecOptions opts)
 								throws  P4JavaException {
@@ -2285,7 +2310,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getClient(String)
+	 * @see com.perforce.p4java.server.IServer#getClient(java.lang.String)
 	 */
 	public IClient getClient(String clientName)
 				throws ConnectionException, RequestException, AccessException {
@@ -2337,7 +2362,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getClientTemplate(String, boolean)
+	 * @see com.perforce.p4java.server.IServer#getClientTemplate(java.lang.String, boolean)
 	 */
 	public IClient getClientTemplate(String clientName, boolean allowExistent)
 			throws ConnectionException, RequestException,
@@ -2351,12 +2376,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getClientTemplate(String, com.perforce.p4java.option.server.GetClientTemplateOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getClientTemplate(java.lang.String, com.perforce.p4java.option.server.GetClientTemplateOptions)
 	 */
 	public IClient getClientTemplate(String clientName, GetClientTemplateOptions opts)
 								throws P4JavaException {
@@ -2407,7 +2433,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#getClientTemplate(String)
+	 * @see com.perforce.p4java.server.IServer#getClientTemplate(java.lang.String)
 	 */
 	public IClient getClientTemplate(String clientName)
 			throws ConnectionException, RequestException,
@@ -2498,6 +2524,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -2535,7 +2562,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#deleteClient(String, boolean)
+	 * @see com.perforce.p4java.server.IServer#deleteClient(java.lang.String, boolean)
 	 */
 	public String deleteClient(String clientName, boolean force) 
 							throws ConnectionException, RequestException, AccessException {	
@@ -2548,12 +2575,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#deleteClient(String, com.perforce.p4java.option.server.DeleteClientOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#deleteClient(java.lang.String, com.perforce.p4java.option.server.DeleteClientOptions)
 	 */
 	public String deleteClient(String clientName, DeleteClientOptions opts)
 													throws P4JavaException {
@@ -2585,7 +2613,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#switchClientView(String, String, com.perforce.p4java.option.server.SwitchClientViewOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#switchClientView(java.lang.String, java.lang.String, com.perforce.p4java.option.server.SwitchClientViewOptions)
 	 */
 	public String switchClientView(String templateClientName, String targetClientName, SwitchClientViewOptions opts) 
 														throws P4JavaException {	
@@ -2625,7 +2653,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#switchStreamView(String, String, com.perforce.p4java.option.server.SwitchClientViewOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#switchStreamView(java.lang.String, java.lang.String, com.perforce.p4java.option.server.SwitchClientViewOptions)
 	 */
 	public String switchStreamView(String streamPath, String targetClientName, SwitchClientViewOptions opts) 
 														throws P4JavaException {	
@@ -2694,7 +2722,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getDepot(String)
+	 * @see com.perforce.p4java.server.IOptionsServer#getDepot(java.lang.String)
 	 */
 	public IDepot getDepot(String name) throws P4JavaException {
 		if (name == null) {
@@ -2748,7 +2776,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#deleteDepot(String)
+	 * @see com.perforce.p4java.server.IOptionsServer#deleteDepot(com.perforce.p4java.core.IDepot)
 	 */
 	public String deleteDepot(String name) throws P4JavaException {
 		if (name == null) {
@@ -2779,7 +2807,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getChangelists(int, List, String, String, boolean, com.perforce.p4java.core.IChangelist.Type, boolean)
+	 * @see com.perforce.p4java.server.IServer#getChangelists(int, java.util.List, java.lang.String, java.lang.String, boolean, com.perforce.p4java.core.IChangelist.Type, boolean)
 	 */
 	public List<IChangelistSummary> getChangelists(int maxMostRecent,
 			List<IFileSpec> fileSpecs, String clientName, String userName,
@@ -2800,12 +2828,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#getChangelists(int, List, String, String, boolean, boolean, boolean, boolean)
+	 * @see com.perforce.p4java.server.IServer#getChangelists(int, java.util.List, java.lang.String, java.lang.String, boolean, boolean, boolean, boolean)
 	 */
 	public List<IChangelistSummary> getChangelists(int maxMostRecent, List<IFileSpec> fileSpecs, String clientName,
 			String userName, boolean includeIntegrated, boolean submittedOnly, boolean pendingOnly,
@@ -2821,7 +2850,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getChangelists(List, com.perforce.p4java.option.server.GetChangelistsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getChangelists(java.util.List, com.perforce.p4java.option.server.GetChangelistsOptions)
 	 */
 	public List<IChangelistSummary> getChangelists(List<IFileSpec> fileSpecs, GetChangelistsOptions opts)
 														throws P4JavaException {
@@ -2862,6 +2891,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -2914,6 +2944,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -3077,12 +3108,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#getRevisionHistory(List, int,
+	 * @see com.perforce.p4java.server.IServer#getRevisionHistory(java.util.List, int,
 	 * 				boolean, boolean, boolean, boolean)
 	 */
 	public Map<IFileSpec, List<IFileRevisionData>> getRevisionHistory(List<IFileSpec> fileSpecs,
@@ -3106,7 +3138,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getRevisionHistory(List, com.perforce.p4java.option.server.GetRevisionHistoryOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getRevisionHistory(java.util.List, com.perforce.p4java.option.server.GetRevisionHistoryOptions)
 	 */
 	public Map<IFileSpec, List<IFileRevisionData>> getRevisionHistory(List<IFileSpec> fileSpecs,
 			GetRevisionHistoryOptions opts) throws P4JavaException {
@@ -3119,6 +3151,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 
 		if (resultMaps != null) {
 			for (Map<String, Object> result : resultMaps) {
+				// p4ic4idea: use IServerMessage instead of string
 				final IServerMessage err = this.handleFileErrorStr(result);
 				if (err != null) {
 					FileSpec fSpec = new FileSpec(FileSpecOpStatus.ERROR, err);
@@ -3143,7 +3176,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getOpenedFiles(List, boolean, String, int, int)
+	 * @see com.perforce.p4java.server.IServer#getOpenedFiles(java.util.List, boolean, java.lang.String, int, int)
 	 */
 	public List<IFileSpec> getOpenedFiles(List<IFileSpec> fileSpecs, boolean allClients, String clientName,
 								int maxFiles, int changeListId)
@@ -3165,7 +3198,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getOpenedFiles(List, OpenedFilesOptions)
+	 * @see com.perforce.p4java.server.IServer#getOpenedFiles(java.util.List, com.perforce.p4java.option.server.OpenedFilesOptions)
 	 */
 	public List<IFileSpec> getOpenedFiles(List<IFileSpec> fileSpecs, OpenedFilesOptions opts)
 									throws P4JavaException {
@@ -3184,7 +3217,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getFileContents(List, boolean, boolean)
+	 * @see com.perforce.p4java.server.IServer#getFileContents(java.util.List, boolean, boolean)
 	 */
 	public InputStream getFileContents(List<IFileSpec> fileSpecs, boolean allRevs,
 														boolean noHeaderLine)
@@ -3199,12 +3232,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getFileContents(List, com.perforce.p4java.option.server.GetFileContentsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getFileContents(java.util.List, com.perforce.p4java.option.server.GetFileContentsOptions)
 	 */
 	public InputStream getFileContents(List<IFileSpec> fileSpecs, GetFileContentsOptions opts)
 										throws P4JavaException {
@@ -3215,7 +3249,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getDirectories(List, boolean, boolean, boolean)
+	 * @see com.perforce.p4java.server.IServer#getDirectories(java.util.List, boolean, boolean, boolean)
 	 */
 	public List<IFileSpec> getDirectories(List<IFileSpec> fileSpecs, boolean clientOnly,
 							boolean deletedOnly, boolean haveListOnly)
@@ -3241,7 +3275,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getDirectories(List, com.perforce.p4java.option.server.GetDirectoriesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getDirectories(java.util.List, com.perforce.p4java.option.server.GetDirectoriesOptions)
 	 */
 	public List<IFileSpec> getDirectories(List<IFileSpec> fileSpecs, GetDirectoriesOptions opts)
 													throws P4JavaException {
@@ -3263,6 +3297,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 				// really first-class parts of the Perforce file menagerie...
 	
 				if (map != null) {
+					// p4ic4idea: use IServerMessage instead of string
 					final IServerMessage err = handleFileErrorStr(map);
 					if (err == null) {
 						if (map.get("dirName") != null) {
@@ -3291,7 +3326,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getSubmittedIntegrations(List, String, boolean)
+	 * @see com.perforce.p4java.server.IServer#getSubmittedIntegrations(java.util.List, java.lang.String, boolean)
 	 */
 	public List<IFileSpec> getSubmittedIntegrations(List<IFileSpec> fileSpecs,
 												String branchSpec, boolean reverseMappings)
@@ -3306,12 +3341,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getSubmittedIntegrations(List, com.perforce.p4java.option.server.GetSubmittedIntegrationsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getSubmittedIntegrations(java.util.List, com.perforce.p4java.option.server.GetSubmittedIntegrationsOptions)
 	 */
 	public List<IFileSpec> getSubmittedIntegrations(List<IFileSpec> fileSpecs, GetSubmittedIntegrationsOptions opts)
 								throws P4JavaException {
@@ -3350,12 +3386,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getInterchanges(String, List, List, boolean, boolean, int, boolean, boolean)
+	 * @see com.perforce.p4java.server.IServer#getInterchanges(java.lang.String, java.util.List, java.util.List, boolean, boolean, int, boolean, boolean)
 	 */
 	public List<IChangelist> getInterchanges(String branchSpecName,
 							List<IFileSpec> fromFileList, List<IFileSpec> toFileList,
@@ -3377,6 +3414,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -3396,7 +3434,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getInterchanges(String, List, List, com.perforce.p4java.option.server.GetInterchangesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getInterchanges(java.lang.String, java.util.List, java.util.List, com.perforce.p4java.option.server.GetInterchangesOptions)
 	 */
 	public List<IChangelist> getInterchanges(String branchSpecName,
 			List<IFileSpec> fromFileList, List<IFileSpec> toFileList, GetInterchangesOptions opts)
@@ -3408,7 +3446,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#getExtendedFiles(List, int, int, int, com.perforce.p4java.core.file.FileStatOutputOptions, com.perforce.p4java.core.file.FileStatAncilliaryOptions)
+	 * @see com.perforce.p4java.server.IServer#getExtendedFiles(java.util.List, int, int, int, com.perforce.p4java.core.file.FileStatOutputOptions, com.perforce.p4java.core.file.FileStatAncilliaryOptions)
 	 */
 	public List<IExtendedFileSpec> getExtendedFiles(List<IFileSpec> fileSpecs, int maxFiles,
 			int sinceChangelist, int affectedByChangelist,
@@ -3433,7 +3471,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getExtendedFiles(List, com.perforce.p4java.option.server.GetExtendedFilesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getExtendedFiles(java.util.List, com.perforce.p4java.option.server.GetExtendedFilesOptions)
 	 */
 	public List<IExtendedFileSpec> getExtendedFiles(List<IFileSpec> fileSpecs,
 						GetExtendedFilesOptions opts) throws P4JavaException {
@@ -3455,6 +3493,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 				// out any return map here that has no depot path and a "desc" field
 				// -- HR (see also job040680).
 
+				// p4ic4idea: use IServerMessage instead of string
 				final IServerMessage err = handleFileErrorStr(map);
 				ExtendedFileSpec eSpec = null;
 				if (err == null) {
@@ -3473,7 +3512,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#searchJobs(String, com.perforce.p4java.option.server.SearchJobsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#searchJobs(java.lang.String, com.perforce.p4java.option.server.SearchJobsOptions)
 	 */
 	public 	List<String> searchJobs(String words, SearchJobsOptions opts) throws P4JavaException {
 
@@ -3492,6 +3531,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
 				if (map != null) {
+					// p4ic4idea: use IServerMessage instead of string
 					final IServerMessage err = getErrorStr(map);
 					
 					if (err != null) {
@@ -3507,7 +3547,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getJobs(List, int, boolean, boolean, boolean, String)
+	 * @see com.perforce.p4java.server.IServer#getJobs(java.util.List, int, boolean, boolean, boolean, java.lang.String)
 	 */
 	public List<IJob> getJobs(List<IFileSpec> fileSpecs, int maxJobs, boolean longDescriptions,
 											boolean reverseOrder, boolean includeIntegrated,
@@ -3527,12 +3567,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getJobs(List, com.perforce.p4java.option.server.GetJobsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getJobs(java.util.List, com.perforce.p4java.option.server.GetJobsOptions)
 	 */
 	public List<IJob> getJobs(List<IFileSpec> fileSpecs, GetJobsOptions opts) throws P4JavaException {
 		List<IJob> jobList = new ArrayList<IJob>();
@@ -3545,6 +3586,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
 				if (map != null) {
+					// p4ic4idea: use IServerMessage instead of string
 					final IServerMessage err = getErrorStr(map);
 					
 					if (err != null) {
@@ -3560,7 +3602,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getJob(String)
+	 * @see com.perforce.p4java.server.IServer#getJob(java.lang.String)
 	 */
 	
 	public IJob getJob(String jobId)
@@ -3589,7 +3631,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#createJob(Map)
+	 * @see com.perforce.p4java.server.IServer#createJob(java.util.Map)
 	 */
 	public IJob createJob(Map<String, Object> fieldMap)
 				throws ConnectionException, RequestException, AccessException {
@@ -3662,7 +3704,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#deleteJob(String)
+	 * @see com.perforce.p4java.server.IServer#deleteJob(java.lang.String)
 	 */
 	public String deleteJob(String jobId)
 					throws ConnectionException, RequestException, AccessException {
@@ -3721,7 +3763,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getFixList(List, int, String, boolean, int)
+	 * @see com.perforce.p4java.server.IServer#getFixList(java.util.List, int, java.lang.String, boolean, int)
 	 */
 	public List<IFix> getFixList(List<IFileSpec> fileSpecs, int changeListId, String jobId,
 							boolean includeIntegrations, int maxFixes)
@@ -3746,12 +3788,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getFixes(List, GetFixesOptions)
+	 * @see com.perforce.p4java.server.IServer#getFixList(java.util.List, com.perforce.p4java.option.server.GetFixesOptions)
 	 */
 	public List<IFix> getFixes(List<IFileSpec> fileSpecs, GetFixesOptions opts)
 											throws P4JavaException {
@@ -3774,7 +3817,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#fixJobs(List, int, String, boolean)
+	 * @see com.perforce.p4java.server.IServer#fixJobs(java.util.List, int, java.lang.String, boolean)
 	 */
 	public List<IFix> fixJobs(List<String> jobIdList, int changeListId, String status, boolean delete)
 					throws ConnectionException, RequestException, AccessException {
@@ -3788,12 +3831,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#fixJobs(List, int, FixJobsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#fixJobs(java.util.List, com.perforce.p4java.option.server.FixJobsOptions)
 	 */
 	public List<IFix> fixJobs(List<String> jobIds, int changelistId, FixJobsOptions opts)
 							throws P4JavaException {
@@ -3816,6 +3860,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
+				// p4ic4idea: use IServerMessage instead of string
 				final IServerMessage err = getErrorStr(map);
 
 				if (err != null) {
@@ -3830,7 +3875,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getCounter(String)
+	 * @see com.perforce.p4java.server.IServer#getCounter(java.lang.String)
 	 */
 	public String getCounter(String counterName) 
 					throws ConnectionException, RequestException, AccessException {
@@ -3843,12 +3888,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getCounter(String, com.perforce.p4java.option.server.CounterOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getCounter(java.lang.String, com.perforce.p4java.option.server.CounterOptions)
 	 */
 	public String getCounter(String counterName, CounterOptions opts) throws P4JavaException {
 		if (counterName == null) {
@@ -3875,7 +3921,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#setCounter(String, String, boolean)
+	 * @see com.perforce.p4java.server.IServer#setCounter(java.lang.String, java.lang.String, boolean)
 	 */
 	public void setCounter(String counterName, String value, boolean perforceCounter)
 					throws ConnectionException, RequestException, AccessException
@@ -3896,12 +3942,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#setCounter(String, String, com.perforce.p4java.option.server.CounterOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#setCounter(java.lang.String, java.lang.String, com.perforce.p4java.option.server.CounterOptions)
 	 */
 	public String setCounter(String counterName, String value, CounterOptions opts)
 									throws P4JavaException {
@@ -3922,7 +3969,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#deleteCounter(String, boolean)
+	 * @see com.perforce.p4java.server.IServer#deleteCounter(java.lang.String, boolean)
 	 */
 	public void deleteCounter(String counterName, boolean perforceCounter)
 					throws ConnectionException, RequestException, AccessException {
@@ -3938,6 +3985,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -3958,6 +4006,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -3979,6 +4028,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
+				// p4ic4idea: use IServerMessage instead of string
 				final IServerMessage err = getErrorOrInfoStr(map);
 				
 				if (err != null) {
@@ -4004,7 +4054,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	/**
 	 * @see com.perforce.p4java.server.IOptionsServer#getCounters(com.perforce.p4java.option.server.GetCountersOptions)
 	 */
-	public 	Map<String, String> getCounters(GetCountersOptions opts) throws P4JavaException {
+	public Map<String, String> getCounters(GetCountersOptions opts) throws P4JavaException {
 		
 		List<Map<String, Object>> resultMaps = execMapCmdList(
 													CmdSpec.COUNTERS,
@@ -4015,6 +4065,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
+				// p4ic4idea: use IServerMessage instead of string
 				final IServerMessage err = getErrorOrInfoStr(map);
 				
 				if (err != null) {
@@ -4038,7 +4089,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getKey(String)
+	 * @see com.perforce.p4java.server.IOptionsServer#getKey(java.lang.String)
 	 */
 	public String getKey(String keyName) throws P4JavaException {
 		if (keyName == null) {
@@ -4063,7 +4114,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#setKey(String, String, com.perforce.p4java.option.server.KeyOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#setKey(java.lang.String, java.lang.String, com.perforce.p4java.option.server.KeyOptions)
 	 */
 	public String setKey(String KeyName, String value, KeyOptions opts)
 									throws P4JavaException {
@@ -4087,7 +4138,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#deleteKey(String)
+	 * @see com.perforce.p4java.server.IOptionsServer#deleteKey(java.lang.String)
 	 */
 	public String deleteKey(String KeyName) throws P4JavaException {
 		if (KeyName == null) {
@@ -4110,6 +4161,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
+				// p4ic4idea: use IServerMessage instead of string
 				final IServerMessage err = getErrorOrInfoStr(map);
 				
 				if (err != null) {
@@ -4147,6 +4199,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
+				// p4ic4idea: use IServerMessage instead of string
 				final IServerMessage err = getErrorOrInfoStr(map);
 				
 				if (err != null) {
@@ -4170,7 +4223,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#setProperty(String, String, com.perforce.p4java.option.server.PropertyOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#setProperty(java.lang.String, java.lang.String, com.perforce.p4java.option.server.PropertyOptions)
 	 */
 	public String setProperty(String name, String value, PropertyOptions opts)
 									throws P4JavaException {
@@ -4212,7 +4265,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#deleteProperty(String, com.perforce.p4java.option.server.PropertyOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#deleteProperty(java.lang.String, com.perforce.p4java.option.server.PropertyOptions)
 	 */
 	public String deleteProperty(String name, PropertyOptions opts) throws P4JavaException {
 
@@ -4262,6 +4315,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -4284,6 +4338,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
+				// p4ic4idea: use IServerMessage instead of string
 				final IServerMessage err = getErrorStr(map);
 
 				if (err != null) {
@@ -4297,7 +4352,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getServerFileDiffs(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, String, com.perforce.p4java.core.file.DiffType, boolean, boolean, boolean)
+	 * @see com.perforce.p4java.server.IServer#getServerFileDiffs(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, java.lang.String, com.perforce.p4java.core.file.DiffType, boolean, boolean, boolean)
 	 */
 	public InputStream getServerFileDiffs(IFileSpec file1, IFileSpec file2,
 							String branchSpecName, DiffType diffType, boolean quiet,
@@ -4341,12 +4396,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getFileDiffs(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, String, com.perforce.p4java.core.file.DiffType, boolean, boolean, boolean)
+	 * @see com.perforce.p4java.server.IServer#getFileDiffs(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, java.lang.String, com.perforce.p4java.core.file.DiffType, boolean, boolean, boolean)
 	 */
 	public List<IFileDiff> getFileDiffs(IFileSpec file1, IFileSpec file2,
 			String branchSpecName, DiffType diffType, boolean quiet,
@@ -4390,12 +4446,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getFileDiffsStream(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, String, com.perforce.p4java.option.server.GetFileDiffsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getFileDiffsStream(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, java.lang.String, com.perforce.p4java.option.server.GetFileDiffsOptions)
 	 */
 	public InputStream getFileDiffsStream(IFileSpec file1, IFileSpec file2, String branchSpecName,
 							GetFileDiffsOptions opts) throws P4JavaException {
@@ -4404,7 +4461,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getFileDiffs(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, String, com.perforce.p4java.option.server.GetFileDiffsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getFileDiffs(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, java.lang.String, com.perforce.p4java.option.server.GetFileDiffsOptions)
 	 */
 	public List<IFileDiff> getFileDiffs(IFileSpec file1, IFileSpec file2, String branchSpecName,
 							GetFileDiffsOptions opts) throws P4JavaException {
@@ -4417,6 +4474,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
 				if (map != null) {
+					// p4ic4idea: use IServerMessage instead of error
 					IServerMessage err = getErrorStr(map);
 					if (err != null) {
 						throw new RequestException(err);
@@ -4436,7 +4494,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#getDbSchema(List)
+	 * @see com.perforce.p4java.server.IServer#getDbSchema(java.util.List)
 	 */
 	public List<IDbSchema> getDbSchema(List<String> tableSpecs)
 						throws ConnectionException, RequestException, AccessException {
@@ -4455,6 +4513,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
+				// p4ic4idea: use IServerMessage instead of string
 				final IServerMessage err = getErrorStr(map);
 	
 				if (err != null) {
@@ -4467,7 +4526,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getExportRecords(boolean, long, int, long, boolean, String, String)
+	 * @see com.perforce.p4java.server.IServer#getExportRecords(boolean, long, int, long, boolean, java.lang.String, java.lang.String)
 	 */
 	public List<Map<String, Object>> getExportRecords(boolean useJournal, long maxRecs,
 									int sourceNum, long offset, boolean format, String journalPrefix, String filter)
@@ -4488,6 +4547,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// p4ic4idea: just reuse the exception
 			throw new RequestException(exc);
 		}
 	}
@@ -4511,6 +4571,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
+				// p4ic4idea: use IServerMessage instead of string
 				final IServerMessage err = getErrorStr(map);
 				if (err != null) {
 					throw new RequestException(err);
@@ -4544,7 +4605,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getDiskSpace(List)
+	 * @see com.perforce.p4java.server.IOptionsServer#getDiskSpace(java.util.List)
 	 */
 	public List<IDiskSpace> getDiskSpace(List<String> filesystems)
 								throws P4JavaException {
@@ -4568,7 +4629,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#setFileAttributes(List, Map, SetFileAttributesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#setFileAttributes(com.perforce.p4java.option.server.SetFileAttributesOptions, java.util.Map, java.util.List)
 	 */
 	public List<IFileSpec> setFileAttributes(List<IFileSpec> files, Map<String, String> attributes,
 							SetFileAttributesOptions opts) throws P4JavaException {
@@ -4641,7 +4702,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#setFileAttributes(List, String, InputStream, SetFileAttributesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#setFileAttributes(com.perforce.p4java.option.server.SetFileAttributesOptions, java.io.InputStream, java.util.List)
 	 */
 	public List<IFileSpec> setFileAttributes(List<IFileSpec> files, String attributeName,
 					InputStream inStream, SetFileAttributesOptions opts) throws P4JavaException {
@@ -4696,7 +4757,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#showServerConfiguration(String, String)
+	 * @see com.perforce.p4java.server.IOptionsServer#showServerConfiguration(java.lang.String, java.lang.String)
 	 */
 	public List<ServerConfigurationValue> showServerConfiguration(String serverName,
 						String variableName) throws P4JavaException {
@@ -4722,6 +4783,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
+				// p4ic4idea: use IServerMessage instead of string
 				final IServerMessage err = getErrorStr(map);
 				if (err != null) {
 					throw new RequestException(err);
@@ -4734,7 +4796,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#setServerConfigurationValue(String, String)
+	 * @see com.perforce.p4java.server.IOptionsServer#setServerConfigurationValue(java.lang.String, java.lang.String)
 	 */
 	public String setServerConfigurationValue(String name, String value) throws P4JavaException {
 		if (name == null) {
@@ -4759,7 +4821,8 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
 				if (map != null) {
-					// TODO this is kind of a bad implementation
+					// p4ic4idea: use IServerMessage instead of string
+					// TODO this is kind of a bad implementation; it should be using the codes instead of the string
 					IServerMessage errInfo = this.getErrorOrInfoStr(map);
 					String msg = errInfo == null ? null : errInfo.toString();
 					if (errInfo == null) {
@@ -4793,7 +4856,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getFileSizes(List, com.perforce.p4java.option.server.GetFileSizesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getFileSizes(java.util.List, com.perforce.p4java.option.server.GetFileSizesOptions)
 	 */
 	public List<IFileSize> getFileSizes(List<IFileSpec> fileSpecs, GetFileSizesOptions opts) throws P4JavaException {
 		
@@ -4805,6 +4868,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
+				// p4ic4idea: use IServerMessage instead of string
 				final IServerMessage err = getErrorOrInfoStr(map);
 				
 				if (err != null) {
@@ -4838,6 +4902,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
+				// p4ic4idea: use IServerMessage instead of string
 				final IServerMessage err = getErrorStr(map);
 				if (err != null) {
 					throw new RequestException(err);
@@ -4849,6 +4914,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	public boolean handleErrorStr(Map<String, Object> map)
 			throws RequestException, AccessException {
 
+		// p4ic4idea: use IServerMessage instead of string
 		final IServerMessage err = getErrorStr(map);
 		
 		if (err != null) {
@@ -4869,6 +4935,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	public IFileSpec handleFileReturn(Map<String, Object> map, IClient client)
 					throws AccessException, ConnectionException {
 		if (map != null) {
+			// p4ic4idea: use IServerMessage instead of string
 			final IServerMessage err = handleFileErrorStr(map);
 			if (err == null) {
 				return new FileSpec(map, this, -1);
@@ -4891,6 +4958,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	public IFileSpec handleIntegrationFileReturn(Map<String, Object> map, boolean ignoreInfo)
 							throws AccessException, ConnectionException {
 		if (map != null) {
+			// p4ic4idea: use IServerMessage instead of string
 			final IServerMessage err = handleFileErrorStr(map);
 			if (err == null) {
 				return new FileSpec(map, this, -1);
@@ -4909,6 +4977,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		return null;
 	}
 	
+	// p4ic4idea: use IServerMessage instead of string
 	public IServerMessage handleFileErrorStr(Map<String, Object> map)
 			throws ConnectionException, AccessException {
 		final IServerMessage err = getErrorOrInfoStr(map);
@@ -5038,30 +5107,35 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getErrorStr(Map)
+	 * @see com.perforce.p4java.server.IOptionsServer#getErrorStr(java.util.Map)
 	 */
+	// p4ic4idea: use IServerMessage instead of String
 	public IServerMessage getErrorStr(Map<String, Object> map) {
 		throw new UnimplementedError("called IOptionsServer.getErrorStr(map)");
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getErrorOrInfoStr(Map)
+	 * @see com.perforce.p4java.server.IOptionsServer#getErrorOrInfoStr(java.util.Map)
 	 */
+	// p4ic4idea: use IServerMessage instead of String
 	public IServerMessage getErrorOrInfoStr(Map<String, Object> map) {
 		throw new UnimplementedError("called IOptionsServer.getErrorOrInfoStr(map)");
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getInfoStr(Map)
+	 * @see com.perforce.p4java.server.IOptionsServer#getInfoStr(java.util.Map)
 	 */
 	public String getInfoStr(Map<String, Object> map) {
 		throw new UnimplementedError("called IOptionsServer.getInfoStr(map)");
 	}
 
+	// p4ic4idea: use IServerMessage instead of String
 	abstract public boolean isAuthFail(IServerMessage err);
 	abstract public boolean isLoginNotRequired(String msgStr);
 
-	/** @deprecated use the IServerMessage instead */
+	/**
+      * @deprecated use the IServerMessage instead
+      */
 	abstract public boolean isInfoMessage(Map<String, Object> map);
 
 	/**
@@ -5075,110 +5149,110 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	protected abstract int getSeverityCode(Map<String, Object> map);
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#execMapCmd(String, String[], Map)
+	 * @see com.perforce.p4java.server.IServer#execMapCmd(java.lang.String, java.lang.String[], java.util.Map)
 	 */
 	abstract public Map<String, Object>[] execMapCmd(String cmdName, String[] cmdArgs, Map<String, Object> inMap)
 									throws ConnectionException, AccessException, RequestException;
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#execMapCmdList(String, String[], Map)
+	 * @see com.perforce.p4java.server.IOptionsServer#execMapCmdList(java.lang.String, java.lang.String[], java.util.Map)
 	 */
 	abstract public List<Map<String, Object>> execMapCmdList(String cmdName, String[] cmdArgs, Map<String, Object> inMap)
 									throws P4JavaException;
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#execMapCmdList(String, String[], Map, com.perforce.p4java.server.callback.IFilterCallback)
+	 * @see com.perforce.p4java.server.IOptionsServer#execMapCmdList(java.lang.String, java.lang.String[], java.util.Map, com.perforce.p4java.server.callback.IFilterCallback)
 	 */
 	abstract public List<Map<String, Object>> execMapCmdList(String cmdName, String[] cmdArgs, Map<String, Object> inMap, IFilterCallback filterCallback)
 									throws P4JavaException;
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#execInputStringMapCmd(String, String[], String)
+	 * @see com.perforce.p4java.server.IServer#execInputStringMapCmd(java.lang.String, java.lang.String[], java.lang.String)
 	 */
 	abstract public Map<String, Object>[] execInputStringMapCmd(String cmdName, String[] cmdArgs, String inString)
 									throws P4JavaException;
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#execInputStringMapCmdList(String, String[], String)
+	 * @see com.perforce.p4java.server.IOptionsServer#execInputStringMapCmdList(java.lang.String, java.lang.String[], java.lang.String)
 	 */
 	abstract public List<Map<String, Object>> execInputStringMapCmdList(String cmdName, String[] cmdArgs, String inString)
 									throws P4JavaException;
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#execInputStringMapCmdList(String, String[], String, com.perforce.p4java.server.callback.IFilterCallback)
+	 * @see com.perforce.p4java.server.IOptionsServer#execInputStringMapCmdList(java.lang.String, java.lang.String[], java.lang.String, com.perforce.p4java.server.callback.IFilterCallback)
  	 */
 	abstract public List<Map<String, Object>> execInputStringMapCmdList(String cmdName, String[] cmdArgs, String inString, IFilterCallback filterCallback)
 									throws P4JavaException;
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#execQuietMapCmd(String, String[], Map)
+	 * @see com.perforce.p4java.server.IServer#execQuietMapCmd(java.lang.String, java.lang.String[], java.util.Map)
 	 */
 	abstract public Map<String, Object>[] execQuietMapCmd(String cmdName, String[] cmdArgs, Map<String, Object> inMap)
 									throws ConnectionException, RequestException, AccessException;
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#execQuietMapCmdList(String, String[], Map)
+	 * @see com.perforce.p4java.server.IOptionsServer#execQuietMapCmdList(java.lang.String, java.lang.String[], java.util.Map)
 	 */
 	abstract public List<Map<String, Object>> execQuietMapCmdList(String cmdName, String[] cmdArgs, Map<String, Object> inMap)
 									throws P4JavaException;
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#execStreamCmd(String, String[])
+	 * @see com.perforce.p4java.server.IServer#execStreamCmd(java.lang.String, java.lang.String[])
 	 */
 	abstract public InputStream execStreamCmd(String cmdName, String[] cmdArgs)
 									throws ConnectionException, RequestException, AccessException;
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#execStreamCmd(String, String[], Map)
+	 * @see com.perforce.p4java.server.IOptionsServer#execStreamCmd(java.lang.String, java.lang.String[], java.util.Map)
 	 */
 	abstract public InputStream execStreamCmd(String cmdName, String[] cmdArgs, Map<String, Object> inMap)
 									throws P4JavaException;
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#execInputStringStreamCmd(String, String[], String)
+	 * @see com.perforce.p4java.server.IOptionsServer#execInputStringStreamCmd(java.lang.String, java.lang.String)
 	 */
 	abstract public InputStream execInputStringStreamCmd(String cmdName, String[] cmdArgs, String inString)
 									throws P4JavaException;
 
 	/**
-	 * @see com.perforce.p4java.server.IServer#execQuietStreamCmd(String, String[])
+	 * @see com.perforce.p4java.server.IServer#execQuietStreamCmd(java.lang.String, java.lang.String[])
 	 */
 	abstract public InputStream execQuietStreamCmd(String cmdName, String[] cmdArgs)
 									throws ConnectionException, RequestException, AccessException;
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#execStreamingMapCommand(String, String[], Map, com.perforce.p4java.server.callback.IStreamingCallback, int)
+	 * @see com.perforce.p4java.server.IServer#execStreamingMapCommand(java.lang.String, java.lang.String[], java.util.Map, com.perforce.p4java.server.callback.IStreamingCallback, int)
 	 */
 	abstract public void execStreamingMapCommand(String cmdName, String[] cmdArgs, Map<String, Object> inMap,
 									IStreamingCallback callback, int key) throws P4JavaException;
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#execInputStringStreamingMapComd(String, String[], String, com.perforce.p4java.server.callback.IStreamingCallback, int)
+	 * @see com.perforce.p4java.server.IServer#execInputStringStreamingMapComd(java.lang.String, java.lang.String[], java.lang.String, com.perforce.p4java.server.callback.IStreamingCallback, int)
 	 * 
-	 * @deprecated As of release 2013.1, replaced by {@link #execInputStringStreamingMapCmd(String, String[], String, com.perforce.p4java.server.callback.IStreamingCallback, int)}
+	 * @deprecated As of release 2013.1, replaced by {@link #execInputStringStreamingMapCmd(java.lang.String, java.lang.String[], java.lang.String, com.perforce.p4java.server.callback.IStreamingCallback, int)}
  	 */
 	@Deprecated
 	abstract public void execInputStringStreamingMapComd(String cmdName, String[] cmdArgs, String inString,
 									IStreamingCallback callback, int key) throws P4JavaException;
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#execInputStringStreamingMapCmd(String, String[], String, com.perforce.p4java.server.callback.IStreamingCallback, int)
+	 * @see com.perforce.p4java.server.IOptionsServer#execInputStringStreamingMapCmd(java.lang.String, java.lang.String[], java.lang.String, com.perforce.p4java.server.callback.IStreamingCallback, int)
  	 */
 	abstract public void execInputStringStreamingMapCmd(String cmdName, String[] cmdArgs, String inString,
 									IStreamingCallback callback, int key) throws P4JavaException;
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#setAuthTicket(String, String)
+	 * @see com.perforce.p4java.server.IOptionsServer#setAuthTicket(java.lang.String, java.lang.String)
 	 */
 	abstract public void setAuthTicket(String userName, String authTicket);
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getAuthTicket(String)
+	 * @see com.perforce.p4java.server.IOptionsServer#getAuthTicket(java.lang.String)
 	 */
 	abstract public String getAuthTicket(String userName);
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#setTicketsFilePath(String)
+	 * @see com.perforce.p4java.server.IOptionsServer#setTicketsFilePath(java.lang.String)
 	 */
 	abstract public void setTicketsFilePath(String ticketsFilePath);
 	
@@ -5188,7 +5262,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	abstract public String getTicketsFilePath();
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#setTrustFilePath(String)
+	 * @see com.perforce.p4java.server.IOptionsServer#setTrustFilePath(java.lang.String)
 	 */
 	abstract public void setTrustFilePath(String trustFilePath);
 	
@@ -5202,27 +5276,42 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	 */
 	abstract public String getTrust() throws P4JavaException;
 
-	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#addTrust(com.perforce.p4java.option.server.TrustOptions)
-	 */
-	abstract public String addTrust(TrustOptions opts) throws P4JavaException;
-	
-	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#addTrust(String)
-	 */
-	abstract public String addTrust(String fingerprintValue) throws P4JavaException;
+    /**
+     * @see com.perforce.p4java.server.IOptionsServer#addTrust(com.perforce.p4java.option.server.TrustOptions)
+     */
+    abstract public String addTrust(TrustOptions opts) throws P4JavaException;
 
-	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#removeTrust()
-	 */
-	abstract public String removeTrust() throws P4JavaException;
-	
-	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getTrusts()
-	 */
-	abstract public List<Fingerprint> getTrusts() throws P4JavaException;
+    /**
+     * @see com.perforce.p4java.server.IOptionsServer#addTrust(java.lang.String)
+     */
+    abstract public String addTrust(String fingerprintValue) throws P4JavaException;
 
-	/**
+    /**
+     * @see com.perforce.p4java.server.IOptionsServer#addTrust(java.lang.String, com.perforce.p4java.option.server.TrustOptions)
+     */
+    abstract public String addTrust(String fingerprintValue, TrustOptions opts) throws P4JavaException;
+
+    /**
+     * @see com.perforce.p4java.server.IOptionsServer#removeTrust()
+     */
+    abstract public String removeTrust() throws P4JavaException;
+
+    /**
+     * @see com.perforce.p4java.server.IOptionsServer#removeTrust(com.perforce.p4java.option.server.TrustOptions)
+     */
+    abstract public String removeTrust(TrustOptions opts) throws P4JavaException;
+
+    /**
+     * @see com.perforce.p4java.server.IOptionsServer#getTrusts()
+     */
+    abstract public List<Fingerprint> getTrusts() throws P4JavaException;
+
+    /**
+     * @see com.perforce.p4java.server.IOptionsServer#getTrusts(com.perforce.p4java.option.server.TrustOptions)
+     */
+    abstract public List<Fingerprint> getTrusts(TrustOptions opts) throws P4JavaException;
+
+    /**
 	 * Check if the server is secure (SSL) or not.
 	 */
 	protected boolean isSecure() {
@@ -5423,6 +5512,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 					// which case we pick the files off as best we can and then associate
 					// them with the changelist constructed as above.
 
+					// p4ic4idea: use IServerMessage instead of String
 					final IServerMessage err = handleFileErrorStr(map);
 					
 					if (err != null) {
@@ -5483,7 +5573,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getMatchingLines(List, String, com.perforce.p4java.option.server.MatchingLinesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getMatchingLines(java.util.List, java.lang.String, com.perforce.p4java.option.server.MatchingLinesOptions)
 	 */
 	public List<IFileLineMatch> getMatchingLines(List<IFileSpec> fileSpecs, String pattern,
 			MatchingLinesOptions options) throws P4JavaException {
@@ -5491,8 +5581,9 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getMatchingLines(List, String, List, com.perforce.p4java.option.server.MatchingLinesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getMatchingLines(java.util.List, java.lang.String, java.util.List, com.perforce.p4java.option.server.MatchingLinesOptions)
 	 */
+	// p4ic4idea: use IServerMessage instead of String
 	public List<IFileLineMatch> getMatchingLines(List<IFileSpec> fileSpecs, String pattern,
 			List<IServerMessage> infoLines, MatchingLinesOptions options) throws P4JavaException {
 		if (fileSpecs == null) {
@@ -5535,7 +5626,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#obliterateFiles(List, com.perforce.p4java.option.server.ObliterateFilesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#obliterateFiles(java.util.List, com.perforce.p4java.option.server.ObliterateFilesOptions)
 	 */
 	public List<IObliterateResult> obliterateFiles(List<IFileSpec> fileSpecs,
 						ObliterateFilesOptions opts) throws P4JavaException {
@@ -5572,6 +5663,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 				IObliterateResult result = null;
 				List<IFileSpec> fsList = new ArrayList<IFileSpec>();
 				for (Map<String, Object> map : resultMaps) {
+					// p4ic4idea: use IServerMessage instead of String
 					final IServerMessage err = handleFileErrorStr(map);
 					FileSpec fs = null;
 					if (err == null) {
@@ -5616,7 +5708,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getStreams(List streamPaths, com.perforce.p4java.option.server.GetStreamsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getStreams(java.util.List streamPaths, com.perforce.p4java.option.server.GetStreamsOptions)
 	 */
 	public List<IStreamSummary> getStreams(List<String> streamPaths, GetStreamsOptions opts)
 										throws P4JavaException {
@@ -5631,6 +5723,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 														null);
 		if (resultMaps != null) {
 			for (Map<String, Object> streamMap : resultMaps) {
+				// p4ic4idea: use IServerMessage instead of String
 				final IServerMessage err = handleFileErrorStr(streamMap);
 				if (err != null) {
 					Log.error(err);
@@ -5673,14 +5766,14 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getStream(String)
+	 * @see com.perforce.p4java.server.IOptionsServer#getStream(java.lang.String)
 	 */
 	public IStream getStream(String streamPath) throws P4JavaException {
 		return getStream(streamPath, new GetStreamOptions());
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getStream(String, com.perforce.p4java.option.server.GetStreamOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getStream(java.lang.String, com.perforce.p4java.option.server.GetStreamOptions)
 	 */
 	public IStream getStream(String streamPath, GetStreamOptions opts) throws P4JavaException {
 		if (streamPath == null) {
@@ -5709,7 +5802,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#updateStream(IStream, StreamOptions)
+	 * @see com.perforce.p4java.server.IOptioinsServer#updateStream(com.perforce.p4java.core.IStream, com.perforce.p4java.option.server.StreamOptions)
 	 */
 	public String updateStream(IStream stream, StreamOptions opts) throws P4JavaException {
 		if (stream == null) {
@@ -5740,7 +5833,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#deleteStream(String, com.perforce.p4java.option.server.StreamOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#deleteStream(java.lang.String, com.perforce.p4java.option.server.StreamOptions)
 	 */
 	public String deleteStream(String streamPath, StreamOptions opts) throws P4JavaException {
 		if (streamPath == null) {
@@ -5772,7 +5865,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getStreamIntegrationStatus(String, com.perforce.p4java.option.server.StreamIntegrationStatusOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getStreamIntegrationStatus(java.lang.String, com.perforce.p4java.option.server.StreamIntegrationStatusOptions)
 	 */
 	public IStreamIntegrationStatus getStreamIntegrationStatus(String stream, StreamIntegrationStatusOptions opts)
 								throws P4JavaException {
@@ -5811,6 +5904,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
 				if (map != null) {
+					// p4ic4idea: use IServerMessage instead of String
 					final IServerMessage err = getErrorStr(map);
 					if (err != null) {
 						throw new RequestException(err);
@@ -5841,7 +5935,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#duplicateRevisions(IFileSpec, IFileSpec, DuplicateRevisionsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#duplicateRevisions(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.option.DuplicateRevisionsOptions)
 	 */
 	public List<IFileSpec> duplicateRevisions(IFileSpec fromFile, IFileSpec toFile,
 			DuplicateRevisionsOptions opts) throws P4JavaException {
@@ -5955,7 +6049,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#createTriggerEntries(List)
+	 * @see com.perforce.p4java.server.IOptionsServer#createTriggerEntries(java.util.List)
 	 */
 	public String createTriggerEntries(List<ITriggerEntry> entryList) throws P4JavaException {
 		if (entryList == null) {
@@ -5983,7 +6077,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#updateTriggerEntries(List)
+	 * @see com.perforce.p4java.server.IOptionsServer#updateTriggerEntries(java.util.List)
 	 */
 	public String updateTriggerEntries(List<ITriggerEntry> entryList) throws P4JavaException {
 		if (entryList == null) {
@@ -6011,7 +6105,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#verifyFiles(List, com.perforce.p4java.option.server.VerifyFilesOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#verifyFiles(java.util.List, com.perforce.p4java.option.server.VerifyFilesOptions)
 	 */
 	public List<IExtendedFileSpec> verifyFiles(List<IFileSpec> fileSpecs, VerifyFilesOptions opts)
 									throws P4JavaException {
@@ -6023,6 +6117,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> map : resultMaps) {
+	            // p4ic4idea: use IServerMessage instead of String
 				final IServerMessage err = handleFileErrorStr(map);
 				ExtendedFileSpec eSpec = null;
 				if (err == null) {

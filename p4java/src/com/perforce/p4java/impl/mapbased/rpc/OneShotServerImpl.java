@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.perforce.p4java.impl.mapbased.rpc;
 
@@ -48,23 +48,23 @@ import java.util.*;
  */
 
 public class OneShotServerImpl extends RpcServer {
-	
+
 	/**
 	 * The short-form name (display name) of this implementation.
 	 */
 	public static final String SCREEN_NAME = "Native RPC";
-	
+
 	/**
 	 * Implementation-specific comments (dependencies, limitations, etc.).
 	 */
 	public static final String IMPL_COMMENTS = "Java-native RPC standalone P4Java implementation."
-							+ " Requires JDK 6 or later and full Java NIO support.";
-	
+			+ " Requires JDK 6 or later and full Java NIO support.";
+
 	/**
 	 * The specific protocol name to be used in URIs for this implementation.
 	 */
 	public static final String PROTOCOL_NAME = Protocol.P4JRPC.toString();
-	
+
 	/**
 	 * The specific SSL protocol name to be used in URIs for this implementation.
 	 */
@@ -75,32 +75,33 @@ public class OneShotServerImpl extends RpcServer {
 	 * these...
 	 */
 	public static final boolean DEFAULT_STATUS = false;
-	
+
 	/**
 	 * The minimum Perforce server level required by this implementation.
 	 */
 	public static final int MINIMUM_SUPPORTED_SERVER_LEVEL = 20052;
-	
+
 	/**
 	 * What we use as a P4JTracer trace prefix for methods here.
 	 */
 	public static final String TRACE_PREFIX = "OneShotServerImpl";
-	
+
 	/**
 	 * Socket pool for this server
 	 */
 	protected RpcSocketPool socketPool = null;
-	
+
 	/**
 	 * Initialize the server. Basically defers to the superclass after setting
 	 * up the required server version and any optional socket pools.
-	 * 
-	 * @see com.perforce.p4java.impl.mapbased.rpc.RpcServer#init(String, int, Properties, com.perforce.p4java.option.UsageOptions, boolean)
+	 *
+	 * @see com.perforce.p4java.impl.mapbased.rpc.RpcServer#init(java.lang.String, int, java.util.Properties, com.perforce.p4java.option.UsageOptions, boolean)
 	 */
-	public ServerStatus init(String host, int port, Properties props, UsageOptions opts, boolean secure)
-								throws ConfigException, ConnectionException {
+	public ServerStatus init(String host, int port, Properties props, UsageOptions opts,
+			boolean secure, String rsh) throws ConfigException, ConnectionException {
 		super.init(host, port, props, opts, secure);
 		super.minumumSupportedServerVersion = MINIMUM_SUPPORTED_SERVER_LEVEL;
+		this.rsh = rsh;
 		int poolSize = RpcPropertyDefs.getPropertyAsInt(this.props,
 				RpcPropertyDefs.RPC_SOCKET_POOL_SIZE_NICK,
 				RpcPropertyDefs.RPC_SOCKET_POOL_DEFAULT_SIZE);
@@ -116,8 +117,10 @@ public class OneShotServerImpl extends RpcServer {
 								serverHost, serverPort,
 								OneShotServerImpl.this.props,
 								OneShotServerImpl.this.serverStats,
-								OneShotServerImpl.this.charset, socket,
-								OneShotServerImpl.this.secure);
+								OneShotServerImpl.this.charset,
+								socket, null,
+								OneShotServerImpl.this.secure,
+								OneShotServerImpl.this.rsh);
 						dispatcher.shutdown(rpcConnection);
 					} catch (ConnectionException e) {
 						Log.exception(e);
@@ -127,48 +130,48 @@ public class OneShotServerImpl extends RpcServer {
 			this.socketPool = new RpcSocketPool(poolSize, this.serverHost,
 					this.serverPort, this.props, handler, this.secure);
 		}
-		
+
 		return status;
 	}
-	
+
 	/**
 	 * Shorthand for the options-based init() above, but with a false secure arg.
-	 * 
-	 * @see com.perforce.p4java.impl.mapbased.rpc.RpcServer#init(String, int, Properties, com.perforce.p4java.option.UsageOptions)
+	 *
+	 * @see com.perforce.p4java.impl.mapbased.rpc.RpcServer#init(java.lang.String, int, java.util.Properties, com.perforce.p4java.option.UsageOptions)
 	 */
 	public ServerStatus init(String host, int port, Properties props, UsageOptions opts)
-								throws ConfigException, ConnectionException {
+			throws ConfigException, ConnectionException {
 		return this.init(host, port, props, opts, false);
 	}
 
 	/**
 	 * Shorthand for the options-based init() above, but with a null opts arg.
-	 * 
-	 * @see com.perforce.p4java.impl.mapbased.rpc.RpcServer#init(String, int, Properties)
+	 *
+	 * @see com.perforce.p4java.impl.mapbased.rpc.RpcServer#init(java.lang.String, int, java.util.Properties)
 	 */
 	public ServerStatus init(String host, int port, Properties props)
-				throws ConfigException, ConnectionException {
+			throws ConfigException, ConnectionException {
 		return this.init(host, port, props, null);
 	}
-	
-	public void connect() throws ConnectionException, AccessException, 
-							RequestException, ConfigException {
+
+	public void connect() throws ConnectionException, AccessException,
+			RequestException, ConfigException {
 		this.serverStats.clear();
 		super.connect();
 	}
-	
+
 	/**
 	 * @see com.perforce.p4java.impl.mapbased.rpc.RpcServer#disconnect()
 	 */
 	public void disconnect() throws ConnectionException, AccessException {
-		if( this.socketPool != null) {
+		if (this.socketPool != null) {
 			this.socketPool.disconnect();
 		}
 		super.disconnect();
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execMapCmd(String, String[], Map)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execMapCmd(java.lang.String, java.lang.String[], java.util.Map)
 	 */
 	@Override
 	public Map<String, Object>[] execMapCmd(String cmdName, String[] cmdArgs,
@@ -178,7 +181,7 @@ public class OneShotServerImpl extends RpcServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execMapCmdList(String, String[], Map)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execMapCmdList(java.lang.String, java.lang.String[], java.util.Map)
 	 */
 	@Override
 	public List<Map<String, Object>> execMapCmdList(String cmdName, String[] cmdArgs,
@@ -187,7 +190,7 @@ public class OneShotServerImpl extends RpcServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execMapCmdList(String, String[], Map, com.perforce.p4java.server.callback.IFilterCallback)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execMapCmdList(java.lang.String, java.lang.String[], java.util.Map, com.perforce.p4java.server.callback.IFilterCallback)
 	 */
 	@Override
 	public List<Map<String, Object>> execMapCmdList(String cmdName, String[] cmdArgs,
@@ -196,7 +199,7 @@ public class OneShotServerImpl extends RpcServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execQuietMapCmd(String, String[], Map)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execQuietMapCmd(java.lang.String, java.lang.String[], java.util.Map)
 	 */
 	@Override
 	public Map<String, Object>[] execQuietMapCmd(String cmdName,
@@ -205,26 +208,26 @@ public class OneShotServerImpl extends RpcServer {
 			AccessException {
 		return this.execMapCmd(cmdName, cmdArgs, inMap, null, true, null, 0);
 	}
-	
+
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execQuietMapCmdList(String, String[], Map)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execQuietMapCmdList(java.lang.String, java.lang.String[], java.util.Map)
 	 */
 	@Override
 	public List<Map<String, Object>> execQuietMapCmdList(String cmdName,
 			String[] cmdArgs, Map<String, Object> inMap) throws P4JavaException {
 		return this.execMapCmdList(cmdName, cmdArgs, inMap, null, true, null, 0, null);
 	}
-	
+
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringMapCmd(String, String[], String)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringMapCmd(java.lang.String, java.lang.String[], java.lang.String)
 	 */
 	public Map<String, Object>[] execInputStringMapCmd(String cmdName,
 			String[] cmdArgs, String inString) throws P4JavaException {
 		return this.execMapCmd(cmdName, cmdArgs, null, inString, true, null, 0);
 	}
-	
+
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringMapCmdList(String, String[], String)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringMapCmdList(java.lang.String, java.lang.String[], java.lang.String)
 	 */
 	public List<Map<String, Object>> execInputStringMapCmdList(String cmdName,
 			String[] cmdArgs, String inString) throws P4JavaException {
@@ -232,28 +235,28 @@ public class OneShotServerImpl extends RpcServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringMapCmdList(String, String[], String, com.perforce.p4java.server.callback.IFilterCallback)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringMapCmdList(java.lang.String, java.lang.String[], java.lang.String, com.perforce.p4java.server.callback.IFilterCallback)
 	 */
 	public List<Map<String, Object>> execInputStringMapCmdList(String cmdName,
 			String[] cmdArgs, String inString, IFilterCallback filterCallback) throws P4JavaException {
 		return this.execMapCmdList(cmdName, cmdArgs, null, inString, true, null, 0, filterCallback);
 	}
-	
+
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringStreamingMapComd(String, String[], String, com.perforce.p4java.server.callback.IStreamingCallback, int)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringStreamingMapComd(java.lang.String, java.lang.String[], java.lang.String, com.perforce.p4java.server.callback.IStreamingCallback, int)
 	 * 
-	 * @deprecated As of release 2013.1, replaced by {@link #execInputStringStreamingMapCmd(String, String[], String, com.perforce.p4java.server.callback.IStreamingCallback, int)}
- 	 */
+	 * @deprecated As of release 2013.1, replaced by {@link #execInputStringStreamingMapCmd(java.lang.String, java.lang.String[], java.lang.String, com.perforce.p4java.server.callback.IStreamingCallback, int)}
+	 */
 	@Deprecated
 	public void execInputStringStreamingMapComd(String cmdName,
 			String[] cmdArgs, String inString, IStreamingCallback callback,
 			int key) throws P4JavaException {
 		execMapCmd(cmdName, cmdArgs, null, inString, false, callback, key);
 	}
-	
+
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringStreamingMapCmd(String, String[], String, com.perforce.p4java.server.callback.IStreamingCallback, int)
- 	 */
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringStreamingMapCmd(java.lang.String, java.lang.String[], java.lang.String, com.perforce.p4java.server.callback.IStreamingCallback, int)
+	 */
 	public void execInputStringStreamingMapCmd(String cmdName,
 			String[] cmdArgs, String inString, IStreamingCallback callback,
 			int key) throws P4JavaException {
@@ -263,49 +266,49 @@ public class OneShotServerImpl extends RpcServer {
 	@SuppressWarnings("unchecked")
 	protected Map<String, Object>[] execMapCmd(String cmdName,
 			String[] cmdArgs, Map<String, Object> inMap, String inString, boolean ignoreCallbacks,
-							IStreamingCallback callback, int callbackKey)
-								throws ConnectionException, AccessException, RequestException {
-		
+			IStreamingCallback callback, int callbackKey)
+			throws ConnectionException, AccessException, RequestException {
+
 		List<Map<String, Object>> results = execMapCmdList(cmdName, cmdArgs, inMap, inString, ignoreCallbacks, callback, callbackKey, null);
 		if (results != null) {
 			return results.toArray(new HashMap[results.size()]);
 		}
-		
+
 		return null;
 	}
 
 	protected List<Map<String, Object>> execMapCmdList(String cmdName,
 			String[] cmdArgs, Map<String, Object> inMap, String inString, boolean ignoreCallbacks,
-							IStreamingCallback callback, int callbackKey, IFilterCallback filterCallback)
-								throws ConnectionException, AccessException, RequestException {
+			IStreamingCallback callback, int callbackKey, IFilterCallback filterCallback)
+			throws ConnectionException, AccessException, RequestException {
 		RpcPacketDispatcher dispatcher = null;
 		RpcConnection rpcConnection = null;
-		
+
 		if (cmdName == null) {
 			throw new NullPointerError(
 					"Null command name passed to execMapCmd");
 		}
-		
+
 		if (!this.connected) {
 			throw new ConnectionNotConnectedException(
 					"Not currently connected to a Perforce server");
 		}
-		
+
 		try {
 			int cmdCallBackKey = this.nextCmdCallBackKey.incrementAndGet();
 			long startTime = System.currentTimeMillis();
 			dispatcher = new RpcPacketDispatcher(props, this);
 			rpcConnection = new RpcStreamConnection(serverHost, serverPort,
-					props, this.serverStats, this.charset, this.socketPool,
-					this.secure);
+					props, this.serverStats, this.charset, null, this.socketPool,
+					this.secure, this.rsh);
 			ProtocolCommand protocolSpecs = new ProtocolCommand();
-			
+
 			if (inMap != null && ClientLineEnding.CONVERT_TEXT) {
 				ClientLineEnding.convertMap(inMap);
 			}
 
 			ExternalEnv env = setupCmd(dispatcher, rpcConnection, protocolSpecs,
-									cmdName.toLowerCase(Locale.ENGLISH), cmdArgs, inMap, ignoreCallbacks, cmdCallBackKey, false);
+					cmdName.toLowerCase(Locale.ENGLISH), cmdArgs, inMap, ignoreCallbacks, cmdCallBackKey, false);
 			CommandEnv cmdEnv = new CommandEnv(
 					new RpcCmdSpec(
 							cmdName.toLowerCase(Locale.ENGLISH),
@@ -314,7 +317,7 @@ public class OneShotServerImpl extends RpcServer {
 							inMap,
 							inString,
 							env),
-					rpcConnection, 
+					rpcConnection,
 					protocolSpecs,
 					this.serverProtocolMap,
 					this.progressCallback,
@@ -344,17 +347,17 @@ public class OneShotServerImpl extends RpcServer {
 					Log.exception(exc);
 				}
 			}
-			
+
 			// Check if currently case sensitive so the map search for the no
 			// case key is only performed when necessary. Once a server is
 			// marked as case insensitive this check will never look at the
 			// server protocol specs map.
 			if (this.caseSensitive
 					&& cmdEnv.getServerProtocolSpecsMap().containsKey(
-							RpcFunctionMapKey.NOCASE)) {
+					RpcFunctionMapKey.NOCASE)) {
 				this.caseSensitive = false;
 			}
-			
+
 			if (!ignoreCallbacks && (this.commandCallback != null)) {
 				this.processCmdCallbacks(cmdCallBackKey, endTime - startTime, retMapList);
 			}
@@ -367,7 +370,7 @@ public class OneShotServerImpl extends RpcServer {
 			}
 
 			return retMapList;
-			
+
 		} catch (BufferOverflowException exc) {
 			Log.error("RPC Buffer overflow: " + exc.getLocalizedMessage());
 			Log.exception(exc);
@@ -381,29 +384,29 @@ public class OneShotServerImpl extends RpcServer {
 			Log.exception(ioexc);
 			throw new RequestException(
 					"I/O error encountered in stream command: "
-					+ ioexc.getLocalizedMessage(), ioexc);
-		} finally {			
+							+ ioexc.getLocalizedMessage(), ioexc);
+		} finally {
 			if (rpcConnection != null) {
 				rpcConnection.disconnect(dispatcher);
 			}
 		}
 	}
-	
+
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execStreamingMapCommand(String, String[], Map, com.perforce.p4java.server.callback.IStreamingCallback, int)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execStreamingMapCommand(java.lang.String, java.lang.String[], java.util.Map, com.perforce.p4java.server.callback.IStreamingCallback, int)
 	 */
 	public void execStreamingMapCommand(String cmdName, String[] cmdArgs, Map<String, Object> inMap,
 			IStreamingCallback callback, int key) throws P4JavaException {
 		if (callback == null) {
 			throw new NullPointerError(
-							"null streaming callback passed to execStreamingMapCommand method");
+					"null streaming callback passed to execStreamingMapCommand method");
 		}
-		
+
 		execMapCmdList(cmdName, cmdArgs, inMap, null, false, callback, key, null);
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execQuietStreamCmd(String, String[])
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execQuietStreamCmd(java.lang.String, java.lang.String[])
 	 */
 	@Override
 	public InputStream execQuietStreamCmd(String cmdName, String[] cmdArgs)
@@ -413,7 +416,7 @@ public class OneShotServerImpl extends RpcServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execStreamCmd(String, String[])
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execStreamCmd(java.lang.String, java.lang.String[])
 	 */
 	@Override
 	public InputStream execStreamCmd(String cmdName, String[] cmdArgs)
@@ -423,7 +426,7 @@ public class OneShotServerImpl extends RpcServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execStreamCmd(String, String[], Map)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execStreamCmd(java.lang.String, java.lang.String[], java.util.Map)
 	 */
 	@Override
 	public InputStream execStreamCmd(String cmdName, String[] cmdArgs, Map<String, Object> inMap)
@@ -432,69 +435,69 @@ public class OneShotServerImpl extends RpcServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringStreamCmd(String, String[], String)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringStreamCmd(java.lang.String, java.lang.String)
 	 */
 	@Override
 	public InputStream execInputStringStreamCmd(String cmdName, String[] cmdArgs, String inString)
 			throws P4JavaException {
 		return this.execStreamCmd(cmdName, cmdArgs, null, inString, false);
 	}
-	
+
 	/**
 	 * Note that this method does the access / request exception processing here rather
 	 * than passing things up the stack; we may introduce an extended version of this
 	 * method to take the map array as an output parameter in later releases.
 	 */
 	protected InputStream execStreamCmd(String cmdName, String[] cmdArgs, Map<String, Object> inMap, String inString, boolean ignoreCallbacks)
-						throws ConnectionException, RequestException, AccessException {
+			throws ConnectionException, RequestException, AccessException {
 		RpcPacketDispatcher dispatcher = null;
 		RpcConnection rpcConnection = null;
 		if (cmdName == null) {
 			throw new NullPointerError(
 					"Null command name passed to execStreamCmd");
 		}
-		
+
 		if (!this.connected) {
 			throw new ConnectionNotConnectedException(
 					"Not currently connected to a Perforce server");
 		}
-		
-		try {	
+
+		try {
 			int cmdCallBackKey = this.nextCmdCallBackKey.incrementAndGet();
 			long startTime = System.currentTimeMillis();
 			dispatcher = new RpcPacketDispatcher(props, this);
 			rpcConnection = new RpcStreamConnection(serverHost, serverPort,
-					props, this.serverStats, this.charset, this.socketPool,
-					this.secure);
+					props, this.serverStats, this.charset, null, this.socketPool,
+					this.secure, this.rsh);
 			ProtocolCommand protocolSpecs = new ProtocolCommand();
 			if (inMap != null && ClientLineEnding.CONVERT_TEXT) {
 				ClientLineEnding.convertMap(inMap);
 			}
 			ExternalEnv env = setupCmd(dispatcher, rpcConnection, protocolSpecs,
-											cmdName.toLowerCase(Locale.ENGLISH),cmdArgs, inMap, ignoreCallbacks, cmdCallBackKey, true);
+					cmdName.toLowerCase(Locale.ENGLISH), cmdArgs, inMap, ignoreCallbacks, cmdCallBackKey, true);
 			CommandEnv cmdEnv = new CommandEnv(
-											new RpcCmdSpec(
-													cmdName.toLowerCase(Locale.ENGLISH),
-													cmdArgs,
-													getAuthTicket(),
-													inMap,
-													inString,
-													env),
-											rpcConnection,
-											protocolSpecs,
-											this.serverProtocolMap,
-											this.progressCallback,
-											cmdCallBackKey,
-											writeInPlace(cmdName),
-											this.isNonCheckedSyncs());
+					new RpcCmdSpec(
+							cmdName.toLowerCase(Locale.ENGLISH),
+							cmdArgs,
+							getAuthTicket(),
+							inMap,
+							inString,
+							env),
+					rpcConnection,
+					protocolSpecs,
+					this.serverProtocolMap,
+					this.progressCallback,
+					cmdCallBackKey,
+					writeInPlace(cmdName),
+					this.isNonCheckedSyncs());
 			cmdEnv.setDontWriteTicket(isDontWriteTicket(cmdName.toLowerCase(Locale.ENGLISH), cmdArgs));
 			cmdEnv.setFieldRule(getRpcPacketFieldRule(inMap, CmdSpec.getValidP4JCmdSpec(cmdName)));
 			cmdEnv.setStreamCmd(true);
 
 			List<Map<String, Object>> retMapList = dispatcher.dispatch(cmdEnv);
-			
+
 			long endTime = System.currentTimeMillis();
-			
+
 			if (!ignoreCallbacks && (this.commandCallback != null)) {
 				this.processCmdCallbacks(cmdCallBackKey, endTime - startTime, retMapList);
 			}
@@ -502,12 +505,13 @@ public class OneShotServerImpl extends RpcServer {
 			if ((retMapList != null) && (retMapList.size() != 0)) {
 				for (Map<String, Object> map : retMapList) {
 					if (map != null) {
-						final IServerMessage err = this.getErrorStr(map);
-						if (err != null) {
-							if (isAuthFail(err)) {
-								throw new AccessException(err);
+						// groboclown: use IServerMessage
+						final IServerMessage errStr = this.getErrorStr(map);
+						if (errStr != null) {
+							if (isAuthFail(errStr)) {
+								throw new AccessException(errStr);
 							} else {
-								throw new RequestException(err);
+								throw new RequestException(errStr);
 							}
 						}
 					}
@@ -516,16 +520,16 @@ public class OneShotServerImpl extends RpcServer {
 
 			RpcOutputStream outStream = (RpcOutputStream) cmdEnv.getStateMap().get(
 					RpcServer.RPC_TMP_OUTFILE_STREAM_KEY);
-			
+
 			if (outStream != null) {
 				outStream.close();
 				TempFileInputStream inStream
-								= new TempFileInputStream(outStream.getFile());
+						= new TempFileInputStream(outStream.getFile());
 				return inStream;
 			}
-			
+
 			return null;
-			
+
 		} catch (BufferOverflowException exc) {
 			Log.error("RPC Buffer overflow: " + exc.getLocalizedMessage());
 			Log.exception(exc);
@@ -539,7 +543,7 @@ public class OneShotServerImpl extends RpcServer {
 			Log.exception(ioexc);
 			throw new RequestException(
 					"I/O error encountered in stream command: "
-					+ ioexc.getLocalizedMessage(), ioexc);
+							+ ioexc.getLocalizedMessage(), ioexc);
 		} finally {
 			if (rpcConnection != null) {
 				rpcConnection.disconnect(dispatcher);
@@ -552,10 +556,10 @@ public class OneShotServerImpl extends RpcServer {
 	 */
 
 	protected ExternalEnv setupCmd(RpcPacketDispatcher dispatcher,
-				RpcConnection rpcConnection, ProtocolCommand protocolSpecs,
-				String cmdName, String[] cmdArgs, Map<String, Object> inMap,
-				boolean ignoreCallbacks, int cmdCallBackKey, boolean isStream)
-									throws ConnectionException, AccessException, RequestException {
+			RpcConnection rpcConnection, ProtocolCommand protocolSpecs,
+			String cmdName, String[] cmdArgs, Map<String, Object> inMap,
+			boolean ignoreCallbacks, int cmdCallBackKey, boolean isStream)
+			throws ConnectionException, AccessException, RequestException {
 		if (rpcConnection == null) {
 			throw new NullPointerError("Null RPC connection in execMapCmd call");
 		}
@@ -569,27 +573,27 @@ public class OneShotServerImpl extends RpcServer {
 			throw new RequestException("command name '"
 					+ cmdName + "' unimplemented or unrecognized by p4java");
 		}
-		
+
 		// Should use tags?
 		boolean useTags = useTags(cmdName, cmdArgs, inMap, isStream);
-		
+
 		// Check fingerprint
 		checkFingerprint(rpcConnection);
-		
+
 		ExternalEnv env = new ExternalEnv(
-					this.getUsageOptions().getProgramName(),
-					this.getUsageOptions().getProgramVersion(),
-					this.getClientNameForEnv(),
-					this.getUsageOptions().getWorkingDirectory(),
-					this.getHostForEnv(),
-					this.getServerHostPort(),
-					this.getUsageOptions().getTextLanguage(),
-					this.getOsTypeForEnv(),
-					this.getUserForEnv(),
-					this.charsetName != null,
-					this.charset
-				);
-		
+				this.getUsageOptions().getProgramName(),
+				this.getUsageOptions().getProgramVersion(),
+				this.getClientNameForEnv(),
+				this.getUsageOptions().getWorkingDirectory(),
+				this.getHostForEnv(),
+				this.getServerHostPort(),
+				this.getUsageOptions().getTextLanguage(),
+				this.getOsTypeForEnv(),
+				this.getUserForEnv(),
+				this.charsetName != null,
+				this.charset
+		);
+
 		if (!ignoreCallbacks && (this.commandCallback != null)) {
 			StringBuilder cmd = new StringBuilder(cmdName);
 			for (String argStr : cmdArgs) {
@@ -600,9 +604,9 @@ public class OneShotServerImpl extends RpcServer {
 			}
 			this.commandCallback.issuingServerCommand(cmdCallBackKey, cmd.toString());
 		}
-	
+
 		RpcPacket protPacket = null;
-		
+
 		protocolSpecs.setClientApiLevel(this.clientApiLevel);
 		protocolSpecs.setClientCmpFile(false);
 		protocolSpecs.setServerApiLevel(this.serverApiLevel);
@@ -617,26 +621,26 @@ public class OneShotServerImpl extends RpcServer {
 		// Set the 'host' (P4HOST) and 'port' (P4PORT) protocol parameters
 		protocolSpecs.setHost(env.getHost());
 		protocolSpecs.setPort(env.getPort());
-		
+
 		protPacket = RpcPacket.constructRpcPacket(
-								RpcFunctionSpec.PROTOCOL_PROTOCOL,
-								protocolSpecs.asMap(),
-								null);
-		
+				RpcFunctionSpec.PROTOCOL_PROTOCOL,
+				protocolSpecs.asMap(),
+				null);
+
 		RpcFunctionSpec name = RpcFunctionSpec.decodeFromEndUserCmd(cmdName,
-													this.isRelaxCmdNameValidationChecks());
-		
+				this.isRelaxCmdNameValidationChecks());
+
 		RpcPacket cmdPacket = RpcPacket.constructRpcPacket(name, cmdName, cmdArgs,
-														env);
+				env);
 		// Append the "tag" argument before the function name
 		if (useTags) {
 			cmdPacket.setMapArgs(this.cmdMapArgs);
 		}
 
 		// On each command message sent to the server (i.e. "user-foo")
-        // a variable "progress" should be set to 1 to indicate that
-        // the server should send progress messages to the client if they
-        // are available for that command.
+		// a variable "progress" should be set to 1 to indicate that
+		// the server should send progress messages to the client if they
+		// are available for that command.
 		if (this.enableProgress) {
 			Map<String, Object> valMap = new HashMap<String, Object>();
 			if (cmdPacket.getMapArgs() != null) {
@@ -645,13 +649,13 @@ public class OneShotServerImpl extends RpcServer {
 			valMap.put(ProtocolCommand.RPC_ARGNAME_PROTOCOL_ENABLE_PROGRESS, "1");
 			cmdPacket.setMapArgs(valMap);
 		}
-		
+
 		if (protPacket == null) {
 			rpcConnection.putRpcPacket(cmdPacket);
 		} else {
-			rpcConnection.putRpcPackets(new RpcPacket[] {protPacket, cmdPacket});
+			rpcConnection.putRpcPackets(new RpcPacket[]{protPacket, cmdPacket});
 		}
-		
+
 		return env;
 	}
 }

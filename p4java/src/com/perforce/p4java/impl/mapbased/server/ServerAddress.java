@@ -18,6 +18,7 @@ public class ServerAddress implements IServerAddress {
 	private String query = null;
 	private Properties properties = null;
 	private String uri = null;
+	private String rsh = null;
 
 	/**
 	 * Instantiates a new server address.
@@ -32,6 +33,7 @@ public class ServerAddress implements IServerAddress {
 		this.query = builder.getQuery();
 		this.properties = builder.getProperties();
 		this.uri = builder.getUri();
+		this.rsh = builder.getRsh();
 	}
 
 	/**
@@ -74,6 +76,13 @@ public class ServerAddress implements IServerAddress {
 	 */
 	public String getUri() {
 		return this.uri;
+	}
+
+	/**
+	 * @see com.perforce.p4java.server.IServerAddress#getRsh()
+	 */
+	public String getRsh() {
+		return this.rsh;
 	}
 
 	/**

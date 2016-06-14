@@ -19,6 +19,7 @@ import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacketPreamble;
 import com.perforce.p4java.impl.mapbased.rpc.packet.helper.RpcPacketFieldRule;
 import com.perforce.p4java.impl.mapbased.rpc.stream.RpcSocketPool.ShutdownHandler;
 import com.perforce.p4java.impl.mapbased.rpc.stream.helper.RpcSocketHelper;
+import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.server.callback.IFilterCallback;
 
 import javax.net.ssl.SSLSession;
@@ -69,11 +70,14 @@ public class RpcStreamConnection extends RpcConnection {
 	
 	private RpcSocketPool pool = null;
 	private Socket socket = null;
-	private InputStream sockInputStream = null;
-	private OutputStream sockOutputStream = null;	
+	private InputStream inputStream = null;
+	private OutputStream outputStream = null;
 	private InputStream topInputStream = null;
 	private OutputStream topOutputStream = null;
-	
+
+	// 'rsh' mode server launch command
+	private String rsh = null;
+
 	/**
 	 * Construct a new Perforce RPC connection to the named Perforce server
 	 * using java.io socket streams at the lowest level. This constructor sets
@@ -148,25 +152,7 @@ public class RpcStreamConnection extends RpcConnection {
 	public RpcStreamConnection(String serverHost, int serverPort,
 			Properties props, ServerStats stats, Charset charset,
 			Socket socket, boolean secure) throws ConnectionException {
-		super(serverHost, serverPort, props, stats, charset, secure);
-		try {
-			this.socket = socket;
-			if( this.socket == null) {
-				this.socket = RpcSocketHelper.createSocket(serverHost, serverPort, props, secure);
-			}
-			init();
-		} catch (UnknownHostException exc) {
-			throw new ConnectionException("Unable to resolve Perforce server host name '"
-												+ hostName
-												+ "' for RPC connection");
-		} catch (IOException exc) {
-			throw new ConnectionException("Unable to connect to Perforce server at "
-												+ hostName + ":" + hostPort);
-		} catch (Throwable thr) {
-			Log.error("Unexpected exception: " + thr.getLocalizedMessage());
-			Log.exception(thr);
-			throw new ConnectionException(thr.getLocalizedMessage());
-		}
+		this(serverHost, serverPort, props, stats, charset, socket, null, secure);
 	}
 	
 	/**
@@ -185,9 +171,29 @@ public class RpcStreamConnection extends RpcConnection {
 	public RpcStreamConnection(String serverHost, int serverPort,
 			Properties props, ServerStats stats, Charset charset,
 			RpcSocketPool pool) throws ConnectionException {
-		this(serverHost, serverPort, props, stats, charset, pool, false);
+		this(serverHost, serverPort, props, stats, charset, null, pool, false);
 	}
-	
+
+	/**
+	 * Construct a new Perforce RPC connection to the named Perforce server using
+	 * java.io socket streams at the lowest level. This constructor sets up the default
+	 * non-compressed stack; in general this means just a couple of simple socket streams.
+	 *
+	 * @param serverHost
+	 * @param serverPort
+	 * @param props
+	 * @param stats
+	 * @param charset
+	 * @param pool 
+	 * @param secure
+	 * @throws ConnectionException 
+	 */
+	public RpcStreamConnection(String serverHost, int serverPort,
+			Properties props, ServerStats stats, Charset charset,
+			RpcSocketPool pool, boolean secure) throws ConnectionException {
+		this(serverHost, serverPort, props, stats, charset, null, pool, secure);
+	}
+
 	/**
 	 * Construct a new Perforce RPC connection to the named Perforce server using
 	 * java.io socket streams at the lowest level. This constructor sets up the default
@@ -198,73 +204,144 @@ public class RpcStreamConnection extends RpcConnection {
 	 * @param props 
 	 * @param stats 
 	 * @param charset 
-	 * @param pool 
+	 * @param socket
+	 * @param pool
 	 * @param secure
-	 * @throws ConnectionException 
+	 * @throws ConnectionException
 	 */
 	public RpcStreamConnection(String serverHost, int serverPort,
 			Properties props, ServerStats stats, Charset charset,
-			RpcSocketPool pool, boolean secure) throws ConnectionException {
-		super(serverHost, serverPort, props, stats, charset, secure);
-		try {
-			this.pool = pool;
-			if (this.pool != null) {
-				this.socket = this.pool.acquire();
-			} else {
-				this.socket = RpcSocketHelper.createSocket(serverHost, serverPort, props, secure);
-			}
-			init();
-		// groboclown: don't wrap the underlying connection exception; just reuse it
-		} catch (ConnectionException e) {
-			throw e;
-		} catch (UnknownHostException exc) {
-			throw new ConnectionException("Unable to resolve Perforce server host name '"
-												+ hostName
-												+ "' for RPC connection");
-		} catch (IOException exc) {
-			throw new ConnectionException("Unable to connect to Perforce server at "
-					+ hostName + ":" + hostPort);
-		// groboclown: never, never just capture "throwable"
-		//} catch (Throwable thr) {
-		} catch (Exception thr) {
-			Log.error("Unexpected exception: " + thr.getLocalizedMessage());
-			Log.exception(thr);
-			// groboclown show the real source of the problem.
-			//throw new ConnectionException(thr.getLocalizedMessage());
-			throw new ConnectionException(thr);
-		}
+			Socket socket, RpcSocketPool pool, boolean secure) throws ConnectionException {
+		this(serverHost, serverPort, props, stats, charset, socket, pool, secure, null);
 	}
-	
+
+	/**
+	 * Construct a new Perforce RPC connection to the named Perforce server using
+	 * java.io socket streams at the lowest level. This constructor sets up the default
+	 * non-compressed stack; in general this means just a couple of simple socket streams.
+	 *
+	 * @param serverHost
+	 * @param serverPort
+	 * @param props
+	 * @param stats
+	 * @param charset
+	 * @param socket
+	 * @param pool
+	 * @param secure
+	 * @param rsh
+	 * @throws ConnectionException
+	 */
+	public RpcStreamConnection(String serverHost, int serverPort,
+			Properties props, ServerStats stats, Charset charset,
+			Socket socket, RpcSocketPool pool, boolean secure, String rsh) throws ConnectionException {
+		super(serverHost, serverPort, props, stats, charset, secure);
+		this.socket = socket;
+		this.pool = pool;
+		this.rsh = rsh;
+		init();
+	}
+
+	/**
+	 * Initialize actual connection to the server.
+	 *
+	 * @throws ConnectionException
+	 */
 	private void init() throws ConnectionException {
-		// Get IP address from socket connection
-		if (this.socket != null) {
-			if (socket.getInetAddress() != null) {
-				InetAddress address = socket.getInetAddress();
-				// Check if it is an IPv6 address
-				if (Inet6Address.class.isAssignableFrom(address.getClass())) {
-					// Add the square brackets for IPv6 address
-					this.hostIp = "[" + socket.getInetAddress().getHostAddress() + "]";
-				} else {
-					this.hostIp = socket.getInetAddress().getHostAddress();
+		if (this.rsh != null) { // 'rsh' mode server
+			try {
+				String[] command = new String[]{
+						Server.isRunningOnWindows() ? "cmd.exe" : "/bin/sh",
+						Server.isRunningOnWindows() ? "/c" : "-c",
+						this.rsh};
+				ProcessBuilder builder = new ProcessBuilder(command);
+				//builder.redirectErrorStream(true); // redirect error stream to output stream
+				Process process = builder.start();
+				InputStream in = process.getInputStream();
+				OutputStream out = process.getOutputStream();
+				//InputStream err = process.getErrorStream();
+
+				this.inputStream = new RpcRshInputStream(in, this.stats);
+				this.outputStream = new RpcRshOutputStream(out, this.stats);
+			// Groboclown: never, never, never catch a Throwable
+			// unless you're really careful.  This is not being
+			// careful.
+			// } catch (Throwable thr) {
+			} catch (Exception thr) {
+				Log.error("Unexpected exception: " + thr.getLocalizedMessage());
+				Log.exception(thr);
+				// groboclown show the real source of the problem.
+				//throw new ConnectionException(thr.getLocalizedMessage());
+				throw new ConnectionException(thr);
+			}
+
+		} else { // socket based server
+			try {
+				if (this.socket == null) {
+					if (this.pool != null) {
+						this.socket = this.pool.acquire();
+					} else {
+						this.socket = RpcSocketHelper.createSocket(this.hostName, this.hostPort, this.props, this.secure);
+					}
+				}
+			} catch (UnknownHostException exc) {
+				throw new ConnectionException("Unable to resolve Perforce server host name '"
+						+ hostName
+						+ "' for RPC connection",
+						// groboclown: don't mask the source
+						exc
+						);
+			} catch (IOException exc) {
+				throw new ConnectionException("Unable to connect to Perforce server at "
+						+ hostName + ":" + hostPort,
+						// groboclown: don't mask the source
+						exc);
+			// groboclown: never, never, never catch a Throwable,
+			// unless you're really careful, which this is not.
+			// } catch (Throwable thr) {
+			} catch (Exception thr) {
+				Log.error("Unexpected exception: " + thr.getLocalizedMessage());
+				Log.exception(thr);
+				// groboclown: Don't mask the source
+				throw new ConnectionException(thr);
+			}
+
+			// Get IP address from socket connection
+			if (this.socket != null) {
+				if (socket.getInetAddress() != null) {
+					InetAddress address = socket.getInetAddress();
+					// Check if it is an IPv6 address
+					if (Inet6Address.class.isAssignableFrom(address.getClass())) {
+						// Add the square brackets for IPv6 address
+						this.hostIp = "[" + socket.getInetAddress().getHostAddress() + "]";
+					} else {
+						this.hostIp = socket.getInetAddress().getHostAddress();
+					}
 				}
 			}
+
+			// Initialize SSL connection
+			if (this.secure) {
+				initSSL();
+			}
+
+			try {
+				this.inputStream = new RpcSocketInputStream(this.socket, this.stats);
+				this.outputStream = new RpcSocketOutputStream(this.socket, this.stats);
+			// groboclown: Never, never, never catch a Throwable
+			// unless you're really careful, which this is not.
+			// } catch (Throwable thr) {
+			} catch (Exception thr) {
+				Log.error("Unexpected exception: " + thr.getLocalizedMessage());
+				Log.exception(thr);
+				// groboclown: Don't mask the source
+				throw new ConnectionException(thr);
+			}
 		}
-		// Initialize SSL connection
-		if (this.secure) {
-			initSSL();
-		}
-		try {
-			this.sockInputStream = new RpcSocketInputStream(this.socket, this.stats);
-			this.sockOutputStream = new RpcSocketOutputStream(this.socket, this.stats);
-			this.topInputStream = this.sockInputStream;
-			this.topOutputStream = this.sockOutputStream;
-		} catch (Throwable thr) {
-			Log.error("Unexpected exception: " + thr.getLocalizedMessage());
-			Log.exception(thr);
-			throw new ConnectionException(thr.getLocalizedMessage());
-		}
+
+		this.topInputStream = this.inputStream;
+		this.topOutputStream = this.outputStream;
 	}
-	
+
 	private void initSSL() throws ConnectionException {
 		// Start SSL handshake
 		if (this.socket != null) {
@@ -337,7 +414,7 @@ public class RpcStreamConnection extends RpcConnection {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection#disconnect(RpcPacketDispatcher)
+	 * @see com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection#disconnect()
 	 */
 	public void disconnect(final RpcPacketDispatcher dispatcher) throws ConnectionException {
 		try {
@@ -357,15 +434,27 @@ public class RpcStreamConnection extends RpcConnection {
 					}					
 				}
 			};
-			if (this.pool != null) {
-				this.pool.release(this.socket, handler);
-			} else {
-				handler.shutdown(this.socket);
+			// Handle 'rsh' mode server shutdown
+			if (this.rsh != null) {
+				try {
+					dispatcher.shutdown(RpcStreamConnection.this);
+				} catch (ConnectionException e) {
+					Log.exception(e);
+				}
 				this.topInputStream.close();
 				this.topOutputStream.close();
-				this.socket.close();
+			} else {
+				if (this.pool != null) {
+					this.pool.release(this.socket, handler);
+				} else {
+					handler.shutdown(this.socket);
+					this.topInputStream.close();
+					this.topOutputStream.close();
+					if (socket != null) {
+						this.socket.close();
+					}
+				}
 			}
-			
 		} catch (IOException exc) {
 			throw new ConnectionException(
 					"RPC disconnection error: " + exc.getLocalizedMessage(), exc);
@@ -389,8 +478,8 @@ public class RpcStreamConnection extends RpcConnection {
 									"compress2",
 									(String[]) null, null));
 				this.topOutputStream.flush();
-				this.topOutputStream = new RpcGZIPOutputStream(this.sockOutputStream);
-				this.topInputStream = new RpcGZIPInputStream(this.sockInputStream);
+				this.topOutputStream = new RpcGZIPOutputStream(this.outputStream);
+				this.topInputStream = new RpcGZIPInputStream(this.inputStream);
 			} catch (IOException exc) {
 				Log.error("I/O exception encountered while setting up GZIP streaming: "
 						+ exc.getLocalizedMessage());

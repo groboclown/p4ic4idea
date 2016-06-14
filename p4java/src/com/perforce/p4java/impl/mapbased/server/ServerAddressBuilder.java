@@ -19,6 +19,7 @@ public class ServerAddressBuilder {
 	private String query = null;
 	private Properties properties = null;
 	private String uri = null;
+	private String rsh = null;
 
 	/**
 	 * Instantiates a new server address builder from a string.
@@ -65,53 +66,59 @@ public class ServerAddressBuilder {
 		}
 
 		String restStr = uri.substring(protoPartEnd + 3);
-		int portStart = restStr.lastIndexOf(":");
-		int queryStart = restStr.indexOf("?");
-		if (portStart == 0) {
-			throw new URISyntaxException(uri,
-					"missing or malformed Perforce server hostname");
-		}
-		if ((portStart < 0) || ((queryStart > 0) && (queryStart < portStart))) {
-			throw new URISyntaxException(uri,
-					"missing or malformed Perforce server port specifier");
-		}
-		this.host = restStr.substring(0, portStart);
-
-		String portPart = null;
-		if (queryStart > 0) {
-			portPart = restStr.substring(portStart + 1, queryStart);
-
-			if (queryStart >= restStr.length()) {
-				throw new URISyntaxException(uri,
-						"empty or malformed P4Java query string");
-			}
-			this.query = restStr.substring(queryStart + 1);
+		if (protocol == Protocol.P4JRSH || protocol == Protocol.P4JRSHNTS) {
+			this.rsh = restStr;
+			this.port = 0;
+			this.host = "localhost";
 		} else {
-			portPart = restStr.substring(portStart + 1);
-		}
-		try {
-			this.port = new Integer(portPart);
-		} catch (NumberFormatException nfe) {
-			throw new URISyntaxException(uri,
-					"non-numeric Perforce server port specifier");
-		}
-
-		if (this.query != null) {
-			if (this.properties == null) {
-				this.properties = new Properties();
+			int portStart = restStr.lastIndexOf(":");
+			int queryStart = restStr.indexOf("?");
+			if (portStart == 0) {
+				throw new URISyntaxException(uri,
+						"missing or malformed Perforce server hostname");
 			}
-			// Do this without the help of the various servlet classes, mostly
-			// because we don't want to drag that entire package into here.
-			String[] params = this.query.split("&");
-			if (params != null) {
-				for (String param : params) {
-					if (param != null) {
-						String[] pair = param.split("=");
-						if ((pair != null) && (pair.length > 0) && (pair[0] != null)) {
-							if (pair.length > 1) {
-								this.properties.put(pair[0], pair[1] != null ? pair[1] : "");
-							} else {
-								this.properties.put(pair[0], "");
+			if ((portStart < 0) || ((queryStart > 0) && (queryStart < portStart))) {
+				throw new URISyntaxException(uri,
+						"missing or malformed Perforce server port specifier");
+			}
+			this.host = restStr.substring(0, portStart);
+	
+			String portPart = null;
+			if (queryStart > 0) {
+				portPart = restStr.substring(portStart + 1, queryStart);
+	
+				if (queryStart >= restStr.length()) {
+					throw new URISyntaxException(uri,
+							"empty or malformed P4Java query string");
+				}
+				this.query = restStr.substring(queryStart + 1);
+			} else {
+				portPart = restStr.substring(portStart + 1);
+			}
+			try {
+				this.port = new Integer(portPart);
+			} catch (NumberFormatException nfe) {
+				throw new URISyntaxException(uri,
+						"non-numeric Perforce server port specifier");
+			}
+	
+			if (this.query != null) {
+				if (this.properties == null) {
+					this.properties = new Properties();
+				}
+				// Do this without the help of the various servlet classes, mostly
+				// because we don't want to drag that entire package into here.
+				String[] params = this.query.split("&");
+				if (params != null) {
+					for (String param : params) {
+						if (param != null) {
+							String[] pair = param.split("=");
+							if ((pair != null) && (pair.length > 0) && (pair[0] != null)) {
+								if (pair.length > 1) {
+									this.properties.put(pair[0], pair[1] != null ? pair[1] : "");
+								} else {
+									this.properties.put(pair[0], "");
+								}
 							}
 						}
 					}
@@ -181,5 +188,14 @@ public class ServerAddressBuilder {
 	 */
 	public String getUri() {
 		return this.uri;
+	}
+
+	/**
+	 * Gets the rsh command.
+	 * 
+	 * @return the rsh command
+	 */
+	public String getRsh() {
+		return this.rsh;
 	}
 }

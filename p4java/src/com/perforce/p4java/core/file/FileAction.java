@@ -55,6 +55,7 @@ public enum FileAction {
 	
 	private static final String[] names = {
 		"add",
+		"add/edit",
 		"branch",
 		"edit",
 		"integrate",

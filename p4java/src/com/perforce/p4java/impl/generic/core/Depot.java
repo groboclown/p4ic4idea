@@ -9,6 +9,8 @@ import java.util.Map;
 
 import com.perforce.p4java.Log;
 import com.perforce.p4java.core.IDepot;
+import com.perforce.p4java.core.IMapEntry;
+import com.perforce.p4java.core.ViewMap;
 import com.perforce.p4java.impl.mapbased.MapKeys;
 
 /**
@@ -26,7 +28,9 @@ public class Depot extends ServerResource implements IDepot {
 	private DepotType depotType = null;
 	private String address = null;
 	private String suffix = null;
+	private String streamDepth = null;
 	private String map = null;
+	private ViewMap<IMapEntry> specMap = null;
 	
 	/**
 	 * Default constructor. Sets up default (typically null) metadata values.
@@ -41,6 +45,15 @@ public class Depot extends ServerResource implements IDepot {
 	public Depot(String name, String ownerName, Date modDate,
 			String description, DepotType depotType, String address,
 			String suffix, String map) {
+		this(name, ownerName, modDate, description, depotType, address, suffix, null, map);
+	}
+
+	/**
+	 * Explicit-value constructor.
+	 */
+	public Depot(String name, String ownerName, Date modDate,
+			String description, DepotType depotType, String address,
+			String suffix, String streamDepth, String map) {
 		this.name = name;
 		this.ownerName = ownerName;
 		this.modDate = modDate;
@@ -48,7 +61,26 @@ public class Depot extends ServerResource implements IDepot {
 		this.depotType = depotType;
 		this.address = address;
 		this.suffix = suffix;
+		this.streamDepth = streamDepth;
 		this.map = map;
+	}
+
+	/**
+	 * Explicit-value constructor.
+	 */
+	public Depot(String name, String ownerName, Date modDate,
+			String description, DepotType depotType, String address,
+			String suffix, String streamDepth, String map, ViewMap<IMapEntry> specMap) {
+		this.name = name;
+		this.ownerName = ownerName;
+		this.modDate = modDate;
+		this.description = description;
+		this.depotType = depotType;
+		this.address = address;
+		this.suffix = suffix;
+		this.streamDepth = streamDepth;
+		this.map = map;
+		this.specMap = specMap;
 	}
 
 	/**
@@ -69,6 +101,8 @@ public class Depot extends ServerResource implements IDepot {
 			// an individual depot listing or all depots... hence all the second guessing
 			// going on below.
 			
+			// The "p4 -ztag depot -o" command returns upper case field names for a single depot
+			// The "p4 -ztag depots" command returns lower case fields names for multiple depots (summaries)
 			try {
 				this.name = (String) map.get(MapKeys.NAME_LC_KEY);
 				if (this.name == null) {
@@ -102,18 +136,42 @@ public class Depot extends ServerResource implements IDepot {
 					this.depotType = DepotType.fromString(((String) map.get(MapKeys.TYPE_KEY)).toUpperCase());
 				}
 				switch (this.depotType) {
-					case REMOTE:
-						this.address = (String) map.get(MapKeys.EXTRA_LC_KEY);
-						if (this.address == null) {
-							this.address = (String) map.get(MapKeys.ADDRESS_KEY);
+				case REMOTE:
+					this.address = (String) map.get(MapKeys.EXTRA_LC_KEY);
+					if (this.address == null) {
+						this.address = (String) map.get(MapKeys.ADDRESS_KEY);
+					}
+					break;
+				case SPEC:
+					this.suffix = (String) map.get(MapKeys.EXTRA_LC_KEY);
+					if (this.suffix == null) {
+						this.suffix = (String) map.get(MapKeys.SUFFIX_KEY);
+					}
+					// Get the spec maps
+					specMap = map.containsKey(MapKeys.SPEC_MAP_KEY + "0") ? new ViewMap<IMapEntry>() : null;
+					for (int i = 0;; i++) {
+						if (!map.containsKey(MapKeys.SPEC_MAP_KEY + i)) {
+							break;
+						} else if (map.get(MapKeys.SPEC_MAP_KEY + i) != null) {
+							try {
+								String path = (String)map.get(MapKeys.SPEC_MAP_KEY + i);
+								this.specMap.getEntryList().add(new MapEntry(i, path));
+							} catch (Throwable thr) {
+								Log.error("Unexpected exception in depot spec map-based constructor: "
+										+ thr.getLocalizedMessage());
+								Log.exception(thr);
+							}
 						}
-						break;
-					case SPEC:
-						this.suffix = (String) map.get(MapKeys.EXTRA_LC_KEY);
-						if (this.suffix == null) {
-							this.suffix = (String) map.get(MapKeys.SUFFIX_KEY);
-						}
-						break;
+					}
+					break;
+				case STREAM:
+					this.streamDepth = (String) map.get(MapKeys.DEPTH_LC_KEY);
+					if (this.streamDepth == null) {
+						this.streamDepth = (String) map.get(MapKeys.STREAM_DEPTH);
+					}
+					break;
+				default:
+					break;
 				}
 				this.map = (String) map.get(MapKeys.MAP_LC_KEY);
 				if (this.map == null) {
@@ -169,10 +227,22 @@ public class Depot extends ServerResource implements IDepot {
 	public void setSuffix(String suffix) {
 		this.suffix = suffix;
 	}
+	public String getStreamDepth() {
+		return streamDepth;
+	}
+	public void setStreamDepth(String streamDepth) {
+		this.streamDepth = streamDepth;
+	}
 	public String getMap() {
 		return map;
 	}
 	public void setMap(String map) {
 		this.map = map;
+	}
+	public ViewMap<IMapEntry> getSpecMap() {
+		return specMap;
+	}
+	public void setSpecMap(ViewMap<IMapEntry> specMap) {
+		this.specMap = specMap;
 	}
 }

@@ -111,7 +111,7 @@ public class AuthTicketsHelper extends AbstractAuthHelper {
 		AuthTicket foundTicket = null;
 		if (serverAddress != null) {
 			if (serverAddress.indexOf(':') == -1) {
-				serverAddress += "localhost:" + serverAddress;
+				serverAddress = "localhost:" + serverAddress;
 			}
 			for (AuthTicket ticket : getTickets(ticketsFilePath)) {
 				if (serverAddress.equals(ticket.getServerAddress())
@@ -207,6 +207,36 @@ public class AuthTicketsHelper extends AbstractAuthHelper {
 	 * Save the specified parameters as an entry into the specified tickets
 	 * file. This method will replace the current entry for the user name and
 	 * server address in the tickets file. If a current entry is not found then
+	 * the specified entry will be appended to the file.
+	 * 
+	 * @param userName
+	 *            - non-null user name
+	 * @param serverAddress
+	 *            - non-null server address
+	 * @param ticketValue
+	 *            - non-null ticket value
+	 * @param ticketsFilePath
+	 *            - non-null file path
+	 * @param lockTry
+	 *            - number of tries for locking
+	 * @param lockDelay
+	 *            - delay time (ms) for locking
+	 * @param lockWait
+	 *            - wait time (ms) for other process/thread to finish locking
+	 * @throws IOException
+	 */
+	public static void saveTicket(String userName, String serverAddress,
+			String ticketValue, String ticketsFilePath, int lockTry,
+			long lockDelay, long lockWait) throws IOException {
+		File file = ticketsFilePath != null ? new File(ticketsFilePath) : null;
+		saveTicket(userName, serverAddress, ticketValue, file,
+				lockTry, lockDelay, lockWait);
+	}
+
+	/**
+	 * Save the specified parameters as an entry into the specified tickets
+	 * file. This method will replace the current entry for the user name and
+	 * server address in the tickets file. If a current entry is not found then
 	 * the specified entry will be appended to the file. If the specified ticket
 	 * value is null then the current entry in the specified file will be
 	 * removed if found.
@@ -223,8 +253,39 @@ public class AuthTicketsHelper extends AbstractAuthHelper {
 	 */
 	public static synchronized void saveTicket(String userName, String serverAddress,
 			String ticketValue, File ticketsFile) throws IOException {
+		saveTicket(userName, serverAddress, ticketValue, ticketsFile, 0, 0, 0);
+	}
+
+	/**
+	 * Save the specified parameters as an entry into the specified tickets
+	 * file. This method will replace the current entry for the user name and
+	 * server address in the tickets file. If a current entry is not found then
+	 * the specified entry will be appended to the file. If the specified ticket
+	 * value is null then the current entry in the specified file will be
+	 * removed if found.
+	 * 
+	 * @param userName
+	 *            - non-null user name
+	 * @param serverAddress
+	 *            - non-null server address
+	 * @param ticketValue
+	 *            - possibly null ticket value
+	 * @param ticketsFile
+	 *            - non-null file
+	 * @param lockTry
+	 *            - number of tries for locking
+	 * @param lockDelay
+	 *            - delay time (ms) for locking
+	 * @param lockWait
+	 *            - wait time (ms) for other process/thread to finish locking
+	 * @throws IOException
+	 */
+	public static synchronized void saveTicket(String userName, String serverAddress,
+			String ticketValue, File ticketsFile, int lockTry, long lockDelay, long lockWait)
+					throws IOException {
 		if (ticketsFile != null) {
-			saveFileEntry(userName, serverAddress, ticketValue, ticketsFile);
+			saveFileEntry(userName, serverAddress, ticketValue, ticketsFile,
+					lockTry, lockDelay, lockWait);
 		} else {
 			saveMemoryEntry(userName, serverAddress, ticketValue, ticketsMap);
 		}

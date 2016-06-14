@@ -53,6 +53,7 @@ import com.perforce.p4java.impl.mapbased.rpc.sys.RpcPerforceFileType.RpcServerTy
 import com.perforce.p4java.impl.mapbased.rpc.sys.helper.AppleFileHelper;
 import com.perforce.p4java.impl.mapbased.rpc.sys.helper.SymbolicLinkHelper;
 import com.perforce.p4java.impl.mapbased.rpc.sys.helper.SysFileHelperBridge;
+import com.perforce.p4java.util.FilesHelper;
 
 /**
  * Implements the simpler lower-level file commands that typically
@@ -102,8 +103,8 @@ public class ClientSystemFileCommands {
 
 	// Keeping track of file data progress info
 	private String filePath = null;
-	private int fileSize = 0;
-	private int currentSize = 0;
+	private long fileSize = 0;
+	private long currentSize = 0;
 	
 	protected ClientSystemFileCommands(Properties props, RpcServer server) {
 		this.props = props;
@@ -255,7 +256,7 @@ public class ClientSystemFileCommands {
 
 		// Initialize file data info for progress indicator
 		filePath = path != null ? path : null;
-		fileSize = fileSizeStr != null ? new Integer(fileSizeStr) : 0;
+		fileSize = fileSizeStr != null ? new Long(fileSizeStr) : 0;
 		currentSize = 0;
 		
 		RpcPerforceFileType fileType = RpcPerforceFileType.decodeFromServerString(fileTypeStr);
@@ -325,7 +326,7 @@ public class ClientSystemFileCommands {
 				if (fileExists(targetFile, fstSymlink)) {
 					targetFile.delete();
 				} else {
-					if (!mkdirs(targetFile)) {
+					if (!FilesHelper.mkdirs(targetFile)) {
 						handler.setError(true);
 						cmdEnv.handleResult(
 								new RpcMessage(
@@ -377,7 +378,7 @@ public class ClientSystemFileCommands {
 				// See if we have the enclosing directories; if not,
 				// we have to try to create them...
 				
-				if (!mkdirs(targetFile)) {
+				if (!FilesHelper.mkdirs(targetFile)) {
 					handler.setError(true);
 					cmdEnv.handleResult(
 							new RpcMessage(
@@ -961,17 +962,27 @@ public class ClientSystemFileCommands {
 										+ tmpFile.getName());
 					}
 					
-					// Need to rename tmp file to target file and clean up.
-					if (!tmpFile.renameTo(targetFile)) {
-						// Total failure occurred - was unable to rename or even copy
-						// the file to its target.
-						
-						Log.error("Rename failed completely in closeFile(); tmp file: "
+					try {
+						// Need to rename tmp file to target file.
+						if (!tmpFile.renameTo(targetFile)) {
+							Log.warn("Rename file failed in closeFile(); so, now will try to copy the file...");
+							// If a straight up rename fails, then try
+							// copying the tmp file onto the target file.
+							// This rename problem seems to happen on Windows
+							// when file size exceeds 2GB.
+							// See job080437
+							FilesHelper.copy(tmpFile, targetFile);
+							Log.warn("Copy file succeeded in closeFile().");
+						}
+					} catch (IOException e) {
+						// Total failure occurred - was unable to rename
+						// or even copy the file to its target.
+						Log.error("Rename/copy failed completely in closeFile(); tmp file: "
 								+ tmpFile.getName()
 								+ "; target file: "
 								+ targetFile.getName());
 					}
-					
+
 				} else {
 					// Was written in-place; nothing to do here...
 					if (targetStream != null) {
@@ -1065,7 +1076,9 @@ public class ClientSystemFileCommands {
 				}
 				
 				if (targetFile.getFileType().isExecutable()) {
-					fileCommands.setExecutable(targetFile.getPath(), true, true);
+					// See job075630
+					// Set exec bit for Owner, Group and World.
+					fileCommands.setExecutable(targetFile.getPath(), true, false);
 				}
 			} finally {
 				try {
@@ -1173,7 +1186,7 @@ public class ClientSystemFileCommands {
 		
 		// May need to stitch up target directories:
 		
-		if (!mkdirs(toFile)) {
+		if (!FilesHelper.mkdirs(toFile)) {
 			handler.setError(true);
 			cmdEnv.handleResult(
 					new RpcMessage(
@@ -2027,26 +2040,6 @@ public class ClientSystemFileCommands {
 		return map;
 	}
 
-	/**
-	 * Create all directories, including any necessary but nonexistent parent
-	 * directories.
-	 */
-	private boolean mkdirs(RpcPerforceFile targetFile) {
-		// See if we have the enclosing directories; if not,
-		// we have to try to create them...
-		
-		String parent = targetFile.getParent();
-		
-		if (parent != null) {
-			File parentDir = new File(parent);
-			
-			if (!parentDir.exists()) {
-				return parentDir.mkdirs();
-			}
-		}
-		return true;
-	}
-	
     /**
      * Recursively get all files in a directory.<p>
      * 

@@ -303,7 +303,7 @@ public class Stream extends StreamSummary implements IStream {
 				// The first part of the stream path should be the type
 				int idx = viewString.indexOf(" ");
 				if (idx != -1) {
-					this.pathType = PathType.fromString(viewString.substring(0, idx).toUpperCase());
+					this.pathType = PathType.fromString(viewString.substring(0, idx));
 					// Remove the type part from the original path
 					viewString = viewString.substring(idx + 1);
 				}
@@ -322,7 +322,7 @@ public class Stream extends StreamSummary implements IStream {
 		}
 
 		/**
-		 * @see com.perforce.p4java.core.IStreamViewMapping#setPathType(String)
+		 * @see com.perforce.p4java.core.IStreamViewMapping#setPathType(java.lang.String)
 		 */
 		public void setPathType(PathType pathType) {
 			this.pathType = pathType;
@@ -336,7 +336,7 @@ public class Stream extends StreamSummary implements IStream {
 		}
 
 		/**
-		 * @see com.perforce.p4java.core.IStreamViewMapping#setViewPath(String)
+		 * @see com.perforce.p4java.core.IStreamViewMapping#setViewPath(java.lang.String)
 		 */
 		public void setViewPath(String viewPath) {
 			this.left = viewPath;
@@ -350,7 +350,7 @@ public class Stream extends StreamSummary implements IStream {
 		}
 
 		/**
-		 * @see com.perforce.p4java.core.IStreamViewMapping#setDepotPath(String)
+		 * @see com.perforce.p4java.core.IStreamViewMapping#setDepotPath(java.lang.String)
 		 */
 		public void setDepotPath(String depotPath) {
 			this.right = depotPath;
@@ -394,7 +394,7 @@ public class Stream extends StreamSummary implements IStream {
 		}
 
 		/**
-		 * @see com.perforce.p4java.core.IStreamRemappedMapping#setLeftRemapPath(String)
+		 * @see com.perforce.p4java.core.IStreamRemappedMapping#setLeftRemapPath(java.lang.String)
 		 */
 		public void setLeftRemapPath(String leftRemapPath) {
 			this.left = leftRemapPath;
@@ -408,7 +408,7 @@ public class Stream extends StreamSummary implements IStream {
 		}
 
 		/**
-		 * @see com.perforce.p4java.core.IStreamRemappedMapping#setRightRemapPath(String)
+		 * @see com.perforce.p4java.core.IStreamRemappedMapping#setRightRemapPath(java.lang.String)
 		 */
 		public void setRightRemapPath(String rightRemapPath) {
 			this.right = rightRemapPath;
@@ -445,7 +445,7 @@ public class Stream extends StreamSummary implements IStream {
 		}
 
 		/**
-		 * @see com.perforce.p4java.core.IStreamIgnoredMapping#setIgnorePath(String)
+		 * @see com.perforce.p4java.core.IStreamIgnoredMapping#setIgnorePath(java.lang.String)
 		 */
 		public void setIgnorePath(String ignorePath) {
 			this.left = ignorePath;
@@ -523,7 +523,7 @@ public class Stream extends StreamSummary implements IStream {
 						// The first part of the stream path should be the type
 						int idx = path.indexOf(" ");
 						if (idx != -1) {
-							type = PathType.fromString(path.substring(0, idx).toUpperCase());
+							type = PathType.fromString(path.substring(0, idx));
 							// Remove the type part from the original path
 							path = path.substring(idx + 1);
 						}
@@ -677,7 +677,7 @@ public class Stream extends StreamSummary implements IStream {
 					this.extraTags = refreshedStream.getExtraTags();
 				}
 			} catch (P4JavaException exc) {
-				throw new RequestException(exc);
+				throw new RequestException(exc.getMessage(), exc);
 			}
 		}
 		updateFlags();
@@ -777,7 +777,7 @@ public class Stream extends StreamSummary implements IStream {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IStream#setExtraTags(List)
+	 * @see com.perforce.p4java.core.IStream#setExtraTags(java.util.List)
 	 */
 	public void setExtraTags(List<IExtraTag> extraTags) {
 		this.extraTags = extraTags;

@@ -96,6 +96,8 @@ public class ServerFactory {
 		implMap.put(Protocol.P4JRPCSSL, OneShotServerImpl.class);
 		implMap.put(Protocol.P4JRPCNTS, NtsServerImpl.class);
 		implMap.put(Protocol.P4JRPCNTSSSL, NtsServerImpl.class);
+		implMap.put(Protocol.P4JRSH, OneShotServerImpl.class);
+		implMap.put(Protocol.P4JRSHNTS, NtsServerImpl.class);
 		Log.info("P4Java server factory loaded; version: " + Metadata.getP4JVersionString()
 				+ "; date: " + Metadata.getP4JDateString());
 		Log.info("Using default charset: " + CharsetDefs.DEFAULT
@@ -315,7 +317,8 @@ public class ServerFactory {
 			Log.info("Using Server implementation class: " + serverImplClass.getCanonicalName());
 			
 			IServerControl serverImpl = (IServerControl) serverImplClass.newInstance();
-			serverImpl.init(serverAddress.getHost(), serverAddress.getPort(), props, opts, serverAddress.getProtocol().isSecure());
+			serverImpl.init(serverAddress.getHost(), serverAddress.getPort(), props, opts,
+					serverAddress.getProtocol().isSecure(), serverAddress.getRsh());
 			return (IOptionsServer) serverImpl;	// This part may also cause a cast exception...	
 		} catch (ClassNotFoundException cnfe) {
 			Log.error("Unable to instantiate Perforce server implementation class '"

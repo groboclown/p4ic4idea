@@ -336,6 +336,11 @@ public class ClientSendFile {
 						// Read the target of the symlink
 						if (SymbolicLinkHelper.isSymbolicLinkCapable()) {
 							symbolicLinkTarget = SymbolicLinkHelper.readSymbolicLink(clientPath);
+							// Appending "\n" for depot archive symlink file storage
+							// See job078811
+							if (symbolicLinkTarget != null) {
+								symbolicLinkTarget += "\n";
+							}
 						}
 						
 						if (symbolicLinkTarget == null) {
@@ -361,7 +366,7 @@ public class ClientSendFile {
 					} else if (RpcPerforceFileType.FST_UNICODE == fileType) {
 						charset = rpcConnection.getClientCharset();
 					}
-					if (!rpcConnection.isUnicodeServer() || charset == null || charset.equals(CharsetDefs.UTF8)) {
+					if ((!rpcConnection.isUnicodeServer() && charset != CharsetDefs.UTF16) || charset == null || charset.equals(CharsetDefs.UTF8)) {
 						inStream = symbolicLinkTarget != null ? new ByteArrayInputStream(
 								symbolicLinkTarget.getBytes())
 								: new RpcInputStream(file);

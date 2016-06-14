@@ -14,8 +14,8 @@ import com.perforce.p4java.server.IServer;
  */
 public class TrustOptions extends Options {
 	
-	/** Options: -f, -n, -y. */
-	public static final String OPTIONS_SPECS = "b:f b:n b:y";
+	/** Options: -f, -n, -y, -r. */
+	public static final String OPTIONS_SPECS = "b:f b:n b:y b:r";
 
 	/**
 	 * Forcibly install fingerprint even if differs. Corresponds to the -f flag.
@@ -31,6 +31,11 @@ public class TrustOptions extends Options {
 	 * Like no option but prompting automatically accepted. Corresponds to the -y flag.
 	 */
 	protected boolean autoAccept = false;
+
+	/**
+	 * Specifies that a replacement fingerprint is to be affected. Corresponds to the -r flag.
+	 */
+	protected boolean replacement = false;
 
 	/**
 	 * Default constructor.
@@ -55,7 +60,7 @@ public class TrustOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 *
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public TrustOptions(String... options) {
 		super(options);
@@ -83,7 +88,8 @@ public class TrustOptions extends Options {
 		this.optionList = this.processFields(OPTIONS_SPECS,
 								this.isForce(),
 								this.isAutoRefuse(),
-								this.isAutoAccept());
+								this.isAutoAccept(),
+								this.isReplacement());
 
 		return this.optionList;
 	}
@@ -145,6 +151,26 @@ public class TrustOptions extends Options {
 	 */
 	public TrustOptions setAutoAccept(boolean autoAccept) {
 		this.autoAccept = autoAccept;
+		return this;
+	}
+
+	/**
+	 * Checks if a replacement fingerprint is to be affected.
+	 *
+	 * @return true, if a replacement fingerprint is to be affected
+	 */
+	public boolean isReplacement() {
+		return replacement;
+	}
+
+	/**
+	 * Sets true/false that a replacement fingerprint is to be affected
+	 *
+	 * @param replacement true/false that a replacement fingerprint is to be affected.
+	 * @return the trust options
+	 */
+	public TrustOptions setReplacement(boolean replacement) {
+		this.replacement = replacement;
 		return this;
 	}
 }

@@ -2,7 +2,9 @@ package com.perforce.p4java;
 
 import com.perforce.p4java.exception.ClientError;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -14,6 +16,9 @@ import java.nio.charset.CodingErrorAction;
  * P4Java charset converter class
  */
 public class CharsetConverter {
+
+    // Encode this to get byte order mark
+    final String bomChar = "\uFEFF";
 
 	private CharsetDecoder decoder;
 	private CharsetEncoder encoder;
@@ -112,7 +117,22 @@ public class CharsetConverter {
 			// Encode back to byte buffer
 			converted = encoder.encode(from);
 
+			// UTF-16
 			if (checkBOM) {
+				// Endianness (byte order) of client OS
+				// Java default to BE byte order, so we need to handle if native byte order is LE
+				if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
+					try {
+					    // Append BOM char and get the bytes in UTF-16LE encoding (manually add BOM)
+						byte[] bytes = (bomChar + from.rewind().toString()).getBytes("UTF-16LE");
+						converted = ByteBuffer.wrap(bytes);
+						converted.order(ByteOrder.LITTLE_ENDIAN);
+					} catch (UnsupportedEncodingException uee) {
+						Log.exception(uee);
+						throw new ClientError("Translation of file content failed", uee);
+					}
+				}
+				
 				// Ignore BOM if UTF-16 and not first call to convert
 				if (ignoreBOM) {
 					int limit = converted.limit();

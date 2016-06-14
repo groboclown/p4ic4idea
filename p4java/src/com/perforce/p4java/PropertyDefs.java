@@ -79,7 +79,12 @@ public class PropertyDefs {
 	 * Default value to be used for the unset client name (see the comments for
 	 * CLIENT_UNSET_NAME_KEY, above) when no associated property is set.
 	 */
-	public static final String CLIENT_UNSET_NAME_DEFAULT = "noclient";
+	// In order to prevent default clients from getting created the server team
+	// is looking to make ____CLIENT_UNSET____ a reserved workspace name. That
+	// way all of our clients can use the same fake client name and know that it
+	// will never be created accidentally.
+	// See job078085
+	public static final String CLIENT_UNSET_NAME_DEFAULT = "_____CLIENT_UNSET_____";
 	
 	/**
 	 * Property key for passing in a suitable user name to be used when we
@@ -383,4 +388,57 @@ public class PropertyDefs {
 	 */
 	public static final String UNICODE_MAPPING = Metadata.P4JAVA_PROPS_KEY_PREFIX
 													+ UNICODE_MAPPING_SHORT_FORM;
+
+	/**
+	 * If this property is set, attempt to use this value as the number of tries
+	 * for creating a auth lock file.
+	 * 
+	 * @since 2015.2
+	 */
+	public static final String AUTH_FILE_LOCK_TRY_KEY_SHORT_FORM = "authFileLockTry";
+	
+	/**
+	 * If this property is set, attempt to use this value as the number of tries
+	 * for creating a auth lock file.
+	 * 
+	 * @since 2015.2
+	 */
+	public static final String AUTH_FILE_LOCK_TRY_KEY = Metadata.P4JAVA_PROPS_KEY_PREFIX
+													+ AUTH_FILE_LOCK_TRY_KEY_SHORT_FORM;
+
+	/**
+	 * If this property is set, attempt to use this value as the number of milliseconds
+	 * delay for deciding if the auth lock file is new or old based on file time stamp.
+	 * 
+	 * @since 2015.2
+	 */
+	public static final String AUTH_FILE_LOCK_DELAY_KEY_SHORT_FORM = "authFileLockDelay";
+	
+	/**
+	 * If this property is set, attempt to use this value as the number of milliseconds
+	 * delay for deciding if the auth lock file is new or old based on file time stamp.
+	 * 
+	 * @since 2015.2
+	 */
+	public static final String AUTH_FILE_LOCK_DELAY_KEY = Metadata.P4JAVA_PROPS_KEY_PREFIX
+													+ AUTH_FILE_LOCK_DELAY_KEY_SHORT_FORM;
+
+	/**
+	 * If this property is set, attempt to use this value as the number of milliseconds
+	 * the current thread should wait (pause execution) for the other thread/process
+	 * to finish handling the auth lock file.
+	 * 
+	 * @since 2015.2
+	 */
+	public static final String AUTH_FILE_LOCK_WAIT_KEY_SHORT_FORM = "authFileLockWait";
+	
+	/**
+	 * If this property is set, attempt to use this value as the number of milliseconds
+	 * the current thread should wait (pause execution) for the other thread/process
+	 * to finish handling the auth lock file.
+	 * 
+	 * @since 2015.2
+	 */
+	public static final String AUTH_FILE_LOCK_WAIT_KEY = Metadata.P4JAVA_PROPS_KEY_PREFIX
+													+ AUTH_FILE_LOCK_WAIT_KEY_SHORT_FORM;
 }

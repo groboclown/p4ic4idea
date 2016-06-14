@@ -389,7 +389,20 @@ public class InputMapper {
 			if (depotSpec.getSuffix() != null) {
 				depotMap.put(MapKeys.SUFFIX_KEY, depotSpec.getSuffix());
 			}
+			if (depotSpec.getStreamDepth() != null) {
+				depotMap.put(MapKeys.STREAM_DEPTH, depotSpec.getStreamDepth());
+			}
 			depotMap.put(MapKeys.MAP_KEY, depotSpec.getMap());
+
+			ViewMap<IMapEntry> specMap = depotSpec.getSpecMap();
+			if (specMap != null) {
+				for (IMapEntry mapping : specMap.getEntryList()) {
+					if (mapping != null) {
+						depotMap.put(MapKeys.SPEC_MAP_KEY + mapping.getOrder(),
+								mapping.toString(" ", true));
+					}
+				}
+			}
 		}
 		
 		return depotMap;
@@ -406,6 +419,7 @@ public class InputMapper {
 		Map<String, Object> protectionsMap = new HashMap<String, Object>();
 
 		if (protectionsTable != null && protectionsTable.getEntries() != null) {
+			int count = 0;
 			for (IProtectionEntry entry : protectionsTable.getEntries()) {
 				StringBuilder line = new StringBuilder();
 				if (entry.getMode() != null) {
@@ -421,7 +435,9 @@ public class InputMapper {
 				if (entry.getPath() != null) {
 					line.append(" ").append(entry.getPath());
 				}
-				protectionsMap.put(MapKeys.PROTECTIONS_KEY + entry.getOrder(), line.toString());
+				// Using the innate ordering (count) of the Java List, instead of the entry.getOrder()
+				// See job070733
+				protectionsMap.put(MapKeys.PROTECTIONS_KEY + count++, line.toString());
 			}
 		}
 		
@@ -468,7 +484,7 @@ public class InputMapper {
 				for (IStreamViewMapping mapping : viewMap.getEntryList()) {
 					if (mapping != null) {
 						streamMap.put(MapKeys.PATHS_KEY + mapping.getOrder(),
-								mapping.getPathType().toString().toLowerCase(Locale.ENGLISH) + " " +  mapping.toString(" ", true));
+								mapping.getPathType().getValue() + " " +  mapping.toString(" ", true));
 					}
 				}
 			}

@@ -560,7 +560,8 @@ public class ClientUserInteraction {
 			if( ticketStr == null) {
 				ticketStr = MapKeys.EMPTY;		// which should fail on the server...
 			}
-						
+			
+			String daddr = rpcConnection.getServerIpPort();
 			token = (String) resultsMap.get(RpcFunctionMapKey.TOKEN);
 
 			digester = new MD5Digester();
@@ -569,8 +570,20 @@ public class ClientUserInteraction {
 			digester.update(token.getBytes(CharsetDefs.UTF8.name()));
 			digester.update(ticketStr.getBytes());
 			resp = digester.digestAs32ByteHex();
-			
+
 			respMap = new HashMap<String, Object>();
+			
+			// Add 'daddr' for Perforce server configurable 'net.mimcheck=5' (or >= 4)
+			// See job081080
+			if (daddr != null) {
+				digester.reset();
+				digester.update(resp.getBytes());
+				digester.update(daddr.getBytes());
+				resp = digester.digestAs32ByteHex();
+
+				respMap.put(RpcFunctionMapKey.DADDR, daddr);
+			}
+
 			respMap.put(RpcFunctionMapKey.TOKEN, resp);
 			
 			RpcPacket respPacket = RpcPacket.constructRpcPacket(

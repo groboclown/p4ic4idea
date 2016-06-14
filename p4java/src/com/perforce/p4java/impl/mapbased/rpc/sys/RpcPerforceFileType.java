@@ -38,7 +38,7 @@ import com.perforce.p4java.impl.mapbased.server.Server;
  * various client function classes.<p>
  * 
  * A file's type is stored in the server for all known files,
- * (see e.g. "p4 help filemap" and "p4 help filetypes"),
+ * (see e.g. "p4 help typemap" and "p4 help filetypes"),
  * and in most cases we simply accept what we're given if we
  * can cope with that type (there are some types we don't
  * process at all here -- see below). What sort of file types
@@ -69,7 +69,7 @@ import com.perforce.p4java.impl.mapbased.server.Server;
  * 
  *
  */
-
+// See p4/client/clientservice.cc
 public enum RpcPerforceFileType {
 	
 	// Basic file types:
@@ -86,8 +86,9 @@ public enum RpcPerforceFileType {
 	FST_EMPTY,		// file is empty
 	FST_UNICODE,	// file is unicode (utf-8?)
 	FST_GUNZIP,		// stream is gzip
+	FST_UTF8,		// stream is utf8
 	FST_UTF16,		// stream is utf8 convert to utf16
-	
+
 	// Derived file types (i.e. modified basic types):
 	// (forbidden types are given below for completeness;
 	// these are usually weeded out or detected elsewhere)
@@ -106,6 +107,7 @@ public enum RpcPerforceFileType {
 	FST_XAPPLETEXT,	// forbidden
 	FST_XUNICODE,	// executable unicode text
 	FST_XRTEXT,		// executable raw text (also forbidden)
+	FST_XUTF8,		// executable utf8
 	FST_XUTF16,		// executable utf8 convert to utf16
 	FST_XGUNZIP,	// executable in gkzip form
 	FST_RCS			// RCS temporary file: raw text, sync on close
@@ -162,7 +164,8 @@ public enum RpcPerforceFileType {
 	
 	// Symbolic link capable?
 	private static CtAction symlinkAction = SymbolicLinkHelper.isSymbolicLinkCapable() ? CtAction.OK : CtAction.CANT;
-	
+
+	// See p4/client/clientservice.cc
 	private static ActionTableElement[] actionTable = {
 		new ActionTableElement(
 				RpcPerforceFileType.FST_TEXT, 0, CtAction.OK, CtAction.OK, "text", "text" ),
@@ -200,6 +203,10 @@ public enum RpcPerforceFileType {
 				RpcPerforceFileType.FST_UTF16, 6, CtAction.SUBST, CtAction.OK, "utf16", "binary" ),
 		new ActionTableElement(
 				RpcPerforceFileType.FST_XUTF16, 6, CtAction.SUBST, CtAction.OK, "xutf16", "binary" ),
+		new ActionTableElement(
+				RpcPerforceFileType.FST_UTF8, 7, CtAction.SUBST, CtAction.OK, "utf8", "text" ),
+		new ActionTableElement(
+				RpcPerforceFileType.FST_XUTF8, 7, CtAction.SUBST, CtAction.OK, "xutf8", "text" ),
 		new ActionTableElement(
 				RpcPerforceFileType.FST_TEXT, 0, CtAction.OK, CtAction.OK, "text", "text" )
 	};
@@ -270,6 +277,8 @@ public enum RpcPerforceFileType {
 			case 0x00D: return FST_APPLEFILE;
 			case 0x00E: return FST_XAPPLETEXT;
 			case 0x00F: return FST_XAPPLEFILE;
+			case 0x014: return FST_UTF8;
+			case 0x016: return FST_XUTF8;
 			case 0x018: return FST_UTF16;
 			case 0x01A: return FST_XUTF16;
 	
@@ -293,9 +302,12 @@ public enum RpcPerforceFileType {
 			case FST_XAPPLEFILE:
 			case FST_XBINARY:
 			case FST_XUNICODE:
+			case FST_XUTF8:
 			case FST_XUTF16:
 			case FST_XGUNZIP:
 				return true;
+			default:
+				break;
 		}
 		
 		return false;
@@ -574,10 +586,23 @@ public enum RpcPerforceFileType {
 				return FST_CBINARY;
 			}
 			
+			// Infer unicode-encoded file type
+			RpcPerforceFileType rpcPerforceFileType = inferUnicodeFileType(bytes, bytesRead, clientCharset);
+			
+			// Is it utf16
+			if (rpcPerforceFileType == FST_UTF16) {
+				return (isExecutable? FST_XUTF16 : FST_UTF16);
+			}
+			
+			// Is it utf8
+			if (rpcPerforceFileType == FST_UTF8) {
+				return (isExecutable? FST_XUTF8 : FST_UTF8);
+			}
+
 			// Is it recognizably some sort of Unicode encoding? If so, and we're talking
 			// to a Unicode-enabled server, return a unicode code.
-			
-			if (isUnicodeServer && isProbablyUnicode(bytes, bytesRead, clientCharset)) {
+			if (isUnicodeServer && (rpcPerforceFileType == FST_UNICODE
+					|| isProbablyUnicode(bytes, bytesRead, clientCharset))) {
 				return (isExecutable? FST_XUNICODE : FST_UNICODE);
 			}
 			
@@ -611,29 +636,37 @@ public enum RpcPerforceFileType {
 	 */
 	private static boolean isProbablyUnicode(byte[] bytes, int bytesRead, Charset clientCharset) {
 		if ((bytes != null) && (bytesRead >= 2)) {
-			
-			// First check for Unicode BOMs (see e.g. http://unicode.org/faq/utf_bom.html):
-			
-			if ((bytes.length >= 3) && (bytes[0] == (byte) 0xEF) && (bytes[1] == (byte) 0xBB) && (bytes[2] == (byte) 0xBF)) {
-				return true; // UTF-8
-			} else if ((bytes.length >= 2) && (bytes[0] == (byte) 0xFF) && (bytes[1] == (byte) 0xFE)) {
-				return true; // UTF-16-LE, UTF-32-LE
-			} else if ((bytes.length >= 4) && (bytes[0] == (byte) 0xFE) && (bytes[1] == (byte) 0xFF)
-					&& (bytes[2] == (byte) 0x00) && (bytes[3] == (byte) 0x00)) {
-				return true; // UTF-32-LE
-			} else if ((bytes.length >= 4) && (bytes[0] == (byte) 0x00) && (bytes[1] == (byte) 0x00)
-					&& (bytes[2] == (byte) 0xFE) && (bytes[3] == (byte) 0xFF)) {
-				return true; // UTF-32-BE
-			}
-			
-			// No BOM. Use heuristics...
-			
+			// Use heuristics...
 			return UnicodeHelper.inferCharset(bytes, bytesRead, clientCharset);
 		}
 		
 		return false;
 	}
 	
+	/**
+	 * Return file type IFF the contents seem to be Unicode-encoded.
+	 */
+	private static RpcPerforceFileType inferUnicodeFileType(byte[] bytes, int bytesRead, Charset clientCharset) {
+		if ((bytes != null) && (bytesRead >= 2)) {
+			// First check for Unicode BOMs (see e.g. http://unicode.org/faq/utf_bom.html):
+			if ((bytes.length >= 4) && (bytes[0] == (byte) 0xFE) && (bytes[1] == (byte) 0xFF)
+					&& (bytes[2] == (byte) 0x00) && (bytes[3] == (byte) 0x00)) {
+				return FST_UNICODE; // UTF-32-LE
+			} else if ((bytes.length >= 4) && (bytes[0] == (byte) 0x00) && (bytes[1] == (byte) 0x00)
+					&& (bytes[2] == (byte) 0xFE) && (bytes[3] == (byte) 0xFF)) {
+				return FST_UNICODE; // UTF-32-BE
+			} else if ((bytes.length >= 3) && (bytes[0] == (byte) 0xEF) && (bytes[1] == (byte) 0xBB) && (bytes[2] == (byte) 0xBF)) {
+				return FST_UNICODE; // UTF-8
+			} else if ((bytes.length >= 2) && (bytes[0] == (byte) 0xFF) && (bytes[1] == (byte) 0xFE)) {
+				return FST_UTF16; // UTF-16-LE
+			} else if ((bytes.length >= 2) && (bytes[0] == (byte) 0xFE) && (bytes[1] == (byte) 0xFF)) {
+				return FST_UTF16; // UTF-16-BE
+			}
+		}
+		
+		return FST_CANTTELL;
+	}
+
 	/**
 	 * Return true IFF the contents seem to be a PDF.
 	 */

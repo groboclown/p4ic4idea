@@ -5,9 +5,7 @@ package com.perforce.p4java.server;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -19,6 +17,7 @@ import java.util.Map;
 import com.perforce.p4java.Log;
 import com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper;
 import com.perforce.p4java.impl.mapbased.rpc.sys.helper.SysFileHelperBridge;
+import com.perforce.p4java.util.FilesHelper;
 
 /**
  * This super class is designed to lookup auth entries from file or memory.
@@ -30,6 +29,9 @@ public abstract class AbstractAuthHelper {
 	protected static final String USER_NAME_MAP_KEY = "userName";
 	protected static final String AUTH_VALUE_MAP_KEY = "authValue";
 
+	public static final int DEFAULT_LOCK_TRY = 100; // 100 tries
+	public static final long DEFAULT_LOCK_DELAY = 300000; // 300 seconds delay time
+	public static final long DEFAULT_LOCK_WAIT = 1000; // 1 second wait time
 	
 	/**
 	 * Get the auth entry in the specified auth map that matches the specified
@@ -43,7 +45,7 @@ public abstract class AbstractAuthHelper {
 		Map<String, String> entryMap = null;
 		if (userName != null && serverAddress != null && authMap != null) {
 			if (serverAddress.lastIndexOf(':') == -1) {
-				serverAddress += "localhost:" + serverAddress;
+				serverAddress = "localhost:" + serverAddress;
 			}
 			String prefix = serverAddress + "=" + userName;
 			if (authMap.containsKey(prefix)) {
@@ -111,7 +113,7 @@ public abstract class AbstractAuthHelper {
 			String authValue, Map<String, String> authMap) {
 		if (userName != null && serverAddress != null && authMap != null) {
 			if (serverAddress.lastIndexOf(':') == -1) {
-				serverAddress += "localhost:" + serverAddress;
+				serverAddress = "localhost:" + serverAddress;
 			}
 			String prefix = serverAddress + "=" + userName;
 			if (authValue != null) { // save entry
@@ -187,10 +189,20 @@ public abstract class AbstractAuthHelper {
 	 * @throws IOException
 	 */
 	protected static synchronized void saveFileEntry(String userName, String serverAddress,
-			String authValue, File authFile) throws IOException {
+			String authValue, File authFile, int lockTry, long lockDelay, long lockWait) throws IOException {
 		if (userName != null && serverAddress != null && authFile != null) {
+			// Create parent directories if necessary
+			if (!authFile.exists()) {
+				FilesHelper.mkdirs(authFile);
+			}
+			// Create lock file
+			File lockFile = new File(authFile.getAbsolutePath() + ".lck");
+			if (!createLockFile(lockFile, lockTry, lockDelay, lockWait)) {
+				return;
+			}
+			
 			if (serverAddress.lastIndexOf(':') == -1) {
-				serverAddress += "localhost:" + serverAddress;
+				serverAddress = "localhost:" + serverAddress;
 			}
 			String prefix = serverAddress + "=" + userName + ":";
 			String value = null;
@@ -252,7 +264,7 @@ public abstract class AbstractAuthHelper {
 						// If a straight up rename fails then try to copy the new
 						// auth file into the current p4 auth file. This seems to
 						// happen on windows.
-						renamed = copy(tempAuth, authFile);
+						renamed = FilesHelper.copy(tempAuth, authFile);
 					}
 				} finally {
 					if (tempAuth.exists()) {
@@ -260,6 +272,16 @@ public abstract class AbstractAuthHelper {
 							Log.warn("Unable to delete temp auth file '"
 									+ tempAuth.getPath()
 									+ "' in AbstractAuthHelper.saveFileEntry() -- unknown cause");
+						}
+					}
+				}
+				// Delete lock file
+				if (lockFile != null) {
+					if (lockFile.exists()) {
+						if (!lockFile.delete()) {
+							lockFile.deleteOnExit();
+							Log.error("Error deleting auth lock file: "
+									+ lockFile.getAbsolutePath());
 						}
 					}
 				}
@@ -275,49 +297,6 @@ public abstract class AbstractAuthHelper {
 			}
 
 		}
-	}
-
-	private static boolean copy(File source, File destination)
-			throws IOException {
-		boolean copied = false;
-		if (source != null && destination != null) {
-		    FileInputStream reader = null;
-		    FileOutputStream writer = null;
-			try {
-				ISystemFileCommandsHelper helper = ServerFactory.getRpcFileSystemHelper();
-				if (helper == null) {
-					helper = SysFileHelperBridge.getSysFileCommands();
-				}
-				if (helper != null) {
-					helper.setWritable(destination.getAbsolutePath(), true);
-				}
-				reader = new FileInputStream(source);
-				writer = new FileOutputStream(destination);
-				long targetCount = reader.getChannel().size();
-				long transferCount = writer.getChannel().transferFrom(reader.getChannel(), 0, targetCount);
-				copied = transferCount == targetCount;
-			} finally {
-				if (reader != null) {
-					try {
-						reader.close();
-					} catch (IOException e) {
-						Log.warn("reader close error in AbstractAuthHelper.copy(): "
-								+ e.getLocalizedMessage());
-						Log.exception(e);
-					}
-				}
-				if (writer != null) {
-					try {
-						writer.close();
-					} catch (IOException e) {
-						Log.warn("writer close error in AbstractAuthHelper.copy(): "
-								+ e.getLocalizedMessage());
-						Log.exception(e);
-					}
-				}
-			}
-		}
-		return copied;
 	}
 
 	private static void updateReadBit(File file) throws IOException {
@@ -337,5 +316,50 @@ public abstract class AbstractAuthHelper {
 				helper.setOwnerReadOnly(file.getAbsolutePath());
 			}
 		}
+	}
+	
+	private static boolean createLockFile(File lockFile, int lockTry, long lockDelay, long lockWait) {
+		lockTry = lockTry < 1 ? DEFAULT_LOCK_TRY : lockTry;
+		lockDelay = lockDelay < 1 ? DEFAULT_LOCK_DELAY : lockDelay;
+		lockWait = lockWait < 1 ? DEFAULT_LOCK_WAIT : lockWait;
+		
+		if (lockFile != null) {
+			while (lockTry-- > 0) {
+				// Lock file exists
+				if (lockFile.lastModified() > 0) {
+					// Delete "old" lock file
+					if ((System.currentTimeMillis() - lockFile.lastModified()) > lockDelay) {
+						if (!lockFile.delete()) {
+							lockFile.deleteOnExit();
+							Log.error("Error deleting auth lock file: "
+									+ lockFile.getAbsolutePath());
+							return false;
+						}
+					} else { // Lock file is "new", so wait for other process/thread to finish with it
+						try {
+							Thread.sleep(lockWait);
+						} catch (InterruptedException e) {
+							Log.error("Error waiting for auth lock file: "
+									+ e.getLocalizedMessage());
+						}
+					}
+				} else { // Lock file doesn't exist, so create it
+					try {
+						if (lockFile.createNewFile()) {
+							return true;
+						}
+					} catch (IOException e) {
+						Log.error("Error creating new auth lock file: "
+								+ lockFile.getAbsolutePath() + ": "
+								+ e.getLocalizedMessage());
+					}
+				}
+			}
+			// Too many retries
+			Log.error("Error creating new auth lock file after retries: "
+					+ lockFile.getAbsolutePath());
+		}
+		
+		return false;
 	}
 }

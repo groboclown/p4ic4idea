@@ -12,14 +12,14 @@ import com.perforce.p4java.server.IServer;
 /**
  * IClient reconcileFiles method Options definitions.
  * 
- * @see com.perforce.p4java.client.IClient#addFiles(List, com.perforce.p4java.option.client.ReconcileFilesOptions)
+ * @see com.perforce.p4java.client.IClient#addFiles(java.util.List, com.perforce.p4java.option.client.ReconcileFilesOptions) 
  */
 public class ReconcileFilesOptions extends Options {
 	
 	/**
-	 * Options: -n, -c[changelist], -e, -a, -f, -I, -d, -l
+	 * Options: -n, -c[changelist], -e, -a, -f, -I, -d, -l, -m, -w
 	 */
-	public static final String OPTIONS_SPECS = "b:n i:c:gtz b:e b:a b:f b:I b:d b:l";
+	public static final String OPTIONS_SPECS = "b:n i:c:gtz b:e b:a b:f b:I b:d b:l b:m b:w";
 	
 	/**
 	 * If true, don't actually do the add, just return the files that
@@ -81,6 +81,24 @@ public class ReconcileFilesOptions extends Options {
 	protected boolean localSyntax = false;
 
 	/**
+	 * If true, used in conjunction with '-e' can be used to minimize costly
+	 * digest computation on the client by checking file modification times
+	 * before checking digests to determine if files have been modified outside
+	 * of Perforce. Corresponds to the '-m' flag.
+	 */
+	protected boolean checkModTime = false;
+
+	/**
+	 * If true, forces the workspace files to be updated to match the depot
+	 * rather than opening them so that the depot can be updated to match the
+	 * workspace. Files that are not under source control will be deleted, and
+	 * modified or deleted files will be refreshed. Note that this operation
+	 * will result in the loss of any changes made to unopened files. This
+	 * option requires read permission. Corresponds to the '-w' flag.
+	 */
+	protected boolean updateWorkspace = false;
+
+	/**
 	 * Default constructor.
 	 */
 	public ReconcileFilesOptions() {
@@ -103,7 +121,7 @@ public class ReconcileFilesOptions extends Options {
 	 * string's setting. Do not use this constructor unless you know what you're
 	 * doing and / or you do not also use the field getters and setters.</b>
 	 * 
-	 * @see com.perforce.p4java.option.Options#Options(String...)
+	 * @see com.perforce.p4java.option.Options#Options(java.lang.String...)
 	 */
 	public ReconcileFilesOptions(String... options) {
 		super(options);
@@ -138,7 +156,9 @@ public class ReconcileFilesOptions extends Options {
 								this.useWildcards,
 								this.noIgnoreChecking,
 								this.removed,
-								this.localSyntax);
+								this.localSyntax,
+								this.checkModTime,
+								this.updateWorkspace);
 		return this.optionList;
 	}
 
@@ -211,6 +231,24 @@ public class ReconcileFilesOptions extends Options {
 	
 	public ReconcileFilesOptions setLocalSyntax(boolean localSyntax) {
 		this.localSyntax = localSyntax;
+		return this;
+	}
+
+	public boolean isCheckModTime() {
+		return checkModTime;
+	}
+	
+	public ReconcileFilesOptions setCheckModTime(boolean checkModTime) {
+		this.checkModTime = checkModTime;
+		return this;
+	}
+
+	public boolean isUpdateWorkspace() {
+		return updateWorkspace;
+	}
+	
+	public ReconcileFilesOptions setUpdateWorkspace(boolean updateWorkspace) {
+		this.updateWorkspace = updateWorkspace;
 		return this;
 	}
 }

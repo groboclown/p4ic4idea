@@ -50,6 +50,7 @@ public class RpcFunctionMapKey {
 	public static final String NEW_PASSWORD = "newPassword";
 	public static final String NEW_PASSWORD2 = "newPassword2";
 	public static final String TOKEN = "token";
+	public static final String DADDR = "daddr";
 	public static final String DECLINE = "decline";
 	public static final String HANDLE = "handle";
 	public static final String FLUSH_HWM = "himark";

@@ -90,6 +90,7 @@ public class MapKeys {
 	public static final String MAP_LC_KEY = "map";
 	public static final String EXTRA_LC_KEY = "extra";
 	public static final String ADDRESS_LC_KEY = "address";
+	public static final String DEPTH_LC_KEY = "depth";
 	public static final String UTF16_LC_KEY = "utf16";
 	public static final String USER_KEY = "User";
 	public static final String EMAIL_KEY = "Email";
@@ -101,7 +102,9 @@ public class MapKeys {
 	public static final String TYPE_KEY = "Type";
 	public static final String ADDRESS_KEY = "Address";
 	public static final String SUFFIX_KEY = "Suffix";
+	public static final String STREAM_DEPTH = "StreamDepth";
 	public static final String MAP_KEY = "Map";
+	public static final String SPEC_MAP_KEY = "SpecMap";
 	public static final String DATE_KEY = "Date";
 	public static final String TICKET_EXPIRATION = "TicketExpiration";
 	public static final String PASSWORD_CHANGE_KEY = "PasswordChange";

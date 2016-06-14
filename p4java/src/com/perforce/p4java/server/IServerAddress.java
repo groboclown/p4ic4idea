@@ -33,6 +33,7 @@ import java.util.Properties;
  * p4jrpcssl - secure one-shot (connection-per-command) RPC protocol implementation.
  * p4jrpcnts - non-thread-safe (multiple-commands-per-connection) RPC protocol implementation.
  * p4jrpcntsssl - secure non-thread-safe (multiple-commands-per-connection) RPC protocol implementation.
+ * p4jrsh - run p4d in 'rsh' mode.
  * 
  * P4Java URI Examples:
  * 
@@ -76,7 +77,17 @@ public interface IServerAddress {
 		/**
 		 * Non-thread-safe (multiple-commands-per-connection) SSL RPC protocol.
 		 */
-		P4JRPCNTSSSL("p4jrpcntsssl");
+		P4JRPCNTSSSL("p4jrpcntsssl"),
+
+		/**
+		 * RSH protocol (run p4d in 'rsh' mode).
+		 */
+		P4JRSH("p4jrsh"),
+
+		/**
+		 * Non-thread-safe (multiple-commands-per-connection) RSH protocol (run p4d in 'rsh' mode).
+		 */
+		P4JRSHNTS("p4jrshnts");
 
 		/**
 		 * The connection protocol in string form.
@@ -188,4 +199,11 @@ public interface IServerAddress {
 	 * @return the properties
 	 */
 	Properties getProperties();
+
+	/**
+	 * Gets the command for running the server in 'rsh' mode. 
+	 * 
+	 * @return the rsh
+	 */
+	String getRsh();
 }

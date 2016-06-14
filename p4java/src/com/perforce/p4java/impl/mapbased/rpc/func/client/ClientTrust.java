@@ -26,10 +26,13 @@ public class ClientTrust {
 	public static final char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6',
 			'7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
-	public static final String USER_NAME_PLACE_HOLDER = "**++**";
+	public static final String FINGERPRINT_USER_NAME = "**++**";
+
+	public static final String FINGERPRINT_REPLACEMENT_USER_NAME = "++++++";
 
 	public static final String CLIENT_TRUST_MESSAGES = "com.perforce.p4java.messages.ClientTrustMessages";
 
+	public static final String CLIENT_TRUST_WARNING_NOT_ESTABLISHED = "client.trust.warning.notestablished";
 	public static final String CLIENT_TRUST_WARNING_NEW_CONNECTION = "client.trust.warning.newconnection";
 	public static final String CLIENT_TRUST_WARNING_NEW_KEY = "client.trust.warning.newkey";
 
@@ -70,23 +73,29 @@ public class ClientTrust {
 	 * 
 	 * @param serverIpPort
 	 *            the serverIpPort
+	 * @param fingerprintUser
+	 *            the fingerprintUser
 	 * @param fingerprint
 	 *            the fingerprint
 	 * @throws TrustException
 	 *             the trust exception
 	 */
-	public void installFingerprint(String serverIpPort, String fingerprint)
+	public void installFingerprint(String serverIpPort, String fingerprintUser, String fingerprint)
 			throws TrustException {
 		if (serverIpPort == null) {
 			throw new NullPointerError(
 					"null serverIpPort passed to the ClientTrust installFingerprint method");
+		}
+		if (fingerprintUser == null) {
+			throw new NullPointerError(
+					"null fingerprintUser passed to the ClientTrust installFingerprint method");
 		}
 		if (fingerprint == null) {
 			throw new NullPointerError(
 					"null fingerprint passed to the ClientTrust installFingerprint method");
 		}
 		try {
-			rpcServer.saveFingerprint(serverIpPort, fingerprint);
+			rpcServer.saveFingerprint(serverIpPort, fingerprintUser, fingerprint);
 		} catch (ConfigException e) {
 			throw new TrustException(TrustException.Type.INSTALL,
 					rpcServer.getServerHostPort(), serverIpPort, fingerprint,
@@ -98,16 +107,24 @@ public class ClientTrust {
 	/**
 	 * Removes the fingerprint for the specified server IP and port
 	 * 
+	 * @param serverIpPort
+	 *            the serverIpPort
+	 * @param fingerprintUser
+	 *            the fingerprintUser
 	 * @throws TrustException
 	 *             the trust exception
 	 */
-	public void removeFingerprint(String serverIpPort) throws TrustException {
+	public void removeFingerprint(String serverIpPort, String fingerprintUser) throws TrustException {
 		if (serverIpPort == null) {
 			throw new NullPointerError(
 					"null serverIpPort passed to the ClientTrust removeFingerprint method");
 		}
+		if (fingerprintUser == null) {
+			throw new NullPointerError(
+					"null fingerprintUser passed to the ClientTrust removeFingerprint method");
+		}
 		try {
-			rpcServer.saveFingerprint(serverIpPort, null);
+			rpcServer.saveFingerprint(serverIpPort, fingerprintUser, null);
 		} catch (ConfigException e) {
 			throw new TrustException(TrustException.Type.UNINSTALL,
 					rpcServer.getServerHostPort(), serverIpPort, null,
@@ -121,14 +138,20 @@ public class ClientTrust {
 	 * 
 	 * @param serverIpPort
 	 *            the serverIpPort
+	 * @param fingerprintUser
+	 *            the fingerprintUser
 	 * @return true, if successful
 	 */
-	public boolean fingerprintExists(String serverIpPort) {
+	public boolean fingerprintExists(String serverIpPort, String fingerprintUser) {
 		if (serverIpPort == null) {
 			throw new NullPointerError(
 					"null serverIpPort passed to the ClientTrust fingerprintExists method");
 		}
-		return (rpcServer.loadFingerprint(serverIpPort) != null);
+		if (fingerprintUser == null) {
+			throw new NullPointerError(
+					"null fingerprintUser passed to the ClientTrust fingerprintExists method");
+		}
+		return (rpcServer.loadFingerprint(serverIpPort, fingerprintUser) != null);
 	}
 
 	/**
@@ -137,22 +160,28 @@ public class ClientTrust {
 	 * 
 	 * @param serverIpPort
 	 *            the serverIpPort
+	 * @param fingerprintUser
+	 *            the fingerprintUser
 	 * @param fingerprint
 	 *            the fingerprint
 	 * @return true, if successful
 	 */
-	public boolean fingerprintMatches(String serverIpPort, String fingerprint) {
+	public boolean fingerprintMatches(String serverIpPort, String fingerprintUser, String fingerprint) {
 		if (serverIpPort == null) {
 			throw new NullPointerError(
 					"null serverIpPort passed to the ClientTrust fingerprintMatches method");
+		}
+		if (fingerprintUser == null) {
+			throw new NullPointerError(
+					"null fingerprintUser passed to the ClientTrust fingerprintMatches method");
 		}
 		if (fingerprint == null) {
 			throw new NullPointerError(
 					"null fingerprint passed to the ClientTrust fingerprintMatches method");
 		}
-		if (fingerprintExists(serverIpPort)) {
+		if (fingerprintExists(serverIpPort, fingerprintUser)) {
 			Fingerprint existingFingerprint = rpcServer
-					.loadFingerprint(serverIpPort);
+					.loadFingerprint(serverIpPort, fingerprintUser);
 			if (existingFingerprint != null
 					&& existingFingerprint.getFingerprintValue() != null) {
 				if (fingerprint.equalsIgnoreCase(existingFingerprint

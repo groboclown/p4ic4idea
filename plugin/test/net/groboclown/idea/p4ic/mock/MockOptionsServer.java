@@ -17,6 +17,7 @@ package net.groboclown.idea.p4ic.mock;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.impl.mapbased.rpc.RpcServer;
 import com.perforce.p4java.option.UsageOptions;
+import com.perforce.p4java.server.ServerStatus;
 import com.perforce.p4java.server.callback.IFilterCallback;
 import com.perforce.p4java.server.callback.IStreamingCallback;
 import net.groboclown.idea.p4ic.config.ServerConfig;
@@ -203,5 +204,12 @@ public class MockOptionsServer extends RpcServer {
     public void execInputStringStreamingMapCmd(final String cmdName, final String[] cmdArgs, final String inString,
             final IStreamingCallback callback, final int key) throws P4JavaException {
         throw new IllegalStateException("not implemented");
+    }
+
+    @Override
+    public ServerStatus init(final String host, final int port, final Properties props, final UsageOptions opts,
+            final boolean secure, final String rsh)
+            throws ConfigException, ConnectionException {
+        return null;
     }
 }

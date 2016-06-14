@@ -2007,57 +2007,107 @@ public interface IOptionsServer extends IServer {
 	String getTrust() throws P4JavaException;
 
 	/**
-	 * Approve and add the specified fingerprint for the Perforce SSL
-	 * connection. The fingerprint will be stored in the trust file.<p>
+	 * Approve and add the fingerprint for the Perforce SSL connection. The
+	 * fingerprint or replacement will be stored in the trust file. If the
+	 * attribute TrustOptions.isReplacement() is true, then the replacement
+	 * fingerprint will be stored. Otherwise, the normal fingerprint is stored.<p>
 	 * 
 	 * Note that an exception would be thrown if there is an identity change
 	 * detected. If you want to trust the new key use the 'force' option.
-	 * 
+	 *
 	 * @since 2012.1
 	 * @param opts TrustOptions object describing optional parameters; if null,
-	 * 				no options are set.
+	 *             no options are set.
 	 * @return non-null result message string from the trust operation; this may
-	 * 				include the fingerprint for the Perforce server public key.
+	 * include the fingerprint for the Perforce server public key.
 	 * @throws P4JavaException if an error occurs processing this method and its
-	 * 				parameters.
+	 *                         parameters.
 	 */
 	String addTrust(TrustOptions opts) throws P4JavaException;
-	
+
 	/**
 	 * Approve and add the specified fingerprint for the Perforce SSL
-	 * connection. The fingerprint will be stored in the trust file.<p>
-	 * 
+	 * connection. The fingerprint will be stored in the trust file.
+	 *
 	 * @since 2012.1
 	 * @param fingerprintValue non-null fingerprint value to be added.
 	 * @return non-null result message string from the trust operation; this may
-	 * 				include the fingerprint for the Perforce server public key.
+	 * include the fingerprint for the Perforce server public key.
 	 * @throws P4JavaException if an error occurs processing this method and its
-	 * 				parameters.
+	 *                         parameters.
 	 */
 	String addTrust(String fingerprintValue) throws P4JavaException;
 
 	/**
+	 * Approve and add the specified fingerprint or replacement for the Perforce
+	 * SSL connection. The fingerprint or replacement will be stored in the trust
+	 * file. If the attribute TrustOptions.isReplacement() is true, then the
+	 * replacement fingerprint will be stored. Otherwise, the normal fingerprint
+	 * is stored.
+	 *
+	 * @since 2015.1
+	 * @param fingerprintValue non-null fingerprint value to be added.
+	 * @param opts             TrustOptions object describing optional parameters; if null,
+	 *                         no options are set.
+	 * @return non-null result message string from the trust operation; this may
+	 * include the fingerprint for the Perforce server public key.
+	 * @throws P4JavaException if an error occurs processing this method and its
+	 *                         parameters.
+	 */
+	String addTrust(String fingerprintValue, TrustOptions opts) throws P4JavaException;
+
+	/**
 	 * Remove the fingerprint for the Perforce SSL connection. The fingerprint
 	 * will removed from the trust file.
-	 * 
+	 *
 	 * @since 2012.1
 	 * @return non-null result message string from the trust operation; this may
-	 * 				include the fingerprint for the Perforce server public key.
+	 * include the fingerprint for the Perforce server public key.
 	 * @throws P4JavaException if an error occurs processing this method and its
-	 * 				parameters.
+	 *                         parameters.
 	 */
 	String removeTrust() throws P4JavaException;
-	
+
+	/**
+	 * Remove the fingerprint or replacement for the Perforce SSL connection. The
+	 * fingerprint or replacement will removed from the trust file. If the attribute
+	 * TrustOptions.isReplacement() is true, then the replacement fingerprint will
+	 * be removed. Otherwise the normal fingerprint is removed.
+	 *
+	 * @since 2015.1
+	 * @param opts TrustOptions object describing optional parameters; if null,
+	 *             no options are set.
+	 * @return non-null result message string from the trust operation; this may
+	 * include the fingerprint for the Perforce server public key.
+	 * @throws P4JavaException if an error occurs processing this method and its
+	 *                         parameters.
+	 */
+	String removeTrust(TrustOptions opts) throws P4JavaException;
+
 	/**
 	 * List all fingerprints in the trust file.
-	 * 
+	 *
 	 * @since 2012.1
 	 * @return non-null list of known fingerprints in the trust file.
 	 * @throws P4JavaException if an error occurs processing this method and its
-	 * 				parameters.
+	 *                         parameters.
 	 */
 	List<Fingerprint> getTrusts() throws P4JavaException;
-	
+
+	/**
+	 * List all fingerprints or replacements in the trust file. If the attribute
+	 * TrustOptions.isReplacement() is true, then replacement fingerprints will
+	 * be returned. Otherwise, normal fingerprints are returned.
+	 *
+	 * @since 2015.1
+	 * @param opts TrustOptions object describing optional parameters; if null,
+	 *             no options are set.
+	 * @return non-null list of fingerprints in the trust file.
+	 * @throws P4JavaException if an error occurs processing this method and its
+	 *                         parameters.
+	 */
+	List<Fingerprint> getTrusts(TrustOptions opts) throws P4JavaException;
+
 	/**
 	 * Return a list of Perforce server processes active on the Perforce server.
 	 * 

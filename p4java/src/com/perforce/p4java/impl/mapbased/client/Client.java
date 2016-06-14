@@ -507,7 +507,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#sync(List, boolean, boolean, boolean, boolean)
+	 * @see com.perforce.p4java.client.IClient#sync(java.util.List, boolean, boolean, boolean, boolean)
 	 */
 	public List<IFileSpec> sync(List<IFileSpec> fileSpecs, boolean forceUpdate, boolean noUpdate,
 					boolean clientBypass, boolean serverBypass)
@@ -522,12 +522,13 @@ public class Client extends ClientSummary implements IClient {
 		} catch (RequestException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
+			// groboclown: just reuse the original exception
 			throw new RequestException(exc);
 		}
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#sync(List, com.perforce.p4java.option.client.SyncOptions)
+	 * @see com.perforce.p4java.client.IClient#sync(java.util.List, com.perforce.p4java.option.client.SyncOptions)
 	 */
 	public List<IFileSpec> sync(List<IFileSpec> fileSpecs, SyncOptions syncOpts)
 			throws P4JavaException {
@@ -554,7 +555,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#sync(List, com.perforce.p4java.option.client.SyncOptions, com.perforce.p4java.server.callback.IStreamingCallback, int)
+	 * @see com.perforce.p4java.client.IClient#sync(java.util.List, com.perforce.p4java.option.client.SyncOptions, com.perforce.p4java.server.callback.IStreamingCallback, int)
 	 */
 	public void sync(List<IFileSpec> fileSpecs, SyncOptions syncOpts, IStreamingCallback callback, int key)
 			throws P4JavaException {
@@ -574,7 +575,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 
 	/**
-	 * @see com.perforce.p4java.client.IClient#labelSync(List, String, boolean, boolean, boolean)
+	 * @see com.perforce.p4java.client.IClient#labelSync(java.util.List, java.lang.String, boolean, boolean, boolean)
 	 */
 	public List<IFileSpec> labelSync(List<IFileSpec> fileSpecs, String labelName,
 								boolean noUpdate, boolean addFiles, boolean deleteFiles)
@@ -593,7 +594,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#labelSync(List, String, com.perforce.p4java.option.client.LabelSyncOptions)
+	 * @see com.perforce.p4java.client.IClient#labelSync(java.util.List, java.lang.String, com.perforce.p4java.option.client.LabelSyncOptions)
 	 */
 	public List<IFileSpec> labelSync(List<IFileSpec> fileSpecs, String labelName, LabelSyncOptions opts)
 											throws P4JavaException {
@@ -684,7 +685,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 
 	/**
-	 * @see com.perforce.p4java.client.IClient#addFiles(List, boolean, int, String, boolean)
+	 * @see com.perforce.p4java.client.IClient#addFiles(java.util.List, boolean, int, java.lang.String, boolean)
 	 */
 	public List<IFileSpec> addFiles(List<IFileSpec> fileSpecs,
 				boolean noUpdate, int changeListId, String fileType, boolean useWildcards)
@@ -703,7 +704,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#addFiles(List, com.perforce.p4java.option.client.AddFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#addFiles(java.util.List, com.perforce.p4java.option.client.AddFilesOptions)
 	 */
 	public List<IFileSpec> addFiles(List<IFileSpec> fileSpecs, AddFilesOptions opts)
 								throws P4JavaException {
@@ -724,7 +725,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 
 	/**
-	 * @see com.perforce.p4java.client.IClient#deleteFiles(List, int, boolean)
+	 * @see com.perforce.p4java.client.IClient#deleteFiles(java.util.List, int, boolean)
 	 */
 	public List<IFileSpec> deleteFiles(List<IFileSpec> fileSpecs,
 										int changeListId, boolean noUpdate)
@@ -743,7 +744,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#deleteFiles(List, com.perforce.p4java.option.client.DeleteFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#deleteFiles(java.util.List, com.perforce.p4java.option.client.DeleteFilesOptions)
 	 */
 	public List<IFileSpec> deleteFiles(List<IFileSpec> fileSpecs, DeleteFilesOptions opts)
 								throws P4JavaException {
@@ -764,7 +765,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 
 	/**
-	 * @see com.perforce.p4java.client.IClient#editFiles(List, boolean, boolean, int, String)
+	 * @see com.perforce.p4java.client.IClient#editFiles(java.util.List, boolean, boolean, int, java.lang.String)
 	 */
 	public List<IFileSpec> editFiles(List<IFileSpec> fileSpecs,
 								boolean noUpdate, boolean bypassClientUpdate, int changeListId, String fileType)
@@ -793,7 +794,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#editFiles(List, com.perforce.p4java.option.client.EditFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#editFiles(java.util.List, com.perforce.p4java.option.client.EditFilesOptions)
 	 */
 	public List<IFileSpec> editFiles(List<IFileSpec> fileSpecs, EditFilesOptions opts) throws P4JavaException {
 		List<IFileSpec> resultList = new ArrayList<IFileSpec>();
@@ -813,7 +814,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#revertFiles(List, boolean, int, boolean, boolean)
+	 * @see com.perforce.p4java.client.IClient#revertFiles(java.util.List, boolean, int, boolean, boolean)
 	 */
 	public List<IFileSpec> revertFiles(List<IFileSpec> fileSpecs, boolean noUpdate,
 						int changeListId, boolean revertOnlyUnchanged, boolean noRefresh)
@@ -832,7 +833,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#revertFiles(List, com.perforce.p4java.option.client.RevertFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#revertFiles(java.util.List, com.perforce.p4java.option.client.RevertFilesOptions)
 	 */
 	public List<IFileSpec> revertFiles(List<IFileSpec> fileSpecs, RevertFilesOptions opts)
 											throws P4JavaException {
@@ -853,7 +854,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#haveList(List)
+	 * @see com.perforce.p4java.client.IClient#haveList(java.util.List)
 	 */
 	public List<IFileSpec> haveList(List<IFileSpec> fileSpecs)
 					throws ConnectionException, AccessException {
@@ -878,7 +879,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#reopenFiles(List, int, String)
+	 * @see com.perforce.p4java.client.IClient#reopenFiles(java.util.List, int, java.lang.String)
 	 */
 	public List<IFileSpec> reopenFiles(List<IFileSpec> fileSpecs, int changeListId,
 					String fileType) throws ConnectionException, AccessException {
@@ -897,7 +898,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#reopenFiles(List, com.perforce.p4java.option.client.ReopenFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#reopenFiles(java.util.List, com.perforce.p4java.option.client.ReopenFilesOptions)
 	 */
 	public List<IFileSpec> reopenFiles(List<IFileSpec> fileSpecs, ReopenFilesOptions opts)
 									throws P4JavaException {
@@ -918,7 +919,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#where(List)
+	 * @see com.perforce.p4java.client.IClient#where(java.util.List)
 	 */
 	public List<IFileSpec> where(List<IFileSpec> fileSpecs)
 								throws ConnectionException, AccessException {
@@ -942,7 +943,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 
 	/**
-	 * @see com.perforce.p4java.client.IClient#openedFiles(List, int, int)
+	 * @see com.perforce.p4java.client.IClient#openedFiles(java.util.List, int, int)
 	 */
 	public List<IFileSpec> openedFiles(List<IFileSpec> fileSpecs, int maxFiles, int changeListId)
 				throws ConnectionException, AccessException {
@@ -961,7 +962,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#openedFiles(List, com.perforce.p4java.option.server.OpenedFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#openedFiles(java.util.List, com.perforce.p4java.option.server.OpenedFilesOptions)
 	 */
 	public List<IFileSpec> openedFiles(List<IFileSpec> fileSpecs, OpenedFilesOptions opts)
 				throws P4JavaException {
@@ -983,7 +984,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#integrateFiles(int, boolean, com.perforce.p4java.core.file.IntegrationOptions, String, com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec)
+	 * @see com.perforce.p4java.client.IClient#integrateFiles(int, boolean, com.perforce.p4java.core.file.IntegrationOptions, java.lang.String, com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec)
 	 */
 	public List<IFileSpec> integrateFiles(int changeListId, boolean showActionsOnly,
 							IntegrationOptions integOpts, String branchSpec,
@@ -1039,37 +1040,48 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#integrateFiles(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, String, com.perforce.p4java.option.client.IntegrateFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#integrateFiles(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, java.lang.String, com.perforce.p4java.option.client.IntegrateFilesOptions)
 	 */
 	public List<IFileSpec> integrateFiles(IFileSpec fromFile, IFileSpec toFile, String branchSpec,
 			IntegrateFilesOptions opts) throws P4JavaException {
-		
+
+		// Set the server's current client to this client
+		IClient currentClient = this.serverImpl.getCurrentClient();
+		this.serverImpl.setCurrentClient(this);
 		List<Map<String, Object>> resultMaps = this.serverImpl.execMapCmdList(
-								CmdSpec.INTEG,
-								Parameters.processParameters(
-										opts, fromFile, toFile, branchSpec, this.serverImpl),
-								null);
-		
+				CmdSpec.INTEG,
+				Parameters.processParameters(
+						opts, fromFile, toFile, branchSpec, this.serverImpl),
+				null);
+		// Set the server's current client back to the previous one
+		this.serverImpl.setCurrentClient(currentClient);
+
 		return getIntegrationFilesFromReturn(resultMaps);
 	}
 
 	/**
-	 * @see com.perforce.p4java.client.IClient#integrateFiles(com.perforce.p4java.core.file.IFileSpec, List, com.perforce.p4java.option.client.IntegrateFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#integrateFiles(com.perforce.p4java.core.file.IFileSpec, java.util.List, com.perforce.p4java.option.client.IntegrateFilesOptions)
 	 */
 	public List<IFileSpec> integrateFiles(IFileSpec fromFile, List<IFileSpec> toFiles,
 			IntegrateFilesOptions opts) throws P4JavaException {
 
+		// Set the server's current client to this client
+		IClient currentClient = this.serverImpl.getCurrentClient();
+		this.serverImpl.setCurrentClient(this);
 		List<Map<String, Object>> resultMaps = this.serverImpl.execMapCmdList(
-								CmdSpec.INTEG,
-								Parameters.processParameters(
-										opts, fromFile, toFiles, null, this.serverImpl),
-								null);
-		
+				CmdSpec.INTEG,
+				Parameters.processParameters(
+						opts, fromFile, toFiles, null, this.serverImpl),
+				null);
+
+		// Set the server's current client back to the previous one
+		this.serverImpl.setCurrentClient(currentClient);
+
 		return getIntegrationFilesFromReturn(resultMaps);
 	}
 
 	/**
-	 * @see com.perforce.p4java.client.IClient#resolveFilesAuto(List, boolean, boolean, boolean, boolean, boolean)
+	 * @see com.perforce.p4java.client.IClient#resolveFilesAuto(java.util.List, boolean, boolean, boolean, boolean, boolean)
 	 */
 	
 	public List<IFileSpec> resolveFilesAuto(List<IFileSpec> fileSpecs, boolean safeMerge,
@@ -1095,7 +1107,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#resolveFilesAuto(List, com.perforce.p4java.option.client.ResolveFilesAutoOptions)
+	 * @see com.perforce.p4java.client.IClient#resolveFilesAuto(java.util.List, com.perforce.p4java.option.client.ResolveFilesAutoOptions)
 	 */
 	public List<IFileSpec> resolveFilesAuto(List<IFileSpec> fileSpecs, ResolveFilesAutoOptions opts)
 						throws P4JavaException {
@@ -1118,7 +1130,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#resolveFile(com.perforce.p4java.core.file.IFileSpec, InputStream)
+	 * @see com.perforce.p4java.client.IClient#resolveFile(com.perforce.p4java.core.file.IFileSpec, java.io.InputStream)
 	 */
 	public IFileSpec resolveFile(IFileSpec targetFile, InputStream sourceStream)
 									throws ConnectionException, RequestException, AccessException {
@@ -1126,7 +1138,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#resolveFile(com.perforce.p4java.core.file.IFileSpec, InputStream)
+	 * @see com.perforce.p4java.client.IClient#resolveFile(com.perforce.p4java.core.file.IFileSpec, java.io.InputStream)
 	 */
 	public IFileSpec resolveFile(IFileSpec targetFile, InputStream sourceStream, boolean useTextualMerge,
 			int startFromRev, int endFromRev)
@@ -1207,7 +1219,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#resolvedFiles(List, boolean)
+	 * @see com.perforce.p4java.client.IClient#resolvedFiles(java.util.List, boolean)
 	 */
 	public List<IFileSpec> resolvedFiles(List<IFileSpec> fileSpecs,
 				boolean showBaseRevision) throws ConnectionException, AccessException {
@@ -1225,7 +1237,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#resolvedFiles(List, com.perforce.p4java.option.client.ResolvedFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#resolvedFiles(java.util.List, com.perforce.p4java.option.client.ResolvedFilesOptions)
 	 */
 	public List<IFileSpec> resolvedFiles(List<IFileSpec> fileSpecs, ResolvedFilesOptions opts)
 									throws P4JavaException {
@@ -1239,7 +1251,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#lockFiles(List, int)
+	 * @see com.perforce.p4java.client.IClient#lockFiles(java.util.List, int)
 	 */
 	public List<IFileSpec> lockFiles(List<IFileSpec> fileSpecs, int changeListId)
 					throws ConnectionException, AccessException {
@@ -1256,7 +1268,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#lockFiles(List, com.perforce.p4java.option.client.LockFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#lockFiles(java.util.List, com.perforce.p4java.option.client.LockFilesOptions)
 	 */
 	public List<IFileSpec> lockFiles(List<IFileSpec> fileSpecs, LockFilesOptions opts)
 						throws P4JavaException {
@@ -1276,7 +1288,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 
 	/**
-	 * @see com.perforce.p4java.client.IClient#unlockFiles(List, int, boolean)
+	 * @see com.perforce.p4java.client.IClient#unlockFiles(java.util.List, int, boolean)
 	 */
 	public List<IFileSpec> unlockFiles(List<IFileSpec> fileSpecs, int changeListId, boolean force)
 					throws ConnectionException, AccessException {
@@ -1294,7 +1306,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#unlockFiles(List, com.perforce.p4java.option.client.UnlockFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#unlockFiles(java.util.List, com.perforce.p4java.option.client.UnlockFilesOptions)
 	 */
 	public List<IFileSpec> unlockFiles(List<IFileSpec> fileSpecs, UnlockFilesOptions opts)
 							throws P4JavaException {
@@ -1314,7 +1326,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#getDiffFiles(List, int, boolean, boolean, boolean, boolean, boolean, boolean, boolean)
+	 * @see com.perforce.p4java.client.IClient#getDiffFiles(java.util.List, int, boolean, boolean, boolean, boolean, boolean, boolean, boolean)
 	 */
 	public List<IFileSpec> getDiffFiles(List<IFileSpec> fileSpecs,
 			int maxFiles, boolean diffNonTextFiles, boolean openedDifferentMissing,
@@ -1343,7 +1355,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#getDiffFiles(List, com.perforce.p4java.option.client.GetDiffFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#getDiffFiles(java.util.List, com.perforce.p4java.option.client.GetDiffFilesOptions)
 	 */
 	public List<IFileSpec> getDiffFiles(List<IFileSpec> fileSpecs, GetDiffFilesOptions opts)
 								throws P4JavaException {
@@ -1363,7 +1375,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#shelveFiles(List, int, com.perforce.p4java.option.client.ShelveFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#shelveFiles(java.util.List, int, com.perforce.p4java.option.client.ShelveFilesOptions)
 	 */
 	public List<IFileSpec> shelveFiles(List<IFileSpec> fileSpecs, int changelistId,
 						ShelveFilesOptions opts) throws P4JavaException {
@@ -1375,6 +1387,9 @@ public class Client extends ClientSummary implements IClient {
 		} else if (changelistId > 0) {
 			changelistString = "-c" + changelistId;
 		}
+		// Set the server's current client to this client
+		IClient currentClient = this.serverImpl.getCurrentClient();
+		this.serverImpl.setCurrentClient(this);
 		List<Map<String, Object>> resultMaps = this.serverImpl.execMapCmdList(
 													CmdSpec.SHELVE,
 													Parameters.processParameters(
@@ -1385,12 +1400,14 @@ public class Client extends ClientSummary implements IClient {
 				resultList.add(this.serverImpl.handleFileReturn(result, this));
 			}
 		}
+		// Set the server's current client back to the previous one
+		this.serverImpl.setCurrentClient(currentClient);
 
 		return resultList;
 	}
 	
 	/**
-	 * @see com.perforce.p4java.client.IClient#unshelveFiles(List, int, int, com.perforce.p4java.option.client.UnshelveFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#unshelveFiles(java.util.List, int, int, com.perforce.p4java.option.client.UnshelveFilesOptions)
 	 */
 	public List<IFileSpec> unshelveFiles(List<IFileSpec> fileSpecs, int sourceChangelistId,
 			int targetChangelistId, UnshelveFilesOptions opts) throws P4JavaException {
@@ -1430,7 +1447,7 @@ public class Client extends ClientSummary implements IClient {
 
 	/**
 	 * @see com.perforce.p4java.client.IClient#shelveChangelist(int,
-	 *      List, boolean, boolean, boolean)
+	 *      java.util.List, boolean, boolean, boolean)
 	 */
 	public List<IFileSpec> shelveChangelist(int changelistId,
 			List<IFileSpec> fileSpecs, boolean forceUpdate, boolean replace,
@@ -1459,7 +1476,10 @@ public class Client extends ClientSummary implements IClient {
 		if (list == null) {
 			throw new NullPointerError("Null changelist specification in shelveChangelist method call");
 		}
-		
+
+		// Set the server's current client to this client
+		IClient currentClient = this.serverImpl.getCurrentClient();
+		this.serverImpl.setCurrentClient(this);
 		List<Map<String, Object>> resultMaps = this.serverImpl.execMapCmdList(CmdSpec.SHELVE,
 														new String[] { "-i" },
 														InputMapper.map(list,true));
@@ -1470,12 +1490,15 @@ public class Client extends ClientSummary implements IClient {
 				resultList.add(this.serverImpl.handleFileReturn(result, this));
 			}
 		}
+		// Set the server's current client back to the previous one
+		this.serverImpl.setCurrentClient(currentClient);
+
 		return resultList;
 	}
 
 	/**
 	 * @see com.perforce.p4java.client.IClient#unshelveChangelist(int,
-	 *      List, int, boolean, boolean)
+	 *      java.util.List, int, boolean, boolean)
 	 */
 	public List<IFileSpec> unshelveChangelist(int shelveChangelistId,
 			List<IFileSpec> fileSpecs, int clientChangelistId,
@@ -1525,7 +1548,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 
 	/**
-	 * @see com.perforce.p4java.client.IClient#copyFiles(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, String, com.perforce.p4java.option.client.CopyFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#copyFiles(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, java.lang.String, com.perforce.p4java.option.client.CopyFilesOptions)
 	 */
 	public List<IFileSpec> copyFiles(IFileSpec fromFile, IFileSpec toFile, String branchSpec,
 			CopyFilesOptions opts) throws P4JavaException {
@@ -1540,7 +1563,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 
 	/**
-	 * @see com.perforce.p4java.client.IClient#copyFiles(com.perforce.p4java.core.file.IFileSpec, List, com.perforce.p4java.option.client.CopyFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#copyFiles(com.perforce.p4java.core.file.IFileSpec, java.util.List, com.perforce.p4java.option.client.CopyFilesOptions)
 	 */
 	public List<IFileSpec> copyFiles(IFileSpec fromFile, List<IFileSpec> toFiles,
 			CopyFilesOptions opts) throws P4JavaException {
@@ -1555,7 +1578,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 
 	/**
-	 * @see com.perforce.p4java.client.IClient#mergeFiles(com.perforce.p4java.core.file.IFileSpec, List, com.perforce.p4java.option.client.MergeFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#mergeFiles(com.perforce.p4java.core.file.IFileSpec, java.util.List, com.perforce.p4java.option.client.MergeFilesOptions)
 	 */
 	public List<IFileSpec> mergeFiles(IFileSpec fromFile, List<IFileSpec> toFiles,
 			MergeFilesOptions opts) throws P4JavaException {
@@ -1584,7 +1607,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 
 	/**
-	 * @see com.perforce.p4java.client.IClient#reconcileFiles(List, com.perforce.p4java.option.client.ReconcileFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#reconcileFiles(java.util.List, com.perforce.p4java.option.client.ReconcileFilesOptions)
 	 */
 	public List<IFileSpec> reconcileFiles(List<IFileSpec> fileSpecs, ReconcileFilesOptions opts)
 								throws P4JavaException {
@@ -1605,7 +1628,7 @@ public class Client extends ClientSummary implements IClient {
 	}
 
 	/**
-	 * @see com.perforce.p4java.client.IClient#populateFiles(com.perforce.p4java.core.file.IFileSpec, List, com.perforce.p4java.option.client.PopulateFilesOptions)
+	 * @see com.perforce.p4java.client.IClient#populateFiles(com.perforce.p4java.core.file.IFileSpec, java.util.List, com.perforce.p4java.option.client.PopulateFilesOptions)
 	 */
 	public List<IFileSpec> populateFiles(IFileSpec fromFile, List<IFileSpec> toFiles,
 			PopulateFilesOptions opts) throws P4JavaException {

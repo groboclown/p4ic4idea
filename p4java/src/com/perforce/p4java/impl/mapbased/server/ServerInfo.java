@@ -38,6 +38,7 @@ public class ServerInfo implements IServerInfo {
 	private String serverLicenseIp = null;
 	private boolean serverEncrypted = false;
 	private String serverId = null;
+	private String serverCluster = null;
 	
 	private String replica = null;
 	private boolean passwordEnabled = false;
@@ -133,6 +134,7 @@ public class ServerInfo implements IServerInfo {
 		this.serverVersion = setFromMap(map, "serverVersion", this.serverVersion);
 		this.serverLicenseIp = setFromMap(map, "serverLicense-ip", this.serverLicenseIp);
 		this.serverId = setFromMap(map, "ServerID", this.serverId);
+		this.serverCluster = setFromMap(map, "serverCluster", this.serverCluster);
 		
 		this.replica = setFromMap(map, "replica", this.replica);
 
@@ -461,6 +463,14 @@ public class ServerInfo implements IServerInfo {
 
 	public void setServerId(String serverId) {
 		this.serverId = serverId;
+	}
+
+	public String getServerCluster() {
+		return serverCluster;
+	}
+
+	public void setServerCluster(String serverCluster) {
+		this.serverCluster = serverCluster;
 	}
 
 	public String getIntegEngine() {

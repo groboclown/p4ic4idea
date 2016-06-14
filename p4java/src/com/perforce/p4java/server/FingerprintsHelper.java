@@ -110,7 +110,7 @@ public class FingerprintsHelper extends AbstractAuthHelper {
 		Fingerprint foundFingerprint = null;
 		if (serverAddress != null) {
 			if (serverAddress.indexOf(':') == -1) {
-				serverAddress += "localhost:" + serverAddress;
+				serverAddress = "localhost:" + serverAddress;
 			}
 			for (Fingerprint fingerprint : getFingerprints(trustFilePath)) {
 				if (serverAddress.equals(fingerprint.getServerAddress())
@@ -206,6 +206,36 @@ public class FingerprintsHelper extends AbstractAuthHelper {
 	 * Save the specified parameters as an entry into the specified trust
 	 * file. This method will replace the current entry for the user name and
 	 * server address in the trust file. If a current entry is not found then
+	 * the specified entry will be appended to the file.
+	 * 
+	 * @param userName
+	 *            - non-null user name
+	 * @param serverAddress
+	 *            - non-null server address
+	 * @param fingerprintValue
+	 *            - non-null fingerprint value
+	 * @param trustFilePath
+	 *            - non-null file path
+	 * @param lockTry
+	 *            - number of tries for locking
+	 * @param lockDelay
+	 *            - delay time (ms) for locking
+	 * @param lockWait
+	 *            - wait time (ms) for other process/thread to finish locking
+	 * @throws IOException
+	 */
+	public static void saveFingerprint(String userName, String serverAddress,
+			String fingerprintValue, String trustFilePath, int lockTry,
+			long lockDelay, long lockWait) throws IOException {
+		File file = trustFilePath != null ? new File(trustFilePath) : null;
+		saveFingerprint(userName, serverAddress, fingerprintValue, file,
+				lockTry, lockDelay, lockWait);
+	}
+
+	/**
+	 * Save the specified parameters as an entry into the specified trust
+	 * file. This method will replace the current entry for the user name and
+	 * server address in the trust file. If a current entry is not found then
 	 * the specified entry will be appended to the file. If the specified fingerprint
 	 * value is null then the current entry in the specified file will be
 	 * removed if found.
@@ -222,8 +252,39 @@ public class FingerprintsHelper extends AbstractAuthHelper {
 	 */
 	public static synchronized void saveFingerprint(String userName, String serverAddress,
 			String fingerprintValue, File trustFile) throws IOException {
+		saveFingerprint(userName, serverAddress, fingerprintValue, trustFile, 0, 0, 0);
+	}
+
+	/**
+	 * Save the specified parameters as an entry into the specified trust
+	 * file. This method will replace the current entry for the user name and
+	 * server address in the trust file. If a current entry is not found then
+	 * the specified entry will be appended to the file. If the specified fingerprint
+	 * value is null then the current entry in the specified file will be
+	 * removed if found.
+	 * 
+	 * @param userName
+	 *            - non-null user name
+	 * @param serverAddress
+	 *            - non-null server address
+	 * @param fingerprintValue
+	 *            - possibly null fingerprint value
+	 * @param trustFile
+	 *            - non-null file
+	 * @param lockTry
+	 *            - number of tries for locking
+	 * @param lockDelay
+	 *            - delay time (ms) for locking
+	 * @param lockWait
+	 *            - wait time (ms) for other process/thread to finish locking
+	 * @throws IOException
+	 */
+	public static synchronized void saveFingerprint(String userName, String serverAddress,
+			String fingerprintValue, File trustFile, int lockTry, long lockDelay, long LockWait)
+					throws IOException {
 		if (trustFile != null) {
-			saveFileEntry(userName, serverAddress, fingerprintValue, trustFile);
+			saveFileEntry(userName, serverAddress, fingerprintValue, trustFile,
+					lockTry, lockDelay, LockWait);
 		} else {
 			saveMemoryEntry(userName, serverAddress, fingerprintValue, fingerprintsMap);
 		}

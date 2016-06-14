@@ -25,7 +25,7 @@ import com.perforce.p4java.Log;
  * downgrade the inherited view, but not upgrade it. (For instance, a child
  * stream can downgrade a shared path to an isolated path, but it can't upgrade
  * an isolated path to a shared path.) Note that <depot_path> is relevant only
- * when <path_type> is 'import'.
+ * when <path_type> is 'import' or 'import+'.
  */
 
 public interface IStreamViewMapping extends IMapEntry {
@@ -56,11 +56,27 @@ public interface IStreamViewMapping extends IMapEntry {
 	 * <p>
 	 */
 	public enum PathType {
-		SHARE,
-		ISOLATE,
-		IMPORT,
-		EXCLUDE,
-		UNKNOWN;
+		SHARE("share"),
+		ISOLATE("isolate"),
+		IMPORT("import"),
+		IMPORTPLUS("import+"),
+		EXCLUDE("exclude"),
+		UNKNOWN("unknown");
+		
+		private String type = null;
+		
+		private PathType(String type) {
+			this.type = type;
+		}
+
+		public String getValue() {
+			return this.type;
+		}
+
+		@Override
+	    public String toString() {
+	        return this.getValue();
+	    }
 		
 		/**
 		 * Return a suitable Path type as inferred from the passed-in
@@ -68,18 +84,15 @@ public interface IStreamViewMapping extends IMapEntry {
 		 * Otherwise return the UNKNOWN type
 		 */
 		public static PathType fromString(String str) {
-			if (str == null) {
-				return null;
-			}
-			
-			try {
-				return PathType.valueOf(str.toUpperCase());
-			} catch (IllegalArgumentException iae) {
-				Log.error("Bad conversion attempt in PathType.fromString; string: "
-						+ str + "; message: " + iae.getMessage());
-				Log.exception(iae);
+			if (str != null) {
+				for (PathType pt : PathType.values()) {
+					if (str.equalsIgnoreCase(pt.type)) {
+						return pt;
+					}
+				}
 				return UNKNOWN;
 			}
+			return null;
 		}
 	};
 

@@ -119,8 +119,10 @@ public class RpcOutputStream extends FileOutputStream {
 		if (this.fileType != null) {
 			switch	(this.fileType) {
 				case FST_UTF16:
+				case FST_XUTF16:
 					this.charset = CharsetDefs.UTF16;
 				case FST_UNICODE:
+				case FST_XUNICODE:
 					if ((this.charset != null) &&
 								(isUnicodeServer || (this.charset == CharsetDefs.UTF16))) {
 						this.converter = new CharsetConverter(CharsetDefs.UTF8, this.charset);
@@ -255,7 +257,8 @@ public class RpcOutputStream extends FileOutputStream {
 		switch (this.fileType) {
 			case FST_UNICODE:
 			case FST_UTF16:
-				
+			case FST_XUTF16:
+			case FST_XUNICODE:
 				// Convert to local charset if set
 				if (this.converter != null) {
 					if (this.localDigester != null) {

@@ -421,8 +421,24 @@ public class MapUnmapper {
 			if (inMap.containsKey(MapKeys.SUFFIX_KEY)) {
 				strBuf.append(MapKeys.SUFFIX_KEY + MapKeys.COLON_SPACE + inMap.get(MapKeys.SUFFIX_KEY) + MapKeys.DOUBLE_LF);
 			}
+			if (inMap.containsKey(MapKeys.STREAM_DEPTH)) {
+				strBuf.append(MapKeys.STREAM_DEPTH + MapKeys.COLON_SPACE + inMap.get(MapKeys.STREAM_DEPTH) + MapKeys.DOUBLE_LF);
+			}
 			if (inMap.containsKey(MapKeys.MAP_KEY)) {
 				strBuf.append(MapKeys.MAP_KEY + MapKeys.COLON_SPACE + inMap.get(MapKeys.MAP_KEY) + MapKeys.DOUBLE_LF);
+			}
+
+			for (int i = 0; ; i++) {
+				String mapStr = (String) inMap.get(MapKeys.SPEC_MAP_KEY + i);
+				
+				if (mapStr != null) {
+					if (i == 0) {
+						strBuf.append(MapKeys.SPEC_MAP_KEY + MapKeys.COLON_LF);
+					}
+					strBuf.append(MapKeys.TAB + mapStr + MapKeys.LF);
+				} else {
+					break;
+				}
 			}
 		}
 	}

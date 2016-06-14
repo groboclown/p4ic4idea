@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.perforce.p4java.server;
 
@@ -27,7 +27,7 @@ public interface IServerInfo {
 	String getClientHost();
 	String getClientAddress();
 	String getClientCurrentDirectory();
-	
+
 	String getPeerAddress();
 
 	String getServerAddress();
@@ -40,21 +40,22 @@ public interface IServerInfo {
 	String getServerLicenseIp();
 	boolean isServerEncrypted();
 	String getServerId();
-	
+	String getServerCluster();
+
 	String getProxyVersion();
 	String getProxyAddress();
 	String getProxyRoot();
 	boolean isProxyEncrypted();
-	
+
 	String getBrokerVersion();
 	String getBrokerAddress();
 	boolean isBrokerEncrypted();
-	
+
 	String getSandboxVersion();
 	String getSandboxPort();
-	
+
 	String getIntegEngine();
-	
+
 	boolean isPasswordEnabled();
 	boolean isCaseSensitive();
 	boolean isUnicodeEnabled();

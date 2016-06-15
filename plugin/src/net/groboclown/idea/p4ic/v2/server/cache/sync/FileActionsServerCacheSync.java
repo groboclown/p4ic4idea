@@ -165,8 +165,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         // Find if there are any local actions that do not have corresponding pending updates
         LOG.debug("Checking local integrity...");
 
+        // Prevent a ConcurrentModificationException (#118)
+        List<PendingUpdateState> copyOfUpdates = new ArrayList<PendingUpdateState>(pendingUpdates);
+
         Set<FilePath> known = new HashSet<FilePath>();
-        for (PendingUpdateState update : pendingUpdates) {
+        for (PendingUpdateState update : copyOfUpdates) {
             String path = UpdateParameterNames.FILE.getParameterValue(update);
             FilePath fp = FilePathUtil.getFilePath(path);
             if (fp != null) {

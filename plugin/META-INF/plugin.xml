@@ -1,11 +1,26 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.14</version>
+    <version>0.7.15</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.7.15</em>
+            <ol>
+              <li>Updated P4Java API to r15-2.</li>
+              <li>Patch of r15-2 looks to fix a "file corrupted during transfer" error
+              message.</li>
+              <li>Set proper Perforce Application name and version on requests to the
+              server.</li>
+              <li>Fixed NoSuchElementException occurs when attempting to revert
+              files.</li>
+              <li>Fixed ConcurrentModificationException from local integrity
+              checker.</li>
+              <li>Fixed Null server value passed to
+              P4ChangeListMapping.getPerforceChangelistFor.</li>
+            </ol>
+          </li>
           <li><em>0.7.14</em>
             <ol>
               <li>Fixed a possible deadlock with server connection checking.</li>
@@ -20,21 +35,6 @@
               submit.</li>
               <li>Fixed a configuration panel issue for the multi-p4config file setup
               did not show the config settings for a selected path.</li>
-            </ol>
-          </li>
-          <li><em>0.7.13</em>
-            <ol>
-              <li>Added configurable "max retry authentication" parameter to control how many times
-              to retry logging into the server after it reports an unauthorized connection.
-              This can help those users who experience frequent issues around the server
-              dropping the authentication token.</li>
-              <li>Add configurable "Always reconnect for each request", which closes the server
-              connection after each server group of commands.</li>
-              <li>Changed the default p4java API connection implementation to
-              better handle server authentication retention.</li>
-              <li>Improved responses to the retry login failures to display a different dialog.</li>
-              <li>Fixed the issue where files with a special character in the name (e.g.
-              "@" and "#") can now be moved between changelists.</li>
             </ol>
           </li>
         </ol>

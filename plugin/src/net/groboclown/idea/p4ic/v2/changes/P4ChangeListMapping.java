@@ -215,7 +215,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
      * just the Perforce default changelist.
      */
     @NotNull
-    public P4ChangeListId getProjectDefaultPerforceChangelist(final P4Server server) {
+    public P4ChangeListId getProjectDefaultPerforceChangelist(@NotNull final P4Server server) {
         LocalChangeList change = getDefaultIdeaChangelist();
         P4ChangeListId ret = null;
         if (change != null) {

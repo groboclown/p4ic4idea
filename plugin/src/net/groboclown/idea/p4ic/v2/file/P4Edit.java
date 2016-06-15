@@ -91,8 +91,10 @@ public class P4Edit extends BasicAction {
         for (Map.Entry<P4Server, List<VirtualFile>> en: servers.entrySet()) {
             final P4Server server = en.getKey();
             List<VirtualFile> files = en.getValue();
-            int changelistId = changeListMapping.getProjectDefaultPerforceChangelist(server).getChangeListId();
-            server.addOrEditFiles(files, changelistId);
+            if (server != null) {
+                int changelistId = changeListMapping.getProjectDefaultPerforceChangelist(server).getChangeListId();
+                server.addOrEditFiles(files, changelistId);
+            }
             VcsDirtyScopeManager.getInstance(project).filesDirty(files, null);
         }
         // No longer supported in IntelliJ 15

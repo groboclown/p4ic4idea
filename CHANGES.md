@@ -1,5 +1,27 @@
 # IDEA Community VCS Integration for Perforce
-    
+
+
+## ::v0.7.15::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Updated P4Java API to r15-2.
+    * Patch of r15-2 looks to fix a "file corrupted during transfer" error
+      message. (#123)
+    * Set proper Perforce Application name and version on requests to the
+      server. (#122)
+    * Fixed NoSuchElementException occurs when attempting to revert
+      files. (#121)
+    * Fixed ConcurrentModificationException from local integrity checker.
+      (#118)
+    * Fixed Null server value passed to
+      P4ChangeListMapping.getPerforceChangelistFor. (#117)
+
 
 ## ::v0.7.14::
 

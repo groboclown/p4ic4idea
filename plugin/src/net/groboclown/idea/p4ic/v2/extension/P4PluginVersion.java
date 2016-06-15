@@ -64,6 +64,7 @@ public class P4PluginVersion {
                 res.close();
             }
         } catch (Exception e) {
+            LOG.info("Cannot read p4ic-version.txt", e);
             return "2";
         }
     }

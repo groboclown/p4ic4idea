@@ -120,6 +120,11 @@ public class ServerMessage implements IServerMessage {
     }
 
     @Override
+    public String getCode() {
+        return highestSeverity.getCode();
+    }
+
+    @Override
     public boolean hasMessageFragment(final String fragment) {
         for (ISingleServerMessage msg: messages) {
             if (msg.hasMessageFragment(fragment)) {
@@ -228,6 +233,13 @@ public class ServerMessage implements IServerMessage {
         @Override
         public int getRawCode() {
             return rawCode;
+        }
+
+        @Override
+        public String getCode() {
+            return getGeneric() + ":" +
+                    getSubSystem() + ":" +
+                    getSubCode() + " (" + getUniqueCode() + ")";
         }
 
         @Override

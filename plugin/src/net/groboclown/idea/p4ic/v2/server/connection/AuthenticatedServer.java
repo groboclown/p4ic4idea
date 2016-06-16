@@ -50,6 +50,12 @@ class AuthenticatedServer {
         NOT_CONNECTED
     }
 
+    enum LoginValidation {
+        AUTHENTICATED,
+        SESSION_EXPIRED,
+        ERROR
+    }
+
 
     private static final Logger LOG = Logger.getInstance(AuthenticatedServer.class);
     private static final Logger P4LOG = Logger.getInstance("p4");
@@ -190,7 +196,9 @@ class AuthenticatedServer {
         // be invalid.  However, all that checking will be in the
         // shared logic
 
-        if (! validateLogin()) {
+        LoginValidation loginValidation = validateLogin();
+
+        if (loginValidation != LoginValidation.AUTHENTICATED) {
             loginFailedCount++;
 
             // the forced authentication has passed, but the
@@ -222,18 +230,26 @@ class AuthenticatedServer {
                     // Sleeping a bit may cause the server to re-authenticate
                     // correctly.
                     reconnect();
-                    if (validateLogin()) {
+                    loginValidation = validateLogin();
+                    if (loginValidation == LoginValidation.AUTHENTICATED) {
                         LOG.info("Authorization successful after " + i +
                                 " unauthorized connections (but a valid one was seen earlier) for " +
                                 this);
                         return AuthenticationResult.AUTHENTICATED;
                     }
                     forceAuthenticate(i);
-                    if (validateLogin()) {
+                    loginValidation = validateLogin();
+                    if (loginValidation == LoginValidation.AUTHENTICATED) {
                         LOG.info("Authorization successful after " + i +
                                 " unauthorized connections (but a valid one was seen earlier) for " +
                                 this);
                         return AuthenticationResult.AUTHENTICATED;
+                    }
+                    if (loginValidation == LoginValidation.SESSION_EXPIRED) {
+                        LOG.info("Authorization failed due to session expiration for " + this);
+                        // Attempted to login, it failed with "session expired",
+                        // so this means that the login didn't work.
+                        return AuthenticationResult.INVALID_LOGIN;
                     }
                 } catch (URISyntaxException e) {
                     throw new P4JavaException(e);
@@ -315,10 +331,10 @@ class AuthenticatedServer {
     }
 
 
-    private boolean validateLogin()
+    private LoginValidation validateLogin()
             throws ConnectionException, RequestException, AccessException {
         if (! server.isConnected()) {
-            return false;
+            return LoginValidation.ERROR;
         }
         try {
             // Perform an operation that should succeed, and only fail if the
@@ -327,14 +343,18 @@ class AuthenticatedServer {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Basic authentication looks correct for " + this);
             }
-            return true;
+            return LoginValidation.AUTHENTICATED;
         } catch (AccessException ex) {
             LOG.info("Server forgot connection login", ex);
             // Do not disconnect here..  If it's not a real authentication
             // issue, then we will need to stay connected to re-authorize
             // the connection.
             // disconnect();
-            return false;
+            if (ex.hasMessageFragment("Your session has expired, please %'login'% again.")) {
+                LOG.info("Login expired message: ID " + ex.getServerMessage().getCode());
+                return LoginValidation.SESSION_EXPIRED;
+            }
+            return LoginValidation.ERROR;
         }
     }
 
@@ -492,6 +512,7 @@ class AuthenticatedServer {
         return o == this ||
                 !(o == null ||
                     !(o instanceof AuthenticatedServer)) &&
+                        // note: identity equality
                         serverInstance == ((AuthenticatedServer) o).serverInstance;
     }
 

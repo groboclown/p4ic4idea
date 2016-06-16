@@ -19,6 +19,8 @@
               checker.</li>
               <li>Fixed Null server value passed to
               P4ChangeListMapping.getPerforceChangelistFor.</li>
+              <li>Fixed an issue with session expiration.  The plugin now properly
+              asks for the user's password.</li>
             </ol>
           </li>
           <li><em>0.7.14</em>

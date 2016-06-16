@@ -387,7 +387,8 @@ public class ServerRunner {
         if (ex instanceof AccessException) {
             AccessException aex = (AccessException) ex;
             // see Server for a list of the authentication failure messages.
-            return aex.hasMessageFragment("Perforce password (P4PASSWD)");
+            return aex.hasMessageFragment("Perforce password (P4PASSWD)") ||
+                    aex.hasMessageFragment("Your session has expired");
         }
         //if (ex instanceof LoginRequiresPasswordException) {
         //    LOG.info("No password specified, but one is needed", ex);

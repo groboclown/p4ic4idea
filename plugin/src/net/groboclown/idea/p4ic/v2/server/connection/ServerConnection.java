@@ -110,7 +110,7 @@ public class ServerConnection {
     }
 
 
-    public void postSetup(@NotNull Project project) {
+    public void postSetup(@NotNull final Project project) {
         if (setup) {
             // Already setup, or in the process of being
             // setup.
@@ -118,6 +118,11 @@ public class ServerConnection {
         }
 
         synchronized (clientExecLock) {
+            // Already setup check, now that we're in the lock.
+            if (setup) {
+                return;
+            }
+
             // Mark the connection has having been setup,
             // so that we don't try to re-enter this
             // method and possibly deadlock.

@@ -42,4 +42,6 @@ public interface ISingleServerMessage {
      * @deprecated here until the string matching is eliminated
      */
     boolean hasMessageFragment(String fragment);
+
+    String getCode();
 }

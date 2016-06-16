@@ -1,6 +1,18 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.7.16::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Help prevent a FileNotFoundException during writing to a temp file (#114).
+
+
 ## ::v0.7.15::
 
 ### Overview

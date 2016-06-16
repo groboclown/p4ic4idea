@@ -3,12 +3,12 @@
  */
 package com.perforce.p4java.impl.generic.core;
 
+import com.perforce.p4java.Log;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-
-import com.perforce.p4java.Log;
 
 
 /**
@@ -24,10 +24,24 @@ public class TempFileInputStream extends FileInputStream {
 	
 	public TempFileInputStream(File file)
 			throws FileNotFoundException {
-		super(file);
+		// p4ic4idea: bug #114: there's the rare occasion when the
+		// directory has been removed underneath the file creation.
+		super(ensureDirExists(file));
 		this.tmpFile = file;
 	}
-	
+
+	// p4ic4idea: patch for #114
+	private static File ensureDirExists(final File file) throws FileNotFoundException {
+		final File parent = file.getParentFile();
+		if (! parent.exists()) {
+			boolean created = parent.mkdirs();
+			if (!created) {
+				throw new FileNotFoundException("Parent directory was not created for temp file " + file);
+			}
+		}
+		return file;
+	}
+
 	public void close() throws IOException {
 		super.close();
 		

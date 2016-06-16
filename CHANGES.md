@@ -21,6 +21,8 @@
       (#118)
     * Fixed Null server value passed to
       P4ChangeListMapping.getPerforceChangelistFor. (#117)
+    * Fixed issue with session expired.  The plugin now correctly
+      asks for login.
 
 
 ## ::v0.7.14::

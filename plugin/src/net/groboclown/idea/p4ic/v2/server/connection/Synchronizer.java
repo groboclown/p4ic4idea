@@ -169,6 +169,11 @@ class Synchronizer {
 
             <T> T runImmediateAction(@NotNull final ActionRunner<T> runner) throws InterruptedException {
                 // Acquire the IDE read lock.
+
+                // TODO the actual read lock should be delayed until absolutely necessary.
+                // This can cause the EDT to wait while a Perforce server connection request
+                // runs, when the lock isn't necessary.
+
                 return ApplicationManager.getApplication().runReadAction(
                         new ThrowableComputable<T, InterruptedException>() {
                             @Override
@@ -204,7 +209,12 @@ class Synchronizer {
                     return false;
                 }
 
-                // We don't care if we wait forever, do don't directly reuse the runImmediately logic.
+                // We don't care if we wait forever, don't directly reuse the runImmediately logic.
+
+                // TODO the actual read lock should be delayed until absolutely necessary.
+                // This can cause the EDT to wait while a Perforce server connection request
+                // runs, when the lock isn't necessary.
+
                 ApplicationManager.getApplication().runReadAction(
                         new ThrowableComputable<Void, InterruptedException>() {
                             @Override

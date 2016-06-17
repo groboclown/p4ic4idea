@@ -126,6 +126,14 @@ public class P4ChangeProvider implements ChangeProvider {
             for (P4Server server : vcs.getP4Servers()) {
                 server.checkLocalIntegrity();
                 if (dirtyFiles == null && server.isWorkingOnline()) {
+                    // Note that this isn't forcing the flush.
+                    // That's supposed to be because the flush shouldn't
+                    // happen if there are pending commits.  However,
+                    // there are situations, due to errors in other aspects
+                    // of the system, where if errors occur, the pending
+                    // commits are in an invalid state, causing this flush
+                    // to never happen.
+                    // See #124.
                     server.flushCache(true, false);
                 }
             }

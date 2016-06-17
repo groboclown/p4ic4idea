@@ -21,10 +21,7 @@ import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
-import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerQuery;
+import net.groboclown.idea.p4ic.v2.server.connection.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -57,8 +54,11 @@ public class RemoteFileReader {
 
         @Nullable
         @Override
-        public byte[] query(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager cacheManager,
-                @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+        public byte[] query(@NotNull final P4Exec2 exec,
+                @NotNull final ClientCacheManager cacheManager,
+                @NotNull final ServerConnection connection,
+                @NotNull final SynchronizedActionRunner runner,
+                @NotNull final AlertManager alerts)
                 throws InterruptedException {
             try {
                 return exec.loadFile(spec);
@@ -90,7 +90,8 @@ public class RemoteFileReader {
         @Nullable
         @Override
         public String query(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager cacheManager,
-                @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                @NotNull final ServerConnection connection, final SynchronizedActionRunner runner,
+                @NotNull final AlertManager alerts)
                 throws InterruptedException {
             try {
                 byte[] bytes = exec.loadFile(spec);

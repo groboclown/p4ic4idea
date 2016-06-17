@@ -18,10 +18,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
-import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerQuery;
+import net.groboclown.idea.p4ic.v2.server.connection.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,9 +44,11 @@ abstract class CacheFrontEnd {
             @Nullable
             @Override
             public CacheFrontEnd query(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager cacheManager,
-                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    @NotNull final ServerConnection connection, @NotNull SynchronizedActionRunner runner,
+                    @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 ServerConnection.assertInServerConnection();
+                // TODO pass in the syncRunner?
                 loadServerCache(exec, cacheManager, alerts, forceRefresh);
                 return CacheFrontEnd.this;
             }

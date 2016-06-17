@@ -18,6 +18,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs;
 import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
@@ -185,6 +186,29 @@ public abstract class ConnectionHandler {
         if (config.getIgnoreFileName() != null) {
             ret.setProperty(PropertyDefs.IGNORE_FILE_NAME_KEY, config.getIgnoreFileName());
         }
+
+        // Socket creation properties
+        // See RpcSocketHelper
+        ret.setProperty(RpcPropertyDefs.RPC_SOCKET_SO_TIMEOUT_NICK,
+                // FIXME make a user setting (time is in milliseconds)
+                // This is the default value (30 seconds)
+                Integer.toString(30000));
+
+        // Enable/disable TCP_NODELAY (disable/enable Nagle's algorithm).
+        // "true" or "false"; default is "true"
+        // RpcPropertyDefs.RPC_SOCKET_TCP_NO_DELAY_NICK
+
+        // Defaults to true.  Only disabled if it starts with 'N' or 'n'
+        // RpcPropertyDefs.RPC_SOCKET_USE_KEEPALIVE_NICK
+
+        // Setting the socket performance preferences, described by three
+        // integers whose values indicate the relative importance of short
+        // connection time, low latency, and high bandwidth.
+        // Socket.setPerformancePreferences(int connectionTime, int latency, int bandwidth)
+        // The default values is (1, 2, 0), assume no one changes them.
+        // This gives the highest importance to low latency, followed by
+        // short connection time, and least importance to high bandwidth.
+        // RpcPropertyDefs.RPC_SOCKET_PERFORMANCE_PREFERENCES_NICK
 
         //ret.setProperty(PropertyDefs.ENABLE_PROGRESS, "1");
 

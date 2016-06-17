@@ -452,6 +452,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         @Override
         protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
                 @NotNull final ClientCacheManager clientCacheManager,
+                // @NotNull final SynchronizedActionRunner asyncRunner,
                 @NotNull final AlertManager alerts) {
             ExecutionStatus ret = ExecutionStatus.NO_OP;
             final Collection<P4ChangeListValue> openedChanges = clientCacheManager.getCachedOpenedChanges();
@@ -537,6 +538,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         @Override
         protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
                 @NotNull final ClientCacheManager clientCacheManager,
+                // @NotNull final SynchronizedActionRunner asyncRunner,
                 @NotNull final AlertManager alerts) {
             ExecutionStatus ret = ExecutionStatus.NO_OP;
             final P4ChangeListMapping changeListMapping = P4ChangeListMapping.getInstance(exec.getProject());
@@ -766,6 +768,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         @Override
         protected ExecutionStatus executeAction(@NotNull final P4Exec2 exec,
                 @NotNull final ClientCacheManager clientCacheManager,
+                // @NotNull final SynchronizedActionRunner asyncRunner,
                 @NotNull final AlertManager alerts) {
             // organize the changes by ID, so that they can be done at a single
             // pass.

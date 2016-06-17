@@ -26,10 +26,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.FileMappingRepo;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileSyncState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
-import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerQuery;
+import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -96,13 +93,16 @@ class KnownHaveStateServerCacheSync extends CacheFrontEnd {
             @Override
             public Map<VirtualFile, P4FileSyncState> query(@NotNull final P4Exec2 exec,
                     @NotNull final ClientCacheManager cacheManager,
-                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    @NotNull final ServerConnection connection,
+                    @NotNull final SynchronizedActionRunner runner,
+                    @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 ServerConnection.assertInServerConnection();
 
                 // We have a lock, so setup the mapping that we'll return.
                 Map<VirtualFile, P4FileSyncState> ret = mapToStates(haves);
 
+                // TODO use a read lock?
                 loadServerCache(exec, alerts, ret);
                 return ret;
             }

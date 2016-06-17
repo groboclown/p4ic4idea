@@ -34,10 +34,7 @@ import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
-import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
-import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
-import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
-import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
+import net.groboclown.idea.p4ic.server.exceptions.*;
 import net.groboclown.idea.p4ic.ui.checkin.P4SubmitPanel;
 import net.groboclown.idea.p4ic.ui.checkin.SubmitContext;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
@@ -117,7 +114,6 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             return errors;
         }
 
-
         // Find all the files and their respective P4 changelists.
         // This method deals with the problem of discovering the
         // changelists to submit, and their associated P4 client.
@@ -132,6 +128,8 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                     splitChanges(change, cl, pathsPerChangeList);
                 } catch (InterruptedException e) {
                     errors.add(new VcsInterruptedException(e));
+                } catch (P4CacheSyncException e) {
+                    errors.add(e);
                 }
             }
         }
@@ -181,7 +179,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
 
     private void splitChanges(@NotNull Change change, @Nullable LocalChangeList lcl,
             @NotNull Map<P4Server, Map<P4ChangeListId, List<FilePath>>> clientPathsPerChangeList)
-            throws InterruptedException {
+            throws InterruptedException, P4CacheSyncException {
         final FilePath fp;
         if (change.getVirtualFile() == null) {
             // possibly deleted.
@@ -225,9 +223,8 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
             }
             files.add(fp);
         } else {
-            // TODO do something smart
-            LOG.error("No perforce changelist known for " + lcl + " at " +
-                    server.getClientServerId());
+            throw new P4CacheSyncException(
+                P4Bundle.message("error.cache.sync.changelist", server.getClientServerId(), lcl));
         }
     }
 

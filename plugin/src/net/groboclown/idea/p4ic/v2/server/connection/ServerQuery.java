@@ -29,13 +29,15 @@ public interface ServerQuery<T> {
      * Performs the action.  If the action could not be completed, but needs to
      * be, it should put itself back into the queue (via the P4Server).
      * In all cases, after this executes, it will be removed from the store.
-     *  @param exec   Perforce execution object
+     * @param exec   Perforce execution object
      * @param cacheManager
+     * @param runner
      * @param alerts graceful error handling
      */
     @Nullable
     T query(@NotNull P4Exec2 exec, @NotNull ClientCacheManager cacheManager,
-            @NotNull ServerConnection connection, @NotNull AlertManager alerts)
+            @NotNull ServerConnection connection, @NotNull SynchronizedActionRunner runner,
+            @NotNull AlertManager alerts)
             throws InterruptedException;
 
 }

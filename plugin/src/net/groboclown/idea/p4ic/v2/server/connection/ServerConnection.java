@@ -175,10 +175,10 @@ public class ServerConnection {
             throws InterruptedException {
         synchronizer.runImmediateAction(new ActionRunner<Void>() {
             @Override
-            public Void perform() throws InterruptedException {
+            public Void perform(@NotNull SynchronizedActionRunner runner) throws InterruptedException {
                 try {
                     THREAD_EXECUTION_ACTIVE.set(Boolean.TRUE);
-                    action.perform(getExec(project), cacheManager, ServerConnection.this, alertManager);
+                    action.perform(getExec(project), cacheManager, ServerConnection.this, runner, alertManager);
                 } catch (P4InvalidConfigException e) {
                     alertManager.addCriticalError(new ConfigurationProblemHandler(project, statusController, e), e);
                 } finally {
@@ -193,10 +193,10 @@ public class ServerConnection {
     public <T> T query(@NotNull final Project project, @NotNull final ServerQuery<T> query) throws InterruptedException {
         return synchronizer.runImmediateAction(new ActionRunner<T>() {
             @Override
-            public T perform() throws InterruptedException {
+            public T perform(@NotNull SynchronizedActionRunner runner) throws InterruptedException {
                 try {
                     THREAD_EXECUTION_ACTIVE.set(Boolean.TRUE);
-                    return query.query(getExec(project), cacheManager, ServerConnection.this, alertManager);
+                    return query.query(getExec(project), cacheManager, ServerConnection.this, runner, alertManager);
                 } catch (P4InvalidConfigException e) {
                     alertManager.addCriticalError(new ConfigurationProblemHandler(project, statusController, e), e);
                     return null;
@@ -232,8 +232,9 @@ public class ServerConnection {
 
                 @Override
                 public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
-                        @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
-                        throws InterruptedException {
+                        @NotNull final ServerConnection connection, @NotNull final SynchronizedActionRunner syncRunner,
+                        @NotNull final AlertManager alerts) throws InterruptedException {
+                    // TODO does this need a read lock?
                     ServerConnectionManager.getInstance().flushCache(
                             clientCacheManager.getClientServerId(), includeLocal, force);
                 }
@@ -432,7 +433,7 @@ public class ServerConnection {
                 try {
                     boolean didRun = synchronizer.runBackgroundAction(new ActionRunner<Void>() {
                         @Override
-                        public Void perform() throws InterruptedException {
+                        public Void perform(@NotNull SynchronizedActionRunner syncRunner) throws InterruptedException {
                             LOG.info("Running action " + action);
                             final P4Exec2 exec;
                             try {
@@ -457,7 +458,8 @@ public class ServerConnection {
                             }
                             if (! action.project.isDisposed()) {
                                 action.action.perform(exec,
-                                        cacheManager, ServerConnection.this, alertManager);
+                                        cacheManager, ServerConnection.this,
+                                        syncRunner, alertManager);
                                 // only remove the state once we've successfully
                                 // processed the action.
                                 cacheManager.removePendingUpdateStates(action.action.getPendingUpdateStates());

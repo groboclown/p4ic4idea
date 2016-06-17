@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.ThrowableComputable;
 import org.jetbrains.annotations.NotNull;
 
@@ -108,6 +109,7 @@ class Synchronizer {
         private final Lock onlineLock = new ReentrantLock();
         private final Condition offlineCondition = onlineLock.newCondition();
         private boolean isOnline = false;
+        private InnerSynchronizedActionRunner syncRunner = new InnerSynchronizedActionRunner();
 
 
         ConnectionSynchronizer createConnectionSynchronizer() {
@@ -174,24 +176,18 @@ class Synchronizer {
                 // This can cause the EDT to wait while a Perforce server connection request
                 // runs, when the lock isn't necessary.
 
-                return ApplicationManager.getApplication().runReadAction(
-                        new ThrowableComputable<T, InterruptedException>() {
-                            @Override
-                            public T compute() throws InterruptedException {
-                                // Wait for the connection.
-                                boolean acquired =
-                                        connectionLock.tryLock(connectionWaitTimeMillis, TimeUnit.MILLISECONDS);
-                                if (!acquired) {
-                                    throw new InterruptedException("lock acquire timeout");
-                                }
-                                try {
-                                    // Run the action.
-                                    return runner.perform();
-                                } finally {
-                                    connectionLock.unlock();
-                                }
-                            }
-                        });
+                // Wait a limited time for the connection.
+                boolean acquired =
+                        connectionLock.tryLock(connectionWaitTimeMillis, TimeUnit.MILLISECONDS);
+                if (!acquired) {
+                    throw new InterruptedException("lock acquire timeout");
+                }
+                try {
+                    // Run the action.
+                    return runner.perform(syncRunner);
+                } finally {
+                    connectionLock.unlock();
+                }
             }
 
 
@@ -215,29 +211,55 @@ class Synchronizer {
                 // This can cause the EDT to wait while a Perforce server connection request
                 // runs, when the lock isn't necessary.
 
-                ApplicationManager.getApplication().runReadAction(
-                        new ThrowableComputable<Void, InterruptedException>() {
-                            @Override
-                            public Void compute() throws InterruptedException {
-                                // Wait forever for the connection.
-                                connectionLock.lock();
-                                try {
-                                    // Run the action.
-                                    runner.perform();
-                                    return null;
-                                } finally {
-                                    connectionLock.unlock();
-                                }
-                            }
-                        });
+                // Wait forever for the connection.
+                connectionLock.lock();
+                try {
+                    // Run the action.
+                    runner.perform(syncRunner);
+                } finally {
+                    connectionLock.unlock();
+                }
                 return true;
             }
         }
     }
 
 
+    private class InnerSynchronizedActionRunner implements SynchronizedActionRunner {
+        @Override
+        public <T, E extends Throwable> T read(final ThrowableComputable<T, E> runner) throws E {
+            return ApplicationManager.getApplication().runReadAction(runner);
+        }
+
+        @Override
+        public <T> T read(final Computable<T> runner) {
+            return ApplicationManager.getApplication().runReadAction(runner);
+        }
+
+        @Override
+        public void read(final Runnable runner) {
+            ApplicationManager.getApplication().runReadAction(runner);
+        }
+
+        @Override
+        public <T, E extends Throwable> T write(final ThrowableComputable<T, E> runner) throws E {
+            return ApplicationManager.getApplication().runWriteAction(runner);
+        }
+
+        @Override
+        public <T> T write(final Computable<T> runner) {
+            return ApplicationManager.getApplication().runWriteAction(runner);
+        }
+
+        @Override
+        public void write(final Runnable runner) {
+            ApplicationManager.getApplication().runWriteAction(runner);
+        }
+    }
+
+
 
     interface ActionRunner<T> {
-        T perform() throws InterruptedException;
+        T perform(@NotNull SynchronizedActionRunner runner) throws InterruptedException;
     }
 }

@@ -298,7 +298,9 @@ public class P4Server {
             @Override
             public List<IExtendedFileSpec> query(@NotNull final P4Exec2 exec,
                     @NotNull final ClientCacheManager cacheManager,
-                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    @NotNull final ServerConnection connection,
+                    @NotNull final SynchronizedActionRunner runner,
+                    @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 try {
                     return exec.getFileStatus(fileSpecs);
@@ -325,7 +327,9 @@ public class P4Server {
             @Override
             public Map<IExtendedFileSpec, FilePath> query(@NotNull final P4Exec2 exec,
                     @NotNull final ClientCacheManager cacheManager,
-                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    @NotNull final ServerConnection connection,
+                    @NotNull final SynchronizedActionRunner runner,
+                    @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 return cacheManager.mapSpecsToPath(specs);
             }
@@ -962,7 +966,9 @@ public class P4Server {
             @Override
             public List<P4AnnotatedLine> query(@NotNull final P4Exec2 exec,
                     @NotNull final ClientCacheManager cacheManager,
-                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    @NotNull final ServerConnection connection,
+                    @NotNull final SynchronizedActionRunner runner,
+                    @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 try {
                     IFileSpec usedSpec = spec;
@@ -997,7 +1003,9 @@ public class P4Server {
             @Override
             public List<P4FileRevision> query(@NotNull final P4Exec2 exec,
                     @NotNull final ClientCacheManager cacheManager,
-                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    @NotNull final ServerConnection connection,
+                    @NotNull final SynchronizedActionRunner runner,
+                    @NotNull final AlertManager alerts)
                     throws InterruptedException {
 
                 // FIXME there's a bug here where getting the revision for a file with a special character won't return any history.  e.g.
@@ -1045,8 +1053,11 @@ public class P4Server {
         return connection.query(project, new ServerQuery<P4CommittedChangeList>() {
             @Nullable
             @Override
-            public P4CommittedChangeList query(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager cacheManager,
-                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+            public P4CommittedChangeList query(@NotNull final P4Exec2 exec,
+                    @NotNull final ClientCacheManager cacheManager,
+                    @NotNull final ServerConnection connection,
+                    @NotNull final SynchronizedActionRunner runner,
+                    @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 final List<IFileSpec> specs;
                 try {
@@ -1329,8 +1340,11 @@ public class P4Server {
                 fsMd5 = connection.query(project, new ServerQuery<String>() {
                     @Nullable
                     @Override
-                    public String query(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager cacheManager,
-                            @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    public String query(@NotNull final P4Exec2 exec,
+                            @NotNull final ClientCacheManager cacheManager,
+                            @NotNull final ServerConnection connection,
+                            @NotNull final SynchronizedActionRunner runner,
+                            @NotNull final AlertManager alerts)
                             throws InterruptedException {
                         try {
                             return exec.loadMd5For(spec);

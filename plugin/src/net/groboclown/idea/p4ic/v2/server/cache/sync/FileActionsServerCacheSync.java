@@ -488,8 +488,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
         return new ImmediateServerUpdateAction() {
             @Override
-            public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
-                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+            public void perform(@NotNull final P4Exec2 exec,
+                    @NotNull final ClientCacheManager clientCacheManager,
+                    @NotNull final ServerConnection connection,
+                    @NotNull final SynchronizedActionRunner syncRunner,
+                    @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 try {
                     final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(files));
@@ -523,8 +526,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         final List<FilePath> orderedFiles = new ArrayList<FilePath>(files);
         return new ImmediateServerUpdateAction() {
             @Override
-            public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
-                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+            public void perform(@NotNull final P4Exec2 exec,
+                    @NotNull final ClientCacheManager clientCacheManager,
+                    @NotNull final ServerConnection connection,
+                    @NotNull final SynchronizedActionRunner syncRunner,
+                    @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 try {
                     final List<IFileSpec> results =
@@ -557,8 +563,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         }
         return new ImmediateServerUpdateAction() {
             @Override
-            public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
-                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+            public void perform(@NotNull final P4Exec2 exec,
+                    @NotNull final ClientCacheManager clientCacheManager,
+                    @NotNull final ServerConnection connection,
+                    @NotNull final SynchronizedActionRunner syncRunner,
+                    @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 try {
                     // Synchronize can happen on a directory
@@ -642,8 +651,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         }
         return new ImmediateServerUpdateAction() {
             @Override
-            public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
-                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+            public void perform(@NotNull final P4Exec2 exec,
+                    @NotNull final ClientCacheManager clientCacheManager,
+                    @NotNull final ServerConnection connection,
+                    @NotNull final SynchronizedActionRunner syncRunner,
+                    @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 try {
                     // Setup the changelist to only contain the given files.

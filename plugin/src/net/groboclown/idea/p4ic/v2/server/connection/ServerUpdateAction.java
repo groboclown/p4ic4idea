@@ -44,7 +44,9 @@ public interface ServerUpdateAction {
      * @param alerts graceful error handling
      */
     void perform(@NotNull P4Exec2 exec, @NotNull ClientCacheManager clientCacheManager,
-            @NotNull ServerConnection connection, @NotNull AlertManager alerts)
+            @NotNull ServerConnection connection,
+            @NotNull SynchronizedActionRunner syncRunner,
+            @NotNull AlertManager alerts)
             throws InterruptedException;
 
     /**

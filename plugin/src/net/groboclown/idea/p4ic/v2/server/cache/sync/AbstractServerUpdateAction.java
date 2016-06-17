@@ -54,8 +54,11 @@ public abstract class AbstractServerUpdateAction implements ServerUpdateAction {
     }
 
     @Override
-    public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
-            @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+    public void perform(@NotNull final P4Exec2 exec,
+            @NotNull final ClientCacheManager clientCacheManager,
+            @NotNull final ServerConnection connection,
+            @NotNull final SynchronizedActionRunner asyncRunner,
+            @NotNull final AlertManager alerts)
             throws InterruptedException {
 
         if (LOG.isDebugEnabled()) {

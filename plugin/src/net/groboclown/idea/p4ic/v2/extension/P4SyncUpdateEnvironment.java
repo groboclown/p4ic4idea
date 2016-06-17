@@ -181,12 +181,14 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
         for (FilePath root: contentRoots) {
             try {
                 final P4Server server = vcs.getP4ServerFor(root);
-                List<FilePath> paths = ret.get(server);
-                if (paths == null) {
-                    paths = new ArrayList<FilePath>();
-                    ret.put(server, paths);
+                if (server != null) {
+                    List<FilePath> paths = ret.get(server);
+                    if (paths == null) {
+                        paths = new ArrayList<FilePath>();
+                        ret.put(server, paths);
+                    }
+                    paths.add(root);
                 }
-                paths.add(root);
             } catch (InterruptedException e) {
                 session.exceptions.add(new VcsInterruptedException(e));
             }

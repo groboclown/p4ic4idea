@@ -133,8 +133,8 @@ public class P4ChangeProvider implements ChangeProvider {
                     // of the system, where if errors occur, the pending
                     // commits are in an invalid state, causing this flush
                     // to never happen.
-                    // See #124.
-                    server.flushCache(true, false);
+                    // See #124.  Temporary fix is to force the flush.
+                    server.flushCache(true, true);
                 }
             }
 

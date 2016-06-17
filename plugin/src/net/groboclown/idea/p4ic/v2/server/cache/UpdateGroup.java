@@ -18,10 +18,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ChangeListServerCacheSync;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.FileActionsServerCacheSync;
-import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerUpdateAction;
+import net.groboclown.idea.p4ic.v2.server.connection.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -96,8 +93,11 @@ public enum UpdateGroup {
                 }
 
                 @Override
-                public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
-                        @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                public void perform(@NotNull final P4Exec2 exec,
+                        @NotNull final ClientCacheManager clientCacheManager,
+                        @NotNull final ServerConnection connection,
+                        @NotNull final SynchronizedActionRunner asyncRunner,
+                        @NotNull final AlertManager alerts)
                         throws InterruptedException {
                     // intentionally empty
                 }

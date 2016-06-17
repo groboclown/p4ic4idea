@@ -11,6 +11,11 @@
 
 * Bug fixes.
     * Help prevent a FileNotFoundException during writing to a temp file (#114).
+    * Report a real error message when the user tries submitting a
+      changelist that's not on the server.
+    * Fix a possible NPE while synchronizing a directory.
+    * Temporary fix for #124 in P4ChangeProvider - force the flushing of the
+      local cache on changelist refresh.
 
 
 ## ::v0.7.15::

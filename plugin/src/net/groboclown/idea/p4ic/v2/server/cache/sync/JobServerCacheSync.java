@@ -25,10 +25,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.JobStateList;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
-import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerQuery;
+import net.groboclown.idea.p4ic.v2.server.connection.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -148,7 +145,8 @@ public class JobServerCacheSync extends CacheFrontEnd {
             @Nullable
             @Override
             public Object query(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager cacheManager,
-                    @NotNull final ServerConnection connection, @NotNull final AlertManager alerts)
+                    @NotNull final ServerConnection connection, @NotNull SynchronizedActionRunner runner,
+                    @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 for (String jobId : toRefresh) {
                     try {

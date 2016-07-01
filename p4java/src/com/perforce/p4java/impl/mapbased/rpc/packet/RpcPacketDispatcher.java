@@ -3,19 +3,8 @@
  */
 package com.perforce.p4java.impl.mapbased.rpc.packet;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
 import com.perforce.p4java.Log;
-import com.perforce.p4java.exception.AccessException;
-import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.ConnectionNotConnectedException;
-import com.perforce.p4java.exception.NullPointerError;
-import com.perforce.p4java.exception.ProtocolError;
-import com.perforce.p4java.exception.UnimplementedError;
+import com.perforce.p4java.exception.*;
 import com.perforce.p4java.impl.mapbased.rpc.CommandEnv;
 import com.perforce.p4java.impl.mapbased.rpc.RpcServer;
 import com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection;
@@ -23,6 +12,8 @@ import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionSpec;
 import com.perforce.p4java.impl.mapbased.rpc.func.client.ClientFunctionDispatcher;
 import com.perforce.p4java.impl.mapbased.rpc.func.proto.FlowControl;
 import com.perforce.p4java.impl.mapbased.rpc.func.proto.ProtocolFunctionDispatcher;
+
+import java.util.*;
 
 /**
  * Top-level client-side packet dispatcher. Responsible for dispatching
@@ -219,10 +210,14 @@ public class RpcPacketDispatcher {
 			
 		} catch (ConnectionNotConnectedException cnce) {
 			throw cnce;
-		} catch (Throwable thr) {
+		// p4ic4idea: Never, never, never catch a Throwable unless you're super careful,
+		// which this is not.
+		// } catch (Throwable thr) {
+		} catch (Exception thr) {
 			Log.error("Unexpected exception: " + thr.getLocalizedMessage());
 			Log.exception(thr);
-			throw new ConnectionException(thr.getLocalizedMessage(), thr);
+			// p4ic4idea: just pass in the parent's exception
+			throw new ConnectionException(thr);
 		}
 	}
 	

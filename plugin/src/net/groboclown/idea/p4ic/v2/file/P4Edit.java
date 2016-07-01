@@ -52,8 +52,16 @@ public class P4Edit extends BasicAction {
             LOG.debug("Checking enabled state for files " + Arrays.asList(vFiles));
         }
 
+        /*
+
+        This seems to have trouble performing the correct calculations.
+        Allow it to be shown, which will also skip the possible check
+        and speed up the UI operation.  If the user tries to edit the
+        file when it's not really possible, then the edit will handle the
+        error conditions at that point.
+
         try {
-            final Map<P4Server, List<VirtualFile>> servers = vcs.mapVirtualFilesToP4Server(Arrays.asList(vFiles));
+            final Map<P4Server, List<VirtualFile>> servers = vcs.mapVirtualFilesToOnlineP4Server(Arrays.asList(vFiles));
 
             // all we care about for open for edit/add is whether
             // the files map to servers or not.  Online or offline
@@ -61,8 +69,11 @@ public class P4Edit extends BasicAction {
             return !(servers.isEmpty() || (servers.size() == 1 && servers.containsKey(null)));
         } catch (InterruptedException e) {
             LOG.info(e);
-            return false;
+            return true;
         }
+
+        */
+        return true;
     }
 
 

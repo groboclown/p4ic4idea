@@ -13,9 +13,11 @@
  */
 package net.groboclown.idea.p4ic.server.exceptions;
 
+import net.groboclown.idea.p4ic.P4Bundle;
+
 public class P4WorkingOfflineException extends P4DisconnectedException {
     public P4WorkingOfflineException() {
-        super("User selected offline mode");
+        super(P4Bundle.message("error.working-offline"));
     }
 
 

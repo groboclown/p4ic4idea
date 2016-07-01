@@ -75,9 +75,10 @@ public class P4ChangeProvider implements ChangeProvider {
     }
 
     @Override
-    public void getChanges(VcsDirtyScope dirtyScope, ChangelistBuilder builder,
-            ProgressIndicator progress,
-            ChangeListManagerGate addGate) throws VcsException {
+    public void getChanges(@NotNull VcsDirtyScope dirtyScope,
+            @NotNull ChangelistBuilder builder,
+            @NotNull ProgressIndicator progress,
+            @NotNull ChangeListManagerGate addGate) throws VcsException {
         progress.setFraction(0.0);
         if (project.isDisposed()) {
             progress.setFraction(1.0);
@@ -284,7 +285,7 @@ public class P4ChangeProvider implements ChangeProvider {
 
 
 
-    static class ServerAction {
+    private static class ServerAction {
         final P4Server server;
         final P4FileAction action;
 
@@ -294,7 +295,7 @@ public class P4ChangeProvider implements ChangeProvider {
         }
     }
 
-    static class MappedOpenFiles {
+    private static class MappedOpenFiles {
         // for reference
         final Set<FilePath> scopedDirtyFiles;
 

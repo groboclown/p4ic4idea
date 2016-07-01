@@ -82,6 +82,43 @@ public class P4ServerManager implements ProjectComponent {
     }
 
 
+    /**
+     * Simple request to get the list of servers.  Does not check for
+     * online status or initialization.
+     *
+     * @return
+     */
+    @NotNull
+    public List<P4Server> getOnlineServers() {
+        if (!connectionsValid) {
+            return Collections.emptyList();
+        }
+        if (!hasServers) {
+            // This happens at startup before the system has loaded,
+            // or right after an announcement is sent out, before
+            // we had a chance to reload our server connections.
+            return Collections.emptyList();
+        }
+        final List<P4Server> ret;
+        serverLock.lock();
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Found server configs " + servers);
+            }
+            ret = new ArrayList<P4Server>(servers.size());
+
+            for (P4Server server : servers.values()) {
+                if (server.isValid()) {
+                    ret.add(server);
+                }
+            }
+        } finally {
+            serverLock.unlock();
+        }
+        return ret;
+    }
+
+
     @NotNull
     public List<P4Server> getServers() {
         if (! connectionsValid) {
@@ -166,61 +203,29 @@ public class P4ServerManager implements ProjectComponent {
     @NotNull
     public Map<P4Server, List<FilePath>> mapFilePathsToP4Server(Collection<FilePath> files)
             throws InterruptedException {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("mapping to servers: " + new ArrayList<FilePath>(files));
-        }
-        if (! connectionsValid) {
-            LOG.info("configs not valid");
-            return Collections.emptyMap();
-        }
-        Map<P4Server, List<FilePath>> ret = new HashMap<P4Server, List<FilePath>>();
-        List<P4Server> servers = getServers();
-        if (servers.isEmpty()) {
-            LOG.info("no valid servers registered");
-            return ret;
-        }
-        // Find the shallowest match.
-        for (FilePath file : files) {
-            P4Server minDepthServer = getServerForPath(servers, file);
-            List<FilePath> match = ret.get(minDepthServer);
-            if (match == null) {
-                match = new ArrayList<FilePath>();
-                ret.put(minDepthServer, match);
-            }
-            match.add(file);
-        }
-        return ret;
+        return mapToP4Server(files, FILE_PATH_SERVER_MATCHER);
     }
 
     @NotNull
     public Map<P4Server, List<VirtualFile>> mapVirtualFilesToP4Server(@NotNull final Collection<VirtualFile> files)
             throws InterruptedException {
+        return mapToP4Server(files, VIRTUAL_FILE_SERVER_MATCHER);
+    }
+
+    @NotNull
+    public Map<P4Server, List<VirtualFile>> mapVirtualFilesToOnlineP4Server(@NotNull final Collection<VirtualFile> files)
+            throws InterruptedException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("mapping to servers: " + new ArrayList<VirtualFile>(files));
         }
-        if (connectionsValid) {
-            Map<P4Server, List<VirtualFile>> ret = new HashMap<P4Server, List<VirtualFile>>();
-            List<P4Server> servers = getServers();
-            if (servers.isEmpty()) {
-                LOG.info("no valid servers registered");
-                return ret;
-            }
-            // Find the shallowest match.
-            for (VirtualFile file : files) {
-                P4Server minDepthServer = getServerForPath(servers, FilePathUtil.getFilePath(file));
-                List<VirtualFile> match = ret.get(minDepthServer);
-                if (match == null) {
-                    match = new ArrayList<VirtualFile>();
-                    ret.put(minDepthServer, match);
-                }
-                match.add(file);
-            }
-            return ret;
-        } else {
+        if (!connectionsValid) {
             LOG.info("configs not valid");
             return Collections.emptyMap();
         }
+        return mapToP4Server(getOnlineServers(), files, VIRTUAL_FILE_SERVER_MATCHER);
     }
+
+
 
 
     @Nullable
@@ -338,7 +343,7 @@ public class P4ServerManager implements ProjectComponent {
 
 
     @Nullable
-    private P4Server getServerForPath(@NotNull List<P4Server> servers, @NotNull FilePath file)
+    private static P4Server getServerForPath(@NotNull List<P4Server> servers, @NotNull FilePath file)
             throws InterruptedException {
         int minDepth = Integer.MAX_VALUE;
         P4Server minDepthServer = null;
@@ -443,6 +448,78 @@ public class P4ServerManager implements ProjectComponent {
         for (Warning warning : warnings) {
             warning.post(alertManager);
         }
+    }
+
+    private interface ServerMatcher<T> {
+        @Nullable
+        P4Server match(@NotNull List<P4Server> servers, T file) throws InterruptedException;
+    }
+
+    private static final ServerMatcher<FilePath> FILE_PATH_SERVER_MATCHER = new ServerMatcher<FilePath>() {
+        @Nullable
+        @Override
+        public P4Server match(@NotNull final List<P4Server> servers, final FilePath file) throws InterruptedException {
+            return getServerForPath(servers, file);
+        }
+    };
+
+    private static final ServerMatcher<VirtualFile> VIRTUAL_FILE_SERVER_MATCHER = new ServerMatcher<VirtualFile>() {
+        @Nullable
+        @Override
+        public P4Server match(@NotNull final List<P4Server> servers, final VirtualFile file)
+                throws InterruptedException {
+            return getServerForPath(servers, FilePathUtil.getFilePath(file));
+        }
+    };
+
+    /**
+     * @param files files
+     * @return the matched mapping of files to the servers.  There might be a "null" server entry, which
+     * contains a list of file paths that didn't map to a client.
+     */
+    @NotNull
+    private <T> Map<P4Server, List<T>> mapToP4Server(
+            @NotNull Collection<T> files,
+            @NotNull ServerMatcher<T> matcher)
+            throws InterruptedException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("mapping to servers: " + new ArrayList<T>(files));
+        }
+        if (!connectionsValid) {
+            LOG.info("configs not valid");
+            return Collections.emptyMap();
+        }
+        return mapToP4Server(getServers(), files, matcher);
+    }
+
+
+    /**
+     * @param files files
+     * @return the matched mapping of files to the servers.  There might be a "null" server entry, which
+     * contains a list of file paths that didn't map to a client.
+     */
+    @NotNull
+    private <T> Map<P4Server, List<T>> mapToP4Server(
+            @NotNull List<P4Server> servers,
+            @NotNull Collection<T> files,
+            @NotNull ServerMatcher<T> matcher)
+            throws InterruptedException {
+        if (servers.isEmpty()) {
+            LOG.info("no valid servers registered");
+            return Collections.emptyMap();
+        }
+        Map<P4Server, List<T>> ret = new HashMap<P4Server, List<T>>();
+        // Find the shallowest match.
+        for (T file : files) {
+            P4Server minDepthServer = matcher.match(servers, file);
+            List<T> match = ret.get(minDepthServer);
+            if (match == null) {
+                match = new ArrayList<T>();
+                ret.put(minDepthServer, match);
+            }
+            match.add(file);
+        }
+        return ret;
     }
 
 

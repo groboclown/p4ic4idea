@@ -167,6 +167,9 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
                 next = iter.next();
                 sb.append(P4Bundle.message("changelist.decorator.offline.middle", next.getClientName()));
             }
+            if (sb.length() > 0) {
+                sb.append(' ');
+            }
             sb.append(P4Bundle.message("changelist.decorator.offline.end"));
             cellRenderer.append(sb.toString(), SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES);
         }

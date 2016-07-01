@@ -16,6 +16,15 @@
     * Fix a possible NPE while synchronizing a directory.
     * Temporary fix for #124 in P4ChangeProvider - force the flushing of the
       local cache on changelist refresh.
+    * Removed deprecated references.
+    * Minor fix to changelist view details - if the server is offline and
+      you're using multiple clients, then the offline status is correctly formatted.
+    * Reduced the number of possible critical errors while changing connection
+      information during a background operation.
+    * Increased the performance of the determination of whether the "Edit" option
+      should be visible under the P4 menu.  This also changes its behavior so that
+      it is always visible, even if the selected files are not under a Perforce
+      client.
 
 
 ## ::v0.7.15::

@@ -77,25 +77,25 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             FileStatusFactory.getInstance().createFileStatus(
                     "ADDED_OFFLINE",
                     P4Bundle.message("filestatus.added_offline"),
-                    FileStatus.COLOR_ADDED
+                    FileStatus.ADDED.getColor()
             );
     public static final FileStatus MODIFIED_OFFLINE =
             FileStatusFactory.getInstance().createFileStatus(
                     "MODIFIED_OFFLINE",
                     P4Bundle.message("filestatus.edited_offline"),
-                    FileStatus.COLOR_MODIFIED
+                    FileStatus.MODIFIED.getColor()
             );
     public static final FileStatus DELETED_OFFLINE =
             FileStatusFactory.getInstance().createFileStatus(
                     "DELETED_OFFLINE",
                     P4Bundle.message("filestatus.deleted_offline"),
-                    FileStatus.COLOR_MISSING
+                    FileStatus.DELETED_FROM_FS.getColor()
             );
     public static final FileStatus REVERTED_OFFLINE =
             FileStatusFactory.getInstance().createFileStatus(
                     "REVERTED_OFFLINE",
                     P4Bundle.message("filestatus.reverted_offline"),
-                    FileStatus.COLOR_NOT_CHANGED_IMMEDIATE
+                    FileStatus.NOT_CHANGED_IMMEDIATE.getColor()
             );
 
 
@@ -659,8 +659,27 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     }
 
 
+    /**
+     * Quick look at the servers, so that it doesn't hang up the UI.
+     *
+     * @param files files
+     * @return the matched mapping of files to the servers.  There might be a "null" server entry, which
+     * contains a list of file paths that didn't map to a client.
+     */
+    @NotNull
+    public Map<P4Server, List<VirtualFile>> mapVirtualFilesToOnlineP4Server(Collection<VirtualFile> files)
+            throws InterruptedException {
+        return serverManager.mapVirtualFilesToOnlineP4Server(files);
+    }
+
+
     public List<P4Server> getP4Servers() {
         return serverManager.getServers();
+    }
+
+
+    public List<P4Server> getOnlineP4Servers() {
+        return serverManager.getOnlineServers();
     }
 
 

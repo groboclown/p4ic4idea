@@ -1,11 +1,30 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.15</version>
+    <version>0.7.16</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.7.16</em>
+            <ol>
+              <li>Help prevent a FileNotFoundException during writing to a temp file.</li>
+              <li>Report a real error message when the user tries submitting a
+              changelist that's not on the server.</li>
+              <li>Fix a possible NPE while synchronizing a directory.</li>
+              <li>Temporary fix for #124 in P4ChangeProvider - force the flushing of the
+              local cache on changelist refresh.</li>
+              <li>Removed deprecated references.</li>
+              <lil>Minor fix to changelist view details - if the server is offline and
+              you're using multiple clients, then the offline status is correctly formatted.</li>
+              <li>Reduced the number of possible critical errors while changing connection
+              information during a background operation.</li>
+              <li>Increased the performance of the determination of whether the "Edit" option
+              should be visible under the P4 menu.  This also changes its behavior so that
+              it is always visible, even if the selected files are not under a Perforce
+              client.</li>
+            </ol>
+          </li>
           <li><em>0.7.15</em>
             <ol>
               <li>Updated P4Java API to r15-2.</li>
@@ -21,22 +40,6 @@
               P4ChangeListMapping.getPerforceChangelistFor.</li>
               <li>Fixed an issue with session expiration.  The plugin now properly
               asks for the user's password.</li>
-            </ol>
-          </li>
-          <li><em>0.7.14</em>
-            <ol>
-              <li>Fixed a possible deadlock with server connection checking.</li>
-              <li>Fixed an issue where copied files were not opened for add.</li>
-              <li>Fixed a rare concurrent modification exception.</li>
-              <li>Fixed one place where disposed projects are attempted to be used.</li>
-              <li>Fixed an issue where the plugin would not allow loading
-              the list of clients unless you had a client set.</li>
-              <li>Fixed an issue where the changelist name and description can be concatenated
-              together.  Now, changelists will be updated to use the comment, and only use
-              the name if no comment is given.  This better matches the behavior of
-              submit.</li>
-              <li>Fixed a configuration panel issue for the multi-p4config file setup
-              did not show the config settings for a selected path.</li>
             </ol>
           </li>
         </ol>

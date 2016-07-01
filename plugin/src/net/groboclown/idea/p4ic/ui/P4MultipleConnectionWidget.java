@@ -232,7 +232,9 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
         int online = 0;
         int offline = 0;
         if (myVcs != null) {
-            for (P4Server server : myVcs.getP4Servers()) {
+            // Don't hang up the UI thread by waiting on servers to be validated and
+            // authenticated.
+            for (P4Server server : myVcs.getOnlineP4Servers()) {
                 if (server.isWorkingOffline()) {
                     offline++;
                 } else {

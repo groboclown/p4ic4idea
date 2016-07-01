@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.connection;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
@@ -103,7 +104,7 @@ public class ServerConnection {
         this.clientName = clientServerId.getClientId();
         this.clientExec = initial;
 
-        background = new Thread(new QueueRunner());
+        background = new Thread(new QueueRunner(), "P4 Server Connection");
         background.setDaemon(false);
         background.setPriority(Thread.NORM_PRIORITY - 1);
         background.start();
@@ -117,33 +118,40 @@ public class ServerConnection {
             return;
         }
 
-        synchronized (clientExecLock) {
-            // Already setup check, now that we're in the lock.
-            if (setup) {
-                return;
-            }
+        // This can severely hang the UI during startup, so run
+        // in a background thread.
+        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (clientExecLock) {
+                    // Already setup check, now that we're in the lock.
+                    if (setup) {
+                        return;
+                    }
 
-            // Mark the connection has having been setup,
-            // so that we don't try to re-enter this
-            // method and possibly deadlock.
-            setup = true;
+                    // Mark the connection has having been setup,
+                    // so that we don't try to re-enter this
+                    // method and possibly deadlock.
+                    setup = true;
 
-            // First, check if the server is reachable.
-            // This is necessary to keep the pending changes from being gobbled
-            // up if we have a mistaken online mode set.  If we know we're
-            // working offline, then don't check if we're online (especially since
-            // the user can manually switch to offline mode).
-            if (isWorkingOnline()) {
-                checkIfOnline(project);
-            }
+                    // First, check if the server is reachable.
+                    // This is necessary to keep the pending changes from being gobbled
+                    // up if we have a mistaken online mode set.  If we know we're
+                    // working offline, then don't check if we're online (especially since
+                    // the user can manually switch to offline mode).
+                    if (isWorkingOnline()) {
+                        checkIfOnline(project);
+                    }
 
-            // Push all the cached pending updates into the queue for future
-            // processing.
-            if (!loadedPendingUpdateStates) {
-                queueUpdateActions(project, cacheManager.getCachedPendingUpdates());
-                loadedPendingUpdateStates = true;
+                    // Push all the cached pending updates into the queue for future
+                    // processing.
+                    if (!loadedPendingUpdateStates) {
+                        queueUpdateActions(project, cacheManager.getCachedPendingUpdates());
+                        loadedPendingUpdateStates = true;
+                    }
+                }
             }
-        }
+        });
     }
 
 
@@ -313,7 +321,7 @@ public class ServerConnection {
 
     P4Exec2 getExec(@NotNull Project project) throws P4InvalidConfigException {
         if (disposed) {
-            throw new IllegalStateException("connection disposed");
+            throw new P4InvalidConfigException(P4Bundle.message("error.p4exec.disposed"));
         }
         // double-check locking.  This is why clientExec must be volatile.
         synchronized (clientExecLock) {
@@ -439,7 +447,9 @@ public class ServerConnection {
                             try {
                                 exec = getExec(action.project);
                                 // Perform a second connection attempt, just to be sure.
-                                exec.getServerInfo();
+
+                                // TODO currently disabled to see if this helps with connection speed.
+                                // exec.getServerInfo();
                             } catch (P4InvalidConfigException e) {
                                 alertManager.addCriticalError(new ConfigurationProblemHandler(action.project,
                                         statusController, e), e);
@@ -447,14 +457,14 @@ public class ServerConnection {
                                 cacheManager.removePendingUpdateStates(action.action.getPendingUpdateStates());
                                 action.action.abort(cacheManager);
                                 return null;
-                            } catch (VcsException e) {
-                                // TODO need a more nuanced handler for general connection problems.
-                                alertManager.addCriticalError(new DisconnectedHandler(action.project,
-                                        statusController, e), e);
-                                // go offline and requeue the action
-                                getServerConnectedController().disconnect();
-                                pushAbortedAction(action);
-                                return null;
+//                            } catch (VcsException e) {
+//                                // TODO need a more nuanced handler for general connection problems.
+//                                alertManager.addCriticalError(new DisconnectedHandler(action.project,
+//                                        statusController, e), e);
+//                                // go offline and requeue the action
+//                                getServerConnectedController().disconnect();
+//                                pushAbortedAction(action);
+//                                return null;
                             }
                             if (! action.project.isDisposed()) {
                                 action.action.perform(exec,

@@ -241,13 +241,13 @@
     <target name="unit-tests" unless="skip.tests">
         <property name="base.test-data.dir" location="${basedir}/work/test-data"/>
         <mkdir dir="${base.test-data.dir}"/>
+        <echo>${jdk.bin}/java</echo>
         <junit printsummary="yes" fork="yes" forkmode="once" failureProperty="tests.failure"
                errorProperty="tests.error" dir="${base.test-data.dir}">
             <classpath>
                 <path location="${testoutput.dir}"/>
                 <path refid="test.runtime.classpath"/>
             </classpath>
-            <bootclasspath refid="bootclasspath.6"/>
 
             <!-- Add the plain output to allow for step-by-step reporting of tests -->
             <formatter type="plain" usefile="no"/>

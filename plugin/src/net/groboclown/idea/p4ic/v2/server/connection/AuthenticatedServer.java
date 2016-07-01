@@ -14,7 +14,6 @@
 package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
-
 import com.intellij.openapi.project.Project;
 import com.perforce.p4java.Log;
 import com.perforce.p4java.PropertyDefs;
@@ -50,7 +49,7 @@ class AuthenticatedServer {
         NOT_CONNECTED
     }
 
-    enum LoginValidation {
+    private enum LoginValidation {
         AUTHENTICATED,
         SESSION_EXPIRED,
         ERROR
@@ -86,7 +85,7 @@ class AuthenticatedServer {
     @Nullable
     private final Project project;
 
-    @NotNull
+    @Nullable
     private IOptionsServer server;
 
     private Thread checkedOutBy;
@@ -112,20 +111,17 @@ class AuthenticatedServer {
         this.config = config;
         this.clientName = clientName;
         this.tempDir = tempDir;
-        this.server = reconnect(project, clientName, connectionHandler,
-                config, tempDir, serverInstance);
-
-        connectedCount++;
+        this.server = null;
     }
 
 
     boolean isDisconnected() {
-        return ! server.isConnected();
+        return server == null || ! server.isConnected();
     }
 
 
     void disconnect() throws ConnectionException, AccessException {
-        if (server.isConnected()) {
+        if (server != null && server.isConnected()) {
             disconnectedCount++;
             activeConnectionCount.decrementAndGet();
             server.disconnect();
@@ -147,13 +143,12 @@ class AuthenticatedServer {
             LOG.debug("Checking out server " + this + " in " + Thread.currentThread());
         }
 
-        if (! server.isConnected()) {
+        if (server == null || ! server.isConnected()) {
             reconnect();
         }
-        //if (! hasValidatedAuthentication) {
-            // Note: does not check the authentication result.
+        if (! hasValidatedAuthentication) {
             authenticate();
-        //}
+        }
         checkedOutBy = Thread.currentThread();
         return server;
     }
@@ -180,10 +175,22 @@ class AuthenticatedServer {
     /**
      *
      * @return true if authentication was successful.
-     * @throws P4JavaException
+     * @throws P4JavaException on authentication problem
      */
     AuthenticationResult authenticate() throws P4JavaException {
-        if (! server.isConnected() || (project != null && project.isDisposed())) {
+        if (project != null && project.isDisposed()) {
+            return AuthenticationResult.NOT_CONNECTED;
+        }
+        if (server == null || ! server.isConnected()) {
+//            try {
+//                reconnect();
+//            } catch (URISyntaxException e) {
+//                return AuthenticationResult.NOT_CONNECTED;
+//            }
+            // The only place where this would matter is with the call to
+            // ClientExec.ServerRunnerConnection.authenticate.  Even that
+            // is called only when an unauthorized exception is called.
+            // Other than that, this should always assume that it's connected.
             return AuthenticationResult.NOT_CONNECTED;
         }
 
@@ -201,7 +208,7 @@ class AuthenticatedServer {
         if (loginValidation != LoginValidation.AUTHENTICATED) {
             loginFailedCount++;
 
-            // the forced authentication has passed, but the
+            // The forced authentication has passed, but the
             // validation failed.
 
             if (! hasValidatedAuthentication) {
@@ -235,6 +242,7 @@ class AuthenticatedServer {
                         LOG.info("Authorization successful after " + i +
                                 " unauthorized connections (but a valid one was seen earlier) for " +
                                 this);
+                        hasValidatedAuthentication = true;
                         return AuthenticationResult.AUTHENTICATED;
                     }
                     forceAuthenticate(i);
@@ -243,6 +251,7 @@ class AuthenticatedServer {
                         LOG.info("Authorization successful after " + i +
                                 " unauthorized connections (but a valid one was seen earlier) for " +
                                 this);
+                        hasValidatedAuthentication = true;
                         return AuthenticationResult.AUTHENTICATED;
                     }
                     if (loginValidation == LoginValidation.SESSION_EXPIRED) {
@@ -267,6 +276,9 @@ class AuthenticatedServer {
     }
 
     private void forceAuthenticate(int count) throws P4JavaException {
+        if (server == null || ! server.isConnected()) {
+            throw new ConnectionNotConnectedException();
+        }
         try {
             // It looks like forced authentication can fail due to too many
             // quick requests to the server.  So wait a little bit to
@@ -333,12 +345,15 @@ class AuthenticatedServer {
 
     private LoginValidation validateLogin()
             throws ConnectionException, RequestException, AccessException {
-        if (! server.isConnected()) {
+        if (server == null || ! server.isConnected()) {
             return LoginValidation.ERROR;
         }
         try {
             // Perform an operation that should succeed, and only fail if the
             // login is wrong.
+
+            // Note: this can potentially take a really long time to run.
+
             server.getUser(config.getUsername());
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Basic authentication looks correct for " + this);
@@ -414,9 +429,9 @@ class AuthenticatedServer {
         properties.setProperty(PropertyDefs.P4JAVA_TMP_DIR_KEY, tempDir.getAbsolutePath());
 
         // For tracking purposes
-        properties.setProperty(PropertyDefs.PROG_NAME_KEY,
-                properties.getProperty(PropertyDefs.PROG_NAME_KEY) + " connection " +
-                serverInstance);
+        // properties.setProperty(PropertyDefs.PROG_NAME_KEY,
+        //        properties.getProperty(PropertyDefs.PROG_NAME_KEY) + " connection " +
+        //        serverInstance);
 
         url = connectionHandler.createUrl(config);
         LOG.info("Opening connection " + serverInstance + " to " + url + " with " + config.getUsername());
@@ -449,6 +464,8 @@ class AuthenticatedServer {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("calling connect");
                     }
+                    // Will need to reauthenticate, because we're re-connecting.
+                    hasValidatedAuthentication = false;
                     server.connect();
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("calling activeConnectionCount incrementAndGet");
@@ -467,6 +484,7 @@ class AuthenticatedServer {
                         LOG.debug("calling defaultAuthentication on " + connectionHandler.getClass().getSimpleName());
                     }
                     connectionHandler.defaultAuthentication(project, server, config);
+                    // We cannot tell if we've been authenticated here.  That is delayed until later.
 
                     return server;
                 }
@@ -480,12 +498,12 @@ class AuthenticatedServer {
     /**
      * Ensures that the CONNECT_LOCK is correctly used so it doesn't cause deadlocks.
      *
-     * @param callable
-     * @param <T>
-     * @return
-     * @throws InterruptedException
-     * @throws P4JavaException
-     * @throws URISyntaxException
+     * @param callable locked object
+     * @param <T> return type
+     * @return callable's return
+     * @throws InterruptedException thread interrupted
+     * @throws P4JavaException p4 communication error
+     * @throws URISyntaxException server uri wrong
      */
     private <T> T withConnectionLock(WithConnectionLock<T> callable)
             throws InterruptedException, P4JavaException, URISyntaxException {

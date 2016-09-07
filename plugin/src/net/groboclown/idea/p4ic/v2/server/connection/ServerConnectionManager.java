@@ -67,7 +67,7 @@ public class ServerConnectionManager implements ApplicationComponent {
         this(new CentralCacheManager(), AlertManager.getInstance());
     }
 
-    ServerConnectionManager(@NotNull CentralCacheManager cacheManager,
+    private ServerConnectionManager(@NotNull CentralCacheManager cacheManager,
             @NotNull AlertManager alerts) {
         this.cacheManager = cacheManager;
         this.alerts = alerts;
@@ -159,7 +159,7 @@ public class ServerConnectionManager implements ApplicationComponent {
     }
 
 
-    void invalidateConfig(@NotNull P4Config client) {
+    private void invalidateConfig(@NotNull P4Config client) {
         serverCacheLock.lock();
         try {
             List<ServerConfig> removedConfigs = new ArrayList<ServerConfig>();
@@ -181,7 +181,7 @@ public class ServerConnectionManager implements ApplicationComponent {
     }
 
 
-    void invalidateAllConfigs() {
+    private void invalidateAllConfigs() {
         serverCacheLock.lock();
         try {
             for (ServerConfigStatus status: serverCache.values()) {
@@ -194,7 +194,8 @@ public class ServerConnectionManager implements ApplicationComponent {
     }
 
 
-    void setConnectionState(@NotNull ServerConfig config, boolean isOnline) {
+    private void setConnectionState(@NotNull ServerConfig config, boolean isOnline) {
+        /* Bug #128: This was putting us in a deadlock.
         serverCacheLock.lock();
         try {
             final ServerConfigStatus status = serverCache.get(config);
@@ -210,10 +211,27 @@ public class ServerConnectionManager implements ApplicationComponent {
         } finally {
             serverCacheLock.unlock();
         }
+        */
+        final ServerConfigStatus status;
+        serverCacheLock.lock();
+        try {
+            status = serverCache.get(config);
+        } finally {
+            serverCacheLock.unlock();
+        }
+        if (status != null) {
+            // directly set the status; don't go through the events or
+            // other connection stuff.
+            if (isOnline) {
+                status.onConnected();
+            } else {
+                status.onDisconnected();
+            }
+        }
     }
 
 
-    static class ServerConfigStatus implements ServerStatusController {
+    private static class ServerConfigStatus implements ServerStatusController {
         // List, not a set, so that we can have multiple registrations of the same client name;
         // especially useful for multiple projects with the same client.
         final Map<String, ServerConnection> clientNames = new HashMap<String, ServerConnection>();

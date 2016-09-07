@@ -8,9 +8,8 @@
       <sourceFolder url="file://$MODULE_DIR$/resources" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="IntelliJ IDEA Community Edition IC-144.4199.23" jdkType="IDEA JDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="idea-compat" exported="" />
     <orderEntry type="module-library" scope="TEST">
       <library>
         <CLASSES>
@@ -23,35 +22,7 @@
         </SOURCES>
       </library>
     </orderEntry>
-    <orderEntry type="module" module-name="p4java" exported="" />
-    <orderEntry type="module" module-name="idea160" scope="RUNTIME" />
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/AI-135.1653844/openapi.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/AI-135.1653844/util.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/AI-135.1653844/annotations.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
+    <orderEntry type="module" module-name="p4java" />
     <orderEntry type="module-library" scope="TEST">
       <library>
         <CLASSES>
@@ -73,7 +44,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/AI-135.1653844/jdom.jar!/" />
+          <root url="jar://$MODULE_DIR$/../idea-compat/work/p4ic4idea.idea-compat.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -82,7 +53,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/AI-135.1653844/idea.jar!/" />
+          <root url="jar://$MODULE_DIR$/../idea160/work/p4ic4idea.idea160-compat.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -91,7 +62,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/AI-135.1653844/extensions.jar!/" />
+          <root url="jar://$MODULE_DIR$/../idea135/work/p4ic4idea.idea135-compat.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -100,7 +71,16 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/AI-135.1653844/asm-all.jar!/" />
+          <root url="jar://$MODULE_DIR$/../idea140/work/p4ic4idea.idea140-compat.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../idea150/work/p4ic4idea.idea150-compat.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -110,51 +90,6 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/AI-135.1653844/guava-17.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/AI-135.1653844/idea_rt.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/AI-135.1653844/javac2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/AI-135.1653844/jgoodies-forms.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../intellij-lib/intellij/AI-135.1653844/log4j.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../lib/picocontainer/1.2/picocontainer.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

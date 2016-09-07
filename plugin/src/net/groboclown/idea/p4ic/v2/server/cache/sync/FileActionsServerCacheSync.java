@@ -1385,7 +1385,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     joinChangelistFiles(split.edited, split.added, split.integrated);
             if (!revertSets.isEmpty()) {
                 final Set<FilePath> reverts = new HashSet<FilePath>();
-                for (Collection<FilePath> fpList : split.deleted.values()) {
+                for (Collection<FilePath> fpList : revertSets.values()) {
                     reverts.addAll(fpList);
                 }
                 try {

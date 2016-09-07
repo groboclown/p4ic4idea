@@ -1,6 +1,21 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.7.17::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Added a fix for a deadlock that would happen on occasion during
+      startup (#128).
+    * Fixed an old bug related to deleting files (#126).  It used to just
+      open the file for edit.  Now it correctly reverts the edit before
+      trying to delete the file.
+
 ## ::v0.7.16::
 
 ### Overview

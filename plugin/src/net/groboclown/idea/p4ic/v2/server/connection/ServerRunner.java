@@ -189,13 +189,13 @@ public class ServerRunner {
     private static <T> T p4RunWithSkippedPasswordCheck(@NotNull P4Runner<T> runner, @NotNull Connection conn,
             @NotNull ErrorVisitor errorVisitor, int retryCount)
             throws VcsException, CancellationException {
-        // Must check offline status
-        if (conn.isWorkingOffline()) {
-            // should never get to this point; the online/offline status should
-            // have already been determined before entering this method.
-            conn.disconnected();
-            throw new P4WorkingOfflineException();
-        }
+        // If the user is working in offline mode, then
+        // the execution should never have reached this point;
+        // the online/offline status should
+        // have already been determined before entering this method.
+        // See bug #125 for details.  Essentially, checking offline
+        // status here makes the user mad, and the plugin nearly
+        // unusable.
 
         try {
             T ret = runner.run();

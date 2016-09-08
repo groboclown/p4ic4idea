@@ -6,31 +6,20 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.7.18</em>
+            <ol>
+              <li>Removed an extraneous offline mode check which caused setting up the connection to report a
+              "working offline" error.  This ended up making the plugin unusable while in this mode.</li>
+              <li>Fixed the display of the server connection information so that it no longer has the really ugly
+              prefix.</li>
+            </ol>
+          </li>
           <li><em>0.7.17</em>
             <ol>
               <li>Added a fix for a deadlock that would happen on occasion during
               startup.</li>
               <li>Fixed the delete bug; it now correctly opens the
               file for delete, even if the file is open for edit.</li>
-            </ol>
-          </li>
-          <li><em>0.7.16</em>
-            <ol>
-              <li>Help prevent a FileNotFoundException during writing to a temp file.</li>
-              <li>Report a real error message when the user tries submitting a
-              changelist that's not on the server.</li>
-              <li>Fix a possible NPE while synchronizing a directory.</li>
-              <li>Temporary fix for #124 in P4ChangeProvider - force the flushing of the
-              local cache on changelist refresh.</li>
-              <li>Removed deprecated references.</li>
-              <lil>Minor fix to changelist view details - if the server is offline and
-              you're using multiple clients, then the offline status is correctly formatted.</li>
-              <li>Reduced the number of possible critical errors while changing connection
-              information during a background operation.</li>
-              <li>Increased the performance of the determination of whether the "Edit" option
-              should be visible under the P4 menu.  This also changes its behavior so that
-              it is always visible, even if the selected files are not under a Perforce
-              client.</li>
             </ol>
           </li>
         </ol>

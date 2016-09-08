@@ -181,6 +181,16 @@ public class P4Server {
     }
 
 
+    @NotNull
+    public String getClientServerDisplayId() {
+        String serverDisplay = source.getClientServerId().getServerDisplayId();
+        String clientDisplay = source.getClientServerId().getClientId();
+        if (clientDisplay == null) {
+            return P4Bundle.message("client-server.display.server-only", serverDisplay);
+        }
+        return P4Bundle.message("client-server.display.server-client", serverDisplay, clientDisplay);
+    }
+
     public void workOffline() {
         if (isValid()) {
             connection.workOffline();

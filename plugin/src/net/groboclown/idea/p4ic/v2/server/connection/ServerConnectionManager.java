@@ -370,7 +370,8 @@ public class ServerConnectionManager implements ApplicationComponent {
                 }
             } else if (project != null) {
                 P4DisconnectedException ex = new P4DisconnectedException(
-                        P4Bundle.message("disconnected.server-invalid", config.getServiceName())
+                        // Note: using the nice server name, rather than the whole ugly string (#116)
+                        P4Bundle.message("disconnected.server-invalid", config.getServiceDisplayName())
                 );
                 AlertManager.getInstance().addCriticalError(
                         new DisconnectedHandler(project, this, ex), ex);

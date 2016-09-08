@@ -109,13 +109,23 @@ public abstract class ServerConfig {
         return getProtocol().toString() + "://" + getPort();
     }
 
-    //public abstract boolean storePasswordLocally();
+    @NotNull
+    public final String getServiceDisplayName() {
+        StringBuilder ret = new StringBuilder();
+        if (getProtocol().isSecure()) {
+            ret.append("ssl:");
+        }
+        ret.append(getPort());
+        return ret.toString();
+    }
 
     public abstract boolean isAutoOffline();
 
     @Override
     public String toString() {
         Map<String, String> ret = new HashMap<String, String>();
+        // Note: even though this is not what we want for bug #116 (display of the ugly protocol to the user),
+        // it's fine for here.
         ret.put(PerforceEnvironment.P4PORT, P4ConfigUtil.toFullPort(getProtocol(), getPort()));
         ret.put(PerforceEnvironment.P4TRUST,
                 getTrustTicket() == null ? null :

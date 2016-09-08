@@ -65,8 +65,15 @@ public final class ClientServerId {
 
     @NotNull
     public String getServerDisplayId() {
-        // TODO return a user friendly id
-        return serverConfigId;
+        String display = serverConfigId;
+        int pos = display.indexOf("://");
+        if (pos >= 0) {
+            display = display.substring(pos + 3);
+        }
+        if (display.contains("ssl://")) {
+            display = "ssl:" + display;
+        }
+        return display;
     }
 
 

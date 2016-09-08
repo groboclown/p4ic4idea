@@ -1,6 +1,20 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.7.18::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Removed an extraneous offline mode check which caused setting up the connection to report a "working offline"
+      error.  This ended up making the plugin unusable while in this mode.  (#125)
+    * Fixed the display of the server connection information so that it no longer has the really ugly prefix. (#116)
+
+
 ## ::v0.7.17::
 
 ### Overview

@@ -257,7 +257,8 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
 
         String password = UICompat.getInstance().askPassword(project,
                 P4Bundle.message("login.password.title"),
-                P4Bundle.message("login.password.message", config.getServiceName(), config.getUsername()),
+                // Note: using the nice server name, rather than the whole ugly string (#116)
+                P4Bundle.message("login.password.message", config.getServiceDisplayName(), config.getUsername()),
                 REQUESTOR_CLASS, key,
                 true,
                 P4Bundle.message("login.password.error")

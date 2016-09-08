@@ -717,7 +717,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
                     server.forceWorkspaceRefresh();
                 } catch (InterruptedException e) {
                     AlertManager.getInstance().addNotice(myProject,
-                            P4Bundle.message("exception.refresh.workspace", server.getClientServerId()),
+                            P4Bundle.message("exception.refresh.workspace", server.getClientServerDisplayId()),
                             e);
                 }
             }

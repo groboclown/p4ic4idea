@@ -117,7 +117,8 @@ public class ProjectConfigSource {
 
             StringBuilder ret = new StringBuilder();
             if (serverConfig != null) {
-                ret.append(serverConfig.getServiceName());
+                // Note: use nice display name (#116)
+                ret.append(serverConfig.getServiceDisplayName());
             }
             String configFile = baseConfig.getConfigFile();
             if (configFile != null) {
@@ -185,6 +186,6 @@ public class ProjectConfigSource {
 
     @Override
     public String toString() {
-        return getClientServerId() + " - " + getProjectSourceDirs();
+        return getClientServerId().getServerDisplayId() + " - " + getProjectSourceDirs();
     }
 }

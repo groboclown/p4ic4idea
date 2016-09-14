@@ -23,6 +23,9 @@
       underlying cache wasn't being correctly cleared out. (#100) (#124)
     * Fixed some cases of incorrectly forcing a workspace, which could cause
       a UI freeze if the server connection took too long.
+    * Fixed the IDE startup to better load the initial configuration, to
+      prevent the occasional issue where you used to have to edit the
+      setup before it took effect.
     * Fixed a UI freeze that could happen when cleaning up a connection
       that runs against a slow server response.
     * Fixed an instance of synchronizing causing a NoSuchElementException.

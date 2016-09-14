@@ -8,10 +8,25 @@
         <ol>
           <li><em>0.7.18</em>
             <ol>
-              <li>Removed an extraneous offline mode check which caused setting up the connection to report a
-              "working offline" error.  This ended up making the plugin unusable while in this mode.</li>
-              <li>Fixed the display of the server connection information so that it no longer has the really ugly
-              prefix.</li>
+              <li>Removed an extraneous offline mode check which caused setting up the
+              connection to report a "working offline" error.  This ended up making
+              the plugin unusable while in this mode.</li>
+              <li>The plugin correctly refreshes its state at IDE startup.
+              This prevented the connection widget from displaying its initial
+              state, and the rare no client root error.</li>
+              <li>Fixed the display of the server connection information so that it no
+              longer has the really ugly prefix.</li>
+              <li>Defend against a weird hiccup with finding servers.</li>
+              <li>Fixed a long standing old issue regarding incorrect cached
+              changes.  The underlying cache wasn't being correctly cleared out.</li>
+              <li>Fixed some cases of incorrectly forcing a workspace, which could
+              cause a UI freeze if the server connection took too long.</li>
+              <li>Fixed the IDE startup to better load the initial configuration, to
+              prevent the occasional issue where you used to have to edit the
+              setup before it took effect.</li>
+              <li>Fixed a UI freeze that could happen when cleaning up a connection
+              that runs against a slow server response.</li>
+              <li>Fixed an instance of synchronizing causing a NoSuchElementException.</li>
             </ol>
           </li>
           <li><em>0.7.17</em>

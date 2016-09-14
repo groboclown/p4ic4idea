@@ -405,6 +405,17 @@ public class P4ServerManager implements ProjectComponent {
         } finally {
             serverLock.unlock();
         }
+
+        // Send the announcement that the configs are updated.
+        try {
+            cp.announceBaseConfigUpdated();
+        } catch (P4InvalidConfigException e) {
+            // TODO ensure that this is the correct kind of error to show.
+            AlertManager.getInstance().addWarning(project,
+                    P4Bundle.message("error.config.load-sources"),
+                    P4Bundle.message("error.config.load-sources"),
+                    e, new FilePath[0]);
+        }
     }
 
 

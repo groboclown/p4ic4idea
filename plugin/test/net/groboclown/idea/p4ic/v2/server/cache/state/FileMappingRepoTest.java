@@ -18,10 +18,7 @@ import net.groboclown.idea.p4ic.mock.MockFilePath;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -47,18 +44,24 @@ public class FileMappingRepoTest {
         final Iterable<P4ClientFileMapping> iterable = repo.getAllFiles();
         // ensure the iterable can be used multiple times
         for (int i = 0; i < 3; i++) {
-            List<P4ClientFileMapping> expected = new ArrayList<P4ClientFileMapping>(Arrays.asList(
-                new P4ClientFileMapping("//depot/file2", fp2),
-                new P4ClientFileMapping("//depot/file1", fp3)
-            ));
+            List<String> expectedDepotPaths = new ArrayList<String>(Arrays.asList("//depot/file1", "//depot/file2"));
+            List<File> expectedFiles = new ArrayList<File>(Arrays.asList(fp2.getIOFile(), fp3.getIOFile()));
+            Map<String, File> pairs = new HashMap<String, File>();
+            pairs.put("//depot/file1", fp3.getIOFile());
+            pairs.put("//depot/file2", fp2.getIOFile());
 
             final Iterator<P4ClientFileMapping> iter = iterable.iterator();
             assertThat(iter.hasNext(), is(true));
 
             P4ClientFileMapping next = iter.next();
-            assertThat(expected.remove(next), is(true));
+            assertThat(expectedDepotPaths.remove(next.getDepotPath()), is(true));
+            assertThat(expectedFiles.remove(next.getLocalFilePath().getIOFile()), is(true));
+            assertThat(next.getLocalFilePath().getIOFile(), is(pairs.get(next.getDepotPath())));
+
             next = iter.next();
-            assertThat(expected.remove(next), is(true));
+            assertThat(expectedDepotPaths.remove(next.getDepotPath()), is(true));
+            assertThat(expectedFiles.remove(next.getLocalFilePath().getIOFile()), is(true));
+            assertThat(next.getLocalFilePath().getIOFile(), is(pairs.get(next.getDepotPath())));
 
             assertThat(iter.hasNext(), is(false));
         }
@@ -83,21 +86,32 @@ public class FileMappingRepoTest {
         final Iterable<P4ClientFileMapping> iterable = repo.getAllFiles();
         // ensure the iterable can be used multiple times
         for (int i = 0; i < 3; i++) {
-            List<P4ClientFileMapping> expected = new ArrayList<P4ClientFileMapping>(Arrays.asList(
-                    new P4ClientFileMapping("//depot/file2", fp2),
-                    new P4ClientFileMapping("//depot/file1", fp1),
-                    new P4ClientFileMapping("//depot/FILE1", fp3)
-            ));
+            List<String> expectedDepotPaths = new ArrayList<String>(Arrays.asList("//depot/file1", "//depot/file2", "//depot/FILE1"));
+            List<File> expectedFiles = new ArrayList<File>(Arrays.asList(fp1.getIOFile(), fp2.getIOFile(), fp3.getIOFile()));
+            Map<String, File> pairs = new HashMap<String, File>();
+            pairs.put("//depot/file1", fp1.getIOFile());
+            pairs.put("//depot/file2", fp2.getIOFile());
+            pairs.put("//depot/FILE1", fp3.getIOFile());
 
             final Iterator<P4ClientFileMapping> iter = iterable.iterator();
-            assertThat(iter.hasNext(), is(true));
 
+            assertThat(iter.hasNext(), is(true));
             P4ClientFileMapping next = iter.next();
-            assertThat(expected.remove(next), is(true));
+            assertThat(expectedDepotPaths.remove(next.getDepotPath()), is(true));
+            assertThat(expectedFiles.remove(next.getLocalFilePath().getIOFile()), is(true));
+            assertThat(next.getLocalFilePath().getIOFile(), is(pairs.get(next.getDepotPath())));
+
+            assertThat(iter.hasNext(), is(true));
             next = iter.next();
-            assertThat(expected.remove(next), is(true));
+            assertThat(expectedDepotPaths.remove(next.getDepotPath()), is(true));
+            assertThat(expectedFiles.remove(next.getLocalFilePath().getIOFile()), is(true));
+            assertThat(next.getLocalFilePath().getIOFile(), is(pairs.get(next.getDepotPath())));
+
+            assertThat(iter.hasNext(), is(true));
             next = iter.next();
-            assertThat(expected.remove(next), is(true));
+            assertThat(expectedDepotPaths.remove(next.getDepotPath()), is(true));
+            assertThat(expectedFiles.remove(next.getLocalFilePath().getIOFile()), is(true));
+            assertThat(next.getLocalFilePath().getIOFile(), is(pairs.get(next.getDepotPath())));
 
             assertThat(iter.hasNext(), is(false));
         }

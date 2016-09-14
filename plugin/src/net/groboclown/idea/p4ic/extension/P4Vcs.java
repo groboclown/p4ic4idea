@@ -334,6 +334,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             public void run() {
                 refreshServerConnectivity();
 
+
                 if (connectionWidget != null) {
                     // This widget needs to be initialized outside the activation thread.
                     // Do not block on running this, as it can indirectly run the password
@@ -712,6 +713,9 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         // See bug #84.
 
         for (P4Server server : getP4Servers()) {
+            if (server.isValid()) {
+                server.workOnline();
+            }
             if (server.isConnectionValid()) {
                 try {
                     server.forceWorkspaceRefresh();

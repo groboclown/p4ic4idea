@@ -126,4 +126,14 @@ public class MockFilePath implements FilePath {
     public boolean isNonLocal() {
         return false;
     }
+
+    @Override
+    public int hashCode() {
+        return vf.getPath().hashCode() + vf.getName().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return !(obj == null || !(obj instanceof FilePath)) && vf.equals(((FilePath) obj).getVirtualFile());
+    }
 }

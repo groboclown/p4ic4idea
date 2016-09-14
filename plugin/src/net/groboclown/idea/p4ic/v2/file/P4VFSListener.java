@@ -107,28 +107,35 @@ public class P4VFSListener extends VcsVFSListener {
         try {
             final SplitServerFileMap split = splitMap(moveMap);
             for (P4Server server : split.getServers()) {
-                int changelistId = changeListMapping.
-                        getProjectDefaultPerforceChangelist(server).getChangeListId();
+                // This really shouldn't happen (null server),
+                // but there have been situations where it has occurred (#131)
+                // This appears to have been a weird hiccup, but defend against
 
-                vfsLock.lock();
-                try {
-                    server.moveFiles(split.getFilePathMatch(server), changelistId);
+                // it all the same.
+                if (server != null) {
+                    int changelistId = changeListMapping.
+                            getProjectDefaultPerforceChangelist(server).getChangeListId();
 
-                    // all the files that come from outside the server are just added.
-                    server.addFiles(split.getCrossTargetDifferentServerVirtualFilesFor(server), changelistId);
+                    vfsLock.lock();
+                    try {
+                        server.moveFiles(split.getFilePathMatch(server), changelistId);
+
+                        // all the files that come from outside the server are just added.
+                        server.addFiles(split.getCrossTargetDifferentServerVirtualFilesFor(server), changelistId);
 
 
-                    // Cross client files.
-                    // This situation can happen if the file is moved either from or to outside P4 control,
-                    // or if the file moves from one P4 client to another P4 client.
-                    // IDE will handle underlying I/O copy and delete operation.
+                        // Cross client files.
+                        // This situation can happen if the file is moved either from or to outside P4 control,
+                        // or if the file moves from one P4 client to another P4 client.
+                        // IDE will handle underlying I/O copy and delete operation.
 
-                    server.deleteFiles(split.getCrossSourceFilePathsFor(server), changelistId);
+                        server.deleteFiles(split.getCrossSourceFilePathsFor(server), changelistId);
 
-                    // perform an integrate for cross-client, if they share the same server.
-                    server.integrateFiles(split.getSameServerCrossVirtualFilesForTarget(server), changelistId);
-                } finally {
-                    vfsLock.unlock();
+                        // perform an integrate for cross-client, if they share the same server.
+                        server.integrateFiles(split.getSameServerCrossVirtualFilesForTarget(server), changelistId);
+                    } finally {
+                        vfsLock.unlock();
+                    }
                 }
             }
 

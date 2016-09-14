@@ -19,23 +19,25 @@ import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.io.File;
+import java.util.*;
 
-// FIXME this is a source of many problems.  Instead of having a fancy
-// "set" and using the nature of the P4FileUpdateState to have equality
-// only on the file, keep the updated files as a map, relating the
-// file source to the state.
 public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
     private static final Logger LOG = Logger.getInstance(FileUpdateStateList.class);
 
-    private final Set<P4FileUpdateState> updatedFiles;
+    // The file update state can change its contents, and thus be changing its equality and its hash code.
+    // When its hash code changes, and it already belongs to the set, then it can no longer be removed
+    // through a simple "remove" call (the hash codes no longer match).
+
+    // Therefore, we only save a map of the local file system file to the update state.
+    // We know we have a local file system in the state, because this stores a local update,
+    // which can only happen with a file.
+
+    private final Map<File, P4FileUpdateState> updatedFiles;
     private final Object sync = new Object();
 
-    public FileUpdateStateList() {
-        this.updatedFiles = new HashSet<P4FileUpdateState>();
+    FileUpdateStateList() {
+        this.updatedFiles = new HashMap<File, P4FileUpdateState>();
     }
 
     @NotNull
@@ -58,7 +60,7 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
     @NotNull
     public Set<P4FileUpdateState> copy() {
         synchronized (sync) {
-            return new HashSet<P4FileUpdateState>(updatedFiles);
+            return new HashSet<P4FileUpdateState>(updatedFiles.values());
         }
     }
 
@@ -69,17 +71,17 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
                 LOG.debug("Replacing update state files with " + newValues + "; was " + updatedFiles);
             }
             updatedFiles.clear();
-            updatedFiles.addAll(newValues);
+            for (P4FileUpdateState newValue : newValues) {
+                updatedFiles.put(getKey(newValue), newValue);
+            }
         }
     }
 
 
     public void add(@NotNull P4FileUpdateState state) {
+        final File key = getKey(state);
         synchronized (sync) {
-            // Ensure any existing match is removed, so that we only keep the new state.
-            // This is due to how we perform equality checking.
-            updatedFiles.remove(state);
-            updatedFiles.add(state);
+            updatedFiles.put(key, state);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Adding state file with " + state + "; now " + updatedFiles);
             }
@@ -89,7 +91,7 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
 
     public boolean remove(@NotNull P4FileUpdateState state) {
         synchronized (sync) {
-            final boolean ret = updatedFiles.remove(state);
+            final boolean ret = updatedFiles.remove(getKey(state)) != null;
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Removing state file " + state + "; now " + updatedFiles);
             }
@@ -100,12 +102,9 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
 
     @Nullable
     public P4FileUpdateState getUpdateStateFor(@NotNull final FilePath file) {
-        for (P4FileUpdateState updatedFile : copy()) {
-            if (file.equals(updatedFile.getLocalFilePath())) {
-                return updatedFile;
-            }
+        synchronized (sync) {
+            return updatedFiles.get(file.getIOFile());
         }
-        return null;
     }
 
 
@@ -113,5 +112,14 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
     public String toString() {
         return updatedFiles.toString();
     }
+
+    @NotNull
+    private File getKey(@NotNull P4FileUpdateState state) {
+        final FilePath path = state.getLocalFilePath();
+        if (path == null) {
+            throw new IllegalArgumentException("No local path in state (" + state + ")");
+        }
+        return path.getIOFile();
+   }
 }
 

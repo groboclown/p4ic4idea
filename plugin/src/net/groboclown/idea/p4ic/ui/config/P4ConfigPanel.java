@@ -216,7 +216,8 @@ public class P4ConfigPanel {
         resetResolvedProperties();
         initialized = true;
         refreshClientList();
-        refreshResolvedProperties();
+        refreshConfigPaths();
+        // refreshResolvedProperties();
     }
 
     protected void saveSettingsToConfig(@NotNull ManualP4Config config) {

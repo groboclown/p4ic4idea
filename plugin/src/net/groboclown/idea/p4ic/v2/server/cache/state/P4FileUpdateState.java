@@ -27,6 +27,11 @@ import org.jetbrains.annotations.Nullable;
 public final class P4FileUpdateState extends UpdateRef {
     private static final Logger LOG = Logger.getInstance(P4FileUpdateState.class);
 
+    // NOTE: this does not implement hashCode or equals.  Due to the changing
+    // nature of the class, it leads to too many problems when this is used
+    // in a hash set or as a hash map key.  Instead, use an invariant
+    // as the key.
+
 
     // TODO include information about a cached backup file (for reverts)
 
@@ -91,26 +96,6 @@ public final class P4FileUpdateState extends UpdateRef {
     @Nullable
     public FilePath getLocalFilePath() {
         return file.getLocalFilePath();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == this) {
-            return true;
-        }
-        if (o == null) {
-            return false;
-        }
-        if (o.getClass().equals(P4FileUpdateState.class)) {
-            P4FileUpdateState that = (P4FileUpdateState) o;
-            return that.file.equals(file);
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return file.hashCode();
     }
 
     @Override

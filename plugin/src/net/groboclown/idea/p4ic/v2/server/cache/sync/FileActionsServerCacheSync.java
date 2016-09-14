@@ -595,6 +595,11 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     while (resultIter.hasNext()) {
                         final IFileSpec spec = resultIter.next();
                         if (spec.getOpStatus() == FileSpecOpStatus.VALID) {
+                            if (! srcIter.hasNext()) {
+                                LOG.warn("No more source files; result spec " + spec);
+                                messages.add(new P4StatusMessage(spec));
+                                continue;
+                            }
                             FilePath file = srcIter.next();
                             final P4ClientFileMapping mapping =
                                     cache.getClientMappingFor(file);

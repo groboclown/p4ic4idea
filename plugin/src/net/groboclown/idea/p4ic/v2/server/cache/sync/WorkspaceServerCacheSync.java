@@ -234,6 +234,21 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
 
     @NotNull
     List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts) {
+        final List<VirtualFile> ret = getSimpleClientRoots(project);
+        if (ret == null) {
+            // no root found.
+            invalidRootsException.fillInStackTrace();
+            alerts.addCriticalError(new InvalidRootsHandler(project,
+                    cachedServerWorkspace.getRoots(),
+                    cache.getClientServerId(), invalidRootsException), invalidRootsException);
+            return Collections.emptyList();
+        }
+        return ret;
+    }
+
+
+    @Nullable
+    List<VirtualFile> getSimpleClientRoots(@NotNull Project project) {
         if (project.isDisposed()) {
             LOG.info("Called getClientRoots() on a disposed project");
             return Collections.emptyList();
@@ -246,7 +261,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
             LOG.debug(" - workspace roots: " + workspaceRoots);
         }
 
-        for (String workspaceRoot: workspaceRoots) {
+        for (String workspaceRoot : workspaceRoots) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(" - root: " + workspaceRoot);
             }
@@ -276,21 +291,20 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
 
                 }
             }
-            if (! ret.isEmpty()) {
+            if (!ret.isEmpty()) {
                 return ret;
             }
         }
         // no root found.
-        invalidRootsException.fillInStackTrace();
-        alerts.addCriticalError(new InvalidRootsHandler(project,
-                workspaceRoots,
-                cache.getClientServerId(), invalidRootsException), invalidRootsException);
-        return Collections.emptyList();
+        return null;
     }
+
+
 
     void updateDepotPathFor(@NotNull P4ClientFileMapping mapping, @NotNull String depotPathString) {
         fileRepo.updateDepotPath(mapping, depotPathString);
     }
+
 
     @NotNull
     private List<VirtualFile> findClientMappingsUnder(@NotNull List<VirtualFile> projectRoots) {
@@ -377,7 +391,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         } else {
             roots.add(client.getRoot());
         }
-       if (client.getAlternateRoots() != null) {
+        if (client.getAlternateRoots() != null) {
             for (String root : client.getAlternateRoots()) {
                 if (root != null) {
                     roots.add(root);

@@ -256,13 +256,13 @@ public class P4Server {
         return connection.cacheQuery(new CacheQuery<List<VirtualFile>>() {
             @Override
             public List<VirtualFile> query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
-                if (isWorkingOnline()) {
-                    LOG.debug("working online; loading the client roots cache");
+                List<VirtualFile> roots = mgr.getClientRoots(project, alertManager);
+                if (roots.isEmpty() && isWorkingOnline()) {
+                    LOG.debug("working online; no roots known for client, so refreshing list");
                     connection.query(project, mgr.createWorkspaceRefreshQuery());
-                } else {
-                    LOG.debug("working offline; using cached files.");
+                    roots = mgr.getClientRoots(project, alertManager);
                 }
-                return mgr.getClientRoots(project, alertManager);
+                return roots;
             }
         });
     }
@@ -406,6 +406,10 @@ public class P4Server {
             @Override
             public Collection<P4FileAction> query(@NotNull final ClientCacheManager mgr) throws InterruptedException {
                 if (isWorkingOnline()) {
+                    if (! mgr.hasClientRoots(project)) {
+                        LOG.debug("working online; no roots known for client, so refreshing list");
+                        connection.query(project, mgr.createWorkspaceRefreshQuery());
+                    }
                     connection.query(project, mgr.createFileActionsRefreshQuery());
                 }
                 return mgr.getCachedOpenFiles();

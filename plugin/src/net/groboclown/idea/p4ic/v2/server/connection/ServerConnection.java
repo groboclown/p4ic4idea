@@ -59,7 +59,7 @@ public class ServerConnection {
     private final ServerConfig config;
     private final ServerStatusController statusController;
     private final String clientName;
-    private final Object clientExecLock = new Object();
+    private final Lock clientExecLock = new ReentrantLock();
     private final Thread background;
     private final Synchronizer.ServerSynchronizer.ConnectionSynchronizer synchronizer;
     private volatile boolean disposed = false;
@@ -123,7 +123,8 @@ public class ServerConnection {
         ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
             @Override
             public void run() {
-                synchronized (clientExecLock) {
+                clientExecLock.lock();
+                try {
                     // Already setup check, now that we're in the lock.
                     if (setup) {
                         return;
@@ -149,6 +150,8 @@ public class ServerConnection {
                         queueUpdateActions(project, cacheManager.getCachedPendingUpdates());
                         loadedPendingUpdateStates = true;
                     }
+                } finally {
+                    clientExecLock.unlock();
                 }
             }
         });
@@ -156,12 +159,37 @@ public class ServerConnection {
 
 
     public void dispose() {
+        if (disposed) {
+            return;
+        }
         disposed = true;
         background.interrupt();
-        synchronized (clientExecLock) {
-            if (clientExec != null) {
-                clientExec.dispose();
-                clientExec = null;
+        if (clientExec != null) {
+            // If the server communication is taking a really long
+            // time, this lock attempt can block the EDT.  So, do
+            // a quick attempt to lock, and if that fails, then
+            // dispose in the background.
+            if (clientExecLock.tryLock()) {
+                try {
+                    clientExec.dispose();
+                    clientExec = null;
+                } finally {
+                    clientExecLock.unlock();
+                }
+            } else {
+                // could not dispose right now, so do it in the background.
+                ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        clientExecLock.lock();
+                        try {
+                            clientExec.dispose();
+                            clientExec = null;
+                        } finally {
+                            clientExecLock.unlock();
+                        }
+                    }
+                });
             }
         }
     }

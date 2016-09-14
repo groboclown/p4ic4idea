@@ -12,9 +12,20 @@
 * Bug fixes.
     * Removed an extraneous offline mode check which caused setting up the
       connection to report a "working offline" error.  This ended up making
-      the plugin unusable while in this mode.  (#125)
+      the plugin unusable while in this mode. (#125)
+    * The plugin correctly refreshes its state at IDE startup.  This prevented
+      the connection widget from displaying its initial state, and the
+      rare no client root error. (#130)
     * Fixed the display of the server connection information so that it no
       longer has the really ugly prefix. (#116)
+    * Defend against a weird hiccup with finding servers. (#131)
+    * Fixed a long standing old issue regarding incorrect cached changes.  The
+      underlying cache wasn't being correctly cleared out. (#100) (#124)
+    * Fixed some cases of incorrectly forcing a workspace, which could cause
+      a UI freeze if the server connection took too long.
+    * Fixed a UI freeze that could happen when cleaning up a connection
+      that runs against a slow server response.
+    * Fixed an instance of synchronizing causing a NoSuchElementException.
 
 
 ## ::v0.7.17::

@@ -14,8 +14,6 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
@@ -42,8 +40,10 @@ import org.jetbrains.annotations.Nullable;
  * file system.
  */
 public final class P4ClientFileMapping {
-    private static final Logger LOG = Logger.getInstance(P4ClientFileMapping.class);
-
+    // NOTE: this does not implement hashCode or equals.  Due to the changing
+    // nature of the class, it leads to too many problems when this is used
+    // in a hash set or as a hash map key.  Instead, use an invariant
+    // as the key.
 
     @Nullable
     private String depotPath;
@@ -101,47 +101,6 @@ public final class P4ClientFileMapping {
     // called by FileMappingRepo; requires depot maps to be updated
     void updateDepot(@NotNull final String depot) {
         this.depotPath = depot;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (! obj.getClass().equals(getClass())) {
-            return false;
-        }
-        P4ClientFileMapping that = (P4ClientFileMapping) obj;
-        if (depotPath != null && that.depotPath != null) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("comparing depot paths: " + depotPath + " vs " + that.depotPath);
-            }
-            return depotPath.equals(that.depotPath);
-        }
-        if (localFilePath != null && that.localFilePath != null) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("comparing file paths:" + localFilePath + " vs " + that.localFilePath);
-            }
-            return FileUtil.filesEqual(localFilePath.getIOFile(), that.localFilePath.getIOFile());
-        }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("this (" + this + ") and that (" + that + ") don't have comparable contents");
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        // This means that changes to the depot path or local path will cause a hash
-        // map value change!
-        return depotPath != null
-                ? depotPath.hashCode()
-                : (localFilePath == null
-                        ? 0
-                        : FileUtil.fileHashCode(localFilePath.getIOFile()));
     }
 
     @Override

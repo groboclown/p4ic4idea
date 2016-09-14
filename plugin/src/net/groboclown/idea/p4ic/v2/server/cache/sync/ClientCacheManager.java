@@ -180,6 +180,10 @@ public class ClientCacheManager {
         return workspace.getClientRoots(project, alerts);
     }
 
+    public boolean hasClientRoots(@NotNull Project project) {
+        return workspace.getSimpleClientRoots(project) != null;
+    }
+
     @NotNull
     public Collection<P4ChangeListValue> getCachedOpenedChanges() {
         return changeLists.getOpenedChangeLists();

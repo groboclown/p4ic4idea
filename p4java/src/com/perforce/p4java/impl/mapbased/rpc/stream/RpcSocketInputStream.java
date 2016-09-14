@@ -3,14 +3,14 @@
  */
 package com.perforce.p4java.impl.mapbased.rpc.stream;
 
+import com.perforce.p4java.Log;
+import com.perforce.p4java.exception.NullPointerError;
+import com.perforce.p4java.exception.P4JavaError;
+import com.perforce.p4java.impl.mapbased.rpc.ServerStats;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
-
-import com.perforce.p4java.Log;
-import com.perforce.p4java.exception.P4JavaError;
-import com.perforce.p4java.exception.NullPointerError;
-import com.perforce.p4java.impl.mapbased.rpc.ServerStats;
 
 /**
  * Implements the lowest level of the P4Java RPC input socket stream architecture.<p>
@@ -80,6 +80,9 @@ public class RpcSocketInputStream extends InputStream {
 			throw new NullPointerError(
 					"null byte array in RpcSocketInputStream.read()");
 		}
+		// groboclown: NOTE: this can block indefinitely for login
+		// requests when using SSL.  It appears that the API
+		// is reading when the server is expecting a write.
 		int retVal = this.socketStream.read(bytes);
 		
 		if ((stats != null) && (stats.largestRecv.get() < retVal)) {

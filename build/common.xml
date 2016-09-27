@@ -111,17 +111,41 @@
 
     <!-- Global Libraries -->
     <!-- Register Custom Compiler Taskdefs -->
-    <property name="javac2.home" value="${rootdir}/intellij-lib/intellij/AI-135.1653844"/>
-    <path id="javac2.classpath">
-        <pathelement location="${javac2.home}/javac2.jar"/>
-        <pathelement location="${javac2.home}/jdom.jar"/>
-        <pathelement location="${javac2.home}/asm-all.jar"/>
-        <pathelement location="${javac2.home}/jgoodies-forms.jar"/>
+    <property name="javac2-135.home" value="${rootdir}/intellij-lib/intellij/AI-135.1653844"/>
+    <path id="javac2-135.classpath">
+        <pathelement location="${javac2-135.home}/javac2.jar"/>
+        <pathelement location="${javac2-135.home}/jdom.jar"/>
+        <pathelement location="${javac2-135.home}/asm-all.jar"/>
+        <pathelement location="${javac2-135.home}/jgoodies-forms.jar"/>
+    </path>
+    <property name="javac2-140.home" value="${rootdir}/intellij-lib/intellij/IC-140.2285.5"/>
+    <path id="javac2-140.classpath">
+        <pathelement location="${javac2-140.home}/javac2.jar"/>
+        <pathelement location="${javac2-140.home}/jdom.jar"/>
+        <pathelement location="${javac2-140.home}/asm-all.jar"/>
+        <pathelement location="${javac2-140.home}/jgoodies-forms.jar"/>
+    </path>
+    <property name="javac2-150.home" value="${rootdir}/intellij-lib/intellij/IC-143.381.42"/>
+    <path id="javac2-150.classpath">
+        <pathelement location="${javac2-150.home}/javac2.jar"/>
+        <pathelement location="${javac2-150.home}/jdom.jar"/>
+        <pathelement location="${javac2-150.home}/asm-all.jar"/>
+        <pathelement location="${javac2-150.home}/jgoodies-forms.jar"/>
+    </path>
+    <property name="javac2-160.home" value="${rootdir}/intellij-lib/intellij/IC-144.3357.4"/>
+    <path id="javac2-160.classpath">
+        <pathelement location="${javac2-160.home}/javac2.jar"/>
+        <pathelement location="${javac2-160.home}/jdom.jar"/>
+        <pathelement location="${javac2-160.home}/asm-all.jar"/>
+        <pathelement location="${javac2-160.home}/jgoodies-forms.jar"/>
     </path>
     <target name="register.custom.compilers">
-        <taskdef name="javac2" classname="com.intellij.ant.Javac2" classpathref="javac2.classpath"/>
+        <taskdef name="javac2-135" classname="com.intellij.ant.Javac2" classpathref="javac2-135.classpath"/>
+        <taskdef name="javac2-140" classname="com.intellij.ant.Javac2" classpathref="javac2-140.classpath"/>
+        <taskdef name="javac2-150" classname="com.intellij.ant.Javac2" classpathref="javac2-150.classpath"/>
+        <taskdef name="javac2-160" classname="com.intellij.ant.Javac2" classpathref="javac2-160.classpath"/>
         <taskdef name="instrumentIdeaExtensions" classname="com.intellij.ant.InstrumentIdeaExtensions"
-                 classpathref="javac2.classpath"/>
+                 classpathref="javac2-160.classpath"/>
     </target>
 
     <property name="all.compiler.args" value="-encoding UTF-8 -source 1.6 ${compiler.args}"/>

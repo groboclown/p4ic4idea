@@ -23,7 +23,9 @@ import com.perforce.p4java.server.callback.ILogCallback;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
+import net.groboclown.idea.p4ic.server.exceptions.ExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.LoginRequiresPasswordException;
+import net.groboclown.idea.p4ic.server.exceptions.P4UnknownLoginException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,12 +48,14 @@ class AuthenticatedServer {
         AUTHENTICATED,
         INVALID_LOGIN,
         RELOGIN_FAILED,
+        NEEDS_PASSWORD,
         NOT_CONNECTED
     }
 
     private enum LoginValidation {
         AUTHENTICATED,
         SESSION_EXPIRED,
+        NEEDS_PASSWORD,
         ERROR
     }
 
@@ -205,6 +209,12 @@ class AuthenticatedServer {
 
         LoginValidation loginValidation = validateLogin();
 
+        if (loginValidation == LoginValidation.NEEDS_PASSWORD) {
+            LOG.info("User must enter the password");
+            hasValidatedAuthentication = false;
+            return AuthenticationResult.NEEDS_PASSWORD;
+        }
+
         if (loginValidation != LoginValidation.AUTHENTICATED) {
             loginFailedCount++;
 
@@ -245,8 +255,18 @@ class AuthenticatedServer {
                         hasValidatedAuthentication = true;
                         return AuthenticationResult.AUTHENTICATED;
                     }
+                    if (loginValidation == LoginValidation.NEEDS_PASSWORD) {
+                        LOG.info("User must enter the password");
+                        hasValidatedAuthentication = false;
+                        return AuthenticationResult.NEEDS_PASSWORD;
+                    }
                     forceAuthenticate(i);
                     loginValidation = validateLogin();
+                    if (loginValidation == LoginValidation.NEEDS_PASSWORD) {
+                        LOG.info("User must enter the password");
+                        hasValidatedAuthentication = false;
+                        return AuthenticationResult.NEEDS_PASSWORD;
+                    }
                     if (loginValidation == LoginValidation.AUTHENTICATED) {
                         LOG.info("Authorization successful after " + i +
                                 " unauthorized connections (but a valid one was seen earlier) for " +
@@ -355,10 +375,20 @@ class AuthenticatedServer {
             // Note: this can potentially take a really long time to run.
 
             server.getUser(config.getUsername());
-            if (LOG.isDebugEnabled()) {
+            if (LOG.isDebugEnabled())
+            {
                 LOG.debug("Basic authentication looks correct for " + this);
             }
             return LoginValidation.AUTHENTICATED;
+        } catch (RequestException ex) {
+            if (ExceptionUtil.isPasswordProblem(ex))
+            {
+                return LoginValidation.NEEDS_PASSWORD;
+            }
+            // Some other problem
+            throw ex;
+        } catch (LoginRequiresPasswordException ex) {
+            return LoginValidation.NEEDS_PASSWORD;
         } catch (AccessException ex) {
             LOG.info("Server forgot connection login", ex);
             // Do not disconnect here..  If it's not a real authentication
@@ -368,6 +398,9 @@ class AuthenticatedServer {
             if (ex.hasMessageFragment("Your session has expired, please %'login'% again.")) {
                 LOG.info("Login expired message: ID " + ex.getServerMessage().getCode());
                 return LoginValidation.SESSION_EXPIRED;
+            }
+            if (ExceptionUtil.isPasswordProblem(ex)) {
+                return LoginValidation.NEEDS_PASSWORD;
             }
             return LoginValidation.ERROR;
         }
@@ -457,14 +490,14 @@ class AuthenticatedServer {
                     }
                     final IOptionsServer server = connectionHandler.getOptionsServer(url, properties, config);
 
-                    // These seem to cause issues.
+                    // These cause issues.
                     //server.registerCallback(new LoggingCommandCallback());
                     //server.registerProgressCallback(new LoggingProgressCallback());
 
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("calling connect");
                     }
-                    // Will need to reauthenticate, because we're re-connecting.
+                    // Will need to re-authenticate, because we're re-connecting.
                     hasValidatedAuthentication = false;
                     server.connect();
                     if (LOG.isDebugEnabled()) {

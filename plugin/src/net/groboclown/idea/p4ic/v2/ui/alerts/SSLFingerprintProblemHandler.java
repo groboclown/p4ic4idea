@@ -41,6 +41,8 @@ public class SSLFingerprintProblemHandler extends AbstractErrorHandler {
             return;
         }
 
+        // TODO this needs to better handle the SSL fingerprint issues.
+
         int result = Messages.showYesNoDialog(getProject(),
                 P4Bundle.message("configuration.ssl-fingerprint-problem.ask", getExceptionMessage()),
                 P4Bundle.message("configuration.ssl-fingerprint-problem.title"),

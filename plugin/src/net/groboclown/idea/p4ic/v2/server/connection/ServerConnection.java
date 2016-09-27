@@ -24,8 +24,10 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
+import net.groboclown.idea.p4ic.server.exceptions.P4ConnectionDisposedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.server.exceptions.ProjectDisposedException;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
@@ -217,6 +219,8 @@ public class ServerConnection {
                     action.perform(getExec(project), cacheManager, ServerConnection.this, runner, alertManager);
                 } catch (P4InvalidConfigException e) {
                     alertManager.addCriticalError(new ConfigurationProblemHandler(project, statusController, e), e);
+                } catch (P4ConnectionDisposedException e) {
+                    LOG.info("Ran immediate action on disposed connection", e);
                 } finally {
                     THREAD_EXECUTION_ACTIVE.remove();
                 }
@@ -235,10 +239,12 @@ public class ServerConnection {
                     return query.query(getExec(project), cacheManager, ServerConnection.this, runner, alertManager);
                 } catch (P4InvalidConfigException e) {
                     alertManager.addCriticalError(new ConfigurationProblemHandler(project, statusController, e), e);
-                    return null;
+                } catch (P4ConnectionDisposedException e) {
+                    LOG.info("Ran query on disposed server", e);
                 } finally {
                     THREAD_EXECUTION_ACTIVE.remove();
                 }
+                return null;
             }
         });
     }
@@ -347,9 +353,9 @@ public class ServerConnection {
     }
 
 
-    P4Exec2 getExec(@NotNull Project project) throws P4InvalidConfigException {
+    P4Exec2 getExec(@NotNull Project project) throws P4InvalidConfigException, P4ConnectionDisposedException {
         if (disposed) {
-            throw new P4InvalidConfigException(P4Bundle.message("error.p4exec.disposed"));
+            throw new P4ConnectionDisposedException();
         }
         // double-check locking.  This is why clientExec must be volatile.
         synchronized (clientExecLock) {
@@ -481,18 +487,14 @@ public class ServerConnection {
                             } catch (P4InvalidConfigException e) {
                                 alertManager.addCriticalError(new ConfigurationProblemHandler(action.project,
                                         statusController, e), e);
-                                // do not requeue the action
+                                // Do not requeue the action.
                                 cacheManager.removePendingUpdateStates(action.action.getPendingUpdateStates());
                                 action.action.abort(cacheManager);
                                 return null;
-//                            } catch (VcsException e) {
-//                                // TODO need a more nuanced handler for general connection problems.
-//                                alertManager.addCriticalError(new DisconnectedHandler(action.project,
-//                                        statusController, e), e);
-//                                // go offline and requeue the action
-//                                getServerConnectedController().disconnect();
-//                                pushAbortedAction(action);
-//                                return null;
+                            } catch (P4ConnectionDisposedException e) {
+                                // Do not report this error.
+                                // But requeue the action.
+                                return null;
                             }
                             if (! action.project.isDisposed()) {
                                 action.action.perform(exec,

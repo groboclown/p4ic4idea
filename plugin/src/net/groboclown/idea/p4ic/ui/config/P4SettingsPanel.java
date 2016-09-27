@@ -71,17 +71,14 @@ public class P4SettingsPanel {
         myRootPanel.add(tabbedPane1, BorderLayout.CENTER);
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new BorderLayout(0, 0));
-        tabbedPane1.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("user.settings.connection"), panel1);
+        tabbedPane1.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.settings.connection"), panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, BorderLayout.CENTER);
         myP4ConfigPanel = new P4ConfigPanel();
         scrollPane1.setViewportView(myP4ConfigPanel.$$$getRootComponent$$$());
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new BorderLayout(0, 0));
-        tabbedPane1
-                .addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.settings.prefs"),
-                        panel2);
+        tabbedPane1.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.settings.prefs"), panel2);
         final JScrollPane scrollPane2 = new JScrollPane();
         panel2.add(scrollPane2, BorderLayout.CENTER);
         myUserPreferencesPanel = new UserPreferencesPanel();

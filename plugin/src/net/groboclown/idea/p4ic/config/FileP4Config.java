@@ -19,14 +19,10 @@ import com.perforce.p4java.server.IServerAddress;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.Properties;
 
 public class FileP4Config implements P4Config {
-    private static final Logger LOG = Logger.getInstance(FileP4Config.class);
-
     private final File configFile;
     private String clientName;
     private String password;
@@ -70,15 +66,11 @@ public class FileP4Config implements P4Config {
 
     public void reloadFile() throws IOException {
 
-        // The Perforce config file has the same general format that the
-        // Java properties files has.  For a quick win, just reuse that.
-        Properties props = new Properties();
-        FileReader reader = new FileReader(configFile);
-        try {
-            props.load(reader);
-        } finally {
-            reader.close();
-        }
+        // The Perforce config file is NOT the same as a Java
+        // config file.  Java config files will read the "\" as
+        // an escape character, whereas the Perforce config file
+        // will keep it.
+        Properties props = readConfigFile();
 
         /* All P4 client parameters.
    P4CHARSET        Client's local character set    p4 help charset
@@ -134,6 +126,29 @@ public class FileP4Config implements P4Config {
             connectionMethod = P4Config.ConnectionMethod.CLIENT;
         }
 
+    }
+
+    private Properties readConfigFile() throws IOException {
+        Properties props = new Properties();
+        FileReader reader = new FileReader(configFile);
+        try {
+            BufferedReader inp = new BufferedReader(reader);
+            String line;
+            while ((line = inp.readLine()) != null) {
+                int pos = line.indexOf('=');
+                if (pos > 0) {
+                    final String key = line.substring(0, pos).trim();
+                    final String value = line.substring(pos + 1).trim();
+                    if (key.length() > 0) {
+                        props.setProperty(key, value);
+                    }
+                }
+            }
+            props.load(reader);
+        } finally {
+            reader.close();
+        }
+        return props;
     }
 
     @Override

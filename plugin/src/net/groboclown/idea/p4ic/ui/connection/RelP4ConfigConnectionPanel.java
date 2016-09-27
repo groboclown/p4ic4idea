@@ -82,23 +82,13 @@ public class RelP4ConfigConnectionPanel implements RelativeConfigConnectionPanel
     private void $$$setupUI$$$() {
         myRootPane = new JPanel();
         myRootPane.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        myRootPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                        .getString("configuration.relp4config.file.title")));
+        myRootPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.relp4config.file.title")));
         final JLabel label1 = new JLabel();
-        this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("configuration.relp4config.file.label"));
-        myRootPane.add(label1,
-                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_NORTHWEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
-                        false));
+        this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.relp4config.file.label"));
+        myRootPane.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_NORTHWEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myConfigFileName = new JTextField();
-        myConfigFileName.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("config.rel.path.tooltip"));
-        myRootPane.add(myConfigFileName,
-                new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_NORTHWEST, GridConstraints.FILL_HORIZONTAL,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
-                        new Dimension(150, -1), null, 0, false));
+        myConfigFileName.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("config.rel.path.tooltip"));
+        myRootPane.add(myConfigFileName, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_NORTHWEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         label1.setLabelFor(myConfigFileName);
     }
 
@@ -113,9 +103,7 @@ public class RelP4ConfigConnectionPanel implements RelativeConfigConnectionPanel
         for (int i = 0; i < text.length(); i++) {
             if (text.charAt(i) == '&') {
                 i++;
-                if (i == text.length()) {
-                    break;
-                }
+                if (i == text.length()) break;
                 if (!haveMnemonic && text.charAt(i) != '&') {
                     haveMnemonic = true;
                     mnemonic = text.charAt(i);

@@ -18,6 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.server.exceptions.P4UnknownLoginException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -65,6 +66,8 @@ public class ConnectionUIConfiguration {
                 ret.put(source, e);
             } catch (URISyntaxException e) {
                 ret.put(source, e);
+            } catch (P4UnknownLoginException e) {
+                // FIXME
             } catch (VcsException e) {
                 ret.put(source, e);
             }

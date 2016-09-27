@@ -59,7 +59,7 @@ public class ServerRunner {
          * @throws CancellationException
          */
         @NotNull
-        P4LoginException loginFailure(P4JavaException e)
+        P4LoginException loginFailure(@NotNull P4JavaException e)
                 throws VcsException, CancellationException;
 
         /**
@@ -69,8 +69,10 @@ public class ServerRunner {
          * @throws VcsException
          * @throws CancellationException
          */
-        void loginFailure(P4LoginException e)
+        void loginFailure(@NotNull P4LoginException e)
                 throws VcsException, CancellationException;
+
+        void loginRequiresPassword() throws VcsException, CancellationException;
 
         /**
          * The server refuses to reauthenticate a connection.
@@ -172,6 +174,10 @@ public class ServerRunner {
                     errorVisitor.retryAuthorizationFailure(ex);
                     return retry(runner, conn, errorVisitor, retryCount, e);
                 }
+                case NEEDS_PASSWORD: {
+                    errorVisitor.loginRequiresPassword();
+                    throw e;
+                }
                 default: {
                     throw e;
                 }
@@ -234,7 +240,7 @@ public class ServerRunner {
         } catch (AccessException e) {
             // Most probably a password problem.
             LOG.info("Problem accessing resources (password problem?)", e);
-            if (isPasswordProblem(e)) {
+            if (ExceptionUtil.isPasswordProblem(e)) {
                 // This is handled by the outside caller
                 throw new P4UnknownLoginException(e);
             }
@@ -296,7 +302,7 @@ public class ServerRunner {
         } catch (RequestException e) {
             LOG.info("Request problem", e);
 
-            if (isPasswordProblem(e)) {
+            if (ExceptionUtil.isPasswordProblem(e)) {
                 // This could either be a real password problem, or
                 // a lost security token issue.
                 throw new P4UnknownLoginException(e);
@@ -373,28 +379,6 @@ public class ServerRunner {
             throw ex;
         }
         return p4RunFor(runner, conn, errorVisitor, retryCount + 1);
-    }
-
-
-    private static boolean isPasswordProblem(@NotNull P4JavaException ex) {
-        // TODO replace with error code checking
-
-        if (ex instanceof RequestException) {
-            RequestException rex = (RequestException) ex;
-            return (rex.hasMessageFragment("Your session has expired, please login again.")
-                    || rex.hasMessageFragment("Perforce password (P4PASSWD) invalid or unset."));
-        }
-        if (ex instanceof AccessException) {
-            AccessException aex = (AccessException) ex;
-            // see Server for a list of the authentication failure messages.
-            return aex.hasMessageFragment("Perforce password (P4PASSWD)") ||
-                    aex.hasMessageFragment("Your session has expired");
-        }
-        //if (ex instanceof LoginRequiresPasswordException) {
-        //    LOG.info("No password specified, but one is needed", ex);
-        //    return false;
-        //}
-        return false;
     }
 
 

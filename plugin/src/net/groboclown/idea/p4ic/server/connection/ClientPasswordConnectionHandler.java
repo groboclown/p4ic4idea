@@ -18,6 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.server.Fingerprint;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.ConfigurationProblem;
@@ -105,7 +106,6 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
     private AccessException authenticate(@Nullable Project project, @NotNull IOptionsServer server,
             @NotNull ServerConfig config, boolean force)
             throws P4JavaException {
-
         // Default login - use the simple password
         final String password;
         try {

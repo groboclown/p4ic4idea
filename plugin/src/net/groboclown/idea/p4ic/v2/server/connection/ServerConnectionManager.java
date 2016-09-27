@@ -237,8 +237,8 @@ public class ServerConnectionManager implements ApplicationComponent {
         final Map<String, ServerConnection> clientNames = new HashMap<String, ServerConnection>();
         final ServerConfig config;
         final Synchronizer.ServerSynchronizer synchronizer;
-        boolean valid = true;
-        boolean disposed = false;
+        volatile boolean valid = true;
+        volatile boolean disposed = false;
 
         // assume we're online at the start.
         volatile boolean online = true;
@@ -295,7 +295,9 @@ public class ServerConnectionManager implements ApplicationComponent {
 
         @Override
         public void onConnected() {
-            setOnline(null);
+            if (!disposed) {
+                setOnline(null);
+            }
         }
 
         @Override
@@ -352,7 +354,8 @@ public class ServerConnectionManager implements ApplicationComponent {
 
         synchronized boolean setOnline(@Nullable final Project project) {
             if (disposed) {
-                LOG.error("Tried to go online for a disposed connection");
+                // Does not need to be an error (#134)
+                LOG.info("Tried to go online for a disposed connection");
             } else if (valid) {
                 onlineStatusLock.lock();
                 try {

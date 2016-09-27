@@ -278,7 +278,7 @@ class ClientExec {
 
         @NotNull
         @Override
-        public P4LoginException loginFailure(final P4JavaException e) throws VcsException, CancellationException {
+        public P4LoginException loginFailure(@NotNull final P4JavaException e) throws VcsException, CancellationException {
             LOG.info("Incorrect login.", e);
             P4LoginException ex = new P4LoginException(project, config, e);
             AlertManager.getInstance().addCriticalError(
@@ -287,10 +287,17 @@ class ClientExec {
         }
 
         @Override
-        public void loginFailure(final P4LoginException e) throws VcsException, CancellationException {
+        public void loginFailure(@NotNull final P4LoginException e) throws VcsException, CancellationException {
             LOG.info("Gave up on trying to login.  Showing critical error.");
             AlertManager.getInstance().addCriticalError(
                     new LoginFailedHandler(project, connectedController, config, e), e);
+        }
+
+        @Override
+        public void loginRequiresPassword() throws VcsException, CancellationException {
+            Exception ex = new Exception("Login requires password");
+            AlertManager.getInstance().addCriticalError(
+                    new LoginFailedHandler(project, connectedController, config, ex), ex);
         }
 
         @Override

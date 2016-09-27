@@ -22,6 +22,7 @@ public class MockServerStatusController implements ServerStatusController {
     public boolean connected = true;
     public boolean autoOffline = false;
     public boolean valid = true;
+    public boolean disposed = false;
 
 
 

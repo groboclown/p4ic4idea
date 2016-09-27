@@ -18,10 +18,11 @@ First, you need to install the prerequisite software.
 1. **Ant 1.8 or better** - the source uses Ant as the build tool.
 1. **Git repo with submodules** - clone the Git repo from GitHub, and make
    sure to pull in the submodules.
+   
    ```
-   git clone (repository name)
-   git pull --recurse-submodules
+   git clone --recursive (repository name)
    ```
+   
    The submodule contains the IntelliJ libraries for different versions.
    It's put into a submodule, because GitHub has a hard limit on file
    sizes, whereas the SourceForge git repo doesn't.

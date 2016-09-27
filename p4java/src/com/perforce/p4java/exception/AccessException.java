@@ -33,6 +33,19 @@ public class AccessException extends P4JavaException {
 		return err;
 	}
 
+	public int getGenericCode() {
+		if (err != null) {
+			return err.getGeneric();
+		}
+		return -1;
+	}
+
+	public int getSubCode() {
+		if (err != null) {
+			return err.getSubCode();
+		}
+		return -1;
+	}
 
 	/**
 	 * @deprecated use the server code instead

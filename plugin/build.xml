@@ -75,7 +75,7 @@
     <target name="compile.production" depends="register.custom.compilers"
             description="Compile module p4ic4idea; production classes">
         <mkdir dir="${output.dir}"/>
-        <javac2 destdir="${output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}"
+        <javac2-135 destdir="${output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}"
                 memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
                 includeantruntime="false" target="1.6" source="1.6">
             <compilerarg line="${compiler.args}"/>
@@ -83,7 +83,7 @@
             <classpath refid="production.classpath"/>
             <src refid="production.sourcepath"/>
             <patternset refid="excluded.from.compilation"/>
-        </javac2>
+        </javac2-135>
 
         <copy todir="${output.dir}">
             <fileset dir="${basedir}/src">
@@ -111,7 +111,7 @@
     <target name="compile-api-compat-135"
             depends="register.custom.compilers">
         <mkdir dir="work/test-compile-135"/>
-        <javac2 destdir="work/test-compile-135" nowarn="${compiler.generate.no.warnings}"
+        <javac2-135 destdir="work/test-compile-135" nowarn="${compiler.generate.no.warnings}"
                 memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
                 includeantruntime="false" target="1.6" source="1.6">
             <compilerarg line="${compiler.args}"/>
@@ -119,12 +119,12 @@
             <classpath refid="trial-idea135.classpath"/>
             <src refid="production.sourcepath"/>
             <patternset refid="excluded.from.compilation"/>
-        </javac2>
+        </javac2-135>
     </target>
     <target name="compile-api-compat-140"
             depends="register.custom.compilers">
         <mkdir dir="work/test-compile-140"/>
-        <javac2 destdir="work/test-compile-140" nowarn="${compiler.generate.no.warnings}"
+        <javac2-140 destdir="work/test-compile-140" nowarn="${compiler.generate.no.warnings}"
                 memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
                 includeantruntime="false" target="1.6" source="1.6">
             <compilerarg line="${compiler.args}"/>
@@ -132,12 +132,12 @@
             <classpath refid="trial-idea140.classpath"/>
             <src refid="production.sourcepath"/>
             <patternset refid="excluded.from.compilation"/>
-        </javac2>
+        </javac2-140>
     </target>
     <target name="compile-api-compat-150"
             depends="register.custom.compilers">
         <mkdir dir="work/test-compile-150"/>
-        <javac2 destdir="work/test-compile-150" nowarn="${compiler.generate.no.warnings}"
+        <javac2-150 destdir="work/test-compile-150" nowarn="${compiler.generate.no.warnings}"
                 memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
                 includeantruntime="false" target="1.6" source="1.6">
             <compilerarg line="${compiler.args}"/>
@@ -145,13 +145,13 @@
             <classpath refid="trial-idea150.classpath"/>
             <src refid="production.sourcepath"/>
             <patternset refid="excluded.from.compilation"/>
-        </javac2>
+        </javac2-150>
     </target>
     <target name="compile-api-compat-160"
             depends="register.custom.compilers">
         <mkdir dir="work/test-compile-160"/>
         <!-- Note jdk 1.8 -->
-        <javac2 destdir="work/test-compile-160" nowarn="${compiler.generate.no.warnings}"
+        <javac2-160 destdir="work/test-compile-160" nowarn="${compiler.generate.no.warnings}"
                 memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
                 includeantruntime="false" target="1.8" source="1.8">
             <compilerarg line="${compiler.args}"/>
@@ -159,14 +159,14 @@
             <classpath refid="trial-idea160.classpath"/>
             <src refid="production.sourcepath"/>
             <patternset refid="excluded.from.compilation"/>
-        </javac2>
+        </javac2-160>
     </target>
 
     <target name="compile.tests"
             depends="register.custom.compilers,compile.production"
             description="compile module p4ic4idea; test classes" unless="skip.tests">
         <mkdir dir="${testoutput.dir}"/>
-        <javac2 destdir="${testoutput.dir}" debug="${compiler.debug}"
+        <javac2-135 destdir="${testoutput.dir}" debug="${compiler.debug}"
                 nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true"
                 executable="${jdk.bin}/javac" includeantruntime="false" target="1.6" source="1.6">
             <compilerarg line="${compiler.args}"/>
@@ -174,7 +174,7 @@
             <classpath refid="test.compile.classpath"/>
             <src refid="test.sourcepath"/>
             <patternset refid="excluded.from.compilation"/>
-        </javac2>
+        </javac2-135>
 
         <copy todir="${testoutput.dir}">
             <fileset dir="${basedir}/test">

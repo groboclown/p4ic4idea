@@ -44,7 +44,7 @@
     <target name="compile.production" depends="register.custom.compilers"
             description="Compile module p4ic4idea; production classes">
         <mkdir dir="${output.dir}"/>
-        <javac2 destdir="${output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}"
+        <javac2-135 destdir="${output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}"
                 memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
                 includeantruntime="false" target="1.6" source="1.6">
             <compilerarg line="${compiler.args}"/>
@@ -52,7 +52,7 @@
             <classpath refid="production.classpath"/>
             <src refid="production.sourcepath"/>
             <patternset refid="excluded.from.compilation"/>
-        </javac2>
+        </javac2-135>
 
         <copy todir="${output.dir}">
             <fileset dir="${basedir}/resources">

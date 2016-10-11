@@ -1,6 +1,25 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.7.19::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* BugFixes
+    * Fixed configuration connection issue.  It should now recognize more
+      situations where the password is needed.
+    * Corrected the P4CONFIG parsing so that it correctly reads the file.  It used
+      to incorrectly parse a '\' character as an escaping character.  Now it is
+      correctly read.
+    * Reduced the number of working-with-disposed-connections errors. (#134)
+    * Fixed an error with loading user preferences if the project is disposed.
+    * Build improvements.
+
+
 ## ::v0.7.18::
 
 ### Overview

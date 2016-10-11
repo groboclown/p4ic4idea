@@ -87,6 +87,11 @@
             <include name="*.jar"/>
         </fileset>
     </path>
+    <path id="idea163.classpath">
+        <fileset dir="${rootdir}/intellij-lib/intellij/IC-163.5219.11">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
     <path id="unittest.classpath">
       <fileset dir="${rootdir}/lib">
         <include name="junit/4.12/junit-4.12.jar"/>
@@ -139,13 +144,21 @@
         <pathelement location="${javac2-160.home}/asm-all.jar"/>
         <pathelement location="${javac2-160.home}/jgoodies-forms.jar"/>
     </path>
+    <property name="javac2-163.home" value="${rootdir}/intellij-lib/intellij/IC-163.5219.11"/>
+    <path id="javac2-163.classpath">
+        <pathelement location="${javac2-163.home}/javac2.jar"/>
+        <pathelement location="${javac2-163.home}/jdom.jar"/>
+        <pathelement location="${javac2-163.home}/asm-all.jar"/>
+        <pathelement location="${javac2-163.home}/jgoodies-forms.jar"/>
+    </path>
     <target name="register.custom.compilers">
         <taskdef name="javac2-135" classname="com.intellij.ant.Javac2" classpathref="javac2-135.classpath"/>
         <taskdef name="javac2-140" classname="com.intellij.ant.Javac2" classpathref="javac2-140.classpath"/>
         <taskdef name="javac2-150" classname="com.intellij.ant.Javac2" classpathref="javac2-150.classpath"/>
         <taskdef name="javac2-160" classname="com.intellij.ant.Javac2" classpathref="javac2-160.classpath"/>
+        <taskdef name="javac2-163" classname="com.intellij.ant.Javac2" classpathref="javac2-163.classpath"/>
         <taskdef name="instrumentIdeaExtensions" classname="com.intellij.ant.InstrumentIdeaExtensions"
-                 classpathref="javac2-160.classpath"/>
+                 classpathref="javac2-163.classpath"/>
     </target>
 
     <property name="all.compiler.args" value="-encoding UTF-8 -source 1.6 ${compiler.args}"/>

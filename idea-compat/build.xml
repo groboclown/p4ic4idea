@@ -41,6 +41,11 @@
         <path refid="base.compile.classpath"/>
     </path>
 
+    <path id="trial-idea163.classpath">
+        <path refid="idea163.classpath"/>
+        <path refid="base.compile.classpath"/>
+    </path>
+
     <path id="test.runtime.classpath">
         <path refid="test.compile.classpath"/>
         <pathelement location="${testoutput.dir}"/>
@@ -124,7 +129,8 @@
                 compile-api-compat-135,
                 compile-api-compat-140,
                 compile-api-compat-150,
-                compile-api-compat-160"/>
+                compile-api-compat-160,
+                compile-api-compat-163"/>
 
     <target name="compile-api-compat-135"
             depends="register.custom.compilers">
@@ -178,6 +184,20 @@
             <src refid="production.sourcepath"/>
             <patternset refid="excluded.from.compilation"/>
         </javac2-160>
+    </target>
+    <target name="compile-api-compat-163"
+            depends="register.custom.compilers">
+        <mkdir dir="work/test-compile-163"/>
+        <!-- Note jdk 1.8 -->
+        <javac2-163 destdir="work/test-compile-163" nowarn="${compiler.generate.no.warnings}"
+                    memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
+                    includeantruntime="false" target="1.8" source="1.8">
+            <compilerarg line="${compiler.args}"/>
+            <bootclasspath refid="bootclasspath.8"/>
+            <classpath refid="trial-idea160.classpath"/>
+            <src refid="production.sourcepath"/>
+            <patternset refid="excluded.from.compilation"/>
+        </javac2-163>
     </target>
 
     <target name="clean" description="cleanup module">

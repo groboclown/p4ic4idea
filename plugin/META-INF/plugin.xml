@@ -1,11 +1,23 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.17</version>
+    <version>0.7.19</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.7.19</em>
+            <ol>
+              <li>Fixed configuration connection issue.  It should now recognize more
+              situations where the password is needed.</li>
+              <li>Corrected the P4CONFIG parsing so that it correctly reads the file.
+              It used to incorrectly parse a '\' character as an escaping character.
+              Now it is correctly read.</li>
+              <li>Reduced the number of working-with-disposed-connections errors.</li>
+              <li>Fixed an error with loading user preferences if the project is disposed.</li>
+              <li>Build improvements.</li>
+            </ol>
+          </li>
           <li><em>0.7.18</em>
             <ol>
               <li>Removed an extraneous offline mode check which caused setting up the
@@ -27,14 +39,6 @@
               <li>Fixed a UI freeze that could happen when cleaning up a connection
               that runs against a slow server response.</li>
               <li>Fixed an instance of synchronizing causing a NoSuchElementException.</li>
-            </ol>
-          </li>
-          <li><em>0.7.17</em>
-            <ol>
-              <li>Added a fix for a deadlock that would happen on occasion during
-              startup.</li>
-              <li>Fixed the delete bug; it now correctly opens the
-              file for delete, even if the file is open for edit.</li>
             </ol>
           </li>
         </ol>

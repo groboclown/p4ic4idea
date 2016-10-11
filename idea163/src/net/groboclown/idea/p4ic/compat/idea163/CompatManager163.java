@@ -12,28 +12,34 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.compat.idea160;
+package net.groboclown.idea.p4ic.compat.idea163;
 
-import net.groboclown.idea.p4ic.compat.CompatFactory;
 import net.groboclown.idea.p4ic.compat.CompatManager;
+import net.groboclown.idea.p4ic.compat.HistoryCompat;
+import net.groboclown.idea.p4ic.compat.UICompat;
+import net.groboclown.idea.p4ic.compat.VcsCompat;
 import org.jetbrains.annotations.NotNull;
 
-public class CompatFactory160 implements CompatFactory {
+public class CompatManager163 extends CompatManager {
+    private final UICompat163 uiCompat = new UICompat163();
+    private final VcsCompat163 vcsCompat = new VcsCompat163();
+    private final HistoryCompat163 historyCompat = new HistoryCompat163();
+
     @NotNull
     @Override
-    public String getMinCompatibleApiVersion() {
-        return "144.0000";
+    public UICompat getUICompat() {
+        return uiCompat;
     }
 
     @NotNull
     @Override
-    public String getMaxCompatibleApiVersion() {
-        return "162.99999";
+    public VcsCompat getVcsCompat() {
+        return vcsCompat;
     }
 
     @NotNull
     @Override
-    public CompatManager createCompatManager() throws IllegalStateException {
-        return new CompatManager160();
+    public HistoryCompat getHistoryCompat() {
+        return historyCompat;
     }
 }

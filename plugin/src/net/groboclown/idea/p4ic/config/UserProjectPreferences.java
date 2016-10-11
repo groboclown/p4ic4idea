@@ -74,6 +74,9 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
 
     @Nullable
     public static UserProjectPreferences getInstance(@NotNull final Project project) {
+        if (project.isDisposed()) {
+            return null;
+        }
         return ServiceManager.getService(project, UserProjectPreferences.class);
     }
 

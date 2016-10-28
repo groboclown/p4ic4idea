@@ -11,7 +11,8 @@
 
 * BugFixes
     * Fixed configuration connection issue.  It should now recognize more
-      situations where the password is needed.
+      situations where the password is needed.  Additionally, the user
+      shouldn't be quite as bombarded with error dialogs as before.
     * Corrected the P4CONFIG parsing so that it correctly reads the file.  It used
       to incorrectly parse a '\' character as an escaping character.  Now it is
       correctly read.

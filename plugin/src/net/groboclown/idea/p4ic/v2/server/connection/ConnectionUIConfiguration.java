@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.connection;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
@@ -33,6 +34,8 @@ import java.util.Map;
  * Handles the server connection code when setting up an initial connection.
  */
 public class ConnectionUIConfiguration {
+    private static final Logger LOG = Logger.getInstance(ConnectionUIConfiguration.class);
+
     public static void checkConnection(@NotNull ProjectConfigSource source,
             @NotNull ServerConnectionManager connectionManager)
             throws IOException, URISyntaxException,
@@ -101,10 +104,13 @@ public class ConnectionUIConfiguration {
                     exec.dispose();
                 }
             } catch (P4InvalidConfigException e) {
+                LOG.info(e);
                 ret.put(source, new ClientResult(e));
             } catch (P4InvalidClientException e) {
+                LOG.info(e);
                 ret.put(source, new ClientResult(e));
             } catch (VcsException e) {
+                LOG.info(e);
                 ret.put(source, new ClientResult(e));
             }
         }

@@ -162,12 +162,16 @@ public class ServerRunner {
                 case INVALID_LOGIN: {
                     P4LoginException ex = new P4LoginException(e);
                     errorVisitor.loginFailure(ex);
-                    throw ex;
+                    // Because we told the error visitor about this,
+                    // we will not tell the user in an alert about it.
+                    throw new HandledVcsException(ex);
                 }
                 case NOT_CONNECTED: {
                     P4DisconnectedException ex = new P4DisconnectedException(e);
                     errorVisitor.disconnectFailure(ex);
-                    throw ex;
+                    // Because we told the error visitor about this,
+                    // we will not tell the user in an alert about it.
+                    throw new HandledVcsException(ex);
                 }
                 case RELOGIN_FAILED: {
                     final P4RetryAuthenticationException ex = new P4RetryAuthenticationException(e);
@@ -176,7 +180,9 @@ public class ServerRunner {
                 }
                 case NEEDS_PASSWORD: {
                     errorVisitor.loginRequiresPassword();
-                    throw e;
+                    // Because we told the error visitor about this,
+                    // we will not tell the user in an alert about it.
+                    throw new HandledVcsException(e);
                 }
                 default: {
                     throw e;

@@ -24,6 +24,7 @@ import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
+import net.groboclown.idea.p4ic.server.exceptions.HandledVcsException;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import net.groboclown.idea.p4ic.v2.ui.warning.WarningMessage;
 import net.groboclown.idea.p4ic.v2.ui.warning.WarningUI;
@@ -421,6 +422,10 @@ public class AlertManager implements ApplicationComponent {
          * @return true if it is already registered, false if it is added.
          */
         boolean isHandled(@NotNull Throwable t) {
+            if (t instanceof HandledVcsException) {
+                return true;
+            }
+
             Set<Throwable> causes = new HashSet<Throwable>();
             Throwable current = t;
             Throwable prev = null;

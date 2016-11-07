@@ -17,6 +17,7 @@ package net.groboclown.idea.p4ic.v2.ui.alerts;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.perforce.p4java.exception.TrustException;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
 import org.jetbrains.annotations.NotNull;
@@ -26,11 +27,14 @@ import java.util.Date;
 public class SSLFingerprintProblemHandler extends AbstractErrorHandler {
     private static final Logger LOG = Logger.getInstance(SSLFingerprintProblemHandler.class);
 
+    private final boolean trustError;
+
 
     public SSLFingerprintProblemHandler(@NotNull final Project project,
             @NotNull final ServerConnectedController connectedController,
             @NotNull final Exception exception) {
         super(project, connectedController, exception);
+        trustError = exception instanceof TrustException;
     }
 
     @Override
@@ -42,9 +46,21 @@ public class SSLFingerprintProblemHandler extends AbstractErrorHandler {
         }
 
         // TODO this needs to better handle the SSL fingerprint issues.
+        final String message;
+        if (trustError) {
+            message = P4Bundle.message("configuration.ssl-trust-problem.ask",
+                    System.getProperty("java.version") == null ? "<unknown>" : System.getProperty("java.version"),
+                    System.getProperty("java.vendor") == null ? "<unknown>" : System.getProperty("java.vendor"),
+                    System.getProperty("java.vendor.url") == null ? "<unknown>" : System.getProperty("java.vendor.url"),
+                    System.getProperty("java.home") == null ? "<unknown>" : System.getProperty("java.home"),
+                    getExceptionMessage()
+            );
+        } else {
+            message = P4Bundle.message("configuration.ssl-fingerprint-problem.ask", getExceptionMessage());
+        }
 
         int result = Messages.showYesNoDialog(getProject(),
-                P4Bundle.message("configuration.ssl-fingerprint-problem.ask", getExceptionMessage()),
+                message,
                 P4Bundle.message("configuration.ssl-fingerprint-problem.title"),
                 Messages.getErrorIcon());
         if (result == Messages.YES) {

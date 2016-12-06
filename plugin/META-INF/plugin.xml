@@ -1,11 +1,18 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.7.19</version>
+    <version>0.7.20</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.7.20</em>
+            <ol>
+              <li>Changed the error reporting for SSL encryption library problem, when it comes
+              from a TrustException.  The error reported now includes information about the
+              user's JRE for better user investigation of the SSL problem.</li>
+            </ol>
+          </li>
           <li><em>0.7.19</em>
             <ol>
               <li>Fixed configuration connection issue.  It should now recognize more
@@ -17,29 +24,6 @@
               <li>Reduced the number of working-with-disposed-connections errors.</li>
               <li>Fixed an error with loading user preferences if the project is disposed.</li>
               <li>Build improvements.</li>
-            </ol>
-          </li>
-          <li><em>0.7.18</em>
-            <ol>
-              <li>Removed an extraneous offline mode check which caused setting up the
-              connection to report a "working offline" error.  This ended up making
-              the plugin unusable while in this mode.</li>
-              <li>The plugin correctly refreshes its state at IDE startup.
-              This prevented the connection widget from displaying its initial
-              state, and the rare no client root error.</li>
-              <li>Fixed the display of the server connection information so that it no
-              longer has the really ugly prefix.</li>
-              <li>Defend against a weird hiccup with finding servers.</li>
-              <li>Fixed a long standing old issue regarding incorrect cached
-              changes.  The underlying cache wasn't being correctly cleared out.</li>
-              <li>Fixed some cases of incorrectly forcing a workspace, which could
-              cause a UI freeze if the server connection took too long.</li>
-              <li>Fixed the IDE startup to better load the initial configuration, to
-              prevent the occasional issue where you used to have to edit the
-              setup before it took effect.</li>
-              <li>Fixed a UI freeze that could happen when cleaning up a connection
-              that runs against a slow server response.</li>
-              <li>Fixed an instance of synchronizing causing a NoSuchElementException.</li>
             </ol>
           </li>
         </ol>

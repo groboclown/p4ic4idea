@@ -25,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
+import static net.groboclown.idea.p4ic.v2.ui.alerts.DistinctDialog.YES;
+
 public class InvalidRootsHandler extends AbstractErrorHandler {
     private static final Logger LOG = Logger.getInstance(InvalidRootsHandler.class);
 
@@ -52,23 +54,17 @@ public class InvalidRootsHandler extends AbstractErrorHandler {
             vcsPresentableRoots.add(vcsRoot.getPresentableName());
         }
 
-        int result;
-        if (workspaceRoots.isEmpty()) {
-            result = Messages.showYesNoDialog(getProject(),
-                    P4Bundle.message("error.config.no-workspace-roots"),
-                    P4Bundle.message("error.config.invalid-roots.title", clientServerId.getClientId()),
-                    P4Bundle.message("error.config.invalid-roots.yes"),
-                    P4Bundle.message("error.config.invalid-roots.no"),
-                    Messages.getErrorIcon());
-        } else {
-            result = Messages.showYesNoDialog(getProject(),
-                    P4Bundle.message("error.config.invalid-roots", workspaceRoots, vcsPresentableRoots),
-                    P4Bundle.message("error.config.invalid-roots.title", clientServerId.getClientId()),
-                    P4Bundle.message("error.config.invalid-roots.yes"),
-                    P4Bundle.message("error.config.invalid-roots.no"),
-                    Messages.getErrorIcon());
-        }
-        if (result == Messages.YES) {
+        String messageKey = workspaceRoots.isEmpty()
+                ? "error.config.no-workspace-roots"
+                : "error.config.invalid-roots";
+        int result = DistinctDialog.showDialog(
+                DistinctDialog.key(this, clientServerId.getServerConfigId(), clientServerId.getClientId()),
+                getProject(),
+                P4Bundle.message(messageKey, workspaceRoots, vcsPresentableRoots),
+                P4Bundle.message("error.config.invalid-roots.title", clientServerId.getClientId()),
+                new String[] { P4Bundle.message("error.config.invalid-roots.yes"), P4Bundle.message("error.config.invalid-roots.no") },
+                Messages.getErrorIcon());
+        if (result == YES) {
             // Signal to the API to try again only if
             // the user selected "okay".
             tryConfigChange(false);
@@ -108,6 +104,12 @@ public class InvalidRootsHandler extends AbstractErrorHandler {
         @Override
         public void connect(@NotNull final Project project) {
             // do nothing
+        }
+
+        @Override
+        @NotNull
+        public String getServerDescription() {
+            return "";
         }
     }
 

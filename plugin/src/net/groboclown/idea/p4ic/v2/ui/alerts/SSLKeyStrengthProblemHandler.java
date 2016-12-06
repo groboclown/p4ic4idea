@@ -41,7 +41,9 @@ public class SSLKeyStrengthProblemHandler extends AbstractErrorHandler {
             return;
         }
 
-        int result = Messages.showYesNoDialog(getProject(),
+        int result = DistinctDialog.showDialog(
+                DistinctDialog.key(this, getServerKey()),
+                getProject(),
                 P4Bundle.message("exception.java.ssl.keystrength-ask",
                         System.getProperty("java.version") == null ? "<unknown>" : System.getProperty("java.version"),
                         System.getProperty("java.vendor") == null ? "<unknown>" : System.getProperty("java.vendor"),
@@ -51,14 +53,13 @@ public class SSLKeyStrengthProblemHandler extends AbstractErrorHandler {
                         System.getProperty("java.home") == null ? "<unknown>" : System.getProperty("java.home"),
                         getExceptionMessage()),
                 P4Bundle.message("exception.java.ssl.keystrength-ask.title"),
-                P4Bundle.message("dialog.confirm.edit-config"),
-                P4Bundle.message("dialog.confirm.work-offline"),
+                new String[] { P4Bundle.message("dialog.confirm.edit-config"), P4Bundle.message("dialog.confirm.work-offline") },
                 Messages.getErrorIcon());
-        if (result == Messages.YES) {
+        if (result == DistinctDialog.YES) {
             // Signal to the API to try again only if
             // the user selected "okay".
             tryConfigChange();
-        } else {
+        } else if (result == DistinctDialog.NO){
             // Work offline
             goOffline();
         }

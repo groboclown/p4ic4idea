@@ -71,4 +71,10 @@ public class MockServerStatusController implements ServerStatusController {
     public void connect(@NotNull final Project project) {
         connected = true;
     }
+
+    @NotNull
+    @Override
+    public String getServerDescription() {
+        return "x";
+    }
 }

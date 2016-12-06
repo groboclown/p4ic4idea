@@ -23,6 +23,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 
+import static net.groboclown.idea.p4ic.v2.ui.alerts.DistinctDialog.NO;
+import static net.groboclown.idea.p4ic.v2.ui.alerts.DistinctDialog.YES;
+
 public class ConfigurationProblemHandler extends AbstractErrorHandler {
     private static final Logger LOG = Logger.getInstance(ConfigurationProblemHandler.class);
 
@@ -39,15 +42,17 @@ public class ConfigurationProblemHandler extends AbstractErrorHandler {
             return;
         }
 
-        int result = Messages.showYesNoDialog(getProject(),
+        int result = DistinctDialog.showYesNoDialog(
+                DistinctDialog.key(this, getServerKey()),
+                getProject(),
                 P4Bundle.message("configuration.connection-problem-ask", getExceptionMessage()),
                 P4Bundle.message("configuration.check-connection"),
                 Messages.getErrorIcon());
-        if (result == Messages.YES) {
+        if (result == YES) {
             // Signal to the API to try again only if
             // the user selected "okay".
             tryConfigChange();
-        } else {
+        } else if (result == NO) {
             // Work offline
             goOffline();
         }

@@ -35,15 +35,7 @@ import java.util.Set;
 public class LoginFailedHandler extends AbstractErrorHandler {
     private static final Logger LOG = Logger.getInstance(LoginFailedHandler.class);
 
-    // Without the list of who is being asked for passwords, we get into a bad
-    // state where the asking for password is active while another bad login
-    // message is displayed.  This all stems from the issue where the dialog that
-    // we're showing to ask the user for their action choice won't go away
-    // if another dialog pops up.
-    private static final Set<String> ACTIVE_LOGINS = Collections.synchronizedSet(new HashSet<String>());
-
     private final ServerConfig config;
-
 
 
     public LoginFailedHandler(@NotNull final Project project,
@@ -62,70 +54,54 @@ public class LoginFailedHandler extends AbstractErrorHandler {
             return;
         }
 
-        boolean handleEndSeparately = false;
-
-        if (beginAction(config)) {
-            try {
-                int result = Messages.showDialog(getProject(),
-                        P4Bundle.message("configuration.login-problem-ask", getExceptionMessage()),
-                        P4Bundle.message("configuration.login-problem.title"),
-                        new String[]{
-                                P4Bundle.message("configuration.login-problem.yes"),
-                                P4Bundle.message("configuration.login-problem.no"),
-                                P4Bundle.message("configuration.login-problem.cancel")
-                        },
-                        0,
-                        Messages.getErrorIcon());
-                if (result == 0) { // first option: re-enter password
-                    // This needs to run in another event, otherwise the
-                    // message dialog will stay active forever.
-                    ApplicationManager.getApplication().invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                PasswordManager.getInstance().askPassword(getProject(), config);
-                                connect();
-                            } catch (PasswordStoreException e) {
-                                AlertManager.getInstance().addWarning(getProject(),
-                                        P4Bundle.message("password.store.error.title"),
-                                        P4Bundle.message("password.store.error"),
-                                        e, new FilePath[0]);
-                            } finally {
-                                endAction(config);
-                            }
+        DistinctDialog.performOnDialog(
+                DistinctDialog.key(this, config.getServiceName(), config.getUsername()),
+                getProject(),
+                P4Bundle.message("configuration.login-problem-ask", getExceptionMessage()),
+                P4Bundle.message("configuration.login-problem.title"),
+                new String[]{
+                        P4Bundle.message("configuration.login-problem.yes"),
+                        P4Bundle.message("configuration.login-problem.no"),
+                        P4Bundle.message("configuration.login-problem.cancel")
+                },
+                Messages.getErrorIcon(),
+                new DistinctDialog.ChoiceActor() {
+                    @Override
+                    public void onChoice(int choice, @NotNull final DistinctDialog.OnEndHandler onEndHandler) {
+                        switch (choice) {
+                            case 0:
+                                // first option: re-enter password
+                                // This needs to run in another event, otherwise the
+                                // message dialog will stay active forever.
+                                onEndHandler.handleInOtherThread();
+                                ApplicationManager.getApplication().invokeLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            PasswordManager.getInstance().askPassword(getProject(), config);
+                                            connect();
+                                        } catch (PasswordStoreException e) {
+                                            AlertManager.getInstance().addWarning(getProject(),
+                                                    P4Bundle.message("password.store.error.title"),
+                                                    P4Bundle.message("password.store.error"),
+                                                    e, new FilePath[0]);
+                                        } finally {
+                                            onEndHandler.handleInOtherThread();
+                                        }
+                                    }
+                                });
+                                break;
+                            case 1:
+                                // 2nd option: update server config
+                                tryConfigChange();
+                                break;
+                            default:
+                                // 3rd option: work offline
+                                goOffline();
+                                break;
                         }
-                    });
-                    handleEndSeparately = true;
-                } else if (result == 1) { // 2nd option: update server config
-                    tryConfigChange();
-                } else { // 3rd option: work offline
-                    goOffline();
+                    }
                 }
-            } finally {
-                if (! handleEndSeparately) {
-                    endAction(config);
-                }
-            }
-        } else {
-            LOG.info("Already handling login for config " + config);
-        }
+        );
     }
-
-
-    private static boolean beginAction(@NotNull ServerConfig config) {
-        String key = getLoginKey(config);
-        return ACTIVE_LOGINS.add(key);
-    }
-
-    private static void endAction(@NotNull ServerConfig config) {
-        String key = getLoginKey(config);
-        ACTIVE_LOGINS.remove(key);
-    }
-
-
-    @NotNull
-    private static String getLoginKey(@NotNull ServerConfig config) {
-        return config.getServiceName() + ">>>" + config.getUsername();
-    }
-
 }

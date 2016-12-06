@@ -105,4 +105,9 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
     protected boolean isAutoOffline() {
         return serverConnectedController.isAutoOffline();
     }
+
+
+    protected String getServerKey() {
+        return serverConnectedController.getServerDescription();
+    }
 }

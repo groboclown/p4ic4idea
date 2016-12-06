@@ -45,15 +45,17 @@ public class ClientNameMismatchHandler extends AbstractErrorHandler {
 
         ApplicationManager.getApplication().assertIsDispatchThread();
 
-        int result = Messages.showYesNoDialog(getProject(),
+        int result = DistinctDialog.showYesNoDialog(
+                DistinctDialog.key(this, cachedClientName, p4ClientName),
+                getProject(),
                 P4Bundle.message("configuration.client-mismatch-ask", cachedClientName, p4ClientName),
                 P4Bundle.message("configuration.check-connection"),
                 Messages.getErrorIcon());
-        if (result == Messages.YES) {
+        if (result == DistinctDialog.YES) {
             // Signal to the API to try again only if
             // the user selected "okay".
             tryConfigChange();
-        } else {
+        } else if (result > DistinctDialog.DIALOG_ALREADY_ACTIVE) {
             goOffline();
         }
     }

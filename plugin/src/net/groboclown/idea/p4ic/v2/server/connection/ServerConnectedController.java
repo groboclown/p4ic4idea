@@ -41,4 +41,11 @@ public interface ServerConnectedController {
      *                the active project.
      */
     void connect(@NotNull Project project);
+
+    /**
+     *
+     * @return the connection description
+     */
+    @NotNull
+    String getServerDescription();
 }

@@ -278,6 +278,12 @@ public class ServerConnectionManager implements ApplicationComponent {
             }
         }
 
+        @NotNull
+        @Override
+        public String getServerDescription() {
+            return config.getServiceName();
+        }
+
         public boolean removeClient(@Nullable final String clientName) {
             clientNames.remove(clientName);
             return clientNames.isEmpty();

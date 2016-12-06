@@ -44,10 +44,13 @@ public class ConfigPanelErrorHandler implements CriticalErrorHandler {
     public void handleError(@NotNull final Date when) {
         // using ApplicationManager.getApplication().invokeLater
         // will cause the dialog to delay displaying until all
-        // other active gui are dismissed.
+        // other active dialogs are dismissed.
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
+                // Don't use the Distinct Dialog.  The config panel
+                // doesn't have these kinds of issues.
+
                 Messages.showMessageDialog(project,
                         message,
                         title,

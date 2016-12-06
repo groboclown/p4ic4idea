@@ -51,18 +51,19 @@ public class DisconnectedHandler extends AbstractErrorHandler {
 
         // Ask the user if they want to disconnect.
         LOG.info("Asking user to reconnect");
-        int choice = Messages.showDialog(getProject(),
+        int choice = DistinctDialog.showDialog(
+                DistinctDialog.key(this, getServerKey()),
+                getProject(),
                 P4Bundle.message("dialog.offline.message"),
                 P4Bundle.message("dialog.offline.title"),
                 new String[]{
                         P4Bundle.message("dialog.offline.reconnect"),
                         P4Bundle.message("dialog.offline.offline-mode")
                 },
-                1,
                 Messages.getErrorIcon());
         if (choice == 0) {
             connect();
-        } else {
+        } else if (choice == 1) {
             goOffline();
         }
     }

@@ -287,7 +287,6 @@
         <!-- Load the version number from the plugin file. -->
         <xmlproperty prefix="pluginfile" file="${basedir}/META-INF/plugin.xml"/>
         <!-- Overwrite the existing file, which is probably the placeholder version. -->
-        <echoproperties/>
         <echo file="${output.dir}/p4ic-version.txt"
               message="${pluginfile.idea-plugin.version}" />
     </target>

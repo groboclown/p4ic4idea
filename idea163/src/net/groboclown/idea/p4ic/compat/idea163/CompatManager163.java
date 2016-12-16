@@ -14,16 +14,14 @@
 
 package net.groboclown.idea.p4ic.compat.idea163;
 
-import net.groboclown.idea.p4ic.compat.CompatManager;
-import net.groboclown.idea.p4ic.compat.HistoryCompat;
-import net.groboclown.idea.p4ic.compat.UICompat;
-import net.groboclown.idea.p4ic.compat.VcsCompat;
+import net.groboclown.idea.p4ic.compat.*;
 import org.jetbrains.annotations.NotNull;
 
 public class CompatManager163 extends CompatManager {
     private final UICompat163 uiCompat = new UICompat163();
     private final VcsCompat163 vcsCompat = new VcsCompat163();
     private final HistoryCompat163 historyCompat = new HistoryCompat163();
+    private final AuthenticationCompat163 authenticationCompat = new AuthenticationCompat163();
 
     @NotNull
     @Override
@@ -41,5 +39,11 @@ public class CompatManager163 extends CompatManager {
     @Override
     public HistoryCompat getHistoryCompat() {
         return historyCompat;
+    }
+
+    @NotNull
+    @Override
+    public AuthenticationCompat getAuthenticationCompat() {
+        return authenticationCompat;
     }
 }

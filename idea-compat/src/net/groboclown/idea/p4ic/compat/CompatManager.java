@@ -30,4 +30,7 @@ public abstract class CompatManager {
 
     @NotNull
     public abstract HistoryCompat getHistoryCompat();
+
+    @NotNull
+    public abstract AuthenticationCompat getAuthenticationCompat();
 }

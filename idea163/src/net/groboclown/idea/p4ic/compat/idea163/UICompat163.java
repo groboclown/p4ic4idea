@@ -14,8 +14,9 @@
 
 package net.groboclown.idea.p4ic.compat.idea163;
 
+import com.intellij.credentialStore.CredentialAttributesKt;
+import com.intellij.credentialStore.CredentialPromptDialog;
 import com.intellij.ide.actions.ShowSettingsUtilImpl;
-import com.intellij.ide.passwordSafe.ui.PasswordSafePromptDialog;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -46,7 +47,7 @@ public class UICompat163 extends UICompat {
             @NotNull final String message,
             final Class<?> requester, @NotNull final String key, final boolean resetPassword,
             @NotNull final String error) {
-        return PasswordSafePromptDialog.askPassword(project, title, message, requester,
-                key, resetPassword, error);
+        return CredentialPromptDialog.askPassword(project, title, message,
+                CredentialAttributesKt.CredentialAttributes(requester, key), resetPassword, error);
     }
 }

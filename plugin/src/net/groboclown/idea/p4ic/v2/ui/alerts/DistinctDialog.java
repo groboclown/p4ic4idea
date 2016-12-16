@@ -17,7 +17,6 @@ package net.groboclown.idea.p4ic.v2.ui.alerts;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,7 +60,10 @@ class DistinctDialog {
 
 
     static int showYesNoDialog(@NotNull String dialogKey, @Nullable Project project, String message,
-            @Nls(capitalization = Nls.Capitalization.Title) String title, @Nullable Icon icon) {
+            // Note: IntelliJ > 160 annotation
+            // @Nls(capitalization = Nls.Capitalization.Title)
+            @NotNull
+            String title, @Nullable Icon icon) {
         return showDialog(dialogKey, project, message, title, YES_NO, icon);
     }
 
@@ -78,7 +80,10 @@ class DistinctDialog {
      *      processed.
      */
     static int showDialog(@NotNull String dialogKey, @Nullable Project project, String message,
-            @Nls(capitalization = Nls.Capitalization.Title) String title,
+            // Note: IntelliJ > 160 annotation
+            // @Nls(capitalization = Nls.Capitalization.Title)
+            @NotNull
+            String title,
             @NotNull String[] options, @Nullable Icon icon) {
         if (beginAction(dialogKey)) {
             try {
@@ -94,7 +99,10 @@ class DistinctDialog {
 
 
     static void performOnDialog(@NotNull String dialogKey, @Nullable Project project, String message,
-            @Nls(capitalization = Nls.Capitalization.Title) String title,
+            // Note: IntelliJ > 160 annotation
+            // @Nls(capitalization = Nls.Capitalization.Title)
+            @NotNull
+            String title,
             @NotNull String[] options, @Nullable Icon icon,
             @NotNull ChoiceActor actor)
     {

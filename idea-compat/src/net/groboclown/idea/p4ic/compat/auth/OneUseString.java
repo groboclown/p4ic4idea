@@ -14,8 +14,11 @@
 
 package net.groboclown.idea.p4ic.compat.auth;
 
+import org.jetbrains.annotations.Nullable;
+
 public class OneUseString {
     private char[] value;
+    private boolean used = false;
 
     /**
      * Directly stores the char array.  It will be blanked out
@@ -31,9 +34,10 @@ public class OneUseString {
         this.value = value.toCharArray();
     }
 
-    public <T> void use(WithString<T> block) {
+    public synchronized <T> T use(WithString<T> block) {
+        checkAvailable();
         try {
-            block.with(value);
+            return block.with(value);
         } finally {
             for (int i = 0; i < value.length; i++) {
                 value[i] = 0;
@@ -42,22 +46,32 @@ public class OneUseString {
         }
     }
 
-    public <T, H extends Throwable> void use(WithStringThrows<T, H> block) throws H {
+    public synchronized <T, H extends Throwable> T use(WithStringThrows<T, H> block) throws H {
+        checkAvailable();
         try {
-            block.with(value);
+            return block.with(value);
         } finally {
-            for (int i = 0; i < value.length; i++) {
-                value[i] = 0;
+            if (value != null) {
+                for (int i = 0; i < value.length; i++) {
+                    value[i] = 0;
+                }
             }
             value = null;
         }
     }
 
     public interface WithString<T> {
-        T with(char[] value);
+        T with(@Nullable char[] value);
     }
 
     public interface WithStringThrows<T, H extends Throwable> {
-        T with(char[] value) throws H;
+        T with(@Nullable char[] value) throws H;
+    }
+
+    private void checkAvailable() {
+        if (used) {
+            throw new IllegalStateException("Already used string");
+        }
+        used = true;
     }
 }

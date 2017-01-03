@@ -19,7 +19,6 @@ import com.intellij.credentialStore.CredentialStore;
 import com.intellij.credentialStore.CredentialStoreFactory;
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.ide.passwordSafe.PasswordStorage;
-import com.intellij.ide.passwordSafe.impl.providers.memory.MemoryPasswordSafe;
 import com.intellij.openapi.extensions.ExtensionPoint;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.extensions.ExtensionsArea;
@@ -30,7 +29,7 @@ import net.groboclown.idea.p4ic.compat.auth.OneUseString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class AuthenticationCompat163 implements AuthenticationCompat {
+public class AuthenticationCompat163 extends AuthenticationCompat {
     @NotNull
     @Override
     public AuthenticationStore createAuthenticationStore(@Nullable Project project) {
@@ -56,6 +55,11 @@ public class AuthenticationCompat163 implements AuthenticationCompat {
 
         private CredentialAuthStore(@NotNull CredentialStoreFactory factory) {
             this.credentials = factory.create();
+        }
+
+        @Override
+        public boolean isBlocking() {
+            return true;
         }
 
         @Override

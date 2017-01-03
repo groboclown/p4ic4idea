@@ -20,6 +20,7 @@ import com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage;
 import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
 import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.ISingleServerMessage;
+import net.groboclown.idea.p4ic.compat.auth.AuthenticationException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -32,8 +33,13 @@ public class PasswordStoreException extends AccessException {
         initCause(t);
     }
 
+    public PasswordStoreException(AuthenticationException e) {
+        super(getServiceMessage(e));
+        initCause(e);
+    }
+
     @NotNull
-    private static IServerMessage getServiceMessage(final PasswordSafeException t) {
+    private static IServerMessage getServiceMessage(final Exception t) {
         Map<String, Object> format = new HashMap<String, Object>();
         format.put(RpcMessage.FMT + '0', t.getMessage());
         return new ServerMessage(Collections.<ISingleServerMessage>singletonList(

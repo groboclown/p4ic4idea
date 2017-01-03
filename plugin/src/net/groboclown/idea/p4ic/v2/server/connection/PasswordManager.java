@@ -14,16 +14,17 @@
 
 package net.groboclown.idea.p4ic.v2.server.connection;
 
-import com.intellij.ide.passwordSafe.PasswordSafe;
-import com.intellij.ide.passwordSafe.PasswordSafeException;
-import com.intellij.ide.passwordSafe.impl.providers.memory.MemoryPasswordSafe;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.*;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.compat.AuthenticationCompat;
 import net.groboclown.idea.p4ic.compat.UICompat;
+import net.groboclown.idea.p4ic.compat.auth.AuthenticationException;
+import net.groboclown.idea.p4ic.compat.auth.AuthenticationStore;
+import net.groboclown.idea.p4ic.compat.auth.OneUseString;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
@@ -32,9 +33,7 @@ import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Returned passwords will always be either null or non-empty.
@@ -59,14 +58,22 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
 
     private static Class REQUESTOR_CLASS = P4Vcs.class;
 
-    @Nullable
-    private MemoryPasswordSafe memoryPasswordSafe = new MemoryPasswordSafe();
+    // This used to use the MemoryPasswordSafe.  However, as per the Java doc:
+    // "The provider that stores passwords in memory in encrypted from. It does not stores passwords on the disk,
+    // so all passwords are forgotten after application exit. Some efforts are done to complicate retrieving passwords
+    // from page file. However the passwords could be still retrieved from the memory using debugger or full memory
+    // dump."
+    // The JavaDoc then follows this up with:
+    // used in https://github.com/groboclown/p4ic4idea, cannot be deleted
+    // So, let's be nice and not use the MemoryPasswordSafe.
 
-    // the keys that are saved into the in-memory safe.
-    private final Set<String> hasPasswordInMemory = Collections.synchronizedSet(new HashSet<String>());
+    @NotNull
+    private Map<String, char[]> memoryPasswordSafe = Collections.synchronizedMap(new HashMap<String, char[]>());
 
     // the keys that are saved into the password data store persistence.
     private final Set<String> hasPasswordInStorage = Collections.synchronizedSet(new HashSet<String>());
+
+    private volatile boolean disposed = false;
 
 
     @NotNull
@@ -81,41 +88,38 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
      * @param project source project
      * @param config server and user configuration
      * @return password which is null or non-empty.
-     * @throws PasswordStoreException
+     * @throws PasswordStoreException if there was an underlying storage error.
      */
-    @Nullable
-    public String getPassword(@Nullable final Project project, @NotNull final ServerConfig config,
+    @NotNull
+    public OneUseString getPassword(@Nullable final Project project, @NotNull final ServerConfig config,
             boolean forceLogin)
             throws PasswordStoreException, PasswordAccessedWrongException {
 
-        if (memoryPasswordSafe == null) {
+        if (disposed) {
             LOG.warn("already disposed");
-            return null;
+            throw new PasswordAccessedWrongException();
         }
 
         final String key = toKey(config);
 
-        // TODO look at storing these in the memory safe
-        String ret = config.getPlaintextPassword();
-        if (ret != null && ret.length() > 0) {
-            LOG.debug("Using plaintext for " + key);
-            return config.getPlaintextPassword();
+        {
+            final String plaintextPassword = config.getPlaintextPassword();
+            if (plaintextPassword != null && plaintextPassword.length() > 0) {
+                LOG.debug("Using plaintext for " + key);
+                return new OneUseString(config.getPlaintextPassword());
+            }
         }
         if (! forceLogin && ! hasPasswordInStorage.contains(key)) {
             // do not inspect the password safes
             LOG.debug("Skipping the password safe check for " + key);
-            return null;
+            return new OneUseString((char[]) null);
         }
 
         try {
-            ret = memoryPasswordSafe.getPassword(project, REQUESTOR_CLASS, key);
-            if (ret == null || ret.length() <= 0) {
-                if (hasPasswordInMemory.contains(toKey(config))) {
-                    // already set the value, and it's empty.
-                    LOG.debug("Using stored null password for " + key);
-                    return null;
-                }
-
+            OneUseString chPass = getMemoryPassword(config);
+            if (chPass != null) {
+                return chPass;
+            } else {
 
                 // From the JavaDoc on the general password getter:
                 // This method may be called from the background,
@@ -128,14 +132,17 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                 if (ApplicationManager.getApplication().isDispatchThread() ||
                         ! ApplicationManager.getApplication().isReadAccessAllowed()) {
                     LOG.debug("Fetching password from PasswordSafe");
-                    ret = PasswordSafe.getInstance().getPassword(project,
-                            REQUESTOR_CLASS, key);
-                    if (ret != null && ret.length() > 0) {
-                        // keep a local copy of the password for future, outside the
-                        // dispatch and in a read action, reference.
-                        memoryPasswordSafe.storePassword(project, REQUESTOR_CLASS, key, ret);
+                    final AuthenticationStore passwordStore = getAuthenticationStore(project);
+                    OneUseString ret = passwordStore.get(config.getServiceName(), config.getUsername());
+                    if (ret == null) {
+                        // Weird situation.
+                        LOG.info("Storage for password key " + key + " was null");
+                        ret = new OneUseString(new char[0]);
                     }
-                    hasPasswordInMemory.add(key);
+                    // keep a local copy of the password for future, outside the
+                    // dispatch and in a read action, reference.
+                    ret = setMemoryPassword(config, ret);
+                    return ret;
                 } else {
                     LOG.warn("Could not get password because the action is called from outside the dispatch thread and in a read action.");
                     if (LOG.isDebugEnabled()) {
@@ -147,27 +154,25 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                     ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
                         @Override
                         public void run() {
+                            final AuthenticationStore passwordStore = getAuthenticationStore(project);
                             try {
                                 LOG.debug("Fetching for " + key + " in background thread");
-                                String pw = PasswordSafe.getInstance().getPassword(project,
-                                        REQUESTOR_CLASS, key);
-                                hasPasswordInMemory.add(key);
+                                OneUseString pw = passwordStore.get(config.getServiceName(), config.getUsername());
                                 if (pw != null) {
-                                    memoryPasswordSafe.storePassword(project,
-                                            REQUESTOR_CLASS, key, pw);
+                                    setMemoryPassword(config, pw);
                                 } else {
-                                    // force the login.
-                                    //P4LoginException ex = new P4LoginException(project, config,
-                                    //        P4Bundle.message("login.password.error"));
-                                    //AlertManager.getInstance().addCriticalError(
-                                    //        new PasswordRequiredHandler(project, config), ex);
+                                    setMemoryPassword(config, new OneUseString(new char[0]));
                                     LOG.warn("Not forcing a login");
                                 }
-                            } catch (PasswordSafeException e) {
-                                AlertManager.getInstance().addWarning(project,
-                                        P4Bundle.message("password.store.error.title"),
-                                        P4Bundle.message("password.store.error"),
-                                        e, new FilePath[0]);
+                            } catch (AuthenticationException e) {
+                                if (project == null) {
+                                    LOG.warn(P4Bundle.message("password.store.error"), e);
+                                } else {
+                                    AlertManager.getInstance().addWarning(project,
+                                            P4Bundle.message("password.store.error.title"),
+                                            P4Bundle.message("password.store.error"),
+                                            e, new FilePath[0]);
+                                }
                             }
                         }
                     });
@@ -175,11 +180,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                     throw new PasswordAccessedWrongException();
                 }
             }
-            if (ret == null || ret.length() <= 0) {
-                return null;
-            }
-            return ret;
-        } catch (PasswordSafeException e) {
+        } catch (AuthenticationException e) {
             throw new PasswordStoreException(e);
         }
     }
@@ -190,26 +191,14 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
         final String key = toKey(config);
         LOG.debug("Forgetting for " + key);
 
-        String ret = config.getPlaintextPassword();
-        if (ret != null && ret.length() > 0) {
-            LOG.debug("Cannot forget password, as it is a plaintext password");
-            return;
-        }
-
-        PasswordStoreException ex = null;
+        // If the password is stored in the plaintext file, we still should go through
+        // this logic.
 
         // Do not remove the password from the "has password", because we still "have" it
         // pulled into the memory safe.
 
         // Critical call; do not fail just because it's been disposed.
-        if (memoryPasswordSafe != null) {
-            try {
-                memoryPasswordSafe.removePassword(project, REQUESTOR_CLASS, key);
-            } catch (PasswordSafeException e) {
-                ex = new PasswordStoreException(e);
-            }
-            hasPasswordInMemory.remove(key);
-        }
+        clearMemoryPassword(config);
 
         // this can wait on shared resources, so make sure
         // it runs in the background, to avoid deadlocks.
@@ -217,22 +206,19 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
             @Override
             public void run() {
                 try {
-                    PasswordSafe.getInstance().removePassword(project, REQUESTOR_CLASS, key);
-                } catch (PasswordSafeException e) {
-                    LOG.error(e);
-                    // ex = new PasswordStoreException(e);
+                    getAuthenticationStore(project).clear(config.getServiceName(), config.getUsername());
+                } catch (AuthenticationException e) {
+                    e.printStackTrace();
                 }
                 hasPasswordInStorage.remove(key);
             }
         });
-
-        if (ex != null) {
-            throw ex;
-        }
     }
 
 
     /**
+     * Resets the user's password, and asks for a new one.  This will block input.
+     *
      * Not really the best place for this method, but it centralizes the PasswordSafe
      * access.
      *
@@ -240,20 +226,12 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
      */
     public boolean askPassword(@Nullable Project project, @NotNull final ServerConfig config)
             throws PasswordStoreException {
-        if (memoryPasswordSafe == null) {
+        if (disposed) {
             LOG.warn("Already disposed");
             return false;
         }
 
         final String key = toKey(config);
-
-        // clear out the memory password.
-        try {
-            memoryPasswordSafe.removePassword(project, REQUESTOR_CLASS, key);
-        } catch (PasswordSafeException e) {
-            throw new PasswordStoreException(e);
-        }
-        hasPasswordInMemory.remove(key);
 
         String password = UICompat.getInstance().askPassword(project,
                 P4Bundle.message("login.password.title"),
@@ -266,6 +244,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
 
         if (password == null) {
             // already automatically removed from the store.
+            clearMemoryPassword(config);
             LOG.info("No password entered");
             return false;
         } else {
@@ -274,15 +253,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
             // store it.
             LOG.info("New password stored");
             hasPasswordInStorage.add(key);
-            try {
-                memoryPasswordSafe.storePassword(
-                        project, REQUESTOR_CLASS, key,
-                        password);
-                hasPasswordInMemory.add(key);
-            } catch (PasswordSafeException e) {
-                LOG.info("Did not store password for " + key, e);
-                throw new PasswordStoreException(e);
-            }
+            setMemoryPassword(config, password.toCharArray());
             return true;
         }
     }
@@ -301,7 +272,13 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
 
     @Override
     public void disposeComponent() {
-        memoryPasswordSafe = null;
+        disposed = true;
+        for (char[] chars : memoryPasswordSafe.values()) {
+            if (chars != null) {
+                Arrays.fill(chars, (char) 0);
+            }
+        }
+        memoryPasswordSafe.clear();
     }
 
     @NotNull
@@ -335,5 +312,43 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                 }
             }
         }
+    }
+
+    private void setMemoryPassword(@NotNull ServerConfig config, @NotNull char[] password) {
+        final String key = toKey(config);
+        memoryPasswordSafe.put(key, password);
+    }
+
+    private OneUseString setMemoryPassword(@NotNull ServerConfig config, @NotNull OneUseString password) {
+        final String key = toKey(config);
+        return password.use(new OneUseString.WithString<OneUseString>() {
+            @Override
+            public OneUseString with(char[] value) {
+                memoryPasswordSafe.put(key, value);
+                return new OneUseString(value);
+            }
+        });
+    }
+
+    @Nullable
+    private OneUseString getMemoryPassword(@NotNull ServerConfig config) {
+        final String key = toKey(config);
+        char[] pass = memoryPasswordSafe.get(key);
+        if (pass == null) {
+            return null;
+        }
+        return new OneUseString(pass);
+    }
+
+    private void clearMemoryPassword(@NotNull ServerConfig config) {
+        final String key = toKey(config);
+        char[] pass = memoryPasswordSafe.remove(key);
+        if (pass != null) {
+            Arrays.fill(pass, (char) 0);
+        }
+    }
+
+    private static AuthenticationStore getAuthenticationStore(@Nullable Project project) {
+        return AuthenticationCompat.getInstance().createAuthenticationStore(project);
     }
 }

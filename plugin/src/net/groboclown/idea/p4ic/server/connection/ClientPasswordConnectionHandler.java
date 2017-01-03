@@ -20,6 +20,7 @@ import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.server.Fingerprint;
 import com.perforce.p4java.server.IOptionsServer;
+import net.groboclown.idea.p4ic.compat.auth.OneUseString;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.ConfigurationProblem;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
@@ -103,11 +104,11 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
 
 
     @Nullable
-    private AccessException authenticate(@Nullable Project project, @NotNull IOptionsServer server,
+    private AccessException authenticate(@Nullable Project project, @NotNull final IOptionsServer server,
             @NotNull ServerConfig config, boolean force)
             throws P4JavaException {
         // Default login - use the simple password
-        final String password;
+        final OneUseString password;
         try {
             password = PasswordManager.getInstance().getPassword(project, config, force);
         } catch (PasswordAccessedWrongException ex) {
@@ -117,39 +118,41 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
             throw ex;
         }
 
-        if (password != null) {
-            // If the password is blank, then there's no need for the
-            // user to log in; in fact, that wil raise an error by Perforce
-            try {
-                // server.login(password, new LoginOptions(false, true));
-                server.login(password);
-                LOG.debug("No issue logging in with stored password");
-                return null;
-            } catch (AccessException ex) {
-                // This seems to happen on a rare occasion on the
-                // first attempt at logging in.  Don't automatically
-                // forget the password.
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("login failed", ex);
-                }
-                if (ex.getServerMessage().hasMessageFragment("'login' not necessary")) {
-                    // ignore login and keep going
-                    PasswordManager.getInstance().forgetPassword(project, config);
-                    LOG.info(config + ": User provided password, but it is not necessary", ex);
+        try {
+            password.use(new OneUseString.WithStringThrows<Void, P4JavaException>() {
+                @Override
+                public Void with(@Nullable char[] value) throws P4JavaException {
+                    // If the password is blank, then there's no need for the
+                    // user to log in; in fact, that wil raise an error by Perforce
+                    if (value != null && value.length > 0) {
+                        server.login(new String(value));
+                        LOG.debug("No issue logging in with stored password");
+                    }
                     return null;
                 }
-                if (force) {
-                    // Under a forced circumstance, forget the
-                    // password.
-                    PasswordManager.getInstance().forgetPassword(project, config);
-                    LOG.info("Stored password was bad; forgetting it", ex);
-                    return ex;
-                }
-                LOG.info("P4 server reported bad password, but this can be a timing issue.  Allowing it on the first pass", ex);
+            });
+            return null;
+        } catch (AccessException ex) {
+            // This seems to happen on a rare occasion on the
+            // first attempt at logging in.  Don't automatically
+            // forget the password.
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("login failed", ex);
+            }
+            if (ex.getServerMessage().hasMessageFragment("'login' not necessary")) {
+                // ignore login and keep going
+                PasswordManager.getInstance().forgetPassword(project, config);
+                LOG.info(config + ": User provided password, but it is not necessary", ex);
                 return null;
             }
-        } else {
-            LOG.debug("no password - not logging in");
+            if (force) {
+                // Under a forced circumstance, forget the
+                // password.
+                PasswordManager.getInstance().forgetPassword(project, config);
+                LOG.info("Stored password was bad; forgetting it", ex);
+                return ex;
+            }
+            LOG.info("P4 server reported bad password, but this can be a timing issue.  Allowing it on the first pass", ex);
             return null;
         }
     }

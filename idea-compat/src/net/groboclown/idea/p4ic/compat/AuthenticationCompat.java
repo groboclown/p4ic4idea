@@ -20,9 +20,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Allows for
+ * Allows for compatible way to store passwords.
  */
-public interface AuthenticationCompat {
+public abstract class AuthenticationCompat {
+    public static final AuthenticationCompat getInstance() {
+        return CompatManager.getInstance().getAuthenticationCompat();
+    }
+
     @NotNull
-    AuthenticationStore createAuthenticationStore(@Nullable Project project);
+    public abstract AuthenticationStore createAuthenticationStore(@Nullable Project project);
 }

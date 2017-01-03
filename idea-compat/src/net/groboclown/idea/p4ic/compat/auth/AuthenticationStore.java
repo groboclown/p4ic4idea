@@ -22,6 +22,12 @@ import org.jetbrains.annotations.Nullable;
  * soon as it is no longer required.
  */
 public interface AuthenticationStore {
+    /**
+     *
+     * @return true if access to this store can block the EDT.
+     */
+    boolean isBlocking();
+
     void clear(@NotNull String service, @NotNull String user) throws AuthenticationException;
 
     boolean has(@NotNull String service, @NotNull String user) throws AuthenticationException;

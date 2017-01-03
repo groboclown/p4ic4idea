@@ -66,11 +66,12 @@ public class CompatFactoryLoader {
      *         with this IDE.
      */
     @NotNull
-    public static CompatFactory loadCompatFactory() {
+    private static CompatFactory loadCompatFactory() {
         CompatFactory factory = loadCompatFactory(getApiVersion(), findClassLoaders());
         if (factory == null) {
             throw new IncompatibleApiVersionException(getApiVersion());
         }
+        LOG.info("Using compatibility features " + factory.getClass().getSimpleName());
         return factory;
     }
 

@@ -42,6 +42,7 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public static final int MAX_MAX_AUTHENTICATION_RETRIES = 5;
     public static final boolean DEFAULT_RECONNECT_WITH_EACH_REQUEST = false;
     public static final boolean DEFAULT_CONCATENATE_CHANGELIST_NAME_COMMENT = false;
+    public static final boolean DEFAULT_AUTO_OFFLINE = false;
 
     @NotNull
     private State state = new State();
@@ -70,6 +71,8 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         public boolean reconnectWithEachRequest = DEFAULT_RECONNECT_WITH_EACH_REQUEST;
 
         public boolean concatenateChangelistNameComment = DEFAULT_CONCATENATE_CHANGELIST_NAME_COMMENT;
+
+        public boolean isAutoOffline = DEFAULT_AUTO_OFFLINE;
     }
 
     @Nullable
@@ -204,6 +207,13 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         state.maxAuthenticationRetries = value;
     }
 
+    public boolean isAutoOffline() {
+        return state.isAutoOffline;
+    }
+
+    public void setAutoOffline(boolean value) {
+        state.isAutoOffline = value;
+    }
 
     public static boolean getReconnectWithEachRequest(@Nullable final Project project) {
         if (project == null) {

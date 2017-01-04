@@ -95,6 +95,8 @@ public interface P4Config {
     @Nullable
     String getConfigFile();
 
+    boolean hasClientHostnameSet();
+
     /**
      * Allow for custom setting the client hostname.
      *
@@ -103,8 +105,17 @@ public interface P4Config {
     @Nullable
     String getClientHostname();
 
+    boolean hasIgnoreFileNameSet();
+
     @Nullable
     String getIgnoreFileName();
+
+    boolean hasDefaultCharsetSet();
+
+    @Nullable
+    String getDefaultCharset();
+
+
 
 
     /*
@@ -112,7 +123,6 @@ public interface P4Config {
 
     public static final String P4JAVA_TMP_DIR_KEY = "com.perforce.p4java.tmpDir";
     public static final String DEFAULT_CHARSET_KEY = "com.perforce.p4java.defaultCharset";
-    public static final String IGNORE_FILE_NAME_KEY = "com.perforce.p4java.ignoreFileName";
     public static final String UNICODE_MAPPING = "com.perforce.p4java.unicodeMapping";
      */
 }

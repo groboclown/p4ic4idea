@@ -99,15 +99,21 @@ public class P4Edit extends BasicAction {
 
         LOG.info("adding or editing files: " + affectedFiles);
 
+        boolean filesAffected = false;
         for (Map.Entry<P4Server, List<VirtualFile>> en: servers.entrySet()) {
             final P4Server server = en.getKey();
             List<VirtualFile> files = en.getValue();
-            if (server != null) {
+            if (server != null && ! files.isEmpty()) {
+                filesAffected = true;
                 int changelistId = changeListMapping.getProjectDefaultPerforceChangelist(server).getChangeListId();
                 server.addOrEditFiles(files, changelistId);
             }
             VcsDirtyScopeManager.getInstance(project).filesDirty(files, null);
         }
+        if (! filesAffected) {
+            LOG.warn("No server mappings found for files " + affectedFiles);
+        }
+
         // No longer supported in IntelliJ 15
         VcsCompat.getInstance().refreshFiles(project, affectedFiles);
     }

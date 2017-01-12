@@ -37,7 +37,7 @@ public class ExceptionUtil
         }
         if (ex instanceof AccessException) {
             AccessException aex = (AccessException) ex;
-            // see Server for a list of the authentication failure messages.
+            // see P4ServerName for a list of the authentication failure messages.
             return (aex.hasMessageFragment("Perforce password (P4PASSWD)")
                     || aex.hasMessageFragment("Your session has expired"));
         }

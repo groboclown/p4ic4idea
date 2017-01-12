@@ -11,44 +11,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.config;
 
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vfs.VirtualFile;
+package net.groboclown.idea.p4ic.config.part;
+
+import com.intellij.openapi.project.Project;
+import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class ProjectConfigStack implements ProjectConfig {
+// abstract class in order to avoid public methods.
+// If you subclass this, it must be added into the Unmarshal class.
+abstract class ConfigPartFactory<T extends ConfigPart> {
+    abstract T create(@NotNull Project project, @NotNull Element element);
 
-
-
-    @Override
-    public void refresh() {
-
+    static boolean isTag(@NotNull String expectedTag, @NotNull Element element) {
+        return expectedTag.equals(element.getName());
     }
 
-    @NotNull
-    @Override
-    public Iterable<ClientConfig> getClientConfigs() {
-        return null;
+    static boolean isNotTag(@NotNull String expectedTag, @NotNull Element element) {
+        return ! expectedTag.equals(element.getName());
     }
-
-    @Nullable
-    @Override
-    public ClientConfig getClientConfigFor(@NotNull FilePath file) {
-        return null;
-    }
-
-    @Nullable
-    @Override
-    public ClientConfig getClientConfigFor(@NotNull VirtualFile file) {
-        return null;
-    }
-
-    boolean isEmpty() {
-
-    }
-
-
 
 }

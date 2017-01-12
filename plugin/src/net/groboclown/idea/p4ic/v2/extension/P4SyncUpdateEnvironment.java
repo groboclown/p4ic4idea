@@ -195,7 +195,7 @@ public class P4SyncUpdateEnvironment implements UpdateEnvironment {
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Server to file mapping for sync: " + ret);
+            LOG.debug("P4ServerName to file mapping for sync: " + ret);
         }
 
         return ret;

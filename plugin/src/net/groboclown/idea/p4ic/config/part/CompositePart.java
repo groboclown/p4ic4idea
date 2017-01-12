@@ -11,27 +11,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.config;
 
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vfs.VirtualFile;
+package net.groboclown.idea.p4ic.config.part;
+
+import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Manages the configuration for an entire project.  The configuration must be refined through a file path,
- * or by getting a list of configurations.
- */
-public interface ProjectConfig {
+import java.util.List;
 
-    void refresh();
+/**
+ * A
+ */
+public abstract class CompositePart implements ConfigPart {
+    static void marshalAppend(@NotNull Element parent, @Nullable ConfigPart part) {
+        if (part != null && ! (part instanceof DefaultDataPart)) {
+            // DefaultDataPart is NEVER marshalled.
+            final Element child = part.marshal();
+            parent.addContent(child);
+        }
+    }
 
     @NotNull
-    Iterable<ClientConfig> getClientConfigs();
-
-    @Nullable
-    ClientConfig getClientConfigFor(@NotNull FilePath file);
-
-    @Nullable
-    ClientConfig getClientConfigFor(@NotNull VirtualFile file);
+    public abstract List<ConfigPart> getConfigParts();
 }

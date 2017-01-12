@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
  * for looking for the configuration - the environment variables, configuration file,
  * and user overrides.
  *
- * @author Matt Albrecht
+ * @deprecated Only kept around for historical purposes.
  */
 public class ManualP4Config implements P4Config {
     @Nullable
@@ -74,24 +74,6 @@ public class ManualP4Config implements P4Config {
         this.autoOffline = copy.isAutoOffline();
         this.password = copy.getPassword();
         //this.storePassword = copy.isPasswordStoredLocally();
-        this.clientHostname = copy.getClientHostname();
-        this.ignoreFileName = copy.getIgnoreFileName();
-        this.isConfigured = true;
-    }
-
-    public ManualP4Config(@NotNull ServerConfig copy, @Nullable String clientName) {
-        this.protocol = copy.getProtocol();
-        this.port = copy.getPort();
-        this.clientname = clientName;
-        this.username = copy.getUsername();
-        this.authTicket = copy.getAuthTicket() == null ? null : copy.getAuthTicket().getAbsolutePath();
-        this.trustTicket = copy.getTrustTicket() == null ? null : copy.getTrustTicket().getAbsolutePath();
-        this.serverFingerprint = copy.getServerFingerprint();
-        this.configFile = null;
-        this.connectionMethod = copy.getConnectionMethod();
-        this.autoOffline = copy.isAutoOffline();
-        this.password = null;
-        //this.storePassword = copy.storePasswordLocally();
         this.clientHostname = copy.getClientHostname();
         this.ignoreFileName = copy.getIgnoreFileName();
         this.isConfigured = true;
@@ -249,6 +231,11 @@ public class ManualP4Config implements P4Config {
         return configFile;
     }
 
+    @Override
+    public boolean hasClientHostnameSet() {
+        return false;
+    }
+
     public void setConfigFile(@Nullable String configFile) {
         this.configFile = configFile;
         this.isConfigured = true;
@@ -265,10 +252,26 @@ public class ManualP4Config implements P4Config {
         return clientHostname;
     }
 
+    @Override
+    public boolean hasIgnoreFileNameSet() {
+        return false;
+    }
+
     @Nullable
     @Override
     public String getIgnoreFileName() {
         return ignoreFileName;
+    }
+
+    @Override
+    public boolean hasDefaultCharsetSet() {
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public String getDefaultCharset() {
+        return null;
     }
 
     public void setIgnoreFileName(@Nullable String fileName) {

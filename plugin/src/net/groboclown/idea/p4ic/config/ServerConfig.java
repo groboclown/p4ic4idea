@@ -13,51 +13,113 @@
  */
 package net.groboclown.idea.p4ic.config;
 
+import com.intellij.openapi.util.io.FileUtil;
 import com.perforce.p4java.env.PerforceEnvironment;
-import com.perforce.p4java.server.IServerAddress;
+import net.groboclown.idea.p4ic.config.part.DataPart;
+import net.groboclown.idea.p4ic.config.part.PartValidation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 
 /**
  * Stores the connection information related to a specific Perforce
- * server.
+ * server.  It only keeps track of information required to identify the
+ * server, which means it needs the username, password, auth ticket file,
+ * trust ticket file, and server fingerprint.
  * <p>
  * Implementations must specify {@link #equals(Object)} and
  * {@link #hashCode()}, to indicate whether the server connection
  * properties are the same; it should not match on online mode.
  */
-public abstract class ServerConfig {
+public final class ServerConfig {
+    // Just some character that won't appear in any real text, but
+    // is still viewable in a debugger.
+    private static final char SEP = (char) 0x2202;
 
-    @Nullable
-    public static ServerConfig createNewServerConfig(@NotNull P4Config p4Config) {
-        if (! isValid(p4Config)) {
-            return null;
+    private final P4ServerName serverName;
+    private final String username;
+    private final File authTicket;
+    private final File trustTicket;
+    private final String serverFingerprint;
+
+    // This really shouldn't just be here in plaintext, however
+    // the source of the value is stored in plaintext on the user's
+    // computer anyway.
+    private final String password;
+
+    private final String serverId;
+
+
+
+    @NotNull
+    public static ServerConfig createFrom(@NotNull DataPart part) {
+        return new ServerConfig(part);
+    }
+
+    public static boolean isValid(@Nullable DataPart part) {
+        // Could be optimized in the future.
+        return getProblems(part).isEmpty();
+    }
+
+    public static Collection<ConfigProblem> getProblems(@Nullable DataPart part) {
+        if (part == null) {
+            return Collections.singletonList(new ConfigProblem("config.display.key.no-value"));
         }
-        return new ServerConfigImpl(p4Config);
+        return PartValidation.findAllProblems(part);
+    }
+
+    private ServerConfig(@NotNull DataPart part) {
+        if (! isValid(part)) {
+            throw new IllegalStateException("Did not check validity before creating");
+        }
+
+        assert part.hasServerNameSet();
+        this.serverName = part.getServerName();
+        assert part.hasUsernameSet();
+        this.username = part.getUsername();
+        this.authTicket =
+                part.hasAuthTicketFileSet()
+                        ? part.getAuthTicketFile()
+                        : null;
+        this.trustTicket =
+                part.hasTrustTicketFileSet()
+                        ? part.getTrustTicketFile()
+                        : null;
+        this.serverFingerprint =
+                part.hasServerFingerprintSet()
+                        ? part.getServerFingerprint()
+                        : null;
+        this.password =
+                part.hasPasswordSet()
+                        ? (part.getPlaintextPassword() == null
+                        ? ""
+                        : part.getPlaintextPassword())
+                        : null;
+
+        serverId = this.serverName.getFullPort() + SEP +
+                this.username + SEP +
+                (this.password != null ? "(PWD)" : "(NPWD") + SEP +
+                this.authTicket + SEP +
+                this.trustTicket + SEP +
+                this.serverFingerprint;
     }
 
 
-    private static boolean isValid(P4Config p4config) {
-        return p4config != null &&
-                p4config.getPort() != null &&
-                p4config.getProtocol() != null &&
-                p4config.getUsername() != null;
+    @NotNull
+    public P4ServerName getServerName() {
+        return serverName;
     }
 
-
     @NotNull
-    public abstract String getPort();
-
-    @NotNull
-    public abstract IServerAddress.Protocol getProtocol();
-
-    @NotNull
-    public abstract String getUsername();
+    public String getUsername() {
+        return username;
+    }
 
     /**
      *
@@ -66,28 +128,24 @@ public abstract class ServerConfig {
      *      set, or a P4PASSWD env set.
      */
     @Nullable
-    public abstract String getPlaintextPassword();
-
-    @NotNull
-    public abstract P4Config.ConnectionMethod getConnectionMethod();
-
-    /**
-     * Overrides the default method for discovering the user's client
-     * host name.  By default, the underlying P4Java API uses INetAddress.
-     *
-     * @return the overridden client hostname, nor null if not set.
-     */
-    @Nullable
-    public abstract String getClientHostname();
+    public String getPlaintextPassword() {
+        return password;
+    }
 
     @Nullable
-    public abstract File getAuthTicket();
+    public File getAuthTicket() {
+        return authTicket;
+    }
 
     @Nullable
-    public abstract File getTrustTicket();
+    public File getTrustTicket() {
+        return trustTicket;
+    }
 
     @Nullable
-    public abstract String getServerFingerprint();
+    public String getServerFingerprint() {
+        return serverFingerprint;
+    }
 
     public boolean hasServerFingerprint() {
         return getServerFingerprint() != null && getServerFingerprint().length() > 0;
@@ -101,32 +159,51 @@ public abstract class ServerConfig {
         return getTrustTicket() != null;
     }
 
-    @Nullable
-    public abstract String getIgnoreFileName();
-
+    /**
+     *
+     * @return unique identifier for the server connection settings.
+     */
     @NotNull
-    public final String getServiceName() {
-        return getProtocol().toString() + "://" + getPort();
+    public String getServerId() {
+        return serverId;
     }
 
-    @NotNull
-    public final String getServiceDisplayName() {
-        StringBuilder ret = new StringBuilder();
-        if (getProtocol().isSecure()) {
-            ret.append("ssl:");
+    public boolean isSameServer(@Nullable DataPart part) {
+        if (part == null) {
+            return false;
         }
-        ret.append(getPort());
-        return ret.toString();
-    }
+        if (! getServerName().equals(part.getServerName())) {
+            return false;
+        }
 
-    public abstract boolean isAutoOffline();
+        if (hasAuthTicket() && ! FileUtil.filesEqual(getAuthTicket(), part.getAuthTicketFile())) {
+            return false;
+        }
+        if (hasAuthTicket() != part.hasAuthTicketFileSet()) {
+            return false;
+        }
+
+        if (hasTrustTicket() && ! FileUtil.filesEqual(getTrustTicket(), part.getTrustTicketFile())) {
+            return false;
+        }
+        if (hasTrustTicket() != part.hasTrustTicketFileSet()) {
+            return false;
+        }
+
+        if (hasServerFingerprint() && ! getServerFingerprint().equals(part.getServerFingerprint())) {
+            return false;
+        }
+        if (hasServerFingerprint() != part.hasServerFingerprintSet()) {
+            return false;
+        }
+
+        return true;
+    }
 
     @Override
     public String toString() {
         Map<String, String> ret = new HashMap<String, String>();
-        // Note: even though this is not what we want for bug #116 (display of the ugly protocol to the user),
-        // it's fine for here.
-        ret.put(PerforceEnvironment.P4PORT, P4ConfigUtil.toFullPort(getProtocol(), getPort()));
+        ret.put(PerforceEnvironment.P4PORT, getServerName().getDisplayName());
         ret.put(PerforceEnvironment.P4TRUST,
                 getTrustTicket() == null ? null :
                 getTrustTicket().toString());
@@ -135,15 +212,6 @@ public abstract class ServerConfig {
                 getAuthTicket() == null ? null :
                 getAuthTicket().toString());
         return ret.toString();
-    }
-
-
-    public boolean isSameConnectionAs(@NotNull P4Config config) {
-        // same as the equals implementation, but against a P4Config.
-        return getPort().equals(config.getPort()) &&
-                getProtocol().equals(config.getProtocol()) &&
-                getUsername().equals(config.getUsername()) &&
-                getConnectionMethod().equals(config.getConnectionMethod());
     }
 
 
@@ -162,18 +230,11 @@ public abstract class ServerConfig {
             return false;
         }
         ServerConfig sc = (ServerConfig) other;
-        return getPort().equals(sc.getPort()) &&
-                getProtocol().equals(sc.getProtocol()) &&
-                getUsername().equals(sc.getUsername()) &&
-                getConnectionMethod().equals(sc.getConnectionMethod());
-        // auth ticket & trust ticket & others - not part of comparison!
+        return sc.getServerId().equals(getServerId());
     }
 
     @Override
     public int hashCode() {
-        return (getPort().hashCode() << 6) +
-                (getProtocol().hashCode() << 4) +
-                (getUsername().hashCode() << 2) +
-                getConnectionMethod().hashCode();
+        return getServerId().hashCode();
     }
 }

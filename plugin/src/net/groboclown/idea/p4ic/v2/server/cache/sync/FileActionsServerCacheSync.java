@@ -1200,6 +1200,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     reverts.addAll(fpList);
                 }
                 try {
+                    LOG.debug("Reverting files in preparation for edit: " + reverts);
                     final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
                     final List<P4StatusMessage> msgs = P4StatusMessage.getErrors(results);
                     alerts.addNotices(exec.getProject(),
@@ -1225,6 +1226,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             if (! split.notInPerforce.isEmpty()) {
                 for (Entry<Integer, Set<FilePath>> entry : split.notInPerforce.entrySet()) {
                     try {
+                        LOG.debug("Opening files for add: " + entry.getValue());
                         final List<P4StatusMessage> msgs =
                                 exec.addFiles(FileSpecUtil.getFromFilePaths(entry.getValue()), entry.getKey());
                         alerts.addNotices(exec.getProject(),
@@ -1256,6 +1258,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     split.edited, split.added);
             for (Entry<Integer, Set<FilePath>> entry: reopen.entrySet()) {
                 try {
+                    LOG.debug("Reopening files for edit: " + entry.getValue());
                     final List<P4StatusMessage> msgs =
                             exec.reopenFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
                                     entry.getKey(), null);
@@ -1298,6 +1301,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
             for (Entry<Integer, Set<FilePath>> entry : edits.entrySet()) {
                 try {
+                    LOG.debug("Opening files for edit: " + entry.getValue());
                     final List<P4StatusMessage> msgs =
                             exec.editFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
                                     entry.getKey());

@@ -144,7 +144,6 @@ public class FileP4Config implements P4Config {
                     }
                 }
             }
-            props.load(reader);
         } finally {
             reader.close();
         }

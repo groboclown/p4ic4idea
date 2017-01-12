@@ -28,12 +28,25 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * @deprecated should instead be using the new config API.
+ */
 public class P4ConfigUtil {
     private static final Logger LOG = Logger.getInstance(P4ConfigUtil.class);
 
+    /**
+     * @deprecated use {@link P4ServerName} instead.
+     */
     public static final String PROTOCOL_SEP = "://";
 
 
+    /**
+     *
+     * @param protocol
+     * @param simplePort
+     * @return
+     * @deprecated use {@link P4ServerName} instead.
+     */
     @Nullable
     public static String toFullPort(@Nullable IServerAddress.Protocol protocol, @Nullable String simplePort) {
         if (protocol == null && simplePort == null) {
@@ -70,12 +83,24 @@ public class P4ConfigUtil {
         return ret;
     }
 
+    /**
+     *
+     * @param port
+     * @return
+     * @deprecated use {@link P4ServerName} instead.
+     */
     @Nullable
     public static String getSimplePortFromPort(String port) {
         return portSplit(port)[1];
     }
 
 
+    /**
+     *
+     * @param port
+     * @return
+     * @deprecated use {@link P4ServerName} instead.
+     */
     @Nullable
     public static IServerAddress.Protocol getProtocolFromPort(String port) {
         String protocol = portSplit(port)[0];
@@ -117,10 +142,17 @@ public class P4ConfigUtil {
             return IServerAddress.Protocol.P4JRPCNTSSSL;
         }
         return null;
-        //return IServerAddress.Protocol.P4JAVA;
+        //return IServerAddress.P4ServerName.P4JAVA;
     }
 
 
+    /**
+     *
+     * @param current
+     * @param setting
+     * @return
+     * @deprecated use {@link P4ServerName} instead.
+     */
     public static boolean isPortModified(@NotNull P4Config current, @Nullable String setting) {
         String port = getSimplePortFromPort(setting);
         IServerAddress.Protocol protocol = getProtocolFromPort(setting);
@@ -135,6 +167,13 @@ public class P4ConfigUtil {
     }
 
 
+    /**
+     *
+     * @param port
+     * @return
+     * @deprecated use {@link P4ServerName} instead.
+     */
+    @Deprecated
     private static String[] portSplit(@Nullable String port) {
         String[] ret = new String[] { null, port };
         if (port != null) {

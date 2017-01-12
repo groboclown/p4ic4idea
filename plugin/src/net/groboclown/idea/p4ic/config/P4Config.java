@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Matt Albrecht
  */
+@Deprecated
 public interface P4Config {
     enum ConnectionMethod {
         CLIENT(false),

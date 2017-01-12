@@ -140,7 +140,7 @@ class AuthenticatedServer {
             throw remakeException(authenticationException);
         }
         if (checkedOutBy != null) {
-            throw new P4JavaException("Server object already checked out by " + checkedOutBy);
+            throw new P4JavaException("P4ServerName object already checked out by " + checkedOutBy);
         }
 
         if (LOG.isDebugEnabled()) {
@@ -159,7 +159,7 @@ class AuthenticatedServer {
 
     synchronized void checkinServer(@NotNull IOptionsServer server) throws P4JavaException {
         if (checkedOutBy != Thread.currentThread()) {
-            throw new P4JavaException("Server object not checked out by current thread (current thread: " +
+            throw new P4JavaException("P4ServerName object not checked out by current thread (current thread: " +
                 Thread.currentThread() + "; checked out by " + checkedOutBy + ")");
         }
         if (this.server != server) {
@@ -343,7 +343,7 @@ class AuthenticatedServer {
 
     private void reconnect() throws P4JavaException, URISyntaxException {
         if (checkedOutBy != null) {
-            throw new P4JavaException("Server instance already checked out by " + checkedOutBy);
+            throw new P4JavaException("P4ServerName instance already checked out by " + checkedOutBy);
         }
         try {
             withConnectionLock(new WithConnectionLock<Void>() {
@@ -390,7 +390,7 @@ class AuthenticatedServer {
         } catch (LoginRequiresPasswordException ex) {
             return LoginValidation.NEEDS_PASSWORD;
         } catch (AccessException ex) {
-            LOG.info("Server forgot connection login", ex);
+            LOG.info("P4ServerName forgot connection login", ex);
             // Do not disconnect here..  If it's not a real authentication
             // issue, then we will need to stay connected to re-authorize
             // the connection.
@@ -574,7 +574,7 @@ class AuthenticatedServer {
 
     @Override
     public String toString() {
-        return "Server" + serverInstance +
+        return "P4ServerName" + serverInstance +
                 " (loginFailed# " + loginFailedCount +
                 ", connected# " + connectedCount +
                 ", disconnected# " + disconnectedCount +

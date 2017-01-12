@@ -35,6 +35,7 @@ import java.util.*;
  * <p/>
  * These are created via {@link P4ConfigProject#loadProjectConfigSources()}.
  */
+@Deprecated
 public class ProjectConfigSource {
 
     private final Project project;

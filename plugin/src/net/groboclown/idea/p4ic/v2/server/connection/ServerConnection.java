@@ -51,7 +51,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class ServerConnection {
     private static final Logger LOG = Logger.getInstance(ServerConnection.class);
-    private static final ThreadGroup CONNECTION_THREAD_GROUP = new ThreadGroup("Server Connection");
+    private static final ThreadGroup CONNECTION_THREAD_GROUP = new ThreadGroup("P4ServerName Connection");
     private static final ThreadLocal<Boolean> THREAD_EXECUTION_ACTIVE = new ThreadLocal<Boolean>();
     private final BlockingQueue<UpdateAction> pendingUpdates = new LinkedBlockingDeque<UpdateAction>();
     private final Queue<UpdateAction> redo = new ArrayDeque<UpdateAction>();
@@ -106,7 +106,7 @@ public class ServerConnection {
         this.clientName = clientServerId.getClientId();
         this.clientExec = initial;
 
-        background = new Thread(new QueueRunner(), "P4 Server Connection");
+        background = new Thread(new QueueRunner(), "P4 P4ServerName Connection");
         background.setDaemon(false);
         background.setPriority(Thread.NORM_PRIORITY - 1);
         background.start();

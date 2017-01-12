@@ -43,7 +43,7 @@ public class RetryAuthenticationFailedHandler extends AbstractErrorHandler {
 
     @Override
     public void handleError(@NotNull final Date when) {
-        LOG.warn("Server refused authentication too many times");
+        LOG.warn("P4ServerName refused authentication too many times");
 
         DistinctDialog.performOnDialog(
                 DistinctDialog.key(this, config.getServiceName(), config.getUsername()),

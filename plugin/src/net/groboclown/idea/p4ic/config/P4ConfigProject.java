@@ -54,19 +54,8 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
 
     private final Project project;
 
-    private MessageBusConnection projectMessageBus;
-
     @NotNull
     private ManualP4Config config = new ManualP4Config();
-
-    @Nullable
-    private List<ProjectConfigSource> configSources;
-    private P4InvalidConfigException sourceConfigEx;
-    boolean sourcesInitialized = false;
-    boolean clientsInitialized = false;
-
-    // for testing
-    //private int badLoadCount = 0;
 
     public P4ConfigProject(@NotNull Project project) {
         this.project = project;
@@ -115,10 +104,6 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
 
     @Override
     public void disposeComponent() {
-        if (projectMessageBus != null) {
-            projectMessageBus.disconnect();
-            projectMessageBus = null;
-        }
     }
 
     @NotNull

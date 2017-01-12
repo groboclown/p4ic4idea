@@ -338,7 +338,7 @@ public class P4ServerManager implements ProjectComponent {
     @NotNull
     @Override
     public String getComponentName() {
-        return "Perforce Server Manager";
+        return "Perforce P4ServerName Manager";
     }
 
 

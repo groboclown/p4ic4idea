@@ -21,18 +21,19 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsListener;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.config.part.ConfigPart;
+import net.groboclown.idea.p4ic.config.part.SimpleDataPart;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource.Builder;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSourceLoader;
+import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -41,7 +42,7 @@ import java.util.List;
  * and user overrides.
  */
 @State(
-    name = "ProjectConfigComponent",
+    name = "P4ProjectConfigComponent",
     reloadable = true,
     storages = {
         @Storage(
@@ -50,22 +51,25 @@ import java.util.List;
         )
     }
 )
-public class ProjectConfigComponent implements ProjectComponent, PersistentStateComponent<ProjectConfigStack> {
-    private static final Logger LOG = Logger.getInstance(ProjectConfigComponent.class);
+public class P4ProjectConfigComponent implements ProjectComponent, PersistentStateComponent<Element> {
+    private static final Logger LOG = Logger.getInstance(P4ProjectConfigComponent.class);
+    public static final String STATE_TAG_NAME = "project-config-component";
 
     private final Project project;
 
     private MessageBusConnection projectMessageBus;
 
-    @NotNull
-    private ProjectConfigStack config = new ProjectConfigStack();
+    // The actual list of user-defined parts.
+    private List<ConfigPart> state = null;
 
-    public ProjectConfigComponent(@NotNull Project project) {
+    private P4ProjectConfigStack config = null;
+
+    public P4ProjectConfigComponent(@NotNull Project project) {
         this.project = project;
     }
 
-    public static ProjectConfigComponent getInstance(@NotNull final Project project) {
-        return ServiceManager.getService(project, ProjectConfigComponent.class);
+    public static P4ProjectConfigComponent getInstance(@NotNull final Project project) {
+        return ServiceManager.getService(project, P4ProjectConfigComponent.class);
     }
 
 
@@ -99,23 +103,69 @@ public class ProjectConfigComponent implements ProjectComponent, PersistentState
                 configUpdated(project, configSources);
     }
 
+
     /**
-     * 
-     * @return a copy of the base config.  The only way to actually update the value is
-     *      through a {@link #loadState(ProjectConfigStack)} call.
+     *
+     * @return a copy of the user's configured parts.
      */
-    public ProjectConfigStack getBaseConfig() {
-        return new ManualP4Config(config);
+    public synchronized List<ConfigPart> getUserConfigParts() {
+        checkConfigState();
+        return new ArrayList<ConfigPart>(state);
+    }
+
+
+    public synchronized void setUserConfigParts(@NotNull List<ConfigPart> parts) {
+
+    }
+
+
+    public P4ProjectConfig getP4ProjectConfig() {
+        checkConfigState();
+        return config;
+    }
+
+
+    private synchronized void checkConfigState() {
+        if (state == null) {
+            this.state = new ArrayList<ConfigPart>();
+
+            // Backwards compatibility!
+            // Attempt to load the state from the previous setting.
+            P4ConfigProject origConfig = P4ConfigProject.getInstance(project);
+            if (origConfig != null) {
+                ManualP4Config config = origConfig.getBaseConfig()
+                SimpleDataPart part = new SimpleDataPart(project, null);
+                part.setIgnoreFilename(config.getIgnoreFileName());
+                part.setServerName(config.getProtocol() + "://" + config.getPort());
+                part.setAuthTicketFile(config.getAuthTicketPath());
+                part.setTrustTicketFile(config.getTrustTicketPath());
+                part.setClientHostname(config.getClientHostname());
+                part.setClientname(config.getClientname());
+                part.setDefaultCharset(config.getDefaultCharset());
+                part.setServerFingerprint(config.getServerFingerprint());
+                part.setUsername(config.getUsername());
+            }
+
+            this.config = new P4ProjectConfigStack(project, state);
+        }
     }
 
 
     @Override
-    public ProjectConfigStack getState() {
-        return getBaseConfig();
+    public Element getState() {
+        checkConfigState();
+        Element ret = new Element(STATE_TAG_NAME);
+        if (state != null) {
+            for (ConfigPart configPart : state) {
+                ret.addContent(configPart.marshal());
+            }
+        }
+        return ret;
     }
 
     @Override
-    public void loadState(@NotNull ProjectConfigStack state) {
+    public void loadState(@NotNull Element state) {
+        if (! STATE_TAG_NAME.equals(state.getName()) || state.getChildren().isEmpty())
         if (state.isEmpty()) {
             // Attempt to load the configuration from the old method.
 
@@ -245,6 +295,7 @@ public class ProjectConfigComponent implements ProjectComponent, PersistentState
     }
 
 
+    @Deprecated
     @NotNull
     private List<ProjectConfigSource> readProjectConfigSources()
             throws P4InvalidConfigException {

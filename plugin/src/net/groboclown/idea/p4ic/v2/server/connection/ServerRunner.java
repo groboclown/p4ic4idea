@@ -290,7 +290,7 @@ public class ServerRunner {
             // retry.
             return retry(runner, conn, errorVisitor, retryCount, e);
         } catch (FileDecoderException e) {
-            // Server -> client encoding problem
+            // P4ServerName -> client encoding problem
             LOG.info("File decoder problem", e);
             throw new P4FileException(e);
         } catch (FileEncoderException e) {

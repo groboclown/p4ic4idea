@@ -123,7 +123,7 @@ public class ServerConnectionManager implements ApplicationComponent {
     @NotNull
     @Override
     public String getComponentName() {
-        return "Server Connection Manager";
+        return "P4ServerName Connection Manager";
     }
 
 

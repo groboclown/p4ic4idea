@@ -46,6 +46,7 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
         // stateless utility class
     }
 
+        /*
     @Override
     public Properties getConnectionProperties(@NotNull ServerConfig config, @Nullable String clientName) {
         Properties ret = initializeConnectionProperties(config);
@@ -73,7 +74,9 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
 
         return ret;
     }
+    */
 
+    /*
     @Override
     public void defaultAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config)
             throws P4JavaException {
@@ -82,6 +85,7 @@ public class ClientPasswordConnectionHandler extends ConnectionHandler {
             throw ex;
         }
     }
+    */
 
 
     @Override

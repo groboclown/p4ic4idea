@@ -106,7 +106,7 @@ public class P4ServerName {
         }
     }
 
-    @Nullable
+    @NotNull
     public IServerAddress.Protocol getServerProtocol() {
         return protocol;
     }
@@ -136,7 +136,12 @@ public class P4ServerName {
 
     @NotNull
     public String getUrl() {
+        // Trim the config port.  See bug #23
         return getServerProtocol() + PROTOCOL_SEP + getServerPort().trim();
+    }
+
+    public boolean isSecure() {
+        return protocol.isSecure();
     }
 
     @Override

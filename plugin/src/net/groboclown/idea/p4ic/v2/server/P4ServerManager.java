@@ -24,22 +24,28 @@ import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.P4Config;
-import net.groboclown.idea.p4ic.config.P4ConfigProject;
+import net.groboclown.idea.p4ic.config.ClientConfig;
+import net.groboclown.idea.p4ic.config.P4ProjectConfig;
+import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.cache.state.AllClientsState;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -51,7 +57,7 @@ public class P4ServerManager implements ProjectComponent {
 
     private final Project project;
     private final MessageBusConnection appMessageBus;
-    private final Map<ClientServerId, P4Server> servers = new HashMap<ClientServerId, P4Server>();
+    private final Map<ClientServerRef, P4Server> servers = new HashMap<ClientServerRef, P4Server>();
     private final AlertManager alertManager;
 
     // big note on this lock: posting alerts while inside a lock
@@ -157,8 +163,8 @@ public class P4ServerManager implements ProjectComponent {
 
         // Break that into two separate blocks, so that the
         // invalid servers are handled on their own.
-        Map<ClientServerId, P4Server> updated = new HashMap<ClientServerId, P4Server>();
-        Set<ClientServerId> removed = new HashSet<ClientServerId>();
+        Map<ClientServerRef, P4Server> updated = new HashMap<ClientServerRef, P4Server>();
+        Set<ClientServerRef> removed = new HashSet<ClientServerRef>();
         for (P4Server server : invalid) {
             LOG.info("Reconnecting to " + server.getClientServerId());
             if (LOG.isDebugEnabled()) {
@@ -169,7 +175,7 @@ public class P4ServerManager implements ProjectComponent {
                 removed.add(server.getClientServerId());
             } else {
                 try {
-                    P4Server updatedServer = new P4Server(server.getProject(), server.getProjectConfigSource());
+                    P4Server updatedServer = new P4Server(server.getProject(), server.getClientConfig());
                     updated.put(updatedServer.getClientServerId(), updatedServer);
                 } catch (P4InvalidClientException e) {
                     LOG.info(e);
@@ -180,8 +186,8 @@ public class P4ServerManager implements ProjectComponent {
 
         serverLock.lock();
         try {
-            for (ClientServerId clientServerId : removed) {
-                servers.remove(clientServerId);
+            for (ClientServerRef clientServerRef : removed) {
+                servers.remove(clientServerRef);
             }
             servers.putAll(updated);
 
@@ -274,7 +280,7 @@ public class P4ServerManager implements ProjectComponent {
         Events.registerP4ServerAppBaseConfigUpdated(appMessageBus, new BaseConfigUpdatedListener() {
             @Override
             public void configUpdated(@NotNull final Project project,
-                    @NotNull final List<ProjectConfigSource> sources) {
+                    @NotNull final P4ProjectConfig sources) {
 
                 // Connections are potentially invalid.  Because the primary project config may be no longer
                 // valid, just mark all of the configs invalid.
@@ -296,8 +302,8 @@ public class P4ServerManager implements ProjectComponent {
 
         Events.registerP4ServerAppConfigInvalid(appMessageBus, new ConfigInvalidListener() {
             @Override
-            public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
-                    @NotNull final VcsConnectionProblem ex) {
+            public void configurationProblem(@NotNull Project project, @NotNull P4ProjectConfig config,
+                                      @NotNull VcsConnectionProblem ex) {
                 final AllClientsState clientState = AllClientsState.getInstance();
 
                 // Connections are temporarily invalid.
@@ -369,12 +375,10 @@ public class P4ServerManager implements ProjectComponent {
 
 
     private void initializeServers() {
-        P4ConfigProject cp = P4ConfigProject.getInstance(project);
-        final List<ProjectConfigSource> sources;
-        try {
-            sources = cp.loadProjectConfigSources();
-        } catch (P4InvalidConfigException e) {
-            LOG.info("source load caused error", e);
+        P4ProjectConfigComponent cp = P4ProjectConfigComponent.getInstance(project);
+        final P4ProjectConfig sources = cp.getP4ProjectConfig();
+        if (! sources.getConfigProblems().isEmpty()) {
+            LOG.info("source load has errors: " + sources.getConfigProblems());
             serverLock.lock();
             try {
                 servers.clear();
@@ -386,15 +390,15 @@ public class P4ServerManager implements ProjectComponent {
 
         // If this was inside the lock, it could cause a deadlock if waiting on
         // IDE master password
-        Map<ClientServerId, P4Server> newServers = new HashMap<ClientServerId, P4Server>();
-        for (ProjectConfigSource source : sources) {
+        Map<ClientServerRef, P4Server> newServers = new HashMap<ClientServerRef, P4Server>();
+        for (ClientConfig config: sources.getClientConfigs()) {
             try {
-                final P4Server server = new P4Server(project, source);
+                final P4Server server = new P4Server(project, config);
                 newServers.put(server.getClientServerId(), server);
             } catch (P4InvalidClientException e) {
                 alertManager.addWarning(project,
-                        P4Bundle.message("errors.no-client.source", source),
-                        P4Bundle.message("errors.no-client.source", source),
+                        P4Bundle.message("errors.no-client.source", config),
+                        P4Bundle.message("errors.no-client.source", config),
                         e, new FilePath[0]);
             }
         }
@@ -407,20 +411,12 @@ public class P4ServerManager implements ProjectComponent {
         }
 
         // Send the announcement that the configs are updated.
-        try {
-            cp.announceBaseConfigUpdated();
-        } catch (P4InvalidConfigException e) {
-            // TODO ensure that this is the correct kind of error to show.
-            AlertManager.getInstance().addWarning(project,
-                    P4Bundle.message("error.config.load-sources"),
-                    P4Bundle.message("error.config.load-sources"),
-                    e, new FilePath[0]);
-        }
+        cp.announceBaseConfigUpdated();
     }
 
 
     private void updateConfigurations(@NotNull final Project project,
-            @NotNull final List<ProjectConfigSource> sources) {
+            @NotNull final P4ProjectConfig sources) {
         List<Warning> warnings = new ArrayList<Warning>();
 
         serverLock.lock();
@@ -430,7 +426,7 @@ public class P4ServerManager implements ProjectComponent {
                 if (server.getProject().equals(project)) {
                     server.dispose();
                     boolean foundSource = false;
-                    for (ProjectConfigSource source : sources) {
+                    for (ClientConfig source : sources.getClientConfigs()) {
                         if (server.isSameSource(source)) {
                             foundSource = true;
                             try {

@@ -24,7 +24,6 @@ import org.jetbrains.annotations.NotNull;
 public interface ServerConnectedController {
     boolean isWorkingOnline();
     boolean isWorkingOffline();
-    boolean isAutoOffline();
     boolean isValid();
 
     /**

@@ -29,26 +29,26 @@ import java.util.Date;
  * Immutable view of a changelist state.
  */
 public class P4ChangeListValue {
-    private final ClientServerId clientServerId;
+    private final ClientServerRef clientServerRef;
     private final P4ChangeListState state;
     private P4ChangeListId id;
 
-    public P4ChangeListValue(@NotNull ClientServerId clientServerId, @NotNull P4ChangeListState state) {
-        this.clientServerId = clientServerId;
+    public P4ChangeListValue(@NotNull ClientServerRef clientServerRef, @NotNull P4ChangeListState state) {
+        this.clientServerRef = clientServerRef;
         this.state = state;
     }
 
-    public P4ChangeListValue(final ClientServerId clientServerId, final boolean isServerDefaultChange) {
+    public P4ChangeListValue(final ClientServerRef clientServerRef, final boolean isServerDefaultChange) {
         assert isServerDefaultChange;
-        this.clientServerId = clientServerId;
+        this.clientServerRef = clientServerRef;
         this.state = new P4ChangeListState(new ChangelistSummary(
-                P4ChangeListId.P4_DEFAULT, clientServerId.getClientId(), null,
+                P4ChangeListId.P4_DEFAULT, clientServerRef.getClientName(), null,
                 ChangelistStatus.NEW, new Date(), "", false));
     }
 
 
-    public ClientServerId getClientServerId() {
-        return clientServerId;
+    public ClientServerRef getClientServerRef() {
+        return clientServerRef;
     }
 
 
@@ -76,7 +76,7 @@ public class P4ChangeListValue {
 
     @Override
     public int hashCode() {
-        return clientServerId.hashCode() + state.hashCode();
+        return clientServerRef.hashCode() + state.hashCode();
     }
 
     @Override
@@ -89,7 +89,7 @@ public class P4ChangeListValue {
         }
         if (obj.getClass().equals(getClass())) {
             P4ChangeListValue that = (P4ChangeListValue) obj;
-            return (that.clientServerId.equals(this.clientServerId) &&
+            return (that.clientServerRef.equals(this.clientServerRef) &&
                 that.state.getChangelistId() == this.state.getChangelistId());
         }
         return false;
@@ -102,13 +102,13 @@ public class P4ChangeListValue {
     // TODO is this still necessary
     public synchronized P4ChangeListId getIdObject() {
         if (id == null) {
-            id = new P4ChangeListIdImpl(clientServerId, getChangeListId());
+            id = new P4ChangeListIdImpl(clientServerRef, getChangeListId());
         }
         return id;
     }
 
     @Override
     public String toString() {
-        return clientServerId + "@" + getChangeListId();
+        return clientServerRef + "@" + getChangeListId();
     }
 }

@@ -60,6 +60,7 @@ public class TestConnectionHandler extends ConnectionHandler {
         return server;
     }
 
+    /*
     @Override
     public Properties getConnectionProperties(@NotNull final ServerConfig config, @Nullable final String clientName) {
         return new Properties();
@@ -69,6 +70,7 @@ public class TestConnectionHandler extends ConnectionHandler {
     public void defaultAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config) throws P4JavaException {
         // Intentionally empty
     }
+    */
 
     @Override
     public boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server,

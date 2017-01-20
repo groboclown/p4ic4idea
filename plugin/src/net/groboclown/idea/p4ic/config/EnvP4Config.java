@@ -164,6 +164,11 @@ public class EnvP4Config implements P4Config {
         return configFile;
     }
 
+    @Override
+    public boolean hasClientHostnameSet() {
+        return false;
+    }
+
     //@Override
     //public boolean isPasswordStoredLocally() {
     //    return getPlaintextPassword() == null;
@@ -176,8 +181,24 @@ public class EnvP4Config implements P4Config {
     }
 
     @Override
+    public boolean hasIgnoreFileNameSet() {
+        return false;
+    }
+
+    @Override
     public String getIgnoreFileName() {
         return ignoreFile;
+    }
+
+    @Override
+    public boolean hasDefaultCharsetSet() {
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public String getDefaultCharset() {
+        return null;
     }
 
 

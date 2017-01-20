@@ -118,13 +118,13 @@ class DistinctDialog {
     }
 
 
-    static String key(@Nullable Object type, String... args) {
+    static String key(@Nullable Object type, Object... args) {
         StringBuilder sb = new StringBuilder();
         if (type != null) {
             sb.append(type.getClass().getName()).append(JOIN);
         }
-        for (String arg: args) {
-            sb.append(arg).append(JOIN);
+        for (Object arg: args) {
+            sb.append(arg.toString()).append(JOIN);
         }
         return sb.toString();
     }

@@ -19,7 +19,7 @@ import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,11 +28,11 @@ import org.jetbrains.annotations.Nullable;
  * TODO allow this to be one action per server.
  */
 public class P4ServerWorkOfflineAction extends AnAction {
-    private final ClientServerId serverId;
+    private final ClientServerRef serverId;
 
-    public P4ServerWorkOfflineAction(@NotNull ClientServerId serverId) {
+    public P4ServerWorkOfflineAction(@NotNull ClientServerRef serverId) {
         super(P4Bundle.message("statusbar.connection.popup.server-offline-mode",
-                serverId.getClientId(), serverId.getServerDisplayId()));
+                serverId.getClientName(), serverId.getServerDisplayId()));
         this.serverId = serverId;
     }
 

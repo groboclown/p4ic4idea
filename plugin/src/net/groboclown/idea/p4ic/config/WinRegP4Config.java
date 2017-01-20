@@ -177,6 +177,11 @@ public class WinRegP4Config implements P4Config {
         return configFile;
     }
 
+    @Override
+    public boolean hasClientHostnameSet() {
+        return false;
+    }
+
     //@Override
     //public boolean isPasswordStoredLocally() {
     //    return false;
@@ -189,8 +194,24 @@ public class WinRegP4Config implements P4Config {
     }
 
     @Override
+    public boolean hasIgnoreFileNameSet() {
+        return false;
+    }
+
+    @Override
     public String getIgnoreFileName() {
         return ignoreFileName;
+    }
+
+    @Override
+    public boolean hasDefaultCharsetSet() {
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public String getDefaultCharset() {
+        return null;
     }
 
     @Override

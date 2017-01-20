@@ -20,7 +20,7 @@ import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,11 +28,11 @@ public class P4ServerWorkOnlineAction extends AnAction {
     private static final Logger LOG = Logger.getInstance(P4ServerWorkOnlineAction.class);
 
 
-    private final ClientServerId serverId;
+    private final ClientServerRef serverId;
 
-    public P4ServerWorkOnlineAction(@NotNull ClientServerId serverId) {
+    public P4ServerWorkOnlineAction(@NotNull ClientServerRef serverId) {
         super(P4Bundle.message("statusbar.connection.popup.server-online-mode",
-                serverId.getClientId(), serverId.getServerDisplayId()));
+                serverId.getClientName(), serverId.getServerDisplayId()));
         this.serverId = serverId;
     }
 

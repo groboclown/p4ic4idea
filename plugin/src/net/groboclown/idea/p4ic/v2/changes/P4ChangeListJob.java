@@ -14,7 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.changes;
 
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import org.jetbrains.annotations.NotNull;
@@ -32,16 +32,16 @@ public final class P4ChangeListJob implements Comparable<P4ChangeListJob> {
             "open", "suspended", "closed"
     );
 
-    private final ClientServerId clientServerId;
+    private final ClientServerRef clientServerRef;
     private final P4JobState job;
 
     public P4ChangeListJob(@NotNull P4ChangeListValue change, @NotNull P4JobState job) {
-        this.clientServerId = change.getClientServerId();
+        this.clientServerRef = change.getClientServerRef();
         this.job = job;
     }
 
-    public P4ChangeListJob(@NotNull ClientServerId clientServerId, @NotNull P4JobState job) {
-        this.clientServerId = clientServerId;
+    public P4ChangeListJob(@NotNull ClientServerRef clientServerRef, @NotNull P4JobState job) {
+        this.clientServerRef = clientServerRef;
         this.job = job;
     }
 
@@ -73,7 +73,7 @@ public final class P4ChangeListJob implements Comparable<P4ChangeListJob> {
         }
         if (o instanceof P4ChangeListJob) {
             P4ChangeListJob that = (P4ChangeListJob) o;
-            return clientServerId.equals(that.clientServerId) &&
+            return clientServerRef.equals(that.clientServerRef) &&
                     job.getId().equals(that.job.getId());
         }
         return false;
@@ -81,7 +81,7 @@ public final class P4ChangeListJob implements Comparable<P4ChangeListJob> {
 
     @Override
     public int hashCode() {
-        return (clientServerId.hashCode() << 2) +
+        return (clientServerRef.hashCode() << 2) +
                 job.getId().hashCode();
     }
 }

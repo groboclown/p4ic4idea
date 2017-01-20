@@ -394,7 +394,7 @@ public class P4VFSListener extends VcsVFSListener {
                     // same client
                     return false;
                 }
-                if (srcClient.getClientServerId().getServerConfigId().equals(tgtClient.getClientServerId().getServerConfigId())) {
+                if (srcClient.getClientServerId().getServerName().equals(tgtClient.getClientServerId().getServerName())) {
                     // same server, different client
                     return true;
                 }

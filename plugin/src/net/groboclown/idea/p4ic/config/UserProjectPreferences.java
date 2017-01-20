@@ -215,6 +215,17 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         state.isAutoOffline = value;
     }
 
+    public static boolean isAutoOffline(@Nullable final Project project) {
+        if (project == null) {
+            return DEFAULT_AUTO_OFFLINE;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return DEFAULT_AUTO_OFFLINE;
+        }
+        return prefs.isAutoOffline();
+    }
+
     public static boolean getReconnectWithEachRequest(@Nullable final Project project) {
         if (project == null) {
             return DEFAULT_RECONNECT_WITH_EACH_REQUEST;

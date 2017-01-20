@@ -18,7 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
@@ -44,7 +44,7 @@ interface Cache {
 
 
     @NotNull
-    ClientServerId getClientServerId();
+    ClientServerRef getClientServerId();
 
     @NotNull
     String getClientName();

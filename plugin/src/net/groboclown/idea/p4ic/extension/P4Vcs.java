@@ -23,7 +23,16 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.SystemInfo;
-import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.AbstractVcs;
+import com.intellij.openapi.vcs.CommittedChangesProvider;
+import com.intellij.openapi.vcs.EditFileProvider;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusFactory;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.VcsKey;
+import com.intellij.openapi.vcs.VcsListener;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
@@ -43,6 +52,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.TempFileWatchDog;
 import net.groboclown.idea.p4ic.compat.CompatFactoryLoader;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
+import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.ui.P4MultipleConnectionWidget;
 import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
@@ -62,7 +72,6 @@ import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.P4ServerManager;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -70,7 +79,11 @@ import org.jetbrains.annotations.Nullable;
 import org.picocontainer.alternatives.EmptyPicoContainer;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     public static final FileStatus ADDED_OFFLINE =
@@ -699,10 +712,10 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         // API, so that password queries can be run (they can only be done outside
         // the read-lock, which the manager API runs commands in).
         // See bug #81.
-        List<ProjectConfigSource> configSources = new ArrayList<ProjectConfigSource>();
+        List<ClientConfig> configSources = new ArrayList<ClientConfig>();
         for (P4Server server: getP4Servers()) {
             if (server.isConnectionValid()) {
-                configSources.add(server.getProjectConfigSource());
+                configSources.add(server.getClientConfig());
             }
         }
         ConnectionUIConfiguration.getClients(

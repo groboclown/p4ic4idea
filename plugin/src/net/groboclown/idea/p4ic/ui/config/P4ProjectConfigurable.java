@@ -17,10 +17,11 @@ import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.P4ConfigProject;
+import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
@@ -49,25 +50,34 @@ public class P4ProjectConfigurable implements SearchableConfigurable {
 
     @Override
     public JComponent createComponent() {
-        return myPanel.getPanel(loadConfig().getBaseConfig(), loadPreferences());
+        UserProjectPreferences prefs = loadPreferences();
+        if (prefs == null) {
+            return null;
+        }
+        return myPanel.getPanel(loadConfig(), prefs);
     }
 
     @Override
     public boolean isModified() {
-       return myPanel.isModified(loadConfig().getBaseConfig(), loadPreferences());
+        UserProjectPreferences prefs = loadPreferences();
+        return prefs != null && myPanel.isModified(loadConfig(), prefs);
     }
 
     @Override
     public void apply() throws ConfigurationException {
-        myPanel.saveSettings(loadConfig(), loadPreferences());
-
-        // Note: the "save settings" call will call P4ConfigProject.loadState(new config)
+        UserProjectPreferences prefs = loadPreferences();
+        if (prefs != null) {
+            myPanel.saveSettings(loadConfig(), prefs);
+            // Note: the "save settings" call will call P4ProjectConfigComponent.setUserConfigParts(new config)
+        }
     }
 
     @Override
     public void reset() {
-        P4ConfigProject config = P4ConfigProject.getInstance(myProject);
-        myPanel.loadSettings(config.getBaseConfig(), loadPreferences());
+        UserProjectPreferences prefs = loadPreferences();
+        if (prefs != null) {
+            myPanel.loadSettings(loadConfig(), prefs);
+        }
     }
 
     @Override
@@ -87,11 +97,11 @@ public class P4ProjectConfigurable implements SearchableConfigurable {
     }
 
     @NotNull
-    private P4ConfigProject loadConfig() {
-        return P4ConfigProject.getInstance(myProject);
+    private P4ProjectConfigComponent loadConfig() {
+        return P4ProjectConfigComponent.getInstance(myProject);
     }
 
-    @NotNull
+    @Nullable
     private UserProjectPreferences loadPreferences() {
         return UserProjectPreferences.getInstance(myProject);
     }

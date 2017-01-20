@@ -13,27 +13,15 @@
  */
 package net.groboclown.idea.p4ic.config;
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.*;
+import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.ProjectComponent;
+import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.Storage;
+import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.ProjectLevelVcsManager;
-import com.intellij.openapi.vcs.VcsListener;
-import com.intellij.util.messages.MessageBusConnection;
-import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
-import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
-import net.groboclown.idea.p4ic.v2.events.Events;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource.Builder;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSourceLoader;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Compatibility with the old way the configurations were stored.

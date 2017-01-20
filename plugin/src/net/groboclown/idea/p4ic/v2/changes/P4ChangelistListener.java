@@ -28,7 +28,7 @@ import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.util.ChangelistDescriptionGenerator;
 import org.jetbrains.annotations.NotNull;
@@ -163,7 +163,7 @@ public class P4ChangelistListener implements ChangeListListener {
             // So move the files into the default changelist, and delete
             // the changelist.
 
-            final Map<ClientServerId, P4ChangeListId> moved =
+            final Map<ClientServerRef, P4ChangeListId> moved =
                     changeListMapping.rebindChangelistAsDefault((LocalChangeList) list);
             for (P4Server server: myVcs.getP4Servers()) {
                 final P4ChangeListId p4cl = moved.remove(server.getClientServerId());

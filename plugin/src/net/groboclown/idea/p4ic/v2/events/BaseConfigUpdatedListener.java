@@ -15,6 +15,7 @@ package net.groboclown.idea.p4ic.v2.events;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.Topic;
+import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,5 +33,5 @@ public interface BaseConfigUpdatedListener {
             new Topic<BaseConfigUpdatedListener>("p4ic.config.changed-serverconfig", BaseConfigUpdatedListener.class);
 
 
-    void configUpdated(@NotNull Project project, @NotNull List<ProjectConfigSource> sources);
+    void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig config);
 }

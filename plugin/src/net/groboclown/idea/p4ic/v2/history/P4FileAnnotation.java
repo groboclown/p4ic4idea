@@ -21,7 +21,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.text.DateFormatUtil;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,7 +43,7 @@ public class P4FileAnnotation extends FileAnnotation {
     private final P4RevisionNumber fileRev;
     private final List<P4AnnotatedLine> annotations;
     private final String content;
-    private final ClientServerId clientServerId;
+    private final ClientServerRef clientServerRef;
 
     private final LineAnnotationAspect[] aspects = new LineAnnotationAspect[]{
             new P4LineAnnotationAspect(LineAnnotationAspect.AUTHOR, true) {
@@ -70,7 +70,7 @@ public class P4FileAnnotation extends FileAnnotation {
     };
 
 
-    public P4FileAnnotation(@NotNull Project project, @NotNull ClientServerId clientServerId, @NotNull VirtualFile file,
+    public P4FileAnnotation(@NotNull Project project, @NotNull ClientServerRef clientServerRef, @NotNull VirtualFile file,
             @NotNull P4RevisionNumber fileRev, @NotNull List<P4AnnotatedLine> annotations, @NotNull String content) {
         super(project);
         this.project = project;
@@ -78,7 +78,7 @@ public class P4FileAnnotation extends FileAnnotation {
         this.fileRev = fileRev;
         this.annotations = annotations;
         this.content = content;
-        this.clientServerId = clientServerId;
+        this.clientServerRef = clientServerRef;
     }
 
     /**
@@ -200,7 +200,7 @@ public class P4FileAnnotation extends FileAnnotation {
         Set<VcsFileRevision> revs = new HashSet<VcsFileRevision>();
         for (P4AnnotatedLine line : annotations) {
             if (line != null) {
-                P4FileRevision fileRev = new P4FileRevision(project, clientServerId,
+                P4FileRevision fileRev = new P4FileRevision(project, clientServerRef,
                         FilePathUtil.getFilePath(file),
                         this.fileRev.getDepotPath(), line);
                 revs.add(fileRev);

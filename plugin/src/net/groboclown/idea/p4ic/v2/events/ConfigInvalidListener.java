@@ -17,6 +17,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.util.messages.Topic;
 import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -30,6 +31,6 @@ public interface ConfigInvalidListener {
     Topic<ConfigInvalidListener> TOPIC_SERVERCONNECTION =
             new Topic<ConfigInvalidListener>("p4ic.config.invalid.p4server.serverconnection", ConfigInvalidListener.class);
 
-    void configurationProblem(@NotNull Project project, @NotNull P4Config config,
+    void configurationProblem(@NotNull Project project, @NotNull P4ProjectConfig config,
             @NotNull VcsConnectionProblem ex);
 }

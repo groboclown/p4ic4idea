@@ -86,7 +86,7 @@ public class ChangeListMatcher {
 
         return null;
         //
-        //throw new IllegalStateException("Bad setup: no matching changelist for server " + server.getClientServerId() +
+        //throw new IllegalStateException("Bad setup: no matching changelist for server " + server.getClientServerRef() +
         //        " changelist " + action.getChangeList() + " (known changes for server: " + changes.keySet() + ")");
     }
 
@@ -177,7 +177,7 @@ public class ChangeListMatcher {
                     // independent of the matchers.
 
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Associating " + p4cl.getClientServerId() + " default changelist to IDEA changelist " +
+                        LOG.debug("Associating " + p4cl.getClientServerRef() + " default changelist to IDEA changelist " +
                                 P4ChangeListId.DEFAULT_CHANGE_NAME);
                     }
                     LocalChangeList local = addGate.findOrCreateList(P4ChangeListId.DEFAULT_CHANGE_NAME, "");

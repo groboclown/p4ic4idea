@@ -22,13 +22,11 @@ import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.server.IServerInfo;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
-import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4ConnectionDisposedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
-import net.groboclown.idea.p4ic.server.exceptions.ProjectDisposedException;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
@@ -40,7 +38,12 @@ import net.groboclown.idea.p4ic.v2.ui.alerts.DisconnectedHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.locks.Lock;
@@ -58,9 +61,8 @@ public class ServerConnection {
     private final Lock redoLock = new ReentrantLock();
     private final AlertManager alertManager;
     private final ClientCacheManager cacheManager;
-    private final ServerConfig config;
+    private final ClientConfig config;
     private final ServerStatusController statusController;
-    private final String clientName;
     private final Lock clientExecLock = new ReentrantLock();
     private final Thread background;
     private final Synchronizer.ServerSynchronizer.ConnectionSynchronizer synchronizer;
@@ -88,14 +90,15 @@ public class ServerConnection {
 
 
     public interface CacheQuery<T> {
-        T query(@NotNull ClientCacheManager mgr) throws InterruptedException;
+        T query(@NotNull ClientCacheManager mgr)
+                throws InterruptedException;
     }
 
 
-
-    public ServerConnection(@NotNull final AlertManager alertManager,
-            @NotNull ClientServerId clientServerId, @NotNull ClientCacheManager cacheManager,
-            @NotNull ServerConfig config, @NotNull ServerStatusController statusController,
+    public ServerConnection(@NotNull
+    final AlertManager alertManager,
+            @NotNull ClientCacheManager cacheManager,
+            @NotNull ClientConfig config, @NotNull ServerStatusController statusController,
             @NotNull Synchronizer.ServerSynchronizer.ConnectionSynchronizer synchronizer,
             @Nullable ClientExec initial) {
         this.synchronizer = synchronizer;
@@ -103,7 +106,6 @@ public class ServerConnection {
         this.cacheManager = cacheManager;
         this.config = config;
         this.statusController = statusController;
-        this.clientName = clientServerId.getClientId();
         this.clientExec = initial;
 
         background = new Thread(new QueueRunner(), "P4 P4ServerName Connection");
@@ -113,7 +115,8 @@ public class ServerConnection {
     }
 
 
-    public void postSetup(@NotNull final Project project) {
+    public void postSetup(@NotNull
+    final Project project) {
         if (setup) {
             // Already setup, or in the process of being
             // setup.
@@ -197,7 +200,6 @@ public class ServerConnection {
     }
 
 
-
     private void queueAction(@NotNull Project project, @NotNull ServerUpdateAction action) {
         LOG.info("Queueing action for execution: " + action);
         pendingUpdates.add(new UpdateAction(project, action));
@@ -209,11 +211,14 @@ public class ServerConnection {
      *
      * @param action action to run
      */
-    public void runImmediately(@NotNull final Project project, @NotNull final ServerUpdateAction action)
+    public void runImmediately(@NotNull
+    final Project project, @NotNull
+    final ServerUpdateAction action)
             throws InterruptedException {
         synchronizer.runImmediateAction(new ActionRunner<Void>() {
             @Override
-            public Void perform(@NotNull SynchronizedActionRunner runner) throws InterruptedException {
+            public Void perform(@NotNull SynchronizedActionRunner runner)
+                    throws InterruptedException {
                 try {
                     THREAD_EXECUTION_ACTIVE.set(Boolean.TRUE);
                     action.perform(getExec(project), cacheManager, ServerConnection.this, runner, alertManager);
@@ -230,10 +235,14 @@ public class ServerConnection {
     }
 
     @Nullable
-    public <T> T query(@NotNull final Project project, @NotNull final ServerQuery<T> query) throws InterruptedException {
+    public <T> T query(@NotNull
+    final Project project, @NotNull
+    final ServerQuery<T> query)
+            throws InterruptedException {
         return synchronizer.runImmediateAction(new ActionRunner<T>() {
             @Override
-            public T perform(@NotNull SynchronizedActionRunner runner) throws InterruptedException {
+            public T perform(@NotNull SynchronizedActionRunner runner)
+                    throws InterruptedException {
                 try {
                     THREAD_EXECUTION_ACTIVE.set(Boolean.TRUE);
                     return query.query(getExec(project), cacheManager, ServerConnection.this, runner, alertManager);
@@ -263,7 +272,8 @@ public class ServerConnection {
 
 
     // FIXME see if this is the right place for this action.
-    public void flushCache(@NotNull Project project, final boolean includeLocal, final boolean force) throws InterruptedException {
+    public void flushCache(@NotNull Project project, final boolean includeLocal, final boolean force)
+            throws InterruptedException {
         if (isWorkingOnline()) {
             runImmediately(project, new ServerUpdateAction() {
                 @NotNull
@@ -273,16 +283,23 @@ public class ServerConnection {
                 }
 
                 @Override
-                public void perform(@NotNull final P4Exec2 exec, @NotNull final ClientCacheManager clientCacheManager,
-                        @NotNull final ServerConnection connection, @NotNull final SynchronizedActionRunner syncRunner,
-                        @NotNull final AlertManager alerts) throws InterruptedException {
+                public void perform(@NotNull
+                final P4Exec2 exec, @NotNull
+                final ClientCacheManager clientCacheManager,
+                        @NotNull
+                        final ServerConnection connection, @NotNull
+                final SynchronizedActionRunner syncRunner,
+                        @NotNull
+                        final AlertManager alerts)
+                        throws InterruptedException {
                     // TODO does this need a read lock?
                     ServerConnectionManager.getInstance().flushCache(
                             clientCacheManager.getClientServerId(), includeLocal, force);
                 }
 
                 @Override
-                public void abort(@NotNull final ClientCacheManager clientCacheManager) {
+                public void abort(@NotNull
+                final ClientCacheManager clientCacheManager) {
 
                 }
             });
@@ -332,7 +349,8 @@ public class ServerConnection {
     }
 
 
-    public <T> T cacheQuery(@NotNull CacheQuery<T> q) throws InterruptedException {
+    public <T> T cacheQuery(@NotNull CacheQuery<T> q)
+            throws InterruptedException {
         return q.query(cacheManager);
     }
 
@@ -341,26 +359,28 @@ public class ServerConnection {
      * Used in the few rare cases where the client connection is used outside the
      * scope of the P4Server objects.  If we don't have this method, and instead
      * require use of the getExec method, then there will be giant threading issues.
-     *
+     * <p>
      * Callers must call {@link ClientExec#dispose()} when finished using it.
      *
      * @return the exec object to use in a one-off.
      * @throws P4InvalidConfigException
      */
     @Deprecated
-    ClientExec oneOffClientExec() throws P4InvalidConfigException {
-        return new ClientExec(config, statusController, clientName);
+    ClientExec oneOffClientExec()
+            throws P4InvalidConfigException {
+        return ClientExec.createFor(config, statusController);
     }
 
 
-    P4Exec2 getExec(@NotNull Project project) throws P4InvalidConfigException, P4ConnectionDisposedException {
+    P4Exec2 getExec(@NotNull Project project)
+            throws P4InvalidConfigException, P4ConnectionDisposedException {
         if (disposed) {
             throw new P4ConnectionDisposedException();
         }
         // double-check locking.  This is why clientExec must be volatile.
         synchronized (clientExecLock) {
             if (clientExec == null) {
-                clientExec = new ClientExec(config, statusController, clientName);
+                clientExec = ClientExec.createFor(config, statusController);
             }
             return new P4Exec2(project, clientExec);
         }
@@ -421,7 +441,8 @@ public class ServerConnection {
     }
 
 
-    private UpdateAction pullNextAction() throws InterruptedException {
+    private UpdateAction pullNextAction()
+            throws InterruptedException {
         UpdateAction action;
         redoLock.lock();
         try {
@@ -441,7 +462,8 @@ public class ServerConnection {
     }
 
 
-    private void pushAbortedAction(@NotNull final UpdateAction updateAction) {
+    private void pushAbortedAction(@NotNull
+    final UpdateAction updateAction) {
         redoLock.lock();
         try {
             redo.add(updateAction);
@@ -451,7 +473,8 @@ public class ServerConnection {
     }
 
 
-    private class QueueRunner implements Runnable {
+    private class QueueRunner
+            implements Runnable {
         @Override
         public void run() {
             while (!disposed) {
@@ -475,7 +498,8 @@ public class ServerConnection {
                 try {
                     boolean didRun = synchronizer.runBackgroundAction(new ActionRunner<Void>() {
                         @Override
-                        public Void perform(@NotNull SynchronizedActionRunner syncRunner) throws InterruptedException {
+                        public Void perform(@NotNull SynchronizedActionRunner syncRunner)
+                                throws InterruptedException {
                             LOG.info("Running action " + action);
                             final P4Exec2 exec;
                             try {
@@ -496,7 +520,7 @@ public class ServerConnection {
                                 // But requeue the action.
                                 return null;
                             }
-                            if (! action.project.isDisposed()) {
+                            if (!action.project.isDisposed()) {
                                 action.action.perform(exec,
                                         cacheManager, ServerConnection.this,
                                         syncRunner, alertManager);

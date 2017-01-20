@@ -243,6 +243,11 @@ public class FileP4Config implements P4Config {
         return null;
     }
 
+    @Override
+    public boolean hasClientHostnameSet() {
+        return false;
+    }
+
     //@Override
     //public boolean isPasswordStoredLocally() {
     //    return false;
@@ -255,8 +260,24 @@ public class FileP4Config implements P4Config {
     }
 
     @Override
+    public boolean hasIgnoreFileNameSet() {
+        return false;
+    }
+
+    @Override
     public String getIgnoreFileName() {
         return ignoreFile;
+    }
+
+    @Override
+    public boolean hasDefaultCharsetSet() {
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public String getDefaultCharset() {
+        return null;
     }
 
     public File getSource() {

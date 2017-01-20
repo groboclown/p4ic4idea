@@ -19,7 +19,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
 import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.JobStateList;
@@ -114,7 +114,7 @@ public class JobServerCacheSync extends CacheFrontEnd {
         return ret;
     }
 
-    Map<String, P4ChangeListJob> getCachedJobIds(@NotNull ClientServerId clientServerId,
+    Map<String, P4ChangeListJob> getCachedJobIds(@NotNull ClientServerRef clientServerRef,
             @NotNull Collection<String> jobIds) {
         Map<String, P4ChangeListJob> ret = new HashMap<String, P4ChangeListJob>();
         for (String jobId : jobIds) {
@@ -122,7 +122,7 @@ public class JobServerCacheSync extends CacheFrontEnd {
             if (job == null) {
                 ret.put(jobId, null);
             } else {
-                ret.put(jobId, new P4ChangeListJob(clientServerId, job));
+                ret.put(jobId, new P4ChangeListJob(clientServerRef, job));
             }
         }
         return ret;

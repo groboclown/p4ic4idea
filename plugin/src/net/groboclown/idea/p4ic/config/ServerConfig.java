@@ -15,16 +15,14 @@ package net.groboclown.idea.p4ic.config;
 
 import com.intellij.openapi.util.io.FileUtil;
 import com.perforce.p4java.env.PerforceEnvironment;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.part.DataPart;
 import net.groboclown.idea.p4ic.config.part.PartValidation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -200,18 +198,30 @@ public final class ServerConfig {
         return true;
     }
 
-    @Override
-    public String toString() {
+    @NotNull
+    public Map<String, String> toProperties() {
         Map<String, String> ret = new HashMap<String, String>();
         ret.put(PerforceEnvironment.P4PORT, getServerName().getDisplayName());
         ret.put(PerforceEnvironment.P4TRUST,
-                getTrustTicket() == null ? null :
-                getTrustTicket().toString());
+                getTrustTicket() == null
+                        ? P4Bundle.getString("configuration.resolve.value.unset")
+                        : getTrustTicket().toString());
         ret.put(PerforceEnvironment.P4USER, getUsername());
         ret.put(PerforceEnvironment.P4TICKETS,
-                getAuthTicket() == null ? null :
-                getAuthTicket().toString());
-        return ret.toString();
+                getAuthTicket() == null
+                        ? P4Bundle.getString("configuration.resolve.value.unset")
+                        : getAuthTicket().toString());
+        ret.put("Server Fingerprint", getServerFingerprint());
+        ret.put(PerforceEnvironment.P4PASSWD,
+                getPlaintextPassword() == null
+                        ? P4Bundle.getString("configuration.resolve.password.unset")
+                        : P4Bundle.getString("configuration.resolve.password.set"));
+        return ret;
+    }
+
+    @Override
+    public String toString() {
+        return toProperties().toString();
     }
 
 

@@ -19,7 +19,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,14 +30,14 @@ import static net.groboclown.idea.p4ic.v2.ui.alerts.DistinctDialog.YES;
 public class InvalidRootsHandler extends AbstractErrorHandler {
     private static final Logger LOG = Logger.getInstance(InvalidRootsHandler.class);
 
-    private final ClientServerId clientServerId;
+    private final ClientServerRef clientServerRef;
     private final Collection<String> workspaceRoots;
 
     public InvalidRootsHandler(@NotNull Project project,
             @NotNull Collection<String> workspaceRoots,
-            @NotNull ClientServerId clientServerId, @NotNull Exception ex) {
+            @NotNull ClientServerRef clientServerRef, @NotNull Exception ex) {
         super(project, FAKE_CONTROLLER, ex);
-        this.clientServerId = clientServerId;
+        this.clientServerRef = clientServerRef;
         this.workspaceRoots = Collections.unmodifiableCollection(new ArrayList<String>(workspaceRoots));
     }
 
@@ -58,10 +58,10 @@ public class InvalidRootsHandler extends AbstractErrorHandler {
                 ? "error.config.no-workspace-roots"
                 : "error.config.invalid-roots";
         int result = DistinctDialog.showDialog(
-                DistinctDialog.key(this, clientServerId.getServerConfigId(), clientServerId.getClientId()),
+                DistinctDialog.key(this, clientServerRef.getServerName(), clientServerRef.getClientName()),
                 getProject(),
                 P4Bundle.message(messageKey, workspaceRoots, vcsPresentableRoots),
-                P4Bundle.message("error.config.invalid-roots.title", clientServerId.getClientId()),
+                P4Bundle.message("error.config.invalid-roots.title", clientServerRef.getClientName()),
                 new String[] { P4Bundle.message("error.config.invalid-roots.yes"), P4Bundle.message("error.config.invalid-roots.no") },
                 Messages.getErrorIcon());
         if (result == YES) {
@@ -83,11 +83,6 @@ public class InvalidRootsHandler extends AbstractErrorHandler {
 
         @Override
         public boolean isWorkingOffline() {
-            return false;
-        }
-
-        @Override
-        public boolean isAutoOffline() {
             return false;
         }
 

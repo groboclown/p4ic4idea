@@ -19,7 +19,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.util.messages.MessageBusConnection;
-import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.config.ClientConfig;
+import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
@@ -28,11 +29,9 @@ import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.server.cache.state.AllClientsState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.ClientLocalServerState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
@@ -43,7 +42,7 @@ public class CentralCacheManager {
 
     private final AllClientsState allClientState;
     private final MessageBusConnection messageBus;
-    private final Map<ClientServerId, ClientCacheManager> clientManagers = new HashMap<ClientServerId, ClientCacheManager>();
+    private final Map<ClientServerRef, ClientCacheManager> clientManagers = new HashMap<ClientServerRef, ClientCacheManager>();
     private final Lock cacheLock = new ReentrantLock();
     private boolean disposed = false;
 
@@ -53,8 +52,7 @@ public class CentralCacheManager {
 
         Events.registerAppBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
             @Override
-            public void configUpdated(@NotNull final Project project,
-                    @NotNull final List<ProjectConfigSource> sources) {
+            public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig config) {
                 if (disposed) {
                     return;
                 }
@@ -74,16 +72,18 @@ public class CentralCacheManager {
 
         Events.registerAppConfigInvalid(messageBus, new ConfigInvalidListener() {
             @Override
-            public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
-                    @NotNull final VcsConnectionProblem ex) {
+            public void configurationProblem(@NotNull Project project, @NotNull P4ProjectConfig config,
+                    @NotNull VcsConnectionProblem ex) {
                 if (disposed) {
                     return;
                 }
-                // Only invalid clients are given to this method, so there's
-                // a very good chance that the client ID will be null.
-                ClientServerId id = ClientServerId.create(project, config);
-                if (id != null) {
-                    removeCache(id);
+                for (ClientConfig clientConfig : config.getClientConfigs()) {
+                    // Only invalid clients are given to this method, so there's
+                    // a very good chance that the client ID will be null.
+                    ClientServerRef id = ClientServerRef.create(clientConfig);
+                    if (id != null) {
+                        removeCache(id);
+                    }
                 }
             }
         });
@@ -102,7 +102,7 @@ public class CentralCacheManager {
 
 
     // NOTE this must be done inside a ServerConnection
-    public void flushState(@NotNull ClientServerId clientServerId,
+    public void flushState(@NotNull ClientServerRef clientServerRef,
             boolean includeLocal, boolean force) {
         if (disposed) {
             // Coding error; no bundled message
@@ -111,7 +111,7 @@ public class CentralCacheManager {
         final ClientLocalServerState state;
         cacheLock.lock();
         try {
-            state = allClientState.getCachedStateForClient(clientServerId);
+            state = allClientState.getCachedStateForClient(clientServerRef);
             if (state == null) {
                 LOG.info("No state to clear");
                 return;
@@ -125,7 +125,7 @@ public class CentralCacheManager {
 
     /**
      *
-     * @param clientServerId client / server name
+     * @param clientServerRef client / server name
      * @param config server configuration
      * @param isServerCaseInsensitiveCallable if the cached version of the client is not loaded,
      *                                        this will be called to discover whether the
@@ -135,25 +135,25 @@ public class CentralCacheManager {
      * @return the cache manager.
      */
     @NotNull
-    public ClientCacheManager getClientCacheManager(@NotNull ClientServerId clientServerId, @NotNull ServerConfig config,
+    public ClientCacheManager getClientCacheManager(@NotNull ClientServerRef clientServerRef, @NotNull ServerConfig config,
             @NotNull  Callable<Boolean> isServerCaseInsensitiveCallable) throws P4InvalidClientException {
         if (disposed) {
             // Coding error; no bundled message
             throw new IllegalStateException("disposed");
         }
-        if (clientServerId.getClientId() == null) {
-            throw new P4InvalidClientException(clientServerId);
+        if (clientServerRef.getClientName() == null) {
+            throw new P4InvalidClientException(clientServerRef);
         }
         ClientCacheManager cacheManager;
         cacheLock.lock();
         try {
-            cacheManager = clientManagers.get(clientServerId);
+            cacheManager = clientManagers.get(clientServerRef);
             if (cacheManager == null) {
                 final ClientLocalServerState state = allClientState.getStateForClient(
-                        clientServerId,
+                        clientServerRef,
                         isServerCaseInsensitiveCallable);
                 cacheManager = new ClientCacheManager(config, state);
-                clientManagers.put(clientServerId, cacheManager);
+                clientManagers.put(clientServerRef, cacheManager);
             }
         } finally {
             cacheLock.unlock();
@@ -163,7 +163,7 @@ public class CentralCacheManager {
 
 
 
-    private void removeCache(@NotNull ClientServerId id) {
+    private void removeCache(@NotNull ClientServerRef id) {
         if (disposed) {
             // Coding error; no bundled message
             throw new IllegalStateException("disposed");

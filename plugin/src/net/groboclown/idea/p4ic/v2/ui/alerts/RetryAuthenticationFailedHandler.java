@@ -46,7 +46,7 @@ public class RetryAuthenticationFailedHandler extends AbstractErrorHandler {
         LOG.warn("P4ServerName refused authentication too many times");
 
         DistinctDialog.performOnDialog(
-                DistinctDialog.key(this, config.getServiceName(), config.getUsername()),
+                DistinctDialog.key(this, config.getServerName(), config.getUsername()),
                 getProject(),
                 P4Bundle.message("configuration.retry-auth-problem-ask", getExceptionMessage()),
                 P4Bundle.message("configuration.retry-auth-problem.title"),

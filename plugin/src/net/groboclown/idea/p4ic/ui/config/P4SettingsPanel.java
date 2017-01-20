@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.ui.config;
 
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
+import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,16 +29,16 @@ public class P4SettingsPanel {
     private UserPreferencesPanel myUserPreferencesPanel;
     private JPanel myRootPanel;
 
-    boolean isModified(@NotNull final ManualP4Config myConfig, @NotNull final UserProjectPreferences preferences) {
+    boolean isModified(@NotNull final P4ProjectConfigComponent myConfig, @NotNull final UserProjectPreferences preferences) {
         return myP4ConfigPanel.isModified(myConfig) || myUserPreferencesPanel.isModified(preferences);
     }
 
-    void saveSettingsToConfig(@NotNull final ManualP4Config config, @NotNull final UserProjectPreferences preferences) {
+    void saveSettingsToConfig(@NotNull final P4ProjectConfigComponent config, @NotNull final UserProjectPreferences preferences) {
         myP4ConfigPanel.saveSettingsToConfig(config);
         myUserPreferencesPanel.saveSettingsToConfig(preferences);
     }
 
-    void loadSettingsIntoGUI(@NotNull final ManualP4Config config, @NotNull final UserProjectPreferences preferences) {
+    void loadSettingsIntoGUI(@NotNull final P4ProjectConfigComponent config, @NotNull final UserProjectPreferences preferences) {
         myP4ConfigPanel.loadSettingsIntoGUI(config);
         myUserPreferencesPanel.loadSettingsIntoGUI(preferences);
     }

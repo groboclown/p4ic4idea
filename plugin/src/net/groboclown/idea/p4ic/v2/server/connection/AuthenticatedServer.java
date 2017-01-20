@@ -20,12 +20,11 @@ import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.callback.ILogCallback;
-import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
 import net.groboclown.idea.p4ic.server.exceptions.ExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.LoginRequiresPasswordException;
-import net.groboclown.idea.p4ic.server.exceptions.P4UnknownLoginException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -81,9 +80,8 @@ class AuthenticatedServer {
     private static final long CONNECT_LOCK_TIMEOUT_MILLIS = 30 * 1000L;
 
     private final ConnectionHandler connectionHandler;
-    private final ServerConfig config;
+    private final ClientConfig config;
     private final int serverInstance = serverCount.getAndIncrement();
-    private final String clientName;
     private final File tempDir;
 
     @Nullable
@@ -107,13 +105,12 @@ class AuthenticatedServer {
 
 
     AuthenticatedServer(@Nullable Project project,
-            @Nullable String clientName, @NotNull ConnectionHandler connectionHandler,
-            @NotNull ServerConfig config, @NotNull File tempDir)
+            @NotNull ClientConfig clientConfig, @NotNull ConnectionHandler connectionHandler,
+            @NotNull File tempDir)
             throws P4JavaException, URISyntaxException {
         this.project = project;
         this.connectionHandler = connectionHandler;
-        this.config = config;
-        this.clientName = clientName;
+        this.config = clientConfig;
         this.tempDir = tempDir;
         this.server = null;
     }
@@ -310,7 +307,8 @@ class AuthenticatedServer {
             withConnectionLock(new WithConnectionLock<Void>() {
                 @Override
                 public Void call() throws P4JavaException {
-                    connectionHandler.forcedAuthentication(project, server, config, AlertManager.getInstance());
+                    connectionHandler.forcedAuthentication(project, server, config.getServerConfig(),
+                            AlertManager.getInstance());
                     forcedAuthenticationCount++;
                     return null;
                 }
@@ -350,7 +348,7 @@ class AuthenticatedServer {
                 @Override
                 public Void call() throws P4JavaException, URISyntaxException {
                     disconnect();
-                    server = reconnect(project, clientName, connectionHandler, config, tempDir,
+                    server = reconnect(project, connectionHandler, config, tempDir,
                             serverInstance);
                     connectedCount++;
                     return null;
@@ -374,7 +372,7 @@ class AuthenticatedServer {
 
             // Note: this can potentially take a really long time to run.
 
-            server.getUser(config.getUsername());
+            server.getUser(config.getServerConfig().getUsername());
             if (LOG.isDebugEnabled())
             {
                 LOG.debug("Basic authentication looks correct for " + this);
@@ -408,8 +406,8 @@ class AuthenticatedServer {
 
 
     private IOptionsServer reconnect(@Nullable final Project project,
-            @Nullable String clientName, final @NotNull ConnectionHandler connectionHandler,
-            @NotNull final ServerConfig config, @NotNull File tempDir,
+            @NotNull final ConnectionHandler connectionHandler,
+            @NotNull final ClientConfig config, @NotNull File tempDir,
             int serverInstance)
             throws P4JavaException, URISyntaxException {
         // Setup logging
@@ -458,7 +456,7 @@ class AuthenticatedServer {
 
         final Properties properties;
         final String url;
-        properties = connectionHandler.getConnectionProperties(config, clientName);
+        properties = connectionHandler.getConnectionProperties(config);
         properties.setProperty(PropertyDefs.P4JAVA_TMP_DIR_KEY, tempDir.getAbsolutePath());
 
         // For tracking purposes
@@ -466,8 +464,9 @@ class AuthenticatedServer {
         //        properties.getProperty(PropertyDefs.PROG_NAME_KEY) + " connection " +
         //        serverInstance);
 
-        url = connectionHandler.createUrl(config);
-        LOG.info("Opening connection " + serverInstance + " to " + url + " with " + config.getUsername());
+        url = connectionHandler.createUrl(config.getServerConfig());
+        LOG.info("Opening connection " + serverInstance + " to " + url + " with " + config.getServerConfig()
+                .getUsername());
 
         // see bug #61
         // Hostname as used by the Java code:
@@ -488,7 +487,7 @@ class AuthenticatedServer {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("calling connectionHandler.getOptionsServer");
                     }
-                    final IOptionsServer server = connectionHandler.getOptionsServer(url, properties, config);
+                    final IOptionsServer server = connectionHandler.getOptionsServer(url, properties, config.getServerConfig());
 
                     // These cause issues.
                     //server.registerCallback(new LoggingCommandCallback());

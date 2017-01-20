@@ -29,6 +29,7 @@ import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.impl.mapbased.rpc.func.helper.MD5Digester;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
+import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
@@ -39,7 +40,7 @@ import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.changes.P4CommittedChangeList;
 import net.groboclown.idea.p4ic.v2.history.P4AnnotatedLine;
 import net.groboclown.idea.p4ic.v2.history.P4FileRevision;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileSyncState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
@@ -80,7 +81,7 @@ public class P4Server {
     private final Project project;
     private final ServerConnection connection;
     private final AlertManager alertManager;
-    private final ProjectConfigSource source;
+    private final ClientConfig source;
 
     private boolean valid = true;
     private boolean disposed = false;
@@ -94,7 +95,7 @@ public class P4Server {
      * whether the source file is on the same server or not.
      */
     public static final class IntegrateFile {
-        private final ClientServerId sourceClient;
+        private final ClientServerRef sourceClient;
         private final FilePath sourceFile;
         private final FilePath targetFile;
 
@@ -102,7 +103,7 @@ public class P4Server {
             this(null, sourceFile, targetFile);
         }
 
-        public IntegrateFile(@Nullable ClientServerId sourceClient, @NotNull FilePath sourceFile,
+        public IntegrateFile(@Nullable ClientServerRef sourceClient, @NotNull FilePath sourceFile,
                 @NotNull FilePath targetFile) {
             this.sourceClient = sourceClient;
             this.sourceFile = sourceFile;
@@ -110,7 +111,7 @@ public class P4Server {
         }
 
         @Nullable
-        public ClientServerId getSourceClient() {
+        public ClientServerRef getSourceClient() {
             return sourceClient;
         }
 
@@ -136,14 +137,14 @@ public class P4Server {
 
 
 
-    P4Server(@NotNull final Project project, @NotNull final ProjectConfigSource source)
+    P4Server(@NotNull final Project project, @NotNull final ClientConfig source)
             throws P4InvalidClientException {
         this.project = project;
         this.alertManager = AlertManager.getInstance();
         this.source = source;
         //this.clientState = AllClientsState.getInstance().getStateForClient(clientServerId);
         this.connection = ServerConnectionManager.getInstance().getConnectionFor(project,
-                source.getClientServerId(), source.getServerConfig(), true);
+                source.getClientServerRef(), source.getServerConfig(), true);
         connection.postSetup(project);
 
         // Do not reload the caches early.
@@ -176,15 +177,15 @@ public class P4Server {
         return !isValid() || connection.isWorkingOffline();
     }
 
-    public boolean isSameSource(@Nullable ProjectConfigSource pcs) {
+    public boolean isSameSource(@Nullable ClientConfig pcs) {
         return source.equals(pcs);
     }
 
 
     @NotNull
     public String getClientServerDisplayId() {
-        String serverDisplay = source.getClientServerId().getServerDisplayId();
-        String clientDisplay = source.getClientServerId().getClientId();
+        String serverDisplay = source.getClientServerRef().getServerDisplayId();
+        String clientDisplay = source.getClientServerRef().getClientName();
         if (clientDisplay == null) {
             return P4Bundle.message("client-server.display.server-only", serverDisplay);
         }
@@ -553,8 +554,8 @@ public class P4Server {
                 }
                 //if (!unreverted.isEmpty()) {
                 //    alerts.addWarning(vcs.getProject(),
-                //            P4Bundle.message("revert.offline", server.getClientServerId()),
-                //            P4Bundle.message("revert.offline", server.getClientServerId()),
+                //            P4Bundle.message("revert.offline", server.getClientServerRef()),
+                //            P4Bundle.message("revert.offline", server.getClientServerRef()),
                 //            null, unreverted.toArray(new FilePath[unreverted.size()]));
                 //}
             } catch (InterruptedException e) {
@@ -827,8 +828,8 @@ public class P4Server {
     }
 
     @NotNull
-    public ClientServerId getClientServerId() {
-        return source.getClientServerId();
+    public ClientServerRef getClientServerId() {
+        return source.getClientServerRef();
     }
 
     @NotNull
@@ -1252,9 +1253,8 @@ public class P4Server {
      *
      * @return source for the config
      */
-    // TODO return an immutable wrapper
     @NotNull
-    public ProjectConfigSource getProjectConfigSource() {
+    public ClientConfig getClientConfig() {
         return source;
     }
 

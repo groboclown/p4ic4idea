@@ -13,10 +13,20 @@
  */
 package net.groboclown.idea.p4ic.config;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.perforce.p4java.env.PerforceEnvironment;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.part.DataPart;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Stores information regarding a server configuration and the specific client/workspace in that
@@ -27,29 +37,34 @@ public class ClientConfig {
     // is still viewable in a debugger.
     private static final char SEP = (char) 0x2202;
 
-    private final VirtualFile rootDir;
+    private final Project project;
+    private final Set<VirtualFile> rootDirs;
     private final ServerConfig serverConfig;
     private final String clientName;
     private final String clientHostName;
     private final String defaultCharSet;
     private final String ignoreFileName;
 
+    private final ClientServerRef clientServerRef;
     private final String clientId;
 
-    public static ClientConfig createFrom(@NotNull ServerConfig serverConfig, @NotNull DataPart data) {
+    public static ClientConfig createFrom(@NotNull Project project, @NotNull ServerConfig serverConfig,
+            @NotNull DataPart data, @NotNull Collection<VirtualFile> clientProjectBaseDirectories) {
         if (! data.getConfigProblems().isEmpty()) {
             throw new IllegalArgumentException("did not validate data");
         }
-        return new ClientConfig(serverConfig, data);
+        return new ClientConfig(project, serverConfig, data, clientProjectBaseDirectories);
     }
 
-    private ClientConfig(@NotNull ServerConfig serverConfig, @NotNull DataPart data) {
+    private ClientConfig(@NotNull Project project, @NotNull ServerConfig serverConfig, @NotNull DataPart data,
+            @NotNull Collection<VirtualFile> clientProjectBaseDirectories) {
         if (! serverConfig.isSameServer(data)) {
             throw new IllegalArgumentException("Server config " + serverConfig +
                     " does not match data config " + data);
         }
 
-        this.rootDir = data.getRootPath();
+        this.project = project;
+        this.rootDirs = Collections.unmodifiableSet(new HashSet<VirtualFile>(clientProjectBaseDirectories));
         this.serverConfig = serverConfig;
         this.clientName =
                 data.hasClientnameSet()
@@ -72,8 +87,10 @@ public class ClientConfig {
                 this.clientName + SEP +
                 this.clientHostName + SEP +
                 this.ignoreFileName + SEP +
-                this.defaultCharSet + SEP +
-                this.rootDir;
+                this.defaultCharSet + SEP;
+                // root directories are not listed, because all client configs
+                // for the same client and server should be a shared object.
+        this.clientServerRef = new ClientServerRef(serverConfig.getServerName(), clientName);
     }
 
     /**
@@ -122,10 +139,38 @@ public class ClientConfig {
     }
 
     /**
-     * @return the root directory.
+     * Returns all the lowest project source directories that
+     * share this client.  This is a bit troublesome in its implications
+     * in the implementation.  It means that if you have two directories,
+     * each with their own p4 config file, referencing the same client
+     * on the same server, but with different configuration
+     * (say, a different p4ignore setting), then this one instance
+     * will reference just one version of that setting.
+     * <p>
+     * This is a big assumption.  Other sections of the code should
+     * alert the user when this scenario happens.  However, for the
+     * moment, this is considered an acceptable shortcoming, as the
+     * listed scenario should be rare.
+     *
+     * @return all root directories in the project that share
+     *      this client config.  Note that some of the directories
+     *      might be a subdirectory of another, which is fine, because
+     *      there may be some level in a tree that is covered by another
+     *      client.
      */
-    public VirtualFile getRootDir() {
-         return rootDir;
+    @NotNull
+    public Collection<VirtualFile> getProjectSourceDirs() {
+        return rootDirs;
+    }
+
+    @NotNull
+    public ClientServerRef getClientServerRef() {
+        return clientServerRef;
+    }
+
+    @NotNull
+    public Project getProject() {
+        return project;
     }
 
     @Override
@@ -134,6 +179,28 @@ public class ClientConfig {
             return serverConfig.getServerName().getDisplayName() + "@" + clientName;
         }
         return serverConfig.getServerName().getDisplayName();
+    }
+
+    @NotNull
+    public Map<String, String> toProperties() {
+        Map<String, String> props = serverConfig.toProperties();
+        props.put(PerforceEnvironment.P4CHARSET,
+                getDefaultCharSet() == null
+                    ? P4Bundle.getString("configuration.resolve.value.unset")
+                    : getDefaultCharSet());
+        props.put(PerforceEnvironment.P4IGNORE,
+                getIgnoreFileName() == null
+                    ? P4Bundle.getString("configuration.resolve.value.unset")
+                    : getIgnoreFileName());
+        props.put(PerforceEnvironment.P4CLIENT,
+                getClientName() == null
+                        ? P4Bundle.getString("configuration.resolve.value.unset")
+                        : getClientName());
+        props.put(PerforceEnvironment.P4HOST,
+                getClientHostName() == null
+                        ? P4Bundle.getString("configuration.resolve.value.unset")
+                        : getClientHostName());
+        return props;
     }
 
     @Override

@@ -19,7 +19,7 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,12 +27,12 @@ import java.io.File;
 import java.nio.charset.Charset;
 
 public class DepotFilePath implements FilePath {
-    private final ClientServerId clientServerId;
+    private final ClientServerRef clientServerRef;
     private final String depotPath;
     private final String name;
 
-    public DepotFilePath(@NotNull  final ClientServerId clientServerId, @NotNull  final String depotPath) {
-        this.clientServerId = clientServerId;
+    public DepotFilePath(@NotNull  final ClientServerRef clientServerRef, @NotNull  final String depotPath) {
+        this.clientServerRef = clientServerRef;
         this.depotPath = depotPath;
 
         int pos = depotPath.lastIndexOf('/');
@@ -70,7 +70,7 @@ public class DepotFilePath implements FilePath {
 
     @Override
     public String getPresentableUrl() {
-        return clientServerId.getServerDisplayId() + "/" + clientServerId.getClientId() + depotPath;
+        return clientServerRef.getServerDisplayId() + "/" + clientServerRef.getClientName() + depotPath;
     }
 
     @Nullable

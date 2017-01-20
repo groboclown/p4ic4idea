@@ -26,7 +26,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,21 +51,21 @@ public class P4FileRevision implements VcsFileRevision {
     private final String author;
     private final Date date;
     private final IFileRevisionData revisionData;
-    private final ClientServerId clientServerId;
+    private final ClientServerRef clientServerRef;
     private final FilePath baseFile;
 
 
-    public P4FileRevision(@NotNull Project project, @NotNull ClientServerId clientServerId,
+    public P4FileRevision(@NotNull Project project, @NotNull ClientServerRef clientServerRef,
             @NotNull FilePath baseFile,
             @Nullable String rootDepotPath, @NotNull P4AnnotatedLine line) {
-        this(project, clientServerId, baseFile, rootDepotPath, line.getDepotPath(), line.getRevisionData());
+        this(project, clientServerRef, baseFile, rootDepotPath, line.getDepotPath(), line.getRevisionData());
     }
 
-    public P4FileRevision(@NotNull Project project, @NotNull ClientServerId clientServerId,
+    public P4FileRevision(@NotNull Project project, @NotNull ClientServerRef clientServerRef,
             @NotNull FilePath baseFile,
             @Nullable String rootDepotPath, @Nullable String versionDepotPath, @Nullable IFileRevisionData data) {
         this.project = project;
-        this.clientServerId = clientServerId;
+        this.clientServerRef = clientServerRef;
         this.streamName = null;
         this.baseFile = baseFile;
         this.revisionDepotPath = data != null
@@ -124,7 +124,7 @@ public class P4FileRevision implements VcsFileRevision {
     private P4Server getServer() {
         final List<P4Server> servers = P4Vcs.getInstance(project).getP4Servers();
         for (P4Server server: servers) {
-            if (clientServerId.equals(server.getClientServerId())) {
+            if (clientServerRef.equals(server.getClientServerId())) {
                 return server;
             }
         }

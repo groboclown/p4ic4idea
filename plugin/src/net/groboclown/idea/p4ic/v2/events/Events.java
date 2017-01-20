@@ -18,7 +18,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.util.messages.MessageBusConnection;
-import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import org.jetbrains.annotations.NotNull;
@@ -56,7 +56,7 @@ public final class Events {
     }
 
 
-    public static void configInvalid(@NotNull Project project, @NotNull P4Config config,
+    public static void configInvalid(@NotNull Project project, @NotNull P4ProjectConfig config,
             @NotNull P4InvalidConfigException e)
             throws P4InvalidConfigException {
         ApplicationManager.getApplication().getMessageBus().syncPublisher(ConfigInvalidListener.TOPIC_SERVERCONNECTION).
@@ -69,7 +69,7 @@ public final class Events {
     }
 
 
-    public static void handledConfigInvalid(@NotNull Project project, @NotNull P4Config config,
+    public static void handledConfigInvalid(@NotNull Project project, @NotNull P4ProjectConfig config,
             @NotNull VcsConnectionProblem e) {
         ApplicationManager.getApplication().getMessageBus().syncPublisher(ConfigInvalidListener.TOPIC_SERVERCONNECTION).
                 configurationProblem(project, config, e);

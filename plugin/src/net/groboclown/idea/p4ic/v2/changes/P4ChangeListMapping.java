@@ -21,7 +21,7 @@ import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
@@ -70,15 +70,14 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
     @Override
     public Element getState() {
         Element ret = new Element("p4-idea-changelist-mapping");
-        for (Map.Entry<String, Map<ClientServerId, P4ChangeListId>> en: state.ideaToPerforce.entrySet()) {
+        for (Map.Entry<String, Map<ClientServerRef, P4ChangeListId>> en: state.ideaToPerforce.entrySet()) {
             Element idea = new Element("idea-map");
             ret.addContent(idea);
             idea.setAttribute("idea-id", en.getKey());
             for (P4ChangeListId p4cl: en.getValue().values()) {
                 Element p4 = new Element("p4-map");
                 idea.addContent(p4);
-                p4.setAttribute("scid", p4cl.getServerConfigId());
-                p4.setAttribute("client", p4cl.getClientName());
+                p4cl.getClientServerRef().marshal(p4);
                 p4.setAttribute("clid", Integer.toString(p4cl.getChangeListId()));
             }
         }
@@ -94,22 +93,20 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
                 String idea = ideaMap.getAttributeValue("idea-id");
                 List<Element> p4idList = ideaMap.getChildren("p4-map");
                 if (idea != null && p4idList != null) {
-                    Map<ClientServerId, P4ChangeListId> i2p = new HashMap<ClientServerId, P4ChangeListId>();
+                    Map<ClientServerRef, P4ChangeListId> i2p = new HashMap<ClientServerRef, P4ChangeListId>();
                     newState.ideaToPerforce.put(idea, i2p);
                     for (Element p4id: p4idList) {
-                        String scid = p4id.getAttributeValue("scid");
-                        String client = p4id.getAttributeValue("client");
-                        try {
-                            int clid = Integer.parseInt(p4id.getAttributeValue("clid"));
-                            if (scid != null && client != null) {
-                                P4ChangeListId p4cl = new P4ChangeListIdImpl(
-                                        ClientServerId.create(scid, client), clid);
-                                i2p.put(p4cl.getClientServerId(), p4cl);
+                        ClientServerRef serverRef = ClientServerRef.unmarshal(p4id, true);
+                        if (serverRef != null) {
+                            try {
+                                int clid = Integer.parseInt(p4id.getAttributeValue("clid"));
+                                P4ChangeListId p4cl = new P4ChangeListIdImpl(serverRef, clid);
+                                i2p.put(p4cl.getClientServerRef(), p4cl);
                                 newState.perforceToIdea.put(p4cl, idea);
+                            } catch (NumberFormatException e) {
+                                // ignore
+                                LOG.info(e);
                             }
-                        } catch (NumberFormatException e) {
-                            // ignore
-                            LOG.info(e);
                         }
                     }
                 }
@@ -147,7 +144,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
 
     private static class State {
         // idea change id -> (server / client ID -> p4 change)
-        Map<String, Map<ClientServerId, P4ChangeListId>> ideaToPerforce = new HashMap<String, Map<ClientServerId, P4ChangeListId>>();
+        Map<String, Map<ClientServerRef, P4ChangeListId>> ideaToPerforce = new HashMap<String, Map<ClientServerRef, P4ChangeListId>>();
         Map<P4ChangeListId, String> perforceToIdea = new HashMap<P4ChangeListId, String>();
     }
 
@@ -181,7 +178,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
             return cl;
         }
 
-        P4ChangeListId p4id = new P4ChangeListIdImpl(p4cl.getClientServerId(), changeListId);
+        P4ChangeListId p4id = new P4ChangeListIdImpl(p4cl.getClientServerRef(), changeListId);
 
         final String id;
         synchronized (sync) {
@@ -199,7 +196,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
     public Collection<P4ChangeListId> getAllPerforceChangelistsFor(@NotNull LocalChangeList idea) {
         Set<P4ChangeListId> ret = new HashSet<P4ChangeListId>();
         synchronized (sync) {
-            final Map<ClientServerId, P4ChangeListId> perServer = state.ideaToPerforce.get(idea.getId());
+            final Map<ClientServerRef, P4ChangeListId> perServer = state.ideaToPerforce.get(idea.getId());
             if (perServer != null) {
                 ret.addAll(perServer.values());
             }
@@ -234,7 +231,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
     }
 
 
-    public Map<ClientServerId, P4ChangeListId> rebindChangelistAsDefault(@NotNull LocalChangeList list) {
+    public Map<ClientServerRef, P4ChangeListId> rebindChangelistAsDefault(@NotNull LocalChangeList list) {
         if (! isDefaultChangelist(list)) {
             throw new IllegalStateException("Can only be called after list has been renamed to the default change");
         }
@@ -273,9 +270,9 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
         }
 
         synchronized (sync) {
-            Map<ClientServerId, P4ChangeListId> p4ChangeMap = state.ideaToPerforce.get(idea.getId());
+            Map<ClientServerRef, P4ChangeListId> p4ChangeMap = state.ideaToPerforce.get(idea.getId());
             if (p4ChangeMap != null) {
-                if (p4ChangeMap.containsKey(p4id.getClientServerId())) {
+                if (p4ChangeMap.containsKey(p4id.getClientServerRef())) {
                     // ensure the other-way-around exists and is correct
                     state.perforceToIdea.put(p4id, idea.getId());
 
@@ -285,10 +282,10 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
                     return;
                 }
             } else {
-                p4ChangeMap = new HashMap<ClientServerId, P4ChangeListId>();
+                p4ChangeMap = new HashMap<ClientServerRef, P4ChangeListId>();
                 state.ideaToPerforce.put(idea.getId(), p4ChangeMap);
             }
-            p4ChangeMap.put(p4id.getClientServerId(), p4id);
+            p4ChangeMap.put(p4id.getClientServerRef(), p4id);
 
 
             if (state.perforceToIdea.containsKey(p4id)) {
@@ -305,9 +302,9 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
     }
 
     public void replace(@NotNull P4ChangeListId oldChangeList, @NotNull P4ChangeListId newChangeList) {
-        if (! oldChangeList.getClientServerId().equals(newChangeList.getClientServerId())) {
+        if (! oldChangeList.getClientServerRef().equals(newChangeList.getClientServerRef())) {
             throw new IllegalArgumentException("client/server must match: was " +
-                oldChangeList.getClientServerId() + ", now " + newChangeList.getClientServerId());
+                oldChangeList.getClientServerRef() + ", now " + newChangeList.getClientServerRef());
         }
         if (oldChangeList.getChangeListId() == newChangeList.getChangeListId()) {
             return;
@@ -322,11 +319,11 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
             final String idea = state.perforceToIdea.remove(oldChangeList);
             if (idea != null) {
                 state.perforceToIdea.put(newChangeList, idea);
-                final Map<ClientServerId, P4ChangeListId> changes = state.ideaToPerforce.get(idea);
+                final Map<ClientServerRef, P4ChangeListId> changes = state.ideaToPerforce.get(idea);
                 // A simple put should remove the old one, because the client server id are
                 // the same, but this is just to be sure.
-                changes.remove(oldChangeList.getClientServerId());
-                changes.put(newChangeList.getClientServerId(), newChangeList);
+                changes.remove(oldChangeList.getClientServerRef());
+                changes.put(newChangeList.getClientServerRef(), newChangeList);
             }
         }
     }
@@ -350,7 +347,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
         // return that mapping first.
 
         synchronized (sync) {
-            Map<ClientServerId, P4ChangeListId> ret = state.ideaToPerforce.get(idea.getId());
+            Map<ClientServerRef, P4ChangeListId> ret = state.ideaToPerforce.get(idea.getId());
             if (ret == null) {
                 if (isDefaultChangelist(idea)) {
                     return new P4ChangeListIdImpl(server.getClientServerId(), P4ChangeListId.P4_DEFAULT);
@@ -368,7 +365,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
      *
      * @param changes the changes loaded from the server.
      */
-    void cleanServerMapping(@NotNull ClientServerId clientServerId,
+    void cleanServerMapping(@NotNull ClientServerRef clientServerRef,
             @NotNull Collection<P4ChangeListValue> changes) {
         final Set<Integer> newChangeIds = new HashSet<Integer>(changes.size());
         for (P4ChangeListValue change : changes) {
@@ -378,10 +375,10 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
         synchronized (sync) {
             // only need to worry about removing old mappings.
 
-            for (Entry<String, Map<ClientServerId, P4ChangeListId>> entry : state.ideaToPerforce.entrySet()) {
-                final P4ChangeListId p4clForIdea = entry.getValue().get(clientServerId);
+            for (Entry<String, Map<ClientServerRef, P4ChangeListId>> entry : state.ideaToPerforce.entrySet()) {
+                final P4ChangeListId p4clForIdea = entry.getValue().get(clientServerRef);
                 if (p4clForIdea != null && !newChangeIds.contains(p4clForIdea.getChangeListId())) {
-                    entry.getValue().remove(clientServerId);
+                    entry.getValue().remove(clientServerRef);
                     state.perforceToIdea.remove(p4clForIdea);
                 }
             }

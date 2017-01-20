@@ -41,7 +41,7 @@ import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.actions.P4WorkOfflineAction;
 import net.groboclown.idea.p4ic.actions.P4WorkOnlineAction;
-import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.actions.P4ServerWorkOfflineAction;
@@ -51,14 +51,12 @@ import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.events.ServerConnectionStateListener;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.util.List;
 
 /**
  * Widget to display Perforce server connection information.
@@ -330,7 +328,7 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
             BaseConfigUpdatedListener, ServerConnectionStateListener, ConfigInvalidListener {
 
         @Override
-        public void configUpdated(@NotNull final Project project, @NotNull final List<ProjectConfigSource> sources) {
+        public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig config) {
             // FIXME once the projects are linked to the connections,
             // this can be project aware.
             //if (project == P4MultipleConnectionWidget.this.project) {
@@ -339,8 +337,7 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
         }
 
         @Override
-        public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
-                @NotNull final VcsConnectionProblem ex) {
+        public void configurationProblem(@NotNull Project project, @NotNull P4ProjectConfig config, @NotNull VcsConnectionProblem ex) {
             if (project == P4MultipleConnectionWidget.this.project) {
                 update(true);
             }

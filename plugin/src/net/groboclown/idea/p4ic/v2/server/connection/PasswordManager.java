@@ -133,7 +133,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                         ! ApplicationManager.getApplication().isReadAccessAllowed()) {
                     LOG.debug("Fetching password from PasswordSafe");
                     final AuthenticationStore passwordStore = getAuthenticationStore(project);
-                    OneUseString ret = passwordStore.get(config.getServiceName(), config.getUsername());
+                    OneUseString ret = passwordStore.get(config.getServerName().getFullPort(), config.getUsername());
                     if (ret == null) {
                         // Weird situation.
                         LOG.info("Storage for password key " + key + " was null");
@@ -157,7 +157,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                             final AuthenticationStore passwordStore = getAuthenticationStore(project);
                             try {
                                 LOG.debug("Fetching for " + key + " in background thread");
-                                OneUseString pw = passwordStore.get(config.getServiceName(), config.getUsername());
+                                OneUseString pw = passwordStore.get(config.getServerName().getFullPort(), config.getUsername());
                                 if (pw != null) {
                                     setMemoryPassword(config, pw);
                                 } else {
@@ -206,7 +206,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
             @Override
             public void run() {
                 try {
-                    getAuthenticationStore(project).clear(config.getServiceName(), config.getUsername());
+                    getAuthenticationStore(project).clear(config.getServerName().getFullPort(), config.getUsername());
                 } catch (AuthenticationException e) {
                     e.printStackTrace();
                 }
@@ -236,7 +236,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
         String password = UICompat.getInstance().askPassword(project,
                 P4Bundle.message("login.password.title"),
                 // Note: using the nice server name, rather than the whole ugly string (#116)
-                P4Bundle.message("login.password.message", config.getServiceDisplayName(), config.getUsername()),
+                P4Bundle.message("login.password.message", config.getServerName().getDisplayName(), config.getUsername()),
                 REQUESTOR_CLASS, key,
                 true,
                 P4Bundle.message("login.password.error")
@@ -261,7 +261,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
 
     @NotNull
     private static String toKey(@NotNull ServerConfig config) {
-        return config.getServiceName() + ">>>" + config.getUsername();
+        return config.getServerName().getFullPort() + ">>>" + config.getUsername();
     }
 
 

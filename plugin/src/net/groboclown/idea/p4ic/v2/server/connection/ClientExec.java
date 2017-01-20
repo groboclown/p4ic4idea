@@ -20,7 +20,10 @@ import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.ManualP4Config;
+import net.groboclown.idea.p4ic.config.ClientConfig;
+import net.groboclown.idea.p4ic.config.ClientConfigP4ProjectConfig;
+import net.groboclown.idea.p4ic.config.P4ProjectConfig;
+import net.groboclown.idea.p4ic.config.P4ServerName;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.ConnectionHandler;
@@ -53,10 +56,7 @@ class ClientExec {
     private final Object sync = new Object();
 
     private final ServerStatusController connectedController;
-    private final ServerConfig config;
-
-    @Nullable
-    private final String clientName;
+    private final ClientConfig config;
 
     @NotNull
     private final ConnectionHandler connectionHandler;
@@ -66,27 +66,51 @@ class ClientExec {
     @Nullable
     private AuthenticatedServer cachedServer;
 
+    @NotNull
+    public static ClientExec createFor(@NotNull P4ProjectConfig projectConfig, @NotNull ServerConfig server,
+            @NotNull ServerStatusController connectedController, @NotNull String clientName)
+            throws P4InvalidConfigException {
+        ClientConfig clientConfig = ClientConfigDiscoverer.find(projectConfig, server, clientName);
+        if (clientConfig != null) {
+            return new ClientExec(clientConfig, connectedController);
+        }
+        throw new P4InvalidConfigException(clientName);
+    }
 
-    ClientExec(@NotNull ServerConfig config, @NotNull ServerStatusController connectedController,
-            @Nullable String clientName)
+    @NotNull
+    public static ClientExec createFor(@NotNull ClientConfig config, @NotNull ServerStatusController statusController)
+            throws P4InvalidConfigException {
+        return new ClientExec(config, statusController);
+    }
+
+
+    private ClientExec(@NotNull ClientConfig config, @NotNull ServerStatusController connectedController)
             throws P4InvalidConfigException {
         this.connectedController = connectedController;
         this.config = config;
-        this.clientName = clientName;
-        this.connectionHandler = ConnectionHandler.getHandlerFor(config);
-        connectionHandler.validateConfiguration(null, config);
+        this.connectionHandler = ConnectionHandler.getInstance() /*getHandlerFor(config)*/;
+        connectionHandler.validateConfiguration(null, config.getServerConfig());
     }
 
 
     @Nullable
     public String getClientName() {
-        return clientName;
+        return config.getClientName();
     }
 
+    @NotNull
+    public ClientConfig getClientConfig() {
+        return config;
+    }
 
     @NotNull
     public ServerConfig getServerConfig() {
-        return config;
+        return config.getServerConfig();
+    }
+
+    @NotNull
+    public P4ServerName getServerName() {
+        return config.getServerConfig().getServerName();
     }
 
 
@@ -122,12 +146,13 @@ class ClientExec {
                 try {
                     final IClient client = loadClient(p4server);
                     if (client == null) {
-                        throw new ConfigException(P4Bundle.message("error.run-client.invalid-client", clientName));
+                        throw new ConfigException(
+                                P4Bundle.message("error.run-client.invalid-client", getClientName()));
                     }
 
                     // disconnect happens as a separate activity.
                     return runner.run(p4server, client,
-                            new WithClientCount(config.getServiceName(), clientName));
+                            new WithClientCount(getServerName(), getClientName()));
                 } finally {
                     server.checkinServer(p4server);
                 }
@@ -145,7 +170,7 @@ class ClientExec {
                 IOptionsServer p4server = server.checkoutServer();
                 try {
                     return runner.run(p4server,
-                            new WithClientCount(config.getServiceName()));
+                            new WithClientCount(getServerName()));
                 } finally {
                     server.checkinServer(p4server);
                 }
@@ -193,7 +218,7 @@ class ClientExec {
                 cachedServer = null;
             }
             if (cachedServer == null) {
-                cachedServer = connectTo(project, clientName, connectionHandler, config, tempDir);
+                cachedServer = connectTo(project, getClientConfig(), connectionHandler, tempDir);
             }
         }
 
@@ -203,23 +228,22 @@ class ClientExec {
 
     @NotNull
     private static AuthenticatedServer connectTo(@Nullable Project project,
-            @Nullable String clientName, @NotNull ConnectionHandler connectionHandler,
-            @NotNull ServerConfig config, @NotNull File tempDir)
+            @NotNull ClientConfig clientConfig, @NotNull ConnectionHandler connectionHandler,
+            @NotNull File tempDir)
             throws P4JavaException, URISyntaxException {
 
-        return new AuthenticatedServer(project, clientName, connectionHandler,
-                config, tempDir);
+        return new AuthenticatedServer(project, clientConfig, connectionHandler, tempDir);
     }
 
 
     @Nullable
     private IClient loadClient(@NotNull final IOptionsServer server) throws ConnectionException, AccessException, RequestException {
-        if (clientName == null) {
+        if (config.getClientName() == null) {
             return null;
         }
-        IClient client = server.getClient(clientName);
+        IClient client = server.getClient(config.getClientName());
         if (client != null) {
-            LOG.debug("Connected to client " + clientName);
+            LOG.debug("Connected to client " + config.getClientName());
             server.setCurrentClient(client);
         }
         return client;
@@ -280,9 +304,9 @@ class ClientExec {
         @Override
         public P4LoginException loginFailure(@NotNull final P4JavaException e) throws VcsException, CancellationException {
             LOG.info("Incorrect login.", e);
-            P4LoginException ex = new P4LoginException(project, config, e);
+            P4LoginException ex = new P4LoginException(project, config.getServerConfig(), e);
             AlertManager.getInstance().addCriticalError(
-                    new LoginFailedHandler(project, connectedController, config, e), ex);
+                    new LoginFailedHandler(project, connectedController, config.getServerConfig(), e), ex);
             return ex;
         }
 
@@ -290,14 +314,14 @@ class ClientExec {
         public void loginFailure(@NotNull final P4LoginException e) throws VcsException, CancellationException {
             LOG.info("Gave up on trying to login.  Showing critical error.");
             AlertManager.getInstance().addCriticalError(
-                    new LoginFailedHandler(project, connectedController, config, e), e);
+                    new LoginFailedHandler(project, connectedController, config.getServerConfig(), e), e);
         }
 
         @Override
         public void loginRequiresPassword() throws VcsException, CancellationException {
             Exception ex = new Exception("Login requires password");
             AlertManager.getInstance().addCriticalError(
-                    new LoginFailedHandler(project, connectedController, config, ex), ex);
+                    new LoginFailedHandler(project, connectedController, config.getServerConfig(), ex), ex);
         }
 
         @Override
@@ -305,7 +329,7 @@ class ClientExec {
                 throws VcsException, CancellationException {
             LOG.warn("Incorrect handling of lost server authentication token", e);
             AlertManager.getInstance().addCriticalError(
-                    new RetryAuthenticationFailedHandler(project, connectedController, config, e), e);
+                    new RetryAuthenticationFailedHandler(project, connectedController, config.getServerConfig(), e), e);
             throw e;
         }
 
@@ -317,14 +341,15 @@ class ClientExec {
 
         @Override
         public void configInvalid(final P4InvalidConfigException e) throws VcsException, CancellationException {
-            Events.handledConfigInvalid(project, new ManualP4Config(config, clientName), e);
+            Events.handledConfigInvalid(project, new ClientConfigP4ProjectConfig(config), e);
             connectedController.onConfigInvalid();
         }
 
         @NotNull
         @Override
         public P4SSLFingerprintException sslFingerprintError(final ConnectionException e) {
-            P4SSLFingerprintException ex = new P4SSLFingerprintException(config.getServerFingerprint(), e);
+            P4SSLFingerprintException ex = new P4SSLFingerprintException(config.getServerConfig()
+                    .getServerFingerprint(), e);
             AlertManager.getInstance().addCriticalError(
                     new SSLFingerprintProblemHandler(project, connectedController, e),
                     ex);
@@ -359,16 +384,16 @@ class ClientExec {
     // regarding the activity of the plugin with the different servers, including
     // rate of invocations, number of invocations for different calls, and so on.
     private static class AllServerCount {
-        final Map<String, Map<String, Integer>> callCounts = new HashMap<String, Map<String, Integer>>();
+        final Map<P4ServerName, Map<String, Integer>> callCounts = new HashMap<P4ServerName, Map<String, Integer>>();
 
-        synchronized void invoke(@NotNull String operation, @NotNull String serverId, @NotNull String clientId) {
+        synchronized void invoke(@NotNull String operation, @NotNull P4ServerName serverName, @NotNull String clientId) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("server " + serverId + "@" + clientId + " " + operation);
+                LOG.debug("server " + serverName + "@" + clientId + " " + operation);
             }
-            Map<String, Integer> clientCount = callCounts.get(serverId);
+            Map<String, Integer> clientCount = callCounts.get(serverName);
             if (clientCount == null) {
                 clientCount = new HashMap<String, Integer>();
-                callCounts.put(serverId, clientCount);
+                callCounts.put(serverName, clientCount);
             }
             Integer count = clientCount.get(clientId);
             if (count == null) {
@@ -376,29 +401,27 @@ class ClientExec {
             }
             clientCount.put(clientId, count + 1);
             if (count + 1 % 100 == 0) {
-                LOG.info("Invocations against " + serverId + " " + clientId + " = " + (count + 1));
+                LOG.info("Invocations against " + serverName + " " + clientId + " = " + (count + 1));
             }
         }
     }
 
     private static class WithClientCount implements ServerCount {
-        private final String serverId;
+        private final P4ServerName serverName;
         private final String clientId;
 
-        private WithClientCount(final String serverId) {
-            this(serverId, "");
+        private WithClientCount(final P4ServerName serverName) {
+            this(serverName, "");
         }
 
-        private WithClientCount(final String serverId, final String clientId) {
-            this.serverId = serverId;
+        private WithClientCount(final P4ServerName serverName, final String clientId) {
+            this.serverName = serverName;
             this.clientId = clientId;
         }
 
         @Override
         public void invoke(@NotNull final String operation) {
-            SERVER_COUNT.invoke(operation, serverId, clientId);
+            SERVER_COUNT.invoke(operation, serverName, clientId);
         }
     }
-
-
 }

@@ -225,6 +225,11 @@ public class HierarchyP4Config implements P4Config {
         return null;
     }
 
+    @Override
+    public boolean hasClientHostnameSet() {
+        return false;
+    }
+
     //@Override
     //public boolean isPasswordStoredLocally() {
     //    for (P4Config config : parents) {
@@ -247,12 +252,28 @@ public class HierarchyP4Config implements P4Config {
     }
 
     @Override
+    public boolean hasIgnoreFileNameSet() {
+        return false;
+    }
+
+    @Override
     public String getIgnoreFileName() {
         for (P4Config config : parents) {
             if (config.getIgnoreFileName() != null) {
                 return config.getIgnoreFileName();
             }
         }
+        return null;
+    }
+
+    @Override
+    public boolean hasDefaultCharsetSet() {
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public String getDefaultCharset() {
         return null;
     }
 

@@ -15,7 +15,8 @@
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
 import com.intellij.openapi.diagnostic.Logger;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.config.P4ServerName;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,7 +36,7 @@ public class P4ClientState {
 
     private final boolean isServerCaseInsensitive;
 
-    private final ClientServerId clientServerId;
+    private final ClientServerRef clientServerRef;
     private final P4WorkspaceViewState workspace;
     private final Set<P4ChangeListState> changes = new HashSet<P4ChangeListState>();
     private final Set<P4FileSyncState> knownHave = new HashSet<P4FileSyncState>();
@@ -43,11 +44,11 @@ public class P4ClientState {
     private final JobStatusListState jobStatusList;
     private final JobStateList jobs;
 
-    public P4ClientState(boolean isServerCaseInsensitive, @NotNull ClientServerId clientServerId,
+    public P4ClientState(boolean isServerCaseInsensitive, @NotNull ClientServerRef clientServerRef,
             @NotNull P4WorkspaceViewState workspace, @NotNull JobStatusListState jobStatusList,
             @NotNull JobStateList jobs) {
         this.isServerCaseInsensitive = isServerCaseInsensitive;
-        this.clientServerId = clientServerId;
+        this.clientServerRef = clientServerRef;
         this.workspace = workspace;
         this.jobStatusList = jobStatusList;
         this.jobs = jobs;
@@ -69,8 +70,8 @@ public class P4ClientState {
 
 
     @NotNull
-    public ClientServerId getClientServerId() {
-        return clientServerId;
+    public ClientServerRef getClientServerRef() {
+        return clientServerRef;
     }
 
     public boolean isServerCaseInsensitive() {
@@ -130,9 +131,9 @@ public class P4ClientState {
     }
 
     public void serialize(@NotNull Element wrapper, @NotNull EncodeReferences refs) {
-        wrapper.setAttribute("serverConnection", clientServerId.getServerConfigId());
-        if (clientServerId.getClientId() != null) {
-            wrapper.setAttribute("clientName", clientServerId.getClientId());
+        wrapper.setAttribute("serverConnection", clientServerRef.getServerName().getFullPort());
+        if (clientServerRef.getClientName() != null) {
+            wrapper.setAttribute("clientName", clientServerRef.getClientName());
         }
         wrapper.setAttribute("isServerCaseInsensitive", Boolean.toString(isServerCaseInsensitive));
 
@@ -171,6 +172,7 @@ public class P4ClientState {
     public static P4ClientState deserialize(@NotNull Element state, @NotNull DecodeReferences refs) {
         boolean isServerCaseInsensitive = Boolean.parseBoolean(getAttribute(state, "isServerCaseInsensitive"));
         String serverConnection = getAttribute(state, "serverConnection");
+        P4ServerName serverName = P4ServerName.forPort(serverConnection);
         String clientName = getAttribute(state, "clientName");
 
         Element workspaceEl = state.getChild("workspace");
@@ -191,8 +193,8 @@ public class P4ClientState {
             jobStatusList = new JobStatusListState();
         }
 
-        ClientServerId clientServerId = ClientServerId.create(serverConnection, clientName);
-        final P4ClientState ret = new P4ClientState(isServerCaseInsensitive, clientServerId,
+        ClientServerRef clientServerRef = ClientServerRef.create(serverName, clientName);
+        final P4ClientState ret = new P4ClientState(isServerCaseInsensitive, clientServerRef,
                 workspace, jobStatusList, refs.getJobStateList());
 
         for (Element el: state.getChildren("ch")) {
@@ -216,7 +218,7 @@ public class P4ClientState {
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Final list of updated files for " +
-                    ret.clientServerId + ": " + ret.updatedFiles);
+                    ret.clientServerRef + ": " + ret.updatedFiles);
         }
         return ret;
     }

@@ -390,7 +390,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
         for (P4ChangeListValue change : allChanges) {
             for (P4ChangeListId changeId: changes) {
                 if (change.getChangeListId() == changeId.getChangeListId() &&
-                        change.getClientServerId().equals(changeId.getClientServerId())) {
+                        change.getClientServerRef().equals(changeId.getClientServerRef())) {
                     for (P4JobState job: change.getJobStates()) {
                         ret.add(new P4ChangeListJob(change, job));
                     }
@@ -542,7 +542,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 @NotNull final AlertManager alerts) {
             ExecutionStatus ret = ExecutionStatus.NO_OP;
             final P4ChangeListMapping changeListMapping = P4ChangeListMapping.getInstance(exec.getProject());
-            final ClientServerId clientServerId = ClientServerId.create(exec.getServerConfig(), exec.getClientName());
+            final ClientServerRef clientServerRef = ClientServerRef.create(exec.getServerConfig(), exec.getClientName());
             Map<Integer, P4ChangeListValue> changeListMap = new HashMap<Integer, P4ChangeListValue>();
             for (P4ChangeListValue value: clientCacheManager.getCachedOpenedChanges()) {
                 changeListMap.put(value.getChangeListId(), value);
@@ -572,8 +572,8 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     try {
                         final IChangelist changelist = exec.createChangeList(description);
                         realChangeListId = changelist.getId();
-                        P4ChangeListId oldCl = new P4ChangeListIdImpl(clientServerId, changelistId);
-                        P4ChangeListId newCl = new P4ChangeListIdImpl(clientServerId, realChangeListId);
+                        P4ChangeListId oldCl = new P4ChangeListIdImpl(clientServerRef, changelistId);
+                        P4ChangeListId newCl = new P4ChangeListIdImpl(clientServerRef, realChangeListId);
                         changeListMapping.replace(oldCl, newCl);
                         markSuccess(update);
                     } catch (VcsException e) {

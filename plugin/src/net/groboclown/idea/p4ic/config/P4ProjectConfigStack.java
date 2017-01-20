@@ -14,15 +14,12 @@
 package net.groboclown.idea.p4ic.config;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.config.part.*;
-import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.util.*;
 
 public class P4ProjectConfigStack implements P4ProjectConfig {
@@ -42,7 +39,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
     @NotNull
     private Set<ConfigProblem> problems = Collections.emptySet();
 
-    P4ProjectConfigStack(@NotNull Project project, @NotNull  List<ConfigPart> userParts) {
+    public P4ProjectConfigStack(@NotNull Project project, @NotNull List<ConfigPart> userParts) {
         this.project = project;
         MutableCompositePart newParts = new MutableCompositePart();
         newParts.addConfigPart(new DefaultDataPart());
@@ -59,8 +56,18 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
 
     @NotNull
     @Override
-    public Iterable<ClientConfig> getClientConfigs() {
+    public Collection<ClientConfig> getClientConfigs() {
         return new HashSet<ClientConfig>(configs.values());
+    }
+
+    @NotNull
+    @Override
+    public Collection<ServerConfig> getServerConfigs() {
+        Set<ServerConfig> servers = new HashSet<ServerConfig>();
+        for (ClientConfig clientConfig : configs.values()) {
+            servers.add(clientConfig.getServerConfig());
+        }
+        return servers;
     }
 
     @Nullable
@@ -146,7 +153,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         }
     }
 
-    private static Map<VirtualFile, ClientConfig> convertToClients(
+    private Map<VirtualFile, ClientConfig> convertToClients(
             @NotNull VirtualFile projectRoot, @NotNull Map<VirtualFile, List<DataPart>> parts,
             @NotNull Set<ConfigProblem> configProblems) {
         // For each part file, climb up our tree and add its parent as a lower priority
@@ -182,7 +189,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
                 }
                 ret.put(
                     entry.getKey(),
-                    ClientConfig.createFrom(serverConfig, part)
+                    ClientConfig.createFrom(project, serverConfig, part)
                 );
             } else {
                 configProblems.addAll(partProblems);

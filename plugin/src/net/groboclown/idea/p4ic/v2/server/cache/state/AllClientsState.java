@@ -21,20 +21,18 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.util.messages.MessageBusConnection;
-import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
@@ -56,8 +54,8 @@ import java.util.concurrent.Callable;
 public class AllClientsState implements ApplicationComponent, PersistentStateComponent<Element> {
     private static final Logger LOG = Logger.getInstance(AllClientsState.class);
 
-    private final Map<ClientServerId, ClientLocalServerState> clientStates =
-            new HashMap<ClientServerId, ClientLocalServerState>();
+    private final Map<ClientServerRef, ClientLocalServerState> clientStates =
+            new HashMap<ClientServerRef, ClientLocalServerState>();
     private MessageBusConnection messageBus;
 
     @NotNull
@@ -67,21 +65,21 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
 
 
     @Nullable
-    public ClientLocalServerState getCachedStateForClient(@NotNull ClientServerId clientServerId) {
+    public ClientLocalServerState getCachedStateForClient(@NotNull ClientServerRef clientServerRef) {
         synchronized (clientStates) {
-            return clientStates.get(clientServerId);
+            return clientStates.get(clientServerRef);
         }
     }
 
 
     @NotNull
-    public ClientLocalServerState getStateForClient(@NotNull ClientServerId clientServerId,
+    public ClientLocalServerState getStateForClient(@NotNull ClientServerRef clientServerRef,
             Callable<Boolean> isServerCaseInsensitiveCallable) throws P4InvalidClientException {
-        if (clientServerId.getClientId() == null) {
-            throw new P4InvalidClientException(clientServerId);
+        if (clientServerRef.getClientName() == null) {
+            throw new P4InvalidClientException(clientServerRef);
         }
         synchronized (clientStates) {
-            ClientLocalServerState ret = clientStates.get(clientServerId);
+            ClientLocalServerState ret = clientStates.get(clientServerRef);
             if (ret == null) {
                 Boolean isServerCaseInsensitive = null;
                 try {
@@ -93,19 +91,21 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
                     isServerCaseInsensitive = SystemInfo.isWindows;
                 }
                 ret = new ClientLocalServerState(
-                        new P4ClientState(isServerCaseInsensitive, clientServerId, new P4WorkspaceViewState(clientServerId.getClientId()),
+                        new P4ClientState(isServerCaseInsensitive,
+                                clientServerRef, new P4WorkspaceViewState(clientServerRef.getClientName()),
                                 new JobStatusListState(), new JobStateList()),
-                        new P4ClientState(isServerCaseInsensitive, clientServerId, new P4WorkspaceViewState(clientServerId.getClientId()),
+                        new P4ClientState(isServerCaseInsensitive,
+                                clientServerRef, new P4WorkspaceViewState(clientServerRef.getClientName()),
                                 new JobStatusListState(), new JobStateList()),
                         new ArrayList<PendingUpdateState>());
-                clientStates.put(clientServerId, ret);
+                clientStates.put(clientServerRef, ret);
             }
             return ret;
         }
     }
 
-    public void removeClientState(@NotNull ClientServerId client) {
-        if (client.getClientId() == null) {
+    public void removeClientState(@NotNull ClientServerRef client) {
+        if (client.getClientName() == null) {
             // ignore
             return;
         }
@@ -131,10 +131,10 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
         synchronized (clientStates) {
             Element ret = new Element("all-clients-state");
             EncodeReferences refs = new EncodeReferences();
-            for (Entry<ClientServerId, ClientLocalServerState> entry : clientStates.entrySet()) {
+            for (Entry<ClientServerRef, ClientLocalServerState> entry : clientStates.entrySet()) {
                 Element child = new Element("client-state");
                 ret.addContent(child);
-                entry.getKey().serialize(child);
+                entry.getKey().marshal(child);
                 entry.getValue().serialize(child, refs);
             }
             refs.serialize(ret);
@@ -148,7 +148,7 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
             clientStates.clear();
             DecodeReferences refs = DecodeReferences.deserialize(state);
             for (Element child : state.getChildren("client-state")) {
-                ClientServerId id = ClientServerId.deserialize(child);
+                ClientServerRef id = ClientServerRef.deserialize(child);
                 if (id != null) {
                     ClientLocalServerState localServerState = ClientLocalServerState.deserialize(child, refs);
                     if (localServerState != null) {
@@ -166,8 +166,7 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
         // TODO are these listeners necessary?
         Events.registerAppBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
             @Override
-            public void configUpdated(@NotNull final Project project,
-                    @NotNull final List<ProjectConfigSource> sources) {
+            public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig config) {
                 // FIXME implement when project <-> client relationship is stored
                 // NOTE be project aware
                 // Currently, this is not possible to implement correctly.
@@ -178,8 +177,8 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
         });
         Events.registerAppConfigInvalid(messageBus, new ConfigInvalidListener() {
             @Override
-            public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
-                    @NotNull final VcsConnectionProblem ex) {
+            public void configurationProblem(@NotNull Project project, @NotNull P4ProjectConfig config,
+                    @NotNull VcsConnectionProblem ex) {
                 // FIXME implement when project <-> client relationship is stored
                 // NOTE be project aware
                 // Currently, this is not possible to implement correctly.

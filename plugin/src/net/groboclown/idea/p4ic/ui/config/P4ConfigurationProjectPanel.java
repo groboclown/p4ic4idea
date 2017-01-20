@@ -17,7 +17,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
-import net.groboclown.idea.p4ic.config.P4ConfigProject;
+import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
@@ -35,7 +35,7 @@ public class P4ConfigurationProjectPanel {
         this.project = project;
     }
 
-    public synchronized boolean isModified(@NotNull ManualP4Config myConfig, @NotNull UserProjectPreferences preferences) {
+    public synchronized boolean isModified(@NotNull P4ProjectConfigComponent myConfig, @NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
             return false;
         }
@@ -43,7 +43,8 @@ public class P4ConfigurationProjectPanel {
         return myMainPanel.isModified(myConfig, preferences);
     }
 
-    public synchronized void saveSettings(@NotNull P4ConfigProject config, @NotNull UserProjectPreferences preferences) {
+    public synchronized void saveSettings(@NotNull P4ProjectConfigComponent config, @NotNull UserProjectPreferences preferences) {
+        /*
         if (!isInitialized) {
             // nothing to do
             return;
@@ -66,10 +67,10 @@ public class P4ConfigurationProjectPanel {
                     P4Bundle.message("error.config.load-sources"),
                     e, new FilePath[0]);
         }
-
+        */
     }
 
-    public synchronized void loadSettings(@NotNull ManualP4Config config, @NotNull UserProjectPreferences preferences) {
+    public synchronized void loadSettings(@NotNull P4ProjectConfigComponent config, @NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
             getPanel(config, preferences);
             return;
@@ -78,7 +79,7 @@ public class P4ConfigurationProjectPanel {
         myMainPanel.loadSettingsIntoGUI(config, preferences);
     }
 
-    public synchronized JPanel getPanel(@NotNull ManualP4Config config, @NotNull UserProjectPreferences preferences) {
+    public synchronized JPanel getPanel(@NotNull P4ProjectConfigComponent config, @NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
             myMainPanel = new P4SettingsPanel();
             myMainPanel.initialize(project);

@@ -49,7 +49,7 @@ public class DecodeReferences {
     }
 
     static DecodeReferences deserialize(@NotNull Element parent) {
-        // NOTE: order is very important here.  It is the opposite of the serialize
+        // NOTE: order is very important here.  It is the opposite of the marshal
         DecodeReferences ret = new DecodeReferences();
 
         for (Element el : parent.getChildren("m")) {

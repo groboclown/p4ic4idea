@@ -17,7 +17,7 @@ package net.groboclown.idea.p4ic.v2.server.cache.local;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
-import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,8 +36,8 @@ public class IgnoreFiles {
     private final String ignoreFileName;
 
 
-    public IgnoreFiles(@NotNull final ServerConfig config) {
-        this.ignoreFileName = config.getIgnoreFileName();
+    public IgnoreFiles(@NotNull final ClientConfig clientConfig) {
+        this.ignoreFileName = clientConfig.getIgnoreFileName();
     }
 
     public String getIgnoreFileName() {

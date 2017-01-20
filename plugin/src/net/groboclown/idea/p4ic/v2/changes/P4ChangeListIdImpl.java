@@ -16,20 +16,27 @@ package net.groboclown.idea.p4ic.v2.changes;
 
 import com.intellij.openapi.util.Comparing;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
+import net.groboclown.idea.p4ic.config.P4ServerName;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 
 public final class P4ChangeListIdImpl implements P4ChangeListId {
     private final int clid;
 
     @NotNull
-    private final ClientServerId id;
+    private final ClientServerRef id;
 
-    public P4ChangeListIdImpl(@NotNull ClientServerId clientServerId, int clid) {
-        this.id = clientServerId;
-        assert clientServerId.getClientId() != null;
+    @NotNull
+    private final String clientId;
+
+    public P4ChangeListIdImpl(@NotNull ClientServerRef clientServerRef, int clid) {
+        if (clientServerRef.getClientName() == null) {
+            throw new NullPointerException("client id null");
+        }
+        this.id = clientServerRef;
         this.clid = clid;
+        this.clientId = clientServerRef.getClientName();
         assert clid >= P4ChangeListId.P4_DEFAULT || clid <= P4ChangeListId.P4_LOCAL;
     }
 
@@ -40,19 +47,19 @@ public final class P4ChangeListIdImpl implements P4ChangeListId {
 
     @NotNull
     @Override
-    public String getServerConfigId() {
-        return id.getServerConfigId();
+    public P4ServerName getServerName() {
+        return id.getServerName();
     }
 
     @NotNull
     @Override
     public String getClientName() {
-        return id.getClientId();
+        return clientId;
     }
 
     @NotNull
     @Override
-    public ClientServerId getClientServerId() {
+    public ClientServerRef getClientServerRef() {
         return id;
     }
 
@@ -98,6 +105,6 @@ public final class P4ChangeListIdImpl implements P4ChangeListId {
 
     @Override
     public String toString() {
-        return getClientServerId() + "@" + getChangeListId();
+        return getClientServerRef() + "@" + getChangeListId();
     }
 }

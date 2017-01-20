@@ -38,7 +38,7 @@ public class RootDiscoveryUtil {
      * the client roots.  It returns -1 if there is no match.
      */
     public static int getFilePathMatchDepth(@NotNull FilePath file,
-            @NotNull final List<VirtualFile> projectSourceDirs,
+            @NotNull final Collection<VirtualFile> projectSourceDirs,
             @NotNull final List<VirtualFile> projectClientRoots) {
         final List<File> inputParts = getPathParts(file);
 
@@ -97,7 +97,7 @@ public class RootDiscoveryUtil {
      * split by parent directories.
      */
     @NotNull
-    public static List<List<File>> getRoots(@NotNull final List<VirtualFile> projectSourceDirs,
+    public static List<List<File>> getRoots(@NotNull final Collection<VirtualFile> projectSourceDirs,
             @NotNull final List<VirtualFile> projectClientRoots) {
         // use the ProjectConfigSource as the lowest level these can be under.
         final Set<List<File>> ret = new HashSet<List<File>>();

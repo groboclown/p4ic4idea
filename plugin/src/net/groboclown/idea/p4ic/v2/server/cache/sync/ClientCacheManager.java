@@ -28,7 +28,7 @@ import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server.IntegrateFile;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.local.IgnoreFiles;
 import net.groboclown.idea.p4ic.v2.server.cache.state.*;
@@ -338,7 +338,7 @@ public class ClientCacheManager {
 
 
     @NotNull
-    public ClientServerId getClientServerId() {
+    public ClientServerRef getClientServerId() {
         return state.getClientServerId();
     }
 
@@ -356,14 +356,14 @@ public class ClientCacheManager {
 
         @NotNull
         @Override
-        public ClientServerId getClientServerId() {
+        public ClientServerRef getClientServerId() {
             return state.getClientServerId();
         }
 
         @NotNull
         @Override
         public String getClientName() {
-            String ret = getClientServerId().getClientId();
+            String ret = getClientServerId().getClientName();
             if (ret == null) {
                 ret = "";
             }

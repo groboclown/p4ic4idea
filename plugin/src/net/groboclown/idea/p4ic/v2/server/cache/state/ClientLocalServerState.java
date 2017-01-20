@@ -15,7 +15,7 @@
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
 import com.intellij.openapi.diagnostic.Logger;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jdom.Element;
 import org.jdom.output.XMLOutputter;
 import org.jetbrains.annotations.NotNull;
@@ -95,8 +95,8 @@ public class ClientLocalServerState {
 
 
     @NotNull
-    public ClientServerId getClientServerId() {
-        return cachedServerState.getClientServerId();
+    public ClientServerRef getClientServerId() {
+        return cachedServerState.getClientServerRef();
     }
 
     @NotNull

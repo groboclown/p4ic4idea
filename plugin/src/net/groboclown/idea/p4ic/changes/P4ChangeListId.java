@@ -15,8 +15,9 @@ package net.groboclown.idea.p4ic.changes;
 
 import com.intellij.openapi.vcs.VcsBundle;
 import com.perforce.p4java.core.IChangelist;
+import net.groboclown.idea.p4ic.config.P4ServerName;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -40,13 +41,13 @@ public interface P4ChangeListId {
     int getChangeListId();
 
     @NotNull
-    String getServerConfigId();
+    P4ServerName getServerName();
 
     @NotNull
     String getClientName();
 
     @NotNull
-    ClientServerId getClientServerId();
+    ClientServerRef getClientServerRef();
 
     boolean isNumberedChangelist();
 

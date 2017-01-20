@@ -42,6 +42,10 @@ public class P4InvalidConfigException extends P4DisconnectedException {
         super(P4Bundle.message("error.config.setup", config));
     }
 
+    public P4InvalidConfigException(@NotNull final ServerConfig config, @NotNull final String clientName) {
+        super(P4Bundle.message("error.config.no-client-name", config, clientName));
+    }
+
     public P4InvalidConfigException(@NotNull final P4Config config) {
         super(P4Bundle.message("error.config.setup", P4ConfigUtil.getProperties(config)));
     }

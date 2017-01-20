@@ -29,7 +29,10 @@ public interface P4ProjectConfig {
     void refresh();
 
     @NotNull
-    Iterable<ClientConfig> getClientConfigs();
+    Collection<ClientConfig> getClientConfigs();
+
+    @NotNull
+    Collection<ServerConfig> getServerConfigs();
 
     @Nullable
     ClientConfig getClientConfigFor(@NotNull FilePath file);

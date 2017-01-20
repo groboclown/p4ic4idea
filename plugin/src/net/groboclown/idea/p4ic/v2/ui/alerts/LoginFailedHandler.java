@@ -55,7 +55,7 @@ public class LoginFailedHandler extends AbstractErrorHandler {
         }
 
         DistinctDialog.performOnDialog(
-                DistinctDialog.key(this, config.getServiceName(), config.getUsername()),
+                DistinctDialog.key(this, config.getServerName(), config.getUsername()),
                 getProject(),
                 P4Bundle.message("configuration.login-problem-ask", getExceptionMessage()),
                 P4Bundle.message("configuration.login-problem.title"),

@@ -22,13 +22,11 @@ import com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs;
 import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
-import net.groboclown.idea.p4ic.config.ManualP4Config;
-import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.config.ClientConfig;
+import net.groboclown.idea.p4ic.config.ClientConfigP4ProjectConfig;
+import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.ServerConfig;
-import net.groboclown.idea.p4ic.server.connection.AuthTicketConnectionHandler;
-import net.groboclown.idea.p4ic.server.connection.ClientPasswordConnectionHandler;
-import net.groboclown.idea.p4ic.server.connection.EnvConnectionHandler;
-import net.groboclown.idea.p4ic.server.connection.TestConnectionHandler;
+import net.groboclown.idea.p4ic.config.part.SimpleDataPart;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.extension.P4PluginVersion;
@@ -39,9 +37,10 @@ import org.jetbrains.annotations.Nullable;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
-public abstract class ConnectionHandler {
+public class ConnectionHandler {
     private static final Logger LOG = Logger.getInstance(ConnectionHandler.class);
 
     public static final String PLUGIN_P4HOST_KEY = "P4HOST";
@@ -49,38 +48,27 @@ public abstract class ConnectionHandler {
 
     private static final String PLUGIN_VERSION = P4PluginVersion.getPluginVersion();
 
+    private static final ConnectionHandler INSTANCE = new ConnectionHandler();
+
 
     @NotNull
-    public static ConnectionHandler getHandlerFor(@NotNull ServerConfig config) {
-        return getHandlerFor(config.getConnectionMethod());
+    public static ConnectionHandler getInstance() {
+        return INSTANCE;
     }
 
-    @NotNull
-    public static ConnectionHandler getHandlerFor(@NotNull P4Config.ConnectionMethod method) {
-        switch (method) {
-            case AUTH_TICKET:
-                return AuthTicketConnectionHandler.INSTANCE;
-            case CLIENT:
-                return ClientPasswordConnectionHandler.INSTANCE;
-            case P4CONFIG:
-            case DEFAULT:
-                return EnvConnectionHandler.INSTANCE;
-            case UNIT_TEST_MULTIPLE:
-            case UNIT_TEST_SINGLE:
-                return TestConnectionHandler.INSTANCE;
-            default:
-                throw new IllegalStateException(
-                        "Unknown connection method: " + method);
+
+    public Properties getConnectionProperties(@NotNull ClientConfig config) {
+        Properties ret = new Properties();
+        for (Map.Entry<String, String> entry : config.toProperties().entrySet()) {
+            ret.setProperty(entry.getKey(), entry.getValue());
         }
+        return ret;
     }
-
-
-    public abstract Properties getConnectionProperties(@NotNull ServerConfig config, @Nullable String clientName);
 
 
     public String createUrl(@NotNull ServerConfig config) {
         // Trim the config port.  See bug #23
-        return config.getProtocol().toString() + "://" + config.getPort().trim();
+        return config.getServerName().getUrl();
     }
 
 
@@ -117,7 +105,7 @@ public abstract class ConnectionHandler {
         }
 
         final IOptionsServer server = ServerFactory.getOptionsServer(serverUriString, props, options);
-        if (config.getProtocol().isSecure() && config.hasServerFingerprint()) {
+        if (config.getServerName().isSecure() && config.hasServerFingerprint()) {
             server.addTrust(config.getServerFingerprint());
         }
         return server;
@@ -130,9 +118,14 @@ public abstract class ConnectionHandler {
      *
      * @param server server connection
      * @param config configuration
-     * @throws P4JavaException
+     * @throws P4JavaException problem with connection
      */
-    public abstract void defaultAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config) throws P4JavaException;
+    public void defaultAuthentication(@Nullable Project project, @NotNull IOptionsServer server,
+            @NotNull ClientConfig config) throws P4JavaException
+    {
+        // FIXME
+        throw new IllegalStateException("Not implemented");
+    }
 
     /**
      * Called when the server challenges us for authentication.
@@ -140,10 +133,13 @@ public abstract class ConnectionHandler {
      * @param server server connection
      * @param config configuration
      * @return false if authentication could not be done, or true if it was attempted.
-     * @throws P4JavaException
+     * @throws P4JavaException problem with connection
      */
-    public abstract boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server,
-            @NotNull ServerConfig config, @NotNull AlertManager alerts) throws P4JavaException;
+    public boolean forcedAuthentication(@Nullable Project project, @NotNull IOptionsServer server,
+            @NotNull ServerConfig config, @NotNull AlertManager alerts) throws P4JavaException {
+        // FIXME
+        throw new IllegalStateException("Not implemented");
+    }
 
 
     /**
@@ -151,7 +147,10 @@ public abstract class ConnectionHandler {
      * solid valid config.
      */
     @NotNull
-    public abstract List<ConfigurationProblem> getConfigProblems(@NotNull ServerConfig config);
+    public List<ConfigurationProblem> getConfigProblems(@NotNull ServerConfig config) {
+        // FIXME
+        throw new IllegalStateException("Not implemented");
+    }
 
 
     /**
@@ -168,7 +167,8 @@ public abstract class ConnectionHandler {
         if (! problems.isEmpty()) {
             P4InvalidConfigException ex = new P4InvalidConfigException(config, problems);
             if (project != null) {
-                ManualP4Config badConfig = new ManualP4Config(config, null);
+                P4ProjectConfig badConfig = new ClientConfigP4ProjectConfig(
+                        ClientConfig.createFrom(project, config, new SimpleDataPart(project, null)));
                 Events.configInvalid(project, badConfig, ex);
             }
             throw ex;
@@ -176,7 +176,7 @@ public abstract class ConnectionHandler {
     }
 
 
-    protected Properties initializeConnectionProperties(@NotNull ServerConfig config) {
+    protected Properties initializeConnectionProperties(@NotNull ClientConfig config) {
         Properties ret = new Properties();
         ret.setProperty(PropertyDefs.PROG_NAME_KEY, "intellij-perforce-community-plugin-connection");
         // Find the version of our application, as it registered itself.
@@ -228,12 +228,12 @@ public abstract class ConnectionHandler {
         //ret.setProperty(PropertyDefs.ENABLE_TRACKING, "0");
         //ret.setProperty(PropertyDefs.NON_CHECKED_SYNC, "0");
 
-        if (config.hasTrustTicket() && config.getTrustTicket() != null) {
-            ret.setProperty(PropertyDefs.TRUST_PATH_KEY, config.getTrustTicket().getAbsolutePath());
+        if (config.getServerConfig().hasTrustTicket() && config.getServerConfig().getTrustTicket() != null) {
+            ret.setProperty(PropertyDefs.TRUST_PATH_KEY, config.getServerConfig().getTrustTicket().getAbsolutePath());
         }
 
-        if (config.getClientHostname() != null) {
-            ret.setProperty(PLUGIN_P4HOST_KEY, config.getClientHostname());
+        if (config.getClientHostName() != null) {
+            ret.setProperty(PLUGIN_P4HOST_KEY, config.getClientHostName());
         }
 
         return ret;

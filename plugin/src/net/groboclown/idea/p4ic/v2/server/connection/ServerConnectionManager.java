@@ -21,7 +21,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.P4Config;
+import net.groboclown.idea.p4ic.config.P4ProjectConfig;
+import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
@@ -31,7 +32,7 @@ import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.events.ServerConnectionStateListener;
 import net.groboclown.idea.p4ic.v2.server.cache.CentralCacheManager;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerId;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.cache.state.*;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.connection.Synchronizer.ServerSynchronizer;
@@ -41,9 +42,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -78,8 +77,7 @@ public class ServerConnectionManager implements ApplicationComponent {
     public void initComponent() {
         Events.registerServerConnectionAppBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
             @Override
-            public void configUpdated(@NotNull final Project project,
-                    @NotNull final List<ProjectConfigSource> sources) {
+            public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig config) {
                 // FIXME update ONLY for the project.
                 // This means we need a mapping between projects and sources.
                 invalidateAllConfigs();
@@ -87,8 +85,8 @@ public class ServerConnectionManager implements ApplicationComponent {
         });
         Events.registerServerConnectionAppConfigInvalid(messageBus, new ConfigInvalidListener() {
             @Override
-            public void configurationProblem(@NotNull final Project project, @NotNull final P4Config config,
-                    @NotNull final VcsConnectionProblem ex) {
+            public void configurationProblem(@NotNull Project project, @NotNull P4ProjectConfig config,
+                @NotNull VcsConnectionProblem ex) {
                 // because this is selective on a exec, we can safely ignore the project.
                 invalidateConfig(config);
             }
@@ -130,13 +128,13 @@ public class ServerConnectionManager implements ApplicationComponent {
     /**
      *
      *
-     * @param clientServerId client/server ID
+     * @param clientServerRef client/server ID
      * @param config configuration for the server.
      * @return connection
      */
     @NotNull
     public ServerConnection getConnectionFor(@NotNull Project project,
-            @NotNull ClientServerId clientServerId, @NotNull ServerConfig config,
+            @NotNull ClientServerRef clientServerRef, @NotNull ServerConfig config,
             boolean requiresClient)
             throws P4InvalidClientException {
         serverCacheLock.lock();
@@ -146,7 +144,7 @@ public class ServerConnectionManager implements ApplicationComponent {
                 status = new ServerConfigStatus(config, alerts.createServerSynchronizer());
                 serverCache.put(config, status);
             }
-            return status.getConnectionFor(project, clientServerId, alerts, cacheManager,
+            return status.getConnectionFor(project, clientServerRef, alerts, cacheManager,
                     requiresClient);
         } finally {
             serverCacheLock.unlock();
@@ -154,27 +152,17 @@ public class ServerConnectionManager implements ApplicationComponent {
     }
 
 
-    void flushCache(@NotNull ClientServerId clientServerId, boolean includeLocal, boolean force) {
-        cacheManager.flushState(clientServerId, includeLocal, force);
+    void flushCache(@NotNull ClientServerRef clientServerRef, boolean includeLocal, boolean force) {
+        cacheManager.flushState(clientServerRef, includeLocal, force);
     }
 
 
-    private void invalidateConfig(@NotNull P4Config client) {
+    private void invalidateConfig(@NotNull P4ProjectConfig client) {
         serverCacheLock.lock();
         try {
-            List<ServerConfig> removedConfigs = new ArrayList<ServerConfig>();
-            for (Entry<ServerConfig, ServerConfigStatus> entry: serverCache.entrySet()) {
-                final ServerConfig config = entry.getKey();
-                if (config.isSameConnectionAs(client)) {
-                    if (entry.getValue().removeClient(client.getClientname())) {
-                        removedConfigs.add(config);
-                    }
-                }
-            }
-            for (ServerConfig removedConfig: removedConfigs) {
-                serverCache.get(removedConfig).dispose();
-                serverCache.remove(removedConfig);
-            }
+            // Just remove all the configs.
+            // TODO does this need to be refined?
+            serverCache.clear();
         } finally {
             serverCacheLock.unlock();
         }
@@ -255,11 +243,6 @@ public class ServerConnectionManager implements ApplicationComponent {
         }
 
         @Override
-        public boolean isAutoOffline() {
-            return config.isAutoOffline();
-        }
-
-        @Override
         public boolean isValid() {
             return valid && ! disposed;
         }
@@ -281,7 +264,7 @@ public class ServerConnectionManager implements ApplicationComponent {
         @NotNull
         @Override
         public String getServerDescription() {
-            return config.getServiceName();
+            return config.getServerName().getDisplayName();
         }
 
         public boolean removeClient(@Nullable final String clientName) {
@@ -328,31 +311,34 @@ public class ServerConnectionManager implements ApplicationComponent {
 
         synchronized ServerConnection getConnectionFor(
                 @NotNull final Project project,
-                @NotNull final ClientServerId clientServer,
+                @NotNull final ClientServerRef clientServer,
                 @NotNull AlertManager alerts, @NotNull CentralCacheManager cacheManager,
                 boolean requiresClient)
                 throws P4InvalidClientException {
-            ServerConnection conn = clientNames.get(clientServer.getClientId());
+            ServerConnection conn = clientNames.get(clientServer.getClientName());
             if (conn == null) {
                 final ClientExec exec;
                 try {
-                    exec = new ClientExec(config, this, clientServer.getClientId());
+                    exec = ClientExec.createFor(
+                            P4ProjectConfigComponent.getInstance(project).getP4ProjectConfig(),
+                            config, this,
+                            clientServer.getClientName());
                 } catch (P4InvalidConfigException e) {
                     LOG.warn(e);
                     throw new P4InvalidClientException(clientServer);
                 }
-                if (! requiresClient && clientServer.getClientId() == null) {
-                    conn = new ServerConnection(alerts, clientServer,
+                if (! requiresClient && clientServer.getClientName() == null) {
+                    conn = new ServerConnection(alerts,
                             new ClientCacheManager(config, createEmptyClientLocalState(clientServer)),
                             config, this, synchronizer.createConnectionSynchronizer(), exec);
                     // Do not add the connection to the client names
                     // store, because we don't have a client.
                 } else {
-                    conn = new ServerConnection(alerts, clientServer,
+                    conn = new ServerConnection(alerts,
                             cacheManager.getClientCacheManager(
                                     clientServer, config, new CaseInsensitiveCheck(project, exec)),
                             config, this, synchronizer.createConnectionSynchronizer(), exec);
-                    clientNames.put(clientServer.getClientId(), conn);
+                    clientNames.put(clientServer.getClientName(), conn);
                 }
             }
             return conn;
@@ -380,7 +366,8 @@ public class ServerConnectionManager implements ApplicationComponent {
             } else if (project != null) {
                 P4DisconnectedException ex = new P4DisconnectedException(
                         // Note: using the nice server name, rather than the whole ugly string (#116)
-                        P4Bundle.message("disconnected.server-invalid", config.getServiceDisplayName())
+                        P4Bundle.message("disconnected.server-invalid",
+                                config.getServerName().getDisplayName())
                 );
                 AlertManager.getInstance().addCriticalError(
                         new DisconnectedHandler(project, this, ex), ex);
@@ -425,7 +412,7 @@ public class ServerConnectionManager implements ApplicationComponent {
 
 
     private static ClientLocalServerState createEmptyClientLocalState(
-            @NotNull final ClientServerId clientServer) {
+            @NotNull final ClientServerRef clientServer) {
         // don't care what the case sensitivity is for this particular imitation
         // state.
         return new ClientLocalServerState(

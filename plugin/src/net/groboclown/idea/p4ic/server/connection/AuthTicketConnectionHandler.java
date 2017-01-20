@@ -34,6 +34,7 @@ public class AuthTicketConnectionHandler extends ClientPasswordConnectionHandler
         // Utility class
     }
 
+    /*
     @Override
     public Properties getConnectionProperties(@NotNull ServerConfig config, @Nullable String clientName) {
         Properties ret = super.getConnectionProperties(config, clientName);
@@ -48,6 +49,7 @@ public class AuthTicketConnectionHandler extends ClientPasswordConnectionHandler
     public void defaultAuthentication(@Nullable Project project, @NotNull IOptionsServer server, @NotNull ServerConfig config) throws P4JavaException {
         // no need to login - assume the ticket is valid.
     }
+    */
 
     @NotNull
     @Override

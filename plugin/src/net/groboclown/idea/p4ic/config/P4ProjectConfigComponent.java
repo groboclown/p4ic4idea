@@ -14,26 +14,31 @@
 package net.groboclown.idea.p4ic.config;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.*;
+import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.ProjectComponent;
+import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.Storage;
+import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsListener;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.config.part.CompositePart;
 import net.groboclown.idea.p4ic.config.part.ConfigPart;
+import net.groboclown.idea.p4ic.config.part.MutableCompositePart;
 import net.groboclown.idea.p4ic.config.part.SimpleDataPart;
+import net.groboclown.idea.p4ic.config.part.Unmarshal;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSource.Builder;
-import net.groboclown.idea.p4ic.v2.server.connection.ProjectConfigSourceLoader;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -53,7 +58,7 @@ import java.util.List;
 )
 public class P4ProjectConfigComponent implements ProjectComponent, PersistentStateComponent<Element> {
     private static final Logger LOG = Logger.getInstance(P4ProjectConfigComponent.class);
-    public static final String STATE_TAG_NAME = "project-config-component";
+    private static final String STATE_TAG_NAME = "project-config-component";
 
     private final Project project;
 
@@ -73,34 +78,24 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
     }
 
 
-    public void announceBaseConfigUpdated()
-            throws P4InvalidConfigException {
+    public void announceBaseConfigUpdated() {
         LOG.debug("Sending announcement that the base config is updated");
-
-        // This is a really rare circumstance, but it can happen.  It seems
-        // to be due to a synchronization issue, so rather than just checking
-        // whether the config sources have been setup right, we need to wrap
-        // it in a synchronized block to ensure all initialization is
-        // finished before checking the config sources state.
-        // Bug #82
+        checkConfigState();
+        final P4ProjectConfig current;
         synchronized (this) {
-            if (configSources == null) {
-                loadProjectConfigSources();
-            }
-            assert configSources != null;
+            current = config;
         }
-
 
         // Must follow the strict ordering
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 BaseConfigUpdatedListener.TOPIC_SERVERCONFIG).
-                configUpdated(project, configSources);
+                configUpdated(project, current);
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 BaseConfigUpdatedListener.TOPIC_P4SERVER).
-                configUpdated(project, configSources);
+                configUpdated(project, current);
         ApplicationManager.getApplication().getMessageBus().syncPublisher(
                 BaseConfigUpdatedListener.TOPIC_NORMAL).
-                configUpdated(project, configSources);
+                configUpdated(project, current);
     }
 
 
@@ -115,16 +110,22 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
 
 
     public synchronized void setUserConfigParts(@NotNull List<ConfigPart> parts) {
-
+        synchronized (this) {
+            state = new ArrayList<ConfigPart>(parts);
+            config = new P4ProjectConfigStack(project, state);
+        }
+        announceBaseConfigUpdated();
     }
 
 
-    public P4ProjectConfig getP4ProjectConfig() {
+    public synchronized P4ProjectConfig getP4ProjectConfig() {
         checkConfigState();
         return config;
     }
 
 
+    // This method uses deprecated classes for backwards compatible value loading.
+    @SuppressWarnings("deprecation")
     private synchronized void checkConfigState() {
         if (state == null) {
             this.state = new ArrayList<ConfigPart>();
@@ -133,7 +134,7 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
             // Attempt to load the state from the previous setting.
             P4ConfigProject origConfig = P4ConfigProject.getInstance(project);
             if (origConfig != null) {
-                ManualP4Config config = origConfig.getBaseConfig()
+                ManualP4Config config = origConfig.getBaseConfig();
                 SimpleDataPart part = new SimpleDataPart(project, null);
                 part.setIgnoreFilename(config.getIgnoreFileName());
                 part.setServerName(config.getProtocol() + "://" + config.getPort());
@@ -155,41 +156,39 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
     public Element getState() {
         checkConfigState();
         Element ret = new Element(STATE_TAG_NAME);
-        if (state != null) {
-            for (ConfigPart configPart : state) {
-                ret.addContent(configPart.marshal());
+        MutableCompositePart all = new MutableCompositePart();
+        synchronized (this) {
+            if (state != null) {
+                for (ConfigPart configPart : state) {
+                    all.addConfigPart(configPart);
+                }
             }
         }
+        ret.addContent(all.marshal());
         return ret;
     }
 
     @Override
-    public void loadState(@NotNull Element state) {
-        if (! STATE_TAG_NAME.equals(state.getName()) || state.getChildren().isEmpty())
-        if (state.isEmpty()) {
-            // Attempt to load the configuration from the old method.
-
+    public void loadState(@NotNull Element stateEl) {
+        if (! STATE_TAG_NAME.equals(stateEl.getName()) || stateEl.getChildren().isEmpty()) {
+            synchronized (this) {
+                state = null;
+                config = null;
+            }
+            return;
         }
 
-        LOG.info("Loading config state");
-        final ManualP4Config original = config;
+        final ConfigPart statePart = Unmarshal.from(project, stateEl.getChildren().get(0));
+        final List<ConfigPart> newState;
+        if (statePart instanceof CompositePart) {
+            newState = ((CompositePart) statePart).getConfigParts();
+        } else {
+            newState = Collections.singletonList(statePart);
+        }
 
-        // save a copy of the config
-        this.config = new ManualP4Config(state);
         synchronized (this) {
-            // Just always change it.
-            // This can happen when the user wants to explicitly
-            // reset the connections.
-
-            //if (!original.equals(state)) {
-                // When loaded, this can cause errors if we actually initialize
-                // the values here, because the file system for the project isn't
-                // initialized yet.  That can lead to the project view being
-                // empty.  IntelliJ 13 shows the massive amount of errors, but
-                // 15 hides it.
-                sourcesInitialized = false;
-                clientsInitialized = false;
-            //}
+            state = newState;
+            config = new P4ProjectConfigStack(project, state);
         }
     }
 
@@ -242,93 +241,4 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
     public String getComponentName() {
         return "P4ConfigProject";
     }
-
-    private void initializeConfigSources() {
-        // This situation can happen if the user is in the middle
-        // of configuring the plugin as the new, active vcs.
-        // if (!P4Vcs.isProjectValid(project)) {
-        // So, instead, we'll only check to ensure that the
-        // project is not disposed.
-        // See bug #111
-
-        if (project.isDisposed()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Ignoring reload for invalid project " + project.getName());
-            }
-            return;
-        }
-
-        boolean announce = false;
-        synchronized (this) {
-            if (!sourcesInitialized) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("reloading project " + project.getName() + " config sources");
-                }
-
-                // Mark as initialized first, so we don't re-enter this function.
-                sourcesInitialized = true;
-
-                try {
-                    sourceConfigEx = null;
-                    configSources = readProjectConfigSources();
-                    // now that the sources are reloaded, we can make the announcement
-                    announce = true;
-                } catch (P4InvalidConfigException e) {
-                    // ignore; already sent notifications
-                    configSources = null;
-                    sourceConfigEx = e;
-                }
-            }
-        }
-        // Perform this logic outside the synchronization block.
-        // However, this can still block many other things because it can
-        // result in a password update request during initialization.
-        if (announce) {
-            try {
-                announceBaseConfigUpdated();
-            } catch (P4InvalidConfigException e) {
-                // ignore; already sent notifications
-                configSources = null;
-                sourceConfigEx = e;
-            }
-        }
-    }
-
-
-    @Deprecated
-    @NotNull
-    private List<ProjectConfigSource> readProjectConfigSources()
-            throws P4InvalidConfigException {
-
-        final Collection<Builder> sourceBuilders;
-        sourceBuilders = ProjectConfigSourceLoader.loadSources(project, getBaseConfig());
-
-        List<ProjectConfigSource> ret = new ArrayList<ProjectConfigSource>(sourceBuilders.size());
-        List<P4Config> invalidConfigs = new ArrayList<P4Config>();
-        for (Builder sourceBuilder : sourceBuilders) {
-            if (sourceBuilder.isInvalid()) {
-                LOG.warn("Invalid config: " +
-                        P4ConfigUtil.getProperties(sourceBuilder.getBaseConfig()), sourceBuilder.getError());
-                invalidConfigs.add(sourceBuilder.getBaseConfig());
-            } else {
-                final ProjectConfigSource source = sourceBuilder.create();
-                LOG.info("Created config source " + source + " from " +
-                        P4ConfigUtil.getProperties(sourceBuilder.getBaseConfig()) +
-                        "; config dirs = " + source.getProjectSourceDirs());
-                ret.add(source);
-            }
-        }
-        if (!invalidConfigs.isEmpty()) {
-            P4InvalidConfigException ex = new P4InvalidConfigException(invalidConfigs);
-            for (P4Config invalidConfig : invalidConfigs) {
-                Events.configInvalid(project, invalidConfig, new P4InvalidConfigException(invalidConfig));
-            }
-            throw ex;
-        }
-
-        // don't call the reloaded event until we store the value.
-
-        return ret;
-    }
-
 }

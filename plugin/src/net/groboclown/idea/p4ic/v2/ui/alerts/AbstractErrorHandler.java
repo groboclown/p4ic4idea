@@ -19,6 +19,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.compat.UICompat;
+import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.connection.CriticalErrorHandler;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
@@ -103,7 +104,7 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
 
 
     protected boolean isAutoOffline() {
-        return serverConnectedController.isAutoOffline();
+        return UserProjectPreferences.isAutoOffline(project);
     }
 
 

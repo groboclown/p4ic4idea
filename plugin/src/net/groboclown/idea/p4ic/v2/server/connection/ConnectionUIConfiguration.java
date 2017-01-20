@@ -17,6 +17,7 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
+import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.server.exceptions.P4UnknownLoginException;
@@ -45,7 +46,7 @@ public class ConnectionUIConfiguration {
                 // Bug #115: getting the clients should not require that a
                 // client is present.
                 connectionManager.getConnectionFor(project,
-                        source.getClientServerId(),
+                        source.getClientServerRef(),
                         source.getServerConfig(),
                         false);
         ClientExec exec = connection.oneOffClientExec();
@@ -79,20 +80,20 @@ public class ConnectionUIConfiguration {
     }
 
     @Nullable
-    public static Map<ProjectConfigSource, ClientResult> getClients(
-            @Nullable Collection<ProjectConfigSource> sources,
+    public static Map<ClientConfig, ClientResult> getClients(
+            @Nullable Collection<ClientConfig> sources,
             @NotNull ServerConnectionManager connectionManager) {
-        final Map<ProjectConfigSource, ClientResult> ret = new HashMap<ProjectConfigSource, ClientResult>();
+        final Map<ClientConfig, ClientResult> ret = new HashMap<ClientConfig, ClientResult>();
         if (sources == null) {
             return null;
         }
-        for (ProjectConfigSource source : sources) {
+        for (ClientConfig source : sources) {
             try {
                 // Bug #115: getting the clients should not require that a
                 // client is present.
                 final ServerConnection connection =
                         connectionManager.getConnectionFor(source.getProject(),
-                                source.getClientServerId(),
+                                source.getClientServerRef(),
                                 source.getServerConfig(),
                                 false);
                 final ClientExec exec = connection.oneOffClientExec();

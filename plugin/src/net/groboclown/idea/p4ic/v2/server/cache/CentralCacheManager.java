@@ -21,7 +21,6 @@ import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
-import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
@@ -125,8 +124,7 @@ public class CentralCacheManager {
 
     /**
      *
-     * @param clientServerRef client / server name
-     * @param config server configuration
+     * @param clientConfig server configuration
      * @param isServerCaseInsensitiveCallable if the cached version of the client is not loaded,
      *                                        this will be called to discover whether the
      *                                        Perforce server is case sensitive or not.
@@ -135,25 +133,25 @@ public class CentralCacheManager {
      * @return the cache manager.
      */
     @NotNull
-    public ClientCacheManager getClientCacheManager(@NotNull ClientServerRef clientServerRef, @NotNull ServerConfig config,
+    public ClientCacheManager getClientCacheManager(@NotNull ClientConfig clientConfig,
             @NotNull  Callable<Boolean> isServerCaseInsensitiveCallable) throws P4InvalidClientException {
         if (disposed) {
             // Coding error; no bundled message
             throw new IllegalStateException("disposed");
         }
-        if (clientServerRef.getClientName() == null) {
-            throw new P4InvalidClientException(clientServerRef);
+        if (clientConfig.getClientName() == null) {
+            throw new P4InvalidClientException(clientConfig.getClientServerRef());
         }
         ClientCacheManager cacheManager;
         cacheLock.lock();
         try {
-            cacheManager = clientManagers.get(clientServerRef);
+            cacheManager = clientManagers.get(clientConfig.getClientServerRef());
             if (cacheManager == null) {
                 final ClientLocalServerState state = allClientState.getStateForClient(
-                        clientServerRef,
+                        clientConfig.getClientServerRef(),
                         isServerCaseInsensitiveCallable);
-                cacheManager = new ClientCacheManager(config, state);
-                clientManagers.put(clientServerRef, cacheManager);
+                cacheManager = new ClientCacheManager(clientConfig, state);
+                clientManagers.put(clientConfig.getClientServerRef(), cacheManager);
             }
         } finally {
             cacheLock.unlock();

@@ -22,6 +22,7 @@ import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
+import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
@@ -59,7 +60,7 @@ public class ClientCacheManager {
     // be managed in terms of their association with changelists;
     // creation and other actions on jobs is not supported.
 
-    public ClientCacheManager(@NotNull ServerConfig config, @NotNull ClientLocalServerState state) {
+    public ClientCacheManager(@NotNull ClientConfig config, @NotNull ClientLocalServerState state) {
         this.state = state;
 
         final CacheImpl cache = new CacheImpl();

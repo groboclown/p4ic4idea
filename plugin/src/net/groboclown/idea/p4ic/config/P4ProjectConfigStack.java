@@ -172,27 +172,56 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
             }
         }
 
+        // We now have the complete list of client servers, mapped to
+        // their section in the project tree.  We now need to organize these
+        // into shared ClientConfig objects, while maintaining their
+        // organization in the tree.
+
+        // We need to share the ServerConfig object across clients.
         final Map<String, ServerConfig> serverIdMap = new HashMap<String, ServerConfig>();
 
-        Map<VirtualFile, ClientConfig> ret = new HashMap<VirtualFile, ClientConfig>();
+        // Map each root directory to the setup object.
+        List<ClientServerSetup> cachedSetups = new ArrayList<ClientServerSetup>();
 
         for (Map.Entry<VirtualFile, List<DataPart>> entry : parts.entrySet()) {
             MultipleDataPart part = new MultipleDataPart(entry.getKey(), entry.getValue());
             Collection<ConfigProblem> partProblems = ServerConfig.getProblems(part);
             if (partProblems.isEmpty()) {
+                // Note: for a bit of efficiency, we can maybe have a static function
+                // that constructs the server ID, so that we don't have excess ServerConfig
+                // objects created.  However, the construction of the server ID would require
+                // much of the same logic as the construction of the ServerConfig object.
+                // There's a bit of memory allocation waste, but that's not significant.
                 ServerConfig serverConfig = ServerConfig.createFrom(part);
                 final String serverId = serverConfig.getServerId();
                 if (serverIdMap.containsKey(serverId)) {
+                    // Throws away the just constructed server config object.
                     serverConfig = serverIdMap.get(serverId);
                 } else {
                     serverIdMap.put(serverId, serverConfig);
                 }
-                ret.put(
-                    entry.getKey(),
-                    ClientConfig.createFrom(project, serverConfig, part)
-                );
+
+                // Find the cached client server setup object to add this to, if it exists.
+                boolean found = false;
+                for (ClientServerSetup clientServerSetup : cachedSetups) {
+                    if (clientServerSetup.addIfSame(serverConfig, part, entry.getKey())) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (! found) {
+                    // need to create a new one.
+                    cachedSetups.add(new ClientServerSetup(serverConfig, part, entry.getKey()));
+                }
             } else {
                 configProblems.addAll(partProblems);
+            }
+        }
+
+        Map<VirtualFile, ClientConfig> ret = new HashMap<VirtualFile, ClientConfig>();
+        for (ClientServerSetup cachedSetup : cachedSetups) {
+            for (VirtualFile root : cachedSetup.roots) {
+                ret.put(root, cachedSetup.getClientConfig(project));
             }
         }
 
@@ -232,5 +261,50 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
 
         // cmp is not under base.
         return Integer.MIN_VALUE;
+    }
+
+    /**
+     * Class used as a way-point in the construction of a
+     * ClientConfig.  It has the messy implications of the
+     * limitations inherent in the ClientServerRef object.
+     */
+    private static class ClientServerSetup {
+        private final ServerConfig serverConfig;
+        private final String clientName;
+        private final MultipleDataPart dataPart;
+        private final Set<VirtualFile> roots = new HashSet<VirtualFile>();
+        private ClientConfig clientConfig;
+
+
+        private ClientServerSetup(@NotNull ServerConfig serverConfig, @NotNull MultipleDataPart dataPart,
+                @NotNull VirtualFile path) {
+            this.serverConfig = serverConfig;
+            this.clientName = dataPart.getClientname();
+            this.dataPart = dataPart;
+            this.roots.add(path);
+        }
+
+        ClientConfig getClientConfig(@NotNull Project project) {
+            if (clientConfig == null) {
+                clientConfig = ClientConfig.createFrom(project, serverConfig, dataPart, roots);
+            }
+            return clientConfig;
+        }
+
+        /**
+         *
+         * @return true if the same config.
+         */
+        boolean addIfSame(@NotNull ServerConfig serverConfig, @NotNull MultipleDataPart dataPart,
+                @NotNull VirtualFile path) {
+            if (serverConfig.getServerName().equals(this.serverConfig.getServerName())) {
+                if ((clientName == null && dataPart.getClientname() == null) ||
+                        (clientName != null && clientName.equals(dataPart.getClientname()))) {
+                    roots.add(path);
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

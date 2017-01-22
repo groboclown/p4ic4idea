@@ -1,3 +1,13 @@
+# Refactoring of Connection To Dos:
+
+1. Replace config setup w/ new UI.
+2. Re-investigate all the places where the connection can be marked invalid.
+    Why does this happen?  Does it need to be there?
+3. Add to the status bar widget a "reload" button.  Maybe also to the VCS pop-up menu and app menu.
+4. Debugging, debugging, debugging.
+
+
+
 # All the remaining tasks for the v2 migration:
 
 

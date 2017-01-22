@@ -62,7 +62,7 @@ public class P4Response {
     public static P4Response serverInfo(@NotNull ServerConfig config, boolean caseSensitive, boolean unicode) {
         return new P4Response(values(
                 "userName", config.getUsername(),
-                "serverAddress", config.getPort(),
+                "serverAddress", config.getServerName().getFullPort(),
                 "serverEncryption", "unencrypted", // "encrypted" is the key
 
                 // IMPORTANT

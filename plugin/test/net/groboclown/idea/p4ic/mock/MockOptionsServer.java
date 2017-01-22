@@ -47,8 +47,8 @@ public class MockOptionsServer extends RpcServer {
 
     public void simulateSetup(@NotNull ServerConfig config) throws ConnectionException, ConfigException {
         // TODO actually pull apart the host / port
-        init(config.getPort(), 1, new Properties(), new UsageOptions(new Properties()),
-                config.getProtocol().isSecure());
+        init(config.getServerName().getFullPort(), 1, new Properties(), new UsageOptions(new Properties()),
+                config.getServerName().isSecure());
     }
 
 

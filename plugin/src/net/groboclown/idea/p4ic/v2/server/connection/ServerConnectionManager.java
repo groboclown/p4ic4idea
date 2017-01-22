@@ -21,8 +21,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
-import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
@@ -33,7 +33,12 @@ import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.events.ServerConnectionStateListener;
 import net.groboclown.idea.p4ic.v2.server.cache.CentralCacheManager;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
-import net.groboclown.idea.p4ic.v2.server.cache.state.*;
+import net.groboclown.idea.p4ic.v2.server.cache.state.ClientLocalServerState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.JobStateList;
+import net.groboclown.idea.p4ic.v2.server.cache.state.JobStatusListState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4WorkspaceViewState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.connection.Synchronizer.ServerSynchronizer;
 import net.groboclown.idea.p4ic.v2.ui.alerts.DisconnectedHandler;
@@ -128,23 +133,21 @@ public class ServerConnectionManager implements ApplicationComponent {
     /**
      *
      *
-     * @param clientServerRef client/server ID
-     * @param config configuration for the server.
+     * @param clientConfig configuration for the client and server connection.
      * @return connection
      */
     @NotNull
     public ServerConnection getConnectionFor(@NotNull Project project,
-            @NotNull ClientServerRef clientServerRef, @NotNull ServerConfig config,
-            boolean requiresClient)
+            @NotNull ClientConfig clientConfig, boolean requiresClient)
             throws P4InvalidClientException {
         serverCacheLock.lock();
         try {
-            ServerConfigStatus status = serverCache.get(config);
+            ServerConfigStatus status = serverCache.get(clientConfig.getServerConfig());
             if (status == null) {
-                status = new ServerConfigStatus(config, alerts.createServerSynchronizer());
-                serverCache.put(config, status);
+                status = new ServerConfigStatus(clientConfig.getServerConfig(), alerts.createServerSynchronizer());
+                serverCache.put(clientConfig.getServerConfig(), status);
             }
-            return status.getConnectionFor(project, clientServerRef, alerts, cacheManager,
+            return status.getConnectionFor(project, clientConfig, alerts, cacheManager,
                     requiresClient);
         } finally {
             serverCacheLock.unlock();
@@ -311,34 +314,35 @@ public class ServerConnectionManager implements ApplicationComponent {
 
         synchronized ServerConnection getConnectionFor(
                 @NotNull final Project project,
-                @NotNull final ClientServerRef clientServer,
+                @NotNull final ClientConfig clientConfig,
                 @NotNull AlertManager alerts, @NotNull CentralCacheManager cacheManager,
                 boolean requiresClient)
                 throws P4InvalidClientException {
-            ServerConnection conn = clientNames.get(clientServer.getClientName());
+            if (! clientConfig.getServerConfig().equals(config)) {
+                throw new IllegalArgumentException("did not pass same server config");
+            }
+            ServerConnection conn = clientNames.get(clientConfig.getClientName());
             if (conn == null) {
                 final ClientExec exec;
                 try {
-                    exec = ClientExec.createFor(
-                            P4ProjectConfigComponent.getInstance(project).getP4ProjectConfig(),
-                            config, this,
-                            clientServer.getClientName());
+                    exec = ClientExec.createFor(clientConfig, this);
                 } catch (P4InvalidConfigException e) {
                     LOG.warn(e);
-                    throw new P4InvalidClientException(clientServer);
+                    throw new P4InvalidClientException(clientConfig.getClientServerRef());
                 }
-                if (! requiresClient && clientServer.getClientName() == null) {
+                if (! requiresClient && ! clientConfig.isWorkspaceCapable()) {
                     conn = new ServerConnection(alerts,
-                            new ClientCacheManager(config, createEmptyClientLocalState(clientServer)),
-                            config, this, synchronizer.createConnectionSynchronizer(), exec);
+                            new ClientCacheManager(clientConfig,
+                                    createEmptyClientLocalState(clientConfig.getClientServerRef())),
+                            clientConfig, this, synchronizer.createConnectionSynchronizer(), exec);
                     // Do not add the connection to the client names
                     // store, because we don't have a client.
                 } else {
                     conn = new ServerConnection(alerts,
                             cacheManager.getClientCacheManager(
-                                    clientServer, config, new CaseInsensitiveCheck(project, exec)),
-                            config, this, synchronizer.createConnectionSynchronizer(), exec);
-                    clientNames.put(clientServer.getClientName(), conn);
+                                    clientConfig, new CaseInsensitiveCheck(project, exec)),
+                            clientConfig, this, synchronizer.createConnectionSynchronizer(), exec);
+                    clientNames.put(clientConfig.getClientName(), conn);
                 }
             }
             return conn;

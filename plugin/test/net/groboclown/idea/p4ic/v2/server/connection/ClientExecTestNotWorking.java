@@ -21,9 +21,12 @@ import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerAddress.Protocol;
 import net.groboclown.idea.p4ic.ProjectRule;
+import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4Config.ConnectionMethod;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.config.part.SimpleDataPart;
+import net.groboclown.idea.p4ic.mock.MockDataPart;
 import net.groboclown.idea.p4ic.mock.MockOptionsServer;
 import net.groboclown.idea.p4ic.mock.MockServerStatusController;
 import net.groboclown.idea.p4ic.mock.P4Request;
@@ -32,6 +35,7 @@ import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.v2.server.connection.ClientExec.ServerCount;
 import net.groboclown.idea.p4ic.v2.server.connection.ClientExec.WithClient;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
@@ -40,6 +44,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -86,14 +91,15 @@ public class ClientExecTestNotWorking {
     public void setup() throws P4InvalidConfigException, ConnectionException, ConfigException {
         server = new MockOptionsServer("p4java://mock-options-server:1");
         controller = new MockServerStatusController();
-        ManualP4Config p4Config = new ManualP4Config();
+        MockDataPart p4Config = new MockDataPart(FilePathUtil.getFilePath(".").getVirtualFile());
         p4Config.setUsername("test-user");
-        p4Config.setConnectionMethod(ConnectionMethod.UNIT_TEST_SINGLE);
-        p4Config.setPort("mock-options-server:1");
-        p4Config.setProtocol(Protocol.P4JAVA);
-        this.serverConfig = ServerConfig.createNewServerConfig(p4Config);
+        // p4Config.setConnectionMethod(ConnectionMethod.UNIT_TEST_SINGLE);
+        p4Config.setServerName("mock://mock-options-server:1");
+        this.serverConfig = ServerConfig.createFrom(p4Config);
+        ClientConfig clientConfig = ClientConfig.createFrom(null, serverConfig, p4Config,
+                Collections.singleton(p4Config.getRootPath()));
         server.simulateSetup(serverConfig);
-        exec = new ClientExec(serverConfig, controller, "test-client");
+        exec = ClientExec.createFor(clientConfig, controller);
     }
 
     @After

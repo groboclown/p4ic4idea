@@ -15,17 +15,13 @@
 package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
-import net.groboclown.idea.p4ic.server.exceptions.P4UnknownLoginException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -36,48 +32,6 @@ import java.util.Map;
  */
 public class ConnectionUIConfiguration {
     private static final Logger LOG = Logger.getInstance(ConnectionUIConfiguration.class);
-
-    public static void checkConnection(@NotNull ProjectConfigSource source,
-            @NotNull ServerConnectionManager connectionManager)
-            throws IOException, URISyntaxException,
-                VcsException {
-        final Project project = source.getProject();
-        final ServerConnection connection =
-                // Bug #115: getting the clients should not require that a
-                // client is present.
-                connectionManager.getConnectionFor(project,
-                        source.getClientServerRef(),
-                        source.getServerConfig(),
-                        false);
-        ClientExec exec = connection.oneOffClientExec();
-        try {
-            new P4Exec2(source.getProject(), exec).getServerInfo();
-        } finally {
-            exec.dispose();
-        }
-    }
-
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    @NotNull
-    public static Map<ProjectConfigSource, Exception> findConnectionProblems(
-            @NotNull Collection<ProjectConfigSource> sources,
-            @NotNull ServerConnectionManager connectionManager) {
-        final Map<ProjectConfigSource, Exception> ret = new HashMap<ProjectConfigSource, Exception>();
-        for (ProjectConfigSource source : sources) {
-            try {
-                checkConnection(source, connectionManager);
-            } catch (IOException e) {
-                ret.put(source, e);
-            } catch (URISyntaxException e) {
-                ret.put(source, e);
-            } catch (P4UnknownLoginException e) {
-                // FIXME
-            } catch (VcsException e) {
-                ret.put(source, e);
-            }
-        }
-        return ret;
-    }
 
     @Nullable
     public static Map<ClientConfig, ClientResult> getClients(
@@ -93,9 +47,7 @@ public class ConnectionUIConfiguration {
                 // client is present.
                 final ServerConnection connection =
                         connectionManager.getConnectionFor(source.getProject(),
-                                source.getClientServerRef(),
-                                source.getServerConfig(),
-                                false);
+                                source,false);
                 final ClientExec exec = connection.oneOffClientExec();
                 try {
                     final List<String> clients = new P4Exec2(source.getProject(), exec).

@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.server;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs;
@@ -36,6 +37,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.net.InetAddress;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -168,7 +170,8 @@ public class ConnectionHandler {
             P4InvalidConfigException ex = new P4InvalidConfigException(config, problems);
             if (project != null) {
                 P4ProjectConfig badConfig = new ClientConfigP4ProjectConfig(
-                        ClientConfig.createFrom(project, config, new SimpleDataPart(project, null)));
+                        ClientConfig.createFrom(project, config, new SimpleDataPart(project, null),
+                                Collections.<VirtualFile>emptyList()));
                 Events.configInvalid(project, badConfig, ex);
             }
             throw ex;

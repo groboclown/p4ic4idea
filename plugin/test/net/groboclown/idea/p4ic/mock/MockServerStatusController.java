@@ -53,11 +53,6 @@ public class MockServerStatusController implements ServerStatusController {
     }
 
     @Override
-    public boolean isAutoOffline() {
-        return autoOffline;
-    }
-
-    @Override
     public boolean isValid() {
         return valid;
     }

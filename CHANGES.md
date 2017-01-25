@@ -1,14 +1,17 @@
 # IDEA Community VCS Integration for Perforce
 
 
-## ::v0.7.20::
+## ::v0.8.0::
 
 ### Overview
 
+* Connection setup revamped.
 * Bug fixes.
 
 ### Details
 
+* Connection setup revamped.
+    * Entirely changed how the connections are configured through the IDE.
 * Bug fixes.
     * Changed the error reporting for SSL encryption library problem, when it comes
       from a TrustException.  The error reported now includes information about the

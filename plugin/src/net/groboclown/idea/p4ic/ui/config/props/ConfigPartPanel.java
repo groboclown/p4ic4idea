@@ -15,24 +15,24 @@
 package net.groboclown.idea.p4ic.ui.config.props;
 
 import com.intellij.openapi.project.Project;
+import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.part.ConfigPart;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
-public abstract class ConfigPartPanel<T extends ConfigPart> {
+public abstract class ConfigPartPanel<T extends ConfigPart> implements ConfigurationUpdatedListener {
     private final Project project;
     private final String id;
     private final T part;
     private ConfigPartUpdatedListener listener;
+    private P4ProjectConfig latestConfig;
 
     protected ConfigPartPanel(@NotNull Project project, @NotNull String id, @NotNull T part) {
         this.project = project;
         this.id = id;
         this.part = part;
-        this.listener = listener;
     }
 
     void setConfigPartUpdatedListener(@NotNull ConfigPartUpdatedListener listener) {
@@ -43,15 +43,46 @@ public abstract class ConfigPartPanel<T extends ConfigPart> {
         return id;
     }
 
-    public final T getConfigPart() {
+    /**
+     *
+     * @return a copy of the part, for exporting.
+     */
+    abstract @NotNull T copyPart();
+
+    final T getConfigPart() {
         return part;
     }
 
-    public abstract boolean isModified(T originalPart);
+    public abstract boolean isModified(@NotNull T originalPart);
+
+    /**
+     * Completely copy the panel's configuration <i>into</i> the parameter.
+     *
+     * @param userPart destination for the panel's configuration.
+     */
+    public abstract void applySettingsTo(@NotNull T userPart);
 
     abstract JPanel getRootPanel();
 
-    void onPropertyChange() {
+    /**
+     * Call whenever a config part setting changes.
+     */
+    void firePropertyChange() {
         listener.onConfigPartUpdated();
+    }
+
+    @Override
+    public void onConfigurationUpdated(@NotNull P4ProjectConfig config) {
+        this.latestConfig = config;
+    }
+
+    @Nullable
+    P4ProjectConfig getLatestConfig() {
+        return latestConfig;
+    }
+
+    @NotNull
+    Project getProject() {
+        return project;
     }
 }

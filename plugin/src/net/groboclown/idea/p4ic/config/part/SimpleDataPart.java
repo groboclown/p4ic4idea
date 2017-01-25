@@ -45,6 +45,23 @@ public class SimpleDataPart implements DataPart {
         }
     }
 
+    public SimpleDataPart(@NotNull Project project, @NotNull DataPart part) {
+        this(project, (Map<String, String>) null);
+
+        setClientname(part.getClientname());
+        setServerName(part.getServerName());
+        setAuthTicketFile(part.getAuthTicketFile());
+        setClientHostname(part.getClientHostname());
+        setDefaultCharset(part.getDefaultCharset());
+        setIgnoreFilename(part.getIgnoreFileName());
+        setServerFingerprint(part.getServerFingerprint());
+        setTrustTicketFile(part.getTrustTicketFile());
+        setUsername(part.getUsername());
+
+        // Ignore
+        // part.getPlaintextPassword();
+    }
+
     @Override
     public boolean reload() {
         // Do nothing
@@ -79,6 +96,20 @@ public class SimpleDataPart implements DataPart {
     @Override
     public String getPlaintextPassword() {
         return null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || !getClass().equals(o.getClass())) {
+            return false;
+        }
+        SimpleDataPart that = (SimpleDataPart) o;
+        return that.properties.equals(properties);
+    }
+
+    @Override
+    public int hashCode() {
+        return properties.hashCode();
     }
 
     // ----------------------------------------------------------------------

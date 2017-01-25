@@ -49,7 +49,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * A client-aware connection to a Perforce server.
  */
-class ClientExec {
+public class ClientExec {
     private static final Logger LOG = Logger.getInstance(ClientExec.class);
     private static final AllServerCount SERVER_COUNT = new AllServerCount();
 

@@ -15,21 +15,28 @@
 package net.groboclown.idea.p4ic.ui.config.props;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.popup.JBPopupListener;
+import com.intellij.openapi.ui.popup.LightweightWindowEvent;
+import com.intellij.openapi.ui.popup.PopupChooserBuilder;
 import com.intellij.openapi.util.SystemInfo;
+import com.intellij.ui.CollectionListModel;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.intellij.util.ui.UIUtil;
-import com.jgoodies.common.collect.ArrayListModel;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
+import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
 import net.groboclown.idea.p4ic.config.P4ProjectConfigStack;
 import net.groboclown.idea.p4ic.config.part.*;
-import net.groboclown.idea.p4ic.ui.util.BackgroundAwtActionRunner;
+import net.groboclown.idea.p4ic.background.BackgroundAwtActionRunner;
+import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,13 +47,13 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ConfigStackPanel {
+    private static final Logger LOG = Logger.getInstance(ConfigStackPanel.class);
+
     private static AtomicLong nextConfigPanelId = new AtomicLong(0);
 
     private Project project;
@@ -57,9 +64,7 @@ public class ConfigStackPanel {
     private JButton moveEntryUpButton;
     private JButton moveEntryDownButton;
 
-    private final Map<String, ConfigPartPanel<?>> configPanelIdMap = new HashMap<String, ConfigPartPanel<?>>();
-
-    private ArrayListModel/*<ConfigPartPanel>*/ componentStack = new ArrayListModel/*<ConfigPartPanel>*/();
+    private CollectionListModel/*<ConfigPartPanel>*/ componentStack = new CollectionListModel/*<ConfigPartPanel>*/();
 
     private final ArrayList<ConfigurationUpdatedListener> changeListeners =
             new ArrayList<ConfigurationUpdatedListener>(2);
@@ -154,32 +159,44 @@ public class ConfigStackPanel {
             @NotNull
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
-                if (part == null) {
-                    part = new EnvCompositePart(project);
-                }
-                return new EnvConfigPartPanel(project, getNextConfigPanelId(), (EnvCompositePart) part);
+                // For Env, we don't have any settings to copy.  So always use a new one.
+                return new EnvConfigPartPanel(project, getNextConfigPanelId(), new EnvCompositePart(project));
             }
         },
         PROPERTY(SimpleDataPart.class, "configuration.stack.type.property", AllIcons.General.Configure) {
             @NotNull
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
+                final SimpleDataPart cp;
                 if (part == null) {
-                    part = new SimpleDataPart(project, null);
+                    cp = new SimpleDataPart(project, (Map<String, String>) null);
+                } else {
+                    cp = new SimpleDataPart(project, (DataPart) part);
                 }
                 // FIXME
                 return null;
+            }
+        },
+        CLIENT_NAME(ClientNameDataPart.class, "configuration.stack.type.client-name", AllIcons.General.Gear) {
+            @NotNull
+            @Override
+            ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
+                final ClientNameDataPart cp = new ClientNameDataPart();
+                if (part != null) {
+                    cp.setClientname(((DataPart) part).getClientname());
+                }
+                return new ClientNameConfigPartPanel(project, getNextConfigPanelId(), cp);
             }
         },
         FILE(FileDataPart.class, "configuration.stack.type.file", AllIcons.FileTypes.Properties) {
             @NotNull
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
-                if (part == null) {
-                    part = new FileDataPart(project);
+                final FileDataPart cp = new FileDataPart(project);
+                if (part != null) {
+                    cp.setConfigFile(((FileDataPart) part).getConfigFile());
                 }
-                // FIXME
-                return null;
+                return new FileConfigPartPanel(project, getNextConfigPanelId(), cp);
             }
         },
         RELATIVE_FILE(RelativeConfigCompositePart.class, "configuration.stack.type.relative-file",
@@ -187,23 +204,22 @@ public class ConfigStackPanel {
             @NotNull
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
-                if (part == null) {
-                    part = new RelativeConfigCompositePart(project);
+                final RelativeConfigCompositePart cp = new RelativeConfigCompositePart(project);
+                if (part != null) {
+                    cp.setName(((RelativeConfigCompositePart) part).getName());
                 }
                 // FIXME
                 return null;
             }
         },
         REQUIRE_PASSWORD(RequirePasswordDataPart.class, "configuration.stack.type.require-password",
-                AllIcons.General.PasswordLock) {
+                AllIcons.General.Information) {
             @NotNull
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
-                if (part == null) {
-                    part = new RequirePasswordDataPart();
-                }
+                // Require password has no settings, so always use a new part.
                 return new RequirePasswordConfigPartPanel(project, getNextConfigPanelId(),
-                        (RequirePasswordDataPart) part);
+                        new RequirePasswordDataPart());
             }
         };
 
@@ -217,13 +233,20 @@ public class ConfigStackPanel {
             this.icon = icon;
         }
 
+        /**
+         * Create a new panel for the given part as a template.  The given part must be copied
+         * into the panel, and not directly manipulated by the panel.
+         *
+         * @param project project
+         * @param part    source part
+         * @return panel
+         */
         @NotNull
         abstract ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part);
     }
 
-    ConfigStackPanel(@Nullable Project project) {
-        this.project = project;
-        addEntryButton.setIcon(AllIcons.Actions.Cross);
+    public ConfigStackPanel() {
+        addEntryButton.setIcon(AllIcons.General.Add);
         addEntryButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -256,6 +279,7 @@ public class ConfigStackPanel {
         });
 
 
+        configList.setModel(componentStack);
         configList.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -265,8 +289,54 @@ public class ConfigStackPanel {
         configList.setCellRenderer(new ConfigPartPanelCellRenderer());
     }
 
+    public void initialize(@Nullable Project project) {
+        this.project = project;
+    }
+
     public void addChangeListener(@NotNull ConfigurationUpdatedListener changeListener) {
         changeListeners.add(changeListener);
+    }
+
+    public void updateUI(@NotNull
+    final P4ProjectConfigComponent component) {
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                componentStack.removeAll();
+
+                for (ConfigPart part : component.getUserConfigParts()) {
+                    addConfigPart(part);
+                }
+
+                sendConfigStackUpdated();
+            }
+        });
+    }
+
+    public void loadFromUI(@NotNull
+    final P4ProjectConfigComponent component) {
+        ArrayList<ConfigPart> parts = new ArrayList<ConfigPart>(componentStack.getSize());
+        for (Object cmp : componentStack.getItems()) {
+            parts.add(((ConfigPartPanel<?>) cmp).copyPart());
+        }
+        component.setUserConfigParts(parts);
+    }
+
+    public boolean isModified(@NotNull P4ProjectConfigComponent configComponent) {
+        List<ConfigPart> originalParts = configComponent.getUserConfigParts();
+        if (originalParts.size() != componentStack.getSize()) {
+            return true;
+        }
+        Iterator<ConfigPart> origs = originalParts.iterator();
+        Iterator nows = componentStack.getItems().iterator();
+        while (origs.hasNext() && nows.hasNext()) {
+            ConfigPart orig = origs.next();
+            ConfigPart now = (ConfigPart) nows.next();
+            if (!orig.equals(now)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -293,9 +363,15 @@ public class ConfigStackPanel {
 
     private <T extends ConfigPart> void addConfigPartPanel(@NotNull ConfigPartPanel<T> panel, boolean sendUpdate) {
         panel.setConfigPartUpdatedListener(configPartUpdatedListener);
-        configPanelIdMap.put(panel.getId(), panel);
-        final int index = configList == null ? 0 : configList.getSelectedIndex();
-        componentStack.add(index < 0 ? 0 : index, panel);
+        changeListeners.add(panel);
+        if (componentStack.getSize() <= 0) {
+            componentStack.add(panel);
+            LOG.info("Added component panel " + panel.getClass().getSimpleName() + " at the top");
+        } else {
+            final int index = configList == null ? 0 : configList.getSelectedIndex();
+            componentStack.add(index < 0 ? 0 : index, panel);
+            LOG.info("Added component panel " + panel.getClass().getSimpleName() + " at " + index);
+        }
         if (sendUpdate) {
             sendConfigStackUpdated();
         }
@@ -316,21 +392,21 @@ public class ConfigStackPanel {
         // Note: checking for > 0
         if (selectedIndex > 0 && selectedIndex < componentStack.getSize()) {
             /* ConfigPartPanel */
-            Object selectedObject = componentStack.get(selectedIndex);
-            componentStack.set(selectedIndex, componentStack.get(selectedIndex - 1));
-            componentStack.set(selectedIndex - 1, selectedObject);
+            Object selectedObject = componentStack.getElementAt(selectedIndex);
+            componentStack.setElementAt(componentStack.getElementAt(selectedIndex - 1), selectedIndex);
+            componentStack.setElementAt(selectedObject, selectedIndex - 1);
             configList.setSelectedIndex(selectedIndex - 1);
             sendConfigStackUpdated();
         }
     }
 
     private void moveEntryDown(int selectedIndex) {
-        // Note: checking for -1 <
-        if (selectedIndex >= 0 && selectedIndex - 1 < componentStack.getSize()) {
+        // Note: checking for +1 <=
+        if (selectedIndex >= 0 && selectedIndex + 1 <= componentStack.getSize()) {
             /* ConfigPartPanel */
-            Object selectedObject = componentStack.get(selectedIndex);
-            componentStack.set(selectedIndex, componentStack.get(selectedIndex + 1));
-            componentStack.set(selectedIndex + 1, selectedObject);
+            Object selectedObject = componentStack.getElementAt(selectedIndex);
+            componentStack.setElementAt(componentStack.getElementAt(selectedIndex + 1), selectedIndex);
+            componentStack.setElementAt(selectedObject, selectedIndex + 1);
             configList.setSelectedIndex(selectedIndex + 1);
             sendConfigStackUpdated();
         }
@@ -346,7 +422,7 @@ public class ConfigStackPanel {
             removeEntryButton.setEnabled(true);
             moveEntryUpButton.setEnabled(false);
             moveEntryDownButton.setEnabled(true);
-        } else if (selectedIndex + 1 < componentStack.size()) {
+        } else if (selectedIndex + 1 <= componentStack.getSize()) {
             removeEntryButton.setEnabled(true);
             moveEntryUpButton.setEnabled(true);
             moveEntryDownButton.setEnabled(true);
@@ -360,8 +436,8 @@ public class ConfigStackPanel {
     private void sendConfigStackUpdated() {
         onListSelectionChanged();
         ArrayList<ConfigPart> parts = new ArrayList<ConfigPart>(componentStack.getSize());
-        for (Object o : componentStack) {
-            parts.add((ConfigPart) o);
+        for (Object o : componentStack.getItems()) {
+            parts.add(((ConfigPartPanel) o).getConfigPart());
         }
 
         P4ProjectConfig config = new P4ProjectConfigStack(project, parts);
@@ -370,22 +446,35 @@ public class ConfigStackPanel {
 
     // CalledInAWT
     private void chooseEntry() {
-        BackgroundAwtActionRunner.runBackgrounAwtAction(new BackgroundAwtActionRunner
-                .BackgroundAwtAction<ConfigPartType>() {
-            @Override
-            public ConfigPartType runBackgroundProcess() {
-                ChooseConfigPartDialog dialog = new ChooseConfigPartDialog(project);
-                dialog.show();
-                return dialog.getChoice();
-            }
-
-            @Override
-            public void runAwtProcess(ConfigPartType choice) {
-                if (choice != null) {
-                    addConfigPartType(choice);
+        final ConfigPartType[] configTypeValues = ConfigPartType.values();
+        final JBList list = new JBList();
+        list.setListData(configTypeValues);
+        list.setCellRenderer(new ConfigPartTypeCellRenderer());
+        // list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        // list.setEnabled(true);
+        // list.setSelectedIndex(0);
+        // list.setFocusable(true);
+        new PopupChooserBuilder(list)
+            .setCancelOnClickOutside(true)
+            .setRequestFocus(true)
+            .setTitle(P4Bundle.getString("configuration.stack.choose.title"))
+            .setItemChoosenCallback(new Runnable() {
+                @Override
+                public void run() {
+                    final int index = list.getSelectedIndex();
+                    if (index >= 0 && index < configTypeValues.length) {
+                        LOG.info("Adding config type " + configTypeValues[index]);
+                        addConfigPartType(configTypeValues[index]);
+                    } else {
+                        LOG.info("User selected invalid config type index " + index);
+                    }
                 }
-            }
-        });
+            })
+            .createPopup().showInCenterOf(addEntryButton);
+
+        // ChooseConfigPartDialog dialog = new ChooseConfigPartDialog(project);
+        // dialog.show();
+        // addConfigPartType(dialog.getChoice());
     }
 
 
@@ -394,6 +483,7 @@ public class ConfigStackPanel {
     }
 
 
+    // TODO Look at moving to PopupChooserBuilder
     private static class ChooseConfigPartDialog
             extends DialogWrapper {
         private JList/*<ConfigPartType>*/ list;
@@ -404,7 +494,9 @@ public class ConfigStackPanel {
             if (!SystemInfo.isMac) {
                 setButtonsAlignment(0);
             }
-            list = new JBList(ConfigPartType.values());
+            setUndecorated(true);
+            setAutoAdjustable(true);
+            init();
         }
 
         ConfigPartType getChoice() {
@@ -422,9 +514,6 @@ public class ConfigStackPanel {
         @Nullable
         @Override
         protected JComponent createCenterPanel() {
-            list = new JBList(ConfigPartType.values());
-            list.setCellRenderer(new ConfigPartTypeCellRenderer());
-            list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             return new JBScrollPane(list);
         }
     }
@@ -434,11 +523,12 @@ public class ConfigStackPanel {
         final JLabel label = new JLabel();
 
         @Override
-        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
+                boolean cellHasFocus) {
             ConfigPartType type = (ConfigPartType) value;
             label.setFont(UIUtil.getListFont());
             label.setText(P4Bundle.getString(type.title));
-            label.setIcon(type.icon);
+            // label.setIcon(type.icon);
             if (isSelected) {
                 label.setBackground(UIUtil.getListSelectionBackground());
                 label.setForeground(UIUtil.getListSelectionForeground());
@@ -459,13 +549,16 @@ public class ConfigStackPanel {
         }
 
         @Override
-        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
+                boolean cellHasFocus) {
             ConfigPartPanel part = (ConfigPartPanel) value;
             JPanel component = part.getRootPanel();
             panel.removeAll();
             panel.add(component, BorderLayout.CENTER);
-            panel.setBorder(BorderFactory.createLineBorder(UIUtil.getBoundsColor(isSelected)));
+            panel.setBorder(BorderFactory.createLineBorder(UIUtil.getBoundsColor(isSelected), 8));
             panel.validate();
+            panel.doLayout();
+            LOG.info("Showing renderer for panel " + part.getClass().getSimpleName());
             return panel;
         }
     }
@@ -473,4 +566,5 @@ public class ConfigStackPanel {
     private void createUIComponents() {
         // place custom component creation code here
     }
+
 }

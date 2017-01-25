@@ -34,9 +34,20 @@ public class EnvConfigPartPanel
     }
 
     @Override
-    public boolean isModified(EnvCompositePart originalPart) {
+    @NotNull
+    EnvCompositePart copyPart() {
+        return new EnvCompositePart(getProject());
+    }
+
+    @Override
+    public boolean isModified(@NotNull EnvCompositePart originalPart) {
         // Never modifiable
         return false;
+    }
+
+    @Override
+    public void applySettingsTo(@NotNull EnvCompositePart userPart) {
+        // Nothing to do
     }
 
     @Override
@@ -68,22 +79,20 @@ public class EnvConfigPartPanel
                 .getString("configuration.connection-choice.picker.env"));
         rootPanel.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JLabel label2 = new JLabel();
-        label2.setHorizontalAlignment(2);
-        label2.setHorizontalTextPosition(2);
-        this.$$$loadLabelText$$$(label2,
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("connection.env.description"));
-        label2.setVerticalAlignment(1);
-        label2.setVerticalTextPosition(1);
-        rootPanel.add(label2,
-                new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_NORTHWEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_FIXED,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null,
-                        0, false));
         final Spacer spacer1 = new Spacer();
         rootPanel.add(spacer1,
                 new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
                         GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        usesTheStandardPerforceTextArea = new JTextArea();
+        usesTheStandardPerforceTextArea.setEditable(false);
+        usesTheStandardPerforceTextArea.setFont(UIManager.getFont("FormattedTextField.font"));
+        usesTheStandardPerforceTextArea.setLineWrap(true);
+        usesTheStandardPerforceTextArea.setText(
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("connection.env.description"));
+        usesTheStandardPerforceTextArea.setWrapStyleWord(true);
+        rootPanel.add(usesTheStandardPerforceTextArea,
+                new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, 1, null,
+                        new Dimension(150, 50), null, 0, false));
     }
 
     /**

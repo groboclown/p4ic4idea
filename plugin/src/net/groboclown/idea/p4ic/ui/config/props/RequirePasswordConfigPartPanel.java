@@ -30,10 +30,21 @@ public class RequirePasswordConfigPartPanel
         super(project, id, part);
     }
 
+    @NotNull
     @Override
-    public boolean isModified(RequirePasswordDataPart originalPart) {
+    RequirePasswordDataPart copyPart() {
+        return new RequirePasswordDataPart();
+    }
+
+    @Override
+    public boolean isModified(@NotNull RequirePasswordDataPart originalPart) {
         // Can never be modified
         return false;
+    }
+
+    @Override
+    public void applySettingsTo(@NotNull RequirePasswordDataPart userPart) {
+        // Nothing to do
     }
 
     @Override

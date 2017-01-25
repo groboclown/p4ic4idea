@@ -169,6 +169,8 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
                         }
                     }
                 }
+                previous = current;
+                current = previous.getParent();
             }
         }
 

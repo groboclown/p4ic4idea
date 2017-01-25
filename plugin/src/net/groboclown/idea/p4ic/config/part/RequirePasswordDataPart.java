@@ -50,6 +50,16 @@ public class RequirePasswordDataPart implements DataPart {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        return o != null && getClass().equals(o.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return 2;
+    }
+
 
     @Override
     public boolean reload() {

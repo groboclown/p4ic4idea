@@ -209,10 +209,6 @@
             <implementation-class>net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping</implementation-class>
             <interface-class>net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping</interface-class>
         </component>
-        <component>
-            <implementation-class>net.groboclown.idea.p4ic.config.P4ProjectConfigComponent</implementation-class>
-            <interface-class>net.groboclown.idea.p4ic.config.P4ProjectConfigComponent</interface-class>
-        </component>
     </project-components>
 
     <module-components>

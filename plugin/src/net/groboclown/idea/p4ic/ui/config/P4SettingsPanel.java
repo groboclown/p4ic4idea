@@ -25,21 +25,27 @@ import java.awt.*;
 import java.util.ResourceBundle;
 
 public class P4SettingsPanel {
-    private P4ConfigPanel myP4ConfigPanel;
     private UserPreferencesPanel myUserPreferencesPanel;
     private JPanel myRootPanel;
+    private P4Config2Panel myConfigPanel;
 
-    boolean isModified(@NotNull final P4ProjectConfigComponent myConfig, @NotNull final UserProjectPreferences preferences) {
-        return myP4ConfigPanel.isModified(myConfig) || myUserPreferencesPanel.isModified(preferences);
+    boolean isModified(@NotNull
+    final P4ProjectConfigComponent myConfig, @NotNull
+    final UserProjectPreferences preferences) {
+        return myConfigPanel.isModified(myConfig) || myUserPreferencesPanel.isModified(preferences);
     }
 
-    void saveSettingsToConfig(@NotNull final P4ProjectConfigComponent config, @NotNull final UserProjectPreferences preferences) {
-        myP4ConfigPanel.saveSettingsToConfig(config);
+    void saveSettingsToConfig(@NotNull
+    final P4ProjectConfigComponent config, @NotNull
+    final UserProjectPreferences preferences) {
+        myConfigPanel.saveSettingsToConfig(config);
         myUserPreferencesPanel.saveSettingsToConfig(preferences);
     }
 
-    void loadSettingsIntoGUI(@NotNull final P4ProjectConfigComponent config, @NotNull final UserProjectPreferences preferences) {
-        myP4ConfigPanel.loadSettingsIntoGUI(config);
+    void loadSettingsIntoGUI(@NotNull
+    final P4ProjectConfigComponent config, @NotNull
+    final UserProjectPreferences preferences) {
+        myConfigPanel.loadSettingsIntoGUI(config);
         myUserPreferencesPanel.loadSettingsIntoGUI(preferences);
     }
 
@@ -48,7 +54,7 @@ public class P4SettingsPanel {
     }
 
     void initialize(final Project project) {
-        myP4ConfigPanel.initialize(project);
+        myConfigPanel.initialize(project);
     }
 
     {
@@ -72,14 +78,18 @@ public class P4SettingsPanel {
         myRootPanel.add(tabbedPane1, BorderLayout.CENTER);
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new BorderLayout(0, 0));
-        tabbedPane1.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.settings.connection"), panel1);
+        tabbedPane1.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("user.settings.connection"), panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
+        scrollPane1.setHorizontalScrollBarPolicy(31);
         panel1.add(scrollPane1, BorderLayout.CENTER);
-        myP4ConfigPanel = new P4ConfigPanel();
-        scrollPane1.setViewportView(myP4ConfigPanel.$$$getRootComponent$$$());
+        myConfigPanel = new P4Config2Panel();
+        scrollPane1.setViewportView(myConfigPanel.$$$getRootComponent$$$());
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new BorderLayout(0, 0));
-        tabbedPane1.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.settings.prefs"), panel2);
+        tabbedPane1
+                .addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.settings.prefs"),
+                        panel2);
         final JScrollPane scrollPane2 = new JScrollPane();
         panel2.add(scrollPane2, BorderLayout.CENTER);
         myUserPreferencesPanel = new UserPreferencesPanel();

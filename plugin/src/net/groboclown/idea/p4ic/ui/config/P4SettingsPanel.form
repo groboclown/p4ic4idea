@@ -21,10 +21,12 @@
             <children>
               <scrollpane id="7d1d3">
                 <constraints border-constraint="Center"/>
-                <properties/>
+                <properties>
+                  <horizontalScrollBarPolicy value="31"/>
+                </properties>
                 <border type="none"/>
                 <children>
-                  <nested-form id="75cbd" form-file="net/groboclown/idea/p4ic/ui/config/P4ConfigPanel.form" binding="myP4ConfigPanel">
+                  <nested-form id="85fd6" form-file="net/groboclown/idea/p4ic/ui/config/P4Config2Panel.form" binding="myConfigPanel">
                     <constraints/>
                   </nested-form>
                 </children>

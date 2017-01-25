@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="net.groboclown.idea.p4ic.ui.config.P4Config2Panel">
+  <grid id="27dc6" binding="rootPanel" layout-manager="BorderLayout" hgap="0" vgap="0">
+    <constraints>
+      <xy x="20" y="20" width="500" height="400"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <nested-form id="9afdc" form-file="net/groboclown/idea/p4ic/ui/config/props/ConfigStackPanel.form" binding="configStackPanel" custom-create="true">
+        <constraints border-constraint="Center"/>
+      </nested-form>
+      <nested-form id="f9122" form-file="net/groboclown/idea/p4ic/ui/config/ResolvedPropertiesPanel.form" binding="resolvePropertiesPanel">
+        <constraints border-constraint="South"/>
+      </nested-form>
+    </children>
+  </grid>
+</form>

@@ -45,6 +45,7 @@ public class Unmarshal {
         m.put(RequirePasswordDataPart.TAG_NAME, RequirePasswordDataPart.FACTORY);
         m.put(SimpleDataPart.TAG_NAME, SimpleDataPart.FACTORY);
         m.put(SingleCompositePart.TAG_NAME, SingleCompositePart.FACTORY);
+        m.put(ClientNameDataPart.TAG_NAME, ClientNameDataPart.FACTORY);
 
         CONFIG_PART_FACTORY_TAGS = Collections.unmodifiableMap(m);
     }

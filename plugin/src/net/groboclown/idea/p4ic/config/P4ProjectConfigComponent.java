@@ -40,6 +40,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Manages the configuration of the Perforce setup.  It should handle the normal method
@@ -135,7 +136,7 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
             P4ConfigProject origConfig = P4ConfigProject.getInstance(project);
             if (origConfig != null) {
                 ManualP4Config config = origConfig.getBaseConfig();
-                SimpleDataPart part = new SimpleDataPart(project, null);
+                SimpleDataPart part = new SimpleDataPart(project, (Map<String, String>) null);
                 part.setIgnoreFilename(config.getIgnoreFileName());
                 part.setServerName(config.getProtocol() + "://" + config.getPort());
                 part.setAuthTicketFile(config.getAuthTicketPath());

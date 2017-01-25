@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.config.part;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
@@ -32,8 +33,6 @@ import java.util.Collections;
 import java.util.Properties;
 
 public class FileDataPart implements DataPart {
-    private static final Logger LOG = Logger.getInstance(FileDataPart.class);
-
     static final String TAG_NAME = "file-data-part";
     static final ConfigPartFactory<FileDataPart> FACTORY = new Factory();
     private static final String FILE_PATH_ATTRIBUTE = "file";
@@ -59,10 +58,27 @@ public class FileDataPart implements DataPart {
         this.project = project;
     }
 
-    public FileDataPart(@NotNull Project project, @Nullable File filePath) {
+    FileDataPart(@NotNull Project project, @Nullable File filePath) {
         this.project = project;
         this.filePath = filePath;
         reload();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || ! getClass().equals(o.getClass())) {
+            return false;
+        }
+        FileDataPart that = (FileDataPart) o;
+        return FileUtil.filesEqual(filePath, that.filePath);
+    }
+
+    @Override
+    public int hashCode() {
+        if (filePath == null) {
+            return 0;
+        }
+        return FileUtil.fileHashCode(filePath);
     }
 
     @Override
@@ -148,6 +164,11 @@ public class FileDataPart implements DataPart {
     public void setConfigFile(@Nullable File filePath) {
         this.filePath = filePath;
         reload();
+    }
+
+    @Nullable
+    public File getConfigFile() {
+        return filePath;
     }
 
 

@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.ui.config;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.CollectionComboBoxModel;
@@ -22,10 +23,13 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.AsyncProcessIcon;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.background.BackgroundAwtActionRunner;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
-import net.groboclown.idea.p4ic.ui.util.BackgroundAwtActionRunner;
+import net.groboclown.idea.p4ic.ui.config.props.ConfigurationUpdatedListener;
+import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,43 +37,43 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.ResourceBundle;
 
 public class ResolvedPropertiesPanel {
     private JPanel rootPanel;
 
     private JComboBox rootDirDropdownBox;
-    private CollectionComboBoxModel/*<ConfigPath>*/ rootDirDropdownBoxModel; // JDK 1.6 doesn't have generic models
+    private DefaultComboBoxModel/*<ConfigPath>*/ rootDirDropdownBoxModel; // JDK 1.6 doesn't have generic models
 
     private JButton refreshResolvedPropertiesButton;
     private JTextArea resolvedValuesText;
-    private JScrollPane configProblemsPanel;
 
     private JList configProblemsList;
     private AsyncProcessIcon refreshResolvedPropertiesSpinner;
+    private JTabbedPane resolutionTabbedPane;
     private CollectionListModel/*<String>*/ configProblemsListModel; // JDK 1.6 doesn't have generic models
-
-    private boolean problemsVisible = true;
 
     private P4ProjectConfig lastConfig;
 
-    private final PropertyChangeListener propertyChangeListener = new PropertyChangeListener() {
+    private final ConfigurationUpdatedListener configurationUpdatedListener = new ConfigurationUpdatedListener() {
         @Override
-        public void propertyChange(PropertyChangeEvent evt) {
-            refresh((P4ProjectConfig) evt.getNewValue());
+        public void onConfigurationUpdated(@NotNull P4ProjectConfig config) {
+            refresh(config);
         }
     };
 
-    public ResolvedPropertiesPanel() {
+    ResolvedPropertiesPanel() {
         // Initialize GUI constant values
         $$$setupUI$$$();
 
         configProblemsListModel = new CollectionListModel/*<String>*/();
         configProblemsList.setModel(configProblemsListModel);
 
-        rootDirDropdownBoxModel = new CollectionComboBoxModel/*<Object>*/();
+        rootDirDropdownBoxModel = new DefaultComboBoxModel/*<ConfigPath>*/();
         rootDirDropdownBox.setModel(rootDirDropdownBoxModel);
         rootDirDropdownBox.addActionListener(new ActionListener() {
             @Override
@@ -78,6 +82,7 @@ public class ResolvedPropertiesPanel {
             }
         });
 
+        refreshResolvedPropertiesButton.setIcon(AllIcons.Actions.Refresh);
         refreshResolvedPropertiesButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -87,17 +92,14 @@ public class ResolvedPropertiesPanel {
     }
 
     @NotNull
-    public PropertyChangeListener getPropertyChangeListener() {
-        return propertyChangeListener;
+    public ConfigurationUpdatedListener getConfigurationUpdatedListener() {
+        return configurationUpdatedListener;
     }
 
     public void refresh(@Nullable P4ProjectConfig config) {
         lastConfig = config;
         refresh();
     }
-
-
-    // FIXME this needs to be in a background process.
 
     private void refresh() {
         BackgroundAwtActionRunner.runBackgroundAwtAction(refreshResolvedPropertiesSpinner,
@@ -112,9 +114,17 @@ public class ResolvedPropertiesPanel {
                         for (ConfigProblem problem : problems) {
                             results.problemMessages.add(problem.getMessage());
                         }
+                        boolean tryConnection = problems.isEmpty();
 
                         Collection<ClientConfig> configs = lastConfig.getClientConfigs();
                         for (ClientConfig config : configs) {
+                            if (tryConnection) {
+                                ConfigProblem problem = ConnectionUIConfiguration.checkConnection(config,
+                                        ServerConnectionManager.getInstance());
+                                if (problem != null) {
+                                    problems.add(problem);
+                                }
+                            }
                             for (VirtualFile virtualFile : config.getProjectSourceDirs()) {
                                 results.configs.add(new ConfigPath(config, virtualFile));
                             }
@@ -126,25 +136,22 @@ public class ResolvedPropertiesPanel {
                     public void runAwtProcess(ComputedConfigResults results) {
                         if (results.problemMessages.isEmpty()) {
                             configProblemsListModel.removeAll();
-                            if (problemsVisible) {
-                                problemsVisible = false;
-                                configProblemsPanel.setVisible(false);
-                                rootPanel.doLayout();
-                            }
+                            // No errors, so show the resolved properties
+                            resolutionTabbedPane.setSelectedIndex(0);
                         } else {
                             configProblemsListModel.replaceAll(results.problemMessages);
-                            if (!problemsVisible) {
-                                problemsVisible = true;
-                                configProblemsPanel.setVisible(true);
-                                rootPanel.doLayout();
-                            }
+                            // Errors, so show the problems
+                            resolutionTabbedPane.setSelectedIndex(1);
                         }
-                        if (results.configs.isEmpty()) {
-                            rootDirDropdownBoxModel.removeAll();
+                        if (results.configs == null || results.configs.isEmpty()) {
+                            rootDirDropdownBoxModel.removeAllElements();
                             rootDirDropdownBox.setEnabled(false);
                         } else {
                             rootDirDropdownBox.setEnabled(true);
-                            rootDirDropdownBoxModel.replaceAll(results.configs);
+                            rootDirDropdownBoxModel.removeAllElements();
+                            for (ConfigPath config : results.configs) {
+                                rootDirDropdownBoxModel.addElement(config);
+                            }
                             rootDirDropdownBox.setSelectedIndex(0);
                         }
 
@@ -154,29 +161,44 @@ public class ResolvedPropertiesPanel {
     }
 
 
-    // calld in Awt
+    // called in Awt
     private void refreshSelectedConfig() {
         ApplicationManager.getApplication().assertIsDispatchThread();
 
-        final String text;
-        if (rootDirDropdownBoxModel.isEmpty()) {
-            text = P4Bundle.message("config.display.properties.no_path");
+        if (rootDirDropdownBoxModel.getSize() <= 0) {
+            resolvedValuesText.setText(P4Bundle.message("config.display.properties.no_path"));
         } else {
-            final Object selected = rootDirDropdownBoxModel.getSelected();
+            final Object selected = rootDirDropdownBoxModel.getSelectedItem();
             if (selected == null || !(selected instanceof ConfigPath)) {
-                text = P4Bundle.message("config.display.properties.no_path");
+                resolvedValuesText.setText(P4Bundle.message("config.display.properties.no_path"));
             } else {
-                Map<String, String> props = ((ConfigPath) selected).config.toProperties();
-                ArrayList<String> keys = new ArrayList<String>(props.keySet());
-                Collections.sort(keys);
-                StringBuilder sb = new StringBuilder();
-                for (String key : keys) {
-                    sb.append(key).append('=').append(props.get(key)).append('\n');
-                }
-                text = sb.toString();
+                showResolvedPropertiesText((ConfigPath) selected);
             }
         }
-        resolvedValuesText.setText(text);
+    }
+
+    private void showResolvedPropertiesText(@NotNull
+    final ConfigPath selected) {
+        // This can load values from a file, so put in the background.
+        BackgroundAwtActionRunner.runBackgroundAwtAction(refreshResolvedPropertiesSpinner,
+                new BackgroundAwtActionRunner.BackgroundAwtAction<String>() {
+                    @Override
+                    public String runBackgroundProcess() {
+                        Map<String, String> props = selected.config.toProperties();
+                        ArrayList<String> keys = new ArrayList<String>(props.keySet());
+                        Collections.sort(keys);
+                        StringBuilder sb = new StringBuilder();
+                        for (String key : keys) {
+                            sb.append(key).append('=').append(props.get(key)).append('\n');
+                        }
+                        return sb.toString();
+                    }
+
+                    @Override
+                    public void runAwtProcess(String value) {
+                        resolvedValuesText.setText(value);
+                    }
+                });
     }
 
     /**
@@ -189,56 +211,47 @@ public class ResolvedPropertiesPanel {
     private void $$$setupUI$$$() {
         createUIComponents();
         rootPanel = new JPanel();
-        rootPanel.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
+        rootPanel.setLayout(new BorderLayout(0, 0));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        rootPanel.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
-                false));
+        panel1.setLayout(new BorderLayout(0, 0));
+        rootPanel.add(panel1, BorderLayout.NORTH);
+        final JPanel panel2 = new JPanel();
+        panel2.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        panel1.add(panel2, BorderLayout.EAST);
+        refreshResolvedPropertiesButton = new JButton();
+        refreshResolvedPropertiesButton.setText("");
+        refreshResolvedPropertiesButton.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.resolve.refresh.tooltip"));
+        panel2.add(refreshResolvedPropertiesButton);
+        panel2.add(refreshResolvedPropertiesSpinner);
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.add(panel3, BorderLayout.CENTER);
         rootDirDropdownBox = new JComboBox();
-        panel1.add(rootDirDropdownBox,
+        panel3.add(rootDirDropdownBox,
                 new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
                         GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
         final JLabel label1 = new JLabel();
         this.$$$loadLabelText$$$(label1,
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.resolved.path"));
-        panel1.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+        panel3.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel2 = new JPanel();
-        panel2.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
-        rootPanel.add(panel2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
-                false));
-        refreshResolvedPropertiesButton = new JButton();
-        this.$$$loadButtonText$$$(refreshResolvedPropertiesButton,
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                        .getString("configuration.resolve.refresh"));
-        refreshResolvedPropertiesButton.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("configuration.resolve.refresh.tooltip"));
-        panel2.add(refreshResolvedPropertiesButton);
-        panel2.add(refreshResolvedPropertiesSpinner);
+        resolutionTabbedPane = new JTabbedPane();
+        rootPanel.add(resolutionTabbedPane, BorderLayout.CENTER);
         final JScrollPane scrollPane1 = new JScrollPane();
         scrollPane1.setVerticalScrollBarPolicy(22);
-        rootPanel.add(scrollPane1,
-                new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null,
-                        0, false));
+        resolutionTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configurations.resolved-values.tab"), scrollPane1);
         resolvedValuesText = new JTextArea();
         resolvedValuesText.setFont(UIManager.getFont("TextArea.font"));
         scrollPane1.setViewportView(resolvedValuesText);
-        configProblemsPanel = new JScrollPane();
-        configProblemsPanel.setVisible(false);
-        rootPanel.add(configProblemsPanel,
-                new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null,
-                        0, false));
+        final JScrollPane scrollPane2 = new JScrollPane();
+        scrollPane2.setVisible(true);
+        resolutionTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.problems-list.tab"), scrollPane2);
         configProblemsList = new JList();
-        configProblemsPanel.setViewportView(configProblemsList);
+        scrollPane2.setViewportView(configProblemsList);
         label1.setLabelFor(rootDirDropdownBox);
     }
 
@@ -274,39 +287,9 @@ public class ResolvedPropertiesPanel {
     /**
      * @noinspection ALL
      */
-    private void $$$loadButtonText$$$(AbstractButton component, String text) {
-        StringBuffer result = new StringBuffer();
-        boolean haveMnemonic = false;
-        char mnemonic = '\0';
-        int mnemonicIndex = -1;
-        for (int i = 0; i < text.length(); i++) {
-            if (text.charAt(i) == '&') {
-                i++;
-                if (i == text.length()) {
-                    break;
-                }
-                if (!haveMnemonic && text.charAt(i) != '&') {
-                    haveMnemonic = true;
-                    mnemonic = text.charAt(i);
-                    mnemonicIndex = result.length();
-                }
-            }
-            result.append(text.charAt(i));
-        }
-        component.setText(result.toString());
-        if (haveMnemonic) {
-            component.setMnemonic(mnemonic);
-            component.setDisplayedMnemonicIndex(mnemonicIndex);
-        }
-    }
-
-    /**
-     * @noinspection ALL
-     */
     public JComponent $$$getRootComponent$$$() {
         return rootPanel;
     }
-
 
     private static class ComputedConfigResults {
         ArrayList<String> problemMessages;

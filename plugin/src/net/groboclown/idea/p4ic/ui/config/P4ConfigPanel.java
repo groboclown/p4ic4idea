@@ -438,7 +438,7 @@ public class P4ConfigPanel {
         Set<String> toAdd = new HashSet<String>();
         List<Exception> problems = new ArrayList<Exception>();
         for (Entry<ProjectConfigSource, ClientResult> entry : clientResults.entrySet()) {
-            if (entry.getValue().isInalid()) {
+            if (entry.getValue().isInvalid()) {
                 problems.add(entry.getValue().getConnectionProblem());
             } else {
                 toAdd.addAll(entry.getValue().getClientNames());

@@ -170,7 +170,8 @@ public class ConnectionHandler {
             P4InvalidConfigException ex = new P4InvalidConfigException(config, problems);
             if (project != null) {
                 P4ProjectConfig badConfig = new ClientConfigP4ProjectConfig(
-                        ClientConfig.createFrom(project, config, new SimpleDataPart(project, null),
+                        ClientConfig.createFrom(project, config,
+                                new SimpleDataPart(project, (Map<String, String>) null),
                                 Collections.<VirtualFile>emptyList()));
                 Events.configInvalid(project, badConfig, ex);
             }

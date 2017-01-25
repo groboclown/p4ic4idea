@@ -44,6 +44,16 @@ public class EnvCompositePart extends CompositePart {
     }
 
     @Override
+    public boolean equals(Object o) {
+        return o != null && getClass().equals(o.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return 1;
+    }
+
+    @Override
     public boolean reload() {
         loadEnvironmentParts();
 
@@ -93,7 +103,7 @@ public class EnvCompositePart extends CompositePart {
 
         parts.add(new EnvPassword());
 
-        SimpleDataPart envData = new SimpleDataPart(project, null);
+        SimpleDataPart envData = new SimpleDataPart(project, (Map<String, String>) null);
         envData.setServerName(PerforceEnvironment.getP4Port());
         envData.setUsername(PerforceEnvironment.getP4User());
         envData.setClientname(PerforceEnvironment.getP4Client());

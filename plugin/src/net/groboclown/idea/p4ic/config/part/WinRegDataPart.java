@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.Collections;
 
 class WinRegDataPart implements DataPart {
     @NonNls
@@ -104,7 +105,12 @@ class WinRegDataPart implements DataPart {
     @NotNull
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
-        return null;
+        PartValidation validation = new PartValidation();
+        validation.checkPort(rawPort, serverName);
+        // validation.checkAuthTicketFile(authTicketPath);
+        // validation.checkTrustTicketFile(trustTicket);
+        // validation.checkUsername()
+        return validation.getProblems();
     }
 
     @Nullable

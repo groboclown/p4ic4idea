@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.ui.util;
+package net.groboclown.idea.p4ic.background;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;

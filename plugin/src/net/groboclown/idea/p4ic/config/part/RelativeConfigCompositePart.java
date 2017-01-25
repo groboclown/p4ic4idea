@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.config.part;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -47,9 +48,18 @@ public class RelativeConfigCompositePart extends CompositePart {
         this.project = project;
     }
 
-    public RelativeConfigCompositePart(@NotNull Project project, @NotNull String name) {
+    RelativeConfigCompositePart(@NotNull Project project, @NotNull String name) {
         this.project = project;
         this.name = name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || !getClass().equals(o.getClass())) {
+            return false;
+        }
+        RelativeConfigCompositePart that = (RelativeConfigCompositePart) o;
+        return StringUtil.equals(that.name, name);
     }
 
     public void setName(@Nullable String name) {

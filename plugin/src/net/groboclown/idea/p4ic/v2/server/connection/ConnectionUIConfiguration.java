@@ -54,13 +54,13 @@ public class ConnectionUIConfiguration {
             }
             return null;
         } catch (P4InvalidClientException e) {
-            return new ConfigProblem(e);
+            return new ConfigProblem(null, e);
         } catch (P4InvalidConfigException e) {
-            return new ConfigProblem(e);
+            return new ConfigProblem(null, e);
         } catch (VcsException e) {
-            return new ConfigProblem(e);
+            return new ConfigProblem(null, e);
         } catch (RuntimeException e) {
-            return new ConfigProblem(e);
+            return new ConfigProblem(null, e);
         }
     }
 

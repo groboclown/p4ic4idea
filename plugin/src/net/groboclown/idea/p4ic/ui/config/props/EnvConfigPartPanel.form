@@ -7,18 +7,11 @@
     <properties/>
     <border type="none"/>
     <children>
-      <component id="68155" class="javax.swing.JLabel" binding="titleLabel">
-        <constraints border-constraint="North"/>
-        <properties>
-          <horizontalAlignment value="2"/>
-          <horizontalTextPosition value="2"/>
-          <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.connection-choice.picker.env"/>
-        </properties>
-      </component>
       <component id="928c7" class="javax.swing.JTextPane" binding="descriptionLabel">
         <constraints border-constraint="Center"/>
         <properties>
           <font swing-font="Label.font"/>
+          <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="connection.env.description"/>
         </properties>
       </component>
     </children>

@@ -29,9 +29,9 @@ public class PartValidation {
         final PartValidation validation = new PartValidation();
         validation.problems.addAll(part.getConfigProblems());
         if (! part.hasServerNameSet() || part.getServerName() == null) {
-            validation.problems.add(new ConfigProblem("configuration.port.invalid", part.getServerName()));
+            validation.problems.add(new ConfigProblem(part, "configuration.port.invalid", part.getServerName()));
         }
-        validation.checkUsername(part.getUsername());
+        validation.checkUsername(part);
 
         return validation.getProblems();
     }
@@ -40,35 +40,51 @@ public class PartValidation {
         return problems;
     }
 
-    boolean checkPort(@Nullable String rawPort, @Nullable P4ServerName serverName) {
+    boolean checkPort(@NotNull ConfigPart part, @Nullable String rawPort, @Nullable P4ServerName serverName) {
         if (rawPort != null && serverName == null) {
-            problems.add(new ConfigProblem("configuration.port.invalid", rawPort));
+            problems.add(new ConfigProblem(part, "configuration.port.invalid", rawPort));
             return false;
         }
         return true;
     }
 
-    boolean checkAuthTicketFile(@Nullable File file) {
+    boolean checkPort(@NotNull DataPart part, @Nullable String rawPort) {
+        return checkPort(part, rawPort, part.getServerName());
+    }
+
+    boolean checkAuthTicketFile(@NotNull ConfigPart part, @Nullable File file) {
         if (file != null && !file.exists()) {
-            problems.add(new ConfigProblem("configuration.problem.authticket.exist", file));
+            problems.add(new ConfigProblem(part, "configuration.problem.authticket.exist", file));
             return false;
         }
         return true;
     }
 
-    boolean checkTrustTicketFile(@Nullable File file) {
+    boolean checkAuthTicketFile(@NotNull DataPart part) {
+        return checkAuthTicketFile(part, part.getAuthTicketFile());
+    }
+
+    boolean checkTrustTicketFile(@NotNull ConfigPart part, @Nullable File file) {
         if (file != null && ! file.exists()) {
-            problems.add(new ConfigProblem("configuration.problem.trustticket.exist", file));
+            problems.add(new ConfigProblem(part, "configuration.problem.trustticket.exist", file));
             return false;
         }
         return true;
     }
 
-    boolean checkUsername(@Nullable String username) {
+    boolean checkTrustTicketFile(@NotNull DataPart part) {
+        return checkTrustTicketFile(part, part.getTrustTicketFile());
+    }
+
+    boolean checkUsername(@NotNull ConfigPart part, @Nullable String username) {
         if (username == null || username.isEmpty()) {
-            problems.add(new ConfigProblem("configuration.problem.username"));
+            problems.add(new ConfigProblem(part, "configuration.problem.username"));
             return false;
         }
         return true;
+    }
+
+    boolean checkUsername(@NotNull DataPart part) {
+        return checkUsername(part, part.getUsername());
     }
 }

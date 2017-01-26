@@ -20,9 +20,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.popup.PopupChooserBuilder;
 import com.intellij.ui.components.JBList;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
 import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
@@ -35,6 +32,7 @@ import net.groboclown.idea.p4ic.config.part.EnvCompositePart;
 import net.groboclown.idea.p4ic.config.part.FileDataPart;
 import net.groboclown.idea.p4ic.config.part.RelativeConfigCompositePart;
 import net.groboclown.idea.p4ic.config.part.RequirePasswordDataPart;
+import net.groboclown.idea.p4ic.config.part.ServerFingerprintDataPart;
 import net.groboclown.idea.p4ic.config.part.SimpleDataPart;
 import net.groboclown.idea.p4ic.ui.ComponentListPanel;
 import org.jetbrains.annotations.Nls;
@@ -42,41 +40,28 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class ConfigStackPanel {
     private static final Logger LOG = Logger.getInstance(ConfigStackPanel.class);
 
-    private static AtomicLong nextConfigPanelId = new AtomicLong(0);
-
     private Project project;
     private JPanel rootPanel;
     private JButton addEntryButton;
-    private JButton removeEntryButton;
-    private JButton moveEntryUpButton;
-    private JButton moveEntryDownButton;
     private ComponentListPanel<ConfigPartPanel<?>> componentList;
 
     private final ArrayList<ConfigurationUpdatedListener> changeListeners =
             new ArrayList<ConfigurationUpdatedListener>(2);
-    private final ConfigurationUpdatedListener proxyConfigurationUpdatedListener = new ConfigurationUpdatedListener() {
-        @Override
-        public void onConfigurationUpdated(@NotNull P4ProjectConfig evt) {
-            for (ConfigurationUpdatedListener changeListener : changeListeners) {
-                changeListener.onConfigurationUpdated(evt);
-            }
-        }
-    };
     private final ConfigPartUpdatedListener configPartUpdatedListener = new ConfigPartUpdatedListener() {
         @Override
         public void onConfigPartUpdated() {
@@ -98,46 +83,51 @@ public class ConfigStackPanel {
         final JScrollPane scrollPane1 = new JScrollPane();
         scrollPane1.setHorizontalScrollBarPolicy(31);
         rootPanel.add(scrollPane1, BorderLayout.CENTER);
+        scrollPane1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), null));
         scrollPane1.setViewportView(componentList);
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
-        rootPanel.add(panel1, BorderLayout.EAST);
+        panel1.setLayout(new BorderLayout(0, 0));
+        rootPanel.add(panel1, BorderLayout.NORTH);
+        panel1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), null));
+        final JLabel label1 = new JLabel();
+        label1.setFont(UIManager.getFont("TitledBorder.font"));
+        this.$$$loadLabelText$$$(label1,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.stack.title"));
+        panel1.add(label1, BorderLayout.WEST);
         addEntryButton = new JButton();
         addEntryButton.setText("");
         addEntryButton.setToolTipText(
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.stack.add"));
-        panel1.add(addEntryButton,
-                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        removeEntryButton = new JButton();
-        removeEntryButton.setText("");
-        removeEntryButton.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.stack.remove"));
-        panel1.add(removeEntryButton,
-                new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer1 = new Spacer();
-        panel1.add(spacer1,
-                new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        moveEntryUpButton = new JButton();
-        moveEntryUpButton.setText("");
-        moveEntryUpButton.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.stack.move-up"));
-        panel1.add(moveEntryUpButton,
-                new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        moveEntryDownButton = new JButton();
-        moveEntryDownButton.setText("");
-        moveEntryDownButton.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("configuration.stack.move-down"));
-        panel1.add(moveEntryDownButton,
-                new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel1.add(addEntryButton, BorderLayout.EAST);
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    private void $$$loadLabelText$$$(JLabel component, String text) {
+        StringBuffer result = new StringBuffer();
+        boolean haveMnemonic = false;
+        char mnemonic = '\0';
+        int mnemonicIndex = -1;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == '&') {
+                i++;
+                if (i == text.length()) {
+                    break;
+                }
+                if (!haveMnemonic && text.charAt(i) != '&') {
+                    haveMnemonic = true;
+                    mnemonic = text.charAt(i);
+                    mnemonicIndex = result.length();
+                }
+            }
+            result.append(text.charAt(i));
+        }
+        component.setText(result.toString());
+        if (haveMnemonic) {
+            component.setDisplayedMnemonic(mnemonic);
+            component.setDisplayedMnemonicIndex(mnemonicIndex);
+        }
     }
 
     /**
@@ -148,13 +138,12 @@ public class ConfigStackPanel {
     }
 
     enum ConfigPartType {
-        // TODO make these icons all nice.
         ENVIRONMENT(EnvCompositePart.class, "configuration.stack.type.env", AllIcons.Ide.Link) {
             @NotNull
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
                 // For Env, we don't have any settings to copy.  So always use a new one.
-                return new EnvConfigPartPanel(project, getNextConfigPanelId(), new EnvCompositePart(project));
+                return new EnvConfigPartPanel(project, new EnvCompositePart(project));
             }
         },
         PROPERTY(SimpleDataPart.class, "configuration.stack.type.property", AllIcons.General.Configure) {
@@ -167,8 +156,7 @@ public class ConfigStackPanel {
                 } else {
                     cp = new SimpleDataPart(project, (DataPart) part);
                 }
-                // FIXME
-                return null;
+                return new PropertyConfigPanel(project, cp);
             }
         },
         CLIENT_NAME(ClientNameDataPart.class, "configuration.stack.type.client-name", AllIcons.General.Gear) {
@@ -179,7 +167,7 @@ public class ConfigStackPanel {
                 if (part != null) {
                     cp.setClientname(((DataPart) part).getClientname());
                 }
-                return new ClientNameConfigPartPanel(project, getNextConfigPanelId(), cp);
+                return new ClientNameConfigPartPanel(project, cp);
             }
         },
         FILE(FileDataPart.class, "configuration.stack.type.file", AllIcons.FileTypes.Properties) {
@@ -190,7 +178,7 @@ public class ConfigStackPanel {
                 if (part != null) {
                     cp.setConfigFile(((FileDataPart) part).getConfigFile());
                 }
-                return new FileConfigPartPanel(project, getNextConfigPanelId(), cp);
+                return new FileConfigPartPanel(project, cp);
             }
         },
         RELATIVE_FILE(RelativeConfigCompositePart.class, "configuration.stack.type.relative-file",
@@ -202,8 +190,7 @@ public class ConfigStackPanel {
                 if (part != null) {
                     cp.setName(((RelativeConfigCompositePart) part).getName());
                 }
-                // FIXME
-                return null;
+                return new RelativeConfigPartPanel(project, cp);
             }
         },
         REQUIRE_PASSWORD(RequirePasswordDataPart.class, "configuration.stack.type.require-password",
@@ -212,8 +199,19 @@ public class ConfigStackPanel {
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
                 // Require password has no settings, so always use a new part.
-                return new RequirePasswordConfigPartPanel(project, getNextConfigPanelId(),
-                        new RequirePasswordDataPart());
+                return new RequirePasswordConfigPartPanel(project, new RequirePasswordDataPart());
+            }
+        },
+        SERVER_FINGERPRINT(ServerFingerprintDataPart.class, "configuration.stack.type.server-fingerprint",
+                AllIcons.General.Filter) {
+            @NotNull
+            @Override
+            ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
+                final ServerFingerprintDataPart cp = new ServerFingerprintDataPart();
+                if (part != null) {
+                    cp.setServerFingerprint(((ServerFingerprintDataPart) part).getServerFingerprint());
+                }
+                return new ServerFingerprintConfigPartPanel(project, cp);
             }
         };
 
@@ -249,41 +247,11 @@ public class ConfigStackPanel {
             }
         });
 
-        removeEntryButton.setIcon(AllIcons.Actions.Delete);
-        removeEntryButton.addActionListener(new ActionListener() {
+
+        componentList.addChildListChangeListener(new ComponentListPanel.ChildListChanged<ConfigPartPanel<?>>() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                componentList.removeSelectedChild();
-                onListSelectionChanged();
+            public void onChildListChanged(Collection<ConfigPartPanel<?>> childList) {
                 sendConfigStackUpdated();
-            }
-        });
-
-        moveEntryUpButton.setIcon(AllIcons.Actions.MoveUp);
-        moveEntryUpButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                componentList.moveSelectedChildUp();
-                onListSelectionChanged();
-                sendConfigStackUpdated();
-            }
-        });
-
-        moveEntryDownButton.setIcon(AllIcons.Actions.MoveDown);
-        moveEntryDownButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                componentList.moveSelectedChildDown();
-                onListSelectionChanged();
-                sendConfigStackUpdated();
-            }
-        });
-
-
-        componentList.addSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                onListSelectionChanged();
             }
         });
     }
@@ -305,9 +273,6 @@ public class ConfigStackPanel {
                 for (ConfigPart part : component.getUserConfigParts()) {
                     addConfigPart(part);
                 }
-
-                onListSelectionChanged();
-                sendConfigStackUpdated();
             }
         });
     }
@@ -328,10 +293,10 @@ public class ConfigStackPanel {
             return true;
         }
         final Iterator<ConfigPart> origs = originalParts.iterator();
-        final Iterator nows = partPanels.iterator();
+        final Iterator<ConfigPartPanel<?>> nows = partPanels.iterator();
         while (origs.hasNext() && nows.hasNext()) {
             ConfigPart orig = origs.next();
-            ConfigPart now = (ConfigPart) nows.next();
+            ConfigPart now = nows.next().getConfigPart();
             if (!orig.equals(now)) {
                 return true;
             }
@@ -349,7 +314,7 @@ public class ConfigStackPanel {
         final Class<? extends ConfigPart> partClass = part.getClass();
         for (ConfigPartType configPartType : ConfigPartType.values()) {
             if (configPartType.partClass.equals(partClass)) {
-                addConfigPartPanel(configPartType.createPanel(project, part), false);
+                addConfigPartPanel(configPartType.createPanel(project, part));
                 return;
             }
         }
@@ -357,29 +322,17 @@ public class ConfigStackPanel {
     }
 
     private void addConfigPartType(@NotNull ConfigPartType type) {
-        addConfigPartPanel(type.createPanel(project, null), true);
-        sendConfigStackUpdated();
+        addConfigPartPanel(type.createPanel(project, null));
     }
 
-    private <T extends ConfigPart> void addConfigPartPanel(@NotNull ConfigPartPanel<T> panel, boolean sendUpdate) {
+    private <T extends ConfigPart> void addConfigPartPanel(@NotNull ConfigPartPanel<T> panel) {
         panel.setConfigPartUpdatedListener(configPartUpdatedListener);
         // panel.getRootPanel().setMaximumSize(new Dimension(-1, panel.getRootPanel().getMinimumSize().height));
-        componentList.addChildRelativeToSelected(panel, true, true);
+        componentList.addChildAt(0, panel);
         LOG.info("Added component panel " + panel.getClass().getSimpleName());
-        if (sendUpdate) {
-            sendConfigStackUpdated();
-        }
-    }
-
-    private void onListSelectionChanged() {
-        final ComponentListPanel.SelectedPositionDescription desc = componentList.getSelectedPositionDescription();
-        removeEntryButton.setEnabled(desc.canRemove());
-        moveEntryUpButton.setEnabled(desc.canMoveUp());
-        moveEntryDownButton.setEnabled(desc.canMoveDown());
     }
 
     private void sendConfigStackUpdated() {
-        onListSelectionChanged();
         final List<ConfigPartPanel<?>> partComponents = componentList.getChildren();
         ArrayList<ConfigPart> parts = new ArrayList<ConfigPart>(partComponents.size());
         for (ConfigPartPanel<?> configPartPanel : partComponents) {
@@ -387,13 +340,16 @@ public class ConfigStackPanel {
         }
 
         P4ProjectConfig config = new P4ProjectConfigStack(project, parts);
-        proxyConfigurationUpdatedListener.onConfigurationUpdated(config);
+        for (ConfigurationUpdatedListener changeListener : changeListeners) {
+            changeListener.onConfigurationUpdated(config);
+        }
     }
 
     // CalledInAWT
     private void chooseEntry() {
         final ConfigPartType[] configTypeValues = ConfigPartType.values();
         final JBList list = new JBList();
+        new ListMouseMotionListener(list);
         list.setListData(configTypeValues);
         list.setCellRenderer(new ConfigPartTypeCellRenderer());
         // list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -417,14 +373,6 @@ public class ConfigStackPanel {
                     }
                 })
                 .createPopup().showInCenterOf(addEntryButton);
-
-        // ChooseConfigPartDialog dialog = new ChooseConfigPartDialog(project);
-        // dialog.show();
-        // addConfigPartType(dialog.getChoice());
-    }
-
-    private static String getNextConfigPanelId() {
-        return Long.toHexString(nextConfigPanelId.incrementAndGet());
     }
 
     private static class ConfigPartTypeCellRenderer
@@ -449,10 +397,32 @@ public class ConfigStackPanel {
         }
     }
 
+
     private void createUIComponents() {
         // place custom component creation code here
         componentList = new ComponentListPanel<ConfigPartPanel<?>>();
     }
 
 
+    private static class ListMouseMotionListener
+            implements MouseMotionListener {
+        private final JBList list;
+
+        private ListMouseMotionListener(JBList list) {
+            this.list = list;
+            list.addMouseMotionListener(this);
+        }
+
+        @Override
+        public void mouseDragged(MouseEvent e) {
+            // ignore
+        }
+
+        @Override
+        public void mouseMoved(MouseEvent e) {
+            list.setSelectedIndex(list.locationToIndex(e.getPoint()));
+            list.repaint();
+            LOG.info("Set selected index of the popup list to " + list.getSelectedIndex());
+        }
+    }
 }

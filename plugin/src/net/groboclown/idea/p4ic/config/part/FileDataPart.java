@@ -14,7 +14,6 @@
 
 package net.groboclown.idea.p4ic.config.part;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
@@ -145,18 +144,18 @@ public class FileDataPart implements DataPart {
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
         if (filePath == null) {
-            return Collections.singletonList(new ConfigProblem("configuration.p4config.no-file"));
+            return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.no-file"));
         }
         if (! filePath.exists()) {
-            return Collections.singletonList(new ConfigProblem("configuration.p4config.bad-file", filePath));
+            return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.bad-file", filePath));
         }
         if (loadError != null) {
-            return Collections.singletonList(new ConfigProblem(loadError));
+            return Collections.singletonList(new ConfigProblem(this, loadError));
         }
         PartValidation validation = new PartValidation();
-        validation.checkPort(rawPort, serverName);
-        validation.checkAuthTicketFile(getAuthTicketFile());
-        validation.checkTrustTicketFile(getTrustTicketFile());
+        validation.checkPort(this, rawPort);
+        validation.checkAuthTicketFile(this);
+        validation.checkTrustTicketFile(this);
         return validation.getProblems();
     }
 

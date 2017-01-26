@@ -18,7 +18,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.ui.UIUtil;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.part.EnvCompositePart;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -28,11 +30,10 @@ import java.util.ResourceBundle;
 public class EnvConfigPartPanel
         extends ConfigPartPanel<EnvCompositePart> {
     private JPanel rootPanel;
-    private JLabel titleLabel;
     private JTextPane descriptionLabel;
 
-    EnvConfigPartPanel(@NotNull Project project, @NotNull String id, @NotNull EnvCompositePart part) {
-        super(project, id, part);
+    EnvConfigPartPanel(@NotNull Project project, @NotNull EnvCompositePart part) {
+        super(project, part);
     }
 
     @Override
@@ -47,25 +48,17 @@ public class EnvConfigPartPanel
         return false;
     }
 
+    @Nls
+    @NotNull
     @Override
-    public void applySettingsTo(@NotNull EnvCompositePart userPart) {
-        // Nothing to do
+    public String getTitle() {
+        return P4Bundle.getString("configuration.stack.env.title");
     }
 
+    @NotNull
     @Override
     public JPanel getRootPanel() {
         return rootPanel;
-    }
-
-    @Override
-    public void onComponentSelected(boolean selected) {
-        Color background = UIUtil.getListBackground(selected);
-        rootPanel.setBackground(background);
-        titleLabel.setBackground(background);
-        descriptionLabel.setBackground(background);
-
-        titleLabel.setForeground(UIUtil.getListForeground(selected));
-        descriptionLabel.setForeground(UIUtil.getListForeground(selected));
     }
 
     {
@@ -85,44 +78,11 @@ public class EnvConfigPartPanel
     private void $$$setupUI$$$() {
         rootPanel = new JPanel();
         rootPanel.setLayout(new BorderLayout(0, 0));
-        titleLabel = new JLabel();
-        titleLabel.setHorizontalAlignment(2);
-        titleLabel.setHorizontalTextPosition(2);
-        this.$$$loadLabelText$$$(titleLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("configuration.connection-choice.picker.env"));
-        rootPanel.add(titleLabel, BorderLayout.NORTH);
         descriptionLabel = new JTextPane();
         descriptionLabel.setFont(UIManager.getFont("Label.font"));
+        descriptionLabel.setText(
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("connection.env.description"));
         rootPanel.add(descriptionLabel, BorderLayout.CENTER);
-    }
-
-    /**
-     * @noinspection ALL
-     */
-    private void $$$loadLabelText$$$(JLabel component, String text) {
-        StringBuffer result = new StringBuffer();
-        boolean haveMnemonic = false;
-        char mnemonic = '\0';
-        int mnemonicIndex = -1;
-        for (int i = 0; i < text.length(); i++) {
-            if (text.charAt(i) == '&') {
-                i++;
-                if (i == text.length()) {
-                    break;
-                }
-                if (!haveMnemonic && text.charAt(i) != '&') {
-                    haveMnemonic = true;
-                    mnemonic = text.charAt(i);
-                    mnemonicIndex = result.length();
-                }
-            }
-            result.append(text.charAt(i));
-        }
-        component.setText(result.toString());
-        if (haveMnemonic) {
-            component.setDisplayedMnemonic(mnemonic);
-            component.setDisplayedMnemonicIndex(mnemonicIndex);
-        }
     }
 
     /**

@@ -15,48 +15,65 @@
 package net.groboclown.idea.p4ic.ui.config.props;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.part.RequirePasswordDataPart;
+import net.groboclown.idea.p4ic.config.part.RelativeConfigCompositePart;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
-public class RequirePasswordConfigPartPanel
-        extends ConfigPartPanel<RequirePasswordDataPart> {
+public class RelativeConfigPartPanel
+        extends ConfigPartPanel<RelativeConfigCompositePart> {
+    private static final String DEFAULT_FILE_NAME = ".p4config";
+
     private JPanel rootPanel;
-    private JLabel label;
+    private JTextField nameField;
+    private JLabel nameFieldLabel;
 
-    RequirePasswordConfigPartPanel(@NotNull Project project, @NotNull RequirePasswordDataPart part) {
+    RelativeConfigPartPanel(@NotNull Project project, @NotNull final RelativeConfigCompositePart part) {
         super(project, part);
-    }
-
-    @NotNull
-    @Override
-    RequirePasswordDataPart copyPart() {
-        return new RequirePasswordDataPart();
-    }
-
-    @Override
-    public boolean isModified(@NotNull RequirePasswordDataPart originalPart) {
-        // Can never be modified
-        return false;
+        if (part.getName() != null) {
+            part.setName(DEFAULT_FILE_NAME);
+        }
+        nameField.setText(part.getName());
+        nameField.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                part.setName(nameField.getText());
+            }
+        });
     }
 
     @Nls
     @NotNull
     @Override
     public String getTitle() {
-        return P4Bundle.getString("configuration.stack.require-password.title");
+        return P4Bundle.getString("configuration.stack.relative.title");
     }
 
     @NotNull
     @Override
     public JPanel getRootPanel() {
         return rootPanel;
+    }
+
+    @NotNull
+    @Override
+    RelativeConfigCompositePart copyPart() {
+        final RelativeConfigCompositePart ret = new RelativeConfigCompositePart(getProject());
+        ret.setName(getConfigPart().getName());
+        return ret;
+    }
+
+    @Override
+    public boolean isModified(@NotNull RelativeConfigCompositePart originalPart) {
+        return StringUtil.equals(originalPart.getName(), getConfigPart().getName());
     }
 
     {
@@ -75,13 +92,15 @@ public class RequirePasswordConfigPartPanel
      */
     private void $$$setupUI$$$() {
         rootPanel = new JPanel();
-        rootPanel.setLayout(new BorderLayout(0, 0));
-        label = new JLabel();
-        label.setHorizontalAlignment(2);
-        label.setHorizontalTextPosition(2);
-        this.$$$loadLabelText$$$(label, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("configuration.config.require-password"));
-        rootPanel.add(label, BorderLayout.NORTH);
+        rootPanel.setLayout(new BorderLayout(4, 0));
+        nameFieldLabel = new JLabel();
+        this.$$$loadLabelText$$$(nameFieldLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.relp4config.file.label"));
+        rootPanel.add(nameFieldLabel, BorderLayout.WEST);
+        nameField = new JTextField();
+        nameField.setToolTipText(
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("config.rel.path.tooltip"));
+        rootPanel.add(nameField, BorderLayout.CENTER);
     }
 
     /**

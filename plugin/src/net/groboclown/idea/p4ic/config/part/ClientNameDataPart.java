@@ -74,7 +74,7 @@ public class ClientNameDataPart implements DataPart {
     public Collection<ConfigProblem> getConfigProblems() {
         List<ConfigProblem> problems = new ArrayList<ConfigProblem>(additionalProblems);
         if (clientName == null) {
-            problems.add(new ConfigProblem("error.config.no-client"));
+            problems.add(new ConfigProblem(this, "error.config.no-client"));
         }
         return problems;
     }

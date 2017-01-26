@@ -25,27 +25,19 @@ import java.awt.*;
 
 public abstract class ConfigPartPanel<T extends ConfigPart>
         implements ConfigurationUpdatedListener,
-            ComponentListPanel.SelectableComponent,
             ComponentListPanel.WithRootPanel {
     private final Project project;
-    private final String id;
     private final T part;
     private ConfigPartUpdatedListener listener;
     private P4ProjectConfig latestConfig;
 
-    ConfigPartPanel(@NotNull Project project, @NotNull String id, @NotNull T part) {
+    ConfigPartPanel(@NotNull Project project, @NotNull T part) {
         this.project = project;
-        this.id = id;
         this.part = part;
-        // getRootPanel().setMaximumSize(new Dimension(-1, getRootPanel().getMinimumSize().height));
     }
 
     void setConfigPartUpdatedListener(@NotNull ConfigPartUpdatedListener listener) {
         this.listener = listener;
-    }
-
-    public final String getId() {
-        return id;
     }
 
     /**
@@ -59,13 +51,6 @@ public abstract class ConfigPartPanel<T extends ConfigPart>
     }
 
     public abstract boolean isModified(@NotNull T originalPart);
-
-    /**
-     * Completely copy the panel's configuration <i>into</i> the parameter.
-     *
-     * @param userPart destination for the panel's configuration.
-     */
-    public abstract void applySettingsTo(@NotNull T userPart);
 
     /**
      * Call whenever a config part setting changes.

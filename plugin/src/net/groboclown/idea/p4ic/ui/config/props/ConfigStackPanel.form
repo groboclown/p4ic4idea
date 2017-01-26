@@ -12,7 +12,9 @@
         <properties>
           <horizontalScrollBarPolicy value="31"/>
         </properties>
-        <border type="none"/>
+        <border type="empty">
+          <size top="4" left="4" bottom="4" right="4"/>
+        </border>
         <children>
           <component id="27d90" class="net.groboclown.idea.p4ic.ui.ComponentListPanel" binding="componentList" custom-create="true">
             <constraints/>
@@ -20,51 +22,25 @@
           </component>
         </children>
       </scrollpane>
-      <grid id="9467c" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-        <margin top="0" left="0" bottom="0" right="0"/>
-        <constraints border-constraint="East"/>
+      <grid id="3a375" layout-manager="BorderLayout" hgap="0" vgap="0">
+        <constraints border-constraint="North"/>
         <properties/>
-        <border type="none"/>
+        <border type="empty">
+          <size top="4" left="4" bottom="4" right="4"/>
+        </border>
         <children>
+          <component id="72674" class="javax.swing.JLabel">
+            <constraints border-constraint="West"/>
+            <properties>
+              <font swing-font="TitledBorder.font"/>
+              <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.stack.title"/>
+            </properties>
+          </component>
           <component id="82ad7" class="javax.swing.JButton" binding="addEntryButton">
-            <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
+            <constraints border-constraint="East"/>
             <properties>
               <text value=""/>
               <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.stack.add"/>
-            </properties>
-          </component>
-          <component id="aa1e7" class="javax.swing.JButton" binding="removeEntryButton">
-            <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value=""/>
-              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.stack.remove"/>
-            </properties>
-          </component>
-          <vspacer id="86037">
-            <constraints>
-              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-            </constraints>
-          </vspacer>
-          <component id="caf72" class="javax.swing.JButton" binding="moveEntryUpButton">
-            <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value=""/>
-              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.stack.move-up"/>
-            </properties>
-          </component>
-          <component id="fe504" class="javax.swing.JButton" binding="moveEntryDownButton">
-            <constraints>
-              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value=""/>
-              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.stack.move-down"/>
             </properties>
           </component>
         </children>

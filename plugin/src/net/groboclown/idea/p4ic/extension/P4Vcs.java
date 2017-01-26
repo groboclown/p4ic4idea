@@ -347,7 +347,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             public void run() {
                 refreshServerConnectivity();
 
-
                 if (connectionWidget != null) {
                     // This widget needs to be initialized outside the activation thread.
                     // Do not block on running this, as it can indirectly run the password

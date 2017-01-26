@@ -15,6 +15,8 @@
 package net.groboclown.idea.p4ic.ui.config;
 
 import com.intellij.openapi.project.Project;
+import com.jgoodies.forms.layout.CellConstraints;
+import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
 import net.groboclown.idea.p4ic.ui.config.props.ConfigStackPanel;
 import org.jetbrains.annotations.NotNull;
@@ -27,10 +29,12 @@ public class P4Config2Panel {
     private ConfigStackPanel configStackPanel;
     private ResolvedPropertiesPanel resolvePropertiesPanel;
     private JPanel rootPanel;
+    private JSplitPane splitPane;
 
     public P4Config2Panel() {
         $$$setupUI$$$();
         configStackPanel.addChangeListener(resolvePropertiesPanel.getConfigurationUpdatedListener());
+        splitPane.setDividerLocation(0.6);
     }
 
     private void createUIComponents() {
@@ -64,10 +68,15 @@ public class P4Config2Panel {
     private void $$$setupUI$$$() {
         createUIComponents();
         rootPanel = new JPanel();
-        rootPanel.setLayout(new BorderLayout(0, 0));
-        rootPanel.add(configStackPanel.$$$getRootComponent$$$(), BorderLayout.CENTER);
+        rootPanel.setLayout(new FormLayout("fill:d:grow", "center:d:grow"));
+        splitPane = new JSplitPane();
+        splitPane.setDividerLocation(180);
+        splitPane.setOrientation(0);
+        CellConstraints cc = new CellConstraints();
+        rootPanel.add(splitPane, cc.xy(1, 1, CellConstraints.DEFAULT, CellConstraints.FILL));
         resolvePropertiesPanel = new ResolvedPropertiesPanel();
-        rootPanel.add(resolvePropertiesPanel.$$$getRootComponent$$$(), BorderLayout.SOUTH);
+        splitPane.setRightComponent(resolvePropertiesPanel.$$$getRootComponent$$$());
+        splitPane.setLeftComponent(configStackPanel.$$$getRootComponent$$$());
     }
 
     /**

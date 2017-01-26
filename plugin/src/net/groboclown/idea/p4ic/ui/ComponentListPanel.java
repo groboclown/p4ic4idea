@@ -14,246 +14,104 @@
 
 package net.groboclown.idea.p4ic.ui;
 
-import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.ui.VerticalFlowLayout;
+import com.intellij.util.ui.UIUtil;
+import net.groboclown.idea.p4ic.P4Bundle;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * A JPanel that has child panels arranged along an axis (either vertical or horizontal)
- * that can be moved and selected.
+ * A JPanel that has value panels layered vertically
+ * that can be moved and removed in their order.
  */
 public class ComponentListPanel<T extends ComponentListPanel.WithRootPanel> extends JPanel {
-    private static final Logger LOG = Logger.getInstance(ComponentListPanel.class);
 
-    public interface SelectableComponent {
-        void onComponentSelected(boolean selected);
-    }
     public interface WithRootPanel {
+        @NotNull
+        @Nls
+        String getTitle();
+
+        @NotNull
         JPanel getRootPanel();
     }
-
-    public enum SelectedPositionDescription {
-        NOT_SELECTED(false, false, false),
-        ONLY_ONE(false, false, true),
-        AT_TOP(false, true, true),
-        AT_BOTTOM(true, false, true),
-        IN_MIDDLE(true, true, true);
-
-        private final boolean canMoveUp;
-        private final boolean canMoveDown;
-        private final boolean canRemove;
-
-        SelectedPositionDescription(boolean canMoveUp, boolean canMoveDown, boolean canRemove) {
-            this.canMoveUp = canMoveUp;
-            this.canMoveDown = canMoveDown;
-            this.canRemove = canRemove;
-        }
-
-        public boolean canMoveUp() {
-            return canMoveUp;
-        }
-
-        public boolean canMoveDown() {
-            return canMoveDown;
-        }
-
-        public boolean canRemove() {
-            return canRemove;
-        }
+    public interface ChildListChanged<C extends ComponentListPanel.WithRootPanel> {
+        void onChildListChanged(Collection<C> childList);
     }
 
     private final Object sync = new Object();
-    private volatile int selectedIndex = -1;
-    private final List<T> children = new ArrayList<T>();
-    private final List<ListSelectionListener> selectionListeners =
-            Collections.synchronizedList(new ArrayList<ListSelectionListener>());
+    private final List<ChildWrapper> children = new ArrayList<ChildWrapper>();
+    private final List<ChildListChanged<T>> childChangeListeners = new ArrayList<ChildListChanged<T>>();
 
     public ComponentListPanel() {
         super(new VerticalFlowLayout());
     }
 
+    public void addChildListChangeListener(@NotNull ChildListChanged<T> listener) {
+        childChangeListeners.add(listener);
+    }
+
     @NotNull
     public final List<T> getChildren() {
+        final List<T> ret;
         synchronized (sync) {
-            return new ArrayList<T>(children);
-        }
-    }
-
-    public final void addSelectionListener(@NotNull ListSelectionListener listener) {
-        selectionListeners.add(listener);
-    }
-
-    @NotNull
-    public final SelectedPositionDescription getSelectedPositionDescription() {
-        final int size = getChildrenCount();
-        if (size <= 0 || selectedIndex < 0 || selectedIndex >= size) {
-            return SelectedPositionDescription.NOT_SELECTED;
-        }
-        if (size == 1 && selectedIndex == 0) {
-            return SelectedPositionDescription.ONLY_ONE;
-        }
-        if (selectedIndex == 0) {
-            return SelectedPositionDescription.AT_TOP;
-        }
-        if (selectedIndex + 1 >= size) {
-            return SelectedPositionDescription.AT_BOTTOM;
-        }
-        return SelectedPositionDescription.IN_MIDDLE;
-    }
-
-    @Nullable
-    public final T getChildAt(int index) {
-        synchronized (sync) {
-            if (index < 0 || index >= children.size()) {
-                return null;
-            }
-            return children.get(index);
-        }
-    }
-
-    @Nullable
-    public final T getSelectedChild() {
-        return getChildAt(selectedIndex);
-    }
-
-    public final int getSelectedIndex() {
-        return selectedIndex;
-    }
-
-    public final void addChild(@NotNull final T child) {
-        addChildListeners(child);
-        synchronized (sync) {
-            children.add(child);
-            add(child.getRootPanel(), getComponentCount() - 1);
-        }
-        if (getChildrenCount() == 1) {
-            setSelectedChild(child);
-        }
-        onChildrenChanged();
-    }
-
-    /**
-     * Adds the child relative to where the currently selected child is.
-     *
-     */
-    public final void addChildRelativeToSelected(@NotNull final T child, boolean before, boolean makeSelected) {
-        if (getChildrenCount() <= 0) {
-            addChild(child);
-            return;
-        }
-        addChildListeners(child);
-        synchronized (sync) {
-            final int insertPos;
-            if (selectedIndex < 0 || selectedIndex >= children.size()) {
-                if (before || children.isEmpty()) {
-                    insertPos = 0;
-                } else {
-                    insertPos = children.size() - 1;
-                }
-            } else if (before) {
-                insertPos = selectedIndex;
-            } else if (children.isEmpty()) {
-                insertPos = 0;
-            } else {
-                // just in case
-                insertPos = selectedIndex + 1;
-            }
-            children.add(insertPos, child);
-            if (makeSelected) {
-                setSelectedChild(child);
+            ret = new ArrayList<T>(children.size());
+            for (ChildWrapper child : children) {
+                ret.add(child.value);
             }
         }
+        return ret;
+    }
+
+    public final void addChildAt(int index, @NotNull final T child) {
+        if (index < 0) {
+            index = 0;
+        }
+        synchronized (sync) {
+            int size = children.size();
+            if (index > size) {
+                index = size;
+            }
+            final ChildWrapper wrapper = createChildWrapper(child);
+            children.add(index, wrapper);
+        }
+        fireChildListChanged();
         reloadChildren();
-    }
-
-    public void moveSelectedChildUp() {
-        boolean moved = false;
-        synchronized (sync) {
-            // Note > 0
-            if (selectedIndex > 0 && selectedIndex < children.size()) {
-                final T child = children.get(selectedIndex);
-                final int swappedIndex = selectedIndex - 1;
-                final T swapWith = children.get(swappedIndex);
-                children.set(selectedIndex, swapWith);
-                children.set(swappedIndex, child);
-                selectedIndex = swappedIndex;
-                moved = true;
-            }
-        }
-        if (moved) {
-            reloadChildren();
-        }
-    }
-
-    public void moveSelectedChildDown() {
-        boolean moved = false;
-        synchronized (sync) {
-            // Note + 1 <
-            if (selectedIndex >= 0 && selectedIndex + 1 < children.size()) {
-                final T child = children.get(selectedIndex);
-                final int swappedIndex = selectedIndex + 1;
-                final T swapWith = children.get(swappedIndex);
-                children.set(selectedIndex, swapWith);
-                children.set(swappedIndex, child);
-                selectedIndex = swappedIndex;
-                moved = true;
-            }
-        }
-        if (moved) {
-            reloadChildren();
-        }
-    }
-
-    public void removeSelectedChild() {
-        T removedChild = null;
-        T newSelectedChild = getSelectedChild();
-        synchronized (sync) {
-            if (selectedIndex >= 0 && selectedIndex < children.size()) {
-                removedChild = children.remove(selectedIndex);
-                if (selectedIndex < children.size()) {
-                    newSelectedChild = children.get(selectedIndex);
-                } else {
-                    selectedIndex = -1;
-                }
-            }
-        }
-        setSelectedChild(newSelectedChild);
-        if (removedChild != null) {
-            if (removedChild instanceof SelectableComponent) {
-                ((SelectableComponent) removedChild).onComponentSelected(false);
-            }
-            remove(removedChild.getRootPanel());
-            onChildrenChanged();
-        }
     }
 
     public void removeAllChildren() {
-        setSelectedChild(null);
         synchronized (sync) {
             children.clear();
         }
+        fireChildListChanged();
         reloadChildren();
     }
 
-    private void reloadChildren() {
-        while (getComponentCount() > 0) {
-            remove(0);
+    private void fireChildListChanged() {
+        final Collection<T> childList = Collections.unmodifiableCollection(getChildren());
+        for (ChildListChanged<T> childChangeListener : childChangeListeners) {
+            childChangeListener.onChildListChanged(childList);
         }
-        for (T child : children) {
-            add(child.getRootPanel());
+    }
+
+    private void reloadChildren() {
+        removeAll();
+        synchronized (sync) {
+            final int size = children.size();
+            for (int i = 0; i < size; i ++) {
+                final ChildWrapper child = children.get(i);
+                child.setPosition(i, size);
+                add(child);
+            }
         }
         onChildrenChanged();
     }
@@ -265,79 +123,106 @@ public class ComponentListPanel<T extends ComponentListPanel.WithRootPanel> exte
     }
 
 
-    private void setSelectedChild(@Nullable T child) {
-        final int newIndex;
-        T deselected = null;
-        T selected = null;
-        if (child != null) {
-            synchronized (sync) {
-                newIndex = getChildIndex(child);
-                if (newIndex != selectedIndex && newIndex >= 0 && newIndex < children.size()) {
-                    selected = child;
-                    if (selectedIndex >= 0 && selectedIndex < children.size()) {
-                        deselected = children.get(selectedIndex);
-                    }
-                }
-            }
-        } else {
-            newIndex = -1;
-        }
-        if (newIndex == selectedIndex) {
-            return;
-        }
-        selectedIndex = newIndex;
-        if (selected != null) {
-            if (selected instanceof SelectableComponent) {
-                ((SelectableComponent) selected).onComponentSelected(true);
-            }
-        }
-        if (deselected != null && deselected != selected && deselected instanceof SelectableComponent) {
-            ((SelectableComponent) deselected).onComponentSelected(false);
-        }
-        ListSelectionEvent event = new ListSelectionEvent(this, newIndex, newIndex, false);
-        for (ListSelectionListener selectionListener : selectionListeners) {
-            selectionListener.valueChanged(event);
-        }
-        repaint();
-    }
-
-    private int getChildrenCount() {
+    private void moveChild(@NotNull final ChildWrapper child, final int change) {
+        final int origPos = child.position;
+        final boolean swapped;
         synchronized (sync) {
-            return children.size();
+            final int size = children.size();
+            if (child.position < 0 || child.position >= size || child != children.get(child.position)) {
+                throw new IllegalStateException("Child at " + child.position + " is invalid");
+            }
+            final int newPos = child.position + change;
+            if (newPos >= 0 && newPos < size) {
+                // we can swap
+                final ChildWrapper swap = children.get(newPos);
+                children.set(newPos, child);
+                children.set(origPos, swap);
+                // "reload children" will set the position for us
+                swapped = true;
+            } else {
+                swapped = false;
+            }
+        }
+
+        if (swapped) {
+            fireChildListChanged();
+            reloadChildren();
         }
     }
 
-    private int getChildIndex(@NotNull T child) {
+    private void removeChild(@NotNull final ChildWrapper child) {
         synchronized (sync) {
-            return children.indexOf(child);
+            final int size = children.size();
+            if (child.position < 0 || child.position >= size || child != children.get(child.position)) {
+                throw new IllegalStateException("Child at " + child.position + " is invalid");
+            }
+            children.remove(child.position);
         }
+        fireChildListChanged();
+        reloadChildren();
     }
 
-    private void addChildListeners(@NotNull final T child) {
-        child.getRootPanel().addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                setSelectedChild(child);
-            }
-        });
-        List<Container> stack = new ArrayList<Container>();
-        final MouseAdapter mouseListener = new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                setSelectedChild(child);
-            }
-        };
-        stack.add(child.getRootPanel());
-        while (! stack.isEmpty()) {
-            Container next = stack.remove(0);
-            next.addMouseListener(mouseListener);
-            for (Component component : next.getComponents()) {
-                if (component instanceof Container) {
-                    stack.add((Container) component);
-                } else {
-                    component.addMouseListener(mouseListener);
+    private ChildWrapper createChildWrapper(@NotNull final T child) {
+        ChildWrapper panel = new ChildWrapper(child);
+        return panel;
+    }
+
+    private class ChildWrapper extends JPanel {
+        int position = -1;
+        final T value;
+        private final JButton removeButton;
+        private final JButton moveUpButton;
+        private final JButton moveDownButton;
+
+        private ChildWrapper(@NotNull final T value) {
+            super(new BorderLayout());
+            this.value = value;
+
+            JPanel titlePanel = new JPanel(new BorderLayout());
+
+            JLabel title = new JLabel(value.getTitle());
+            title.setFont(UIUtil.getTitledBorderFont());
+            titlePanel.add(title, BorderLayout.WEST);
+
+            JPanel buttons = new JPanel(new FlowLayout());
+            removeButton = new JButton(AllIcons.General.Remove);
+            removeButton.setToolTipText(P4Bundle.getString("configuration.stack.remove"));
+            removeButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    removeChild(ChildWrapper.this);
                 }
-            }
+            });
+            buttons.add(removeButton);
+            moveUpButton = new JButton(AllIcons.Actions.MoveUp);
+            moveUpButton.setToolTipText(P4Bundle.getString("configuration.stack.move-up"));
+            moveUpButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    moveChild(ChildWrapper.this, -1);
+                }
+            });
+            buttons.add(moveUpButton);
+            moveDownButton = new JButton(AllIcons.Actions.MoveDown);
+            moveDownButton.setToolTipText(P4Bundle.getString("configuration.stack.move-down"));
+            moveDownButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    moveChild(ChildWrapper.this, 1);
+                }
+            });
+            buttons.add(moveDownButton);
+            titlePanel.add(buttons);
+
+            add(titlePanel, BorderLayout.NORTH);
+            add(value.getRootPanel(), BorderLayout.CENTER);
+            setBorder(BorderFactory.createLineBorder(UIUtil.getTreeSelectionBorderColor()));
+        }
+
+        void setPosition(int pos, int count) {
+            this.position = pos;
+            moveUpButton.setEnabled(pos > 0);
+            moveDownButton.setEnabled(pos + 1 < count);
         }
     }
 }

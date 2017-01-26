@@ -16,17 +16,14 @@ package net.groboclown.idea.p4ic.ui.config.props;
 
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.TextComponentAccessor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
-import com.intellij.ui.TextFieldWithHistoryWithBrowseButton;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.intellij.util.ui.UIUtil;
-import com.jgoodies.forms.layout.CellConstraints;
-import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.part.FileDataPart;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,15 +36,15 @@ import java.util.ResourceBundle;
 
 public class FileConfigPartPanel
         extends ConfigPartPanel<FileDataPart> {
+    private static final String DEFAULT_FILE_NAME = ".p4config";
+
     private JPanel rootPanel;
     // private TextFieldWithHistoryWithBrowseButton fileLocation;
     private TextFieldWithBrowseButton fileLocation;
     private JLabel fileLocationLabel;
 
-    protected FileConfigPartPanel(@NotNull Project project,
-            @NotNull String id,
-            @NotNull FileDataPart part) {
-        super(project, id, part);
+    FileConfigPartPanel(@NotNull Project project, @NotNull FileDataPart part) {
+        super(project, part);
 
         fileLocation.addBrowseFolderListener(
                 P4Bundle.message("configuration.connection-choice.picker.p4config"),
@@ -64,9 +61,11 @@ public class FileConfigPartPanel
         if (part.getConfigFile() == null && project.getBasePath() != null) {
             // Not in old versions
             // fileLocation.setTextAndAddToHistory(project.getBasePath());
-            fileLocation.getTextField().setText(project.getBasePath());
+            File configFile = new File(project.getBasePath() + File.separator + DEFAULT_FILE_NAME);
+            fileLocation.getTextField().setText(configFile.getAbsolutePath());
+            part.setConfigFile(configFile);
         } else if (part.getConfigFile() != null) {
-            fileLocation.getTextField().setText(part.getConfigFile().getPath());
+            fileLocation.getTextField().setText(part.getConfigFile().getAbsolutePath());
         }
 
         fileLocationLabel.setLabelFor(fileLocation);
@@ -99,26 +98,22 @@ public class FileConfigPartPanel
                 !originalPart.getConfigFile().getParent().equals(getSelectedLocation()));
     }
 
+    @Nls
+    @NotNull
     @Override
-    public void applySettingsTo(@NotNull FileDataPart userPart) {
-        userPart.setConfigFile(getConfigPart().getConfigFile());
+    public String getTitle() {
+        return P4Bundle.getString("configuration.stack.file.title");
     }
 
+    @NotNull
     @Override
     public JPanel getRootPanel() {
         return rootPanel;
     }
 
     @Nullable
-    String getSelectedLocation() {
+    private String getSelectedLocation() {
         return fileLocation.getText();
-    }
-
-    @Override
-    public void onComponentSelected(boolean selected) {
-        rootPanel.setBackground(UIUtil.getListBackground(selected));
-        fileLocationLabel.setBackground(UIUtil.getListBackground(selected));
-        fileLocationLabel.setForeground(UIUtil.getListForeground(selected));
     }
 
     {
@@ -137,28 +132,18 @@ public class FileConfigPartPanel
      */
     private void $$$setupUI$$$() {
         rootPanel = new JPanel();
-        rootPanel.setLayout(new GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
+        rootPanel.setLayout(new BorderLayout(4, 0));
         fileLocationLabel = new JLabel();
+        fileLocationLabel.setHorizontalAlignment(11);
         this.$$$loadLabelText$$$(fileLocationLabel,
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.p4config"));
-        rootPanel.add(fileLocationLabel,
-                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
-                        false));
+        rootPanel.add(fileLocationLabel, BorderLayout.WEST);
         fileLocation = new TextFieldWithBrowseButton();
         fileLocation.setText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("config.file.location.tooltip"));
         fileLocation.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.p4config.chooser"));
-        rootPanel.add(fileLocation,
-                new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
-                        0, false));
-        final Spacer spacer1 = new Spacer();
-        rootPanel.add(spacer1,
-                new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        rootPanel.add(fileLocation, BorderLayout.CENTER);
     }
 
     /**

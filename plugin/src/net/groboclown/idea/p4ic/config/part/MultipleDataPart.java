@@ -141,7 +141,7 @@ public class MultipleDataPart implements DataPart {
     public String getPlaintextPassword() {
         for (DataPart part : parts) {
             if (part.hasPasswordSet()) {
-                return getPlaintextPassword();
+                return part.getPlaintextPassword();
             }
         }
         return null;
@@ -162,7 +162,7 @@ public class MultipleDataPart implements DataPart {
     public File getAuthTicketFile() {
         for (DataPart part : parts) {
             if (part.hasAuthTicketFileSet()) {
-                return getAuthTicketFile();
+                return part.getAuthTicketFile();
             }
         }
         return null;

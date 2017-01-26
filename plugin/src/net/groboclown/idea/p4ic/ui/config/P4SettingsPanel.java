@@ -29,22 +29,19 @@ public class P4SettingsPanel {
     private JPanel myRootPanel;
     private P4Config2Panel myConfigPanel;
 
-    boolean isModified(@NotNull
-    final P4ProjectConfigComponent myConfig, @NotNull
-    final UserProjectPreferences preferences) {
+    boolean isModified(@NotNull final P4ProjectConfigComponent myConfig,
+            @NotNull final UserProjectPreferences preferences) {
         return myConfigPanel.isModified(myConfig) || myUserPreferencesPanel.isModified(preferences);
     }
 
-    void saveSettingsToConfig(@NotNull
-    final P4ProjectConfigComponent config, @NotNull
-    final UserProjectPreferences preferences) {
+    void saveSettingsToConfig(@NotNull final P4ProjectConfigComponent config,
+            @NotNull final UserProjectPreferences preferences) {
         myConfigPanel.saveSettingsToConfig(config);
         myUserPreferencesPanel.saveSettingsToConfig(preferences);
     }
 
-    void loadSettingsIntoGUI(@NotNull
-    final P4ProjectConfigComponent config, @NotNull
-    final UserProjectPreferences preferences) {
+    void loadSettingsIntoGUI(@NotNull final P4ProjectConfigComponent config,
+            @NotNull final UserProjectPreferences preferences) {
         myConfigPanel.loadSettingsIntoGUI(config);
         myUserPreferencesPanel.loadSettingsIntoGUI(preferences);
     }
@@ -82,6 +79,7 @@ public class P4SettingsPanel {
                 .getString("user.settings.connection"), panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
         scrollPane1.setHorizontalScrollBarPolicy(31);
+        scrollPane1.setVerticalScrollBarPolicy(21);
         panel1.add(scrollPane1, BorderLayout.CENTER);
         myConfigPanel = new P4Config2Panel();
         scrollPane1.setViewportView(myConfigPanel.$$$getRootComponent$$$());

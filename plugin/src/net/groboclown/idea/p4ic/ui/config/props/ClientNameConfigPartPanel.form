@@ -7,7 +7,7 @@
     <properties/>
     <border type="none"/>
     <children>
-      <component id="4e1d8" class="javax.swing.JLabel">
+      <component id="4e1d8" class="javax.swing.JLabel" binding="listLabel">
         <constraints border-constraint="West"/>
         <properties>
           <labelFor value="4711c"/>
@@ -15,7 +15,7 @@
           <verticalAlignment value="0"/>
         </properties>
       </component>
-      <grid id="b90d3" layout-manager="BorderLayout" hgap="0" vgap="0">
+      <grid id="b90d3" binding="listPanel" layout-manager="BorderLayout" hgap="0" vgap="0">
         <constraints border-constraint="Center"/>
         <properties/>
         <border type="none"/>
@@ -23,10 +23,11 @@
           <component id="4711c" class="javax.swing.JComboBox" binding="clientDropdownList">
             <constraints border-constraint="Center"/>
             <properties>
+              <editable value="true"/>
               <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.clientname.dropdown-list.tooltip"/>
             </properties>
           </component>
-          <grid id="b50e7" layout-manager="BorderLayout" hgap="0" vgap="0">
+          <grid id="b50e7" binding="refreshPanel" layout-manager="BorderLayout" hgap="0" vgap="0">
             <constraints border-constraint="East"/>
             <properties/>
             <border type="none"/>

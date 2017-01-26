@@ -68,7 +68,7 @@ public class EnvCompositePart extends CompositePart {
     public Collection<ConfigProblem> getConfigProblems() {
         List<ConfigProblem> ret = new ArrayList<ConfigProblem>();
         for (Exception generatedProblem : generatedProblems) {
-            ret.add(new ConfigProblem(generatedProblem));
+            ret.add(new ConfigProblem(this, generatedProblem));
         }
         for (ConfigPart part : parts) {
             ret.addAll(part.getConfigProblems());

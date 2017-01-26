@@ -15,33 +15,42 @@
 package net.groboclown.idea.p4ic.config;
 
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.config.part.ConfigPart;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ConfigProblem {
     private final String message;
     private final Object[] args;
+    private final ConfigPart source;
 
 
-    public ConfigProblem(@Nls @NotNull String message, Object... args) {
+    public ConfigProblem(@NotNull ConfigPart source, @Nls @NotNull String message, Object... args) {
+        this.source = source;
         this.message = message;
         this.args = args;
     }
 
-    public ConfigProblem(@NotNull Exception ex) {
-        // FIXME
-        this.message = ex.getMessage();
+    public ConfigProblem(@Nullable ConfigPart source, @NotNull Exception ex) {
+        this.source = source;
+        this.message = "configproblem.exception";
         this.args = new Object[] { ex };
     }
 
-    @Nls
-    public String getMessageKey() {
-        return message;
+    @Nullable
+    public ConfigPart getSource() {
+        return source;
     }
 
     @NonNls
     public String getMessage() {
         return P4Bundle.message(message, args);
+    }
+
+    @Override
+    public String toString() {
+        return "problem(" + source + ": " + message + " -> " + getMessage() + ")";
     }
 }

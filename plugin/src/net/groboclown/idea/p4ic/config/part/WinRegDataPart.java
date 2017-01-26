@@ -106,7 +106,7 @@ class WinRegDataPart implements DataPart {
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
         PartValidation validation = new PartValidation();
-        validation.checkPort(rawPort, serverName);
+        validation.checkPort(this, rawPort);
         // validation.checkAuthTicketFile(authTicketPath);
         // validation.checkTrustTicketFile(trustTicket);
         // validation.checkUsername()

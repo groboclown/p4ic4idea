@@ -16,8 +16,8 @@ package net.groboclown.idea.p4ic.ui.config;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.CollectionComboBoxModel;
 import com.intellij.ui.CollectionListModel;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -44,6 +44,8 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 public class ResolvedPropertiesPanel {
+    private static final Logger LOG = Logger.getInstance(ResolvedPropertiesPanel.class);
+
     private JPanel rootPanel;
 
     private JComboBox rootDirDropdownBox;
@@ -106,15 +108,19 @@ public class ResolvedPropertiesPanel {
                 new BackgroundAwtActionRunner.BackgroundAwtAction<ComputedConfigResults>() {
                     @Override
                     public ComputedConfigResults runBackgroundProcess() {
+                        if (lastConfig == null) {
+                            return new ComputedConfigResults();
+                        }
                         lastConfig.refresh();
 
-                        ComputedConfigResults results = new ComputedConfigResults();
-                        Collection<ConfigProblem> problems = lastConfig.getConfigProblems();
+                        final ComputedConfigResults results = new ComputedConfigResults();
+                        final Collection<ConfigProblem> problems = lastConfig.getConfigProblems();
                         results.problemMessages = new ArrayList<String>(problems.size());
                         for (ConfigProblem problem : problems) {
+                            LOG.info("ConfigProblem: " + problem);
                             results.problemMessages.add(problem.getMessage());
                         }
-                        boolean tryConnection = problems.isEmpty();
+                        final boolean tryConnection = problems.isEmpty();
 
                         Collection<ClientConfig> configs = lastConfig.getClientConfigs();
                         for (ClientConfig config : configs) {
@@ -126,7 +132,9 @@ public class ResolvedPropertiesPanel {
                                 }
                             }
                             for (VirtualFile virtualFile : config.getProjectSourceDirs()) {
-                                results.configs.add(new ConfigPath(config, virtualFile));
+                                if (virtualFile != null) {
+                                    results.configs.add(new ConfigPath(config, virtualFile));
+                                }
                             }
                         }
                         return results;
@@ -177,8 +185,7 @@ public class ResolvedPropertiesPanel {
         }
     }
 
-    private void showResolvedPropertiesText(@NotNull
-    final ConfigPath selected) {
+    private void showResolvedPropertiesText(@NotNull final ConfigPath selected) {
         // This can load values from a file, so put in the background.
         BackgroundAwtActionRunner.runBackgroundAwtAction(refreshResolvedPropertiesSpinner,
                 new BackgroundAwtActionRunner.BackgroundAwtAction<String>() {
@@ -292,8 +299,8 @@ public class ResolvedPropertiesPanel {
     }
 
     private static class ComputedConfigResults {
-        ArrayList<String> problemMessages;
-        ArrayList<ConfigPath> configs;
+        ArrayList<String> problemMessages = new ArrayList<String>();
+        ArrayList<ConfigPath> configs = new ArrayList<ConfigPath>();
     }
 
 

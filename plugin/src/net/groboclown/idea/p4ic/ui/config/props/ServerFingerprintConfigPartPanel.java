@@ -16,47 +16,59 @@ package net.groboclown.idea.p4ic.ui.config.props;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.util.ui.UIUtil;
+import com.jgoodies.forms.layout.CellConstraints;
+import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.part.RequirePasswordDataPart;
+import net.groboclown.idea.p4ic.config.part.ServerFingerprintDataPart;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
-public class RequirePasswordConfigPartPanel
-        extends ConfigPartPanel<RequirePasswordDataPart> {
+public class ServerFingerprintConfigPartPanel
+        extends ConfigPartPanel<ServerFingerprintDataPart> {
     private JPanel rootPanel;
-    private JLabel label;
+    private JTextField fingerprintField;
+    private JLabel fingerprintFieldLabel;
 
-    RequirePasswordConfigPartPanel(@NotNull Project project, @NotNull RequirePasswordDataPart part) {
+    ServerFingerprintConfigPartPanel(@NotNull Project project, @NotNull ServerFingerprintDataPart part) {
         super(project, part);
-    }
 
-    @NotNull
-    @Override
-    RequirePasswordDataPart copyPart() {
-        return new RequirePasswordDataPart();
-    }
-
-    @Override
-    public boolean isModified(@NotNull RequirePasswordDataPart originalPart) {
-        // Can never be modified
-        return false;
+        fingerprintField.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                getConfigPart().setServerFingerprint(fingerprintField.getText());
+            }
+        });
     }
 
     @Nls
     @NotNull
     @Override
     public String getTitle() {
-        return P4Bundle.getString("configuration.stack.require-password.title");
+        return P4Bundle.getString("configuration.stack.server-fingerprint.title");
     }
 
     @NotNull
     @Override
     public JPanel getRootPanel() {
         return rootPanel;
+    }
+
+    @NotNull
+    @Override
+    ServerFingerprintDataPart copyPart() {
+        ServerFingerprintDataPart ret = new ServerFingerprintDataPart();
+        ret.setServerFingerprint(getConfigPart().getServerFingerprint());
+        return ret;
+    }
+
+    @Override
+    public boolean isModified(@NotNull ServerFingerprintDataPart originalPart) {
+        return !originalPart.equals(getConfigPart());
     }
 
     {
@@ -75,13 +87,14 @@ public class RequirePasswordConfigPartPanel
      */
     private void $$$setupUI$$$() {
         rootPanel = new JPanel();
-        rootPanel.setLayout(new BorderLayout(0, 0));
-        label = new JLabel();
-        label.setHorizontalAlignment(2);
-        label.setHorizontalTextPosition(2);
-        this.$$$loadLabelText$$$(label, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("configuration.config.require-password"));
-        rootPanel.add(label, BorderLayout.NORTH);
+        rootPanel.setLayout(new FormLayout("fill:d:noGrow,left:4dlu:noGrow,fill:d:grow", "center:d:noGrow"));
+        fingerprintFieldLabel = new JLabel();
+        this.$$$loadLabelText$$$(fingerprintFieldLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.serverfingerprint.label"));
+        CellConstraints cc = new CellConstraints();
+        rootPanel.add(fingerprintFieldLabel, cc.xy(1, 1));
+        fingerprintField = new JTextField();
+        rootPanel.add(fingerprintField, cc.xy(3, 1, CellConstraints.FILL, CellConstraints.DEFAULT));
     }
 
     /**

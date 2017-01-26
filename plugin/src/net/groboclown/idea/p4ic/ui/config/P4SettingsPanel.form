@@ -23,6 +23,7 @@
                 <constraints border-constraint="Center"/>
                 <properties>
                   <horizontalScrollBarPolicy value="31"/>
+                  <verticalScrollBarPolicy value="21"/>
                 </properties>
                 <border type="none"/>
                 <children>

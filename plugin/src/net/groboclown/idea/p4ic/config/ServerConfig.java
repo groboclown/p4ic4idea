@@ -67,7 +67,7 @@ public final class ServerConfig {
 
     public static Collection<ConfigProblem> getProblems(@Nullable DataPart part) {
         if (part == null) {
-            return Collections.singletonList(new ConfigProblem("config.display.key.no-value"));
+            return Collections.singletonList(new ConfigProblem(part, "config.display.key.no-value"));
         }
         return PartValidation.findAllProblems(part);
     }

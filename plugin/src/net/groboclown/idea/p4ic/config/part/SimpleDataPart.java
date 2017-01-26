@@ -72,9 +72,9 @@ public class SimpleDataPart implements DataPart {
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
         PartValidation validation = new PartValidation();
-        validation.checkPort(trimmedProperty(PORT_KEY), getServerName());
-        validation.checkAuthTicketFile(getAuthTicketFile());
-        validation.checkTrustTicketFile(getTrustTicketFile());
+        validation.checkPort(this, trimmedProperty(PORT_KEY));
+        validation.checkAuthTicketFile(this);
+        validation.checkTrustTicketFile(this);
         return validation.getProblems();
     }
 
@@ -124,6 +124,11 @@ public class SimpleDataPart implements DataPart {
     @Override
     public P4ServerName getServerName() {
         return P4ServerName.forPort(trimmedProperty(PORT_KEY));
+    }
+
+    @Nullable
+    public String getRawServerName() {
+        return trimmedProperty(PORT_KEY);
     }
 
     public void setServerName(@Nullable String port) {

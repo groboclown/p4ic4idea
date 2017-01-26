@@ -26,9 +26,12 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsListener;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.config.part.ClientNameDataPart;
 import net.groboclown.idea.p4ic.config.part.CompositePart;
 import net.groboclown.idea.p4ic.config.part.ConfigPart;
+import net.groboclown.idea.p4ic.config.part.EnvCompositePart;
 import net.groboclown.idea.p4ic.config.part.MutableCompositePart;
+import net.groboclown.idea.p4ic.config.part.ServerFingerprintDataPart;
 import net.groboclown.idea.p4ic.config.part.SimpleDataPart;
 import net.groboclown.idea.p4ic.config.part.Unmarshal;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
@@ -129,25 +132,44 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
     @SuppressWarnings("deprecation")
     private synchronized void checkConfigState() {
         if (state == null) {
-            this.state = new ArrayList<ConfigPart>();
+            state = new ArrayList<ConfigPart>();
 
             // Backwards compatibility!
             // Attempt to load the state from the previous setting.
             P4ConfigProject origConfig = P4ConfigProject.getInstance(project);
             if (origConfig != null) {
-                ManualP4Config config = origConfig.getBaseConfig();
-                SimpleDataPart part = new SimpleDataPart(project, (Map<String, String>) null);
-                part.setIgnoreFilename(config.getIgnoreFileName());
-                part.setServerName(config.getProtocol() + "://" + config.getPort());
-                part.setAuthTicketFile(config.getAuthTicketPath());
-                part.setTrustTicketFile(config.getTrustTicketPath());
-                part.setClientHostname(config.getClientHostname());
-                part.setClientname(config.getClientname());
-                part.setDefaultCharset(config.getDefaultCharset());
-                part.setServerFingerprint(config.getServerFingerprint());
-                part.setUsername(config.getUsername());
+                final ManualP4Config config = origConfig.getBaseConfig();
+                {
+                    final SimpleDataPart basic = new SimpleDataPart(project, (Map<String, String>) null);
+                    basic.setIgnoreFilename(config.getIgnoreFileName());
+                    basic.setServerName(config.getProtocol() + "://" + config.getPort());
+                    basic.setAuthTicketFile(config.getAuthTicketPath());
+                    basic.setTrustTicketFile(config.getTrustTicketPath());
+                    basic.setClientHostname(config.getClientHostname());
+                    basic.setDefaultCharset(config.getDefaultCharset());
+                    basic.setUsername(config.getUsername());
+                    state.add(basic);
+                }
+
+                if (config.hasClientnameSet()) {
+                    final ClientNameDataPart clientName = new ClientNameDataPart();
+                    clientName.setClientname(config.getClientname());
+                    state.add(clientName);
+                }
+
+                if (config.hasServerFingerprintSet()) {
+                    final ServerFingerprintDataPart fingerprint = new ServerFingerprintDataPart();
+                    fingerprint.setServerFingerprint(config.getServerFingerprint());
+                    state.add(fingerprint);
+                }
             }
 
+            if (state.isEmpty()) {
+                // Allow a smart default
+                state.add(new EnvCompositePart(project));
+            }
+        }
+        if (config == null) {
             this.config = new P4ProjectConfigStack(project, state);
         }
     }

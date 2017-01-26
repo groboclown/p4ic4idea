@@ -17,7 +17,7 @@ package net.groboclown.idea.p4ic.ui.config.props;
 import com.intellij.openapi.project.Project;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
+import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.config.part.EnvCompositePart;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,6 +28,8 @@ import java.util.ResourceBundle;
 public class EnvConfigPartPanel
         extends ConfigPartPanel<EnvCompositePart> {
     private JPanel rootPanel;
+    private JLabel titleLabel;
+    private JTextPane descriptionLabel;
 
     EnvConfigPartPanel(@NotNull Project project, @NotNull String id, @NotNull EnvCompositePart part) {
         super(project, id, part);
@@ -51,8 +53,19 @@ public class EnvConfigPartPanel
     }
 
     @Override
-    JPanel getRootPanel() {
+    public JPanel getRootPanel() {
         return rootPanel;
+    }
+
+    @Override
+    public void onComponentSelected(boolean selected) {
+        Color background = UIUtil.getListBackground(selected);
+        rootPanel.setBackground(background);
+        titleLabel.setBackground(background);
+        descriptionLabel.setBackground(background);
+
+        titleLabel.setForeground(UIUtil.getListForeground(selected));
+        descriptionLabel.setForeground(UIUtil.getListForeground(selected));
     }
 
     {
@@ -71,28 +84,16 @@ public class EnvConfigPartPanel
      */
     private void $$$setupUI$$$() {
         rootPanel = new JPanel();
-        rootPanel.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
-        final JLabel label1 = new JLabel();
-        label1.setHorizontalAlignment(2);
-        label1.setHorizontalTextPosition(2);
-        this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+        rootPanel.setLayout(new BorderLayout(0, 0));
+        titleLabel = new JLabel();
+        titleLabel.setHorizontalAlignment(2);
+        titleLabel.setHorizontalTextPosition(2);
+        this.$$$loadLabelText$$$(titleLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.connection-choice.picker.env"));
-        rootPanel.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer1 = new Spacer();
-        rootPanel.add(spacer1,
-                new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        usesTheStandardPerforceTextArea = new JTextArea();
-        usesTheStandardPerforceTextArea.setEditable(false);
-        usesTheStandardPerforceTextArea.setFont(UIManager.getFont("FormattedTextField.font"));
-        usesTheStandardPerforceTextArea.setLineWrap(true);
-        usesTheStandardPerforceTextArea.setText(
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("connection.env.description"));
-        usesTheStandardPerforceTextArea.setWrapStyleWord(true);
-        rootPanel.add(usesTheStandardPerforceTextArea,
-                new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, 1, null,
-                        new Dimension(150, 50), null, 0, false));
+        rootPanel.add(titleLabel, BorderLayout.NORTH);
+        descriptionLabel = new JTextPane();
+        descriptionLabel.setFont(UIManager.getFont("Label.font"));
+        rootPanel.add(descriptionLabel, BorderLayout.CENTER);
     }
 
     /**

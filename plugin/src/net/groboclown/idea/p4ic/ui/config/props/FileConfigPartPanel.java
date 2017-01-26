@@ -19,6 +19,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextComponentAccessor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.TextFieldWithHistoryWithBrowseButton;
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.Spacer;
+import com.intellij.util.ui.UIUtil;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -27,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -100,13 +105,20 @@ public class FileConfigPartPanel
     }
 
     @Override
-    JPanel getRootPanel() {
+    public JPanel getRootPanel() {
         return rootPanel;
     }
 
     @Nullable
     String getSelectedLocation() {
         return fileLocation.getText();
+    }
+
+    @Override
+    public void onComponentSelected(boolean selected) {
+        rootPanel.setBackground(UIUtil.getListBackground(selected));
+        fileLocationLabel.setBackground(UIUtil.getListBackground(selected));
+        fileLocationLabel.setForeground(UIUtil.getListForeground(selected));
     }
 
     {
@@ -125,18 +137,28 @@ public class FileConfigPartPanel
      */
     private void $$$setupUI$$$() {
         rootPanel = new JPanel();
-        rootPanel.setLayout(new FormLayout("fill:d:noGrow,left:4dlu:noGrow,fill:max(d;4px):noGrow", "center:d:noGrow"));
+        rootPanel.setLayout(new GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
         fileLocationLabel = new JLabel();
         this.$$$loadLabelText$$$(fileLocationLabel,
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.p4config"));
-        CellConstraints cc = new CellConstraints();
-        rootPanel.add(fileLocationLabel, cc.xy(1, 1));
+        rootPanel.add(fileLocationLabel,
+                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         fileLocation = new TextFieldWithBrowseButton();
         fileLocation.setText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("config.file.location.tooltip"));
         fileLocation.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.p4config.chooser"));
-        rootPanel.add(fileLocation, cc.xy(3, 1));
+        rootPanel.add(fileLocation,
+                new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
+                        0, false));
+        final Spacer spacer1 = new Spacer();
+        rootPanel.add(spacer1,
+                new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     }
 
     /**

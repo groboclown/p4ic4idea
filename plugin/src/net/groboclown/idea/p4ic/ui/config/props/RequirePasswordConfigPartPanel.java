@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.ui.config.props;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.config.part.RequirePasswordDataPart;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,8 +26,10 @@ import java.util.ResourceBundle;
 public class RequirePasswordConfigPartPanel
         extends ConfigPartPanel<RequirePasswordDataPart> {
     private JPanel rootPanel;
+    private JLabel label;
 
-    RequirePasswordConfigPartPanel(@NotNull Project project, @NotNull String id, @NotNull RequirePasswordDataPart part) {
+    RequirePasswordConfigPartPanel(@NotNull Project project, @NotNull String id,
+            @NotNull RequirePasswordDataPart part) {
         super(project, id, part);
     }
 
@@ -48,8 +51,14 @@ public class RequirePasswordConfigPartPanel
     }
 
     @Override
-    JPanel getRootPanel() {
+    public JPanel getRootPanel() {
         return rootPanel;
+    }
+
+    @Override
+    public void onComponentSelected(boolean selected) {
+        label.setForeground(UIUtil.getListForeground(selected));
+        label.setBackground(UIUtil.getListBackground(selected));
     }
 
     {
@@ -69,12 +78,12 @@ public class RequirePasswordConfigPartPanel
     private void $$$setupUI$$$() {
         rootPanel = new JPanel();
         rootPanel.setLayout(new BorderLayout(0, 0));
-        final JLabel label1 = new JLabel();
-        label1.setHorizontalAlignment(2);
-        label1.setHorizontalTextPosition(2);
-        this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+        label = new JLabel();
+        label.setHorizontalAlignment(2);
+        label.setHorizontalTextPosition(2);
+        this.$$$loadLabelText$$$(label, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.config.require-password"));
-        rootPanel.add(label1, BorderLayout.CENTER);
+        rootPanel.add(label, BorderLayout.NORTH);
     }
 
     /**

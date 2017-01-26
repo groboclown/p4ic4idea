@@ -17,22 +17,27 @@ package net.groboclown.idea.p4ic.ui.config.props;
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.part.ConfigPart;
+import net.groboclown.idea.p4ic.ui.ComponentListPanel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.*;
+import java.awt.*;
 
-public abstract class ConfigPartPanel<T extends ConfigPart> implements ConfigurationUpdatedListener {
+public abstract class ConfigPartPanel<T extends ConfigPart>
+        implements ConfigurationUpdatedListener,
+            ComponentListPanel.SelectableComponent,
+            ComponentListPanel.WithRootPanel {
     private final Project project;
     private final String id;
     private final T part;
     private ConfigPartUpdatedListener listener;
     private P4ProjectConfig latestConfig;
 
-    protected ConfigPartPanel(@NotNull Project project, @NotNull String id, @NotNull T part) {
+    ConfigPartPanel(@NotNull Project project, @NotNull String id, @NotNull T part) {
         this.project = project;
         this.id = id;
         this.part = part;
+        // getRootPanel().setMaximumSize(new Dimension(-1, getRootPanel().getMinimumSize().height));
     }
 
     void setConfigPartUpdatedListener(@NotNull ConfigPartUpdatedListener listener) {
@@ -61,8 +66,6 @@ public abstract class ConfigPartPanel<T extends ConfigPart> implements Configura
      * @param userPart destination for the panel's configuration.
      */
     public abstract void applySettingsTo(@NotNull T userPart);
-
-    abstract JPanel getRootPanel();
 
     /**
      * Call whenever a config part setting changes.

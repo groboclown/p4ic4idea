@@ -24,6 +24,7 @@ import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.core.IMapEntry;
 import com.perforce.p4java.core.ViewMap;
 import com.perforce.p4java.exception.ClientError;
+import com.perforce.p4java.exception.ClientFileAccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaError;
 import com.perforce.p4java.exception.NullPointerError;
@@ -201,11 +202,12 @@ public class ClientSystemFileCommands {
 			throw new ProtocolError(
 					"Unexpected conversion error in ClientSystemFileCommands.chmodFile: "
 					+ nfe.getLocalizedMessage());
-		} catch (Exception exc) {
-			// FIXME: better error handling here -- HR.
-			
-			Log.exception(exc);
-			throw new ConnectionException(exc.getLocalizedMessage(), exc);
+		// groboclown: allow real exception to be naturally handled
+		//} catch (Exception exc) {
+		//	// FIXME: better error handling here -- HR.
+		//
+		//	Log.exception(exc);
+		//	throw new ConnectionException(exc.getLocalizedMessage(), exc);
 		}
 		
 		return RpcPacketDispatcherResult.CONTINUE_LOOP;
@@ -2003,7 +2005,8 @@ public class ClientSystemFileCommands {
 				} catch (IOException ioexc) {
 					Log.error("tmp file creation error: " + ioexc.getLocalizedMessage());
 					Log.exception(ioexc);
-					throw new ConnectionException("Unable to create temporary file for Perforce file retrieval; " +
+					// p4ic4idea: altered exception to be more precise
+					throw new ClientFileAccessException("Unable to create temporary file for Perforce file retrieval; " +
 							"reason: " + ioexc.getLocalizedMessage(),
 							ioexc);
 				}

@@ -213,11 +213,12 @@ public class RpcPacketDispatcher {
 		// p4ic4idea: Never, never, never catch a Throwable unless you're super careful,
 		// which this is not.
 		// } catch (Throwable thr) {
-		} catch (Exception thr) {
-			Log.error("Unexpected exception: " + thr.getLocalizedMessage());
-			Log.exception(thr);
-			// p4ic4idea: just pass in the parent's exception
-			throw new ConnectionException(thr);
+		// p4ic4idea: instead,
+		// } catch (Exception thr) {
+		//	Log.error("Unexpected exception: " + thr.getLocalizedMessage());
+		//	Log.exception(thr);
+		//	// p4ic4idea: just pass in the parent's exception
+		//	throw new ConnectionException(thr);
 		}
 	}
 	

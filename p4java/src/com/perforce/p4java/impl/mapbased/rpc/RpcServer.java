@@ -145,7 +145,8 @@ public abstract class RpcServer extends Server {
      */
     public static final String RPC_TMP_CONVERTER_KEY = "RPC_TMP_CONVERTER_KEY";
 
-    protected String localHostName = null;	// intended to be just the unqualified name...
+    // p4ic4idea: make private
+    private String localHostName = null;	// intended to be just the unqualified name...
     protected int clientApiLevel = DEFAULT_CLIENT_API_LEVEL;
     protected int serverApiLevel = DEFAULT_SERVER_API_LEVEL;
     protected String applicationName = null;	// Application name
@@ -153,6 +154,7 @@ public abstract class RpcServer extends Server {
     private static final String AUTH_FAIL_STRING_1 = "Single sign-on on client failed"; // SSO failure
     private static final String AUTH_FAIL_STRING_2 = "Password invalid";
 
+    // p4ic4idea: map the error type to the string
     private static final String[] accessErrMsgs = {
                     CORE_AUTH_FAIL_STRING_1,
                     CORE_AUTH_FAIL_STRING_2,
@@ -160,6 +162,15 @@ public abstract class RpcServer extends Server {
                     CORE_AUTH_FAIL_STRING_4,
                     AUTH_FAIL_STRING_1,
                     AUTH_FAIL_STRING_2
+    };
+    private static final AuthenticationFailedException.ErrorType[] accessErrTypes = {
+            // each index maps to the error message
+            AuthenticationFailedException.ErrorType.PASSWORD_INVALID,
+            AuthenticationFailedException.ErrorType.NOT_LOGGED_IN,
+            AuthenticationFailedException.ErrorType.SESSION_EXPIRED,
+            AuthenticationFailedException.ErrorType.SESSION_EXPIRED,
+            AuthenticationFailedException.ErrorType.SSO_LOGIN,
+            AuthenticationFailedException.ErrorType.PASSWORD_INVALID
     };
 
     private static final String PASSWORD_NOT_SET_STRING = "no password set for this user";
@@ -301,7 +312,8 @@ public abstract class RpcServer extends Server {
     protected void checkFingerprint(RpcConnection rpcConnection) throws ConnectionException {
         if (rpcConnection != null && rpcConnection.isSecure() && !rpcConnection.isTrusted()) {
             if (rpcConnection.getFingerprint() == null) {
-                throw new ConnectionException("Null fingerprint for this Perforce SSL connection");
+                // p4ic4idea: use a more precise exception
+                throw new SslException("Null fingerprint for this Perforce SSL connection");
             }
 
             boolean fpExist = clientTrust.fingerprintExists(rpcConnection.getServerIpPort(),
@@ -514,20 +526,22 @@ public abstract class RpcServer extends Server {
     }
 
     /**
-     * @see com.perforce.p4java.impl.mapbased.server.Server#isAuthFail(java.lang.String)
+     * @see com.perforce.p4java.impl.mapbased.server.Server#getAuthFailType(java.lang.String)
      */
     // p4ic4idea change: takes an IServerMessage instead of a string.
     @Override
-    public boolean isAuthFail(IServerMessage err) {
+    public AuthenticationFailedException.ErrorType getAuthFailType(IServerMessage err) {
             if (err != null) {
-                    for (String str : accessErrMsgs) {
-                            if (err.hasMessageFragment(str)) {
-                                    return true;
+                // p4ic4idea: TODO this needs to check the error code instead of the message,
+                // in case the user sets the language.
+                    for (int i = 0; i < accessErrMsgs.length; i++) {
+                            if (err.hasMessageFragment(accessErrMsgs[i])) {
+                                    return accessErrTypes[i];
                             }
                     }
             }
 
-            return false;
+            return null;
     }
 
     /**

@@ -435,7 +435,7 @@ public class OneShotServerImpl extends RpcServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringStreamCmd(java.lang.String, java.lang.String)
+	 * @see com.perforce.p4java.impl.mapbased.server.Server#execInputStringStreamCmd(String, String[], String)
 	 */
 	@Override
 	public InputStream execInputStringStreamCmd(String cmdName, String[] cmdArgs, String inString)
@@ -505,13 +505,20 @@ public class OneShotServerImpl extends RpcServer {
 			if ((retMapList != null) && (retMapList.size() != 0)) {
 				for (Map<String, Object> map : retMapList) {
 					if (map != null) {
-						// groboclown: use IServerMessage
+						// p4ic4idea: use IServerMessage
 						final IServerMessage errStr = this.getErrorStr(map);
 						if (errStr != null) {
-							if (isAuthFail(errStr)) {
-								throw new AccessException(errStr);
-							} else {
-								throw new RequestException(errStr);
+							// p4ic4idea: more precise errors
+							try {
+								throw createExceptionFromMessage(errStr);
+							} catch (ConnectionException e) {
+								throw e;
+							} catch (RequestException e) {
+								throw e;
+							} catch (AccessException e) {
+								throw e;
+							} catch (P4JavaException e) {
+								throw new RequestException(e);
 							}
 						}
 					}

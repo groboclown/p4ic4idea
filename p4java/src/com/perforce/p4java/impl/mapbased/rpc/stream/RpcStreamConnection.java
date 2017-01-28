@@ -8,6 +8,7 @@ import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.NullPointerError;
 import com.perforce.p4java.exception.P4JavaError;
 import com.perforce.p4java.exception.ProtocolError;
+import com.perforce.p4java.exception.SslException;
 import com.perforce.p4java.impl.mapbased.rpc.ServerStats;
 import com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection;
 import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey;
@@ -354,12 +355,14 @@ public class RpcStreamConnection extends RpcConnection {
 					// If an error occurs during the initial handshake,
 					// this method returns an invalid session object which
 					// reports an invalid cipher suite of "SSL_NULL_WITH_NULL_NULL".
-					throw new ConnectionException("Error occurred during the SSL handshake: invalid SSL session");
+					// p4ic4idea: use a more precise exception
+					throw new SslException("Error occurred during the SSL handshake: invalid SSL session");
 				}
 				// Get the certificates
 				Certificate[] serverCerts = sslSession.getPeerCertificates();
 				if (serverCerts == null || serverCerts.length == 0 || serverCerts[0] == null) {
-					throw new ConnectionException("Error occurred during the SSL handshake: no certificate retrieved from SSL session");
+					// p4ic4idea: use a more precise exception
+					throw new SslException("Error occurred during the SSL handshake: no certificate retrieved from SSL session");
 				}
 				// Check that the certificate is currently valid. Check the
 				// current date and time are within the validity period given
@@ -367,31 +370,37 @@ public class RpcStreamConnection extends RpcConnection {
 				try {
 					((X509Certificate)serverCerts[0]).checkValidity();
 				} catch (CertificateExpiredException e) {
-					throw new ConnectionException("Error occurred during the SSL handshake: certificate expired: " + e.toString(), e);
+					// p4ic4idea: use a more precise exception
+					throw new SslException("Error occurred during the SSL handshake: certificate expired: " + e.toString(), e);
 				} catch (CertificateNotYetValidException e) {
-					throw new ConnectionException("Error occurred during the SSL handshake: certificate not yet valid: " + e.toString(), e);
+					// p4ic4idea: use a more precise exception
+					throw new SslException("Error occurred during the SSL handshake: certificate not yet valid: " + e.toString(), e);
 				}
 				// Get the public key from the first certificate
 				PublicKey serverPubKey = serverCerts[0].getPublicKey();
 				if (serverPubKey == null) {
-					throw new ConnectionException("Error occurred during the SSL handshake: no public key retrieved from server certificate");
+					// p4ic4idea: use a more precise exception
+					throw new SslException("Error occurred during the SSL handshake: no public key retrieved from server certificate");
 				}
 				// Generate the fingerprint
 				try {
 					this.fingerprint = ClientTrust.generateFingerprint(serverPubKey);
 					//this.fingerprint = ClientTrust.generateFingerprint((X509Certificate)this.serverCerts[0]);
 				} catch (NoSuchAlgorithmException e) {
-					throw new ConnectionException("Error occurred while generating the fingerprint for the Perforce SSL connection", e);
+					// p4ic4idea: use a more precise exception
+					throw new SslException("Error occurred while generating the fingerprint for the Perforce SSL connection", e);
 				//} catch (CertificateEncodingException e) {
 				//	throw new ConnectionException("Error occurred while generating the fingerprint for the Perforce SSL connection", e);
 				}
 			} catch (IOException e) {
-				String message = "Error occurred during SSL hankshake. "
+				// p4ic4idea: fix typo
+				String message = "Error occurred during SSL handshake. "
 						+ "Please check the release notes for known SSL issues: "
 						+ e.getLocalizedMessage();
 				Log.error(message);
 				Log.exception(e);
-				throw new ConnectionException(message);
+				// p4ic4idea: use a more precise exception
+				throw new SslException(message);
 			}
 		}
 	}

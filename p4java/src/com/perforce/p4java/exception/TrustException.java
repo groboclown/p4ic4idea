@@ -15,8 +15,8 @@ package com.perforce.p4java.exception;
  * trust to the Perforce SSL connection. Only the "NEW_CONNECTION" and "NEW_KEY"
  * types should be handled for trust retries.
  */
-
-public class TrustException extends ConnectionException {
+// p4ic4idea: changed to inherit from SslException
+public class TrustException extends SslException {
 
 	private static final long serialVersionUID = 1L;
 

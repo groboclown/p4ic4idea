@@ -674,11 +674,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 					}
 					if (! singleMessages.isEmpty()) {
 						final ServerMessage msg = new ServerMessage(singleMessages, map);
-						throw new AccessException(msg);
+						// p4ic4idea: more precise exception
+						throw new NoPasswordSetForUserException(msg);
 					}
 				}
 				final ServerMessage msg = new ServerMessage(singleMessages, Collections.<String, Object>emptyMap());
-				throw new AccessException(msg);
+				// p4ic4idea: more precise exception
+				throw new NoPasswordSetForUserException(msg);
 			}
 		}
 		
@@ -935,7 +937,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#getLabels(com.perforce.p4java.option.server.GetLabelsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#getLabels(List, GetLabelsOptions)
 	 */
 	public List<ILabelSummary> getLabels(List<IFileSpec> fileList, GetLabelsOptions opts)
 									throws P4JavaException {
@@ -2776,7 +2778,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#deleteDepot(com.perforce.p4java.core.IDepot)
+	 * @see com.perforce.p4java.server.IOptionsServer#deleteDepot(String)
 	 */
 	public String deleteDepot(String name) throws P4JavaException {
 		if (name == null) {
@@ -3198,7 +3200,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getOpenedFiles(java.util.List, com.perforce.p4java.option.server.OpenedFilesOptions)
+	 * @see com.perforce.p4java.server.IServer#getOpenedFiles(List, boolean, String, int, int)
 	 */
 	public List<IFileSpec> getOpenedFiles(List<IFileSpec> fileSpecs, OpenedFilesOptions opts)
 									throws P4JavaException {
@@ -3794,7 +3796,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IServer#getFixList(java.util.List, com.perforce.p4java.option.server.GetFixesOptions)
+	 * @see com.perforce.p4java.server.IServer#getFixList(List, int, String, boolean, int)
 	 */
 	public List<IFix> getFixes(List<IFileSpec> fileSpecs, GetFixesOptions opts)
 											throws P4JavaException {
@@ -3837,7 +3839,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#fixJobs(java.util.List, com.perforce.p4java.option.server.FixJobsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#fixJobs(List, int, FixJobsOptions)
 	 */
 	public List<IFix> fixJobs(List<String> jobIds, int changelistId, FixJobsOptions opts)
 							throws P4JavaException {
@@ -4032,11 +4034,8 @@ public abstract class Server implements IServerControl, IOptionsServer {
 				final IServerMessage err = getErrorOrInfoStr(map);
 				
 				if (err != null) {
-					if (isAuthFail(err)) {
-						throw new AccessException(err);
-					} else {
-						throw new RequestException(err);
-					}
+					// p4ic4idea: more precise errors
+					throw createExceptionFromMessage(err);
 				} else {
 					try {
 						counterMap.put((String) map.get("counter"), (String) map.get("value"));
@@ -4049,6 +4048,16 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		}
 		
 		return counterMap;
+	}
+
+	// p4ic4idea: more precise errors
+	protected P4JavaException createExceptionFromMessage(IServerMessage err) {
+		final AuthenticationFailedException.ErrorType failureType = getAuthFailType(err);
+		if (failureType != null) {
+			return new AuthenticationFailedException(failureType, err);
+		} else {
+			return new RequestException(err);
+		}
 	}
 
 	/**
@@ -4069,11 +4078,8 @@ public abstract class Server implements IServerControl, IOptionsServer {
 				final IServerMessage err = getErrorOrInfoStr(map);
 				
 				if (err != null) {
-					if (isAuthFail(err)) {
-						throw new AccessException(err);
-					} else {
-						throw new RequestException(err);
-					}
+					// p4ic4idea: more precise errors
+					throw createExceptionFromMessage(err);
 				} else {
 					try {
 						counterMap.put((String) map.get("counter"), (String) map.get("value"));
@@ -4165,11 +4171,8 @@ public abstract class Server implements IServerControl, IOptionsServer {
 				final IServerMessage err = getErrorOrInfoStr(map);
 				
 				if (err != null) {
-					if (isAuthFail(err)) {
-						throw new AccessException(err);
-					} else {
-						throw new RequestException(err);
-					}
+					// p4ic4idea: more precise errors
+					throw createExceptionFromMessage(err);
 				} else {
 					try {
 						keyMap.put((String) map.get("key"), (String) map.get("value"));
@@ -4203,11 +4206,8 @@ public abstract class Server implements IServerControl, IOptionsServer {
 				final IServerMessage err = getErrorOrInfoStr(map);
 				
 				if (err != null) {
-					if (isAuthFail(err)) {
-						throw new AccessException(err);
-					} else {
-						throw new RequestException(err);
-					}
+					// p4ic4idea: more precise errors
+					throw createExceptionFromMessage(err);
 				} else {
 					try {
 						propertyList.add(new Property(map));
@@ -4629,7 +4629,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#setFileAttributes(com.perforce.p4java.option.server.SetFileAttributesOptions, java.util.Map, java.util.List)
+	 * @see com.perforce.p4java.server.IOptionsServer#setFileAttributes(List, Map, SetFileAttributesOptions)
 	 */
 	public List<IFileSpec> setFileAttributes(List<IFileSpec> files, Map<String, String> attributes,
 							SetFileAttributesOptions opts) throws P4JavaException {
@@ -4702,7 +4702,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#setFileAttributes(com.perforce.p4java.option.server.SetFileAttributesOptions, java.io.InputStream, java.util.List)
+	 * @see com.perforce.p4java.server.IOptionsServer#setFileAttributes(List, String, InputStream, SetFileAttributesOptions)
 	 */
 	public List<IFileSpec> setFileAttributes(List<IFileSpec> files, String attributeName,
 					InputStream inStream, SetFileAttributesOptions opts) throws P4JavaException {
@@ -4872,11 +4872,8 @@ public abstract class Server implements IServerControl, IOptionsServer {
 				final IServerMessage err = getErrorOrInfoStr(map);
 				
 				if (err != null) {
-					if (isAuthFail(err)) {
-						throw new AccessException(err);
-					} else {
-						throw new RequestException(err);
-					}
+					// p4ic4idea: more precise errors
+					throw createExceptionFromMessage(err);
 				} else {
 					try {
 						fileSizesList.add(new FileSize(map));
@@ -4918,10 +4915,15 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		final IServerMessage err = getErrorStr(map);
 		
 		if (err != null) {
-			if (isAuthFail(err)) {
-				throw new AccessException(err);
-			} else {
-				throw new RequestException(err);
+			// p4ic4idea: more precise errors
+			try {
+				throw createExceptionFromMessage(err);
+			} catch (RequestException e) {
+				throw e;
+			} catch (AccessException e) {
+				throw e;
+			} catch (P4JavaException e) {
+				throw new RequestException(e);
 			}
 		}
 		return false;
@@ -4983,10 +4985,15 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		final IServerMessage err = getErrorOrInfoStr(map);
 		
 		if (err != null) {
-			if (isAuthFail(err)) {
-				throw new AccessException(err);
-			} else {
-				return err;
+			// p4ic4idea: more precise errors
+			try {
+				throw createExceptionFromMessage(err);
+			} catch (ConnectionException e) {
+				throw e;
+			} catch (AccessException e) {
+				throw e;
+			} catch (P4JavaException e) {
+				throw new ConnectionException(e);
 			}
 		}
 		
@@ -5129,8 +5136,10 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		throw new UnimplementedError("called IOptionsServer.getInfoStr(map)");
 	}
 
-	// p4ic4idea: use IServerMessage instead of String
-	abstract public boolean isAuthFail(IServerMessage err);
+
+
+	// p4ic4idea: use IServerMessage instead of String, and return error type
+	abstract public AuthenticationFailedException.ErrorType getAuthFailType(IServerMessage err);
 	abstract public boolean isLoginNotRequired(String msgStr);
 
 	/**
@@ -5209,7 +5218,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 									throws P4JavaException;
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#execInputStringStreamCmd(java.lang.String, java.lang.String)
+	 * @see com.perforce.p4java.server.IOptionsServer#execInputStringStreamCmd(String, String[], String)
 	 */
 	abstract public InputStream execInputStringStreamCmd(String cmdName, String[] cmdArgs, String inString)
 									throws P4JavaException;
@@ -5802,7 +5811,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptioinsServer#updateStream(com.perforce.p4java.core.IStream, com.perforce.p4java.option.server.StreamOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#updateStream(IStream, StreamOptions)
 	 */
 	public String updateStream(IStream stream, StreamOptions opts) throws P4JavaException {
 		if (stream == null) {
@@ -5935,7 +5944,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	/**
-	 * @see com.perforce.p4java.server.IOptionsServer#duplicateRevisions(com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.core.file.IFileSpec, com.perforce.p4java.option.DuplicateRevisionsOptions)
+	 * @see com.perforce.p4java.server.IOptionsServer#duplicateRevisions(IFileSpec, IFileSpec, DuplicateRevisionsOptions)
 	 */
 	public List<IFileSpec> duplicateRevisions(IFileSpec fromFile, IFileSpec toFile,
 			DuplicateRevisionsOptions opts) throws P4JavaException {
@@ -6036,7 +6045,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 					for (int i = 0; ; i++) {
 						String entry = (String) map.get(MapKeys.TRIGGERS_KEY + i);
 						if (entry != null) {
-							triggersList.add(new TriggerEntry((String)entry, i));
+							triggersList.add(new TriggerEntry(entry, i));
 						} else {
 							break;
 						}

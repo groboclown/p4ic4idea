@@ -28,14 +28,6 @@ public final class Events {
         // utility class
     }
 
-
-    /* Should only be called by the {@link P4ConfigProject}
-    public static void baseConfigUpdated(@NotNull Project project, @NotNull List<ProjectConfigSource> sources) {
-        ApplicationManager.getApplication().getMessageBus().syncPublisher(BaseConfigUpdatedListener.TOPIC_NORMAL).
-                configUpdated(project, sources);
-    }
-    */
-
     // Unfortunately, there is very strict ordering to when the messages are sent.
     // The low-level ServerConnection objects are called first,
     // Then the P4Server objects, then everyone else.

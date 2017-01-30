@@ -14,9 +14,9 @@
 
 package net.groboclown.idea.p4ic.ui.config.props;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.part.RelativeConfigCompositePart;
 import org.jetbrains.annotations.Nls;
@@ -24,12 +24,12 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
 public class RelativeConfigPartPanel
         extends ConfigPartPanel<RelativeConfigCompositePart> {
+    private static final Logger LOG = Logger.getInstance(RelativeConfigPartPanel.class);
+
     private static final String DEFAULT_FILE_NAME = ".p4config";
 
     private JPanel rootPanel;
@@ -42,12 +42,6 @@ public class RelativeConfigPartPanel
             part.setName(DEFAULT_FILE_NAME);
         }
         nameField.setText(part.getName());
-        nameField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                part.setName(nameField.getText());
-            }
-        });
     }
 
     @Nls
@@ -61,6 +55,12 @@ public class RelativeConfigPartPanel
     @Override
     public JPanel getRootPanel() {
         return rootPanel;
+    }
+
+    @Override
+    public void updateConfigPartFromUI() {
+        getConfigPart().setName(nameField.getText());
+        LOG.info("Set relative config file name to " + getConfigPart().getName());
     }
 
     @NotNull

@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.config;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -23,6 +24,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public class P4ProjectConfigStack implements P4ProjectConfig {
+    private static final Logger LOG = Logger.getInstance(P4ProjectConfigStack.class);
+
+
     private final Object sync = new Object();
 
     private final Project project;
@@ -135,6 +139,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
                         partList = new ArrayList<DataPart>();
                         dirToParts.put(partRoot, partList);
                     }
+                    LOG.info("Adding " + dataPart + " into " + partRoot);
                     partList.add(dataPart);
                 } else {
                     throw new IllegalStateException("Unknown config part " + part);
@@ -187,7 +192,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
 
         for (Map.Entry<VirtualFile, List<DataPart>> entry : parts.entrySet()) {
             MultipleDataPart part = new MultipleDataPart(entry.getKey(), entry.getValue());
-            Collection<ConfigProblem> partProblems = ServerConfig.getProblems(part);
+            final Collection<ConfigProblem> partProblems = ServerConfig.getProblems(part);
             if (partProblems.isEmpty()) {
                 // Note: for a bit of efficiency, we can maybe have a static function
                 // that constructs the server ID, so that we don't have excess ServerConfig
@@ -216,6 +221,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
                     cachedSetups.add(new ClientServerSetup(serverConfig, part, entry.getKey()));
                 }
             } else {
+                LOG.info("Skipping " + entry.getKey() + " " + part + "; has problems " + partProblems);
                 configProblems.addAll(partProblems);
             }
         }

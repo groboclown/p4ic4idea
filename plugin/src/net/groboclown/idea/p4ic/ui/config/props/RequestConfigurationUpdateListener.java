@@ -14,6 +14,6 @@
 
 package net.groboclown.idea.p4ic.ui.config.props;
 
-public interface ConfigPartUpdatedListener {
-    void onConfigPartUpdated();
+public interface RequestConfigurationUpdateListener {
+    void updateConfigPartFromUI();
 }

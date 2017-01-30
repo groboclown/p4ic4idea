@@ -25,8 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ResourceBundle;
 
@@ -47,68 +45,30 @@ public class PropertyConfigPanel
     private JLabel ignoreFileNameFieldLabel;
     private JTextField charsetField;
     private JLabel charsetFieldLabel;
+    private TextFieldWithBrowseButton loginSsoField;
+    private JLabel loginSsoFieldLabel;
 
     PropertyConfigPanel(@NotNull Project project, @NotNull final SimpleDataPart part) {
         super(project, part);
 
-        authTicketFileFieldLabel.setLabelFor(authTicketFileField);
-        trustTicketFileFieldLabel.setLabelFor(trustTicketFileField);
-
         portField.setText(nullEmptyTrim(part.getRawServerName()));
-        portField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                part.setServerName(portField.getText());
-            }
-        });
 
         userField.setText(nullEmptyTrim(part.getUsername()));
-        userField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                part.setUsername(userField.getText());
-            }
-        });
 
+        authTicketFileFieldLabel.setLabelFor(authTicketFileField);
         authTicketFileField.setText(nullEmptyFile(project, part.getAuthTicketFile()));
-        authTicketFileField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                part.setAuthTicketFile(authTicketFileField.getText());
-            }
-        });
 
+        trustTicketFileFieldLabel.setLabelFor(trustTicketFileField);
         trustTicketFileField.setText(nullEmptyFile(project, part.getTrustTicketFile()));
-        trustTicketFileField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                part.setTrustTicketFile(trustTicketFileField.getText());
-            }
-        });
 
         hostnameField.setText(nullEmptyTrim(part.getClientHostname()));
-        hostnameField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                part.setClientHostname(hostnameField.getText());
-            }
-        });
 
         ignoreFileNameField.setText(nullEmptyTrim(part.getIgnoreFileName()));
-        ignoreFileNameField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                part.setIgnoreFilename(ignoreFileNameField.getText());
-            }
-        });
 
         charsetField.setText(nullEmptyTrim(part.getDefaultCharset()));
-        charsetField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                part.setDefaultCharset(charsetField.getText());
-            }
-        });
+
+        loginSsoFieldLabel.setLabelFor(loginSsoField);
+        loginSsoField.setText(nullEmptyFile(project, part.getLoginSso()));
     }
 
     @Nls
@@ -122,6 +82,18 @@ public class PropertyConfigPanel
     @Override
     public JPanel getRootPanel() {
         return rootPanel;
+    }
+
+    @Override
+    public void updateConfigPartFromUI() {
+        getConfigPart().setDefaultCharset(charsetField.getText());
+        getConfigPart().setIgnoreFilename(ignoreFileNameField.getText());
+        getConfigPart().setClientHostname(hostnameField.getText());
+        getConfigPart().setTrustTicketFile(trustTicketFileField.getText());
+        getConfigPart().setAuthTicketFile(authTicketFileField.getText());
+        getConfigPart().setUsername(userField.getText());
+        getConfigPart().setServerName(portField.getText());
+        getConfigPart().setLoginSsoFile(loginSsoField.getText());
     }
 
     @NotNull
@@ -168,7 +140,7 @@ public class PropertyConfigPanel
     private void $$$setupUI$$$() {
         rootPanel = new JPanel();
         rootPanel.setLayout(new FormLayout("fill:d:noGrow,left:4dlu:noGrow,fill:d:grow",
-                "center:d:noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow"));
+                "center:d:noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow"));
         portFieldLabel = new JLabel();
         portFieldLabel.setHorizontalAlignment(11);
         this.$$$loadLabelText$$$(portFieldLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
@@ -220,6 +192,13 @@ public class PropertyConfigPanel
         this.$$$loadLabelText$$$(charsetFieldLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.properties.charset.label"));
         rootPanel.add(charsetFieldLabel, cc.xy(1, 13));
+        loginSsoFieldLabel = new JLabel();
+        loginSsoFieldLabel.setHorizontalAlignment(11);
+        this.$$$loadLabelText$$$(loginSsoFieldLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.loginsso.label"));
+        rootPanel.add(loginSsoFieldLabel, cc.xy(1, 15));
+        loginSsoField = new TextFieldWithBrowseButton();
+        rootPanel.add(loginSsoField, cc.xy(3, 15));
         portFieldLabel.setLabelFor(portField);
         userFieldLabel.setLabelFor(userField);
         ignoreFileNameFieldLabel.setLabelFor(ignoreFileNameField);

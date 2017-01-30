@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.v2.ui.alerts;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -72,22 +73,30 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
     }
 
     protected void tryConfigChange(final boolean goOffline) {
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-            @Override
-            public void run() {
-               if (! UICompat.getInstance().editVcsConfiguration(
-                       getProject(), getVcs().getConfigurable())) {
-                   if (goOffline) {
-                       goOffline();
-                   }
-               }
-            }
-        });
-    }
+        // This cannot be run from an invokeLater:
+        // Cannot run synchronous submitTransactionAndWait from invokeLater.
+        // Please use asynchronous submit*Transaction. See TransactionGuard FAQ for details.
 
-    static boolean tryConfigChangeFor(@NotNull Project project) {
-        return UICompat.getInstance().editVcsConfiguration(project,
-                P4Vcs.getInstance(project).getConfigurable());
+        if (ApplicationManager.getApplication().isDispatchThread()) {
+            if (! UICompat.getInstance().editVcsConfiguration(
+                    getProject(), getVcs().getConfigurable())) {
+                if (goOffline) {
+                    goOffline();
+                }
+            }
+        } else {
+            ApplicationManager.getApplication().invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    if (! UICompat.getInstance().editVcsConfiguration(
+                            getProject(), getVcs().getConfigurable())) {
+                        if (goOffline) {
+                            goOffline();
+                        }
+                    }
+                }
+            }, ModalityState.NON_MODAL);
+        }
     }
 
     protected void goOffline() {

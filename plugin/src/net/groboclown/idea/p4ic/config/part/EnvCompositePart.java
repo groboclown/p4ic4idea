@@ -15,16 +15,18 @@
 package net.groboclown.idea.p4ic.config.part;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.env.PerforceEnvironment;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
-import net.groboclown.idea.p4ic.config.P4ServerName;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class EnvCompositePart extends CompositePart {
     static final String TAG_NAME = "env-composite-part";
@@ -90,9 +92,10 @@ public class EnvCompositePart extends CompositePart {
 
         if (WinRegDataPart.isAvailble()) {
             WinRegDataPart userReg = new WinRegDataPart(true);
-            if (p4config == null) {
+            // p4config is always null at this point.
+            // if (p4config == null) {
                 p4config = userReg.getP4ConfigFile();
-            }
+            // }
             WinRegDataPart sysReg = new WinRegDataPart(false);
             if (p4config == null) {
                 p4config = sysReg.getP4ConfigFile();
@@ -164,7 +167,7 @@ public class EnvCompositePart extends CompositePart {
     }
 
 
-    private static class EnvPassword implements DataPart {
+    private static class EnvPassword extends DataPartAdapter {
         @Override
         public boolean hasPasswordSet() {
             // Note: not trimmed, not empty string checked.
@@ -192,111 +195,6 @@ public class EnvCompositePart extends CompositePart {
         @Override
         public Collection<ConfigProblem> getConfigProblems() {
             return Collections.emptyList();
-        }
-
-        @Nullable
-        @Override
-        public VirtualFile getRootPath() {
-            return null;
-        }
-
-        @Override
-        public boolean hasServerNameSet() {
-            return false;
-        }
-
-        @Nullable
-        @Override
-        public P4ServerName getServerName() {
-            return null;
-        }
-
-        @Override
-        public boolean hasClientnameSet() {
-            return false;
-        }
-
-        @Nullable
-        @Override
-        public String getClientname() {
-            return null;
-        }
-
-        @Override
-        public boolean hasUsernameSet() {
-            return false;
-        }
-
-        @Nullable
-        @Override
-        public String getUsername() {
-            return null;
-        }
-
-        @Override
-        public boolean hasAuthTicketFileSet() {
-            return false;
-        }
-
-        @Nullable
-        @Override
-        public File getAuthTicketFile() {
-            return null;
-        }
-
-        @Override
-        public boolean hasTrustTicketFileSet() {
-            return false;
-        }
-
-        @Nullable
-        @Override
-        public File getTrustTicketFile() {
-            return null;
-        }
-
-        @Override
-        public boolean hasServerFingerprintSet() {
-            return false;
-        }
-
-        @Nullable
-        @Override
-        public String getServerFingerprint() {
-            return null;
-        }
-
-        @Override
-        public boolean hasClientHostnameSet() {
-            return false;
-        }
-
-        @Nullable
-        @Override
-        public String getClientHostname() {
-            return null;
-        }
-
-        @Override
-        public boolean hasIgnoreFileNameSet() {
-            return false;
-        }
-
-        @Nullable
-        @Override
-        public String getIgnoreFileName() {
-            return null;
-        }
-
-        @Override
-        public boolean hasDefaultCharsetSet() {
-            return false;
-        }
-
-        @Nullable
-        @Override
-        public String getDefaultCharset() {
-            return null;
         }
     }
 }

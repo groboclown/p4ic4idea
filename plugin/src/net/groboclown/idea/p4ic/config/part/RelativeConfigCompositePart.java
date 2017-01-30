@@ -64,6 +64,7 @@ public class RelativeConfigCompositePart extends CompositePart {
 
     public void setName(@Nullable String name) {
         this.name = name;
+        reload();
     }
 
     @Nullable

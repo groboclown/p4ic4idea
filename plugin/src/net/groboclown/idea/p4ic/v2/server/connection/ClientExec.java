@@ -17,7 +17,11 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.exception.*;
+import com.perforce.p4java.exception.AccessException;
+import com.perforce.p4java.exception.ConfigException;
+import com.perforce.p4java.exception.ConnectionException;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ClientConfig;
@@ -26,10 +30,15 @@ import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.P4ServerName;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.ConnectionHandler;
-import net.groboclown.idea.p4ic.server.exceptions.*;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
+import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
+import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
+import net.groboclown.idea.p4ic.server.exceptions.P4RetryAuthenticationException;
+import net.groboclown.idea.p4ic.server.exceptions.P4SSLFingerprintException;
 import net.groboclown.idea.p4ic.v2.events.Events;
-import net.groboclown.idea.p4ic.v2.server.connection.AuthenticatedServer.AuthenticationResult;
+import net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerRunner.P4Runner;
 import net.groboclown.idea.p4ic.v2.ui.alerts.DisconnectedHandler;
 import net.groboclown.idea.p4ic.v2.ui.alerts.LoginFailedHandler;
@@ -58,9 +67,6 @@ public class ClientExec {
     private final ServerStatusController connectedController;
     private final ClientConfig config;
 
-    @NotNull
-    private final ConnectionHandler connectionHandler;
-
     private boolean disposed = false;
 
     @Nullable
@@ -78,18 +84,15 @@ public class ClientExec {
     }
 
     @NotNull
-    public static ClientExec createFor(@NotNull ClientConfig config, @NotNull ServerStatusController statusController)
+    static ClientExec createFor(@NotNull ClientConfig config, @NotNull ServerStatusController statusController)
             throws P4InvalidConfigException {
         return new ClientExec(config, statusController);
     }
 
 
-    private ClientExec(@NotNull ClientConfig config, @NotNull ServerStatusController connectedController)
-            throws P4InvalidConfigException {
+    private ClientExec(@NotNull ClientConfig config, @NotNull ServerStatusController connectedController) {
         this.connectedController = connectedController;
         this.config = config;
-        this.connectionHandler = ConnectionHandler.getInstance() /*getHandlerFor(config)*/;
-        connectionHandler.validateConfiguration(null, config.getServerConfig());
     }
 
 
@@ -218,7 +221,7 @@ public class ClientExec {
                 cachedServer = null;
             }
             if (cachedServer == null) {
-                cachedServer = connectTo(project, getClientConfig(), connectionHandler, tempDir);
+                cachedServer = connectTo(project, getClientConfig(), tempDir);
             }
         }
 
@@ -228,11 +231,10 @@ public class ClientExec {
 
     @NotNull
     private static AuthenticatedServer connectTo(@Nullable Project project,
-            @NotNull ClientConfig clientConfig, @NotNull ConnectionHandler connectionHandler,
-            @NotNull File tempDir)
+            @NotNull ClientConfig clientConfig, @NotNull File tempDir)
             throws P4JavaException, URISyntaxException {
 
-        return new AuthenticatedServer(project, clientConfig, connectionHandler, tempDir);
+        return new AuthenticatedServer(project, clientConfig, tempDir);
     }
 
 
@@ -287,8 +289,8 @@ public class ClientExec {
         }
 
         @Override
-        public AuthenticationResult authenticate()
-                throws P4JavaException, URISyntaxException {
+        public ServerAuthenticator.AuthenticationStatus authenticate()
+                throws InterruptedException, P4JavaException, URISyntaxException {
             return connectServer(project, tempDir).authenticate();
         }
     }

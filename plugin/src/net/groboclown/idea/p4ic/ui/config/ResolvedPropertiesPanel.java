@@ -27,7 +27,9 @@ import net.groboclown.idea.p4ic.background.BackgroundAwtActionRunner;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.config.props.ConfigurationUpdatedListener;
+import net.groboclown.idea.p4ic.ui.config.props.RequestConfigurationUpdateListener;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
 import org.jetbrains.annotations.NotNull;
@@ -60,6 +62,8 @@ public class ResolvedPropertiesPanel {
     private CollectionListModel/*<String>*/ configProblemsListModel; // JDK 1.6 doesn't have generic models
 
     private P4ProjectConfig lastConfig;
+
+    private RequestConfigurationUpdateListener requestConfigurationUpdateListener;
 
     private final ConfigurationUpdatedListener configurationUpdatedListener = new ConfigurationUpdatedListener() {
         @Override
@@ -108,27 +112,53 @@ public class ResolvedPropertiesPanel {
                 new BackgroundAwtActionRunner.BackgroundAwtAction<ComputedConfigResults>() {
                     @Override
                     public ComputedConfigResults runBackgroundProcess() {
-                        if (lastConfig == null) {
-                            return new ComputedConfigResults();
+                        if (requestConfigurationUpdateListener != null) {
+                            requestConfigurationUpdateListener.updateConfigPartFromUI();
                         }
-                        lastConfig.refresh();
-
                         final ComputedConfigResults results = new ComputedConfigResults();
-                        final Collection<ConfigProblem> problems = lastConfig.getConfigProblems();
-                        results.problemMessages = new ArrayList<String>(problems.size());
-                        for (ConfigProblem problem : problems) {
-                            LOG.info("ConfigProblem: " + problem);
-                            results.problemMessages.add(problem.getMessage());
+                        if (lastConfig == null) {
+                            results.problemMessages.add(
+                                    P4Bundle.getString("configuration.error.no-config-list")
+                            );
+                            return results;
                         }
-                        final boolean tryConnection = problems.isEmpty();
+
+                        lastConfig.refresh();
+                        {
+                            final Collection<ConfigProblem> problems = lastConfig.getConfigProblems();
+                            results.problemMessages = new ArrayList<String>(problems.size());
+                            for (ConfigProblem problem : problems) {
+                                LOG.info("ConfigProblem: " + problem);
+                                results.problemMessages.add(problem.getMessage());
+                            }
+                        }
+                        final boolean tryConnection = results.problemMessages.isEmpty();
 
                         Collection<ClientConfig> configs = lastConfig.getClientConfigs();
+                        if (configs.isEmpty()) {
+                            results.problemMessages.add(
+                                    P4Bundle.getString("configuration.error.no-config-list"));
+                        }
                         for (ClientConfig config : configs) {
                             if (tryConnection) {
                                 ConfigProblem problem = ConnectionUIConfiguration.checkConnection(config,
                                         ServerConnectionManager.getInstance());
                                 if (problem != null) {
-                                    problems.add(problem);
+                                    results.problemMessages.add(problem.getMessage());
+                                }
+                                // We can have a connection without a client, for testing purposes,
+                                // but to actually use it, we need a client.
+                                if (! config.isWorkspaceCapable()) {
+                                    results.problemMessages.add(
+                                            P4Bundle.getString("error.config.no-client"));
+                                }
+                            }
+                            if (config.getProjectSourceDirs().isEmpty()) {
+                                results.problemMessages.add(
+                                        P4Bundle.message("client.root.non-existent",
+                                                config.getProject().getBaseDir()));
+                                if (config.getProject().getBaseDir() != null) {
+                                    results.configs.add(new ConfigPath(config, config.getProject().getBaseDir()));
                                 }
                             }
                             for (VirtualFile virtualFile : config.getProjectSourceDirs()) {
@@ -208,6 +238,36 @@ public class ResolvedPropertiesPanel {
                 });
     }
 
+    public void setRequestConfigurationUpdateListener(
+            @NotNull RequestConfigurationUpdateListener requestConfigurationUpdateListener) {
+        this.requestConfigurationUpdateListener = requestConfigurationUpdateListener;
+    }
+
+    private static class ComputedConfigResults {
+        ArrayList<String> problemMessages = new ArrayList<String>();
+        ArrayList<ConfigPath> configs = new ArrayList<ConfigPath>();
+    }
+
+
+    private static class ConfigPath {
+        final ClientConfig config;
+        final VirtualFile file;
+
+        private ConfigPath(@NotNull ClientConfig config, @NotNull VirtualFile virtualFile) {
+            this.config = config;
+            this.file = virtualFile;
+        }
+
+        @Override
+        public String toString() {
+            return file.getPath();
+        }
+    }
+
+
+    // -----------------------------------------------------------------------
+    // UI form stuff
+
     /**
      * Method generated by IntelliJ IDEA GUI Designer
      * >>> IMPORTANT!! <<<
@@ -246,17 +306,26 @@ public class ResolvedPropertiesPanel {
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         resolutionTabbedPane = new JTabbedPane();
         rootPanel.add(resolutionTabbedPane, BorderLayout.CENTER);
+        final JPanel panel4 = new JPanel();
+        panel4.setLayout(new BorderLayout(0, 0));
+        resolutionTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configurations.resolved-values.tab"), panel4);
+        panel4.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), null));
         final JScrollPane scrollPane1 = new JScrollPane();
         scrollPane1.setVerticalScrollBarPolicy(22);
-        resolutionTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("configurations.resolved-values.tab"), scrollPane1);
+        panel4.add(scrollPane1, BorderLayout.CENTER);
         resolvedValuesText = new JTextArea();
         resolvedValuesText.setFont(UIManager.getFont("TextArea.font"));
+        resolvedValuesText.setRows(8);
         scrollPane1.setViewportView(resolvedValuesText);
+        final JPanel panel5 = new JPanel();
+        panel5.setLayout(new BorderLayout(0, 0));
+        resolutionTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.problems-list.tab"), panel5);
+        panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), null));
         final JScrollPane scrollPane2 = new JScrollPane();
         scrollPane2.setVisible(true);
-        resolutionTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("configuration.problems-list.tab"), scrollPane2);
+        panel5.add(scrollPane2, BorderLayout.CENTER);
         configProblemsList = new JList();
         scrollPane2.setViewportView(configProblemsList);
         label1.setLabelFor(rootDirDropdownBox);
@@ -297,31 +366,6 @@ public class ResolvedPropertiesPanel {
     public JComponent $$$getRootComponent$$$() {
         return rootPanel;
     }
-
-    private static class ComputedConfigResults {
-        ArrayList<String> problemMessages = new ArrayList<String>();
-        ArrayList<ConfigPath> configs = new ArrayList<ConfigPath>();
-    }
-
-
-    private static class ConfigPath {
-        final ClientConfig config;
-        final VirtualFile file;
-
-        private ConfigPath(@NotNull ClientConfig config, @NotNull VirtualFile virtualFile) {
-            this.config = config;
-            this.file = virtualFile;
-        }
-
-        @Override
-        public String toString() {
-            return file.getPath();
-        }
-    }
-
-
-    // -----------------------------------------------------------------------
-    // UI form stuff
 
     private void createUIComponents() {
         // Add custom component construction here.

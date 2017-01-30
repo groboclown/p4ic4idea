@@ -48,6 +48,11 @@ public class EnvConfigPartPanel
         return false;
     }
 
+    @Override
+    public void updateConfigPartFromUI() {
+        // do nothing
+    }
+
     @Nls
     @NotNull
     @Override

@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
  * for looking for the configuration - the environment variables, configuration file,
  * and user overrides.
  *
- * @author Matt Albrecht
+ * @deprecated only kept around for use with {@link ManualP4Config}
  */
 @Deprecated
 public interface P4Config {

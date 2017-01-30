@@ -28,7 +28,6 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
-import java.util.Collections;
 
 class WinRegDataPart implements DataPart {
     @NonNls
@@ -51,6 +50,7 @@ class WinRegDataPart implements DataPart {
     private String clientHostname;
     private String ignoreFileName;
     private String charset;
+    private String loginSso;
 
 
     static boolean isAvailble() {
@@ -88,6 +88,7 @@ class WinRegDataPart implements DataPart {
             clientHostname = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4HOST);
             ignoreFileName = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4IGNORE);
             charset = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4CHARSET);
+            loginSso = PreferencesWinRegistry.readString(hive, key, "P4LOGINSSO");
         } catch (IllegalAccessException e) {
             // Do not mark as an actual problem.  This is a JVM incompatible issue.
             e.printStackTrace();
@@ -227,5 +228,16 @@ class WinRegDataPart implements DataPart {
     @Override
     public String getDefaultCharset() {
         return charset;
+    }
+
+    @Override
+    public boolean hasLoginSsoSet() {
+        return loginSso != null;
+    }
+
+    @Nullable
+    @Override
+    public File getLoginSso() {
+        return loginSso == null ? null : new File(loginSso);
     }
 }

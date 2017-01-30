@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.config.part;
 
+import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
 import net.groboclown.idea.p4ic.config.P4ServerName;
 import org.jetbrains.annotations.NotNull;
@@ -23,6 +24,8 @@ import java.io.File;
 import java.util.*;
 
 public class PartValidation {
+    private static final Logger LOG = Logger.getInstance(PartValidation.class);
+
     private final Set<ConfigProblem> problems = new HashSet<ConfigProblem>();
 
     public static Collection<ConfigProblem> findAllProblems(@NotNull DataPart part) {
@@ -32,11 +35,15 @@ public class PartValidation {
             validation.problems.add(new ConfigProblem(part, "configuration.port.invalid", part.getServerName()));
         }
         validation.checkUsername(part);
+        validation.checkAuthTicketFile(part);
+        validation.checkTrustTicketFile(part);
+        validation.checkLoginSsoFile(part);
 
         return validation.getProblems();
     }
 
     Collection<ConfigProblem> getProblems() {
+        LOG.info(problems.toString());
         return problems;
     }
 
@@ -53,7 +60,7 @@ public class PartValidation {
     }
 
     boolean checkAuthTicketFile(@NotNull ConfigPart part, @Nullable File file) {
-        if (file != null && !file.exists()) {
+        if (file != null && (! file.exists() || ! file.isFile())) {
             problems.add(new ConfigProblem(part, "configuration.problem.authticket.exist", file));
             return false;
         }
@@ -65,7 +72,7 @@ public class PartValidation {
     }
 
     boolean checkTrustTicketFile(@NotNull ConfigPart part, @Nullable File file) {
-        if (file != null && ! file.exists()) {
+        if (file != null && (! file.exists() || ! file.isFile())) {
             problems.add(new ConfigProblem(part, "configuration.problem.trustticket.exist", file));
             return false;
         }
@@ -74,6 +81,18 @@ public class PartValidation {
 
     boolean checkTrustTicketFile(@NotNull DataPart part) {
         return checkTrustTicketFile(part, part.getTrustTicketFile());
+    }
+
+    boolean checkLoginSsoFile(@NotNull ConfigPart part, @Nullable File file) {
+        if (file != null && (! file.exists() || ! file.isFile())) {
+            problems.add(new ConfigProblem(part, "configuration.problem.loginsso.exist", file));
+            return false;
+        }
+        return true;
+    }
+
+    boolean checkLoginSsoFile(@NotNull DataPart part) {
+        return checkLoginSsoFile(part, part.getLoginSso());
     }
 
     boolean checkUsername(@NotNull ConfigPart part, @Nullable String username) {

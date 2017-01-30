@@ -17,8 +17,14 @@ package net.groboclown.idea.p4ic.compat.auth;
 import org.jetbrains.annotations.Nullable;
 
 public class OneUseString {
+    private final boolean nullValue;
     private char[] value;
     private boolean used = false;
+
+    public OneUseString() {
+        value = null;
+        nullValue = true;
+    }
 
     /**
      * Directly stores the char array.  It will be blanked out
@@ -28,10 +34,12 @@ public class OneUseString {
      */
     public OneUseString(char[] value) {
         this.value = value;
+        nullValue = value == null;
     }
 
     public OneUseString(String value) {
         this.value = value.toCharArray();
+        nullValue = false;
     }
 
     public synchronized <T> T use(WithString<T> block) {
@@ -58,6 +66,10 @@ public class OneUseString {
             }
             value = null;
         }
+    }
+
+    public boolean isNullValue() {
+        return nullValue;
     }
 
     public interface WithString<T> {

@@ -2,7 +2,7 @@
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="net.groboclown.idea.p4ic.ui.config.ResolvedPropertiesPanel">
   <grid id="27dc6" binding="rootPanel" layout-manager="BorderLayout" hgap="0" vgap="0">
     <constraints>
-      <xy x="20" y="20" width="500" height="400"/>
+      <xy x="20" y="20" width="500" height="225"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -60,38 +60,57 @@
         <properties/>
         <border type="none"/>
         <children>
-          <scrollpane id="5e2fc">
+          <grid id="a0af" layout-manager="BorderLayout" hgap="0" vgap="0">
             <constraints>
               <tabbedpane title-resource-bundle="net/groboclown/idea/p4ic/P4Bundle" title-key="configurations.resolved-values.tab"/>
             </constraints>
-            <properties>
-              <verticalScrollBarPolicy value="22"/>
-            </properties>
-            <border type="none"/>
+            <properties/>
+            <border type="empty">
+              <size top="4" left="4" bottom="4" right="4"/>
+            </border>
             <children>
-              <component id="8e2eb" class="javax.swing.JTextArea" binding="resolvedValuesText">
-                <constraints/>
+              <scrollpane id="5e2fc">
+                <constraints border-constraint="Center"/>
                 <properties>
-                  <font swing-font="TextArea.font"/>
+                  <verticalScrollBarPolicy value="22"/>
                 </properties>
-              </component>
+                <border type="none"/>
+                <children>
+                  <component id="8e2eb" class="javax.swing.JTextArea" binding="resolvedValuesText">
+                    <constraints/>
+                    <properties>
+                      <font swing-font="TextArea.font"/>
+                      <rows value="8"/>
+                    </properties>
+                  </component>
+                </children>
+              </scrollpane>
             </children>
-          </scrollpane>
-          <scrollpane id="d8cd4">
+          </grid>
+          <grid id="5f8a1" layout-manager="BorderLayout" hgap="0" vgap="0">
             <constraints>
               <tabbedpane title-resource-bundle="net/groboclown/idea/p4ic/P4Bundle" title-key="configuration.problems-list.tab"/>
             </constraints>
-            <properties>
-              <visible value="true"/>
-            </properties>
-            <border type="none"/>
+            <properties/>
+            <border type="empty">
+              <size top="4" left="4" bottom="4" right="4"/>
+            </border>
             <children>
-              <component id="7a703" class="javax.swing.JList" binding="configProblemsList">
-                <constraints/>
-                <properties/>
-              </component>
+              <scrollpane id="d8cd4">
+                <constraints border-constraint="Center"/>
+                <properties>
+                  <visible value="true"/>
+                </properties>
+                <border type="none"/>
+                <children>
+                  <component id="7a703" class="javax.swing.JList" binding="configProblemsList">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </scrollpane>
             </children>
-          </scrollpane>
+          </grid>
         </children>
       </tabbedpane>
     </children>

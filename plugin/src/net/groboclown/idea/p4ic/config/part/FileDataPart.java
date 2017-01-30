@@ -50,6 +50,7 @@ public class FileDataPart implements DataPart {
     private String clientHostname;
     private String charset;
     private String ignoreFile;
+    private File loginSsoScript;
 
     private IOException loadError = null;
 
@@ -81,7 +82,13 @@ public class FileDataPart implements DataPart {
     }
 
     @Override
+    public String toString() {
+        return "FileDataPart(" + filePath + ")";
+    }
+
+    @Override
     public boolean reload() {
+        loadError = null;
         final Properties props;
         try {
             props = loadProps(filePath);
@@ -136,6 +143,7 @@ public class FileDataPart implements DataPart {
         clientHostname = props.getProperty("P4HOST");
         ignoreFile = props.getProperty("P4IGNORE");
         charset = props.getProperty("P4CHARSET");
+        loginSsoScript = toFile(props.getProperty("P4LOGINSSO"));
 
         return getConfigProblems().isEmpty();
     }
@@ -296,6 +304,17 @@ public class FileDataPart implements DataPart {
     @Override
     public String getDefaultCharset() {
         return charset;
+    }
+
+    @Override
+    public boolean hasLoginSsoSet() {
+        return loginSsoScript != null;
+    }
+
+    @Nullable
+    @Override
+    public File getLoginSso() {
+        return loginSsoScript;
     }
 
     // ----------------------------------------------------------------

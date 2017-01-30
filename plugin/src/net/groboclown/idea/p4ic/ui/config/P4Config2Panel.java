@@ -34,6 +34,7 @@ public class P4Config2Panel {
     public P4Config2Panel() {
         $$$setupUI$$$();
         configStackPanel.addChangeListener(resolvePropertiesPanel.getConfigurationUpdatedListener());
+        resolvePropertiesPanel.setRequestConfigurationUpdateListener(configStackPanel);
         splitPane.setDividerLocation(0.6);
     }
 

@@ -78,6 +78,7 @@ public class P4VcsConnectionException extends VcsConnectionProblem {
         return false;
     }
 
+    @Nullable
     public P4JavaException getP4JavaException() {
         if (getCause() != null && getCause() instanceof P4JavaException) {
             return (P4JavaException) getCause();

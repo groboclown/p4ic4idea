@@ -15,7 +15,6 @@
 package net.groboclown.idea.p4ic.v2.extension;
 
 import com.intellij.openapi.diagnostic.Logger;
-import net.groboclown.idea.p4ic.server.ConnectionHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -74,7 +73,7 @@ public class P4PluginVersion {
         // Do not fetch the class loader from the thread context; we want
         // the plugin's class loader, not whatever context this is running
         // in.
-        final ClassLoader ret = ConnectionHandler.class.getClassLoader();
+        final ClassLoader ret = P4PluginVersion.class.getClassLoader();
         if (ret != null) {
             return ret;
         }

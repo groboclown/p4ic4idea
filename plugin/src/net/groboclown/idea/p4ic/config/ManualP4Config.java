@@ -23,7 +23,9 @@ import org.jetbrains.annotations.Nullable;
  * for looking for the configuration - the environment variables, configuration file,
  * and user overrides.
  *
- * @deprecated Only kept around for historical purposes.
+ * @deprecated Only kept around for historical purposes.  Specifically, for loading
+ * the user's old settings when they migrate to the new version.
+ * See {@link P4ConfigProject} for where it should only be used.
  */
 public class ManualP4Config implements P4Config {
     @Nullable
@@ -236,16 +238,6 @@ public class ManualP4Config implements P4Config {
         return false;
     }
 
-    public void setConfigFile(@Nullable String configFile) {
-        this.configFile = configFile;
-        this.isConfigured = true;
-    }
-
-    //@Override
-    //public boolean isPasswordStoredLocally() {
-    //    return storePassword;
-    //}
-
     @Nullable
     @Override
     public String getClientHostname() {
@@ -272,20 +264,6 @@ public class ManualP4Config implements P4Config {
     @Override
     public String getDefaultCharset() {
         return null;
-    }
-
-    public void setIgnoreFileName(@Nullable String fileName) {
-        ignoreFileName = fileName;
-        this.isConfigured = true;
-    }
-
-    public void setClientHostname(@Nullable final String name) {
-        clientHostname = name;
-        this.isConfigured = true;
-    }
-
-    public boolean isConfigured() {
-        return isConfigured;
     }
 
     @Override
@@ -330,10 +308,5 @@ public class ManualP4Config implements P4Config {
                 (password == null ? 11 : password.hashCode()) +
                 (clientHostname == null ? 12 : clientHostname.hashCode()) +
                 (ignoreFileName == null ? 13 : ignoreFileName.hashCode());
-    }
-
-    @Override
-    public String toString() {
-        return P4ConfigUtil.getProperties(this).toString();
     }
 }

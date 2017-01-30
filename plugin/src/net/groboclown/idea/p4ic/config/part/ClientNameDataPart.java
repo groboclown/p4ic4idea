@@ -16,17 +16,14 @@ package net.groboclown.idea.p4ic.config.part;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
-import net.groboclown.idea.p4ic.config.P4ServerName;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,7 +35,7 @@ import java.util.Map;
  * from the SimpleDataPart in that the UI component checks the current
  * configuration for a server to load the list of client names.
  */
-public class ClientNameDataPart implements DataPart {
+public class ClientNameDataPart extends DataPartAdapter {
     static final String TAG_NAME = "client-name-data-part";
     static final ConfigPartFactory<ClientNameDataPart> FACTORY = new ClientNameDataPartFactory();
     private static final String CLIENT_NAME_ATTRIBUTE_KEY = "client-name";
@@ -53,6 +50,12 @@ public class ClientNameDataPart implements DataPart {
             ret.setAttribute(CLIENT_NAME_ATTRIBUTE_KEY, clientName);
         }
         return ret;
+    }
+
+    @Override
+    public boolean reload() {
+        // Nothing to do
+        return false;
     }
 
     private static class ClientNameDataPartFactory
@@ -98,11 +101,6 @@ public class ClientNameDataPart implements DataPart {
 
 
     public static ConnectionUIConfiguration.ClientResult loadClientNames(@NotNull ClientConfig config) {
-        /*
-        final ClientConfig clientConfig = ClientConfig.createFrom(project,
-                ServerConfig.createFrom(config), config,
-                Collections.singletonList(project.getBaseDir()));
-        */
         return loadClientNames(ServerConnectionManager.getInstance(), config);
     }
 
@@ -143,119 +141,5 @@ public class ClientNameDataPart implements DataPart {
             return 0;
         }
         return getClientname().hashCode();
-    }
-
-
-    // --------------------------------------------------------------------
-    // All the non-implemented methods.
-
-    @Override
-    public boolean reload() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public VirtualFile getRootPath() {
-        return null;
-    }
-
-    @Override
-    public boolean hasServerNameSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public P4ServerName getServerName() {
-        return null;
-    }
-
-    @Override
-    public boolean hasUsernameSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public String getUsername() {
-        return null;
-    }
-
-    @Override
-    public boolean hasPasswordSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public String getPlaintextPassword() {
-        return null;
-    }
-
-    @Override
-    public boolean hasAuthTicketFileSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public File getAuthTicketFile() {
-        return null;
-    }
-
-    @Override
-    public boolean hasTrustTicketFileSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public File getTrustTicketFile() {
-        return null;
-    }
-
-    @Override
-    public boolean hasServerFingerprintSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public String getServerFingerprint() {
-        return null;
-    }
-
-    @Override
-    public boolean hasClientHostnameSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public String getClientHostname() {
-        return null;
-    }
-
-    @Override
-    public boolean hasIgnoreFileNameSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public String getIgnoreFileName() {
-        return null;
-    }
-
-    @Override
-    public boolean hasDefaultCharsetSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public String getDefaultCharset() {
-        return null;
     }
 }

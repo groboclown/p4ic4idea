@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.server.exceptions;
 
 import com.perforce.p4java.exception.AccessException;
+import com.perforce.p4java.exception.AuthenticationFailedException;
 import com.perforce.p4java.exception.MessageGenericCode;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
@@ -25,27 +26,64 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ExceptionUtil
 {
-    public static boolean isPasswordProblem(@NotNull P4JavaException ex) {
+    private static final String SESSION_EXPIRED_MESSAGE_1 = "Your session has expired, please login again.";
+    private static final String SESSION_EXPIRED_MESSAGE_2 = "Your session has expired";
+    private static final String SESSION_EXPIRED_MESSAGE_3 = "Your session has expired, please %'login'% again.";
+    private static final String PASSWORD_INVALID_MESSAGE_1 = "Perforce password (P4PASSWD) invalid or unset.";
+    private static final String PASSWORD_INVALID_MESSAGE_2 = "Perforce password (P4PASSWD)";
+    private static final String PASSWORD_INVALID_MESSAGE_3 = "Perforce password (%P4PASSWD%)";
+
+    public static boolean isLoginRequiresPasswordProblem(@NotNull P4JavaException ex) {
+        return ex instanceof LoginRequiresPasswordException;
+    }
+
+    public static boolean isLoginPasswordProblem(@NotNull P4JavaException ex) {
         // TODO extend with correct error code checking.
 
         if (ex instanceof RequestException) {
             RequestException rex = (RequestException) ex;
-            return (rex.hasMessageFragment("Your session has expired, please login again.")
-                    || rex.hasMessageFragment("Perforce password (P4PASSWD) invalid or unset.")
+            return (rex.hasMessageFragment(PASSWORD_INVALID_MESSAGE_1)
+                    || rex.hasMessageFragment(PASSWORD_INVALID_MESSAGE_2)
+                    || rex.hasMessageFragment(PASSWORD_INVALID_MESSAGE_3)
                     || (rex.getGenericCode() == MessageGenericCode.EV_CONFIG &&
                         rex.getSubCode() == 21));
+        }
+        if (ex instanceof AuthenticationFailedException) {
+            AuthenticationFailedException afex = (AuthenticationFailedException) ex;
+            return afex.getErrorType() == AuthenticationFailedException.ErrorType.PASSWORD_INVALID;
         }
         if (ex instanceof AccessException) {
             AccessException aex = (AccessException) ex;
             // see P4ServerName for a list of the authentication failure messages.
-            return (aex.hasMessageFragment("Perforce password (P4PASSWD)")
-                    || aex.hasMessageFragment("Your session has expired"));
+            return (aex.hasMessageFragment(PASSWORD_INVALID_MESSAGE_1)
+                    || aex.hasMessageFragment(PASSWORD_INVALID_MESSAGE_2)
+                    || aex.hasMessageFragment(PASSWORD_INVALID_MESSAGE_3));
         }
-        // Not needed - we'll return false anyway.
-        //if (ex instanceof LoginRequiresPasswordException) {
-        //    LOG.info("No password specified, but one is needed", ex);
-        //    return false;
-        //}
+        return false;
+    }
+
+    public static boolean isSessionExpiredProblem(@NotNull P4JavaException ex) {
+        // TODO extend with correct error code checking.
+
+        if (ex instanceof RequestException) {
+            RequestException rex = (RequestException) ex;
+            return (rex.hasMessageFragment(SESSION_EXPIRED_MESSAGE_1)
+                    || rex.hasMessageFragment(SESSION_EXPIRED_MESSAGE_2)
+                    || rex.hasMessageFragment(SESSION_EXPIRED_MESSAGE_3)
+                    || (rex.getGenericCode() == MessageGenericCode.EV_CONFIG &&
+                    rex.getSubCode() == 21));
+        }
+        if (ex instanceof AuthenticationFailedException) {
+            AuthenticationFailedException afex = (AuthenticationFailedException) ex;
+            return afex.getErrorType() == AuthenticationFailedException.ErrorType.SESSION_EXPIRED;
+        }
+        if (ex instanceof AccessException) {
+            AccessException aex = (AccessException) ex;
+            // see P4ServerName for a list of the authentication failure messages.
+            return (aex.hasMessageFragment(SESSION_EXPIRED_MESSAGE_1)
+                    || aex.hasMessageFragment(SESSION_EXPIRED_MESSAGE_2)
+                    || aex.hasMessageFragment(SESSION_EXPIRED_MESSAGE_3));
+        }
         return false;
     }
 }

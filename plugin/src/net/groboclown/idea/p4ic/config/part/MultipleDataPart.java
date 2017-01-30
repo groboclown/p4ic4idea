@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.config.part;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
 import net.groboclown.idea.p4ic.config.P4ServerName;
@@ -28,6 +29,8 @@ import java.util.List;
 import java.util.Set;
 
 public class MultipleDataPart implements DataPart {
+    private static final Logger LOG = Logger.getInstance(MultipleDataPart.class);
+
     private final VirtualFile root;
     private final List<DataPart> parts;
 
@@ -47,11 +50,42 @@ public class MultipleDataPart implements DataPart {
         throw new IllegalStateException("Should not be called");
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (o == null || ! getClass().equals(o.getClass())) {
+            return false;
+        }
+        MultipleDataPart that = (MultipleDataPart) o;
+        return ((root == null && that.root == null)
+                || (root != null && root.equals(that.root))) &&
+                (parts.equals(that.parts));
+    }
+
+    @Override
+    public int hashCode() {
+        return (root == null ? 0 : root.hashCode()) + parts.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "MultipleDataPart(" + root + ")";
+    }
+
     @NotNull
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
+        LOG.info("Config for MultipleDataPart under " + root);
+
         Set<ConfigProblem> problems = new HashSet<ConfigProblem>();
         for (DataPart part : parts) {
+            LOG.info(part + " P4USER: " + part.hasUsernameSet() + " - " + part.getUsername());
+            LOG.info(part + " P4PORT: " + part.hasServerNameSet() + " - " + part.getServerName());
+            LOG.info(part + " P4CLIENT: " + part.hasClientnameSet() + " - " + part.getClientname());
+            LOG.info(part + " P4HOST: " + part.hasClientHostnameSet() + " - " + part.getClientHostname());
+
             problems.addAll(part.getConfigProblems());
         }
         return problems;
@@ -268,6 +302,27 @@ public class MultipleDataPart implements DataPart {
         for (DataPart part : parts) {
             if (part.hasDefaultCharsetSet()) {
                 return part.getDefaultCharset();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean hasLoginSsoSet() {
+        for (DataPart part : parts) {
+            if (part.hasLoginSsoSet()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public File getLoginSso() {
+        for (DataPart part : parts) {
+            if (part.hasLoginSsoSet()) {
+                return part.getLoginSso();
             }
         }
         return null;

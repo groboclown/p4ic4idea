@@ -99,7 +99,6 @@ public class RootDiscoveryUtil {
     @NotNull
     public static List<List<File>> getRoots(@NotNull final Collection<VirtualFile> projectSourceDirs,
             @NotNull final List<VirtualFile> projectClientRoots) {
-        // use the ProjectConfigSource as the lowest level these can be under.
         final Set<List<File>> ret = new HashSet<List<File>>();
         List<List<File>> projectRootsParts = new ArrayList<List<File>>(projectSourceDirs.size());
         for (VirtualFile projectRoot : projectSourceDirs) {

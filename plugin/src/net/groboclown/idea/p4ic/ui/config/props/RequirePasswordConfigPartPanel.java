@@ -15,7 +15,6 @@
 package net.groboclown.idea.p4ic.ui.config.props;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.part.RequirePasswordDataPart;
 import org.jetbrains.annotations.Nls;
@@ -57,6 +56,11 @@ public class RequirePasswordConfigPartPanel
     @Override
     public JPanel getRootPanel() {
         return rootPanel;
+    }
+
+    @Override
+    public void updateConfigPartFromUI() {
+        // Do nothing
     }
 
     {

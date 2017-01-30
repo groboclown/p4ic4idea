@@ -24,20 +24,15 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.*;
 
 public abstract class ConfigPartPanel<T extends ConfigPart>
-        implements ConfigurationUpdatedListener,
+        implements ConfigurationUpdatedListener, RequestConfigurationUpdateListener,
             ComponentListPanel.WithRootPanel {
     private final Project project;
     private final T part;
-    private ConfigPartUpdatedListener listener;
     private P4ProjectConfig latestConfig;
 
     ConfigPartPanel(@NotNull Project project, @NotNull T part) {
         this.project = project;
         this.part = part;
-    }
-
-    void setConfigPartUpdatedListener(@NotNull ConfigPartUpdatedListener listener) {
-        this.listener = listener;
     }
 
     /**
@@ -51,13 +46,6 @@ public abstract class ConfigPartPanel<T extends ConfigPart>
     }
 
     public abstract boolean isModified(@NotNull T originalPart);
-
-    /**
-     * Call whenever a config part setting changes.
-     */
-    void firePropertyChange() {
-        listener.onConfigPartUpdated();
-    }
 
     @Override
     public void onConfigurationUpdated(@NotNull P4ProjectConfig config) {

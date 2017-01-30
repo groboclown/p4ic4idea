@@ -1,10 +1,19 @@
 # Refactoring of Connection To Dos:
 
-1. Replace config setup w/ new UI.
-2. Re-investigate all the places where the connection can be marked invalid.
+1. Connection UI bugs
+    * It's currently using a splitter bar to separate the refresh from the connection list.
+        The connection list panel should instead have a maximum size set, otherwise it will
+        grow.
+    * Adding a connection needs to have a mouse listener to highlight what you're going
+        to select?  Something.  Because right now, it doesn't look like much.  The mouse
+        listener is there, but it doesn't do anything.
+    * The properties aren't shown correctly.  Something isn't wired up right.
+1. ConnectionHandler needs to be replaced.
+1. ConnectionProblem needs to go.
+1. Re-investigate all the places where the connection can be marked invalid.
     Why does this happen?  Does it need to be there?
-3. Add to the status bar widget a "reload" button.  Maybe also to the VCS pop-up menu and app menu.
-4. Debugging, debugging, debugging.
+1. Add to the status bar widget a "reload" button.  Maybe also to the VCS pop-up menu and app menu.
+1. Debugging, debugging, debugging.
 
 
 

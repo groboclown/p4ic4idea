@@ -71,6 +71,10 @@ public class SimpleDataPart implements DataPart {
     @NotNull
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
+        // Because reload doesn't do anything, we load the
+        // config problems on each call.  This means that we also don't
+        // need to call reload on each of those methods.
+
         PartValidation validation = new PartValidation();
         validation.checkPort(this, trimmedProperty(PORT_KEY));
         validation.checkAuthTicketFile(this);
@@ -303,6 +307,32 @@ public class SimpleDataPart implements DataPart {
 
     public void setDefaultCharset(@Nullable String charset) {
         setTrimmed(DEFAULT_CHARSET_KEY, charset);
+    }
+
+    // ----------------------------------------------------------------------
+    private static final String LOGIN_SSO_KEY = "loginsso";
+
+    @Override
+    public boolean hasLoginSsoSet() {
+        return getLoginSso() != null;
+    }
+
+    @Nullable
+    @Override
+    public File getLoginSso() {
+        return trimmedPropertyFile(LOGIN_SSO_KEY);
+    }
+
+    public void setLoginSsoFile(@Nullable String path) {
+        setTrimmed(LOGIN_SSO_KEY, path);
+    }
+
+    public void setLoginSsoFile(@Nullable File file) {
+        if (file != null) {
+            setTrimmed(LOGIN_SSO_KEY, file.getAbsolutePath());
+        } else {
+            setTrimmed(LOGIN_SSO_KEY, null);
+        }
     }
 
     // ----------------------------------------------------------------------

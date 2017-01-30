@@ -21,7 +21,6 @@ import com.perforce.p4java.server.ServerStatus;
 import com.perforce.p4java.server.callback.IFilterCallback;
 import com.perforce.p4java.server.callback.IStreamingCallback;
 import net.groboclown.idea.p4ic.config.ServerConfig;
-import net.groboclown.idea.p4ic.server.connection.TestConnectionHandler;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
@@ -41,7 +40,10 @@ public class MockOptionsServer extends RpcServer {
     public MockOptionsServer(@NotNull String serverUriString, @NotNull Responses responses) {
         this.responses = responses;
         this.serverUriString = serverUriString;
-        TestConnectionHandler.registerServer(serverUriString, this);
+
+        // FIXME change to ensure that the server is registered in the
+        // P4Connection...Factory class, which should have INSTANCE be mocked out.
+        // TestConnectionHandler.registerServer(serverUriString, this);
     }
 
 
@@ -53,7 +55,9 @@ public class MockOptionsServer extends RpcServer {
 
 
     public void close() {
-        TestConnectionHandler.deregisterServer(serverUriString);
+        // FIXME change to ensure that the server is registered in the
+        // P4Connection...Factory class, which should have INSTANCE be mocked out.
+        // TestConnectionHandler.deregisterServer(serverUriString);
     }
 
 

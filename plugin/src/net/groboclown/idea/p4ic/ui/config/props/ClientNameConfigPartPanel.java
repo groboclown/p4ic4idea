@@ -15,9 +15,9 @@
 package net.groboclown.idea.p4ic.ui.config.props;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.ui.AsyncProcessIcon;
-import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.BackgroundAwtActionRunner;
 import net.groboclown.idea.p4ic.config.ClientConfig;
@@ -40,6 +40,9 @@ import java.util.ResourceBundle;
 
 public class ClientNameConfigPartPanel
         extends ConfigPartPanel<ClientNameDataPart> {
+    private static final Logger LOG = Logger.getInstance(ClientNameConfigPartPanel.class);
+
+
     private JPanel rootPanel;
     private JComboBox/*<String>*/ clientDropdownList;
     private JButton listRefreshButton;
@@ -60,14 +63,6 @@ public class ClientNameConfigPartPanel
                 refreshClientList();
             }
         });
-
-        clientDropdownList.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                clientSelected();
-            }
-        });
-
     }
 
     @NotNull
@@ -105,12 +100,10 @@ public class ClientNameConfigPartPanel
         return rootPanel;
     }
 
-
-    private void clientSelected() {
-        if (isModified(getConfigPart())) {
-            getConfigPart().setClientname(getSelectedClientName());
-            firePropertyChange();
-        }
+    @Override
+    public void updateConfigPartFromUI() {
+        getConfigPart().setClientname(getSelectedClientName());
+        LOG.info("Set the client to " + getConfigPart().getClientname());
     }
 
     private String getSelectedClientName() {
@@ -149,13 +142,6 @@ public class ClientNameConfigPartPanel
                             }
                         }
                         // else already handled the errors; leave the list as it was.
-
-                        final String newSelected = getSelectedClientName();
-                        if ((selected == null && newSelected != null)
-                                || (selected != null && newSelected == null)
-                                || (selected != null && !selected.equals(newSelected))) {
-                            firePropertyChange();
-                        }
                     }
                 });
     }

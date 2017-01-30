@@ -20,7 +20,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.exception.*;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.*;
-import net.groboclown.idea.p4ic.v2.server.connection.AuthenticatedServer.AuthenticationResult;
+import net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator;
 import org.jetbrains.annotations.NotNull;
 
 import javax.crypto.Cipher;
@@ -55,8 +55,8 @@ public class ServerRunner {
          *
          * @param e source error
          * @return the actual exception to throw
-         * @throws VcsException
-         * @throws CancellationException
+         * @throws VcsException exception
+         * @throws CancellationException user canceled execution
          */
         @NotNull
         P4LoginException loginFailure(@NotNull P4JavaException e)
@@ -65,9 +65,9 @@ public class ServerRunner {
         /**
          * Login is considered to be invalid.
          *
-         * @param e
-         * @throws VcsException
-         * @throws CancellationException
+         * @param e source error
+         * @throws VcsException exception
+         * @throws CancellationException user canceled execution
          */
         void loginFailure(@NotNull P4LoginException e)
                 throws VcsException, CancellationException;
@@ -77,9 +77,9 @@ public class ServerRunner {
         /**
          * The server refuses to reauthenticate a connection.
          *
-         * @param e
-         * @throws VcsException
-         * @throws CancellationException
+         * @param e source error
+         * @throws VcsException exception
+         * @throws CancellationException user canceled execution
          */
         void retryAuthorizationFailure(P4RetryAuthenticationException e)
                 throws VcsException, CancellationException;
@@ -91,9 +91,9 @@ public class ServerRunner {
          * Full handling of an invalid config.  Should include
          * AlertManager.getInstance().addCriticalError(new ConfigurationProblemHandler(project, connectedController, e), ex);
          *
-         * @param e
-         * @throws VcsException
-         * @throws CancellationException
+         * @param e source error
+         * @throws VcsException exception
+         * @throws CancellationException user canceled execution
          */
         void configInvalid(P4InvalidConfigException e)
                 throws VcsException, CancellationException;
@@ -121,8 +121,8 @@ public class ServerRunner {
         void onSuccessfulCall();
 
 
-        AuthenticationResult authenticate()
-                throws P4JavaException, URISyntaxException;
+        ServerAuthenticator.AuthenticationStatus authenticate()
+                throws P4JavaException, URISyntaxException, InterruptedException;
     }
 
 
@@ -142,10 +142,10 @@ public class ServerRunner {
             // "password not set or invalid", which means that the server could
             // have dropped the security token, and we need a new one.
 
-            final AuthenticationResult authenticationResult =
-                    p4RunWithSkippedPasswordCheck(new P4Runner<AuthenticationResult>() {
+            final ServerAuthenticator.AuthenticationStatus authenticationResult =
+                    p4RunWithSkippedPasswordCheck(new P4Runner<ServerAuthenticator.AuthenticationStatus>() {
                         @Override
-                        public AuthenticationResult run()
+                        public ServerAuthenticator.AuthenticationStatus run()
                                 throws P4JavaException, IOException, InterruptedException, TimeoutException,
                                 URISyntaxException,
                                 P4Exception {
@@ -154,40 +154,36 @@ public class ServerRunner {
                         }
                     }, conn, errorVisitor,
                     /* first attempt at this login attempt, so retry is 0 */ 0);
-            switch (authenticationResult) {
-                case AUTHENTICATED: {
-                    // Just fine; no errors.
-                    return retry(runner, conn, errorVisitor, retryCount, e);
-                }
-                case INVALID_LOGIN: {
-                    P4LoginException ex = new P4LoginException(e);
-                    errorVisitor.loginFailure(ex);
-                    // Because we told the error visitor about this,
-                    // we will not tell the user in an alert about it.
-                    throw new HandledVcsException(ex);
-                }
-                case NOT_CONNECTED: {
-                    P4DisconnectedException ex = new P4DisconnectedException(e);
-                    errorVisitor.disconnectFailure(ex);
-                    // Because we told the error visitor about this,
-                    // we will not tell the user in an alert about it.
-                    throw new HandledVcsException(ex);
-                }
-                case RELOGIN_FAILED: {
-                    final P4RetryAuthenticationException ex = new P4RetryAuthenticationException(e);
-                    errorVisitor.retryAuthorizationFailure(ex);
-                    return retry(runner, conn, errorVisitor, retryCount, e);
-                }
-                case NEEDS_PASSWORD: {
-                    errorVisitor.loginRequiresPassword();
-                    // Because we told the error visitor about this,
-                    // we will not tell the user in an alert about it.
-                    throw new HandledVcsException(e);
-                }
-                default: {
-                    throw e;
-                }
+            if (authenticationResult.isAuthenticated()) {
+                // Just fine; no errors.
+                return retry(runner, conn, errorVisitor, retryCount, e);
             }
+            if (authenticationResult.isNotConnected()) {
+                P4DisconnectedException ex = new P4DisconnectedException(e);
+                errorVisitor.disconnectFailure(ex);
+                // Because we told the error visitor about this,
+                // we will not tell the user in an alert about it.
+                throw new HandledVcsException(ex);
+            }
+            if (authenticationResult.isPasswordInvalid()) {
+                P4LoginException ex = new P4LoginException(e);
+                errorVisitor.loginFailure(ex);
+                // Because we told the error visitor about this,
+                // we will not tell the user in an alert about it.
+                throw new HandledVcsException(ex);
+            }
+            if (authenticationResult.isSessionExpired()) {
+                final P4RetryAuthenticationException ex = new P4RetryAuthenticationException(e);
+                errorVisitor.retryAuthorizationFailure(ex);
+                return retry(runner, conn, errorVisitor, retryCount, e);
+            }
+            if (authenticationResult.isPasswordRequired()) {
+                errorVisitor.loginRequiresPassword();
+                // Because we told the error visitor about this,
+                // we will not tell the user in an alert about it.
+                throw new HandledVcsException(e);
+            }
+            throw e;
         } catch (P4LoginException e) {
             errorVisitor.loginFailure(e);
             throw e;
@@ -246,7 +242,11 @@ public class ServerRunner {
         } catch (AccessException e) {
             // Most probably a password problem.
             LOG.info("Problem accessing resources (password problem?)", e);
-            if (ExceptionUtil.isPasswordProblem(e)) {
+            if (ExceptionUtil.isLoginRequiresPasswordProblem(e) || ExceptionUtil.isSessionExpiredProblem(e)) {
+                // Bubble this up to the password handlers
+                throw new P4LoginException(e);
+            }
+            if (ExceptionUtil.isLoginPasswordProblem(e)) {
                 // This is handled by the outside caller
                 throw new P4UnknownLoginException(e);
             }
@@ -307,8 +307,11 @@ public class ServerRunner {
             throw new P4Exception(e);
         } catch (RequestException e) {
             LOG.info("Request problem", e);
-
-            if (ExceptionUtil.isPasswordProblem(e)) {
+            if (ExceptionUtil.isLoginRequiresPasswordProblem(e) || ExceptionUtil.isSessionExpiredProblem(e)) {
+                // Bubble this up to the password handlers
+                throw new P4LoginException(e);
+            }
+            if (ExceptionUtil.isLoginPasswordProblem(e)) {
                 // This could either be a real password problem, or
                 // a lost security token issue.
                 throw new P4UnknownLoginException(e);
@@ -325,10 +328,18 @@ public class ServerRunner {
             errorVisitor.disconnectFailure(ex);
             throw ex;
         } catch (P4JavaException e) {
-            LOG.info("General Perforce problem", e);
+            if (ExceptionUtil.isLoginRequiresPasswordProblem(e) || ExceptionUtil.isSessionExpiredProblem(e)) {
+                // Bubble this up to the password handlers
+                throw new P4LoginException(e);
+            }
+            if (ExceptionUtil.isLoginPasswordProblem(e)) {
+                // This could either be a real password problem, or
+                // a lost security token issue.
+                throw new P4UnknownLoginException(e);
+            }
 
             // TODO have this inspect the underlying source of the problem.
-
+            LOG.info("General Perforce problem", e);
             throw new P4Exception(e);
         } catch (IOException e) {
             LOG.info("IO problem", e);
@@ -365,6 +376,7 @@ public class ServerRunner {
             ce.initCause(e);
             throw ce;
         } catch (Throwable t) {
+            // Throwable - never catch certain errors.
             VcsExceptionUtil.alwaysThrown(t);
             if (t.getMessage() != null &&
                     t.getMessage().equals("Task was cancelled.")) {

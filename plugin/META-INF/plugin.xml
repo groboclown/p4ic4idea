@@ -229,7 +229,7 @@
             <implementation-class>net.groboclown.idea.p4ic.v2.historic_compat.ClearPasswordStoreService</implementation-class>
         </component>
         <component>
-            <implementation-class>net.groboclown.idea.p4ic.v2.server.connection.PasswordManager</implementation-class>
+            <implementation-class>net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager</implementation-class>
         </component>
     </application-components>
 </idea-plugin>

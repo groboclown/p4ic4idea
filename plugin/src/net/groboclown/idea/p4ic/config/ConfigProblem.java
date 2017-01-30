@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.config;
 
+import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.part.ConfigPart;
 import org.jetbrains.annotations.Nls;
@@ -22,6 +23,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ConfigProblem {
+    private static final Logger LOG = Logger.getInstance(ConfigProblem.class);
+
+
     private final String message;
     private final Object[] args;
     private final ConfigPart source;
@@ -37,6 +41,7 @@ public class ConfigProblem {
         this.source = source;
         this.message = "configproblem.exception";
         this.args = new Object[] { ex };
+        LOG.info("ConfigProblem from " + source, ex);
     }
 
     @Nullable

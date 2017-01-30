@@ -16,22 +16,28 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.perforce.p4java.Log;
-import com.perforce.p4java.PropertyDefs;
-import com.perforce.p4java.exception.*;
+import com.perforce.p4java.exception.AccessException;
+import com.perforce.p4java.exception.ConfigException;
+import com.perforce.p4java.exception.ConnectionException;
+import com.perforce.p4java.exception.ConnectionNotConnectedException;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.exception.RequestException;
+import com.perforce.p4java.exception.TrustException;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.callback.ILogCallback;
+import net.groboclown.idea.p4ic.compat.auth.OneUseString;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
-import net.groboclown.idea.p4ic.server.ConnectionHandler;
-import net.groboclown.idea.p4ic.server.exceptions.ExceptionUtil;
+import net.groboclown.idea.p4ic.server.P4OptionsServerConnectionFactory;
 import net.groboclown.idea.p4ic.server.exceptions.LoginRequiresPasswordException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
+import net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager;
+import net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.net.URISyntaxException;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -43,28 +49,11 @@ import java.util.concurrent.locks.ReentrantLock;
  * class.
  */
 class AuthenticatedServer {
-    enum AuthenticationResult {
-        AUTHENTICATED,
-        INVALID_LOGIN,
-        RELOGIN_FAILED,
-        NEEDS_PASSWORD,
-        NOT_CONNECTED
-    }
-
-    private enum LoginValidation {
-        AUTHENTICATED,
-        SESSION_EXPIRED,
-        NEEDS_PASSWORD,
-        ERROR
-    }
-
-
     private static final Logger LOG = Logger.getInstance(AuthenticatedServer.class);
     private static final Logger P4LOG = Logger.getInstance("p4");
 
     private static final AtomicInteger serverCount = new AtomicInteger(0);
     private static final AtomicInteger activeConnectionCount = new AtomicInteger(0);
-    private static final int RECONNECTION_WAIT_MILLIS = 10;
 
     // At one point, the CONNECT_LOCK was a static variable.  However, there's
     // no need to make this anything other than a class variable, especially
@@ -79,7 +68,7 @@ class AuthenticatedServer {
     private final Lock CONNECT_LOCK = new ReentrantLock();
     private static final long CONNECT_LOCK_TIMEOUT_MILLIS = 30 * 1000L;
 
-    private final ConnectionHandler connectionHandler;
+    private final ServerAuthenticator authenticator = new ServerAuthenticator();
     private final ClientConfig config;
     private final int serverInstance = serverCount.getAndIncrement();
     private final File tempDir;
@@ -92,9 +81,8 @@ class AuthenticatedServer {
 
     private Thread checkedOutBy;
 
-    private P4JavaException authenticationException = null;
     private boolean hasValidatedAuthentication = false;
-    private boolean isInvalidLogin = false;
+    private ServerAuthenticator.AuthenticationStatus invalidLoginStatus = null;
 
     // metrics for debugging
     private int loginFailedCount = 0;
@@ -103,13 +91,10 @@ class AuthenticatedServer {
     private int disconnectedCount = 0;
 
 
-
     AuthenticatedServer(@Nullable Project project,
-            @NotNull ClientConfig clientConfig, @NotNull ConnectionHandler connectionHandler,
-            @NotNull File tempDir)
+            @NotNull ClientConfig clientConfig, @NotNull File tempDir)
             throws P4JavaException, URISyntaxException {
         this.project = project;
-        this.connectionHandler = connectionHandler;
         this.config = clientConfig;
         this.tempDir = tempDir;
         this.server = null;
@@ -129,12 +114,17 @@ class AuthenticatedServer {
         }
     }
 
-    // experimental workflow
-
     @NotNull
-    synchronized IOptionsServer checkoutServer() throws P4JavaException, URISyntaxException {
-        if (isInvalidLogin) {
-            throw remakeException(authenticationException);
+    synchronized IOptionsServer checkoutServer()
+            throws InterruptedException, P4JavaException, URISyntaxException {
+        if (invalidLoginStatus != null) {
+            if (invalidLoginStatus.getProblem() != null) {
+                if (invalidLoginStatus.getProblem().getP4JavaException() != null) {
+                    throw remakeException(invalidLoginStatus.getProblem().getP4JavaException());
+                }
+                throw new P4JavaException("Server Connection invalid", invalidLoginStatus.getProblem());
+            }
+            throw new P4JavaException("Server Connection invalid");
         }
         if (checkedOutBy != null) {
             throw new P4JavaException("P4ServerName object already checked out by " + checkedOutBy);
@@ -147,9 +137,13 @@ class AuthenticatedServer {
         if (server == null || ! server.isConnected()) {
             reconnect();
         }
+
+        // This is to prevent lots of extra calls to the server for simple
+        // validate-if-authenticated checks.  This might be a source for bugs, though.
         if (! hasValidatedAuthentication) {
             authenticate();
         }
+
         checkedOutBy = Thread.currentThread();
         return server;
     }
@@ -175,159 +169,152 @@ class AuthenticatedServer {
 
     /**
      *
-     * @return true if authentication was successful.
+     * @return authentication result
      * @throws P4JavaException on authentication problem
      */
-    AuthenticationResult authenticate() throws P4JavaException {
+    ServerAuthenticator.AuthenticationStatus authenticate()
+            throws InterruptedException, P4JavaException {
         if (project != null && project.isDisposed()) {
-            return AuthenticationResult.NOT_CONNECTED;
+            return ServerAuthenticator.DISPOSED;
         }
-        if (server == null || ! server.isConnected()) {
-//            try {
-//                reconnect();
-//            } catch (URISyntaxException e) {
-//                return AuthenticationResult.NOT_CONNECTED;
-//            }
+        if (server == null) {
             // The only place where this would matter is with the call to
             // ClientExec.ServerRunnerConnection.authenticate.  Even that
             // is called only when an unauthorized exception is called.
             // Other than that, this should always assume that it's connected.
-            return AuthenticationResult.NOT_CONNECTED;
+            return ServerAuthenticator.DISPOSED;
         }
 
-        if (isInvalidLogin) {
+        if (invalidLoginStatus != null) {
             LOG.info("Previous login attempts failed.  Assuming authentication is invalid.");
-            return AuthenticationResult.INVALID_LOGIN;
+            return invalidLoginStatus;
         }
 
-        // The default authentication has already run, but it may
-        // be invalid.  However, all that checking will be in the
-        // shared logic
+        ServerAuthenticator.AuthenticationStatus status = authenticator.discoverAuthenticationStatus(server);
+        if (status.isAuthenticated()) {
+            return status;
+        }
+        if (status.isClientSetupProblem()) {
+            return status;
+        }
+        if (status.isNotConnected()) {
+            // Could not connect.  Attempt to reconnect and retry the
+            // authentication.  If it still fails to connect, then
+            // report a problem (it may be a wrong port, or the server
+            // could be down).
+            try {
+                reconnect();
+            } catch (URISyntaxException e) {
+                return authenticator.createStatusFor(e);
+            }
+            status = authenticator.discoverAuthenticationStatus(server);
+            if (status.isAuthenticated()) {
+                return status;
+            }
+            if (status.isNotConnected()) {
+                return status;
+            }
+            if (status.isClientSetupProblem()) {
+                return status;
+            }
+        }
 
-        LoginValidation loginValidation = validateLogin();
 
-        if (loginValidation == LoginValidation.NEEDS_PASSWORD) {
+        if (status.isPasswordRequired()) {
+            // FIXME there is a situation where this can be triggered when the
+            // password has been entered, but hasn't been used.  Should check the
+            // password manager to see if it's been set yet.
+
             LOG.info("User must enter the password");
             hasValidatedAuthentication = false;
-            return AuthenticationResult.NEEDS_PASSWORD;
+            return status;
         }
 
-        if (loginValidation != LoginValidation.AUTHENTICATED) {
-            loginFailedCount++;
-
-            // The forced authentication has passed, but the
-            // validation failed.
-
-            if (! hasValidatedAuthentication) {
-                // we have never been authenticated by the server,
-                // and this situation means that we still aren't
-                // even after a forced authentication.  So, we'll
-                // report this connection as being unauthenticated.
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Assuming actual authentication issue");
-                }
-
-                // This assumption that the authentication is invalid is too quick to judge.
-                // Do not return not-authorized yet
-            }
-
-            // we have had a valid connection before, so we'll
-            // try it again.
-            // For some reason that needs to be figured out,
-            // the server reports the connection as unauthorized.
-            // We'll give it up to 3 retries with a slight delay
-            // in between, in cas ethe error comes from too frequent
-            // requests.
-
-            for (int i = 0; i < getMaxAuthenticationRetries(); i++) {
-                try {
-                    // Sleeping a bit may cause the server to re-authenticate
-                    // correctly.
-                    reconnect();
-                    loginValidation = validateLogin();
-                    if (loginValidation == LoginValidation.AUTHENTICATED) {
-                        LOG.info("Authorization successful after " + i +
-                                " unauthorized connections (but a valid one was seen earlier) for " +
-                                this);
-                        hasValidatedAuthentication = true;
-                        return AuthenticationResult.AUTHENTICATED;
-                    }
-                    if (loginValidation == LoginValidation.NEEDS_PASSWORD) {
-                        LOG.info("User must enter the password");
-                        hasValidatedAuthentication = false;
-                        return AuthenticationResult.NEEDS_PASSWORD;
-                    }
-                    forceAuthenticate(i);
-                    loginValidation = validateLogin();
-                    if (loginValidation == LoginValidation.NEEDS_PASSWORD) {
-                        LOG.info("User must enter the password");
-                        hasValidatedAuthentication = false;
-                        return AuthenticationResult.NEEDS_PASSWORD;
-                    }
-                    if (loginValidation == LoginValidation.AUTHENTICATED) {
-                        LOG.info("Authorization successful after " + i +
-                                " unauthorized connections (but a valid one was seen earlier) for " +
-                                this);
-                        hasValidatedAuthentication = true;
-                        return AuthenticationResult.AUTHENTICATED;
-                    }
-                    if (loginValidation == LoginValidation.SESSION_EXPIRED) {
-                        LOG.info("Authorization failed due to session expiration for " + this);
-                        // Attempted to login, it failed with "session expired",
-                        // so this means that the login didn't work.
-                        return AuthenticationResult.INVALID_LOGIN;
-                    }
-                } catch (URISyntaxException e) {
-                    throw new P4JavaException(e);
-                }
-            }
-            // Don't keep trying the same bad config.
-            isInvalidLogin = true;
-            LOG.info("Failed authentication after " + getMaxAuthenticationRetries() +
-                    " unauthorized connections (but a valid one was seen earlier) for " +
-                    this);
-            return AuthenticationResult.RELOGIN_FAILED;
+        if (status.isAuthenticated()) {
+            hasValidatedAuthentication = true;
+            return status;
         }
-        hasValidatedAuthentication = true;
-        return AuthenticationResult.AUTHENTICATED;
-    }
 
-    private void forceAuthenticate(int count) throws P4JavaException {
-        if (server == null || ! server.isConnected()) {
-            throw new ConnectionNotConnectedException();
-        }
-        try {
-            // It looks like forced authentication can fail due to too many
-            // quick requests to the server.  So wait a little bit to
-            // give the server time to recover.
-            Thread.sleep(RECONNECTION_WAIT_MILLIS * (count + 1));
+        // Attempt a login before increasing the login failed count.
+
+        if (! hasValidatedAuthentication) {
+            // we have never been authenticated by the server,
+            // and this situation means that we still aren't
+            // even after a forced authentication.  So, we'll
+            // report this connection as being unauthenticated.
             if (LOG.isDebugEnabled()) {
-                LOG.debug("forcing authentication with " + this);
+                LOG.debug("Assuming actual authentication issue");
             }
-            withConnectionLock(new WithConnectionLock<Void>() {
+
+            // This assumption that the authentication is invalid is too quick to judge.
+            // Do not return not-authorized yet
+        }
+
+        // For some reason that needs to be figured out,
+        // the server can report the connection as unauthorized.
+        // We'll give it up to 3 retries with a slight delay
+        // in between, in cas ethe error comes from too frequent
+        // requests.
+
+        for (int i = 0; i < getMaxAuthenticationRetries(); i++) {
+
+            // Do not force a password prompt; let that be at
+            // purview of the caller.
+            OneUseString password =
+                    PasswordManager.getInstance().getPassword(project, config.getServerConfig(), false);
+            if (status.isPasswordRequired() && password.isNullValue()) {
+                // We don't have a password, but one is required.
+                return status;
+            }
+
+            final ServerAuthenticator.AuthenticationStatus previousStatus = status;
+            status = password.use(new OneUseString.WithString<ServerAuthenticator.AuthenticationStatus>() {
                 @Override
-                public Void call() throws P4JavaException {
-                    connectionHandler.forcedAuthentication(project, server, config.getServerConfig(),
-                            AlertManager.getInstance());
-                    forcedAuthenticationCount++;
-                    return null;
+                public ServerAuthenticator.AuthenticationStatus with(@Nullable char[] passwd) {
+                    final String knownPassword =
+                            passwd == null ? null : new String(passwd);
+                    return authenticator.authenticate(server, config.getServerConfig(),
+                            previousStatus, knownPassword);
                 }
             });
-        } catch (PasswordAccessedWrongException e) {
-            // do not capture this specific exception
-            authenticationException = null;
-            throw e;
-        } catch (P4JavaException e) {
-            // capture the exception for future use
-            authenticationException = e;
-            throw e;
-        } catch (InterruptedException e) {
-            // TODO should not be wrapping this exception in a P4JavaException
-            throw new P4JavaException(e);
-        } catch (URISyntaxException e) {
-            // Should not actually happen, but the withConnectionLock declares it...
-            throw new P4JavaException(e);
+
+            if (status.isAuthenticated()) {
+                LOG.info("Authorization successful after " + i +
+                        " unauthorized connections (but a valid one was seen earlier) for " +
+                        this);
+                hasValidatedAuthentication = true;
+                return status;
+            }
+            if (status.isPasswordRequired()) {
+                // Our password is wrong, perhaps.
+                LOG.info("User must enter the password");
+                hasValidatedAuthentication = false;
+                return status;
+            }
+            if (status.isSessionExpired()) {
+                LOG.info("Authorization failed due to session expiration for " + this);
+                // Attempted to login, it failed with "session expired",
+                // so this means that the login didn't work.
+                return status;
+            }
+
+            // The first attempt at a login failed.
+            loginFailedCount++;
+
+            // Try again, first reopening the connection.  Just in
+            // case the state is a bit wacky.
+            try {
+                reconnect();
+            } catch (URISyntaxException e) {
+                return authenticator.createStatusFor(e);
+            }
         }
+        // Don't keep trying the same bad config.
+        invalidLoginStatus = status;
+        LOG.info("Failed authentication after " + getMaxAuthenticationRetries() +
+                " unauthorized connections (but a valid one was seen earlier) for " +
+                this);
+        return status;
     }
 
 
@@ -339,76 +326,23 @@ class AuthenticatedServer {
     }
 
 
-    private void reconnect() throws P4JavaException, URISyntaxException {
+    private void reconnect()
+            throws P4JavaException, URISyntaxException, InterruptedException {
         if (checkedOutBy != null) {
             throw new P4JavaException("P4ServerName instance already checked out by " + checkedOutBy);
         }
-        try {
-            withConnectionLock(new WithConnectionLock<Void>() {
-                @Override
-                public Void call() throws P4JavaException, URISyntaxException {
-                    disconnect();
-                    server = reconnect(project, connectionHandler, config, tempDir,
-                            serverInstance);
-                    connectedCount++;
-                    return null;
-                }
-            });
-        } catch (InterruptedException e) {
-            // TODO should not be wrapping in a P4JavaException
-            throw new P4JavaException(e);
-        }
+        withConnectionLock(new WithConnectionLock<Void>() {
+            @Override
+            public Void call() throws P4JavaException, URISyntaxException {
+                disconnect();
+                server = reconnect(config, tempDir);
+                connectedCount++;
+                return null;
+            }
+        });
     }
 
-
-    private LoginValidation validateLogin()
-            throws ConnectionException, RequestException, AccessException {
-        if (server == null || ! server.isConnected()) {
-            return LoginValidation.ERROR;
-        }
-        try {
-            // Perform an operation that should succeed, and only fail if the
-            // login is wrong.
-
-            // Note: this can potentially take a really long time to run.
-
-            server.getUser(config.getServerConfig().getUsername());
-            if (LOG.isDebugEnabled())
-            {
-                LOG.debug("Basic authentication looks correct for " + this);
-            }
-            return LoginValidation.AUTHENTICATED;
-        } catch (RequestException ex) {
-            if (ExceptionUtil.isPasswordProblem(ex))
-            {
-                return LoginValidation.NEEDS_PASSWORD;
-            }
-            // Some other problem
-            throw ex;
-        } catch (LoginRequiresPasswordException ex) {
-            return LoginValidation.NEEDS_PASSWORD;
-        } catch (AccessException ex) {
-            LOG.info("P4ServerName forgot connection login", ex);
-            // Do not disconnect here..  If it's not a real authentication
-            // issue, then we will need to stay connected to re-authorize
-            // the connection.
-            // disconnect();
-            if (ex.hasMessageFragment("Your session has expired, please %'login'% again.")) {
-                LOG.info("Login expired message: ID " + ex.getServerMessage().getCode());
-                return LoginValidation.SESSION_EXPIRED;
-            }
-            if (ExceptionUtil.isPasswordProblem(ex)) {
-                return LoginValidation.NEEDS_PASSWORD;
-            }
-            return LoginValidation.ERROR;
-        }
-    }
-
-
-    private IOptionsServer reconnect(@Nullable final Project project,
-            @NotNull final ConnectionHandler connectionHandler,
-            @NotNull final ClientConfig config, @NotNull File tempDir,
-            int serverInstance)
+    private IOptionsServer reconnect(@NotNull final ClientConfig config, @NotNull final File tempDir)
             throws P4JavaException, URISyntaxException {
         // Setup logging
         if (Log.getLogCallback() == null) {
@@ -453,29 +387,6 @@ class AuthenticatedServer {
             });
         }
 
-
-        final Properties properties;
-        final String url;
-        properties = connectionHandler.getConnectionProperties(config);
-        properties.setProperty(PropertyDefs.P4JAVA_TMP_DIR_KEY, tempDir.getAbsolutePath());
-
-        // For tracking purposes
-        // properties.setProperty(PropertyDefs.PROG_NAME_KEY,
-        //        properties.getProperty(PropertyDefs.PROG_NAME_KEY) + " connection " +
-        //        serverInstance);
-
-        url = connectionHandler.createUrl(config.getServerConfig());
-        LOG.info("Opening connection " + serverInstance + " to " + url + " with " + config.getServerConfig()
-                .getUsername());
-
-        // see bug #61
-        // Hostname as used by the Java code:
-        //   Mac clients can incorrectly set the hostname.
-        //   The underlying code will use:
-        //      InetAddress.getLocalHost().getHostName()
-        //   or from the UsageOptions passed into the
-        //   server configuration `init` method.
-
         // The login command can cause some really strange
         // issues, such as "password invalid" when using
         // a valid password.  This
@@ -487,7 +398,8 @@ class AuthenticatedServer {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("calling connectionHandler.getOptionsServer");
                     }
-                    final IOptionsServer server = connectionHandler.getOptionsServer(url, properties, config.getServerConfig());
+                    final IOptionsServer server =
+                            P4OptionsServerConnectionFactory.getInstance().createConnection(config, tempDir);
 
                     // These cause issues.
                     //server.registerCallback(new LoggingCommandCallback());
@@ -504,19 +416,8 @@ class AuthenticatedServer {
                     }
                     activeConnectionCount.incrementAndGet();
 
-                    // If there is a password problem, we still want
-                    // to maintain our cached server, so a retry doesn't
-                    // recreate the server connection again.
-
-                    // However, the way this is written allows for
-                    // an invalid password to cause the server connection
-                    // to never be returned.
-
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("calling defaultAuthentication on " + connectionHandler.getClass().getSimpleName());
-                    }
-                    connectionHandler.defaultAuthentication(project, server, config);
-                    // We cannot tell if we've been authenticated here.  That is delayed until later.
+                    // Authentication will still be done, but
+                    // outside this call.
 
                     return server;
                 }
@@ -578,7 +479,7 @@ class AuthenticatedServer {
                 ", connected# " + connectedCount +
                 ", disconnected# " + disconnectedCount +
                 ", forcedLogin# " + forcedAuthenticationCount +
-                ", invalidLogin? " + isInvalidLogin +
+                ", invalidLogin " + invalidLoginStatus +
                 ", validatedLogin? " + hasValidatedAuthentication +
                 ")";
     }

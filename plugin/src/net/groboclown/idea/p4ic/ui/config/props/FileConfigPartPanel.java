@@ -14,13 +14,10 @@
 
 package net.groboclown.idea.p4ic.ui.config.props;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
-import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.part.FileDataPart;
 import org.jetbrains.annotations.Nls;
@@ -29,13 +26,13 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ResourceBundle;
 
 public class FileConfigPartPanel
         extends ConfigPartPanel<FileDataPart> {
+    private static final Logger LOG = Logger.getInstance(FileConfigPartPanel.class);
+
     private static final String DEFAULT_FILE_NAME = ".p4config";
 
     private JPanel rootPanel;
@@ -52,12 +49,6 @@ public class FileConfigPartPanel
                 project,
                 new FileChooserDescriptor(true, false, false, false, false, false)
         );
-        fileLocation.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                locationUpdated();
-            }
-        });
         if (part.getConfigFile() == null && project.getBasePath() != null) {
             // Not in old versions
             // fileLocation.setTextAndAddToHistory(project.getBasePath());
@@ -79,18 +70,6 @@ public class FileConfigPartPanel
         return ret;
     }
 
-    private void locationUpdated() {
-        if (isModified(getConfigPart())) {
-            String newLocation = getSelectedLocation();
-            if (newLocation == null) {
-                getConfigPart().setConfigFile(null);
-            } else {
-                getConfigPart().setConfigFile(new File(newLocation));
-            }
-            firePropertyChange();
-        }
-    }
-
     @Override
     public boolean isModified(@NotNull FileDataPart originalPart) {
         return (originalPart.getConfigFile() == null && getSelectedLocation() != null)
@@ -109,6 +88,17 @@ public class FileConfigPartPanel
     @Override
     public JPanel getRootPanel() {
         return rootPanel;
+    }
+
+    @Override
+    public void updateConfigPartFromUI() {
+        String newLocation = getSelectedLocation();
+        if (newLocation == null) {
+            getConfigPart().setConfigFile(null);
+        } else {
+            getConfigPart().setConfigFile(new File(newLocation));
+        }
+        LOG.info("Set file location to " + getConfigPart().getConfigFile());
     }
 
     @Nullable

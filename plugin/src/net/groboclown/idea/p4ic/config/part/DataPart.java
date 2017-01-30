@@ -78,4 +78,9 @@ public interface DataPart extends ConfigPart {
 
     @Nullable
     String getDefaultCharset();
+
+    boolean hasLoginSsoSet();
+
+    @Nullable
+    File getLoginSso();
 }

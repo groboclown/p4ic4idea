@@ -14,9 +14,7 @@
 
 package net.groboclown.idea.p4ic.config.part;
 
-import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
-import net.groboclown.idea.p4ic.config.P4ServerName;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,7 +29,7 @@ import java.util.Collections;
  * web; the user will never specify it.  Because of that, it will not marshal
  * to a real tag.
  */
-public class DefaultDataPart implements DataPart {
+public class DefaultDataPart extends DataPartAdapter {
     @NotNull
     @Override
     public Element marshal() {
@@ -48,56 +46,6 @@ public class DefaultDataPart implements DataPart {
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
         return Collections.emptyList();
-    }
-
-    @Nullable
-    @Override
-    public VirtualFile getRootPath() {
-        return null;
-    }
-
-    @Override
-    public boolean hasServerNameSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public P4ServerName getServerName() {
-        return null;
-    }
-
-    @Override
-    public boolean hasClientnameSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public String getClientname() {
-        return null;
-    }
-
-    @Override
-    public boolean hasUsernameSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public String getUsername() {
-        return null;
-    }
-
-    @Override
-    public boolean hasPasswordSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public String getPlaintextPassword() {
-        return null;
     }
 
     @Override
@@ -144,49 +92,5 @@ public class DefaultDataPart implements DataPart {
                     File.separator + "p4trust.txt");
         }
         return new File(System.getenv("HOME") + File.separator + ".p4trust");
-    }
-
-    @Override
-    public boolean hasServerFingerprintSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public String getServerFingerprint() {
-        return null;
-    }
-
-    @Override
-    public boolean hasClientHostnameSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public String getClientHostname() {
-        return null;
-    }
-
-    @Override
-    public boolean hasIgnoreFileNameSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public String getIgnoreFileName() {
-        return null;
-    }
-
-    @Override
-    public boolean hasDefaultCharsetSet() {
-        return false;
-    }
-
-    @Nullable
-    @Override
-    public String getDefaultCharset() {
-        return null;
     }
 }

@@ -18,7 +18,7 @@ import com.perforce.p4java.exception.ConnectionException;
 import net.groboclown.idea.p4ic.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 
-public class P4SSLException extends VcsConnectionProblem {
+public class P4SSLException extends P4VcsConnectionException {
     public P4SSLException(@NotNull ConnectionException e) {
         super(P4Bundle.message("exception.java.ssl"));
         initCause(e);

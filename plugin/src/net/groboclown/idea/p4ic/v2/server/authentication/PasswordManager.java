@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.v2.server.connection;
+package net.groboclown.idea.p4ic.v2.server.authentication;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.*;
@@ -29,6 +29,7 @@ import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -92,7 +93,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
      */
     @NotNull
     public OneUseString getPassword(@Nullable final Project project, @NotNull final ServerConfig config,
-            boolean forceLogin)
+            boolean forceFetch)
             throws PasswordStoreException, PasswordAccessedWrongException {
 
         if (disposed) {
@@ -108,11 +109,6 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                 LOG.debug("Using plaintext for " + key);
                 return new OneUseString(config.getPlaintextPassword());
             }
-        }
-        if (! forceLogin && ! hasPasswordInStorage.contains(key)) {
-            // do not inspect the password safes
-            LOG.debug("Skipping the password safe check for " + key);
-            return new OneUseString((char[]) null);
         }
 
         try {
@@ -143,7 +139,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                     // dispatch and in a read action, reference.
                     ret = setMemoryPassword(config, ret);
                     return ret;
-                } else {
+                } else if (! forceFetch) {
                     LOG.warn("Could not get password because the action is called from outside the dispatch thread and in a read action.");
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Read action for " + key, new Throwable());
@@ -178,6 +174,9 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                     });
 
                     throw new PasswordAccessedWrongException();
+                } else {
+                    // The user did not force a password fetch.
+                    return new OneUseString((char[]) null);
                 }
             }
         } catch (AuthenticationException e) {

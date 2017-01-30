@@ -266,6 +266,32 @@ public class MockDataPart
     }
 
     // ----------------------------------------------------------------------
+    private static final String LOGIN_SSO_KEY = "loginsso";
+
+    @Override
+    public boolean hasLoginSsoSet() {
+        return getLoginSso() != null;
+    }
+
+    @Nullable
+    @Override
+    public File getLoginSso() {
+        return trimmedPropertyFile(LOGIN_SSO_KEY);
+    }
+
+    public void setLoginSsoFile(@Nullable String path) {
+        setTrimmed(LOGIN_SSO_KEY, path);
+    }
+
+    public void setLoginSsoFile(@Nullable File file) {
+        if (file != null) {
+            setTrimmed(LOGIN_SSO_KEY, file.getAbsolutePath());
+        } else {
+            setTrimmed(LOGIN_SSO_KEY, null);
+        }
+    }
+
+    // ----------------------------------------------------------------------
 
     @NotNull
     @Override

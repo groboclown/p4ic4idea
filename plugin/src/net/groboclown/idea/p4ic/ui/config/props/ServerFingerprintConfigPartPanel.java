@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.ui.config.props;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.ui.UIUtil;
 import com.jgoodies.forms.layout.CellConstraints;
@@ -30,19 +31,20 @@ import java.util.ResourceBundle;
 
 public class ServerFingerprintConfigPartPanel
         extends ConfigPartPanel<ServerFingerprintDataPart> {
+    private static final Logger LOG = Logger.getInstance(ServerFingerprintConfigPartPanel.class);
+
     private JPanel rootPanel;
     private JTextField fingerprintField;
     private JLabel fingerprintFieldLabel;
 
     ServerFingerprintConfigPartPanel(@NotNull Project project, @NotNull ServerFingerprintDataPart part) {
         super(project, part);
+    }
 
-        fingerprintField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                getConfigPart().setServerFingerprint(fingerprintField.getText());
-            }
-        });
+    @Override
+    public void updateConfigPartFromUI() {
+        getConfigPart().setServerFingerprint(fingerprintField.getText());
+        LOG.info("Set server fingerprint to " + getConfigPart().getServerFingerprint());
     }
 
     @Nls

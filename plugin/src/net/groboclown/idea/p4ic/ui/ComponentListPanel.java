@@ -212,7 +212,7 @@ public class ComponentListPanel<T extends ComponentListPanel.WithRootPanel> exte
                 }
             });
             buttons.add(moveDownButton);
-            titlePanel.add(buttons);
+            titlePanel.add(buttons, BorderLayout.EAST);
 
             add(titlePanel, BorderLayout.NORTH);
             add(value.getRootPanel(), BorderLayout.CENTER);

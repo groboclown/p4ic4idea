@@ -250,7 +250,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
             // The password that was returned MUST be locally
             // saved, because the user could have selected to not
             // store it.
-            LOG.info("New password stored");
+            LOG.info("New password stored for " + config.getServerName().getFullPort());
             hasPasswordInStorage.add(key);
             setMemoryPassword(config, password.toCharArray());
             return true;

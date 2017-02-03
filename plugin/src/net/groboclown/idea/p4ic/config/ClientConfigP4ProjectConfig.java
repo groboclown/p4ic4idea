@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.config;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
@@ -62,5 +63,11 @@ public class ClientConfigP4ProjectConfig implements P4ProjectConfig {
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
         return Collections.emptyList();
+    }
+
+    @NotNull
+    @Override
+    public Project getProject() {
+        return config.getProject();
     }
 }

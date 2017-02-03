@@ -71,13 +71,18 @@ public class P4Config2Panel {
         rootPanel = new JPanel();
         rootPanel.setLayout(new FormLayout("fill:d:grow", "center:d:grow"));
         splitPane = new JSplitPane();
-        splitPane.setDividerLocation(180);
+        splitPane.setContinuousLayout(false);
+        splitPane.setDividerLocation(100);
+        splitPane.setDividerSize(2);
         splitPane.setOrientation(0);
         CellConstraints cc = new CellConstraints();
         rootPanel.add(splitPane, cc.xy(1, 1, CellConstraints.DEFAULT, CellConstraints.FILL));
         resolvePropertiesPanel = new ResolvedPropertiesPanel();
         splitPane.setRightComponent(resolvePropertiesPanel.$$$getRootComponent$$$());
-        splitPane.setLeftComponent(configStackPanel.$$$getRootComponent$$$());
+        final JPanel panel1 = new JPanel();
+        panel1.setLayout(new BorderLayout(0, 0));
+        splitPane.setLeftComponent(panel1);
+        panel1.add(configStackPanel.$$$getRootComponent$$$(), BorderLayout.CENTER);
     }
 
     /**

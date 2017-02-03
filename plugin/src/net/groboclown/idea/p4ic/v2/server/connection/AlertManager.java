@@ -350,7 +350,17 @@ public class AlertManager implements ApplicationComponent {
                         // Note that ApplicationManager.getApplication().invokeLater
                         // will wait for the UI dialogs to be closed before running.
                         // We do not want that behavior.
-                        SwingUtilities.invokeLater(errorMsg);
+                        // Additionally, in IntelliJ 17, this produces a big nasty
+                        // error message:
+                        // "Cannot run synchronous submitTransactionAndWait from invokeLater.
+                        // Please use asynchronous submit*Transaction. See TransactionGuard
+                        // FAQ for details."
+                        // So, instead, we need to perform a invoke and wait.  Which, if you
+                        // think about it, prevents the dialogs from overlapping each other.
+                        // This seems like a good thing.
+                        //SwingUtilities.invokeLater(errorMsg);
+                        // ApplicationManager.getApplication().invokeAndWait(errorMsg);
+                        SwingUtilities.invokeAndWait(errorMsg);
                     } else if (warningMessages != null) {
                         // should always be true, but just to be sure, check that it
                         // isn't null.

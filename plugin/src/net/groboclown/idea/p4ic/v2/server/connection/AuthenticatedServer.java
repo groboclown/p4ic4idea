@@ -86,7 +86,6 @@ class AuthenticatedServer {
 
     // metrics for debugging
     private int loginFailedCount = 0;
-    private int forcedAuthenticationCount = 0;
     private int connectedCount = 0;
     private int disconnectedCount = 0;
 
@@ -256,7 +255,20 @@ class AuthenticatedServer {
         // in between, in cas ethe error comes from too frequent
         // requests.
 
+        boolean first = true;
+
         for (int i = 0; i < getMaxAuthenticationRetries(); i++) {
+            if (first) {
+                first = false;
+            } else {
+                // Try connecting again, first reopening the connection.  Just in
+                // case the state is a bit wacky.
+                try {
+                    reconnect();
+                } catch (URISyntaxException e) {
+                    return authenticator.createStatusFor(e);
+                }
+            }
 
             // Do not force a password prompt; let that be at
             // purview of the caller.
@@ -278,6 +290,12 @@ class AuthenticatedServer {
                 }
             });
 
+            if (status.isPasswordUnnecessary()) {
+                // This kind of status means that the user is probably authenticated,
+                // so it needs to be handled before the isAuthenticated check.
+                LOG.info("Forgetting user password, because the user doesn't have one for the Perforce account.");
+                PasswordManager.getInstance().forgetPassword(project, config.getServerConfig());
+            }
             if (status.isAuthenticated()) {
                 LOG.info("Authorization successful after " + i +
                         " unauthorized connections (but a valid one was seen earlier) for " +
@@ -289,25 +307,28 @@ class AuthenticatedServer {
                 // Our password is wrong, perhaps.
                 LOG.info("User must enter the password");
                 hasValidatedAuthentication = false;
+                loginFailedCount++;
                 return status;
             }
             if (status.isSessionExpired()) {
                 LOG.info("Authorization failed due to session expiration for " + this);
                 // Attempted to login, it failed with "session expired",
                 // so this means that the login didn't work.
+                hasValidatedAuthentication = false;
+                loginFailedCount++;
+                return status;
+            }
+            if (status.isNotLoggedIn()) {
+                LOG.info("Authorization failed, and the connection still needs a login for " + this);
+                // Attempted to login, but the server responded with the user needs to be
+                // logged in.  Just abort.
+                hasValidatedAuthentication = false;
+                loginFailedCount++;
                 return status;
             }
 
-            // The first attempt at a login failed.
+            LOG.info("Login failed.  Trying again.");
             loginFailedCount++;
-
-            // Try again, first reopening the connection.  Just in
-            // case the state is a bit wacky.
-            try {
-                reconnect();
-            } catch (URISyntaxException e) {
-                return authenticator.createStatusFor(e);
-            }
         }
         // Don't keep trying the same bad config.
         invalidLoginStatus = status;
@@ -367,17 +388,23 @@ class AuthenticatedServer {
 
                 @Override
                 public void internalInfo(final String infoString) {
-                    P4LOG.debug("p4java info: " + infoString);
+                    if (P4LOG.isDebugEnabled()) {
+                        P4LOG.debug("p4java info: " + infoString);
+                    }
                 }
 
                 @Override
                 public void internalStats(final String statsString) {
-                    P4LOG.debug("p4java stats: " + statsString);
+                    if (P4LOG.isDebugEnabled()) {
+                        P4LOG.debug("p4java stats: " + statsString);
+                    }
                 }
 
                 @Override
                 public void internalTrace(final LogTraceLevel traceLevel, final String traceMessage) {
-                    P4LOG.debug("p4java trace: " + traceMessage);
+                    if (P4LOG.isDebugEnabled()) {
+                        P4LOG.debug("p4java trace: " + traceMessage);
+                    }
                 }
 
                 @Override
@@ -478,7 +505,6 @@ class AuthenticatedServer {
                 " (loginFailed# " + loginFailedCount +
                 ", connected# " + connectedCount +
                 ", disconnected# " + disconnectedCount +
-                ", forcedLogin# " + forcedAuthenticationCount +
                 ", invalidLogin " + invalidLoginStatus +
                 ", validatedLogin? " + hasValidatedAuthentication +
                 ")";

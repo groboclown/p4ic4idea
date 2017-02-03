@@ -45,8 +45,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
 
     public P4ProjectConfigStack(@NotNull Project project, @NotNull List<ConfigPart> userParts) {
         this.project = project;
-        MutableCompositePart newParts = new MutableCompositePart();
-        newParts.addConfigPart(new DefaultDataPart());
+        MutableCompositePart newParts = new MutableCompositePart(new DefaultDataPart());
         for (ConfigPart userPart : userParts) {
             newParts.addPriorityConfigPart(userPart);
         }
@@ -107,6 +106,12 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
         return problems;
+    }
+
+    @NotNull
+    @Override
+    public Project getProject() {
+        return project;
     }
 
     boolean isEmpty() {
@@ -232,6 +237,35 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
                 ret.put(root, cachedSetup.getClientConfig(project));
             }
         }
+
+        // We now need the final step of cleaning up the roots.
+        // There can be a situation where some roots in the list are below the project root.
+        // In this case, find the root that is "closest" to the base.
+        List<VirtualFile> belowProjectRoot = new ArrayList<VirtualFile>();
+        VirtualFile bestProjectRoot = null;
+        int bestProjectRootDistance = Integer.MIN_VALUE;
+        for (Map.Entry<VirtualFile, ClientConfig> entry : ret.entrySet()) {
+            final VirtualFile base = entry.getKey();
+            final int depth = getDepthDistance(projectRoot, base);
+            if (depth <= 0 && depth > bestProjectRootDistance) {
+                belowProjectRoot.add(base);
+                bestProjectRoot = base;
+                bestProjectRootDistance = depth;
+            }
+        }
+        if (bestProjectRoot != null) {
+            LOG.info("Best root config: " + bestProjectRoot);
+            LOG.info("All root configs " + belowProjectRoot);
+            ClientConfig bestConfig = ret.get(bestProjectRoot);
+            belowProjectRoot.remove(bestProjectRoot);
+            for (VirtualFile file : belowProjectRoot) {
+                ret.remove(file);
+            }
+            ret.put(projectRoot, bestConfig);
+        } else {
+            LOG.info("No root configs found at or under the project root.");
+        }
+        LOG.info("Final pruned config directories: " + ret.keySet());
 
         return ret;
     }

@@ -15,6 +15,7 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.exception.AccessException;
@@ -26,7 +27,6 @@ import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ClientConfigP4ProjectConfig;
-import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.P4ServerName;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
@@ -37,7 +37,9 @@ import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
 import net.groboclown.idea.p4ic.server.exceptions.P4RetryAuthenticationException;
 import net.groboclown.idea.p4ic.server.exceptions.P4SSLFingerprintException;
+import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
 import net.groboclown.idea.p4ic.v2.events.Events;
+import net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager;
 import net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerRunner.P4Runner;
 import net.groboclown.idea.p4ic.v2.ui.alerts.DisconnectedHandler;
@@ -71,17 +73,6 @@ public class ClientExec {
 
     @Nullable
     private AuthenticatedServer cachedServer;
-
-    @NotNull
-    public static ClientExec createFor(@NotNull P4ProjectConfig projectConfig, @NotNull ServerConfig server,
-            @NotNull ServerStatusController connectedController, @NotNull String clientName)
-            throws P4InvalidConfigException {
-        ClientConfig clientConfig = ClientConfigDiscoverer.find(projectConfig, server, clientName);
-        if (clientConfig != null) {
-            return new ClientExec(clientConfig, connectedController);
-        }
-        throw new P4InvalidConfigException(clientName);
-    }
 
     @NotNull
     static ClientExec createFor(@NotNull ClientConfig config, @NotNull ServerStatusController statusController)
@@ -356,6 +347,20 @@ public class ClientExec {
                     new SSLFingerprintProblemHandler(project, connectedController, e),
                     ex);
             return ex;
+        }
+
+        @Override
+        public void passwordUnnecessary(@NotNull ServerAuthenticator.AuthenticationStatus authenticationResult) {
+            try {
+                PasswordManager.getInstance().forgetPassword(project, config.getServerConfig());
+            } catch (PasswordStoreException e) {
+                LOG.warn(e);
+            }
+            AlertManager.getInstance().addWarning(project,
+                    P4Bundle.getString("connection.password.unnecessary.title"),
+                    P4Bundle.message("connection.password.unnecessary.details",
+                            config.getServerConfig().getServerName().getDisplayName()),
+                    null, (FilePath[]) null);
         }
     }
 

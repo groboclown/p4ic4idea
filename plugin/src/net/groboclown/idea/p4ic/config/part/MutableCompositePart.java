@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +31,10 @@ public class MutableCompositePart extends CompositePart {
     static final ConfigPartFactory<MutableCompositePart> FACTORY = new Factory();
 
     private final List<ConfigPart> parts = new ArrayList<ConfigPart>();
+
+    public MutableCompositePart(@NotNull ConfigPart... parts) {
+        this.parts.addAll(Arrays.asList(parts));
+    }
 
     @Override
     public boolean reload() {
@@ -88,7 +93,7 @@ public class MutableCompositePart extends CompositePart {
             MutableCompositePart ret = new MutableCompositePart();
             if (isTag(TAG_NAME, element)) {
                 for (Element child : element.getChildren()) {
-                    ret.addPriorityConfigPart(Unmarshal.from(project, child));
+                    ret.addConfigPart(Unmarshal.from(project, child));
                 }
             }
             return ret;

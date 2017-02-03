@@ -53,7 +53,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-public class ConfigStackPanel implements RequestConfigurationUpdateListener {
+public class ConfigStackPanel
+        implements RequestConfigurationUpdateListener {
     private static final Logger LOG = Logger.getInstance(ConfigStackPanel.class);
 
     private Project project;
@@ -344,27 +345,28 @@ public class ConfigStackPanel implements RequestConfigurationUpdateListener {
 
     private void sendConfigStackUpdated() {
         // The refresh can take a long time, so run it in the background.
-        BackgroundAwtActionRunner.runBackgrounAwtAction(new BackgroundAwtActionRunner.BackgroundAwtAction<P4ProjectConfig>() {
-            @Override
-            public P4ProjectConfig runBackgroundProcess() {
-                final List<ConfigPartPanel<?>> partComponents = componentList.getChildren();
-                ArrayList<ConfigPart> parts = new ArrayList<ConfigPart>(partComponents.size());
-                for (ConfigPartPanel<?> configPartPanel : partComponents) {
-                    parts.add(configPartPanel.getConfigPart());
-                }
+        BackgroundAwtActionRunner
+                .runBackgrounAwtAction(new BackgroundAwtActionRunner.BackgroundAwtAction<P4ProjectConfig>() {
+                    @Override
+                    public P4ProjectConfig runBackgroundProcess() {
+                        final List<ConfigPartPanel<?>> partComponents = componentList.getChildren();
+                        ArrayList<ConfigPart> parts = new ArrayList<ConfigPart>(partComponents.size());
+                        for (ConfigPartPanel<?> configPartPanel : partComponents) {
+                            parts.add(configPartPanel.getConfigPart());
+                        }
 
-                P4ProjectConfig config = new P4ProjectConfigStack(project, parts);
-                config.refresh();
-                return config;
-            }
+                        P4ProjectConfig config = new P4ProjectConfigStack(project, parts);
+                        config.refresh();
+                        return config;
+                    }
 
-            @Override
-            public void runAwtProcess(final P4ProjectConfig config) {
-                for (ConfigurationUpdatedListener changeListener : changeListeners) {
-                    changeListener.onConfigurationUpdated(config);
-                }
-            }
-        });
+                    @Override
+                    public void runAwtProcess(final P4ProjectConfig config) {
+                        for (ConfigurationUpdatedListener changeListener : changeListeners) {
+                            changeListener.onConfigurationUpdated(config);
+                        }
+                    }
+                });
     }
 
     // CalledInAWT

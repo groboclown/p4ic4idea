@@ -17,16 +17,16 @@
             <properties/>
             <border type="none"/>
             <children>
+              <component id="7cb46" class="com.intellij.util.ui.AsyncProcessIcon" binding="refreshResolvedPropertiesSpinner" custom-create="true">
+                <constraints/>
+                <properties/>
+              </component>
               <component id="f07b" class="javax.swing.JButton" binding="refreshResolvedPropertiesButton" default-binding="true">
                 <constraints/>
                 <properties>
                   <text value=""/>
                   <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.resolve.refresh.tooltip"/>
                 </properties>
-              </component>
-              <component id="7cb46" class="com.intellij.util.ui.AsyncProcessIcon" binding="refreshResolvedPropertiesSpinner" custom-create="true">
-                <constraints/>
-                <properties/>
               </component>
             </children>
           </grid>

@@ -22,6 +22,7 @@ public class AuthenticationFailedException extends AccessException {
 
     public enum ErrorType {
         PASSWORD_INVALID,
+        PASSWORD_UNNECESSARY,
         NOT_LOGGED_IN,
         SESSION_EXPIRED,
         SSO_LOGIN

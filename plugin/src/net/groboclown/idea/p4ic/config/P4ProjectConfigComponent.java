@@ -16,7 +16,6 @@ package net.groboclown.idea.p4ic.config;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ProjectComponent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
@@ -31,6 +30,7 @@ import net.groboclown.idea.p4ic.config.part.CompositePart;
 import net.groboclown.idea.p4ic.config.part.ConfigPart;
 import net.groboclown.idea.p4ic.config.part.EnvCompositePart;
 import net.groboclown.idea.p4ic.config.part.MutableCompositePart;
+import net.groboclown.idea.p4ic.config.part.RequirePasswordDataPart;
 import net.groboclown.idea.p4ic.config.part.ServerFingerprintDataPart;
 import net.groboclown.idea.p4ic.config.part.SimpleDataPart;
 import net.groboclown.idea.p4ic.config.part.Unmarshal;
@@ -39,6 +39,7 @@ import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,16 +70,35 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
     private MessageBusConnection projectMessageBus;
 
     // The actual list of user-defined parts.
-    private List<ConfigPart> state = null;
+    private ConfigState state = new ConfigState();
 
+    public static class ConfigState {
+        // Public for use by reflection when loading the state from XML
+        @SuppressWarnings("WeakerAccess")
+        public List<ConfigPart> configParts;
+
+        @SuppressWarnings("WeakerAccess")
+        public ConfigState() {
+            this.configParts = null;
+        }
+
+        private ConfigState(List<ConfigPart> configParts) {
+            this.configParts = configParts;
+        }
+    }
+
+    @Nullable
     private P4ProjectConfigStack config = null;
+
+    @Nullable
+    private P4ProjectConfig previouslyAnnouncedConfig = null;
 
     public P4ProjectConfigComponent(@NotNull Project project) {
         this.project = project;
     }
 
     public static P4ProjectConfigComponent getInstance(@NotNull final Project project) {
-        return ServiceManager.getService(project, P4ProjectConfigComponent.class);
+        return project.getComponent(P4ProjectConfigComponent.class);
     }
 
 
@@ -86,20 +106,32 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
         LOG.debug("Sending announcement that the base config is updated");
         checkConfigState();
         final P4ProjectConfig current;
+        final P4ProjectConfig previous;
         synchronized (this) {
+            previous = previouslyAnnouncedConfig;
             current = config;
+
+            // Next time we call this, we need to send a copy of
+            // what's considered current right now.
+            if (config == null) {
+                previouslyAnnouncedConfig = null;
+            } else {
+                previouslyAnnouncedConfig = new SimpleP4ProjectConfig(config);
+            }
         }
 
         // Must follow the strict ordering
-        ApplicationManager.getApplication().getMessageBus().syncPublisher(
-                BaseConfigUpdatedListener.TOPIC_SERVERCONFIG).
-                configUpdated(project, current);
-        ApplicationManager.getApplication().getMessageBus().syncPublisher(
-                BaseConfigUpdatedListener.TOPIC_P4SERVER).
-                configUpdated(project, current);
-        ApplicationManager.getApplication().getMessageBus().syncPublisher(
-                BaseConfigUpdatedListener.TOPIC_NORMAL).
-                configUpdated(project, current);
+        if (current != null) {
+            ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                    BaseConfigUpdatedListener.TOPIC_SERVERCONFIG).
+                    configUpdated(project, current, previous);
+            ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                    BaseConfigUpdatedListener.TOPIC_P4SERVER).
+                    configUpdated(project, current, previous);
+            ApplicationManager.getApplication().getMessageBus().syncPublisher(
+                    BaseConfigUpdatedListener.TOPIC_NORMAL).
+                    configUpdated(project, current, previous);
+        }
     }
 
 
@@ -109,14 +141,14 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
      */
     public synchronized List<ConfigPart> getUserConfigParts() {
         checkConfigState();
-        return new ArrayList<ConfigPart>(state);
+        return new ArrayList<ConfigPart>(state.configParts);
     }
 
 
     public synchronized void setUserConfigParts(@NotNull List<ConfigPart> parts) {
         synchronized (this) {
-            state = new ArrayList<ConfigPart>(parts);
-            config = new P4ProjectConfigStack(project, state);
+            state = new ConfigState(new ArrayList<ConfigPart>(parts));
+            config = new P4ProjectConfigStack(project, state.configParts);
         }
         announceBaseConfigUpdated();
     }
@@ -131,8 +163,8 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
     // This method uses deprecated classes for backwards compatible value loading.
     @SuppressWarnings("deprecation")
     private synchronized void checkConfigState() {
-        if (state == null) {
-            state = new ArrayList<ConfigPart>();
+        if (state == null || state.configParts == null) {
+            state = new ConfigState(new ArrayList<ConfigPart>());
 
             // Backwards compatibility!
             // Attempt to load the state from the previous setting.
@@ -148,41 +180,46 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
                     basic.setClientHostname(config.getClientHostname());
                     basic.setDefaultCharset(config.getDefaultCharset());
                     basic.setUsername(config.getUsername());
-                    state.add(basic);
+                    state.configParts.add(basic);
                 }
 
                 if (config.hasClientnameSet()) {
                     final ClientNameDataPart clientName = new ClientNameDataPart();
                     clientName.setClientname(config.getClientname());
-                    state.add(clientName);
+                    state.configParts.add(clientName);
                 }
 
                 if (config.hasServerFingerprintSet()) {
                     final ServerFingerprintDataPart fingerprint = new ServerFingerprintDataPart();
                     fingerprint.setServerFingerprint(config.getServerFingerprint());
-                    state.add(fingerprint);
+                    state.configParts.add(fingerprint);
+                }
+
+                if (config.getConnectionMethod() != P4Config.ConnectionMethod.AUTH_TICKET) {
+                    state.configParts.add(0, new RequirePasswordDataPart());
                 }
             }
 
-            if (state.isEmpty()) {
+            if (state.configParts.isEmpty()) {
                 // Allow a smart default
-                state.add(new EnvCompositePart(project));
+                state.configParts.add(new EnvCompositePart(project));
             }
         }
         if (config == null) {
-            this.config = new P4ProjectConfigStack(project, state);
+            this.config = new P4ProjectConfigStack(project, state.configParts);
         }
     }
 
 
     @Override
     public Element getState() {
+        LOG.debug("Fetching XML state");
         checkConfigState();
         Element ret = new Element(STATE_TAG_NAME);
         MutableCompositePart all = new MutableCompositePart();
         synchronized (this) {
             if (state != null) {
-                for (ConfigPart configPart : state) {
+                for (ConfigPart configPart : state.configParts) {
                     all.addConfigPart(configPart);
                 }
             }
@@ -193,7 +230,9 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
 
     @Override
     public void loadState(@NotNull Element stateEl) {
+        LOG.debug("Reading XML state");
         if (! STATE_TAG_NAME.equals(stateEl.getName()) || stateEl.getChildren().isEmpty()) {
+            LOG.debug("No XML state.  Going to use defaults.");
             synchronized (this) {
                 state = null;
                 config = null;
@@ -202,6 +241,7 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
         }
 
         final ConfigPart statePart = Unmarshal.from(project, stateEl.getChildren().get(0));
+        LOG.debug("Read XML state as " + statePart);
         final List<ConfigPart> newState;
         if (statePart instanceof CompositePart) {
             newState = ((CompositePart) statePart).getConfigParts();
@@ -210,8 +250,8 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
         }
 
         synchronized (this) {
-            state = newState;
-            config = new P4ProjectConfigStack(project, state);
+            state = new ConfigState(newState);
+            config = new P4ProjectConfigStack(project, state.configParts);
         }
     }
 
@@ -242,10 +282,12 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
                         P4InvalidConfigException ex = new P4InvalidConfigException(
                                 P4Bundle.message("vcs.directory.mapping.changed"));
 
-                        try {
-                            Events.configInvalid(project, config, ex);
-                        } catch (P4InvalidConfigException e) {
-                            // Ignore; don't even log.
+                        if (config != null) {
+                            try {
+                                Events.configInvalid(project, config, ex);
+                            } catch (P4InvalidConfigException e) {
+                                // Ignore; don't even log.
+                            }
                         }
                     }
                 });

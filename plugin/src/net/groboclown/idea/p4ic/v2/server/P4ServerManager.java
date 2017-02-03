@@ -27,6 +27,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
+import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
@@ -92,7 +93,7 @@ public class P4ServerManager implements ProjectComponent {
      * Simple request to get the list of servers.  Does not check for
      * online status or initialization.
      *
-     * @return
+     * @return servers that report connected state
      */
     @NotNull
     public List<P4Server> getOnlineServers() {
@@ -280,7 +281,8 @@ public class P4ServerManager implements ProjectComponent {
         Events.registerP4ServerAppBaseConfigUpdated(appMessageBus, new BaseConfigUpdatedListener() {
             @Override
             public void configUpdated(@NotNull final Project project,
-                    @NotNull final P4ProjectConfig sources) {
+                    @NotNull final P4ProjectConfig newConfig,
+                    @Nullable P4ProjectConfig previousConfiguration) {
 
                 // Connections are potentially invalid.  Because the primary project config may be no longer
                 // valid, just mark all of the configs invalid.
@@ -291,11 +293,11 @@ public class P4ServerManager implements ProjectComponent {
                     ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
                         @Override
                         public void run() {
-                            updateConfigurations(project, sources);
+                            updateConfigurations(project, newConfig);
                         }
                     });
                 } else {
-                    updateConfigurations(project, sources);
+                    updateConfigurations(project, newConfig);
                 }
             }
         });
@@ -305,14 +307,16 @@ public class P4ServerManager implements ProjectComponent {
             public void configurationProblem(@NotNull Project project, @NotNull P4ProjectConfig config,
                                       @NotNull VcsConnectionProblem ex) {
                 final AllClientsState clientState = AllClientsState.getInstance();
+                Collection<ServerConfig> problemServers = config.getServerConfigs();
 
                 // Connections are temporarily invalid.
                 connectionsValid = false;
                 serverLock.lock();
                 try {
-                    // TODO examine whether this is appropriate to keep calling.
                     for (P4Server server : servers.values()) {
-                        if (server.getProject().equals(project)) {
+                        // Regardless of the project, if the server configuration is
+                        // shared, then it's set as invalid.
+                        if (problemServers.contains(server.getServerConfig())) {
                             server.setValid(false);
                             clientState.removeClientState(server.getClientServerId());
                         }

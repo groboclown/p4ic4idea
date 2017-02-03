@@ -100,6 +100,8 @@ public class ServerRunner {
 
         @NotNull
         P4SSLFingerprintException sslFingerprintError(ConnectionException e);
+
+        void passwordUnnecessary(@NotNull ServerAuthenticator.AuthenticationStatus authenticationResult);
     }
 
     interface Connection {
@@ -142,6 +144,8 @@ public class ServerRunner {
             // "password not set or invalid", which means that the server could
             // have dropped the security token, and we need a new one.
 
+            LOG.info("With with skipped password encountered login problem", e);
+
             final ServerAuthenticator.AuthenticationStatus authenticationResult =
                     p4RunWithSkippedPasswordCheck(new P4Runner<ServerAuthenticator.AuthenticationStatus>() {
                         @Override
@@ -154,6 +158,11 @@ public class ServerRunner {
                         }
                     }, conn, errorVisitor,
                     /* first attempt at this login attempt, so retry is 0 */ 0);
+            LOG.info(authenticationResult.toString());
+            if (authenticationResult.isPasswordUnnecessary()) {
+                errorVisitor.passwordUnnecessary(authenticationResult);
+                // Fall through; usually, this is still authenticated.
+            }
             if (authenticationResult.isAuthenticated()) {
                 // Just fine; no errors.
                 return retry(runner, conn, errorVisitor, retryCount, e);
@@ -173,8 +182,10 @@ public class ServerRunner {
                 throw new HandledVcsException(ex);
             }
             if (authenticationResult.isSessionExpired()) {
+                LOG.info("Session expired.  Notify the user of the expiration, and retry the operation");
                 final P4RetryAuthenticationException ex = new P4RetryAuthenticationException(e);
                 errorVisitor.retryAuthorizationFailure(ex);
+                // FIXME is this the right behavior?
                 return retry(runner, conn, errorVisitor, retryCount, e);
             }
             if (authenticationResult.isPasswordRequired()) {
@@ -243,8 +254,8 @@ public class ServerRunner {
             // Most probably a password problem.
             LOG.info("Problem accessing resources (password problem?)", e);
             if (ExceptionUtil.isLoginRequiresPasswordProblem(e) || ExceptionUtil.isSessionExpiredProblem(e)) {
-                // Bubble this up to the password handlers
-                throw new P4LoginException(e);
+                // We may not have attempted login yet.
+                throw new P4UnknownLoginException(e);
             }
             if (ExceptionUtil.isLoginPasswordProblem(e)) {
                 // This is handled by the outside caller
@@ -309,15 +320,18 @@ public class ServerRunner {
             LOG.info("Request problem", e);
             if (ExceptionUtil.isLoginRequiresPasswordProblem(e) || ExceptionUtil.isSessionExpiredProblem(e)) {
                 // Bubble this up to the password handlers
+                LOG.info("No password known, but one is expected.");
                 throw new P4LoginException(e);
             }
             if (ExceptionUtil.isLoginPasswordProblem(e)) {
                 // This could either be a real password problem, or
                 // a lost security token issue.
+                LOG.info("Don't have a correct password.");
                 throw new P4UnknownLoginException(e);
             }
 
             // The other possibility is the client API implementation is bad.
+            LOG.info("Some generic request problem");
             throw new P4ApiException(e);
         } catch (ResourceException e) {
             // The ServerFactory doesn't have the resources available to create a
@@ -370,8 +384,10 @@ public class ServerRunner {
             throw ce;
         } catch (VcsException e) {
             // Plugin code generated error
+            LOG.info("General error", e);
             throw e;
         } catch (ProcessCanceledException e) {
+            LOG.info("Cancelled", e);
             CancellationException ce = new CancellationException(e.getMessage());
             ce.initCause(e);
             throw ce;

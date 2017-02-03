@@ -29,6 +29,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.AllClientsState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.ClientLocalServerState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -51,21 +52,21 @@ public class CentralCacheManager {
 
         Events.registerAppBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
             @Override
-            public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig config) {
+            public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig newConfig,
+                    @Nullable P4ProjectConfig previousConfiguration) {
                 if (disposed) {
                     return;
                 }
-
-                // FIXME be project aware
-
-                cacheLock.lock();
-                try {
-                    clientManagers.clear();
-                    // Don't create the new ones until we need it
-                    // Also, don't remove existing cache objects.
-                } finally {
-                    cacheLock.unlock();
+                if (previousConfiguration != null) {
+                    for (ClientConfig clientConfig : previousConfiguration.getClientConfigs()) {
+                        // Yes, we're removing the old cache objects.  Practice shows that
+                        // there's a high chance that it's out of date or maybe even
+                        // corrupted.
+                        removeCache(ClientServerRef.create(clientConfig));
+                    }
                 }
+                // Do not create entries for the new configuration;
+                // let those be lazy loaded.
             }
         });
 
@@ -80,9 +81,7 @@ public class CentralCacheManager {
                     // Only invalid clients are given to this method, so there's
                     // a very good chance that the client ID will be null.
                     ClientServerRef id = ClientServerRef.create(clientConfig);
-                    if (id != null) {
-                        removeCache(id);
-                    }
+                    removeCache(id);
                 }
             }
         });

@@ -40,7 +40,7 @@ public class ConfigProblem {
     public ConfigProblem(@Nullable ConfigPart source, @NotNull Exception ex) {
         this.source = source;
         this.message = "configproblem.exception";
-        this.args = new Object[] { ex };
+        this.args = new Object[] { ex.getMessage(), ex.getClass().getName(), ex.getClass().getSimpleName() };
         LOG.info("ConfigProblem from " + source, ex);
     }
 

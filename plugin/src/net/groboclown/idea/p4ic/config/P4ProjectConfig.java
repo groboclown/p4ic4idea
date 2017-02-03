@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.config;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
@@ -42,4 +43,7 @@ public interface P4ProjectConfig {
 
     @NotNull
     Collection<ConfigProblem> getConfigProblems();
+
+    @NotNull
+    Project getProject();
 }

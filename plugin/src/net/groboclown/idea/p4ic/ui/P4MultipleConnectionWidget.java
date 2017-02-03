@@ -287,7 +287,7 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
     }
 
     private void emptyTextAndTooltip() {
-        icon = null;
+        icon = P4Icons.UNKNOWN;
         toolTip = "";
     }
 
@@ -328,19 +328,16 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
             BaseConfigUpdatedListener, ServerConnectionStateListener, ConfigInvalidListener {
 
         @Override
-        public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig config) {
-            // FIXME once the projects are linked to the connections,
-            // this can be project aware.
-            //if (project == P4MultipleConnectionWidget.this.project) {
-                update(true);
-            //}
+        public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig newConfig,
+                @Nullable P4ProjectConfig previousConfiguration) {
+            // Just update everything.
+            update(true);
         }
 
         @Override
         public void configurationProblem(@NotNull Project project, @NotNull P4ProjectConfig config, @NotNull VcsConnectionProblem ex) {
-            if (project == P4MultipleConnectionWidget.this.project) {
-                update(true);
-            }
+            // Just update everything.
+            update(true);
         }
 
         @Override

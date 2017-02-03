@@ -21,6 +21,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.util.messages.MessageBusConnection;
+import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
@@ -110,8 +111,6 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
             return;
         }
 
-        // TODO it looks like this is too aggressively called.
-
         if (LOG.isDebugEnabled()) {
             LOG.debug("Removing client cache " + client);
         }
@@ -119,7 +118,6 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
             final ClientLocalServerState state = clientStates.get(client);
             if (state != null) {
                 clientStates.remove(client);
-                LOG.warn("Removing client from cache storage: " + client, new Exception());
             }
         }
     }
@@ -166,25 +164,22 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
         // TODO are these listeners necessary?
         Events.registerAppBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
             @Override
-            public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig config) {
-                // FIXME implement when project <-> client relationship is stored
-                // NOTE be project aware
-                // Currently, this is not possible to implement correctly.
-                // It requires knowledge about which projects have which
-                // sources (that's an extra bit of serialized data that
-                // needs to be created, associated with the project).
+            public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig newConfig,
+                    @Nullable P4ProjectConfig previousConfiguration) {
+                if (previousConfiguration != null) {
+                    for (ClientConfig clientConfig : previousConfiguration.getClientConfigs()) {
+                        removeClientState(ClientServerRef.create(clientConfig));
+                    }
+                }
             }
         });
         Events.registerAppConfigInvalid(messageBus, new ConfigInvalidListener() {
             @Override
             public void configurationProblem(@NotNull Project project, @NotNull P4ProjectConfig config,
                     @NotNull VcsConnectionProblem ex) {
-                // FIXME implement when project <-> client relationship is stored
-                // NOTE be project aware
-                // Currently, this is not possible to implement correctly.
-                // It requires knowledge about which projects have which
-                // sources (that's an extra bit of serialized data that
-                // needs to be created, associated with the project).
+                for (ClientConfig clientConfig : config.getClientConfigs()) {
+                    removeClientState(ClientServerRef.create(clientConfig));
+                }
             }
         });
     }

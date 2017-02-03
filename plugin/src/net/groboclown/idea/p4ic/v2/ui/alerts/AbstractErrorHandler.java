@@ -76,6 +76,7 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
         // This cannot be run from an invokeLater:
         // Cannot run synchronous submitTransactionAndWait from invokeLater.
         // Please use asynchronous submit*Transaction. See TransactionGuard FAQ for details.
+        // This means the new API should look at using TransactionGuard instead.
 
         if (ApplicationManager.getApplication().isDispatchThread()) {
             if (! UICompat.getInstance().editVcsConfiguration(

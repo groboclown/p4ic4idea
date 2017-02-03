@@ -12,12 +12,21 @@
 
 * Connection setup revamped.
     * Entirely changed how the connections are configured through the IDE.
+    * This has ripple effects throughout the plugin.  Hopefully, it will make
+      the code more stable.
+    * This change allows for more complex configuration options.  Specifically,
+      the `P4ENVIRO` support is handled better.
+    * Compatibility with your previous settings should mostly be maintained.
 * Bug fixes.
     * Changed the error reporting for SSL encryption library problem, when it comes
       from a TrustException.  The error reported now includes information about the
       user's JRE for better user investigation of the SSL problem. (#133)
     * Improved the error dialogs to reduce the situations where you can be
       bombarded with the same error message.
+    * Changed the error dialog system so that multiple instances of the Perforce
+      dialog don't pop up at once. 
+    * Many of the caches now clear their state when the project configuration
+      is updated.
 
 
 ## ::v0.7.19::

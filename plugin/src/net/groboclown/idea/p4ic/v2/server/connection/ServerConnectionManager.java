@@ -46,8 +46,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -82,18 +85,21 @@ public class ServerConnectionManager implements ApplicationComponent {
     public void initComponent() {
         Events.registerServerConnectionAppBaseConfigUpdated(messageBus, new BaseConfigUpdatedListener() {
             @Override
-            public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig config) {
-                // FIXME update ONLY for the project.
-                // This means we need a mapping between projects and sources.
-                invalidateAllConfigs();
+            public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig newConfig,
+                    @Nullable P4ProjectConfig previousConfiguration) {
+                if (previousConfiguration != null) {
+                    Set<ServerConfig> removedConfigs =
+                            new HashSet<ServerConfig>(previousConfiguration.getServerConfigs());
+                    removedConfigs.removeAll(newConfig.getServerConfigs());
+                    invalidateServerConfigs(removedConfigs);
+                }
             }
         });
         Events.registerServerConnectionAppConfigInvalid(messageBus, new ConfigInvalidListener() {
             @Override
             public void configurationProblem(@NotNull Project project, @NotNull P4ProjectConfig config,
-                @NotNull VcsConnectionProblem ex) {
-                // because this is selective on a exec, we can safely ignore the project.
-                invalidateConfig(config);
+                    @NotNull VcsConnectionProblem ex) {
+                invalidateServerConfigs(config.getServerConfigs());
             }
         });
         Events.appServerConnectionState(messageBus, new ServerConnectionStateListener() {
@@ -160,12 +166,19 @@ public class ServerConnectionManager implements ApplicationComponent {
     }
 
 
-    private void invalidateConfig(@NotNull P4ProjectConfig client) {
+    private void invalidateServerConfigs(@NotNull Collection<ServerConfig> serverConfigs) {
+        if (serverConfigs.isEmpty()) {
+            return;
+        }
         serverCacheLock.lock();
         try {
-            // Just remove all the configs.
-            // TODO does this need to be refined?
-            serverCache.clear();
+            for (ServerConfig serverConfig : serverConfigs) {
+                ServerConfigStatus status = serverCache.get(serverConfig);
+                if (status != null) {
+                    status.dispose();
+                    serverCache.remove(serverConfig);
+                }
+            }
         } finally {
             serverCacheLock.unlock();
         }

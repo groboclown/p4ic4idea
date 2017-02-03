@@ -174,9 +174,6 @@
         <projectService
                 serviceInterface="net.groboclown.idea.p4ic.config.P4ConfigProject"
                 serviceImplementation="net.groboclown.idea.p4ic.config.P4ConfigProject"/>
-        <projectService
-                serviceInterface="net.groboclown.idea.p4ic.config.P4ProjectConfigComponent"
-                serviceImplementation="net.groboclown.idea.p4ic.config.P4ProjectConfigComponent"/>
 
         <!-- Perforce changelist to IDEA changelist mapping -->
         <projectService
@@ -208,6 +205,10 @@
         <component>
             <implementation-class>net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping</implementation-class>
             <interface-class>net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping</interface-class>
+        </component>
+        <component>
+            <implementation-class>net.groboclown.idea.p4ic.config.P4ProjectConfigComponent</implementation-class>
+            <interface-class>net.groboclown.idea.p4ic.config.P4ProjectConfigComponent</interface-class>
         </component>
     </project-components>
 

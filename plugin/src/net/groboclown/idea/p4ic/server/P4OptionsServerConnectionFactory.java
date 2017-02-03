@@ -28,6 +28,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.util.Properties;
@@ -88,8 +90,33 @@ public class P4OptionsServerConnectionFactory {
             }
         }
 
-        final IOptionsServer server = ServerFactory.getOptionsServer(getServerUri(clientConfig.getServerConfig()),
-                props, options);
+        final String uri = getServerUri(clientConfig.getServerConfig());
+        {   // TODO DEBUG STUFF
+            LOG.info("Connecting to server [" + uri + "]");
+            LOG.info(String.format("Usage options:\n"
+                            + "  Host Name: %s\n"
+                            + "  Program Name: %s\n"
+                            + "  Program Version: %s\n"
+                            + "  Text Language: %s\n"
+                            + "  Unset Client Name: %s\n"
+                            + "  Unset User Name: %s\n"
+                            + "  Working Directory: %s",
+                    options.getHostName(),
+                    options.getProgramName(),
+                    options.getProgramVersion(),
+                    options.getTextLanguage(),
+                    options.getUnsetClientName(),
+                    options.getUnsetUserName(),
+                    options.getWorkingDirectory()));
+            try {
+                StringWriter sw = new StringWriter();
+                options.getProps().store(sw, "Options Server Properties");
+                LOG.info(sw.toString());
+            } catch (IOException e) {
+                // Ignore
+            }
+        }
+        final IOptionsServer server = ServerFactory.getOptionsServer(uri, props, options);
         if (clientConfig.getServerConfig().getServerName().isSecure()
                 && clientConfig.getServerConfig().hasServerFingerprint()) {
             server.addTrust(clientConfig.getServerConfig().getServerFingerprint());
@@ -109,6 +136,9 @@ public class P4OptionsServerConnectionFactory {
 
         final ServerConfig serverConfig = clientConfig.getServerConfig();
 
+        // Should always be set.
+        props.setProperty(PropertyDefs.USER_NAME_KEY, serverConfig.getUsername());
+
         if (clientConfig.getDefaultCharSet() != null) {
             props.setProperty(PropertyDefs.DEFAULT_CHARSET_KEY, clientConfig.getDefaultCharSet());
         }
@@ -118,10 +148,10 @@ public class P4OptionsServerConnectionFactory {
 
         if (serverConfig.hasAuthTicket() && serverConfig.getAuthTicket() != null) {
             props.setProperty(PropertyDefs.TICKET_PATH_KEY, serverConfig.getAuthTicket().getAbsolutePath());
-        } else if (serverConfig.getPlaintextPassword() != null) {
-            // This property key doesn't actually seem to do anything.
-            // A real login is still required.
-            props.setProperty(PropertyDefs.PASSWORD_KEY, serverConfig.getPlaintextPassword());
+        // } else if (serverConfig.getPlaintextPassword() != null) {
+        //     // This property key doesn't actually seem to do anything.
+        //     // A real login is still required.
+        //     props.setProperty(PropertyDefs.PASSWORD_KEY, serverConfig.getPlaintextPassword());
         }
         if (serverConfig.hasTrustTicket() && serverConfig.getTrustTicket() != null) {
             props.setProperty(PropertyDefs.TRUST_PATH_KEY, serverConfig.getTrustTicket().getAbsolutePath());

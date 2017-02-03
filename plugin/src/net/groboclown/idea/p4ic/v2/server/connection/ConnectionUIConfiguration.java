@@ -41,11 +41,11 @@ public class ConnectionUIConfiguration {
 
     @Nullable
     public static ConfigProblem checkConnection(@NotNull ClientConfig clientConfig,
-            @NotNull ServerConnectionManager connectionManager) {
+            @NotNull ServerConnectionManager connectionManager, boolean requiresClient) {
         final Project project = clientConfig.getProject();
         try {
             final ServerConnection connection = connectionManager
-                    .getConnectionFor(project, clientConfig, true);
+                    .getConnectionFor(project, clientConfig, requiresClient);
             final ClientExec exec = connection.oneOffClientExec();
             try {
                 new P4Exec2(clientConfig.getProject(), exec).getServerInfo();

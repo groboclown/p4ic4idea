@@ -40,7 +40,7 @@ public class ClientNameDataPart extends DataPartAdapter {
     static final ConfigPartFactory<ClientNameDataPart> FACTORY = new ClientNameDataPartFactory();
     private static final String CLIENT_NAME_ATTRIBUTE_KEY = "client-name";
     private String clientName;
-    private final List<ConfigProblem> additionalProblems = new ArrayList<ConfigProblem>();
+    private final transient List<ConfigProblem> additionalProblems = new ArrayList<ConfigProblem>();
 
     @NotNull
     @Override

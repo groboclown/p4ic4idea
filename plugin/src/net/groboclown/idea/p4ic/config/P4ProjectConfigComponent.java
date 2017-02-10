@@ -213,7 +213,7 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
 
     @Override
     public Element getState() {
-        LOG.debug("Fetching XML state");
+        LOG.info("Fetching XML state");
         checkConfigState();
         Element ret = new Element(STATE_TAG_NAME);
         MutableCompositePart all = new MutableCompositePart();
@@ -230,9 +230,10 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
 
     @Override
     public void loadState(@NotNull Element stateEl) {
-        LOG.debug("Reading XML state");
+        LOG.info("Reading XML state");
         if (! STATE_TAG_NAME.equals(stateEl.getName()) || stateEl.getChildren().isEmpty()) {
-            LOG.debug("No XML state.  Going to use defaults.");
+            LOG.info("No XML state.  Going to use defaults.  State tag = " + stateEl.getName() + "; children = " +
+                stateEl.getChildren());
             synchronized (this) {
                 state = null;
                 config = null;

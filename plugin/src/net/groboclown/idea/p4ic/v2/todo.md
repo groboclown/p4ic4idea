@@ -4,6 +4,10 @@
 
 1. Is the client configuration saved and loaded correctly?  It doesn't look to be
     saved.
+    - It's kind of saved.  Need to double check when this happens.  workspace.xml
+        contains the config values.
+    - It's saved right.  However, at load time, it's being rewritten with the
+        default config.  Order of default check and get state is messing things up.
 1. "Perforce password (%'P4PASSWD'%) invalid or unset."
     Update checks for this error code.  Additionally, it seems that an explicitly
     stored plaintext password is not used?
@@ -18,23 +22,36 @@
     * It's currently using a splitter bar to separate the refresh from the connection list.
         The connection list panel should instead have a maximum size set, otherwise it will
         grow.  Switch over to another UI element.  Half/half panel split would work best.
+        - Changed, but now the stack won't be restricted to its own size - it grows, rather
+            than using the scroll pane correctly.
+        - Maybe use a jgoodies layout, with a vertical spacer between the components?
+    * Changing the config always checks the connection.  This should only be done when the
+        user asks for it.
+        * Turned off (commented out "refresh" in the listener of the refresh panel)
+            - This causes the "refresh" button to not load the new config.  There needs to
+              be a separate code here.
     * Adding a connection needs to have a mouse listener to highlight what you're going
         to select?  Something.  Because right now, it doesn't look like much.  The mouse
         listener is there, but it doesn't do anything.
+        * Switch to JBPopupFactory.createActionGroupPopup
     * The connection is tested when the config is loaded.  However, if the connection
         fails, then the user gets big fat error dialogs.  These should instead be added
-        to the connection problem list.
+        to the connection problem list.  The only thing that should generate a pop-up is
+        a request for a password.
+        * When this is fixed, turn on the refresh panel listener for updates.
+            (uncomment the listener body in the refresh panel)
     * The order is changed when the UI is loaded.
+        - Test out fix
     * Client name property field doesn't seem to work right.  It incorrectly recognizes
         a single config as multiple directories.
 1. Switch P4ProjectConfigComponent to use a (local class) state object.  That means including "transient"
     key words.  A little bit of this work has started.
 1. P4MultipleConnectionWidget could have some nice work
     1. Add to the status bar widget a "reload" button.  Maybe also to the VCS pop-up menu and app menu.
-1. Debugging, debugging, debugging.
 1. Clean up "LOG.info" spots.  Remember that "LOG.debug" should be wrapped in
     "LOG.isDebug" if it does anything more than print a static string.
 1. "todos" and "fixmes" marked in the code.
+1. Debugging, debugging, debugging.
 1. There might be more "files stuck in cached state", but I haven't found more.
 1. Moved files should be grouped together:
     1. move between changelist: one moves, then the other should also move.
@@ -99,23 +116,6 @@ java.lang.Throwable
 	at net.groboclown.idea.p4ic.v2.ui.alerts.InvalidRootsHandler.handleError(InvalidRootsHandler.java:70)
 	at net.groboclown.idea.p4ic.v2.server.connection.AlertManager$ErrorMsg.runHandlerInEDT(AlertManager.java:409)
 	at net.groboclown.idea.p4ic.v2.server.connection.AlertManager.handleError(AlertManager.java:299)
-```
-
-
-## Exception
-
-```
-java.lang.NullPointerException
-	at java.io.File.<init>(File.java:360)
-	at net.groboclown.idea.p4ic.config.part.RelativeConfigCompositePart.findParentP4ConfigFile(RelativeConfigCompositePart.java:194)
-	at net.groboclown.idea.p4ic.config.part.RelativeConfigCompositePart.reload(RelativeConfigCompositePart.java:81)
-	at net.groboclown.idea.p4ic.ui.config.props.ConfigStackPanel$5.run(ConfigStackPanel.java:337)
-	at com.intellij.openapi.application.impl.ApplicationImpl$2.run(ApplicationImpl.java:330)
-	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
-	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
-	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
-	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
-	at java.lang.Thread.run(Thread.java:745)
 ```
 
 

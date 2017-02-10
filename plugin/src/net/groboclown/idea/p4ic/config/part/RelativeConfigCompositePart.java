@@ -181,6 +181,9 @@ public class RelativeConfigCompositePart extends CompositePart {
      */
     @NotNull
     private List<FilePath> findParentP4ConfigFile() {
+        if (name == null || name.isEmpty()) {
+            return Collections.emptyList();
+        }
         VirtualFile rootSearchPath = project.getBaseDir();
         if (! rootSearchPath.exists()) {
             throw new IllegalArgumentException(P4Bundle.message("error.roots.not-directory", rootSearchPath));

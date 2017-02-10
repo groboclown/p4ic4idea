@@ -68,7 +68,13 @@ public class ResolvedPropertiesPanel {
     private final ConfigurationUpdatedListener configurationUpdatedListener = new ConfigurationUpdatedListener() {
         @Override
         public void onConfigurationUpdated(@NotNull P4ProjectConfig config) {
-            refresh(config);
+            // The user may not want to immediately refresh the connection information
+            // upon an update.  If the state is bad, this will make the user bombarded
+            // with "cannot connect" errors at every change.
+            LOG.debug("Skipping refresh of the resolved properties panel.");
+            // refresh(config);
+            // Rather than calling refresh, we'll just cache the passed-in config.
+            lastConfig = config;
         }
     };
 

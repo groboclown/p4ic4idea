@@ -18,9 +18,13 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.popup.PopupChooserBuilder;
+import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.openapi.ui.popup.ListPopup;
+import com.intellij.openapi.ui.popup.PopupStep;
+import com.intellij.openapi.ui.popup.util.BaseListPopupStep;
 import com.intellij.ui.components.JBList;
-import com.intellij.util.ui.UIUtil;
+import com.intellij.util.Consumer;
+import com.intellij.util.ui.EmptyIcon;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.BackgroundAwtActionRunner;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
@@ -36,7 +40,7 @@ import net.groboclown.idea.p4ic.config.part.RequirePasswordDataPart;
 import net.groboclown.idea.p4ic.config.part.ServerFingerprintDataPart;
 import net.groboclown.idea.p4ic.config.part.SimpleDataPart;
 import net.groboclown.idea.p4ic.ui.ComponentListPanel;
-import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,6 +52,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -134,7 +139,10 @@ public class ConfigStackPanel
     }
 
     enum ConfigPartType {
-        ENVIRONMENT(EnvCompositePart.class, "configuration.stack.type.env", AllIcons.Ide.Link) {
+        ENVIRONMENT(
+                EnvCompositePart.class,
+                P4Bundle.getString("configuration.stack.type.env"),
+                AllIcons.Ide.Link) {
             @NotNull
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
@@ -142,7 +150,10 @@ public class ConfigStackPanel
                 return new EnvConfigPartPanel(project, new EnvCompositePart(project));
             }
         },
-        PROPERTY(SimpleDataPart.class, "configuration.stack.type.property", AllIcons.General.Configure) {
+        PROPERTY(
+                SimpleDataPart.class,
+                P4Bundle.getString("configuration.stack.type.property"),
+                EmptyIcon.ICON_16) {
             @NotNull
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
@@ -155,7 +166,10 @@ public class ConfigStackPanel
                 return new PropertyConfigPanel(project, cp);
             }
         },
-        CLIENT_NAME(ClientNameDataPart.class, "configuration.stack.type.client-name", AllIcons.General.Gear) {
+        CLIENT_NAME(
+                ClientNameDataPart.class,
+                P4Bundle.getString("configuration.stack.type.client-name"),
+                EmptyIcon.ICON_16) {
             @NotNull
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
@@ -166,7 +180,10 @@ public class ConfigStackPanel
                 return new ClientNameConfigPartPanel(project, cp);
             }
         },
-        FILE(FileDataPart.class, "configuration.stack.type.file", AllIcons.FileTypes.Properties) {
+        FILE(
+                FileDataPart.class,
+                P4Bundle.getString("configuration.stack.type.file"),
+                EmptyIcon.ICON_16) {
             @NotNull
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
@@ -177,8 +194,10 @@ public class ConfigStackPanel
                 return new FileConfigPartPanel(project, cp);
             }
         },
-        RELATIVE_FILE(RelativeConfigCompositePart.class, "configuration.stack.type.relative-file",
-                AllIcons.FileTypes.Text) {
+        RELATIVE_FILE(
+                RelativeConfigCompositePart.class,
+                P4Bundle.getString("configuration.stack.type.relative-file"),
+                EmptyIcon.ICON_16) {
             @NotNull
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
@@ -189,8 +208,10 @@ public class ConfigStackPanel
                 return new RelativeConfigPartPanel(project, cp);
             }
         },
-        REQUIRE_PASSWORD(RequirePasswordDataPart.class, "configuration.stack.type.require-password",
-                AllIcons.General.Information) {
+        REQUIRE_PASSWORD(
+                RequirePasswordDataPart.class,
+                P4Bundle.getString("configuration.stack.type.require-password"),
+                EmptyIcon.ICON_16) {
             @NotNull
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
@@ -198,8 +219,10 @@ public class ConfigStackPanel
                 return new RequirePasswordConfigPartPanel(project, new RequirePasswordDataPart());
             }
         },
-        SERVER_FINGERPRINT(ServerFingerprintDataPart.class, "configuration.stack.type.server-fingerprint",
-                AllIcons.General.Filter) {
+        SERVER_FINGERPRINT(
+                ServerFingerprintDataPart.class,
+                P4Bundle.getString("configuration.stack.type.server-fingerprint"),
+                EmptyIcon.ICON_16) {
             @NotNull
             @Override
             ConfigPartPanel createPanel(@NotNull Project project, @Nullable ConfigPart part) {
@@ -215,7 +238,7 @@ public class ConfigStackPanel
         private final String title;
         private final Icon icon;
 
-        ConfigPartType(@NotNull Class<? extends ConfigPart> partClass, @NotNull @Nls String title, Icon icon) {
+        ConfigPartType(@NotNull Class<? extends ConfigPart> partClass, @NotNull @NonNls String title, @NotNull Icon icon) {
             this.partClass = partClass;
             this.title = title;
             this.icon = icon;
@@ -256,17 +279,23 @@ public class ConfigStackPanel
         this.project = project;
     }
 
-    public void addChangeListener(@NotNull ConfigurationUpdatedListener changeListener) {
+    public void addConfigurationUpdatedListener(@NotNull ConfigurationUpdatedListener changeListener) {
         changeListeners.add(changeListener);
     }
 
     public void updateUI(@NotNull final P4ProjectConfigComponent component) {
+        // Need to get the user parts, and add them in reverse order.
+        // This is because the logic around "addConfigPart" always sticks the
+        // newly added part to the top of the list.
+        final ArrayList<ConfigPart> parts = new ArrayList<ConfigPart>(component.getUserConfigParts());
+        Collections.reverse(parts);
+
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             @Override
             public void run() {
                 componentList.removeAllChildren();
 
-                for (ConfigPart part : component.getUserConfigParts()) {
+                for (ConfigPart part : parts) {
                     addConfigPart(part);
                 }
             }
@@ -339,6 +368,7 @@ public class ConfigStackPanel
             @Override
             public void run() {
                 panel.getConfigPart().reload();
+                sendConfigStackUpdated();
             }
         });
     }
@@ -369,82 +399,55 @@ public class ConfigStackPanel
                 });
     }
 
+
     // CalledInAWT
     private void chooseEntry() {
-        final ConfigPartType[] configTypeValues = ConfigPartType.values();
-        final JBList list = new JBList();
-        new ListMouseMotionListener(list);
-        list.setListData(configTypeValues);
-        list.setCellRenderer(new ConfigPartTypeCellRenderer());
-        // list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        // list.setEnabled(true);
-        // list.setSelectedIndex(0);
-        // list.setFocusable(true);
-        new PopupChooserBuilder(list)
-                .setCancelOnClickOutside(true)
-                .setRequestFocus(true)
-                .setTitle(P4Bundle.getString("configuration.stack.choose.title"))
-                .setItemChoosenCallback(new Runnable() {
-                    @Override
-                    public void run() {
-                        final int index = list.getSelectedIndex();
-                        if (index >= 0 && index < configTypeValues.length) {
-                            LOG.info("Adding config type " + configTypeValues[index]);
-                            addConfigPartType(configTypeValues[index]);
-                        } else {
-                            LOG.info("User selected invalid config type index " + index);
-                        }
-                    }
-                })
-                .createPopup().showInCenterOf(addEntryButton);
+        final ListPopup popup = createConfigPartPopup(new Consumer<ConfigPartType>() {
+            @Override
+            public void consume(ConfigPartType configPartType) {
+                if (configPartType != null) {
+                    addConfigPartType(configPartType);
+                }
+            }
+        });
+        popup.showUnderneathOf(addEntryButton);
+
     }
 
-    private static class ConfigPartTypeCellRenderer
-            implements ListCellRenderer/*<ConfigPartType>*/ {
-        final JLabel label = new JLabel();
 
-        @Override
-        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
-                boolean cellHasFocus) {
-            ConfigPartType type = (ConfigPartType) value;
-            label.setFont(UIUtil.getListFont());
-            label.setText(P4Bundle.getString(type.title));
-            // label.setIcon(type.icon);
-            // This doesn't seem to do anything.  It's called, but it's
-            // not effective.  Probably because of the wrapper.
-            label.setBackground(UIUtil.getListBackground(isSelected));
-            label.setForeground(UIUtil.getListForeground(isSelected));
-            return label;
-        }
+    private ListPopup createConfigPartPopup(final Consumer<ConfigPartType> onChosen) {
+        return JBPopupFactory.getInstance().createListPopup(new BaseListPopupStep<ConfigPartType>(
+                P4Bundle.getString("configuration.stack.choose.title"),
+                ConfigPartType.values()) {
+            @Nullable
+            @Override
+            public PopupStep onChosen(ConfigPartType configPartType, boolean finalChoice) {
+                onChosen.consume(configPartType);
+                return super.onChosen(configPartType, finalChoice);
+            }
+
+            @Override
+            public void canceled() {
+                onChosen.consume(null);
+            }
+
+            @Nullable
+            @Override
+            public Icon getIconFor(ConfigPartType configPartType) {
+                return configPartType.icon;
+            }
+
+            @NotNull
+            @Override
+            public String getTextFor(ConfigPartType configPartType) {
+                return configPartType.title;
+            }
+        });
     }
 
 
     private void createUIComponents() {
         // place custom component creation code here
         componentList = new ComponentListPanel<ConfigPartPanel<?>>();
-    }
-
-
-    private static class ListMouseMotionListener
-            implements MouseMotionListener {
-        private final JBList list;
-
-        private ListMouseMotionListener(JBList list) {
-            this.list = list;
-            list.addMouseMotionListener(this);
-        }
-
-        @Override
-        public void mouseDragged(MouseEvent e) {
-            // ignore
-        }
-
-        @Override
-        public void mouseMoved(MouseEvent e) {
-            list.setSelectedIndex(list.locationToIndex(e.getPoint()));
-
-            // Tell the wrapper to repaint, rather than directly to the list.
-            list.getParent().repaint();
-        }
     }
 }

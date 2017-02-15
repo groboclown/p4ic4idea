@@ -18,6 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.config.part.*;
+import net.groboclown.idea.p4ic.util.EqualUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,6 +42,9 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
     private Map<VirtualFile, ClientConfig> configs = Collections.emptyMap();
 
     @NotNull
+    private Set<ClientConfigSetup> configSetups = Collections.emptySet();
+
+    @NotNull
     private Set<ConfigProblem> problems = Collections.emptySet();
 
     public P4ProjectConfigStack(@NotNull Project project, @NotNull List<ConfigPart> userParts) {
@@ -49,12 +53,18 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         for (ConfigPart userPart : userParts) {
             newParts.addPriorityConfigPart(userPart);
         }
-        loadValidConfigs(newParts);
+        loadConfigs(newParts);
     }
 
     @Override
     public void refresh() {
-        loadValidConfigs(parts);
+        loadConfigs(parts);
+    }
+
+    @NotNull
+    @Override
+    public Collection<ClientConfigSetup> getClientConfigSetups() {
+        return configSetups;
     }
 
     @NotNull
@@ -118,7 +128,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         return configs.isEmpty();
     }
 
-    private void loadValidConfigs(ConfigPart rootPart) {
+    private void loadConfigs(ConfigPart rootPart) {
         VirtualFile projectRoot = project.getBaseDir();
         if (! projectRoot.isDirectory()) {
             projectRoot = projectRoot.getParent();
@@ -130,42 +140,43 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         stack.add(rootPart);
         while (! stack.isEmpty()) {
             ConfigPart part = stack.remove(stack.size() - 1);
-            if (part.getConfigProblems().isEmpty()) {
-                if (part instanceof CompositePart) {
-                    stack.addAll(((CompositePart) part).getConfigParts());
-                } else if (part instanceof DataPart) {
-                    final DataPart dataPart = (DataPart) part;
-                    VirtualFile partRoot = dataPart.getRootPath();
-                    if (partRoot == null) {
-                        partRoot = projectRoot;
-                    }
-                    List<DataPart> partList = dirToParts.get(partRoot);
-                    if (partList == null) {
-                        partList = new ArrayList<DataPart>();
-                        dirToParts.put(partRoot, partList);
-                    }
-                    LOG.info("Adding " + dataPart + " into " + partRoot);
-                    partList.add(dataPart);
-                } else {
-                    throw new IllegalStateException("Unknown config part " + part);
+            configProblems.addAll(part.getConfigProblems());
+            if (part instanceof CompositePart) {
+                stack.addAll(((CompositePart) part).getConfigParts());
+            } else if (part instanceof DataPart) {
+                final DataPart dataPart = (DataPart) part;
+                VirtualFile partRoot = dataPart.getRootPath();
+                if (partRoot == null) {
+                    partRoot = projectRoot;
                 }
+                List<DataPart> partList = dirToParts.get(partRoot);
+                if (partList == null) {
+                    partList = new ArrayList<DataPart>();
+                    dirToParts.put(partRoot, partList);
+                }
+                LOG.info("Adding " + dataPart + " into " + partRoot);
+                partList.add(dataPart);
             } else {
-                configProblems.addAll(part.getConfigProblems());
+                throw new IllegalStateException("Unknown config part " + part);
             }
         }
 
-        Map<VirtualFile, ClientConfig> tmpConfigs = convertToClients(projectRoot, dirToParts, configProblems);
+        final Set<ClientConfigSetup> clientConfigSetups = new HashSet<ClientConfigSetup>();
+        final Map<VirtualFile, ClientConfig> tmpConfigs = convertToClients(projectRoot, dirToParts, configProblems,
+                clientConfigSetups);
 
         synchronized (sync) {
             parts = rootPart;
             configs = tmpConfigs;
             problems = configProblems;
+            configSetups = clientConfigSetups;
         }
     }
 
     private Map<VirtualFile, ClientConfig> convertToClients(
             @NotNull VirtualFile projectRoot, @NotNull Map<VirtualFile, List<DataPart>> parts,
-            @NotNull Set<ConfigProblem> configProblems) {
+            @NotNull Set<ConfigProblem> configProblems,
+            @NotNull Set<ClientConfigSetup> clientConfigSetups) {
         // For each part file, climb up our tree and add its parent as a lower priority
         // item.
         for (Map.Entry<VirtualFile, List<DataPart>> entry : parts.entrySet()) {
@@ -189,52 +200,54 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         // into shared ClientConfig objects, while maintaining their
         // organization in the tree.
 
+        // With this, there are two structures to maintain - the desired
+        // list, which may have errors, and the validated list.
+
         // We need to share the ServerConfig object across clients.
         final Map<String, ServerConfig> serverIdMap = new HashMap<String, ServerConfig>();
 
         // Map each root directory to the setup object.
-        List<ClientServerSetup> cachedSetups = new ArrayList<ClientServerSetup>();
+        final List<ClientServerSetup> cachedSetups = new ArrayList<ClientServerSetup>();
 
         for (Map.Entry<VirtualFile, List<DataPart>> entry : parts.entrySet()) {
             MultipleDataPart part = new MultipleDataPart(entry.getKey(), entry.getValue());
             final Collection<ConfigProblem> partProblems = ServerConfig.getProblems(part);
+            configProblems.addAll(partProblems);
+            final String serverId = ServerConfig.getServerIdForDataPart(part);
+            // We only want to create a server config if there are no problems.
+            // Otherwise, a validation error will be created.
+            final ServerConfig serverConfig;
             if (partProblems.isEmpty()) {
-                // Note: for a bit of efficiency, we can maybe have a static function
-                // that constructs the server ID, so that we don't have excess ServerConfig
-                // objects created.  However, the construction of the server ID would require
-                // much of the same logic as the construction of the ServerConfig object.
-                // There's a bit of memory allocation waste, but that's not significant.
-                ServerConfig serverConfig = ServerConfig.createFrom(part);
-                final String serverId = serverConfig.getServerId();
                 if (serverIdMap.containsKey(serverId)) {
                     // Throws away the just constructed server config object.
                     serverConfig = serverIdMap.get(serverId);
                 } else {
+                    serverConfig = ServerConfig.createFrom(part);
                     serverIdMap.put(serverId, serverConfig);
                 }
-
-                // Find the cached client server setup object to add this to, if it exists.
-                boolean found = false;
-                for (ClientServerSetup clientServerSetup : cachedSetups) {
-                    if (clientServerSetup.addIfSame(serverConfig, part, entry.getKey())) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (! found) {
-                    // need to create a new one.
-                    cachedSetups.add(new ClientServerSetup(serverConfig, part, entry.getKey()));
-                }
             } else {
-                LOG.info("Skipping " + entry.getKey() + " " + part + "; has problems " + partProblems);
-                configProblems.addAll(partProblems);
+                serverConfig = null;
+            }
+
+            // Find the cached client server setup object to add this to, if it exists.
+            boolean found = false;
+            for (ClientServerSetup clientServerSetup : cachedSetups) {
+                if (clientServerSetup.addIfSame(part, entry.getKey())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (! found) {
+                // need to create a new one.
+                cachedSetups.add(new ClientServerSetup(serverConfig, part, entry.getKey()));
             }
         }
 
-        Map<VirtualFile, ClientConfig> ret = new HashMap<VirtualFile, ClientConfig>();
+        // Create the file tree of client server mappings.
+        Map<VirtualFile, ClientServerSetup> fileMappedSetup = new HashMap<VirtualFile, ClientServerSetup>();
         for (ClientServerSetup cachedSetup : cachedSetups) {
             for (VirtualFile root : cachedSetup.roots) {
-                ret.put(root, cachedSetup.getClientConfig(project));
+                fileMappedSetup.put(root, cachedSetup);
             }
         }
 
@@ -244,7 +257,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         List<VirtualFile> belowProjectRoot = new ArrayList<VirtualFile>();
         VirtualFile bestProjectRoot = null;
         int bestProjectRootDistance = Integer.MIN_VALUE;
-        for (Map.Entry<VirtualFile, ClientConfig> entry : ret.entrySet()) {
+        for (Map.Entry<VirtualFile, ClientServerSetup> entry : fileMappedSetup.entrySet()) {
             final VirtualFile base = entry.getKey();
             final int depth = getDepthDistance(projectRoot, base);
             if (depth <= 0 && depth > bestProjectRootDistance) {
@@ -256,16 +269,26 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         if (bestProjectRoot != null) {
             LOG.info("Best root config: " + bestProjectRoot);
             LOG.info("All root configs " + belowProjectRoot);
-            ClientConfig bestConfig = ret.get(bestProjectRoot);
+            final ClientServerSetup bestConfig = fileMappedSetup.get(bestProjectRoot);
             belowProjectRoot.remove(bestProjectRoot);
             for (VirtualFile file : belowProjectRoot) {
-                ret.remove(file);
+                fileMappedSetup.remove(file);
             }
-            ret.put(projectRoot, bestConfig);
+            fileMappedSetup.put(projectRoot, bestConfig);
         } else {
             LOG.info("No root configs found at or under the project root.");
         }
-        LOG.info("Final pruned config directories: " + ret.keySet());
+        LOG.info("Final pruned config directories: " + fileMappedSetup.keySet());
+
+        // Now we can create the valid configs and the requested setup configs.
+        Map<VirtualFile, ClientConfig> ret = new HashMap<VirtualFile, ClientConfig>();
+        for (Map.Entry<VirtualFile, ClientServerSetup> entry : fileMappedSetup.entrySet()) {
+            final ClientConfig clientConfig = entry.getValue().getClientConfig(project);
+            if (clientConfig != null) {
+                ret.put(entry.getKey(), clientConfig);
+            }
+            clientConfigSetups.add(entry.getValue().getClientConfigSetup(project));
+        }
 
         return ret;
     }
@@ -315,36 +338,46 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         private final String clientName;
         private final MultipleDataPart dataPart;
         private final Set<VirtualFile> roots = new HashSet<VirtualFile>();
+        private final Set<ConfigProblem> problems = new HashSet<ConfigProblem>();
         private ClientConfig clientConfig;
+        private ClientConfigSetup clientSetup;
 
 
-        private ClientServerSetup(@NotNull ServerConfig serverConfig, @NotNull MultipleDataPart dataPart,
+        private ClientServerSetup(@Nullable ServerConfig serverConfig, @NotNull MultipleDataPart dataPart,
                 @NotNull VirtualFile path) {
             this.serverConfig = serverConfig;
             this.clientName = dataPart.getClientname();
             this.dataPart = dataPart;
+            this.problems.addAll(dataPart.getConfigProblems());
             this.roots.add(path);
         }
 
         ClientConfig getClientConfig(@NotNull Project project) {
-            if (clientConfig == null) {
+            // Data part must be valid to have a client config.
+            if (clientConfig == null && dataPart.getConfigProblems().isEmpty() && serverConfig != null) {
                 clientConfig = ClientConfig.createFrom(project, serverConfig, dataPart, roots);
             }
             return clientConfig;
+        }
+
+        ClientConfigSetup getClientConfigSetup(@NotNull Project project) {
+            if (clientSetup == null) {
+                clientSetup = new ClientConfigSetup(getClientConfig(project), problems, dataPart);
+            }
+            return clientSetup;
         }
 
         /**
          *
          * @return true if the same config.
          */
-        boolean addIfSame(@NotNull ServerConfig serverConfig, @NotNull MultipleDataPart dataPart,
-                @NotNull VirtualFile path) {
-            if (serverConfig.getServerName().equals(this.serverConfig.getServerName())) {
-                if ((clientName == null && dataPart.getClientname() == null) ||
-                        (clientName != null && clientName.equals(dataPart.getClientname()))) {
-                    roots.add(path);
-                    return true;
-                }
+        boolean addIfSame(@NotNull MultipleDataPart dataPart, @NotNull VirtualFile path) {
+            final P4ServerName serverName = dataPart.getServerName();
+            if (EqualUtil.isEqual(serverName, this.dataPart.getServerName()) &&
+                    EqualUtil.isEqual(clientName, dataPart.getClientname())) {
+                problems.addAll(dataPart.getConfigProblems());
+                roots.add(path);
+                return true;
             }
             return false;
         }

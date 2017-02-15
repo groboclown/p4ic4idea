@@ -2,12 +2,9 @@
 
 ## Critical
 
-1. Is the client configuration saved and loaded correctly?  It doesn't look to be
-    saved.
-    - It's kind of saved.  Need to double check when this happens.  workspace.xml
-        contains the config values.
-    - It's saved right.  However, at load time, it's being rewritten with the
-        default config.  Order of default check and get state is messing things up.
+1. Connection UI critical bugs
+    * The refresh button, when first clicked with no updates to the config, causes
+        errors.  Looks like the initial config isn't loaded into it.
 1. "Perforce password (%'P4PASSWD'%) invalid or unset."
     Update checks for this error code.  Additionally, it seems that an explicitly
     stored plaintext password is not used?
@@ -19,31 +16,35 @@
     - This comes from the throwing of P4LoginException, which isn't handled as "needs password".
     - Test out fix.
 1. Connection UI bugs
-    * It's currently using a splitter bar to separate the refresh from the connection list.
-        The connection list panel should instead have a maximum size set, otherwise it will
-        grow.  Switch over to another UI element.  Half/half panel split would work best.
-        - Changed, but now the stack won't be restricted to its own size - it grows, rather
-            than using the scroll pane correctly.
-        - Maybe use a jgoodies layout, with a vertical spacer between the components?
+    * Clicking on an error to open the config does not show the connection information.
     * Changing the config always checks the connection.  This should only be done when the
         user asks for it.
         * Turned off (commented out "refresh" in the listener of the refresh panel)
             - This causes the "refresh" button to not load the new config.  There needs to
               be a separate code here.
-    * Adding a connection needs to have a mouse listener to highlight what you're going
-        to select?  Something.  Because right now, it doesn't look like much.  The mouse
-        listener is there, but it doesn't do anything.
-        * Switch to JBPopupFactory.createActionGroupPopup
     * The connection is tested when the config is loaded.  However, if the connection
         fails, then the user gets big fat error dialogs.  These should instead be added
         to the connection problem list.  The only thing that should generate a pop-up is
-        a request for a password.
+        a request for a password.  All errors, except for passwords, should be kept
+        as messages on the resolved panel.
         * When this is fixed, turn on the refresh panel listener for updates.
             (uncomment the listener body in the refresh panel)
-    * The order is changed when the UI is loaded.
-        - Test out fix
+        - Test out fix.
+    * Loading the config by itself (say, from an error message) does not populate the
+        config settings.
     * Client name property field doesn't seem to work right.  It incorrectly recognizes
-        a single config as multiple directories.
+        a single config as multiple directories.  It also doesn't get loaded with the
+        configs, so it doesn't show the list.
+    * Uses a splitter to try to keep the larger scroll bar from appearing.  The
+        different layout attempts all fail because the outer scroll pane, which is intended
+        as a "final attempt", is taking precedent.  What should really happen is the inner
+        containers within the split pane should have their own scroll panes, and the outer one
+        is removed.
+    * The list of client directories, when refreshed, changes to the first entry, rather than
+        staying on the previously selected one.
+        - Test out fix
+    * When first refreshed, the properties panel says that there are no configs.  You need to
+        explicitly select a path, even if one is already selected, to show it.
 1. Switch P4ProjectConfigComponent to use a (local class) state object.  That means including "transient"
     key words.  A little bit of this work has started.
 1. P4MultipleConnectionWidget could have some nice work
@@ -201,4 +202,43 @@ com.intellij.openapi.vcs.VcsException: no valid roots
         at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
         at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
         at java.lang.Thread.run(Thread.java:745)
+```
+
+
+## Exception
+
+```
+Cannot run synchronous submitTransactionAndWait from invokeLater. Please use asynchronous submit*Transaction. See TransactionGuard FAQ for details.
+Transaction: com.intellij.openapi.options.newEditor.SettingsDialog$$Lambda$1464/594451732@31288e55
+java.lang.Throwable
+	at com.intellij.openapi.diagnostic.Logger.error(Logger.java:132)
+	at com.intellij.openapi.application.TransactionGuardImpl.submitTransactionAndWait(TransactionGuardImpl.java:155)
+	at com.intellij.openapi.options.newEditor.SettingsDialog.show(SettingsDialog.java:77)
+	at com.intellij.openapi.ui.DialogWrapper.showAndGet(DialogWrapper.java:1652)
+	at com.intellij.ide.actions.ShowSettingsUtilImpl.editConfigurable(ShowSettingsUtilImpl.java:238)
+	at com.intellij.ide.actions.ShowSettingsUtilImpl.editConfigurable(ShowSettingsUtilImpl.java:199)
+	at net.groboclown.idea.p4ic.compat.idea163.UICompat163.editVcsConfiguration(UICompat163.java:37)
+	at net.groboclown.idea.p4ic.v2.ui.alerts.AbstractErrorHandler.tryConfigChange(AbstractErrorHandler.java:82)
+	at net.groboclown.idea.p4ic.v2.ui.alerts.InvalidRootsHandler.handleError(InvalidRootsHandler.java:70)
+	at net.groboclown.idea.p4ic.v2.server.connection.AlertManager$ErrorMsg.runHandlerInEDT(AlertManager.java:409)
+	at net.groboclown.idea.p4ic.v2.server.connection.AlertManager.handleError(AlertManager.java:299)
+	at net.groboclown.idea.p4ic.v2.server.connection.AlertManager.access$800(AlertManager.java:50)
+	at net.groboclown.idea.p4ic.v2.server.connection.AlertManager$ErrorMsg.run(AlertManager.java:400)
+	at java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:301)
+	at java.awt.EventQueue.dispatchEventImpl(EventQueue.java:762)
+	at java.awt.EventQueue.access$500(EventQueue.java:98)
+	at java.awt.EventQueue$3.run(EventQueue.java:715)
+	at java.awt.EventQueue$3.run(EventQueue.java:709)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:80)
+	at java.awt.EventQueue.dispatchEvent(EventQueue.java:732)
+	at com.intellij.ide.IdeEventQueue.defaultDispatchEvent(IdeEventQueue.java:827)
+	at com.intellij.ide.IdeEventQueue._dispatchEvent(IdeEventQueue.java:655)
+	at com.intellij.ide.IdeEventQueue.dispatchEvent(IdeEventQueue.java:365)
+	at java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:201)
+	at java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:116)
+	at java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:105)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
+	at java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 ```

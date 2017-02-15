@@ -25,11 +25,12 @@ import com.intellij.util.ui.AsyncProcessIcon;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.BackgroundAwtActionRunner;
 import net.groboclown.idea.p4ic.config.ClientConfig;
+import net.groboclown.idea.p4ic.config.ClientConfigSetup;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
+import net.groboclown.idea.p4ic.config.ConfigPropertiesUtil;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.config.part.DataPart;
 import net.groboclown.idea.p4ic.ui.config.props.ConfigurationUpdatedListener;
-import net.groboclown.idea.p4ic.ui.config.props.RequestConfigurationUpdateListener;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
 import org.jetbrains.annotations.NotNull;
@@ -63,7 +64,7 @@ public class ResolvedPropertiesPanel {
 
     private P4ProjectConfig lastConfig;
 
-    private RequestConfigurationUpdateListener requestConfigurationUpdateListener;
+    private RequestConfigurationLoadListener requestConfigurationLoadListener;
 
     private final ConfigurationUpdatedListener configurationUpdatedListener = new ConfigurationUpdatedListener() {
         @Override
@@ -98,31 +99,28 @@ public class ResolvedPropertiesPanel {
         refreshResolvedPropertiesButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                refresh();
+                refresh(null);
             }
         });
     }
 
     @NotNull
-    public ConfigurationUpdatedListener getConfigurationUpdatedListener() {
+    ConfigurationUpdatedListener getConfigurationUpdatedListener() {
         return configurationUpdatedListener;
     }
 
-    public void refresh(@Nullable P4ProjectConfig config) {
-        lastConfig = config;
-        refresh();
-    }
-
-    private void refresh() {
+    public void refresh(@Nullable final P4ProjectConfig config) {
         BackgroundAwtActionRunner.runBackgroundAwtAction(refreshResolvedPropertiesSpinner,
                 new BackgroundAwtActionRunner.BackgroundAwtAction<ComputedConfigResults>() {
                     @Override
                     public ComputedConfigResults runBackgroundProcess() {
-                        if (requestConfigurationUpdateListener != null) {
-                            requestConfigurationUpdateListener.updateConfigPartFromUI();
+                        if (requestConfigurationLoadListener != null && config == null) {
+                            lastConfig = requestConfigurationLoadListener.updateConfigPartFromUI();
+                        } else {
+                            lastConfig = config;
                         }
-                        final ComputedConfigResults results = new ComputedConfigResults();
                         if (lastConfig == null) {
+                            final ComputedConfigResults results = new ComputedConfigResults();
                             results.problemMessages.add(
                                     P4Bundle.getString("configuration.error.no-config-list")
                             );
@@ -130,49 +128,33 @@ public class ResolvedPropertiesPanel {
                         }
 
                         lastConfig.refresh();
-                        {
-                            final Collection<ConfigProblem> problems = lastConfig.getConfigProblems();
-                            results.problemMessages = new ArrayList<String>(problems.size());
-                            for (ConfigProblem problem : problems) {
-                                LOG.info("ConfigProblem: " + problem);
-                                results.problemMessages.add(problem.getMessage());
-                            }
-                        }
-                        final boolean tryConnection = results.problemMessages.isEmpty();
 
-                        Collection<ClientConfig> configs = lastConfig.getClientConfigs();
-                        if (configs.isEmpty()) {
-                            results.problemMessages.add(
-                                    P4Bundle.getString("configuration.error.no-config-list"));
-                        }
-                        for (ClientConfig config : configs) {
-                            if (tryConnection) {
-                                ConfigProblem problem = ConnectionUIConfiguration.checkConnection(config,
-                                        ServerConnectionManager.getInstance(), false);
-                                if (problem != null) {
-                                    results.problemMessages.add(problem.getMessage());
-                                }
-                                // We can have a connection without a client, for testing purposes,
-                                // but to actually use it, we need a client.
-                                if (!config.isWorkspaceCapable()) {
-                                    results.problemMessages.add(
-                                            P4Bundle.getString("error.config.no-client"));
-                                }
-                            }
-                            if (config.getProjectSourceDirs().isEmpty()) {
-                                results.problemMessages.add(
-                                        P4Bundle.message("client.root.non-existent",
-                                                config.getProject().getBaseDir()));
-                                if (config.getProject().getBaseDir() != null) {
-                                    results.configs.add(new ConfigPath(config, config.getProject().getBaseDir()));
-                                }
-                            }
-                            for (VirtualFile virtualFile : config.getProjectSourceDirs()) {
-                                if (virtualFile != null) {
-                                    results.configs.add(new ConfigPath(config, virtualFile));
-                                }
+                        final ComputedConfigResults results = loadConfigResults(lastConfig);
+
+                        final Object selected = rootDirDropdownBox.getSelectedItem();
+                        boolean found = false;
+                        for (int i = 0; selected != null && i < results.configs.size(); i++) {
+                            if (selected == results.configs.get(i)) {
+                                results.selectedConfigIndex = i;
+                                found = true;
+                                break;
                             }
                         }
+                        if (! found) {
+                            if (results.configs.isEmpty()) {
+                                results.selectedConfigIndex = -1;
+                            } else {
+                                results.selectedConfigIndex = 0;
+                                found = true;
+                            }
+                        }
+                        if (found) {
+                            results.selectedConfigText = createResolvedPropertiesText(
+                                    results.configs.get(results.selectedConfigIndex)).toString();
+                        } else {
+                            results.selectedConfigText = null;
+                        }
+
                         return results;
                     }
 
@@ -190,38 +172,52 @@ public class ResolvedPropertiesPanel {
                         if (results.configs == null || results.configs.isEmpty()) {
                             rootDirDropdownBoxModel.removeAllElements();
                             rootDirDropdownBox.setEnabled(false);
+                            LOG.info("No configurations; showing no resolved properties.");
+                            showResolvedPropertiesNone();
                         } else {
                             rootDirDropdownBox.setEnabled(true);
                             rootDirDropdownBoxModel.removeAllElements();
                             for (ConfigPath config : results.configs) {
                                 rootDirDropdownBoxModel.addElement(config);
                             }
-                            rootDirDropdownBox.setSelectedIndex(0);
+                            if (results.selectedConfigIndex < 0 || results.selectedConfigText == null) {
+                                LOG.info("Selected dropdown path in model is null or invalid: " + results.selectedConfigIndex);
+                                showResolvedPropertiesNone();
+                            } else {
+                                LOG.info("Showing dropdown path on reload for " + results.selectedConfigIndex);
+                                rootDirDropdownBox.setSelectedIndex(results.selectedConfigIndex);
+                                resolvedValuesText.setText(results.selectedConfigText);
+                            }
                         }
-
-                        refreshSelectedConfig();
                     }
                 });
     }
-
 
     // called in Awt
     private void refreshSelectedConfig() {
         ApplicationManager.getApplication().assertIsDispatchThread();
 
         if (rootDirDropdownBoxModel.getSize() <= 0) {
-            resolvedValuesText.setText(P4Bundle.message("config.display.properties.no_path"));
+            LOG.info("No items in dropdown path box; showing no properties.");
+            showResolvedPropertiesNone();
         } else {
             Object selected = rootDirDropdownBoxModel.getSelectedItem();
             if (selected == null || !(selected instanceof ConfigPath)) {
+                rootDirDropdownBox.setSelectedIndex(0);
                 selected = rootDirDropdownBoxModel.getElementAt(0);
                 if (selected == null || !(selected instanceof ConfigPath)) {
                     throw new IllegalStateException("Resolved properties selected item is not ConfigPath: " + selected);
                 }
-                rootDirDropdownBoxModel.setSelectedItem(selected);
             }
+            LOG.info("Showing dropdown path for selected " + selected);
             showResolvedPropertiesText((ConfigPath) selected);
         }
+    }
+
+    private void showResolvedPropertiesNone() {
+        ApplicationManager.getApplication().assertIsDispatchThread();
+
+        resolvedValuesText.setText(P4Bundle.message("config.display.properties.no_path"));
     }
 
     private void showResolvedPropertiesText(@NotNull final ConfigPath selected) {
@@ -230,26 +226,87 @@ public class ResolvedPropertiesPanel {
                 new BackgroundAwtActionRunner.BackgroundAwtAction<String>() {
                     @Override
                     public String runBackgroundProcess() {
-                        Map<String, String> props = selected.config.toProperties();
-                        ArrayList<String> keys = new ArrayList<String>(props.keySet());
-                        Collections.sort(keys);
-                        StringBuilder sb = new StringBuilder();
-                        for (String key : keys) {
-                            sb.append(key).append('=').append(props.get(key)).append('\n');
+                        if (selected.config != null) {
+                            selected.config.reload();
                         }
+                        StringBuilder sb = createResolvedPropertiesText(selected);
                         return sb.toString();
                     }
 
                     @Override
                     public void runAwtProcess(String value) {
+                        LOG.info("Showing resolved values text of length " + value.length());
                         resolvedValuesText.setText(value);
                     }
                 });
     }
 
-    public void setRequestConfigurationUpdateListener(
-            @NotNull RequestConfigurationUpdateListener requestConfigurationUpdateListener) {
-        this.requestConfigurationUpdateListener = requestConfigurationUpdateListener;
+    private StringBuilder createResolvedPropertiesText(@NotNull final ConfigPath selected) {
+        Map<String, String> props = ConfigPropertiesUtil.toProperties(selected.config);
+        ArrayList<String> keys = new ArrayList<String>(props.keySet());
+        Collections.sort(keys);
+        StringBuilder sb = new StringBuilder();
+        for (String key : keys) {
+            sb.append(key).append('=').append(props.get(key)).append('\n');
+        }
+        return sb;
+    }
+
+    void setRequestConfigurationLoadListener(
+            @NotNull RequestConfigurationLoadListener requestConfigurationLoadListener) {
+        this.requestConfigurationLoadListener = requestConfigurationLoadListener;
+    }
+
+    private ComputedConfigResults loadConfigResults(@NotNull final P4ProjectConfig projectConfig) {
+        ComputedConfigResults results = new ComputedConfigResults();
+        {
+            final Collection<ConfigProblem> problems = projectConfig.getConfigProblems();
+            results.problemMessages = new ArrayList<String>(problems.size());
+            for (ConfigProblem problem : problems) {
+                LOG.info("ConfigProblem: " + problem);
+                results.problemMessages.add(problem.getMessage());
+            }
+        }
+
+        Collection<ClientConfigSetup> configs = projectConfig.getClientConfigSetups();
+        if (configs.isEmpty()) {
+            results.problemMessages.add(
+                    P4Bundle.getString("configuration.error.no-config-list"));
+        }
+        for (ClientConfigSetup configSetup : configs) {
+            final ClientConfig config = configSetup.getClientConfig();
+            if (! configSetup.hasProblems() && config != null) {
+                ConfigProblem problem = ConnectionUIConfiguration.checkConnection(config,
+                        ServerConnectionManager.getInstance(), false);
+                if (problem != null) {
+                    results.problemMessages.add(problem.getMessage());
+                }
+                // We can have a connection without a client, for testing purposes,
+                // but to actually use it, we need a client.
+                if (!config.isWorkspaceCapable()) {
+                    results.problemMessages.add(
+                            P4Bundle.getString("error.config.no-client"));
+                }
+            }
+            if (config != null && config.getProjectSourceDirs().isEmpty()) {
+                results.problemMessages.add(
+                        P4Bundle.message("client.root.non-existent",
+                                config.getProject().getBaseDir()));
+                if (config.getProject().getBaseDir() != null) {
+                    results.configs.add(new ConfigPath(
+                            configSetup.getSource(), config.getProject().getBaseDir()));
+                }
+            }
+            Collection<VirtualFile> sourceDirs = config == null
+                    ? Collections.singleton(configSetup.getSource().getRootPath())
+                    : config.getProjectSourceDirs();
+            for (VirtualFile virtualFile : sourceDirs) {
+                if (virtualFile != null) {
+                    results.configs.add(new ConfigPath(configSetup.getSource(), virtualFile));
+                }
+            }
+        }
+        return results;
     }
 
     /**
@@ -354,14 +411,16 @@ public class ResolvedPropertiesPanel {
     private static class ComputedConfigResults {
         ArrayList<String> problemMessages = new ArrayList<String>();
         ArrayList<ConfigPath> configs = new ArrayList<ConfigPath>();
+        int selectedConfigIndex;
+        String selectedConfigText;
     }
 
 
     private static class ConfigPath {
-        final ClientConfig config;
+        final DataPart config;
         final VirtualFile file;
 
-        private ConfigPath(@NotNull ClientConfig config, @NotNull VirtualFile virtualFile) {
+        private ConfigPath(@NotNull DataPart config, @NotNull VirtualFile virtualFile) {
             this.config = config;
             this.file = virtualFile;
         }

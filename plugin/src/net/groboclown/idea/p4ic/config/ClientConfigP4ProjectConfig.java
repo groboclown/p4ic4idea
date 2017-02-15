@@ -37,6 +37,12 @@ public class ClientConfigP4ProjectConfig implements P4ProjectConfig {
 
     @NotNull
     @Override
+    public Collection<ClientConfigSetup> getClientConfigSetups() {
+        return Collections.emptyList();
+    }
+
+    @NotNull
+    @Override
     public Collection<ClientConfig> getClientConfigs() {
         return Collections.singleton(config);
     }

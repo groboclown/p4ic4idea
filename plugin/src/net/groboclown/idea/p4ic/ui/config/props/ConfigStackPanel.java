@@ -22,7 +22,6 @@ import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.ui.popup.ListPopup;
 import com.intellij.openapi.ui.popup.PopupStep;
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep;
-import com.intellij.ui.components.JBList;
 import com.intellij.util.Consumer;
 import com.intellij.util.ui.EmptyIcon;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -40,6 +39,7 @@ import net.groboclown.idea.p4ic.config.part.RequirePasswordDataPart;
 import net.groboclown.idea.p4ic.config.part.ServerFingerprintDataPart;
 import net.groboclown.idea.p4ic.config.part.SimpleDataPart;
 import net.groboclown.idea.p4ic.ui.ComponentListPanel;
+import net.groboclown.idea.p4ic.ui.config.RequestConfigurationLoadListener;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -48,8 +48,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -59,7 +57,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 public class ConfigStackPanel
-        implements RequestConfigurationUpdateListener {
+        implements RequestConfigurationLoadListener {
     private static final Logger LOG = Logger.getInstance(ConfigStackPanel.class);
 
     private Project project;
@@ -332,11 +330,15 @@ public class ConfigStackPanel
     }
 
     @Override
-    public void updateConfigPartFromUI() {
+    public P4ProjectConfig updateConfigPartFromUI() {
+        final List<ConfigPartPanel<?>> partPanels = componentList.getChildren();
+        ArrayList<ConfigPart> parts = new ArrayList<ConfigPart>(partPanels.size());
         for (ConfigPartPanel<?> configPartPanel : componentList.getChildren()) {
             configPartPanel.updateConfigPartFromUI();
             configPartPanel.getConfigPart().reload();
+            parts.add(configPartPanel.copyPart());
         }
+        return new P4ProjectConfigStack(project, parts);
     }
 
     /**

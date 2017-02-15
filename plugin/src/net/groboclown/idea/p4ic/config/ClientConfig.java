@@ -181,28 +181,6 @@ public class ClientConfig {
         return serverConfig.getServerName().getDisplayName();
     }
 
-    @NotNull
-    public Map<String, String> toProperties() {
-        Map<String, String> props = serverConfig.toProperties();
-        props.put(PerforceEnvironment.P4CHARSET,
-                getDefaultCharSet() == null
-                    ? P4Bundle.getString("configuration.resolve.value.unset")
-                    : getDefaultCharSet());
-        props.put(PerforceEnvironment.P4IGNORE,
-                getIgnoreFileName() == null
-                    ? P4Bundle.getString("configuration.resolve.value.unset")
-                    : getIgnoreFileName());
-        props.put(PerforceEnvironment.P4CLIENT,
-                getClientName() == null
-                        ? P4Bundle.getString("configuration.resolve.value.unset")
-                        : getClientName());
-        props.put(PerforceEnvironment.P4HOST,
-                getClientHostName() == null
-                        ? P4Bundle.getString("configuration.resolve.value.unset")
-                        : getClientHostName());
-        return props;
-    }
-
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -214,7 +192,10 @@ public class ClientConfig {
         if (! (obj instanceof ClientConfig)) {
             return false;
         }
-        return getClientId().equals(((ClientConfig) obj).getClientId());
+        ClientConfig that = (ClientConfig) obj;
+        return
+                getProject().equals(that.getProject())
+                && getClientId().equals(that.getClientId());
     }
 
     @Override

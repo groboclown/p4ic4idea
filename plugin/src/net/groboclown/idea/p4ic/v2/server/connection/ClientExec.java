@@ -69,6 +69,9 @@ public class ClientExec {
     private final ServerStatusController connectedController;
     private final ClientConfig config;
 
+    @NotNull
+    private final ServerRunner.ErrorVisitorFactory errorVisitorFactory;
+
     private boolean disposed = false;
 
     @Nullable
@@ -77,13 +80,25 @@ public class ClientExec {
     @NotNull
     static ClientExec createFor(@NotNull ClientConfig config, @NotNull ServerStatusController statusController)
             throws P4InvalidConfigException {
-        return new ClientExec(config, statusController);
+        return new ClientExec(config, statusController, null);
+    }
+
+    @NotNull
+    static ClientExec createFor(@NotNull ClientConfig config, @NotNull ServerStatusController statusController,
+            @NotNull ServerRunner.ErrorVisitorFactory errorVisitorFactory)
+            throws P4InvalidConfigException {
+        return new ClientExec(config, statusController,  errorVisitorFactory);
     }
 
 
-    private ClientExec(@NotNull ClientConfig config, @NotNull ServerStatusController connectedController) {
+    private ClientExec(@NotNull ClientConfig config, @NotNull ServerStatusController connectedController,
+            @Nullable ServerRunner.ErrorVisitorFactory errorVisitorFactory) {
         this.connectedController = connectedController;
         this.config = config;
+        if (errorVisitorFactory == null) {
+            errorVisitorFactory = new ServerRunnerErrorVisitorFactory();
+        }
+        this.errorVisitorFactory = errorVisitorFactory;
     }
 
 
@@ -106,7 +121,6 @@ public class ClientExec {
     public P4ServerName getServerName() {
         return config.getServerConfig().getServerName();
     }
-
 
     public void dispose() {
         LOG.info("Disposing ClientExec");
@@ -248,7 +262,7 @@ public class ClientExec {
         try {
             return ServerRunner.p4RunFor(runner,
                     new ServerRunnerConnection(project, getTempDir(project)),
-                    new ServerRunnerErrorVisitor(project));
+                    errorVisitorFactory.getVisitorFor(project));
         } catch (IOException e) {
             throw new P4FileException(e);
         }
@@ -285,6 +299,16 @@ public class ClientExec {
             return connectServer(project, tempDir).authenticate();
         }
     }
+
+
+    private class ServerRunnerErrorVisitorFactory implements ServerRunner.ErrorVisitorFactory {
+        @NotNull
+        @Override
+        public ServerRunner.ErrorVisitor getVisitorFor(@NotNull final Project project) {
+            return new ServerRunnerErrorVisitor(project);
+        }
+    }
+
 
     private class ServerRunnerErrorVisitor implements ServerRunner.ErrorVisitor {
         private final Project project;

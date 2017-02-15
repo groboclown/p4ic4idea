@@ -22,6 +22,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.BackgroundAwtActionRunner;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
+import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.part.ClientNameDataPart;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
 import org.jetbrains.annotations.Nls;
@@ -100,6 +101,7 @@ public class ClientNameConfigPartPanel
         return rootPanel;
     }
 
+    @Nullable
     @Override
     public void updateConfigPartFromUI() {
         getConfigPart().setClientname(getSelectedClientName());

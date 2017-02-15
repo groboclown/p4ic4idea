@@ -24,30 +24,38 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 public class SimpleP4ProjectConfig implements P4ProjectConfig {
     private final Project project;
     private final Collection<ClientConfig> configs;
+    private final Collection<ClientConfigSetup> configSetups;
     private final Collection<ConfigProblem> problems;
 
     SimpleP4ProjectConfig(@NotNull P4ProjectConfig config) {
-        this(config.getProject(), config.getClientConfigs(), config.getConfigProblems());
+        this(config.getProject(), config.getClientConfigs(), config.getClientConfigSetups(),
+                config.getConfigProblems());
     }
 
     private SimpleP4ProjectConfig(Project project,
             Collection<ClientConfig> configs,
+            Collection<ClientConfigSetup> configSetups,
             Collection<ConfigProblem> problems) {
         this.project = project;
         this.configs = Collections.unmodifiableCollection(new ArrayList<ClientConfig>(configs));
+        this.configSetups = Collections.unmodifiableCollection(new ArrayList<ClientConfigSetup>(configSetups));
         this.problems = Collections.unmodifiableCollection(new ArrayList<ConfigProblem>(problems));
     }
 
     @Override
     public void refresh() {
         // do nothing
+    }
+
+    @NotNull
+    @Override
+    public Collection<ClientConfigSetup> getClientConfigSetups() {
+        return configSetups;
     }
 
     @NotNull

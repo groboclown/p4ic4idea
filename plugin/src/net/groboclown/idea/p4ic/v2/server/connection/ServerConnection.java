@@ -366,9 +366,9 @@ public class ServerConnection {
      * @throws P4InvalidConfigException
      */
     @Deprecated
-    ClientExec oneOffClientExec()
+    ClientExec oneOffClientExec(@Nullable ServerRunner.ErrorVisitorFactory errorVisitorFactory)
             throws P4InvalidConfigException {
-        return ClientExec.createFor(config, statusController);
+        return ClientExec.createFor(config, statusController, errorVisitorFactory);
     }
 
 

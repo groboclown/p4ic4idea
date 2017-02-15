@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.v2.server.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProcessCanceledException;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.exception.*;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
@@ -46,6 +47,13 @@ public class ServerRunner {
     interface P4Runner<T> {
         T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
                 P4Exception;
+    }
+
+
+    
+    interface ErrorVisitorFactory {
+        @NotNull
+        ErrorVisitor getVisitorFor(@NotNull Project project);
     }
 
 

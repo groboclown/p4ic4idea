@@ -29,6 +29,17 @@ public interface P4ProjectConfig {
 
     void refresh();
 
+    /**
+     *
+     * @return all valid and invalid client configurations.
+     */
+    @NotNull
+    Collection<ClientConfigSetup> getClientConfigSetups();
+
+    /**
+     *
+     * @return all valid client configurations.
+     */
     @NotNull
     Collection<ClientConfig> getClientConfigs();
 

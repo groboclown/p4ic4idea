@@ -53,6 +53,32 @@ public final class ServerConfig {
 
     private final String serverId;
 
+    @NotNull
+    public static String getServerIdForDataPart(@NotNull DataPart part) {
+        StringBuilder sb = new StringBuilder();
+        if (part.hasServerNameSet() && part.getServerName() != null) {
+            sb.append(part.getServerName().getFullPort());
+        } else {
+            sb.append((String) null);
+        }
+        sb.append(SEP)
+            .append(part.hasUsernameSet() ? part.getUsername() : null)
+            .append(SEP)
+            .append(part.hasPasswordSet()
+                ? (part.getPlaintextPassword() == null
+                    ? ""
+                    : part.getPlaintextPassword())
+                : null)
+            .append(SEP)
+            .append(part.hasAuthTicketFileSet() ? part.getAuthTicketFile() : null)
+            .append(SEP)
+            .append(part.hasTrustTicketFileSet() ? part.getTrustTicketFile() : null)
+            .append(SEP)
+            .append(part.hasServerFingerprintSet() ? part.getServerFingerprint() : null);
+        // These may be common enough that we want to save memory by interning the strings.
+        return sb.toString().intern();
+    }
+
 
 
     @NotNull
@@ -100,12 +126,7 @@ public final class ServerConfig {
                         : part.getPlaintextPassword())
                         : null;
 
-        serverId = this.serverName.getFullPort() + SEP +
-                this.username + SEP +
-                (this.password != null ? "(PWD)" : "(NPWD") + SEP +
-                this.authTicket + SEP +
-                this.trustTicket + SEP +
-                this.serverFingerprint;
+        serverId = getServerIdForDataPart(part);
     }
 
 
@@ -200,23 +221,7 @@ public final class ServerConfig {
 
     @NotNull
     public Map<String, String> toProperties() {
-        Map<String, String> ret = new HashMap<String, String>();
-        ret.put(PerforceEnvironment.P4PORT, getServerName().getDisplayName());
-        ret.put(PerforceEnvironment.P4TRUST,
-                getTrustTicket() == null
-                        ? P4Bundle.getString("configuration.resolve.value.unset")
-                        : getTrustTicket().toString());
-        ret.put(PerforceEnvironment.P4USER, getUsername());
-        ret.put(PerforceEnvironment.P4TICKETS,
-                getAuthTicket() == null
-                        ? P4Bundle.getString("configuration.resolve.value.unset")
-                        : getAuthTicket().toString());
-        ret.put("Server Fingerprint", getServerFingerprint());
-        ret.put(PerforceEnvironment.P4PASSWD,
-                getPlaintextPassword() == null
-                        ? P4Bundle.getString("configuration.resolve.password.unset")
-                        : P4Bundle.getString("configuration.resolve.password.set"));
-        return ret;
+        return ConfigPropertiesUtil.toProperties(this);
     }
 
     @Override

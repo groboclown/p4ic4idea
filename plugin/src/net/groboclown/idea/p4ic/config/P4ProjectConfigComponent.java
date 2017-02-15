@@ -231,7 +231,8 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
     @Override
     public void loadState(@NotNull Element stateEl) {
         LOG.info("Reading XML state");
-        if (! STATE_TAG_NAME.equals(stateEl.getName()) || stateEl.getChildren().isEmpty()) {
+        // Tag name doesn't matter - it's assigned to us by the loader.
+        if (stateEl.getChildren().isEmpty()) {
             LOG.info("No XML state.  Going to use defaults.  State tag = " + stateEl.getName() + "; children = " +
                 stateEl.getChildren());
             synchronized (this) {

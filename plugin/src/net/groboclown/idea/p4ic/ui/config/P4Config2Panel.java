@@ -32,7 +32,7 @@ public class P4Config2Panel {
     public P4Config2Panel() {
         $$$setupUI$$$();
         configStackPanel.addConfigurationUpdatedListener(resolvePropertiesPanel.getConfigurationUpdatedListener());
-        resolvePropertiesPanel.setRequestConfigurationUpdateListener(configStackPanel);
+        resolvePropertiesPanel.setRequestConfigurationLoadListener(configStackPanel);
         /*
         splitPane.setDividerLocation(rootPanel.getHeight() / 2);
         rootPanel.addComponentListener(new ComponentListener() {
@@ -66,6 +66,13 @@ public class P4Config2Panel {
 
     void initialize(@Nullable Project project) {
         configStackPanel.initialize(project);
+        if (project != null) {
+            final P4ProjectConfigComponent configComponent = P4ProjectConfigComponent.getInstance(project);
+            if (configComponent != null) {
+                resolvePropertiesPanel.getConfigurationUpdatedListener().onConfigurationUpdated(
+                        configComponent.getP4ProjectConfig());
+            }
+        }
     }
 
     public void saveSettingsToConfig(@NotNull P4ProjectConfigComponent configComponent) {
@@ -92,15 +99,12 @@ public class P4Config2Panel {
         createUIComponents();
         rootPanel = new JPanel();
         rootPanel.setLayout(new BorderLayout(0, 0));
-        final JPanel panel1 = new JPanel();
-        panel1.setLayout(new BorderLayout(0, 0));
-        rootPanel.add(panel1, BorderLayout.CENTER);
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(false);
         splitPane.setDividerSize(8);
         splitPane.setOrientation(0);
         splitPane.setResizeWeight(1.0);
-        panel1.add(splitPane, BorderLayout.CENTER);
+        rootPanel.add(splitPane, BorderLayout.CENTER);
         splitPane.setLeftComponent(configStackPanel.$$$getRootComponent$$$());
         resolvePropertiesPanel = new ResolvedPropertiesPanel();
         splitPane.setRightComponent(resolvePropertiesPanel.$$$getRootComponent$$$());

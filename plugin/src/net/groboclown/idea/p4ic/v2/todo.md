@@ -20,6 +20,11 @@
     * Figure out why the multiples are being created.  Are they with a different ID?  Are they
         just the loaded cached servers, each trying to refresh itself?  Perhaps there really are
         three copies all active, one per connection queue?
+    * Could be that multiple requests are happening before the password problem is made apparent,
+        for the same connection.  May need to keep track of these connection problems and the
+        user responses.  That is, if the connection had an issue
+        (could not connect, invalid config, no password, etc), then that state is maintained
+        until the user confirms an action to take.
 1. Passwords are not being saved between sessions.
     * Limitation introduced in new version of Idea?
     * Allow for passwords to be saved "encoded" as user option?
@@ -37,6 +42,7 @@
         different layout attempts all fail because the outer scroll pane, which is intended
         as a "final attempt", is taking precedent.
         - Splitter seems fine.  Try instead to remove the outer scroll pane.
+        - Test fixes.
     * The list of client directories, when refreshed, changes to the first entry, rather than
         staying on the previously selected one.
         - Test out fix

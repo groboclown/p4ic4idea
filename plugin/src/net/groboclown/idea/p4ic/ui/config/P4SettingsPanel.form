@@ -19,19 +19,9 @@
             <properties/>
             <border type="none"/>
             <children>
-              <scrollpane id="7d1d3">
+              <nested-form id="85fd6" form-file="net/groboclown/idea/p4ic/ui/config/P4Config2Panel.form" binding="myConfigPanel">
                 <constraints border-constraint="Center"/>
-                <properties>
-                  <horizontalScrollBarPolicy value="31"/>
-                  <verticalScrollBarPolicy value="21"/>
-                </properties>
-                <border type="none"/>
-                <children>
-                  <nested-form id="85fd6" form-file="net/groboclown/idea/p4ic/ui/config/P4Config2Panel.form" binding="myConfigPanel">
-                    <constraints/>
-                  </nested-form>
-                </children>
-              </scrollpane>
+              </nested-form>
             </children>
           </grid>
           <grid id="1e073" layout-manager="BorderLayout" hgap="0" vgap="0">

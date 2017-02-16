@@ -140,7 +140,7 @@ public class ResolvedPropertiesPanel {
                                 break;
                             }
                         }
-                        if (! found) {
+                        if (!found) {
                             if (results.configs.isEmpty()) {
                                 results.selectedConfigIndex = -1;
                             } else {
@@ -181,7 +181,8 @@ public class ResolvedPropertiesPanel {
                                 rootDirDropdownBoxModel.addElement(config);
                             }
                             if (results.selectedConfigIndex < 0 || results.selectedConfigText == null) {
-                                LOG.info("Selected dropdown path in model is null or invalid: " + results.selectedConfigIndex);
+                                LOG.info("Selected dropdown path in model is null or invalid: "
+                                        + results.selectedConfigIndex);
                                 showResolvedPropertiesNone();
                             } else {
                                 LOG.info("Showing dropdown path on reload for " + results.selectedConfigIndex);
@@ -279,7 +280,7 @@ public class ResolvedPropertiesPanel {
         }
         for (ClientConfigSetup configSetup : configs) {
             final ClientConfig config = configSetup.getClientConfig();
-            if (! configSetup.hasProblems() && config != null) {
+            if (!configSetup.hasProblems() && config != null) {
                 ConfigProblem problem = ConnectionUIConfiguration.checkConnection(config,
                         ServerConnectionManager.getInstance(), false);
                 if (problem != null) {

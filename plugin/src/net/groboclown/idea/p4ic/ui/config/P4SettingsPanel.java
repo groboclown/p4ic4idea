@@ -77,21 +77,17 @@ public class P4SettingsPanel {
         panel1.setLayout(new BorderLayout(0, 0));
         tabbedPane1.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("user.settings.connection"), panel1);
-        final JScrollPane scrollPane1 = new JScrollPane();
-        scrollPane1.setHorizontalScrollBarPolicy(31);
-        scrollPane1.setVerticalScrollBarPolicy(21);
-        panel1.add(scrollPane1, BorderLayout.CENTER);
         myConfigPanel = new P4Config2Panel();
-        scrollPane1.setViewportView(myConfigPanel.$$$getRootComponent$$$());
+        panel1.add(myConfigPanel.$$$getRootComponent$$$(), BorderLayout.CENTER);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new BorderLayout(0, 0));
         tabbedPane1
                 .addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.settings.prefs"),
                         panel2);
-        final JScrollPane scrollPane2 = new JScrollPane();
-        panel2.add(scrollPane2, BorderLayout.CENTER);
+        final JScrollPane scrollPane1 = new JScrollPane();
+        panel2.add(scrollPane1, BorderLayout.CENTER);
         myUserPreferencesPanel = new UserPreferencesPanel();
-        scrollPane2.setViewportView(myUserPreferencesPanel.$$$getRootComponent$$$());
+        scrollPane1.setViewportView(myUserPreferencesPanel.$$$getRootComponent$$$());
     }
 
     /**

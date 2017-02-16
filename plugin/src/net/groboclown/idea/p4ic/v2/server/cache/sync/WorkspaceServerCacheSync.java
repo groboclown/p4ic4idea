@@ -92,7 +92,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
      * @return update states
      */
     @NotNull
-    public Collection<P4FileUpdateState> fromOpenedToAction(
+    Collection<P4FileUpdateState> fromOpenedToAction(
             @NotNull final Project project,
             @NotNull final List<IExtendedFileSpec> fileSpecs,
             @NotNull AlertManager alerts) {
@@ -175,10 +175,11 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         String relClientPath = clientPath.substring(clientPrefix.length());
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
         if (workspaceRoots.isEmpty()) {
-            invalidRootsException.fillInStackTrace();
-            alerts.addCriticalError(new InvalidRootsHandler(project,
-                    workspaceRoots,
-                    cache.getClientServerId(), invalidRootsException), invalidRootsException);
+            // This is an invalid state, and it means that our workspace wasn't loaded.
+            // invalidRootsException.fillInStackTrace();
+            // alerts.addCriticalError(new InvalidRootsHandler(project,
+            //         workspaceRoots,
+            //         cache.getClientServerId(), invalidRootsException), invalidRootsException);
             return null;
         }
         for (String workspaceRoot : workspaceRoots) {
@@ -228,7 +229,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         return cachedServerWorkspace.getName();
     }
 
-    public P4ClientFileMapping getClientMappingFor(final FilePath file) {
+    P4ClientFileMapping getClientMappingFor(final FilePath file) {
         return fileRepo.getByLocation(file);
     }
 
@@ -253,7 +254,10 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
             LOG.info("Called getClientRoots() on a disposed project");
             return Collections.emptyList();
         }
-        final List<VirtualFile> projectRoots = P4Vcs.getInstance(project).getVcsRoots();
+        List<VirtualFile> projectRoots = P4Vcs.getInstance(project).getVcsRoots();
+        if (projectRoots.isEmpty()) {
+            projectRoots = Collections.singletonList(project.getBaseDir());
+        }
         final List<String> workspaceRoots = cachedServerWorkspace.getRoots();
         if (LOG.isDebugEnabled()) {
             LOG.debug("Finding client roots for " + cachedServerWorkspace.getName());
@@ -270,6 +274,9 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                 // "null" mapping only matters if we're on Windows.  Otherwise, ignore it.
                 if (SystemInfo.isWindows) {
                     // It should check the mappings to see which ones are under the project roots.
+                    // Note that if we're on Windows, then this is the only
+                    // allowable root (windows clients must have their root
+                    // be in the "root" slot, not in any "altroot".
                     return findClientMappingsUnder(projectRoots);
                 }
                 continue;
@@ -280,12 +287,17 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                 // Valid workspace root directory (can be on this workstation).
                 for (VirtualFile rootVf : projectRoots) {
                     FilePath rootFp = FilePathUtil.getFilePath(rootVf);
-                    if (rootFp.isUnder(fp, false)) {
+                    // "FilePath.isUnder" has been questionable in its implementation.
+                    if (FilePathUtil.isSameOrUnder(fp, rootFp)) {
                         ret.add(rootVf);
                         // keep searching the project roots
-                    } else if (fp.isUnder(rootFp, false)) {
+                    } else if (FilePathUtil.isSameOrUnder(rootFp, fp)) {
+                        // Matched the workspace root, so use that.
+                        // No need to keep searching, because a match
+                        // on the workspace root means that there's nothing
+                        // else going to be higher.
+                        ret.clear();
                         ret.add(fp.getVirtualFile());
-                        // matched the workspace root, so use that.
                         break;
                     }
 
@@ -294,8 +306,15 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
             if (!ret.isEmpty()) {
                 return ret;
             }
+            if (SystemInfo.isWindows) {
+                // Special case: Windows clients *must* have the
+                // windows path be the root path, and not be in the
+                // alt root.
+                break;
+            }
         }
         // no root found.
+        LOG.warn("No client root (" + workspaceRoots + ") mapped under project VCS roots (" + projectRoots + ")");
         return null;
     }
 
@@ -382,6 +401,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                     getCachedClientName(),
                     exec.getServerConnectedController()),
                     null);
+            return;
         }
         List<String> roots = new ArrayList<String>();
         if (client.getRoot() == null) {
@@ -403,27 +423,13 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
 
         boolean doRefresh = false;
 
-        // the roots can be different; if the new roots are not a superset
-        // of the existing roots, then we trigger a refresh.
-        // Loop through the old roots, and compare to the list of new roots.
-        // If a new root doesn't match the old root, assume it's inserted,
-        // and keep searching through the new roots.  If we run out of new roots
-        // before we hit the end of the old root list, then we know that the list
-        // has changed.
 
-        Iterator<String> newRootsIter = roots.iterator();
-        oldRootLoop:
-        for (String oldRoot : cachedServerWorkspace.getRoots()) {
-            while (newRootsIter.hasNext()) {
-                String newRoot = newRootsIter.next();
-                if (newRoot.equals(oldRoot)) {
-                    continue oldRootLoop;
-                }
-            }
-            // finished the new roots loop without a match to the current old root.
-            // refresh!
+        // There may be cases where a change in the roots of a client
+        // mean that we don't have to refresh our state.  However, because root
+        // changing is usually a rare occurrence, we can just say that if the
+        // roots change, then just force a refresh.
+        if (! roots.equals(cachedServerWorkspace.getRoots())) {
             doRefresh = true;
-            break;
         }
         cachedServerWorkspace.setRoots(roots);
 
@@ -431,7 +437,8 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         // The mappings need to match up exactly.
         // There are circumstances where this doesn't need to be the case
         // (new depot locations are added to the client that weren't there
-        // originally), but that is troublesome to detect.
+        // originally), but that is troublesome to detect.  Additionally,
+        // those situations are rare.
 
         final List<ViewMapping> oldMappings = cachedServerWorkspace.getViewMappings();
         final List<IClientViewMapping> newMappings = client.getClientView().getEntryList();
@@ -449,10 +456,16 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                     break;
                 }
             }
+            if (! doRefresh && (newIter.hasNext() || oldIter.hasNext())) {
+                doRefresh = true;
+            }
         }
         cachedServerWorkspace.setViewMappings(newMappings);
 
-        // refreshed the root directories, so the exception can be different.
+        // Create a new exception so that it's different from the previous ones.
+        // Note that we want to share an exception object so that the user isn't
+        // told about this error over and over (the Alert Manager remembers the
+        // exceptions its handled).
         invalidRootsException = new VcsException("no valid roots");
 
         if (doRefresh) {

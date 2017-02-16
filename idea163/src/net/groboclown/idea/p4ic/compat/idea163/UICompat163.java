@@ -34,10 +34,12 @@ public class UICompat163 extends UICompat {
 
     @Override
     public boolean editVcsConfiguration(Project project, Configurable configurable) {
+        // FIXME This has unsafe modality in some cases.
         return ShowSettingsUtil.getInstance().editConfigurable(
                 project,
                 ShowSettingsUtilImpl.createDimensionKey(configurable),
                 configurable,
+                // Show apply button?
                 true);
     }
 

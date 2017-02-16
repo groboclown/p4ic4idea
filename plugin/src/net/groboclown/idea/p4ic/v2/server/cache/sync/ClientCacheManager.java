@@ -182,6 +182,7 @@ public class ClientCacheManager {
     }
 
     public boolean hasClientRoots(@NotNull Project project) {
+
         return workspace.getSimpleClientRoots(project) != null;
     }
 

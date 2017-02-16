@@ -3,8 +3,6 @@
 ## Critical
 
 1. Connection UI critical bugs
-    * The refresh button, when first clicked with no updates to the config, causes
-        errors.  Looks like the initial config isn't loaded into it.
 1. "Perforce password (%'P4PASSWD'%) invalid or unset."
     Update checks for this error code.  Additionally, it seems that an explicitly
     stored plaintext password is not used?
@@ -15,36 +13,33 @@
 1. ServerRunner does not perform authentication attempt.
     - This comes from the throwing of P4LoginException, which isn't handled as "needs password".
     - Test out fix.
+1. The background AWT spinner icons should have the idle icon be an empty icon, rather than null.
+    It should always be visible.  This way, it takes up the correct space, and doesn't cause
+    a resize to the elements around it.
+1. Multiple server connections are active at once, each one with its own password management.
+    * Figure out why the multiples are being created.  Are they with a different ID?  Are they
+        just the loaded cached servers, each trying to refresh itself?  Perhaps there really are
+        three copies all active, one per connection queue?
+1. Passwords are not being saved between sessions.
+    * Limitation introduced in new version of Idea?
+    * Allow for passwords to be saved "encoded" as user option?
 1. Connection UI bugs
-    * Clicking on an error to open the config does not show the connection information.
-    * Changing the config always checks the connection.  This should only be done when the
-        user asks for it.
-        * Turned off (commented out "refresh" in the listener of the refresh panel)
-            - This causes the "refresh" button to not load the new config.  There needs to
-              be a separate code here.
-    * The connection is tested when the config is loaded.  However, if the connection
-        fails, then the user gets big fat error dialogs.  These should instead be added
-        to the connection problem list.  The only thing that should generate a pop-up is
-        a request for a password.  All errors, except for passwords, should be kept
-        as messages on the resolved panel.
-        * When this is fixed, turn on the refresh panel listener for updates.
-            (uncomment the listener body in the refresh panel)
-        - Test out fix.
     * Loading the config by itself (say, from an error message) does not populate the
         config settings.
+    * ResolvedPropertiesPanel should have better control over refreshing the configuration.
+        Re-examine the conditions where the properties are loaded, and ensure that the
+        configuration stack is reloaded at the right points.  See the "FIXME" comment
+        around this point.
     * Client name property field doesn't seem to work right.  It incorrectly recognizes
         a single config as multiple directories.  It also doesn't get loaded with the
         configs, so it doesn't show the list.
     * Uses a splitter to try to keep the larger scroll bar from appearing.  The
         different layout attempts all fail because the outer scroll pane, which is intended
-        as a "final attempt", is taking precedent.  What should really happen is the inner
-        containers within the split pane should have their own scroll panes, and the outer one
-        is removed.
+        as a "final attempt", is taking precedent.
+        - Splitter seems fine.  Try instead to remove the outer scroll pane.
     * The list of client directories, when refreshed, changes to the first entry, rather than
         staying on the previously selected one.
         - Test out fix
-    * When first refreshed, the properties panel says that there are no configs.  You need to
-        explicitly select a path, even if one is already selected, to show it.
 1. Switch P4ProjectConfigComponent to use a (local class) state object.  That means including "transient"
     key words.  A little bit of this work has started.
 1. P4MultipleConnectionWidget could have some nice work
@@ -76,32 +71,6 @@
 
 ## Exception
 
-This one is the really big blocker.
-
-```
-Caused by: com.perforce.p4java.exception.AccessException: Access for user 'nouser' has not been enabled by '%'p4 protect'%'.
-        at net.groboclown.idea.p4ic.v2.server.connection.AuthenticatedServer.remakeException(AuthenticatedServer.java:505)
-        at net.groboclown.idea.p4ic.v2.server.connection.AuthenticatedServer.checkoutServer(AuthenticatedServer.java:123)
-        at net.groboclown.idea.p4ic.v2.server.connection.ClientExec$1.run(ClientExec.java:148)
-        at net.groboclown.idea.p4ic.v2.server.connection.ServerRunner.p4RunWithSkippedPasswordCheck(ServerRunner.java:209)
-        ... 39 more
-Caused by: com.perforce.p4java.exception.AuthenticationFailedException: Access for user 'nouser' has not been enabled by '%'p4 protect'%'.
-        at com.perforce.p4java.impl.mapbased.server.Server.createExceptionFromMessage(Server.java:4057)
-        at com.perforce.p4java.impl.mapbased.server.Server.handleErrorStr(Server.java:4920)
-        at com.perforce.p4java.impl.mapbased.server.Server.login(Server.java:650)
-        at net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator$2.exec(ServerAuthenticator.java:259)
-        at net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator$2.exec(ServerAuthenticator.java:249)
-        at net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator.runExec(ServerAuthenticator.java:337)
-        at net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator.authenticate(ServerAuthenticator.java:249)
-        at net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator.authenticate(ServerAuthenticator.java:200)
-        at net.groboclown.idea.p4ic.v2.server.connection.AuthenticatedServer$1.with(AuthenticatedServer.java:276)
-        at net.groboclown.idea.p4ic.v2.server.connection.AuthenticatedServer$1.with(AuthenticatedServer.java:271)
-        at net.groboclown.idea.p4ic.compat.auth.OneUseString.use(OneUseString.java:48)
-```
-
-
-## Exception
-
 ```
 Cannot run synchronous submitTransactionAndWait from invokeLater. Please use asynchronous submit*Transaction. See TransactionGuard FAQ for details.
 Transaction: com.intellij.openapi.options.newEditor.SettingsDialog$$Lambda$1422/688691600@66cc04f6
@@ -121,7 +90,10 @@ java.lang.Throwable
 
 
 ## Exception
-    
+
+- Should be fixed now.
+- Test fix.
+
 ```
 INFO - idea.p4ic.config.ConfigProblem - ConfigProblem from null
 net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException: Invalid Perforce client: prodsc.austx.zilliant.com:1666
@@ -160,6 +132,11 @@ java.lang.Throwable
 
 
 ## Exception
+
+- There are still situations where this can happen, but one situation has been removed.  This specific one
+    was due to the workspace not being pulled down yet.  For some reason, it didn't sync (or have loaded from disk
+    the state object) the workspace.
+- Test Fix
 
 ```
 INFO - server.connection.AlertManager - Critical error
@@ -210,6 +187,45 @@ com.intellij.openapi.vcs.VcsException: no valid roots
 ```
 Cannot run synchronous submitTransactionAndWait from invokeLater. Please use asynchronous submit*Transaction. See TransactionGuard FAQ for details.
 Transaction: com.intellij.openapi.options.newEditor.SettingsDialog$$Lambda$1464/594451732@31288e55
+java.lang.Throwable
+	at com.intellij.openapi.diagnostic.Logger.error(Logger.java:132)
+	at com.intellij.openapi.application.TransactionGuardImpl.submitTransactionAndWait(TransactionGuardImpl.java:155)
+	at com.intellij.openapi.options.newEditor.SettingsDialog.show(SettingsDialog.java:77)
+	at com.intellij.openapi.ui.DialogWrapper.showAndGet(DialogWrapper.java:1652)
+	at com.intellij.ide.actions.ShowSettingsUtilImpl.editConfigurable(ShowSettingsUtilImpl.java:238)
+	at com.intellij.ide.actions.ShowSettingsUtilImpl.editConfigurable(ShowSettingsUtilImpl.java:199)
+	at net.groboclown.idea.p4ic.compat.idea163.UICompat163.editVcsConfiguration(UICompat163.java:37)
+	at net.groboclown.idea.p4ic.v2.ui.alerts.AbstractErrorHandler.tryConfigChange(AbstractErrorHandler.java:82)
+	at net.groboclown.idea.p4ic.v2.ui.alerts.InvalidRootsHandler.handleError(InvalidRootsHandler.java:70)
+	at net.groboclown.idea.p4ic.v2.server.connection.AlertManager$ErrorMsg.runHandlerInEDT(AlertManager.java:409)
+	at net.groboclown.idea.p4ic.v2.server.connection.AlertManager.handleError(AlertManager.java:299)
+	at net.groboclown.idea.p4ic.v2.server.connection.AlertManager.access$800(AlertManager.java:50)
+	at net.groboclown.idea.p4ic.v2.server.connection.AlertManager$ErrorMsg.run(AlertManager.java:400)
+	at java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:301)
+	at java.awt.EventQueue.dispatchEventImpl(EventQueue.java:762)
+	at java.awt.EventQueue.access$500(EventQueue.java:98)
+	at java.awt.EventQueue$3.run(EventQueue.java:715)
+	at java.awt.EventQueue$3.run(EventQueue.java:709)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:80)
+	at java.awt.EventQueue.dispatchEvent(EventQueue.java:732)
+	at com.intellij.ide.IdeEventQueue.defaultDispatchEvent(IdeEventQueue.java:827)
+	at com.intellij.ide.IdeEventQueue._dispatchEvent(IdeEventQueue.java:655)
+	at com.intellij.ide.IdeEventQueue.dispatchEvent(IdeEventQueue.java:365)
+	at java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:201)
+	at java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:116)
+	at java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:105)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
+	at java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
+```
+
+
+## Exception
+
+```
+Cannot run synchronous submitTransactionAndWait from invokeLater. Please use asynchronous submit*Transaction. See TransactionGuard FAQ for details.
+Transaction: com.intellij.openapi.options.newEditor.SettingsDialog$$Lambda$1146/177452819@d7c8766
 java.lang.Throwable
 	at com.intellij.openapi.diagnostic.Logger.error(Logger.java:132)
 	at com.intellij.openapi.application.TransactionGuardImpl.submitTransactionAndWait(TransactionGuardImpl.java:155)

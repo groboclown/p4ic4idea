@@ -226,9 +226,13 @@ public class ResolvedPropertiesPanel {
                 new BackgroundAwtActionRunner.BackgroundAwtAction<String>() {
                     @Override
                     public String runBackgroundProcess() {
-                        if (selected.config != null) {
-                            selected.config.reload();
-                        }
+                        // FIXME reloading the config is important, but refreshing just the
+                        // one config isn't the right way to do this.  We need to refresh
+                        // the whole stack of configs.  Note that it might change the
+                        // paths, though.
+                        // if (selected.config != null) {
+                        //     selected.config.reload();
+                        // }
                         StringBuilder sb = createResolvedPropertiesText(selected);
                         return sb.toString();
                     }

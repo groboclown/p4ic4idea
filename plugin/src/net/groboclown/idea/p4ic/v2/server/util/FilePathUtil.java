@@ -109,6 +109,19 @@ public final class FilePathUtil {
         return ret;
     }
 
+    public static boolean isSameOrUnder(@NotNull FilePath parent, @NotNull FilePath child) {
+        FilePath prev;
+        FilePath next = child;
+        do {
+            if (parent.equals(next)) {
+                return true;
+            }
+            prev = next;
+            next = next.getParentPath();
+        } while (next != null && ! next.equals(prev));
+        return false;
+    }
+
     /**
      *
      * @param project

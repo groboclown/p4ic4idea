@@ -36,7 +36,7 @@ public class DisconnectedHandler extends AbstractErrorHandler {
 
     @Override
     public void handleError(@NotNull final Date when) {
-        LOG.warn("Disconnected from Perforce server");
+        LOG.warn("Disconnected from Perforce server " + getServerKey());
 
         if (isInvalid() || isWorkingOnline()) {
             return;

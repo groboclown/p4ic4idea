@@ -43,7 +43,8 @@ public class InvalidRootsHandler extends AbstractErrorHandler {
 
     @Override
     public void handleError(@NotNull final Date when) {
-        LOG.warn("Invalid client root", getException());
+        LOG.warn("Invalid client root for server " + getServerKey() + " with roots " + workspaceRoots,
+                getException());
 
         if (isInvalid()) {
             return;

@@ -93,6 +93,11 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	protected static final String CORE_AUTH_FAIL_STRING_4 = "Your session was logged out";
 
 	/**
+	 * Signals access (login) needed
+	 */
+	protected static final String CORE_AUTH_FAIL_STRING_5 = "Perforce password (%'P4PASSWD'%)";
+
+	/**
 	 * P4TICKETS environment variable
 	 */
 	public static final String P4TICKETS_ENV_VAR = "P4TICKETS";
@@ -4930,12 +4935,14 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	public IFileSpec handleFileReturn(Map<String, Object> map)
-									throws AccessException, ConnectionException {
+									// p4ic4idea: expand exception types
+									throws P4JavaException {
 		return handleFileReturn(map, this.client);
 	}
 	
 	public IFileSpec handleFileReturn(Map<String, Object> map, IClient client)
-					throws AccessException, ConnectionException {
+					// p4ic4idea: expand exception types
+					throws P4JavaException {
 		if (map != null) {
 			// p4ic4idea: use IServerMessage instead of string
 			final IServerMessage err = handleFileErrorStr(map);
@@ -4953,12 +4960,14 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 	
 	public IFileSpec handleIntegrationFileReturn(Map<String, Object> map, IClient client)
-							throws AccessException, ConnectionException {
+							// p4ic4idea: expand exception types
+							throws P4JavaException {
 		return handleIntegrationFileReturn(map, false);
 	}
 	
 	public IFileSpec handleIntegrationFileReturn(Map<String, Object> map, boolean ignoreInfo)
-							throws AccessException, ConnectionException {
+							// p4ic4idea: expand exception types
+							throws P4JavaException {
 		if (map != null) {
 			// p4ic4idea: use IServerMessage instead of string
 			final IServerMessage err = handleFileErrorStr(map);
@@ -4981,20 +4990,13 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	
 	// p4ic4idea: use IServerMessage instead of string
 	public IServerMessage handleFileErrorStr(Map<String, Object> map)
-			throws ConnectionException, AccessException {
+			throws P4JavaException {
 		final IServerMessage err = getErrorOrInfoStr(map);
 		
 		if (err != null) {
 			// p4ic4idea: more precise errors
-			try {
-				throw createExceptionFromMessage(err);
-			} catch (ConnectionException e) {
-				throw e;
-			} catch (AccessException e) {
-				throw e;
-			} catch (P4JavaException e) {
-				throw new ConnectionException(e);
-			}
+			// also, remove the wrapped ConnectionException issue.
+			throw createExceptionFromMessage(err);
 		}
 		
 		return null;
@@ -5503,7 +5505,8 @@ public abstract class Server implements IServerControl, IOptionsServer {
 	}
 
 	protected List<IChangelist> processInterchangeMaps(List<Map<String, Object>> resultMaps, boolean showFiles)
-									throws ConnectionException, AccessException, RequestException {
+									// p4ic4idea: expand exception types
+									throws P4JavaException {
 		List<IChangelist> interchangeList = new ArrayList<IChangelist>();
 		
 		if (resultMaps != null) {

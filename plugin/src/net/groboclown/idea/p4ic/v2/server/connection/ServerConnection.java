@@ -95,12 +95,11 @@ public class ServerConnection {
     }
 
 
-    public ServerConnection(@NotNull
-    final AlertManager alertManager,
-            @NotNull ClientCacheManager cacheManager,
-            @NotNull ClientConfig config, @NotNull ServerStatusController statusController,
-            @NotNull Synchronizer.ServerSynchronizer.ConnectionSynchronizer synchronizer,
-            @Nullable ClientExec initial) {
+    public ServerConnection(@NotNull final AlertManager alertManager,
+            @NotNull final ClientCacheManager cacheManager,
+            @NotNull final ClientConfig config, @NotNull final ServerStatusController statusController,
+            @NotNull final Synchronizer.ServerSynchronizer.ConnectionSynchronizer synchronizer,
+            @Nullable final ClientExec initial) {
         this.synchronizer = synchronizer;
         this.alertManager = alertManager;
         this.cacheManager = cacheManager;

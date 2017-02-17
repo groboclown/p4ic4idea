@@ -41,7 +41,7 @@ public class InvalidClientHandler extends AbstractErrorHandler {
 
     @Override
     public void handleError(@NotNull final Date when) {
-        LOG.warn("Invalid client " + clientName);
+        LOG.warn("Invalid client " + clientName + " for server " + getServerKey());
 
         ApplicationManager.getApplication().assertIsDispatchThread();
 

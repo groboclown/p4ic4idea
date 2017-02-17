@@ -29,9 +29,9 @@ public class ExceptionUtil
     private static final String SESSION_EXPIRED_MESSAGE_1 = "Your session has expired, please login again.";
     private static final String SESSION_EXPIRED_MESSAGE_2 = "Your session has expired";
     private static final String SESSION_EXPIRED_MESSAGE_3 = "Your session has expired, please %'login'% again.";
-    private static final String PASSWORD_INVALID_MESSAGE_1 = "Perforce password (P4PASSWD) invalid or unset.";
-    private static final String PASSWORD_INVALID_MESSAGE_2 = "Perforce password (P4PASSWD)";
-    private static final String PASSWORD_INVALID_MESSAGE_3 = "Perforce password (%'P4PASSWD'%)";
+    private static final String LOGIN_NEEDED_MESSAGE_1 = "Perforce password (P4PASSWD) invalid or unset.";
+    private static final String LOGIN_NEEDED_MESSAGE_2 = "Perforce password (P4PASSWD)";
+    private static final String LOGIN_NEEDED_MESSAGE_3 = "Perforce password (%'P4PASSWD'%)";
 
     private static final String PASSWORD_UNNECCESSARY_MESSAGE_1 = "'login' not necessary";
     private static final String PASSWORD_UNNECCESSARY_MESSAGE_2 = "%'login'% not necessary";
@@ -44,30 +44,33 @@ public class ExceptionUtil
     }
 
     public static boolean isLoginRequiresPasswordProblem(@NotNull P4JavaException ex) {
-        return ex instanceof LoginRequiresPasswordException;
+        if (ex instanceof LoginRequiresPasswordException) {
+            return true;
+        }
+        if (ex instanceof RequestException) {
+            RequestException rex = (RequestException) ex;
+            return (rex.hasMessageFragment(LOGIN_NEEDED_MESSAGE_1)
+                    || rex.hasMessageFragment(LOGIN_NEEDED_MESSAGE_2)
+                    || rex.hasMessageFragment(LOGIN_NEEDED_MESSAGE_3)
+                    || (rex.getGenericCode() == MessageGenericCode.EV_CONFIG &&
+                    rex.getSubCode() == 21));
+        }
+        if (ex instanceof AccessException) {
+            AccessException aex = (AccessException) ex;
+            // see P4ServerName for a list of the authentication failure messages.
+            return (aex.hasMessageFragment(LOGIN_NEEDED_MESSAGE_1)
+                    || aex.hasMessageFragment(LOGIN_NEEDED_MESSAGE_2)
+                    || aex.hasMessageFragment(LOGIN_NEEDED_MESSAGE_3));
+        }
+        return false;
     }
 
     public static boolean isLoginPasswordProblem(@NotNull P4JavaException ex) {
         // TODO extend with correct error code checking.
 
-        if (ex instanceof RequestException) {
-            RequestException rex = (RequestException) ex;
-            return (rex.hasMessageFragment(PASSWORD_INVALID_MESSAGE_1)
-                    || rex.hasMessageFragment(PASSWORD_INVALID_MESSAGE_2)
-                    || rex.hasMessageFragment(PASSWORD_INVALID_MESSAGE_3)
-                    || (rex.getGenericCode() == MessageGenericCode.EV_CONFIG &&
-                        rex.getSubCode() == 21));
-        }
         if (ex instanceof AuthenticationFailedException) {
             AuthenticationFailedException afex = (AuthenticationFailedException) ex;
             return afex.getErrorType() == AuthenticationFailedException.ErrorType.PASSWORD_INVALID;
-        }
-        if (ex instanceof AccessException) {
-            AccessException aex = (AccessException) ex;
-            // see P4ServerName for a list of the authentication failure messages.
-            return (aex.hasMessageFragment(PASSWORD_INVALID_MESSAGE_1)
-                    || aex.hasMessageFragment(PASSWORD_INVALID_MESSAGE_2)
-                    || aex.hasMessageFragment(PASSWORD_INVALID_MESSAGE_3));
         }
         return false;
     }

@@ -148,11 +148,12 @@ public class P4OptionsServerConnectionFactory {
 
         if (serverConfig.hasAuthTicket() && serverConfig.getAuthTicket() != null) {
             props.setProperty(PropertyDefs.TICKET_PATH_KEY, serverConfig.getAuthTicket().getAbsolutePath());
-        // } else if (serverConfig.getPlaintextPassword() != null) {
-        //     // This property key doesn't actually seem to do anything.
-        //     // A real login is still required.
-        //     props.setProperty(PropertyDefs.PASSWORD_KEY, serverConfig.getPlaintextPassword());
         }
+        // if (knownPassword != null) {
+        //     // This doesn't actually do anything with the default connection that we use.
+        //     LOG.info("Setting password key (length " + knownPassword.length() + ")");
+        //     props.setProperty(PropertyDefs.PASSWORD_KEY, knownPassword);
+        // }
         if (serverConfig.hasTrustTicket() && serverConfig.getTrustTicket() != null) {
             props.setProperty(PropertyDefs.TRUST_PATH_KEY, serverConfig.getTrustTicket().getAbsolutePath());
         }

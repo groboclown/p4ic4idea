@@ -870,8 +870,18 @@ public class Client extends ClientSummary implements IClient {
 					CmdSpec.HAVE, Server.getPreferredPathArray(null, fileSpecs), null);
 		
 		if (resultMaps != null) {
-			for (Map<String, Object> result : resultMaps) {				
-				haveList.add(this.serverImpl.handleFileReturn(result, this));
+			for (Map<String, Object> result : resultMaps) {
+				try {
+					haveList.add(this.serverImpl.handleFileReturn(result, this));
+				// p4ic4idea: with the expanded exception throw, need to specially handle the
+				// problem here.
+				} catch (ConnectionException e) {
+					throw e;
+				} catch (AccessException e) {
+					throw e;
+				} catch (P4JavaException e) {
+					throw new ConnectionException(e);
+				}
 			}
 		}
 		
@@ -935,7 +945,17 @@ public class Client extends ClientSummary implements IClient {
 		
 		if (resultMaps != null) {
 			for (Map<String, Object> result : resultMaps) {
-				resultList.add(this.serverImpl.handleFileReturn(result, this));
+				try {
+					resultList.add(this.serverImpl.handleFileReturn(result, this));
+				// p4ic4idea: with the expanded exception throw, need to specially handle the
+				// problem here.
+				} catch (ConnectionException e) {
+					throw e;
+				} catch (AccessException e) {
+					throw e;
+				} catch (P4JavaException e) {
+					throw new ConnectionException(e);
+				}
 			}
 		}
 		
@@ -1197,12 +1217,23 @@ public class Client extends ClientSummary implements IClient {
 				
 				if (resultMaps != null) {
 					// This returns *two* entries in normal cases...
-					if (resultMaps.size() > 1) {
-						return this.serverImpl.handleIntegrationFileReturn(resultMaps.get(1), true);
-					} else {
-						return this.serverImpl.handleIntegrationFileReturn(resultMaps.get(0), false);
+					try {
+						if (resultMaps.size() > 1) {
+							return this.serverImpl.handleIntegrationFileReturn(resultMaps.get(1), true);
+						} else {
+							return this.serverImpl.handleIntegrationFileReturn(resultMaps.get(0), false);
+						}
+					// p4ic4idea: with the expanded exception throw, need to specially handle the
+					// problem here.
+					} catch (ConnectionException e) {
+						throw e;
+					} catch (AccessException e) {
+						throw e;
+					} catch (RequestException e) {
+						throw e;
+					} catch (P4JavaException e) {
+						throw new ConnectionException(e);
 					}
-					
 				}
 			} catch (IOException exc) {
 				Log.error("local file I/O error on resolve: " + exc.getMessage());
@@ -1486,8 +1517,20 @@ public class Client extends ClientSummary implements IClient {
 		
 		List<IFileSpec> resultList = new ArrayList<IFileSpec>();
 		if (resultMaps != null) {
-			for (Map<String, Object> result : resultMaps) {	
-				resultList.add(this.serverImpl.handleFileReturn(result, this));
+			for (Map<String, Object> result : resultMaps) {
+				try {
+					resultList.add(this.serverImpl.handleFileReturn(result, this));
+				// p4ic4idea: with the expanded exception throw, need to specially handle the
+				// problem here.
+				} catch (ConnectionException e) {
+					throw e;
+				} catch (AccessException e) {
+					throw e;
+				} catch (RequestException e) {
+					throw e;
+				} catch (P4JavaException e) {
+					throw new ConnectionException(e);
+				}
 			}
 		}
 		// Set the server's current client back to the previous one

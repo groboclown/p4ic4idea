@@ -35,7 +35,7 @@ public class SSLKeyStrengthProblemHandler extends AbstractErrorHandler {
 
     @Override
     public void handleError(@NotNull final Date when) {
-        LOG.warn("SSL key strength problem", getException());
+        LOG.warn("SSL key strength problem for server " + getServerKey(), getException());
 
         if (isInvalid()) {
             return;

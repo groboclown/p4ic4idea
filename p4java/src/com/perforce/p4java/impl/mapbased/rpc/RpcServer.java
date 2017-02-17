@@ -160,15 +160,17 @@ public abstract class RpcServer extends Server {
                     CORE_AUTH_FAIL_STRING_2,
                     CORE_AUTH_FAIL_STRING_3,
                     CORE_AUTH_FAIL_STRING_4,
+                    CORE_AUTH_FAIL_STRING_5,
                     AUTH_FAIL_STRING_1,
                     AUTH_FAIL_STRING_2
     };
     private static final AuthenticationFailedException.ErrorType[] accessErrTypes = {
             // each index maps to the error message
-            AuthenticationFailedException.ErrorType.PASSWORD_INVALID,
+            AuthenticationFailedException.ErrorType.NOT_LOGGED_IN,
             AuthenticationFailedException.ErrorType.NOT_LOGGED_IN,
             AuthenticationFailedException.ErrorType.SESSION_EXPIRED,
             AuthenticationFailedException.ErrorType.SESSION_EXPIRED,
+            AuthenticationFailedException.ErrorType.NOT_LOGGED_IN,
             AuthenticationFailedException.ErrorType.SSO_LOGIN,
             AuthenticationFailedException.ErrorType.PASSWORD_INVALID
     };
@@ -526,7 +528,7 @@ public abstract class RpcServer extends Server {
     }
 
     /**
-     * @see com.perforce.p4java.impl.mapbased.server.Server#getAuthFailType(java.lang.String)
+     * @see com.perforce.p4java.impl.mapbased.server.Server#getAuthFailType(IServerMessage)
      */
     // p4ic4idea change: takes an IServerMessage instead of a string.
     @Override

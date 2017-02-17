@@ -15,8 +15,14 @@
     * This has ripple effects throughout the plugin.  Hopefully, it will make
       the code more stable.
     * This change allows for more complex configuration options.  Specifically,
-      the `P4ENVIRO` support is handled better.
+      the `P4ENVIRO` support is handled better.  Still no support for the
+      per-server charset setting, though.
     * Compatibility with your previous settings should mostly be maintained.
+      If you see an issue with your connection, try updating the connection
+      settings.
+    * Hopefully, the default setup for turning on the Perforce VCS will now match
+      your environment setup.  The goal here is to have the base setup load
+      the user configuration, just like running the "p4" command line tool.
 * Bug fixes.
     * Changed the error reporting for SSL encryption library problem, when it comes
       from a TrustException.  The error reported now includes information about the
@@ -27,6 +33,7 @@
       dialog don't pop up at once. 
     * Many of the caches now clear their state when the project configuration
       is updated.
+    * Big change to better detect when the user's password is necessary.
 
 
 ## ::v0.7.19::

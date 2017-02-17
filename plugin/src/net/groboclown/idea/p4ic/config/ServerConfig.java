@@ -14,8 +14,6 @@
 package net.groboclown.idea.p4ic.config;
 
 import com.intellij.openapi.util.io.FileUtil;
-import com.perforce.p4java.env.PerforceEnvironment;
-import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.part.DataPart;
 import net.groboclown.idea.p4ic.config.part.PartValidation;
 import org.jetbrains.annotations.NotNull;
@@ -54,7 +52,7 @@ public final class ServerConfig {
     private final String serverId;
 
     @NotNull
-    public static String getServerIdForDataPart(@NotNull DataPart part) {
+    static String getServerIdForDataPart(@NotNull DataPart part) {
         StringBuilder sb = new StringBuilder();
         if (part.hasServerNameSet() && part.getServerName() != null) {
             sb.append(part.getServerName().getFullPort());
@@ -67,7 +65,7 @@ public final class ServerConfig {
             .append(part.hasPasswordSet()
                 ? (part.getPlaintextPassword() == null
                     ? ""
-                    : part.getPlaintextPassword())
+                    : "<password>")
                 : null)
             .append(SEP)
             .append(part.hasAuthTicketFileSet() ? part.getAuthTicketFile() : null)

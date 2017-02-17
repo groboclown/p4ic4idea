@@ -174,6 +174,7 @@ class AuthenticatedServer {
     ServerAuthenticator.AuthenticationStatus authenticate()
             throws InterruptedException, P4JavaException {
         if (project != null && project.isDisposed()) {
+            LOG.info("Can't authenticate: Project disposed for " + this);
             return ServerAuthenticator.DISPOSED;
         }
         if (server == null) {
@@ -181,19 +182,22 @@ class AuthenticatedServer {
             // ClientExec.ServerRunnerConnection.authenticate.  Even that
             // is called only when an unauthorized exception is called.
             // Other than that, this should always assume that it's connected.
+            LOG.info("Can't authenticate: AuthenticatedServer is disposed for " + this);
             return ServerAuthenticator.DISPOSED;
         }
 
         if (invalidLoginStatus != null) {
-            LOG.info("Previous login attempts failed.  Assuming authentication is invalid.");
+            LOG.info("Previous login attempts failed.  Assuming authentication is invalid for " + this);
             return invalidLoginStatus;
         }
 
         ServerAuthenticator.AuthenticationStatus status = authenticator.discoverAuthenticationStatus(server);
         if (status.isAuthenticated()) {
+            LOG.info("Server seems authenticated this " + this);
             return status;
         }
         if (status.isClientSetupProblem()) {
+            LOG.info("Server has client setup problems for " + this);
             return status;
         }
         if (status.isNotConnected()) {
@@ -201,6 +205,7 @@ class AuthenticatedServer {
             // authentication.  If it still fails to connect, then
             // report a problem (it may be a wrong port, or the server
             // could be down).
+            LOG.info("Not connected to server; reconnecting for " + this);
             try {
                 reconnect();
             } catch (URISyntaxException e) {
@@ -208,28 +213,35 @@ class AuthenticatedServer {
             }
             status = authenticator.discoverAuthenticationStatus(server);
             if (status.isAuthenticated()) {
+                LOG.info("Reconnected and seems authenticated for " + this);
                 return status;
             }
             if (status.isNotConnected()) {
+                LOG.info("Reconnected and still not connected for " + this);
                 return status;
             }
             if (status.isClientSetupProblem()) {
+                LOG.info("Reconnected and client setup problem for " + this);
                 return status;
             }
+            // Fall through to continue check.
         }
 
 
         if (status.isPasswordRequired()) {
             // FIXME there is a situation where this can be triggered when the
-            // password has been entered, but hasn't been used.  Should check the
-            // password manager to see if it's been set yet.
+            // password has been entered, but hasn't been used.  That situation
+            // happens wit the "Perforce password (%'P4PASSWD'%) invalid or unset." error.
+            // Need to fix the status generator to have the right status with that
+            // error message.
 
-            LOG.info("User must enter the password");
+            LOG.info("User must enter the password for " + this);
             hasValidatedAuthentication = false;
             return status;
         }
 
         if (status.isAuthenticated()) {
+            LOG.info("Connection seems authenticated for " + this);
             hasValidatedAuthentication = true;
             return status;
         }
@@ -241,9 +253,7 @@ class AuthenticatedServer {
             // and this situation means that we still aren't
             // even after a forced authentication.  So, we'll
             // report this connection as being unauthenticated.
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Assuming actual authentication issue");
-            }
+            LOG.debug("Assuming actual authentication issue for " + this);
 
             // This assumption that the authentication is invalid is too quick to judge.
             // Do not return not-authorized yet
@@ -276,15 +286,19 @@ class AuthenticatedServer {
                     PasswordManager.getInstance().getPassword(project, config.getServerConfig(), false);
             if (status.isPasswordRequired() && password.isNullValue()) {
                 // We don't have a password, but one is required.
+                LOG.info("Don't have a password, but one is required for " + this);
                 return status;
             }
 
+            // FIXME this may only be necessary for "session timed out"
+            // Try explicit login.
             final ServerAuthenticator.AuthenticationStatus previousStatus = status;
             status = password.use(new OneUseString.WithString<ServerAuthenticator.AuthenticationStatus>() {
                 @Override
                 public ServerAuthenticator.AuthenticationStatus with(@Nullable char[] passwd) {
                     final String knownPassword =
                             passwd == null ? null : new String(passwd);
+                    LOG.info("Authenticating using known password for " + this);
                     return authenticator.authenticate(server, config.getServerConfig(),
                             previousStatus, knownPassword);
                 }
@@ -293,7 +307,8 @@ class AuthenticatedServer {
             if (status.isPasswordUnnecessary()) {
                 // This kind of status means that the user is probably authenticated,
                 // so it needs to be handled before the isAuthenticated check.
-                LOG.info("Forgetting user password, because the user doesn't have one for the Perforce account.");
+                LOG.info("Forgetting user password, because the user doesn't have one for the Perforce account.  " +
+                        this);
                 PasswordManager.getInstance().forgetPassword(project, config.getServerConfig());
             }
             if (status.isAuthenticated()) {
@@ -305,7 +320,7 @@ class AuthenticatedServer {
             }
             if (status.isPasswordRequired()) {
                 // Our password is wrong, perhaps.
-                LOG.info("User must enter the password");
+                LOG.info("User must enter the password for " + this);
                 hasValidatedAuthentication = false;
                 loginFailedCount++;
                 return status;
@@ -352,18 +367,40 @@ class AuthenticatedServer {
         if (checkedOutBy != null) {
             throw new P4JavaException("P4ServerName instance already checked out by " + checkedOutBy);
         }
+        final OneUseString password =
+                PasswordManager.getInstance().getPassword(project, config.getServerConfig(), false);
         withConnectionLock(new WithConnectionLock<Void>() {
             @Override
             public Void call() throws P4JavaException, URISyntaxException {
                 disconnect();
-                server = reconnect(config, tempDir);
+                try {
+                    server = password.use(new OneUseString.WithStringThrows<IOptionsServer, Exception>() {
+                        @Override
+                        public IOptionsServer with(@Nullable char[] passwd)
+                                throws Exception {
+                            final String knownPassword =
+                                    passwd == null ? null : new String(passwd);
+                            return reconnect(config, tempDir, knownPassword);
+                        }
+                    });
+                } catch (P4JavaException e) {
+                    throw e;
+                } catch (URISyntaxException e) {
+                    throw e;
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new P4JavaException(e);
+                }
+
                 connectedCount++;
                 return null;
             }
         });
     }
 
-    private IOptionsServer reconnect(@NotNull final ClientConfig config, @NotNull final File tempDir)
+    private IOptionsServer reconnect(@NotNull final ClientConfig config, @NotNull final File tempDir,
+            @Nullable final String knownPassword)
             throws P4JavaException, URISyntaxException {
         // Setup logging
         if (Log.getLogCallback() == null) {
@@ -507,6 +544,7 @@ class AuthenticatedServer {
                 ", disconnected# " + disconnectedCount +
                 ", invalidLogin " + invalidLoginStatus +
                 ", validatedLogin? " + hasValidatedAuthentication +
+                ", clientId: " + config.getClientId() +
                 ")";
     }
 

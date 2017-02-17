@@ -36,7 +36,7 @@ public class ConfigurationProblemHandler extends AbstractErrorHandler {
 
     @Override
     public void handleError(@NotNull final Date when) {
-        LOG.warn("Configuration problem", getException());
+        LOG.warn("Configuration problem for server " + getServerKey(), getException());
 
         if (isInvalid()) {
             return;

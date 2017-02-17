@@ -39,7 +39,7 @@ public class SSLFingerprintProblemHandler extends AbstractErrorHandler {
 
     @Override
     public void handleError(@NotNull final Date when) {
-        LOG.warn("SSL fingerprint problem", getException());
+        LOG.warn("SSL fingerprint problem for server " + getServerKey(), getException());
 
         if (isInvalid()) {
             return;

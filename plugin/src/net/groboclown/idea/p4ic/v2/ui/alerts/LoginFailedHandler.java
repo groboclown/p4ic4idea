@@ -40,12 +40,13 @@ public class LoginFailedHandler extends AbstractErrorHandler {
             @NotNull ServerConfig config,
             @NotNull final Exception exception) {
         super(project, connectedController, exception);
+        LOG.info("Generated login failed error for server " + config.getServerId(), exception);
         this.config = config;
     }
 
     @Override
     public void handleError(@NotNull final Date when) {
-        LOG.warn("Login problem", getException());
+        LOG.warn("Login problem for server " + config.getServerId(), getException());
 
         if (isInvalid()) {
             return;

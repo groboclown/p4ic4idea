@@ -41,7 +41,8 @@ public class ClientNameMismatchHandler extends AbstractErrorHandler {
 
     @Override
     public void handleError(@NotNull final Date when) {
-        LOG.warn("Cached client " + cachedClientName + " does not match p4 reported client " + p4ClientName);
+        LOG.warn("Cached client " + cachedClientName + " does not match p4 reported client " + p4ClientName +
+            " for server " + getServerKey());
 
         ApplicationManager.getApplication().assertIsDispatchThread();
 

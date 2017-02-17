@@ -26,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -100,22 +99,16 @@ public class ClientNameDataPart extends DataPartAdapter {
 
 
 
-    public static ConnectionUIConfiguration.ClientResult loadClientNames(@NotNull ClientConfig config) {
+    public static Map<ClientConfig, ConnectionUIConfiguration.ClientResult> loadClientNames(@NotNull Collection<ClientConfig> config) {
         return loadClientNames(ServerConnectionManager.getInstance(), config);
     }
 
 
     @NotNull
-    private static ConnectionUIConfiguration.ClientResult loadClientNames(
+    private static Map<ClientConfig, ConnectionUIConfiguration.ClientResult> loadClientNames(
             @NotNull ServerConnectionManager connectionManager,
-            @NotNull ClientConfig clientConfig) {
-        final Map<ClientConfig, ConnectionUIConfiguration.ClientResult> clientResults =
-                ConnectionUIConfiguration.getClients(
-                        Collections.singletonList(clientConfig), connectionManager);
-        if (clientResults == null || ! clientResults.containsKey(clientConfig)) {
-            throw new IllegalStateException("Did not generate key for config");
-        }
-        return clientResults.get(clientConfig);
+            @NotNull Collection<ClientConfig> clientConfigs) {
+        return ConnectionUIConfiguration.getClients(clientConfigs, connectionManager);
     }
 
     public void addAdditionalProblem(@NotNull ConfigProblem problem) {

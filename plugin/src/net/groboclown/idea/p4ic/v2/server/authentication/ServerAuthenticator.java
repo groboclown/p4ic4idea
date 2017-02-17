@@ -23,6 +23,7 @@ import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.exception.SslException;
+import com.perforce.p4java.option.server.GetClientsOptions;
 import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.config.ServerConfig;
@@ -308,7 +309,10 @@ public class ServerAuthenticator {
             @Override
             public Void exec(@NotNull IOptionsServer server)
                     throws P4JavaException {
-                server.getUsers(null, 1);
+                // Originally, this was "getUsers", but it turns out that this
+                // command can be run without setting a password, even if one
+                // is required.
+                server.getClients(new GetClientsOptions(1, null, null));
                 return null;
             }
         }, server).status;

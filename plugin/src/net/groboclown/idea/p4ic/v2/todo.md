@@ -2,20 +2,13 @@
 
 ## Critical
 
-1. Connection UI critical bugs
-1. "Perforce password (%'P4PASSWD'%) invalid or unset."
-    Update checks for this error code.  Additionally, it seems that an explicitly
-    stored plaintext password is not used?
-
 
 ## General
 
-1. ServerRunner does not perform authentication attempt.
-    - This comes from the throwing of P4LoginException, which isn't handled as "needs password".
-    - Test out fix.
 1. The background AWT spinner icons should have the idle icon be an empty icon, rather than null.
     It should always be visible.  This way, it takes up the correct space, and doesn't cause
     a resize to the elements around it.
+    * Maybe try out `useMask(true)` instead of `setVisible(false)` ?
 1. Multiple server connections are active at once, each one with its own password management.
     * Figure out why the multiples are being created.  Are they with a different ID?  Are they
         just the loaded cached servers, each trying to refresh itself?  Perhaps there really are
@@ -25,9 +18,16 @@
         user responses.  That is, if the connection had an issue
         (could not connect, invalid config, no password, etc), then that state is maintained
         until the user confirms an action to take.
-1. Passwords are not being saved between sessions.
-    * Limitation introduced in new version of Idea?
-    * Allow for passwords to be saved "encoded" as user option?
+        * If this is the case, then there's an issue with the alert manager error stuff
+            synching with the server connection thread.
+        * The state based status should be, then, added to the ServerConnection and the StatusController.
+            This would augment the existing "work offline" status to include much more state.
+            "waitingOnConfigUpdate", "waitingOnUserChoice", "waitingOnPassword", "offline",
+            "online".  The waiting might be condensed down to a single "waitingOnUser".
+            This would mean, though, a thorough check of the dialog classes to make sure they
+            perform the right call to change the state.
+    * Added extra logging on the error handlers to report their server ID.
+1. Why isn't SSLKeyStrengthProblemHandler being used?
 1. Connection UI bugs
     * Loading the config by itself (say, from an error message) does not populate the
         config settings.
@@ -38,14 +38,9 @@
     * Client name property field doesn't seem to work right.  It incorrectly recognizes
         a single config as multiple directories.  It also doesn't get loaded with the
         configs, so it doesn't show the list.
-    * Uses a splitter to try to keep the larger scroll bar from appearing.  The
-        different layout attempts all fail because the outer scroll pane, which is intended
-        as a "final attempt", is taking precedent.
-        - Splitter seems fine.  Try instead to remove the outer scroll pane.
-        - Test fixes.
     * The list of client directories, when refreshed, changes to the first entry, rather than
         staying on the previously selected one.
-        - Test out fix
+        - Test fix
 1. Switch P4ProjectConfigComponent to use a (local class) state object.  That means including "transient"
     key words.  A little bit of this work has started.
 1. P4MultipleConnectionWidget could have some nice work
@@ -73,76 +68,12 @@
        have the "Updating..." text), and the changelist view does not
        have the waiting spinner.  The waiting spinner only seems to
        show up when the explicit refresh is pressed.
+   - Test fix out.
 
 
 ## Exception
 
-```
-Cannot run synchronous submitTransactionAndWait from invokeLater. Please use asynchronous submit*Transaction. See TransactionGuard FAQ for details.
-Transaction: com.intellij.openapi.options.newEditor.SettingsDialog$$Lambda$1422/688691600@66cc04f6
-java.lang.Throwable
-	at com.intellij.openapi.diagnostic.Logger.error(Logger.java:132)
-	at com.intellij.openapi.application.TransactionGuardImpl.submitTransactionAndWait(TransactionGuardImpl.java:155)
-	at com.intellij.openapi.options.newEditor.SettingsDialog.show(SettingsDialog.java:76)
-	at com.intellij.openapi.ui.DialogWrapper.showAndGet(DialogWrapper.java:1652)
-	at com.intellij.ide.actions.ShowSettingsUtilImpl.editConfigurable(ShowSettingsUtilImpl.java:238)
-	at com.intellij.ide.actions.ShowSettingsUtilImpl.editConfigurable(ShowSettingsUtilImpl.java:199)
-	at net.groboclown.idea.p4ic.compat.idea163.UICompat163.editVcsConfiguration(UICompat163.java:37)
-	at net.groboclown.idea.p4ic.v2.ui.alerts.AbstractErrorHandler.tryConfigChange(AbstractErrorHandler.java:82)
-	at net.groboclown.idea.p4ic.v2.ui.alerts.InvalidRootsHandler.handleError(InvalidRootsHandler.java:70)
-	at net.groboclown.idea.p4ic.v2.server.connection.AlertManager$ErrorMsg.runHandlerInEDT(AlertManager.java:409)
-	at net.groboclown.idea.p4ic.v2.server.connection.AlertManager.handleError(AlertManager.java:299)
-```
-
-
-## Exception
-
-- Should be fixed now.
-- Test fix.
-
-```
-INFO - idea.p4ic.config.ConfigProblem - ConfigProblem from null
-net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException: Invalid Perforce client: prodsc.austx.zilliant.com:1666
-        at net.groboclown.idea.p4ic.v2.server.cache.CentralCacheManager.getClientCacheManager(CentralCacheManager.java:143)
-        at net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager$ServerConfigStatus.getConnectionFor(ServerConnectionManager.java:342)
-        at net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager.getConnectionFor(ServerConnectionManager.java:150)
-        at net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration.checkConnection(ConnectionUIConfiguration.java:48)
-        at net.groboclown.idea.p4ic.ui.config.ResolvedPropertiesPanel$4.runBackgroundProcess(ResolvedPropertiesPanel.java:144)
-        at net.groboclown.idea.p4ic.ui.config.ResolvedPropertiesPanel$4.runBackgroundProcess(ResolvedPropertiesPanel.java:112)
-        at net.groboclown.idea.p4ic.background.BackgroundAwtActionRunner$1.run(BackgroundAwtActionRunner.java:79)
-        at com.intellij.openapi.application.impl.ApplicationImpl$2.run(ApplicationImpl.java:330)
-        at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
-        at java.util.concurrent.FutureTask.run(FutureTask.java:266)
-        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
-        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
-        at java.lang.Thread.run(Thread.java:745)
-```
-
-
-## Error Report
-
-```
-Unsafe modality: ModalityState:com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$MyDialog[dialog0,256,463,640x141,layout=java.awt.BorderLayout,APPLICAT
-ION_MODAL,title=Check Connection,defaultCloseOperation=DO_NOTHING_ON_CLOSE,rootPane=com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$MyDialog$DialogRo
-otPane[,8,31,624x102,layout=javax.swing.JRootPane$RootLayout,alignmentX=0.0,alignmentY=0.0,border=,flags=449,maximumSize=,minimumSize=,preferredSize=],r
-ootPaneCheckingEnabled=true]
-java.lang.Throwable
-        at com.intellij.openapi.diagnostic.Logger.error(Logger.java:132)
-        at com.intellij.openapi.application.TransactionGuardImpl.submitTransactionAndWait(TransactionGuardImpl.java:155)
-        at com.intellij.openapi.options.newEditor.SettingsDialog.show(SettingsDialog.java:76)
-        at com.intellij.openapi.ui.DialogWrapper.showAndGet(DialogWrapper.java:1652)
-        at com.intellij.ide.actions.ShowSettingsUtilImpl.editConfigurable(ShowSettingsUtilImpl.java:238)
-        at com.intellij.ide.actions.ShowSettingsUtilImpl.editConfigurable(ShowSettingsUtilImpl.java:199)
-        at net.groboclown.idea.p4ic.compat.idea163.UICompat163.editVcsConfiguration(UICompat163.java:37)
-```
-
-
-## Exception
-
-- There are still situations where this can happen, but one situation has been removed.  This specific one
-    was due to the workspace not being pulled down yet.  For some reason, it didn't sync (or have loaded from disk
-    the state object) the workspace.
-- Test Fix
+- This can happen if the login fails, causing the workspace roots to be empty.
 
 ```
 INFO - server.connection.AlertManager - Critical error
@@ -263,4 +194,22 @@ java.lang.Throwable
 	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
 	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
 	at java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
+```
+
+
+## Error Report
+
+```
+Unsafe modality: ModalityState:com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$MyDialog[dialog0,256,463,640x141,layout=java.awt.BorderLayout,APPLICAT
+ION_MODAL,title=Check Connection,defaultCloseOperation=DO_NOTHING_ON_CLOSE,rootPane=com.intellij.openapi.ui.impl.DialogWrapperPeerImpl$MyDialog$DialogRo
+otPane[,8,31,624x102,layout=javax.swing.JRootPane$RootLayout,alignmentX=0.0,alignmentY=0.0,border=,flags=449,maximumSize=,minimumSize=,preferredSize=],r
+ootPaneCheckingEnabled=true]
+java.lang.Throwable
+        at com.intellij.openapi.diagnostic.Logger.error(Logger.java:132)
+        at com.intellij.openapi.application.TransactionGuardImpl.submitTransactionAndWait(TransactionGuardImpl.java:155)
+        at com.intellij.openapi.options.newEditor.SettingsDialog.show(SettingsDialog.java:76)
+        at com.intellij.openapi.ui.DialogWrapper.showAndGet(DialogWrapper.java:1652)
+        at com.intellij.ide.actions.ShowSettingsUtilImpl.editConfigurable(ShowSettingsUtilImpl.java:238)
+        at com.intellij.ide.actions.ShowSettingsUtilImpl.editConfigurable(ShowSettingsUtilImpl.java:199)
+        at net.groboclown.idea.p4ic.compat.idea163.UICompat163.editVcsConfiguration(UICompat163.java:37)
 ```

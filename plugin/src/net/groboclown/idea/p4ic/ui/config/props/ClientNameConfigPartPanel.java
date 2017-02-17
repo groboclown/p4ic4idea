@@ -22,7 +22,6 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.BackgroundAwtActionRunner;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
-import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.part.ClientNameDataPart;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
 import org.jetbrains.annotations.Nls;
@@ -33,11 +32,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 public class ClientNameConfigPartPanel
         extends ConfigPartPanel<ClientNameDataPart> {
@@ -119,14 +118,14 @@ public class ClientNameConfigPartPanel
     private void refreshClientList() {
         final String selected = getSelectedClientName();
         BackgroundAwtActionRunner.runBackgroundAwtAction(listRefreshSpinner,
-                new BackgroundAwtActionRunner.BackgroundAwtAction<List<String>>() {
+                new BackgroundAwtActionRunner.BackgroundAwtAction<Collection<String>>() {
                     @Override
-                    public List<String> runBackgroundProcess() {
+                    public Collection<String> runBackgroundProcess() {
                         return loadClientList(selected);
                     }
 
                     @Override
-                    public void runAwtProcess(@Nullable final List<String> clientList) {
+                    public void runAwtProcess(@Nullable final Collection<String> clientList) {
                         if (clientList != null) {
                             clientDropdownList.removeAllItems();
                             for (String client : clientList) {
@@ -148,27 +147,23 @@ public class ClientNameConfigPartPanel
                 });
     }
 
-    private List<String> loadClientList(String selected) {
+    private Collection<String> loadClientList(String selected) {
         final Collection<ClientConfig> configs = getLatestConfig() == null
                 ? Collections.<ClientConfig>emptyList()
                 : getLatestConfig().getClientConfigs();
         if (configs.size() != 1) {
             getConfigPart().addAdditionalProblem(new ConfigProblem(
                     getConfigPart(), "configuration.client.error.no-single-server"));
-            if (selected == null || selected.isEmpty()) {
-                return Collections.emptyList();
-            } else {
-                return Collections.singletonList(selected);
-            }
-        } else {
-            ConnectionUIConfiguration.ClientResult clients =
-                    ClientNameDataPart.loadClientNames(configs.iterator().next());
-            List<String> ret = new ArrayList<String>(clients.getClientNames());
-            if (!ret.contains(selected)) {
-                ret.add(selected);
-            }
-            return ret;
+            // Still load up the client names, though.
         }
+        Set<String> ret = new HashSet<String>();
+        for (ConnectionUIConfiguration.ClientResult result : ClientNameDataPart.loadClientNames(configs).values()) {
+            ret.addAll(result.getClientNames());
+        }
+        if (!ret.contains(selected)) {
+            ret.add(selected);
+        }
+        return ret;
     }
 
     /**

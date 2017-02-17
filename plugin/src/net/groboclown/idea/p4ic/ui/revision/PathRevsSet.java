@@ -55,7 +55,7 @@ public class PathRevsSet {
                     return new PathRevsSet(P4Bundle.getString("revision.list.nosuchfile"));
                 }
                 final IExtendedFileSpec spec = status.get(fp);
-                LOG.info("diff file depot: " + spec.getDepotPathString());
+                // LOG.info("diff file depot: " + spec.getDepotPathString());
                 final List<P4FileRevision> history =
                         server.getRevisionHistoryOnline(spec, REVISION_PAGE_SIZE);
                 if (history == null) {

@@ -70,7 +70,7 @@ public class P4ConfigProject implements ProjectComponent, PersistentStateCompone
 
     @Override
     public void loadState(@NotNull ManualP4Config state) {
-        LOG.info("Loading config state");
+        LOG.debug("Loading config state");
 
         // save a copy of the config
         this.config = new ManualP4Config(state);

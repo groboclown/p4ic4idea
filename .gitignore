@@ -15,3 +15,4 @@ p4ic4idea.zip
 local.properties
 local.properties.*
 .idea/
+!/local.properties.template

@@ -33,7 +33,9 @@ public class P4RevisionSelector implements RevisionSelector {
     @Nullable
     @Override
     public VcsRevisionNumber selectNumber(final VirtualFile file) {
-        LOG.info("Selecting version for file " + file);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Selecting version for file " + file);
+        }
         final P4FileRevision rev = RevisionDialog.requestRevision(vcs, file);
         if (rev == null) {
             return null;

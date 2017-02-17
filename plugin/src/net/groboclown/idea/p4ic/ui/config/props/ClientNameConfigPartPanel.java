@@ -148,6 +148,7 @@ public class ClientNameConfigPartPanel
     }
 
     private Collection<String> loadClientList(String selected) {
+        LOG.info("Starting load client list for " + getLatestConfig());
         final Collection<ClientConfig> configs = getLatestConfig() == null
                 ? Collections.<ClientConfig>emptyList()
                 : getLatestConfig().getClientConfigs();
@@ -158,7 +159,11 @@ public class ClientNameConfigPartPanel
         }
         Set<String> ret = new HashSet<String>();
         for (ConnectionUIConfiguration.ClientResult result : ClientNameDataPart.loadClientNames(configs).values()) {
+            LOG.info("Loaded clients " + result.getClientNames() + "; problem " + result.getConnectionProblem());
             ret.addAll(result.getClientNames());
+            if (result.getConnectionProblem() != null) {
+                getConfigPart().addAdditionalProblem(new ConfigProblem(getConfigPart(), result.getConnectionProblem()));
+            }
         }
         if (!ret.contains(selected)) {
             ret.add(selected);

@@ -365,7 +365,6 @@ public class ConfigStackPanel
     private <T extends ConfigPart> void addConfigPartPanel(@NotNull final ConfigPartPanel<T> panel) {
         // panel.getRootPanel().setMaximumSize(new Dimension(-1, panel.getRootPanel().getMinimumSize().height));
         componentList.addChildAt(0, panel);
-        LOG.info("Added component panel " + panel.getClass().getSimpleName());
         ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
             @Override
             public void run() {

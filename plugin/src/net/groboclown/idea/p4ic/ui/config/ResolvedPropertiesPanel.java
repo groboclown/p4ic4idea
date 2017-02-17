@@ -172,7 +172,7 @@ public class ResolvedPropertiesPanel {
                         if (results.configs == null || results.configs.isEmpty()) {
                             rootDirDropdownBoxModel.removeAllElements();
                             rootDirDropdownBox.setEnabled(false);
-                            LOG.info("No configurations; showing no resolved properties.");
+                            LOG.debug("No configurations; showing no resolved properties.");
                             showResolvedPropertiesNone();
                         } else {
                             rootDirDropdownBox.setEnabled(true);
@@ -181,11 +181,15 @@ public class ResolvedPropertiesPanel {
                                 rootDirDropdownBoxModel.addElement(config);
                             }
                             if (results.selectedConfigIndex < 0 || results.selectedConfigText == null) {
-                                LOG.info("Selected dropdown path in model is null or invalid: "
-                                        + results.selectedConfigIndex);
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Selected dropdown path in model is null or invalid: "
+                                            + results.selectedConfigIndex);
+                                }
                                 showResolvedPropertiesNone();
                             } else {
-                                LOG.info("Showing dropdown path on reload for " + results.selectedConfigIndex);
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Showing dropdown path on reload for " + results.selectedConfigIndex);
+                                }
                                 rootDirDropdownBox.setSelectedIndex(results.selectedConfigIndex);
                                 resolvedValuesText.setText(results.selectedConfigText);
                             }
@@ -199,7 +203,7 @@ public class ResolvedPropertiesPanel {
         ApplicationManager.getApplication().assertIsDispatchThread();
 
         if (rootDirDropdownBoxModel.getSize() <= 0) {
-            LOG.info("No items in dropdown path box; showing no properties.");
+            LOG.debug("No items in dropdown path box; showing no properties.");
             showResolvedPropertiesNone();
         } else {
             Object selected = rootDirDropdownBoxModel.getSelectedItem();
@@ -210,7 +214,9 @@ public class ResolvedPropertiesPanel {
                     throw new IllegalStateException("Resolved properties selected item is not ConfigPath: " + selected);
                 }
             }
-            LOG.info("Showing dropdown path for selected " + selected);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Showing dropdown path for selected " + selected);
+            }
             showResolvedPropertiesText((ConfigPath) selected);
         }
     }
@@ -240,7 +246,6 @@ public class ResolvedPropertiesPanel {
 
                     @Override
                     public void runAwtProcess(String value) {
-                        LOG.info("Showing resolved values text of length " + value.length());
                         resolvedValuesText.setText(value);
                     }
                 });
@@ -268,7 +273,6 @@ public class ResolvedPropertiesPanel {
             final Collection<ConfigProblem> problems = projectConfig.getConfigProblems();
             results.problemMessages = new ArrayList<String>(problems.size());
             for (ConfigProblem problem : problems) {
-                LOG.info("ConfigProblem: " + problem);
                 results.problemMessages.add(problem.getMessage());
             }
         }

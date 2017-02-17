@@ -77,14 +77,18 @@ public class MultipleDataPart implements DataPart {
     @NotNull
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
-        LOG.info("Config for MultipleDataPart under " + root);
-
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Config for MultipleDataPart under " + root);
+        }
         Set<ConfigProblem> problems = new HashSet<ConfigProblem>();
+
         for (DataPart part : parts) {
-            LOG.info(part + " P4USER: " + part.hasUsernameSet() + " - " + part.getUsername());
-            LOG.info(part + " P4PORT: " + part.hasServerNameSet() + " - " + part.getServerName());
-            LOG.info(part + " P4CLIENT: " + part.hasClientnameSet() + " - " + part.getClientname());
-            LOG.info(part + " P4HOST: " + part.hasClientHostnameSet() + " - " + part.getClientHostname());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(part + " P4USER: " + part.hasUsernameSet() + " - " + part.getUsername());
+                LOG.debug(part + " P4PORT: " + part.hasServerNameSet() + " - " + part.getServerName());
+                LOG.debug(part + " P4CLIENT: " + part.hasClientnameSet() + " - " + part.getClientname());
+                LOG.debug(part + " P4HOST: " + part.hasClientHostnameSet() + " - " + part.getClientHostname());
+            }
 
             problems.addAll(part.getConfigProblems());
         }

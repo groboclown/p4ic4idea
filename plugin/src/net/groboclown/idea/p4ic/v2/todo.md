@@ -2,6 +2,13 @@
 
 ## Critical
 
+1. Connection UI bugs
+    * Loading the config by itself (say, from an error message) does not populate the
+        config settings.
+    * Client name property field doesn't seem to work right.  It incorrectly recognizes
+        a single config as multiple directories.  It also doesn't get loaded with the
+        configs, so it doesn't show the list.
+
 
 ## General
 
@@ -29,15 +36,10 @@
     * Added extra logging on the error handlers to report their server ID.
 1. Why isn't SSLKeyStrengthProblemHandler being used?
 1. Connection UI bugs
-    * Loading the config by itself (say, from an error message) does not populate the
-        config settings.
     * ResolvedPropertiesPanel should have better control over refreshing the configuration.
         Re-examine the conditions where the properties are loaded, and ensure that the
         configuration stack is reloaded at the right points.  See the "FIXME" comment
         around this point.
-    * Client name property field doesn't seem to work right.  It incorrectly recognizes
-        a single config as multiple directories.  It also doesn't get loaded with the
-        configs, so it doesn't show the list.
     * The list of client directories, when refreshed, changes to the first entry, rather than
         staying on the previously selected one.
         - Test fix

@@ -132,7 +132,9 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                     OneUseString ret = passwordStore.get(config.getServerName().getFullPort(), config.getUsername());
                     if (ret == null) {
                         // Weird situation.
-                        LOG.info("Storage for password key " + key + " was null");
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Storage for password key " + key + " was null");
+                        }
                         ret = new OneUseString(new char[0]);
                     }
                     // keep a local copy of the password for future, outside the
@@ -244,13 +246,15 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
         if (password == null) {
             // already automatically removed from the store.
             clearMemoryPassword(config);
-            LOG.info("No password entered");
+            LOG.debug("No password entered");
             return false;
         } else {
             // The password that was returned MUST be locally
             // saved, because the user could have selected to not
             // store it.
-            LOG.info("New password stored for " + config.getServerName().getFullPort());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("New password stored for " + config.getServerName().getFullPort());
+            }
             hasPasswordInStorage.add(key);
             setMemoryPassword(config, password.toCharArray());
             return true;

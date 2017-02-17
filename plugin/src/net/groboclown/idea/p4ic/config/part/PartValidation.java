@@ -43,7 +43,9 @@ public class PartValidation {
     }
 
     Collection<ConfigProblem> getProblems() {
-        LOG.info(problems.toString());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(problems.toString());
+        }
         return problems;
     }
 

@@ -154,7 +154,9 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
                     partList = new ArrayList<DataPart>();
                     dirToParts.put(partRoot, partList);
                 }
-                LOG.info("Adding " + dataPart + " into " + partRoot);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Adding " + dataPart + " into " + partRoot);
+                }
                 partList.add(dataPart);
             } else {
                 throw new IllegalStateException("Unknown config part " + part);
@@ -267,8 +269,10 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
             }
         }
         if (bestProjectRoot != null) {
-            LOG.info("Best root config: " + bestProjectRoot);
-            LOG.info("All root configs " + belowProjectRoot);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Best root config: " + bestProjectRoot);
+                LOG.debug("All root configs " + belowProjectRoot);
+            }
             final ClientServerSetup bestConfig = fileMappedSetup.get(bestProjectRoot);
             belowProjectRoot.remove(bestProjectRoot);
             for (VirtualFile file : belowProjectRoot) {
@@ -276,9 +280,11 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
             }
             fileMappedSetup.put(projectRoot, bestConfig);
         } else {
-            LOG.info("No root configs found at or under the project root.");
+            LOG.debug("No root configs found at or under the project root.");
         }
-        LOG.info("Final pruned config directories: " + fileMappedSetup.keySet());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Final pruned config directories: " + fileMappedSetup.keySet());
+        }
 
         // Now we can create the valid configs and the requested setup configs.
         Map<VirtualFile, ClientConfig> ret = new HashMap<VirtualFile, ClientConfig>();

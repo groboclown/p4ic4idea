@@ -29,22 +29,22 @@ final class PathRevs {
     private final List<P4FileRevision> revs;
 
     @NotNull
-    public static List<PathRevs> getPathRevs(@NotNull final List<P4FileRevision> revs) {
+    static List<PathRevs> getPathRevs(@NotNull final List<P4FileRevision> revs) {
         List<PathRevs> ret = new ArrayList<PathRevs>();
         PathRevs current = null;
         for (P4FileRevision rev : revs) {
             String depotPath = rev.getRevisionDepotPath();
             if (depotPath != null) {
                 if (current == null) {
-                    LOG.info(":: " + depotPath);
+                    // LOG.info(":: " + depotPath);
                     current = new PathRevs(depotPath);
                     ret.add(current);
                 } else if (! depotPath.equals(current.depotPath)) {
-                    LOG.info(":: " + depotPath);
+                    // LOG.info(":: " + depotPath);
                     current = new PathRevs(depotPath);
                     ret.add(current);
                 }
-                LOG.info(":: -> " + rev.getRev());
+                // LOG.info(":: -> " + rev.getRev());
                 current.revs.add(rev);
             }
         }

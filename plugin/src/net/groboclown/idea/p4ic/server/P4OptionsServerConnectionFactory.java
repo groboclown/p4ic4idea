@@ -91,27 +91,28 @@ public class P4OptionsServerConnectionFactory {
         }
 
         final String uri = getServerUri(clientConfig.getServerConfig());
-        {   // TODO DEBUG STUFF
-            LOG.info("Connecting to server [" + uri + "]");
-            LOG.info(String.format("Usage options:\n"
-                            + "  Host Name: %s\n"
-                            + "  Program Name: %s\n"
-                            + "  Program Version: %s\n"
-                            + "  Text Language: %s\n"
-                            + "  Unset Client Name: %s\n"
-                            + "  Unset User Name: %s\n"
-                            + "  Working Directory: %s",
-                    options.getHostName(),
-                    options.getProgramName(),
-                    options.getProgramVersion(),
-                    options.getTextLanguage(),
-                    options.getUnsetClientName(),
-                    options.getUnsetUserName(),
-                    options.getWorkingDirectory()));
+        {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Connecting to server [" + uri + "]");
+                LOG.debug(String.format("Usage options:\n"
+                                + "  Host Name: %s\n"
+                                + "  Program Name: %s\n"
+                                + "  Program Version: %s\n"
+                                + "  Text Language: %s\n"
+                                + "  Unset Client Name: %s\n"
+                                + "  Unset User Name: %s\n"
+                                + "  Working Directory: %s",
+                        options.getHostName(),
+                        options.getProgramName(),
+                        options.getProgramVersion(),
+                        options.getTextLanguage(),
+                        options.getUnsetClientName(),
+                        options.getUnsetUserName(),
+                        options.getWorkingDirectory()));
+            }
             try {
                 StringWriter sw = new StringWriter();
                 options.getProps().store(sw, "Options Server Properties");
-                LOG.info(sw.toString());
             } catch (IOException e) {
                 // Ignore
             }
@@ -151,7 +152,6 @@ public class P4OptionsServerConnectionFactory {
         }
         // if (knownPassword != null) {
         //     // This doesn't actually do anything with the default connection that we use.
-        //     LOG.info("Setting password key (length " + knownPassword.length() + ")");
         //     props.setProperty(PropertyDefs.PASSWORD_KEY, knownPassword);
         // }
         if (serverConfig.hasTrustTicket() && serverConfig.getTrustTicket() != null) {
@@ -256,7 +256,7 @@ public class P4OptionsServerConnectionFactory {
             if (hostname != null) {
                 int pos = hostname.indexOf('.');
                 if (pos >= 0) {
-                    LOG.info("Default client hostname includes domain: [" + hostname + "]");
+                    LOG.debug("Default client hostname includes domain: [" + hostname + "]");
                     hostname = hostname.substring(0, pos);
                 }
                 hostname = hostname.trim();

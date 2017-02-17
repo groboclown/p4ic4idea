@@ -161,13 +161,17 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
                 String revision = number.asString();
                 if (revision != null && revision.length() > 0 && (revision.charAt(0) == '@' || revision
                         .charAt(0) == '#')) {
-                    LOG.info("Getting changelist for revision " + revision + "; " + fp);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Getting changelist for revision " + revision + "; " + fp);
+                    }
                     P4CommittedChangeList changeList = server.getChangelistForOnline(fp, revision);
 
                     return Pair.create(changeList, fp);
                 }
             }
-            LOG.info("Getting changelist for head revision; " + fp);
+            if (LOG.isDebugEnabled()) {
+                LOG.info("Getting changelist for head revision; " + fp);
+            }
             // FIXME use the correct constant string
             P4CommittedChangeList changeList = server.getChangelistForOnline(fp, "#head");
             return Pair.create(changeList, fp);

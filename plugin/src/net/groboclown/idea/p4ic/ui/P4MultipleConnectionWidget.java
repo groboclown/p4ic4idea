@@ -216,7 +216,7 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
                     setValues();
                 }
                 if (statusBar != null && refreshStatusBar) {
-                    LOG.info("updating the connection widget display");
+                    // LOG.info("updating the connection widget display");
                     statusBar.getComponent().repaint();
                 }
             }

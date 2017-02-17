@@ -99,7 +99,6 @@ public class FileConfigPartPanel
         } else {
             getConfigPart().setConfigFile(new File(newLocation));
         }
-        LOG.info("Set file location to " + getConfigPart().getConfigFile());
     }
 
     @Nullable

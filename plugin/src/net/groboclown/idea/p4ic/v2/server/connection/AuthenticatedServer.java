@@ -174,7 +174,9 @@ class AuthenticatedServer {
     ServerAuthenticator.AuthenticationStatus authenticate()
             throws InterruptedException, P4JavaException {
         if (project != null && project.isDisposed()) {
-            LOG.info("Can't authenticate: Project disposed for " + this);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Can't authenticate: Project disposed for " + this);
+            }
             return ServerAuthenticator.DISPOSED;
         }
         if (server == null) {
@@ -182,22 +184,30 @@ class AuthenticatedServer {
             // ClientExec.ServerRunnerConnection.authenticate.  Even that
             // is called only when an unauthorized exception is called.
             // Other than that, this should always assume that it's connected.
-            LOG.info("Can't authenticate: AuthenticatedServer is disposed for " + this);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Can't authenticate: AuthenticatedServer is disposed for " + this);
+            }
             return ServerAuthenticator.DISPOSED;
         }
 
         if (invalidLoginStatus != null) {
-            LOG.info("Previous login attempts failed.  Assuming authentication is invalid for " + this);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Previous login attempts failed.  Assuming authentication is invalid for " + this);
+            }
             return invalidLoginStatus;
         }
 
         ServerAuthenticator.AuthenticationStatus status = authenticator.discoverAuthenticationStatus(server);
         if (status.isAuthenticated()) {
-            LOG.info("Server seems authenticated this " + this);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Server seems authenticated this " + this);
+            }
             return status;
         }
         if (status.isClientSetupProblem()) {
-            LOG.info("Server has client setup problems for " + this);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Server has client setup problems for " + this);
+            }
             return status;
         }
         if (status.isNotConnected()) {
@@ -205,7 +215,9 @@ class AuthenticatedServer {
             // authentication.  If it still fails to connect, then
             // report a problem (it may be a wrong port, or the server
             // could be down).
-            LOG.info("Not connected to server; reconnecting for " + this);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Not connected to server; reconnecting for " + this);
+            }
             try {
                 reconnect();
             } catch (URISyntaxException e) {
@@ -213,15 +225,21 @@ class AuthenticatedServer {
             }
             status = authenticator.discoverAuthenticationStatus(server);
             if (status.isAuthenticated()) {
-                LOG.info("Reconnected and seems authenticated for " + this);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Reconnected and seems authenticated for " + this);
+                }
                 return status;
             }
             if (status.isNotConnected()) {
-                LOG.info("Reconnected and still not connected for " + this);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Reconnected and still not connected for " + this);
+                }
                 return status;
             }
             if (status.isClientSetupProblem()) {
-                LOG.info("Reconnected and client setup problem for " + this);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Reconnected and client setup problem for " + this);
+                }
                 return status;
             }
             // Fall through to continue check.
@@ -235,13 +253,17 @@ class AuthenticatedServer {
             // Need to fix the status generator to have the right status with that
             // error message.
 
-            LOG.info("User must enter the password for " + this);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("User must enter the password for " + this);
+            }
             hasValidatedAuthentication = false;
             return status;
         }
 
         if (status.isAuthenticated()) {
-            LOG.info("Connection seems authenticated for " + this);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Connection seems authenticated for " + this);
+            }
             hasValidatedAuthentication = true;
             return status;
         }
@@ -286,7 +308,9 @@ class AuthenticatedServer {
                     PasswordManager.getInstance().getPassword(project, config.getServerConfig(), false);
             if (status.isPasswordRequired() && password.isNullValue()) {
                 // We don't have a password, but one is required.
-                LOG.info("Don't have a password, but one is required for " + this);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Don't have a password, but one is required for " + this);
+                }
                 return status;
             }
 
@@ -298,7 +322,9 @@ class AuthenticatedServer {
                 public ServerAuthenticator.AuthenticationStatus with(@Nullable char[] passwd) {
                     final String knownPassword =
                             passwd == null ? null : new String(passwd);
-                    LOG.info("Authenticating using known password for " + this);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Authenticating using known password for " + this);
+                    }
                     return authenticator.authenticate(server, config.getServerConfig(),
                             previousStatus, knownPassword);
                 }
@@ -307,26 +333,34 @@ class AuthenticatedServer {
             if (status.isPasswordUnnecessary()) {
                 // This kind of status means that the user is probably authenticated,
                 // so it needs to be handled before the isAuthenticated check.
-                LOG.info("Forgetting user password, because the user doesn't have one for the Perforce account.  " +
-                        this);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Forgetting user password, because the user doesn't have one for the Perforce account.  " +
+                            this);
+                }
                 PasswordManager.getInstance().forgetPassword(project, config.getServerConfig());
             }
             if (status.isAuthenticated()) {
-                LOG.info("Authorization successful after " + i +
-                        " unauthorized connections (but a valid one was seen earlier) for " +
-                        this);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Authorization successful after " + i +
+                            " unauthorized connections (but a valid one was seen earlier) for " +
+                            this);
+                }
                 hasValidatedAuthentication = true;
                 return status;
             }
             if (status.isPasswordRequired()) {
                 // Our password is wrong, perhaps.
-                LOG.info("User must enter the password for " + this);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("User must enter the password for " + this);
+                }
                 hasValidatedAuthentication = false;
                 loginFailedCount++;
                 return status;
             }
             if (status.isSessionExpired()) {
-                LOG.info("Authorization failed due to session expiration for " + this);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Authorization failed due to session expiration for " + this);
+                }
                 // Attempted to login, it failed with "session expired",
                 // so this means that the login didn't work.
                 hasValidatedAuthentication = false;
@@ -334,7 +368,9 @@ class AuthenticatedServer {
                 return status;
             }
             if (status.isNotLoggedIn()) {
-                LOG.info("Authorization failed, and the connection still needs a login for " + this);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Authorization failed, and the connection still needs a login for " + this);
+                }
                 // Attempted to login, but the server responded with the user needs to be
                 // logged in.  Just abort.
                 hasValidatedAuthentication = false;
@@ -342,14 +378,16 @@ class AuthenticatedServer {
                 return status;
             }
 
-            LOG.info("Login failed.  Trying again.");
+            LOG.debug("Login failed.  Trying again.");
             loginFailedCount++;
         }
         // Don't keep trying the same bad config.
         invalidLoginStatus = status;
-        LOG.info("Failed authentication after " + getMaxAuthenticationRetries() +
-                " unauthorized connections (but a valid one was seen earlier) for " +
-                this);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Failed authentication after " + getMaxAuthenticationRetries() +
+                    " unauthorized connections (but a valid one was seen earlier) for " +
+                    this);
+        }
         return status;
     }
 

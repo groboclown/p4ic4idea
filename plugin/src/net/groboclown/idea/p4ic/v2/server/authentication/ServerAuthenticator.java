@@ -342,30 +342,30 @@ public class ServerAuthenticator {
             @Nullable final String knownPassword,
             final boolean alreadyAttemptedConnection) {
         if (authenticationCheck.isAuthenticated()) {
-            LOG.info("Called authenticate when already authenticated");
+            LOG.debug("Called authenticate when already authenticated");
             return authenticationCheck;
         }
         if (authenticationCheck.clientSetupProblem) {
-            LOG.info("Called authenticate when the issue was with the client setup");
+            LOG.debug("Called authenticate when the issue was with the client setup");
             return authenticationCheck;
         }
 
         if (! server.isConnected()) {
             try {
-                LOG.info("Connecting to server at start of authentication");
+                LOG.debug("Connecting to server at start of authentication");
                 server.connect();
-                LOG.info("Connection succeeded");
+                LOG.debug("Connection succeeded");
             } catch (ConnectionException e) {
-                LOG.info("Failed to connect to server during authentication attempt", e);
+                LOG.debug("Failed to connect to server during authentication attempt", e);
                 return statBuilder()
                         .notConnected()
                         .create();
             } catch (AccessException e) {
                 if (ExceptionUtil.isAuthenticationProblem(e)) {
-                    LOG.info("Connection failed due to authentication; going to try authentication", e);
+                    LOG.debug("Connection failed due to authentication; going to try authentication", e);
                     // fall through
                 } else {
-                    LOG.info("Unknown access problem during connection", e);
+                    LOG.debug("Unknown access problem during connection", e);
                     return statBuilder(new P4AccessException(e))
                             .notConnected()
                             .clientSetupProblem()
@@ -374,16 +374,16 @@ public class ServerAuthenticator {
                 }
             } catch (RequestException e) {
                 if (ExceptionUtil.isAuthenticationProblem(e)) {
-                    LOG.info("Connection failed due to authentication; going to try authentication", e);
+                    LOG.debug("Connection failed due to authentication; going to try authentication", e);
                     // fall through
                 } else {
-                    LOG.info("Unknown server error during connection", e);
+                    LOG.debug("Unknown server error during connection", e);
                     return statBuilder(new P4ApiException(e))
                             .notConnected()
                             .create();
                 }
             } catch (ConfigException e) {
-                LOG.info("Configuration problem during connection", e);
+                LOG.debug("Configuration problem during connection", e);
                 return statBuilder(new P4InvalidConfigException(e))
                         .notConnected()
                         .clientSetupProblem()
@@ -394,7 +394,7 @@ public class ServerAuthenticator {
         if (authenticationCheck.notConnected) {
             // Previous issue was due to not being connected.
             // Now that we're connected, check the authentication again.
-            LOG.info("Rechecking authentication status, now that we're connected.");
+            LOG.debug("Rechecking authentication status, now that we're connected.");
             AuthenticationStatus nextCheck = discoverAuthenticationStatus(server);
 
             // If there was a problem that we won't be able to handle, or if the
@@ -430,9 +430,9 @@ public class ServerAuthenticator {
                 // user to log in; in fact, that wil raise an error by Perforce
                 if (knownPassword != null && knownPassword.length() > 0) {
                     server.login(knownPassword, loginOptions);
-                    LOG.info("No issue logging in with known password");
+                    LOG.debug("No issue logging in with known password");
                 } else {
-                    LOG.info("Skipping login because no known password");
+                    LOG.debug("Skipping login because no known password");
                 }
 
                 return null;
@@ -506,22 +506,22 @@ public class ServerAuthenticator {
         try {
             return new ExecResult<T>(exec.exec(server));
         } catch (SslException e) {
-            LOG.info("Execution generated problem with SSL", e);
+            LOG.debug("Execution generated problem with SSL", e);
             return new ExecResult<T>(statBuilder(new P4SSLException(e))
                     .notConnected()
                     .notLoggedIn()
                     .create());
         } catch (ClientFileAccessException e) {
             // shouldn't happen for this call, but handle it just in case.
-            LOG.info("Execution encountered problem with accessing a file on the client", e);
+            LOG.debug("Execution encountered problem with accessing a file on the client", e);
             return new ExecResult<T>(statBuilder(new P4VcsConnectionException(e))
                     .clientSetupProblem()
                     .create());
         } catch (AuthenticationFailedException e) {
-            LOG.info("Execution generated a login failure", e);
+            LOG.debug("Execution generated a login failure", e);
             return new ExecResult<T>(new AuthenticationStatus(e));
         } catch (ConnectionException e) {
-            LOG.info("Execution encountered a connection failure", e);
+            LOG.debug("Execution encountered a connection failure", e);
             Throwable cause = e.getCause();
             if (cause instanceof ConfigException) {
                 return new ExecResult<T>(statBuilder(new P4InvalidConfigException((ConfigException) cause))
@@ -536,7 +536,7 @@ public class ServerAuthenticator {
                     .notLoggedIn()
                     .create());
         } catch (LoginRequiresPasswordException e) {
-            LOG.info("Execution failed because login requires a password", e);
+            LOG.debug("Execution failed because login requires a password", e);
             return new ExecResult<T>(statBuilder(new P4LoginException(e))
                     .notLoggedIn()
                     .needsPassword()
@@ -546,13 +546,13 @@ public class ServerAuthenticator {
                 // This isn't an error, but a warning.
                 // It's generated when a "login" is attempted but
                 // the user hasn't set a password.
-                LOG.info("User provided password, but the user never set a password", e);
+                LOG.debug("User provided password, but the user never set a password", e);
                 return new ExecResult<T>(statBuilder()
                         .passwordUnnecessary()
                         .create());
             }
             if (ExceptionUtil.isLoginPasswordProblem(e)) {
-                LOG.info("Incorrect password", e);
+                LOG.debug("Incorrect password", e);
                 return new ExecResult<T>(statBuilder(new P4LoginException(e))
                         .passwordInvalid()
                         .notLoggedIn()
@@ -560,14 +560,14 @@ public class ServerAuthenticator {
                         .create());
             }
             if (ExceptionUtil.isSessionExpiredProblem(e)) {
-                LOG.info("Session expired", e);
+                LOG.debug("Session expired", e);
                 return new ExecResult<T>(statBuilder(new P4LoginException(e))
                         .sessionExpired()
                         .notLoggedIn()
                         .create());
             }
             if (ExceptionUtil.isLoginRequiresPasswordProblem(e)) {
-                LOG.info("User requires a password and a login", e);
+                LOG.debug("User requires a password and a login", e);
                 return new ExecResult<T>(statBuilder(new P4LoginException(e))
                         .notLoggedIn()
                         .needsPassword()
@@ -575,14 +575,14 @@ public class ServerAuthenticator {
             }
 
             // Special exception in the status
-            LOG.info("General access problem", e);
+            LOG.debug("General access problem", e);
             return new ExecResult<T>(statBuilder(new P4AccessException(e))
                     .clientSetupProblem()
                     .notLoggedIn()
                     .create());
         } catch (P4JavaException e) {
             if (ExceptionUtil.isLoginPasswordProblem(e)) {
-                LOG.info("Incorrect password", e);
+                LOG.debug("Incorrect password", e);
                 return new ExecResult<T>(statBuilder(new P4LoginException(e))
                         .passwordInvalid()
                         .notLoggedIn()
@@ -590,14 +590,14 @@ public class ServerAuthenticator {
                         .create());
             }
             if (ExceptionUtil.isSessionExpiredProblem(e)) {
-                LOG.info("Session expired", e);
+                LOG.debug("Session expired", e);
                 return new ExecResult<T>(statBuilder(new P4LoginException(e))
                         .sessionExpired()
                         .notLoggedIn()
                         .create());
             }
             if (ExceptionUtil.isLoginRequiresPasswordProblem(e)) {
-                LOG.info("User requires a password and a login", e);
+                LOG.debug("User requires a password and a login", e);
                 return new ExecResult<T>(statBuilder(new P4LoginException(e))
                         .notLoggedIn()
                         .needsPassword()
@@ -605,7 +605,7 @@ public class ServerAuthenticator {
             }
 
             // Generic error in the request
-            LOG.info("Problem loading user list", e);
+            LOG.debug("Problem loading user list", e);
             return new ExecResult<T>(statBuilder(new P4ApiException(e))
                     .create());
         }

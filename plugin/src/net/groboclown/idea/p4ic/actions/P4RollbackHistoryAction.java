@@ -45,7 +45,7 @@ public class P4RollbackHistoryAction extends BasicAction {
             exceptions.add(new P4ApiException(P4Bundle.message("exception.rollback.history")));
             return;
         }
-        LOG.info("perform rollback for " + affectedFiles);
+        LOG.debug("perform rollback for " + affectedFiles);
 
         // TODO get the head revision and the rollback revision.
         exceptions.add(new P4InvalidConfigException("not implemented yet"));
@@ -61,7 +61,7 @@ public class P4RollbackHistoryAction extends BasicAction {
     protected boolean isEnabled(@NotNull final Project project, @NotNull final P4Vcs vcs,
             @NotNull final VirtualFile... vFiles) {
         // TODO return false if this is the latest version.
-        LOG.info("is enabled for " + Arrays.asList(vFiles));
+        LOG.debug("is enabled for " + Arrays.asList(vFiles));
 
         return true;
     }

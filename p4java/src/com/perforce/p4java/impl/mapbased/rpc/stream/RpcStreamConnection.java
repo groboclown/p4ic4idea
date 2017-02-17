@@ -263,14 +263,14 @@ public class RpcStreamConnection extends RpcConnection {
 
 				this.inputStream = new RpcRshInputStream(in, this.stats);
 				this.outputStream = new RpcRshOutputStream(out, this.stats);
-			// Groboclown: never, never, never catch a Throwable
+			// p4ic4idea: never, never, never catch a Throwable
 			// unless you're really careful.  This is not being
 			// careful.
 			// } catch (Throwable thr) {
 			} catch (Exception thr) {
 				Log.error("Unexpected exception: " + thr.getLocalizedMessage());
 				Log.exception(thr);
-				// groboclown show the real source of the problem.
+				// p4ic4idea: show the real source of the problem.
 				//throw new ConnectionException(thr.getLocalizedMessage());
 				throw new ConnectionException(thr);
 			}
@@ -296,13 +296,13 @@ public class RpcStreamConnection extends RpcConnection {
 						+ hostName + ":" + hostPort,
 						// groboclown: don't mask the source
 						exc);
-			// groboclown: never, never, never catch a Throwable,
+			// p4ic4idea: never, never, never catch a Throwable,
 			// unless you're really careful, which this is not.
 			// } catch (Throwable thr) {
 			} catch (Exception thr) {
 				Log.error("Unexpected exception: " + thr.getLocalizedMessage());
 				Log.exception(thr);
-				// groboclown: Don't mask the source
+				// p4ic4idea: Don't mask the source
 				throw new ConnectionException(thr);
 			}
 
@@ -334,7 +334,7 @@ public class RpcStreamConnection extends RpcConnection {
 			} catch (Exception thr) {
 				Log.error("Unexpected exception: " + thr.getLocalizedMessage());
 				Log.exception(thr);
-				// groboclown: Don't mask the source
+				// groboclown: Don't hide the source
 				throw new ConnectionException(thr);
 			}
 		}
@@ -400,7 +400,7 @@ public class RpcStreamConnection extends RpcConnection {
 				Log.error(message);
 				Log.exception(e);
 				// p4ic4idea: use a more precise exception
-				throw new SslException(message);
+				throw new SslException(message, e);
 			}
 		}
 	}
@@ -410,7 +410,7 @@ public class RpcStreamConnection extends RpcConnection {
 	 */
 	public String getServerIpPort() {
         String serverIpPort = null;
-		// groboclown: compare strings with "equals"
+		// p4ic4idea: compare strings with "equals"
         if (! this.hostIp.equals(UNKNOWN_SERVER_HOST)) {
         	serverIpPort = this.hostIp;
             if (this.hostPort != UNKNOWN_SERVER_PORT) {
@@ -423,7 +423,7 @@ public class RpcStreamConnection extends RpcConnection {
 	}
 	
 	/**
-	 * @see com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection#disconnect()
+	 * @see com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection#disconnect(RpcPacketDispatcher)
 	 */
 	public void disconnect(final RpcPacketDispatcher dispatcher) throws ConnectionException {
 		try {

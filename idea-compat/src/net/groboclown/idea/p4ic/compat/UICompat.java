@@ -35,11 +35,13 @@ public abstract class UICompat {
     /**
      * Show the VCS configuration GUI, including an "Apply" button.
      *
+     * No longer reports the result of the action, as this can lead to bad states
+     * when the thread is waiting for the gui to return.
+     *
      * @param project vcs project
      * @param configurable vcs.getConfigurable()
-     * @return true if the configuration was changed
      */
-    public abstract boolean editVcsConfiguration(Project project, Configurable configurable);
+    public abstract void editVcsConfiguration(Project project, Configurable configurable);
 
 
     /**

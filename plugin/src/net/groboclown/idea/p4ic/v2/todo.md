@@ -5,9 +5,6 @@
 1. Connection UI bugs
     * Loading the config by itself (say, from an error message) does not populate the
         config settings.
-    * Client name property field doesn't seem to work right.  It incorrectly recognizes
-        a single config as multiple directories.  It also doesn't get loaded with the
-        configs, so it doesn't show the list.
 
 
 ## General
@@ -158,7 +155,7 @@ java.lang.Throwable
 	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
 	at java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 ```
-
+- Test fix.
 
 ## Exception
 
@@ -197,6 +194,7 @@ java.lang.Throwable
 	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
 	at java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 ```
+- Test fix.
 
 
 ## Error Report
@@ -215,3 +213,5 @@ java.lang.Throwable
         at com.intellij.ide.actions.ShowSettingsUtilImpl.editConfigurable(ShowSettingsUtilImpl.java:199)
         at net.groboclown.idea.p4ic.compat.idea163.UICompat163.editVcsConfiguration(UICompat163.java:37)
 ```
+- Test fix.
+

@@ -17,7 +17,6 @@ package net.groboclown.idea.p4ic.compat.idea163;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FilePathImpl;
 import com.intellij.openapi.vcs.LocalFilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcs.log.VcsUserRegistry;

@@ -14,7 +14,6 @@
 
 package net.groboclown.idea.p4ic.compat.idea140;
 
-import com.intellij.ide.actions.ShowSettingsUtilImpl;
 import com.intellij.ide.passwordSafe.ui.PasswordSafePromptDialog;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ShowSettingsUtil;
@@ -32,12 +31,15 @@ public class UICompat140 extends UICompat {
     }
 
     @Override
-    public boolean editVcsConfiguration(Project project, Configurable configurable) {
+    public void editVcsConfiguration(Project project, Configurable configurable) {
+        ShowSettingsUtil.getInstance().showSettingsDialog(project, configurable);
+        /*
         return ShowSettingsUtil.getInstance().editConfigurable(
                 project,
                 ShowSettingsUtilImpl.createDimensionKey(configurable),
                 configurable,
                 true);
+        */
     }
 
     @Nullable

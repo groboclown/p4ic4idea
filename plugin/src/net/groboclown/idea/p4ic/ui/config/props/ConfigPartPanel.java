@@ -18,17 +18,18 @@ import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.part.ConfigPart;
 import net.groboclown.idea.p4ic.ui.ComponentListPanel;
+import net.groboclown.idea.p4ic.ui.config.RequestConfigurationLoadListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 
 public abstract class ConfigPartPanel<T extends ConfigPart>
-        implements ConfigurationUpdatedListener, RequestConfigurationUpdateListener,
+        implements RequestConfigurationUpdateListener,
             ComponentListPanel.WithRootPanel {
     private final Project project;
     private final T part;
-    private P4ProjectConfig latestConfig;
+    private RequestConfigurationLoadListener requestConfigurationLoadListener;
 
     ConfigPartPanel(@NotNull Project project, @NotNull T part) {
         this.project = project;
@@ -47,15 +48,18 @@ public abstract class ConfigPartPanel<T extends ConfigPart>
 
     public abstract boolean isModified(@NotNull T originalPart);
 
-    @Override
-    public void onConfigurationUpdated(@NotNull P4ProjectConfig config) {
-        this.latestConfig = config;
+    public void setRequestConfigurationLoadListener(@NotNull RequestConfigurationLoadListener listener) {
+        this.requestConfigurationLoadListener = listener;
     }
 
     @Nullable
-    P4ProjectConfig getLatestConfig() {
-        return latestConfig;
+    P4ProjectConfig loadProjectConfigFromUI() {
+        if (requestConfigurationLoadListener != null) {
+            return requestConfigurationLoadListener.updateConfigPartFromUI();
+        }
+        return null;
     }
+
 
     @NotNull
     Project getProject() {

@@ -329,6 +329,7 @@ public class ConfigStackPanel
         return false;
     }
 
+    @NotNull
     @Override
     public P4ProjectConfig updateConfigPartFromUI() {
         final List<ConfigPartPanel<?>> partPanels = componentList.getChildren();
@@ -364,6 +365,7 @@ public class ConfigStackPanel
 
     private <T extends ConfigPart> void addConfigPartPanel(@NotNull final ConfigPartPanel<T> panel) {
         // panel.getRootPanel().setMaximumSize(new Dimension(-1, panel.getRootPanel().getMinimumSize().height));
+        panel.setRequestConfigurationLoadListener(this);
         componentList.addChildAt(0, panel);
         ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
             @Override

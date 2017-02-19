@@ -35,6 +35,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,7 +132,7 @@ public class ConnectionUIConfiguration {
         }
 
         private ClientResult(@NotNull Exception ex) {
-            this.clientNames = null;
+            this.clientNames = Collections.emptyList();
             this.connectionProblem = ex;
         }
 
@@ -139,10 +140,12 @@ public class ConnectionUIConfiguration {
             return clientNames == null;
         }
 
+        @NotNull
         public List<String> getClientNames() {
             return clientNames;
         }
 
+        @Nullable
         public Exception getConnectionProblem() {
             return connectionProblem;
         }

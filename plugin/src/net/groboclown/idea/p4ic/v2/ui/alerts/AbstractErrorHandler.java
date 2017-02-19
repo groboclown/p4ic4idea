@@ -50,7 +50,7 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
     }
 
     @NotNull
-    protected String getExceptionMessage() {
+    String getExceptionMessage() {
         return exception.getMessage() == null ? "" : exception.getMessage();
     }
 
@@ -76,25 +76,16 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
         // This cannot be run from an invokeLater:
         // Cannot run synchronous submitTransactionAndWait from invokeLater.
         // Please use asynchronous submit*Transaction. See TransactionGuard FAQ for details.
-        // This means the new API should look at using TransactionGuard instead.
+        // Because of this, it can no longer check the result code, and go offline if the user
+        // doesn't update.
 
         if (ApplicationManager.getApplication().isDispatchThread()) {
-            if (! UICompat.getInstance().editVcsConfiguration(
-                    getProject(), getVcs().getConfigurable())) {
-                if (goOffline) {
-                    goOffline();
-                }
-            }
+            UICompat.getInstance().editVcsConfiguration(getProject(), getVcs().getConfigurable());
         } else {
             ApplicationManager.getApplication().invokeAndWait(new Runnable() {
                 @Override
                 public void run() {
-                    if (! UICompat.getInstance().editVcsConfiguration(
-                            getProject(), getVcs().getConfigurable())) {
-                        if (goOffline) {
-                            goOffline();
-                        }
-                    }
+                    UICompat.getInstance().editVcsConfiguration(getProject(), getVcs().getConfigurable());
                 }
             }, ModalityState.NON_MODAL);
         }
@@ -113,12 +104,12 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
     }
 
 
-    protected boolean isAutoOffline() {
+    boolean isAutoOffline() {
         return UserProjectPreferences.isAutoOffline(project);
     }
 
 
-    protected String getServerKey() {
+    String getServerKey() {
         return serverConnectedController.getServerDescription();
     }
 }

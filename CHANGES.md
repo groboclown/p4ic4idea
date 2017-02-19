@@ -16,7 +16,7 @@
       the code more stable.
     * This change allows for more complex configuration options.  Specifically,
       the `P4ENVIRO` support is handled better.  Still no support for the
-      per-server charset setting, though.
+      per-server charset setting, though. (#94)
     * Compatibility with your previous settings should mostly be maintained.
       If you see an issue with your connection, try updating the connection
       settings.

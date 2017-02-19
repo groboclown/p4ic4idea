@@ -16,7 +16,6 @@ package net.groboclown.idea.p4ic.compat.idea163;
 
 import com.intellij.credentialStore.CredentialAttributesKt;
 import com.intellij.credentialStore.CredentialPromptDialog;
-import com.intellij.ide.actions.ShowSettingsUtilImpl;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -33,14 +32,16 @@ public class UICompat163 extends UICompat {
     }
 
     @Override
-    public boolean editVcsConfiguration(Project project, Configurable configurable) {
-        // FIXME This has unsafe modality in some cases.
-        return ShowSettingsUtil.getInstance().editConfigurable(
+    public void editVcsConfiguration(Project project, Configurable configurable) {
+        ShowSettingsUtil.getInstance().showSettingsDialog(project, configurable);
+                /*
+                ShowSettingsUtil.getInstance().editConfigurable(
                 project,
                 ShowSettingsUtilImpl.createDimensionKey(configurable),
                 configurable,
                 // Show apply button?
                 true);
+                */
     }
 
     @Nullable

@@ -46,5 +46,20 @@
         <ant antfile="plugin/build.xml" target="package"
             inheritrefs="false" inheritall="false"/>
     </target>
+    <target name="package">
+        <ant antfile="idea-compat/build.xml" target="package"
+             inheritrefs="false" inheritall="false"/>
+        <ant antfile="idea135/build.xml" target="package"
+             inheritrefs="false" inheritall="false"/>
+        <ant antfile="idea140/build.xml" target="package"
+             inheritrefs="false" inheritall="false"/>
+        <ant antfile="idea150/build.xml" target="package"
+             inheritrefs="false" inheritall="false"/>
+        <ant antfile="idea160/build.xml" target="package"
+             inheritrefs="false" inheritall="false"/>
+        <ant antfile="p4java/build.xml" target="package"
+             inheritrefs="false" inheritall="false"/>
+        <ant antfile="plugin/build.xml" target="package"
+             inheritrefs="false" inheritall="false"/>
+    </target>
 </project>
-

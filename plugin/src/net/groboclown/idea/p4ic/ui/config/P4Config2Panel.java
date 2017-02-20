@@ -81,6 +81,7 @@ public class P4Config2Panel {
 
     public void loadSettingsIntoGUI(@NotNull P4ProjectConfigComponent configComponent) {
         configStackPanel.updateUI(configComponent);
+        resolvePropertiesPanel.refresh(configComponent.getP4ProjectConfig());
     }
 
     public boolean isModified(@NotNull P4ProjectConfigComponent configComponent) {

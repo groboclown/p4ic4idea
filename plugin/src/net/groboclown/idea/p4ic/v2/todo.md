@@ -1,11 +1,5 @@
 # Refactoring of Connection To Dos:
 
-## Critical
-
-1. Connection UI bugs
-    * Loading the config by itself (say, from an error message) does not populate the
-        config settings.
-
 
 ## General
 
@@ -35,10 +29,7 @@
     key words.  A little bit of this work has started.
 1. P4MultipleConnectionWidget could have some nice work
     1. Add to the status bar widget a "reload" button.  Maybe also to the VCS pop-up menu and app menu.
-1. Clean up "LOG.info" spots.  Remember that "LOG.debug" should be wrapped in
-    "LOG.isDebug" if it does anything more than print a static string.
 1. "todos" and "fixmes" marked in the code.
-1. Debugging, debugging, debugging.
 1. There might be more "files stuck in cached state", but I haven't found more.
 1. Moved files should be grouped together:
     1. move between changelist: one moves, then the other should also move.

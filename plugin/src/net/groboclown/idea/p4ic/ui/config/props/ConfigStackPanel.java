@@ -288,16 +288,24 @@ public class ConfigStackPanel
         final ArrayList<ConfigPart> parts = new ArrayList<ConfigPart>(component.getUserConfigParts());
         Collections.reverse(parts);
 
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                componentList.removeAllChildren();
+        if (ApplicationManager.getApplication().isDispatchThread()) {
+            componentList.removeAllChildren();
 
-                for (ConfigPart part : parts) {
-                    addConfigPart(part);
-                }
+            for (ConfigPart part : parts) {
+                addConfigPart(part);
             }
-        });
+        } else {
+            ApplicationManager.getApplication().invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    componentList.removeAllChildren();
+
+                    for (ConfigPart part : parts) {
+                        addConfigPart(part);
+                    }
+                    }
+            });
+        }
     }
 
     public void loadFromUI(@NotNull final P4ProjectConfigComponent component) {

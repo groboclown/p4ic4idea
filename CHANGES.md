@@ -6,6 +6,7 @@
 ### Overview
 
 * Connection setup revamped.
+* Added "reload configuration" actions to the VCS popup and connection widget.
 * Bug fixes.
 
 ### Details
@@ -23,7 +24,7 @@
     * Hopefully, the default setup for turning on the Perforce VCS will now match
       your environment setup.  The goal here is to have the base setup load
       the user configuration, just like running the "p4" command line tool.
-* Added a "reload configuration" button to the VCS popup menu, and to the
+* Added a "reload configuration" actions to the VCS popup menu, and to the
   status bar widget when no connections exist.
 * Bug fixes.
     * Delete does delete again! (#126)

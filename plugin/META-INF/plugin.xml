@@ -1,12 +1,12 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.8.0-rc1</version>
+    <version>0.8.0-rc2</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
-          <li><em>0.8.0 rc1</em>
+          <li><em>0.8.0 rc2</em>
             <ol>
               <li>Connection setup revamped.  This has ripple effects throughout the plugin.
               Hopefully, it will make the code more stable.  This change allows for more complex
@@ -17,6 +17,7 @@
               turning on the Perforce VCS will now match your environment setup.  The goal here
               is to have the base setup load the user configuration, just like running the "p4"
               command line tool.</li>
+              <li>Delete correctly opens the file for delete again.</li>
               <li>Changed the error reporting for SSL encryption library problem, when it comes
               from a TrustException.  The error reported now includes information about the
               user's JRE for better user investigation of the SSL problem.</li>
@@ -27,6 +28,8 @@
               <li>Many of the caches now clear their state when the project configuration
               is updated.</li>
               <li>Big change to better detect when the user's password is necessary.</li>
+              <li>Added a "reload configuration" button to the VCS popup menu, and to the
+              status bar widget when no connections exist.</li>
             </ol>
           </li>
           <li><em>0.7.19</em>
@@ -97,6 +100,8 @@
                     text="Work online"/>
             <action id="P4.WorkOffline" class="net.groboclown.idea.p4ic.actions.P4WorkOfflineAction"
                     text="Work offline"/>
+            <action id="P4.ReloadConfiguration" class="net.groboclown.idea.p4ic.actions.ReloadP4ConfigAction"
+                    text="Reload configuration"/>
         </group>
 
         <group id="P4ExtendedActions">

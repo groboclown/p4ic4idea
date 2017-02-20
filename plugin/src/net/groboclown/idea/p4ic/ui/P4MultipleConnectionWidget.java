@@ -41,6 +41,8 @@ import com.intellij.util.ui.UIUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.actions.P4WorkOfflineAction;
 import net.groboclown.idea.p4ic.actions.P4WorkOnlineAction;
+import net.groboclown.idea.p4ic.actions.ReloadP4ConfigAction;
+import net.groboclown.idea.p4ic.compat.UICompat;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
@@ -139,7 +141,21 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
             connectionGroup.add(new P4WorkOnlineAction());
             connectionGroup.add(new P4WorkOfflineAction());
         }
+        if (groupCount <= 0) {
+            connectionGroup.add(new ReloadP4ConfigAction());
+        }
         connectionGroup.addSeparator();
+        /* this is for testing.
+        connectionGroup.add(new AnAction(P4Bundle.getString("statusbar.connection.popup.show-config")) {
+            @Override
+            public void actionPerformed(AnActionEvent anActionEvent) {
+                Project project = anActionEvent.getProject();
+                if (project != null) {
+                    UICompat.getInstance().editVcsConfiguration(project, P4Vcs.getInstance(project).getConfigurable());
+                }
+            }
+        });
+        */
         connectionGroup.add(new AnAction(P4Bundle.message("statusbar.connection.popup.cancel")) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {

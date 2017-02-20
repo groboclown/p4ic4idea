@@ -23,7 +23,10 @@
     * Hopefully, the default setup for turning on the Perforce VCS will now match
       your environment setup.  The goal here is to have the base setup load
       the user configuration, just like running the "p4" command line tool.
+* Added a "reload configuration" button to the VCS popup menu, and to the
+  status bar widget when no connections exist.
 * Bug fixes.
+    * Delete does delete again! (#126)
     * Changed the error reporting for SSL encryption library problem, when it comes
       from a TrustException.  The error reported now includes information about the
       user's JRE for better user investigation of the SSL problem. (#133)

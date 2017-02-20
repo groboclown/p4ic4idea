@@ -31,6 +31,7 @@ import com.perforce.p4java.impl.generic.core.file.FilePath;
 import com.perforce.p4java.impl.generic.core.file.FilePath.PathType;
 import com.perforce.p4java.impl.mapbased.rpc.func.helper.MD5Digester;
 import com.perforce.p4java.option.changelist.SubmitOptions;
+import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
@@ -666,7 +667,9 @@ public class P4Exec2 {
                     @NotNull ClientExec.ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 count.invoke("deleteFiles");
-                return getErrors(client.deleteFiles(deleted, changelistId, deleteLocalFiles));
+                DeleteFilesOptions options = new DeleteFilesOptions(changelistId,
+                        false, false, ! deleteLocalFiles);
+                return getErrors(client.deleteFiles(deleted, options));
             }
         });
     }

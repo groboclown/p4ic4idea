@@ -16,6 +16,8 @@ package net.groboclown.idea.p4ic.compat.idea163;
 
 import com.intellij.credentialStore.CredentialAttributesKt;
 import com.intellij.credentialStore.CredentialPromptDialog;
+import com.intellij.ide.actions.ShowSettingsUtilImpl;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -33,15 +35,27 @@ public class UICompat163 extends UICompat {
 
     @Override
     public void editVcsConfiguration(Project project, Configurable configurable) {
-        ShowSettingsUtil.getInstance().showSettingsDialog(project, configurable);
-                /*
-                ShowSettingsUtil.getInstance().editConfigurable(
-                project,
-                ShowSettingsUtilImpl.createDimensionKey(configurable),
-                configurable,
-                // Show apply button?
-                true);
-                */
+        // With the latest updates to IntelliJ, we can no longer run the "editConfigurable" inside an "invokeLater",
+        // because editConfigurable shows a dialog, and this call hangs until the dialog returns, which is
+        // supposed to be an "invokeAndWait" kind of call.
+        // To work around the small chance that this is running inside an invokeLater call, we need to
+        // trick IntelliJ to not log an ugly error against us.
+        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+            @Override
+            public void run() {
+                ApplicationManager.getApplication().invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        ShowSettingsUtil.getInstance().editConfigurable(
+                                project,
+                                ShowSettingsUtilImpl.createDimensionKey(configurable),
+                                configurable,
+                                // Show apply button?
+                                true);
+                    }
+                });
+            }
+        });
     }
 
     @Nullable

@@ -13,30 +13,21 @@
     It should always be visible.  This way, it takes up the correct space, and doesn't cause
     a resize to the elements around it.
     * Maybe try out `useMask(true)` instead of `setVisible(false)` ?
-1. Multiple server connections are active at once, each one with its own password management.
-    * Figure out why the multiples are being created.  Are they with a different ID?  Are they
-        just the loaded cached servers, each trying to refresh itself?  Perhaps there really are
-        three copies all active, one per connection queue?
-    * Could be that multiple requests are happening before the password problem is made apparent,
-        for the same connection.  May need to keep track of these connection problems and the
-        user responses.  That is, if the connection had an issue
-        (could not connect, invalid config, no password, etc), then that state is maintained
-        until the user confirms an action to take.
-        * If this is the case, then there's an issue with the alert manager error stuff
-            synching with the server connection thread.
-        * The state based status should be, then, added to the ServerConnection and the StatusController.
-            This would augment the existing "work offline" status to include much more state.
-            "waitingOnConfigUpdate", "waitingOnUserChoice", "waitingOnPassword", "offline",
-            "online".  The waiting might be condensed down to a single "waitingOnUser".
-            This would mean, though, a thorough check of the dialog classes to make sure they
-            perform the right call to change the state.
-    * Added extra logging on the error handlers to report their server ID.
+1. Multiple requests are happening before the password problem is made apparent,
+    for the same connection.  May need to keep track of these connection problems and the
+    user responses.  That is, if the connection had an issue
+    (could not connect, invalid config, no password, etc), then that state is maintained
+    until the user confirms an action to take.
+    * If this is the case, then there's an issue with the alert manager error stuff
+        synching with the server connection thread.
+    * The state based status should be, then, added to the ServerConnection and the StatusController.
+        This would augment the existing "work offline" status to include much more state.
+        "waitingOnConfigUpdate", "waitingOnUserChoice", "waitingOnPassword", "offline",
+        "online".  The waiting might be condensed down to a single "waitingOnUser".
+        This would mean, though, a thorough check of the dialog classes to make sure they
+        perform the right call to change the state.
 1. Why isn't SSLKeyStrengthProblemHandler being used?
 1. Connection UI bugs
-    * ResolvedPropertiesPanel should have better control over refreshing the configuration.
-        Re-examine the conditions where the properties are loaded, and ensure that the
-        configuration stack is reloaded at the right points.  See the "FIXME" comment
-        around this point.
     * The list of client directories, when refreshed, changes to the first entry, rather than
         staying on the previously selected one.
         - Test fix

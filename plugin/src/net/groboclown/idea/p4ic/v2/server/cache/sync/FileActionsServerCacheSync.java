@@ -322,7 +322,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
         undoPendingActionFor(file);
 
-        // TODO put the file in the local cache, or mark it in the IDEA built-in vcs.
+        // TODO put the file in the local cache, or mark it in the IDEA built-in vcs
+        // in order to support offline "revert".
 
         // Create the action.
         final HashMap<String, Object> params = new HashMap<String, Object>();
@@ -1392,10 +1393,13 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             // Perform the reverts first
             @SuppressWarnings("unchecked") final Map<Integer, Set<FilePath>> revertSets =
                     joinChangelistFiles(split.edited, split.added, split.integrated);
-            if (!revertSets.isEmpty()) {
-                final Set<FilePath> reverts = new HashSet<FilePath>();
-                for (Collection<FilePath> fpList : revertSets.values()) {
-                    reverts.addAll(fpList);
+            final Set<FilePath> reverts = new HashSet<FilePath>();
+            for (Collection<FilePath> fpList : revertSets.values()) {
+                reverts.addAll(fpList);
+            }
+            if (!reverts.isEmpty()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Reverting files that are going to be deleted: " + reverts);
                 }
                 try {
                     final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(reverts));
@@ -1415,19 +1419,25 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                                     FilePathUtil.toStringList(reverts)),
                             e, reverts);
                     // Whether the revert is a real failure or not
-                    // will be deterined in the below invocation.
+                    // will be determined in the below invocation.
                 }
             }
 
 
             @SuppressWarnings("unchecked") Map<Integer, Set<FilePath>> deletes = joinChangelistFiles(
                     split.notOpened, split.integrated, split.edited);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Marking files for delete: " + deletes);
+            }
 
             for (Entry<Integer, Set<FilePath>> entry : deletes.entrySet()) {
                 try {
+                    List<IFileSpec> specs = FileSpecUtil.getFromFilePaths(entry.getValue());
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Deleting specs " + specs);
+                    }
                     final List<P4StatusMessage> msgs =
-                            exec.deleteFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
-                                    entry.getKey(), true);
+                            exec.deleteFiles(specs, entry.getKey(), true);
                     markUpdated(entry.getValue(), msgs);
                     // Note: any errors here will be displayed to the
                     // user, but they do not indicate that the actual

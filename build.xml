@@ -59,6 +59,7 @@
              inheritrefs="false" inheritall="false"/>
         <ant antfile="p4java/build.xml" target="package"
              inheritrefs="false" inheritall="false"/>
+        <delete file="p4ic4idea.zip" failonerror="false"/>
         <ant antfile="plugin/build.xml" target="package"
              inheritrefs="false" inheritall="false"/>
     </target>

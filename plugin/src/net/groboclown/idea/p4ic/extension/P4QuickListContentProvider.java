@@ -42,6 +42,7 @@ public class P4QuickListContentProvider implements VcsQuickListContentProvider {
         add("CheckinFiles", manager, actions);
         add("ChangesView.Revert", manager, actions);
         add("UpdateFiles", manager, actions);
+        add("ChangesView.AddUnversioned", manager, actions);
 
         addSeparator(actions);
         add("Vcs.ShowTabbedFileHistory", manager, actions);
@@ -55,8 +56,6 @@ public class P4QuickListContentProvider implements VcsQuickListContentProvider {
         add("P4.Unshelve", manager, actions);
         */
 
-        add("ChangesView.AddUnversioned", manager, actions);
-
         /*
         add("P4.ResolveConflicts", manager, actions);
         */
@@ -64,6 +63,7 @@ public class P4QuickListContentProvider implements VcsQuickListContentProvider {
         addSeparator(actions);
         add("P4.WorkOnline", manager, actions);
         add("P4.WorkOffline", manager, actions);
+        add("P4.ReloadConfiguration", manager, actions);
 
         return actions;
     }

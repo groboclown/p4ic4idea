@@ -5,6 +5,18 @@
 
 ### Overview
 
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * ???
+
+
+## ::v0.8.0::
+
+### Overview
+
 * Connection setup revamped.
 * Added "reload configuration" actions to the VCS popup and connection widget.
 * Bug fixes.

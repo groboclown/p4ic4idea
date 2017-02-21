@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.8.0</version>
+    <version>0.8.1</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.8.1</em>
+            <ol>
+              <li>???</li>
+            </ol>
+          </li>
           <li><em>0.8.0</em>
             <ol>
               <li>Connection setup revamped.  This has ripple effects throughout the plugin.
@@ -30,19 +35,6 @@
               <li>Big change to better detect when the user's password is necessary.</li>
               <li>Added a "reload configuration" button to the VCS popup menu, and to the
               status bar widget when no connections exist.</li>
-            </ol>
-          </li>
-          <li><em>0.7.19</em>
-            <ol>
-              <li>Fixed configuration connection issue.  It should now recognize more
-              situations where the password is needed.  Additionally, the user
-              shouldn't be quite as bombarded with error dialogs as before.</li>
-              <li>Corrected the P4CONFIG parsing so that it correctly reads the file.
-              It used to incorrectly parse a '\' character as an escaping character.
-              Now it is correctly read.</li>
-              <li>Reduced the number of working-with-disposed-connections errors.</li>
-              <li>Fixed an error with loading user preferences if the project is disposed.</li>
-              <li>Build improvements.</li>
             </ol>
           </li>
         </ol>

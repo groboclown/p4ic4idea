@@ -64,7 +64,9 @@ public class RelativeConfigCompositePart extends CompositePart {
 
     public void setName(@Nullable String name) {
         this.name = name;
-        reload();
+
+        // Note: do not reload when the name is set.  This can be costly in terms
+        // of performance.  See #139.
     }
 
     @Nullable

@@ -14,7 +14,6 @@
 
 package net.groboclown.idea.p4ic.ui.config.props;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
@@ -40,20 +39,10 @@ public class RelativeConfigPartPanel
 
     RelativeConfigPartPanel(@NotNull Project project, @NotNull final RelativeConfigCompositePart part) {
         super(project, part);
-        final String name = part.getName();
-        if (name == null) {
-            nameField.setText(DEFAULT_FILE_NAME);
-            // Setting the name will trigger a reload, so do that in the background
-            // See #139
-            ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
-                @Override
-                public void run() {
-                    part.setName(DEFAULT_FILE_NAME);
-                }
-            });
-        } else {
-            nameField.setText(name);
+        if (part.getName() != null) {
+            part.setName(DEFAULT_FILE_NAME);
         }
+        nameField.setText(part.getName());
     }
 
     @Nls
@@ -72,7 +61,7 @@ public class RelativeConfigPartPanel
     @Override
     public void updateConfigPartFromUI() {
         getConfigPart().setName(nameField.getText());
-        LOG.info("Set relative config file name to " + getConfigPart().getName());
+        LOG.debug("Set relative config file name to " + getConfigPart().getName());
     }
 
     @NotNull

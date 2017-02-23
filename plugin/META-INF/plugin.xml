@@ -6,6 +6,11 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.8.2</em>
+            <ol>
+              <li>Fixed an issue with adding files.</li>
+            </ol>
+          </li>
           <li><em>0.8.1</em>
             <ol>
               <li>Fixed a parsing error on the client URL protocol.</li>

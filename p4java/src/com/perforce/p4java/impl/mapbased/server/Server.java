@@ -3159,7 +3159,7 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		if (resultMaps != null) {
 			for (Map<String, Object> result : resultMaps) {
 				// p4ic4idea: use IServerMessage instead of string
-				final IServerMessage err = this.handleFileErrorStr(result);
+				final IServerMessage err = handleFileErrorStr(result);
 				if (err != null) {
 					FileSpec fSpec = new FileSpec(FileSpecOpStatus.ERROR, err);
 					String depotPath = (String) result.get("depotFile");
@@ -4987,21 +4987,21 @@ public abstract class Server implements IServerControl, IOptionsServer {
 		}
 		return null;
 	}
-	
+
 	// p4ic4idea: use IServerMessage instead of string
 	public IServerMessage handleFileErrorStr(Map<String, Object> map)
 			throws P4JavaException {
 		final IServerMessage err = getErrorOrInfoStr(map);
-		
+
 		if (err != null) {
 			// p4ic4idea: more precise errors
-			// also, remove the wrapped ConnectionException issue.
-			throw createExceptionFromMessage(err);
+			if (getAuthFailType(err) != null) {
+				throw createExceptionFromMessage(err);
+			}
 		}
-		
-		return null;
+		return err;
 	}
-	
+
 	public static String guardNull(String str) {
 		final String nullStr = "<null>";
 		

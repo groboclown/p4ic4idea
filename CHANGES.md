@@ -1,7 +1,7 @@
 # IDEA Community VCS Integration for Perforce
 
 
-## ::v0.8.0::
+## ::v0.8.1::
 
 ### Overview
 
@@ -12,7 +12,7 @@
 * Bug fixes.
     * Fixed a parsing error on the client URL protocol (#138).
 
-s
+
 ## ::v0.8.0::
 
 ### Overview

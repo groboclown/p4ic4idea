@@ -85,7 +85,7 @@ public class P4ServerNameTest {
                 is("localhost:1667"));
         assertThat("protocol name",
                 name.getProtocolName(),
-                is("nts"));
+                is("java"));
     }
 
     @Test
@@ -114,7 +114,7 @@ public class P4ServerNameTest {
                 is("host:1234"));
         assertThat("protocol name",
                 name.getProtocolName(),
-                is("nts"));
+                is("java"));
     }
 
     @Test
@@ -143,6 +143,6 @@ public class P4ServerNameTest {
                 is("host:1234"));
         assertThat("protocol name",
                 name.getProtocolName(),
-                is("nts"));
+                is("java"));
     }
 }

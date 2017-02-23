@@ -7,6 +7,7 @@
     It should always be visible.  This way, it takes up the correct space, and doesn't cause
     a resize to the elements around it.
     * Maybe try out `useMask(true)` instead of `setVisible(false)` ?
+    * `JBList` has a spinner that could be used (`setPaintBusy`), for when it's loading.
 1. Multiple requests are happening before the password problem is made apparent,
     for the same connection.  May need to keep track of these connection problems and the
     user responses.  That is, if the connection had an issue

@@ -10,9 +10,9 @@
 ### Details
 
 * Bug fixes.
-    * ???
+    * Fixed a parsing error on the client URL protocol (#138).
 
-
+s
 ## ::v0.8.0::
 
 ### Overview

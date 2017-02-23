@@ -38,14 +38,14 @@ public class P4ServerName {
         String protocolText = null;
         String port = portText.trim();
         int splitter = portText.indexOf(PROTOCOL_SEP);
-        if (splitter >= portText.length() - 1) {
-            // ':' is on the last character, which is invalid.
+        if (splitter >= portText.length() - PROTOCOL_SEP.length()) {
+            // '://' is on the end, which is invalid.
             // set the value to an invalid setting, but not null
             // to avoid an NPE.
             port = ":";
         } else if (splitter >= 0) {
-            port = portText.substring(0, splitter);
-            protocolText = portText.substring(splitter + PROTOCOL_SEP.length());
+            protocolText = portText.substring(0, splitter);
+            port = portText.substring(splitter + PROTOCOL_SEP.length());
         } else {
             // based on http://www.perforce.com/perforce/r14.1/manuals/p4guide/chapter.configuration.html
             // format can be "port", "hostname:port", "ssl:hostname:port", "tcp:hostname:port"
@@ -53,13 +53,13 @@ public class P4ServerName {
             if (splitter > 0) {
                 int splitter2 = portText.indexOf(':', splitter + 1);
                 if (splitter2 > 0) {
-                    port = portText.substring(0, splitter);
-                    protocolText = portText.substring(splitter + 1);
+                    protocolText = portText.substring(0, splitter);
+                    port = portText.substring(splitter + 1);
                 }
             }
         }
 
-        if (port.indexOf(':') < 0) {
+        if (port.indexOf(':') <= 0) {
             // This is the form "port", which is not supported by the
             // P4 java api.  So we must prepend a localhost to conform
             // to what P4 java supports.
@@ -102,7 +102,7 @@ public class P4ServerName {
         if (this.protocolName == null) {
             this.fullName = server;
         } else {
-            this.fullName = this.protocolName + ':' + server;
+            this.fullName = this.protocolName + PROTOCOL_SEP + server;
         }
     }
 
@@ -111,8 +111,11 @@ public class P4ServerName {
         return protocol;
     }
 
-    @Nullable
+    @NotNull
     public String getProtocolName() {
+        if (protocolName == null) {
+            return "java";
+        }
         return protocolName;
     }
 
@@ -171,7 +174,7 @@ public class P4ServerName {
         if (protocol == null) {
             return IServerAddress.Protocol.P4JRPCNTS;
         }
-        protocol = protocol.toLowerCase();
+        protocol = protocol.toLowerCase().trim();
         if ("ssl".equals(protocol)) {
             return IServerAddress.Protocol.P4JRPCNTSSSL;
         }

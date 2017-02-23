@@ -8,7 +8,7 @@
         <ol>
           <li><em>0.8.1</em>
             <ol>
-              <li>???</li>
+              <li>Fixed a parsing error on the client URL protocol.</li>
             </ol>
           </li>
           <li><em>0.8.0</em>

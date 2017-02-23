@@ -8,7 +8,8 @@
         <ol>
           <li><em>0.8.3</em>
             <ol>
-              <li>???</li>
+              <li>The relative config part of the configuration no longer hangs when
+              the configuration is first loaded</li>
             </ol>
           </li>
           <li><em>0.8.2</em>

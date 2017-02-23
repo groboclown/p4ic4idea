@@ -10,7 +10,8 @@
 ### Details
 
 * Bug fixes.
-    * ???
+    * The relative config part of the configuration no longer hangs when
+      the configuration is first loaded (#139).
 
 
 ## ::v0.8.2::

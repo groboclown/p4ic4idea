@@ -9,7 +9,13 @@
           <li><em>0.8.3</em>
             <ol>
               <li>The relative config part of the configuration no longer hangs when
-              the configuration is first loaded</li>
+              the configuration is first loaded.</li>
+              <li>The property configuration did not correctly write its parameters to the
+              <tt>workspace.xml</tt> file.</li>
+              <li>The property configuration did not correctly report itself as not
+              modified.</li>
+              <li>The property configuration pane didn't let you choose the file by
+              pressing the "..." button.</li>
             </ol>
           </li>
           <li><em>0.8.2</em>

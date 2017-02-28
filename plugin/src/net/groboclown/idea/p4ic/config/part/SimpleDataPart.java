@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.config.part;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
@@ -29,6 +30,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SimpleDataPart implements DataPart {
+    private static final Logger LOG = Logger.getInstance(SimpleDataPart.class);
+
     static final String TAG_NAME = "simple-data-part";
     static final ConfigPartFactory<SimpleDataPart> FACTORY = new Factory();
     private static final String PROPERTY_TAG_NAME = "prop";
@@ -341,13 +344,17 @@ public class SimpleDataPart implements DataPart {
     @Override
     public Element marshal() {
         Element ret = new Element(TAG_NAME);
+        // FIXME debug
+        LOG.info("Marshalling " + properties);
         for (Map.Entry<String, String> entry : properties.entrySet()) {
             Element prop = new Element(PROPERTY_TAG_NAME);
             prop.setAttribute(KEY_ATTRIBUTE_NAME, entry.getKey());
             if (entry.getValue() != null) {
                 prop.setAttribute(VALUE_ATTRIBUTE_NAME, entry.getValue());
             }
+            ret.addContent(prop);
         }
+        LOG.info("Final marshal: " + ret);
         return ret;
     }
 
@@ -404,8 +411,11 @@ public class SimpleDataPart implements DataPart {
     private void setTrimmed(@NotNull String key, @Nullable String value) {
         value = trimmedValue(value);
         if (value == null) {
+            // FIXME debug
+            LOG.info("Removing key " + key);
             properties.remove(key);
         } else {
+            LOG.info("Setting key " + key + " = [" + value + "]");
             properties.put(key, value);
         }
     }

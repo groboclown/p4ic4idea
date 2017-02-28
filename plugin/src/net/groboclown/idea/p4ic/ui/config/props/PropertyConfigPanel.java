@@ -14,13 +14,16 @@
 
 package net.groboclown.idea.p4ic.ui.config.props;
 
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.openapi.util.io.FileUtil;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.part.SimpleDataPart;
+import net.groboclown.idea.p4ic.util.EqualUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -58,9 +61,23 @@ public class PropertyConfigPanel
 
         authTicketFileFieldLabel.setLabelFor(authTicketFileField);
         authTicketFileField.setText(nullEmptyFile(project, part.getAuthTicketFile()));
+        authTicketFileField.setButtonEnabled(true);
+        authTicketFileField.addBrowseFolderListener(
+                P4Bundle.getString("configuration.properties.authticket.chooser.title"),
+                P4Bundle.getString("configuration.properties.authticket.chooser.desc"),
+                project,
+                FileChooserDescriptorFactory.createSingleLocalFileDescriptor()
+        );
 
         trustTicketFileFieldLabel.setLabelFor(trustTicketFileField);
         trustTicketFileField.setText(nullEmptyFile(project, part.getTrustTicketFile()));
+        trustTicketFileField.setButtonEnabled(true);
+        trustTicketFileField.addBrowseFolderListener(
+                P4Bundle.getString("configuration.properties.trustticket.chooser.title"),
+                P4Bundle.getString("configuration.properties.trustticket.chooser.desc"),
+                project,
+                FileChooserDescriptorFactory.createSingleLocalFileDescriptor()
+        );
 
         hostnameField.setText(nullEmptyTrim(part.getClientHostname()));
 
@@ -70,6 +87,13 @@ public class PropertyConfigPanel
 
         loginSsoFieldLabel.setLabelFor(loginSsoField);
         loginSsoField.setText(nullEmptyFile(project, part.getLoginSso()));
+        loginSsoField.setButtonEnabled(true);
+        loginSsoField.addBrowseFolderListener(
+                P4Bundle.getString("configuration.properties.loginsso.chooser.title"),
+                P4Bundle.getString("configuration.properties.loginsso.chooser.desc"),
+                project,
+                FileChooserDescriptorFactory.createSingleFileOrExecutableAppDescriptor()
+        );
     }
 
     @Nls
@@ -105,7 +129,28 @@ public class PropertyConfigPanel
 
     @Override
     public boolean isModified(@NotNull SimpleDataPart originalPart) {
-        return !originalPart.equals(getConfigPart());
+        return !isNotEqual(charsetField, originalPart.getDefaultCharset())
+            && !isNotEqual(ignoreFileNameField, originalPart.getIgnoreFileName())
+            && !isNotEqual(hostnameField, originalPart.getClientHostname())
+            && !isNotEqual(trustTicketFileField, originalPart.getTrustTicketFile())
+            && !isNotEqual(authTicketFileField, originalPart.getTrustTicketFile())
+            && !isNotEqual(userField, originalPart.getUsername())
+            && !isNotEqual(portField, originalPart.getRawServerName())
+            && !isNotEqual(loginSsoField, originalPart.getLoginSso());
+    }
+
+    private static boolean isNotEqual(@NotNull JTextField field, @Nullable String value) {
+        return EqualUtil.isEqual(field.getText(), value);
+    }
+
+    private static boolean isNotEqual(@NotNull TextFieldWithBrowseButton field, @Nullable File file) {
+        final File f;
+        if (field.getText().isEmpty()) {
+            f = null;
+        } else {
+            f = new File(field.getText());
+        }
+        return FileUtil.filesEqual(f, file);
     }
 
     @NotNull

@@ -62,7 +62,8 @@ public class PartValidation {
     }
 
     boolean checkAuthTicketFile(@NotNull ConfigPart part, @Nullable File file) {
-        if (file != null && (! file.exists() || ! file.isFile())) {
+        // If it points to a directory, then we ignore this.
+        if (file != null && ! file.exists()) {
             problems.add(new ConfigProblem(part, "configuration.problem.authticket.exist", file));
             return false;
         }
@@ -74,7 +75,8 @@ public class PartValidation {
     }
 
     boolean checkTrustTicketFile(@NotNull ConfigPart part, @Nullable File file) {
-        if (file != null && (! file.exists() || ! file.isFile())) {
+        // If it points to a directory, then we ignore this.
+        if (file != null && ! file.exists()) {
             problems.add(new ConfigProblem(part, "configuration.problem.trustticket.exist", file));
             return false;
         }

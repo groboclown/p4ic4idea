@@ -12,6 +12,12 @@
 * Bug fixes.
     * The relative config part of the configuration no longer hangs when
       the configuration is first loaded (#139).
+    * The property configuration did not correctly write its parameters to the
+      `workspace.xml` file (#142).
+    * The property configuration did not correctly report itself as not
+      modified.
+    * The property configuration pane didn't let you choose the file by
+      pressing the "..." button.
 
 
 ## ::v0.8.2::

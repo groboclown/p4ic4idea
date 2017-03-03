@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.config;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.env.PerforceEnvironment;
@@ -33,6 +34,9 @@ import java.util.Set;
  * server.
  */
 public class ClientConfig {
+    private static final Logger LOG = Logger.getInstance(ClientConfig.class);
+
+
     // Just some character that won't appear in any real text, but
     // is still viewable in a debugger.
     private static final char SEP = (char) 0x2202;
@@ -59,10 +63,14 @@ public class ClientConfig {
 
     private ClientConfig(@NotNull Project project, @NotNull ServerConfig serverConfig, @NotNull DataPart data,
             @NotNull Collection<VirtualFile> clientProjectBaseDirectories) {
+        // Not needed anymore, because the calling class (P4ProjectConfigStack) does this check, and we don't
+        // want a misleading double exception in the logs.
+        /*
         if (! serverConfig.isSameServer(data)) {
-            throw new IllegalArgumentException("Server config " + serverConfig +
-                    " does not match data config " + data);
+            LOG.error("Server config " + serverConfig +
+                    " does not match data config " + ConfigPropertiesUtil.toProperties(data));
         }
+        */
 
         this.project = project;
         this.rootDirs = Collections.unmodifiableSet(new HashSet<VirtualFile>(clientProjectBaseDirectories));

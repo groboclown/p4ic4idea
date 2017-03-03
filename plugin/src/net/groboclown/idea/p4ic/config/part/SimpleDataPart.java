@@ -409,9 +409,11 @@ public class SimpleDataPart implements DataPart {
         String path = trimmedProperty(key);
         if (path != null) {
             ret = new File(path);
-            final String baseDir = project.getBaseDir().getCanonicalPath();
-            if (! ret.isAbsolute() && baseDir != null) {
-                ret = new File(new File(baseDir), path);
+            if (project.getBaseDir() != null) {
+                final String baseDir = project.getBaseDir().getCanonicalPath();
+                if (!ret.isAbsolute() && baseDir != null) {
+                    ret = new File(new File(baseDir), path);
+                }
             }
         }
         return ret;

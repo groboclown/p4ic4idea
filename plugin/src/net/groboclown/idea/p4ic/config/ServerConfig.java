@@ -13,9 +13,11 @@
  */
 package net.groboclown.idea.p4ic.config;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.io.FileUtil;
 import net.groboclown.idea.p4ic.config.part.DataPart;
 import net.groboclown.idea.p4ic.config.part.PartValidation;
+import net.groboclown.idea.p4ic.util.EqualUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,6 +36,8 @@ import java.util.*;
  * properties are the same; it should not match on online mode.
  */
 public final class ServerConfig {
+    private static final Logger LOG = Logger.getInstance(ServerConfig.class);
+
     // Just some character that won't appear in any real text, but
     // is still viewable in a debugger.
     private static final char SEP = (char) 0x2202;
@@ -191,40 +195,82 @@ public final class ServerConfig {
         return serverId;
     }
 
-    public boolean isSameServer(@Nullable DataPart part) {
+    boolean isSameServer(@Nullable DataPart part) {
         if (part == null) {
-            return false;
-        }
-        if (! getServerName().equals(part.getServerName())) {
+            LOG.debug("isSameServer: input is null");
             return false;
         }
 
-        if (hasAuthTicket() && ! FileUtil.filesEqual(getAuthTicket(), part.getAuthTicketFile())) {
+        if (! EqualUtil.isEqual(getServerName(), part.getServerName())) {
+            if (LOG.isDebugEnabled()) {
+                if (part.getServerName() == null) {
+                    LOG.debug("isSameServer: input server name is null");
+                } else {
+                    LOG.debug("isSameServer: server doesn't match: "
+                            + getServerName().getServerPort() + "::" + getServerName().getServerProtocol() + " <> "
+                            + part.getServerName().getServerPort() + "::" + part.getServerName().getServerProtocol());
+                }
+            }
             return false;
         }
+
         if (hasAuthTicket() != part.hasAuthTicketFileSet()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("isSameServer: has auth ticket file values don't match: "
+                        + hasAuthTicket() + " <> " + part.hasAuthTicketFileSet());
+            }
+            return false;
+        }
+        if (! FileUtil.filesEqual(getAuthTicket(), part.getAuthTicketFile())) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("isSameServer: auth ticket doesn't match: "
+                        + getAuthTicket() + " <> " + part.getAuthTicketFile());
+            }
             return false;
         }
 
-        if (hasTrustTicket() && ! FileUtil.filesEqual(getTrustTicket(), part.getTrustTicketFile())) {
-            return false;
-        }
         if (hasTrustTicket() != part.hasTrustTicketFileSet()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("isSameServer: has trust ticket doesn't match: "
+                        + hasTrustTicket() + " <> " + part.hasTrustTicketFileSet());
+            }
+            return false;
+        }
+        if (hasTrustTicket() && ! FileUtil.filesEqual(getTrustTicket(), part.getTrustTicketFile())) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("isSameServer: trust ticket doesn't match: "
+                        + getTrustTicket() + " <> " + part.getTrustTicketFile());
+            }
             return false;
         }
 
-        if (hasServerFingerprint() && ! getServerFingerprint().equals(part.getServerFingerprint())) {
+        if (hasServerFingerprint() != part.hasServerFingerprintSet()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("isSameServer: has server fingerprint mismatch: "
+                        + hasServerFingerprint() + " <> " + part.hasServerFingerprintSet());
+            }
             return false;
         }
-        if (hasServerFingerprint() != part.hasServerFingerprintSet()) {
+        if (hasServerFingerprint() && ! EqualUtil.isEqual(getServerFingerprint(), part.getServerFingerprint())) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("isSameServer: server fingerprint mismatch: "
+                        + getServerFingerprint() + " <> " + part.getServerFingerprint());
+            }
             return false;
+        }
+
+        if (! EqualUtil.isEqual(getUsername(), part.getUsername())) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("isSameServer: username mismatch: "
+                       + getUsername() + " <> " + part.getUsername());
+            }
         }
 
         return true;
     }
 
     @NotNull
-    public Map<String, String> toProperties() {
+    private Map<String, String> toProperties() {
         return ConfigPropertiesUtil.toProperties(this);
     }
 

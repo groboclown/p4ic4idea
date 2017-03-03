@@ -154,7 +154,7 @@ public class P4ServerName {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || ! (obj.getClass().equals(P4ServerName.class))) {
+        if (obj == null || ! (obj.getClass().equals(getClass()))) {
             return false;
         }
         P4ServerName that = (P4ServerName) obj;

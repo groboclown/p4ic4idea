@@ -375,7 +375,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         private ClientServerSetup(@Nullable ServerConfig serverConfig, @NotNull MultipleDataPart dataPart,
                 @NotNull VirtualFile path) {
             if (serverConfig != null && ! serverConfig.isSameServer(dataPart)) {
-                throw new IllegalArgumentException("Server config " + serverConfig + " does not match " +
+                LOG.error("Server config " + serverConfig + " does not match " +
                         ConfigPropertiesUtil.toProperties(dataPart));
             }
             if (LOG.isDebugEnabled() && serverConfig == null) {
@@ -394,8 +394,6 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
             if (clientConfig == null && ! dataPart.hasError() && serverConfig != null) {
                 clientConfig = ClientConfig.createFrom(project, serverConfig, dataPart, roots);
             }
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!
-            // Here's the bug: serverConfig is null
             if (LOG.isDebugEnabled() && clientConfig == null) {
                 LOG.debug("null clientConfig: has errors? " + dataPart.hasError() +
                         ", server config: " + serverConfig);

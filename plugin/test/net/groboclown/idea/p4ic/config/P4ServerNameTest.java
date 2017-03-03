@@ -145,4 +145,11 @@ public class P4ServerNameTest {
                 name.getProtocolName(),
                 is("java"));
     }
+
+    @Test
+    public void equals1() {
+        P4ServerName name1 = P4ServerName.forPort("tcp:host:1234");
+        P4ServerName name2 = P4ServerName.forPort("host:1234");
+        assertThat(name1, is(name2));
+    }
 }

@@ -14,7 +14,10 @@
 
 package net.groboclown.idea.p4ic.util;
 
+import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.annotations.Nullable;
+
+import java.io.File;
 
 public class EqualUtil {
     public static boolean isEqual(@Nullable Object a, @Nullable Object b) {
@@ -23,5 +26,10 @@ public class EqualUtil {
         // if a == b, then it's false if a != null and b == null, or b != null and a == null.
         // So, if a == null and a != b, then b must be != null, so that part evaluates to false.
         return (a == b || (a != null && a.equals(b)));
+    }
+
+
+    public static boolean isEqual(@Nullable File a, @Nullable File b) {
+        return FileUtil.filesEqual(a, b);
     }
 }

@@ -228,7 +228,7 @@ public class ClientNameConfigPartPanel
         listRefreshButton.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.refresh-client-list"));
         refreshPanel.add(listRefreshButton, BorderLayout.CENTER);
-        refreshPanel.add(listRefreshSpinner, BorderLayout.EAST);
+        refreshPanel.add(listRefreshSpinner, BorderLayout.WEST);
         listLabel.setLabelFor(clientDropdownList);
     }
 

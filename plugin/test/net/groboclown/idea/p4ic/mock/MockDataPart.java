@@ -57,6 +57,11 @@ public class MockDataPart
         return Collections.emptyList();
     }
 
+    @Override
+    public boolean hasError() {
+        return false;
+    }
+
 
     @Nullable
     @Override

@@ -274,7 +274,13 @@ public class P4ServerManager implements ProjectComponent {
         StartupManager.getInstance(project).registerPostStartupActivity(new Runnable() {
             @Override
             public void run() {
-                initializeServers();
+                // This can block the UI, so run it in the background.
+                ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        initializeServers();
+                    }
+                });
             }
         });
 

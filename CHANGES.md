@@ -12,16 +12,18 @@
     * Cleaned up debug logging.
     * Added workaround for an observed issue where the IDE would not load the workspace
       VCS configuration before the plugin was available (part of #143).
-    * Fixed
+    * The client name panel now correctly displays the client name saved in the
+      `workspace.xml` file.
     * The configuration UI now prompts for a password when the client name panel
       needs a password to find the user's clients.
     * Improved configuration problem reporting to differentiate between warnings and
-      actual errors.
+      actual errors (part of #143 and #144).
     * Fixed the connection status bar widget to push more activity out of the event
       thread and into the background.
     * Fixed the reload buttons to be disabled while the process is running.
     * Moved the client name field spinner to be consistent with the rest of the UI.
     * Added validation check to ensure client name is not purely numeric.
+    * Temporarily disabled the client name refresh button until that's all worked out.
 
 
 ## ::v0.8.3::

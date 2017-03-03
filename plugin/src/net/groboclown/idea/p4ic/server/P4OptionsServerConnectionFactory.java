@@ -171,7 +171,7 @@ public class P4OptionsServerConnectionFactory {
         // Socket creation properties
         // See RpcSocketHelper
         props.setProperty(RpcPropertyDefs.RPC_SOCKET_SO_TIMEOUT_NICK,
-                // FIXME make a user setting (time is in milliseconds)
+                // TODO make a user setting (time is in milliseconds)
                 // This is the default value (30 seconds)
                 Integer.toString(30000));
 

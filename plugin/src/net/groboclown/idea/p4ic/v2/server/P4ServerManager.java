@@ -396,8 +396,9 @@ public class P4ServerManager implements ProjectComponent {
         // IDE master password
         Map<ClientServerRef, P4Server> newServers = new HashMap<ClientServerRef, P4Server>();
         for (ClientConfig config: sources.getClientConfigs()) {
-            // FIXME DEBUG
-            LOG.info("Adding server " + config.getServerConfig().getServerName().getDisplayName());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Adding server " + config.getServerConfig().getServerName().getDisplayName());
+            }
             try {
                 final P4Server server = new P4Server(project, config);
                 newServers.put(server.getClientServerId(), server);

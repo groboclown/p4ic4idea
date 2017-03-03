@@ -38,6 +38,7 @@ public class PartValidation {
         validation.checkAuthTicketFile(part);
         validation.checkTrustTicketFile(part);
         validation.checkLoginSsoFile(part);
+        validation.checkClientName(part, true);
 
         return validation.getProblems();
     }
@@ -109,5 +110,23 @@ public class PartValidation {
 
     boolean checkUsername(@NotNull DataPart part) {
         return checkUsername(part, part.getUsername());
+    }
+
+    boolean checkClientName(@NotNull DataPart part, boolean ensureNotNull) {
+        return checkClientName(part, part.getClientname(), ensureNotNull);
+    }
+
+    private boolean checkClientName(@NotNull DataPart part, @Nullable String clientName, boolean ensureNotNull) {
+        if (clientName != null) {
+            try {
+                Integer.parseInt(clientName);
+                problems.add(new ConfigProblem(part, true, "error.config.client.numeric"));
+            } catch (NumberFormatException e) {
+                // This is fine.  Ignore.
+            }
+        } else if (ensureNotNull) {
+            problems.add(new ConfigProblem(part, false, "error.config.no-client"));
+        }
+        return false;
     }
 }

@@ -79,30 +79,39 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
         if (clientServerRef.getClientName() == null) {
             throw new P4InvalidClientException(clientServerRef);
         }
+
+        // This needs to be done carefully, so we don't have long running blocks
+        // against the server.
+        ClientLocalServerState ret;
         synchronized (clientStates) {
-            ClientLocalServerState ret = clientStates.get(clientServerRef);
-            if (ret == null) {
-                Boolean isServerCaseInsensitive = null;
-                try {
-                    isServerCaseInsensitive = isServerCaseInsensitiveCallable.call();
-                } catch (Exception e) {
-                    LOG.warn("Problem contacting Perforce server", e);
-                }
-                if (isServerCaseInsensitive == null) {
-                    isServerCaseInsensitive = SystemInfo.isWindows;
-                }
-                ret = new ClientLocalServerState(
-                        new P4ClientState(isServerCaseInsensitive,
-                                clientServerRef, new P4WorkspaceViewState(clientServerRef.getClientName()),
-                                new JobStatusListState(), new JobStateList()),
-                        new P4ClientState(isServerCaseInsensitive,
-                                clientServerRef, new P4WorkspaceViewState(clientServerRef.getClientName()),
-                                new JobStatusListState(), new JobStateList()),
-                        new ArrayList<PendingUpdateState>());
+            ret = clientStates.get(clientServerRef);
+        }
+        if (ret == null) {
+            Boolean isServerCaseInsensitive = null;
+            try {
+                isServerCaseInsensitive = isServerCaseInsensitiveCallable.call();
+            } catch (Exception e) {
+                LOG.warn("Problem contacting Perforce server", e);
+            }
+            if (isServerCaseInsensitive == null) {
+                isServerCaseInsensitive = SystemInfo.isWindows;
+            }
+            ret = new ClientLocalServerState(
+                    new P4ClientState(isServerCaseInsensitive,
+                            clientServerRef, new P4WorkspaceViewState(clientServerRef.getClientName()),
+                            new JobStatusListState(), new JobStateList()),
+                    new P4ClientState(isServerCaseInsensitive,
+                            clientServerRef, new P4WorkspaceViewState(clientServerRef.getClientName()),
+                            new JobStatusListState(), new JobStateList()),
+                    new ArrayList<PendingUpdateState>());
+            // It's okay to overwrite any existing value here.  The initialization
+            // work has already been done, and we shouldn't be getting an inconsistent
+            // state if it did.  Besides, this one is probably newer and should therefore win.
+            synchronized (clientStates) {
                 clientStates.put(clientServerRef, ret);
             }
-            return ret;
         }
+        return ret;
     }
 
     public void removeClientState(@NotNull ClientServerRef client) {

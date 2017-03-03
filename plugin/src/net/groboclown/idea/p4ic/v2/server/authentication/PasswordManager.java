@@ -114,8 +114,14 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
         try {
             OneUseString chPass = getMemoryPassword(config);
             if (chPass != null) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Have existing in-memory password for " + config + " (" + key + ")");
+                }
                 return chPass;
             } else {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("No in-memory password for " + config + " (" + key + ")");
+                }
 
                 // From the JavaDoc on the general password getter:
                 // This method may be called from the background,
@@ -190,7 +196,9 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
     public void forgetPassword(@Nullable final Project project, @NotNull final ServerConfig config)
             throws PasswordStoreException {
         final String key = toKey(config);
-        LOG.debug("Forgetting for " + key);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Forgetting for " + config + " (" + key + ")");
+        }
 
         // If the password is stored in the plaintext file, we still should go through
         // this logic.
@@ -246,14 +254,16 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
         if (password == null) {
             // already automatically removed from the store.
             clearMemoryPassword(config);
-            LOG.debug("No password entered");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("No password entered for " + config + " (" + key + ")");
+            }
             return false;
         } else {
             // The password that was returned MUST be locally
             // saved, because the user could have selected to not
             // store it.
             if (LOG.isDebugEnabled()) {
-                LOG.debug("New password stored for " + config.getServerName().getFullPort());
+                LOG.debug("New password stored for " + config.getServerName().getFullPort() + " (" + key + ")");
             }
             hasPasswordInStorage.add(key);
             setMemoryPassword(config, password.toCharArray());

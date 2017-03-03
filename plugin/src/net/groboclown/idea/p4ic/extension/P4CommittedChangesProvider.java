@@ -108,14 +108,14 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
 
     @Override
     public List<P4CommittedChangeList> getCommittedChanges(P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount) throws VcsException {
-        // FIXME implement
+        // FIXME implement the API behavior.
 
         return null;
     }
 
     @Override
     public void loadCommittedChanges(P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount, AsynchConsumer<CommittedChangeList> consumer) throws VcsException {
-        // FIXME
+        // FIXME implement the API behavior.
     }
 
     @Override

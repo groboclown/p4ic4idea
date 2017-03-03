@@ -71,14 +71,13 @@ public class ClientNameDataPart extends DataPartAdapter {
         }
     }
 
+
     @NotNull
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
-        List<ConfigProblem> problems = new ArrayList<ConfigProblem>(additionalProblems);
-        if (clientName == null) {
-            problems.add(new ConfigProblem(this, false, "error.config.no-client"));
-        }
-        return problems;
+        PartValidation validation = new PartValidation();
+        validation.checkClientName(this, true);
+        return validation.getProblems();
     }
 
 
@@ -94,7 +93,11 @@ public class ClientNameDataPart extends DataPartAdapter {
     }
 
     public void setClientname(@Nullable String clientName) {
-        this.clientName = clientName;
+        if (clientName == null) {
+            this.clientName = null;
+        } else {
+            this.clientName = clientName.trim();
+        }
     }
 
 

@@ -411,6 +411,9 @@ class AuthenticatedServer {
         }
         final OneUseString password =
                 PasswordManager.getInstance().getPassword(project, config.getServerConfig(), false);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Fetched the password.  Has it? " + ! password.isNullValue());
+        }
         withConnectionLock(new WithConnectionLock<Void>() {
             @Override
             public Void call() throws P4JavaException, URISyntaxException {

@@ -202,7 +202,7 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
 
                 // click will cause the UI to refresh the view automatically,
                 // so we don't need an explicit repaint.
-                update(false);
+                update(false, false);
 
                 showPopup(mouseEvent);
             }
@@ -233,9 +233,10 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
                 parent));
     }
 
-    private void update(final boolean refreshStatusBar) {
-        if (hasNoServerRefs()) {
+    private void update(final boolean refreshStatusBar, boolean fromRefresh) {
+        if (! fromRefresh && hasNoServerRefs()) {
             reloadServerRefs();
+            return;
         }
         UIUtil.invokeLaterIfNeeded(new Runnable() {
             @Override
@@ -397,7 +398,7 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
                     tmp.add(p4Server.getClientServerId());
                 }
                 setServerRefs(tmp);
-                update(true);
+                update(true, true);
             }
         };
         if (ApplicationManager.getApplication().isDispatchThread()) {
@@ -427,13 +428,13 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
         @Override
         public void connected(@NotNull final ServerConfig config) {
             // No need to reload the configuration.
-            update(true);
+            update(true, false);
         }
 
         @Override
         public void disconnected(@NotNull final ServerConfig config) {
             // No need to reload the configuration.
-            update(true);
+            update(true, false);
         }
     }
 }

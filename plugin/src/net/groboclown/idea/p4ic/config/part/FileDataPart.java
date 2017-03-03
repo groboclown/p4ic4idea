@@ -165,6 +165,7 @@ public class FileDataPart implements DataPart {
         validation.checkPort(this, rawPort);
         validation.checkAuthTicketFile(this);
         validation.checkTrustTicketFile(this);
+        validation.checkClientName(this, false);
         return validation.getProblems();
     }
 

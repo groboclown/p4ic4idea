@@ -229,6 +229,9 @@ public class ConnectionUIConfiguration {
             // AlertManager won't work, because the specific connection is ephemeral.
             // Instead, we should have a password prompt, and the user can rerun the
             // refresh.  This is pulled out from the LoginFailedHandler class.
+
+            // FIXME This just sits around and waits for the configuration dialog
+            // to go away.
             ApplicationManager.getApplication().invokeLater(new Runnable() {
                 @Override
                 public void run() {

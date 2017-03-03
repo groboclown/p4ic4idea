@@ -58,6 +58,8 @@ public class ClientNameConfigPartPanel
 
         $$$setupUI$$$();
 
+        clientDropdownList.addItem(part.getClientname());
+        clientDropdownList.setSelectedIndex(0);
         listRefreshButton.setIcon(AllIcons.Actions.Refresh);
         listRefreshButton.addActionListener(new ActionListener() {
             @Override
@@ -65,6 +67,12 @@ public class ClientNameConfigPartPanel
                 refreshClientList();
             }
         });
+
+        // FIXME this is a temporary fix to prevent users from pressing the refresh button.
+        // We'll remove this line once the refresh works right.
+        // The underlying issue is with the authentication; the way we're doing it now
+        // does not correctly load the user's password from the PasswordManager.
+        listRefreshButton.setEnabled(false);
     }
 
     @NotNull

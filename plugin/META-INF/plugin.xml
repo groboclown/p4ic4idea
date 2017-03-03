@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.8.3</version>
+    <version>0.8.4-beta.1</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.8.4</em>
+            <ol>
+              <li>Cleaned up debug logging.</li>
+            </ol>
+          </li>
           <li><em>0.8.3</em>
             <ol>
               <li>The relative config part of the configuration no longer hangs when
@@ -16,11 +21,6 @@
               modified.</li>
               <li>The property configuration pane didn't let you choose the file by
               pressing the "..." button.</li>
-            </ol>
-          </li>
-          <li><em>0.8.2</em>
-            <ol>
-              <li>Fixed an issue with adding files.</li>
             </ol>
           </li>
         </ol>

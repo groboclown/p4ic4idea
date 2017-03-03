@@ -30,6 +30,7 @@ import net.groboclown.idea.p4ic.config.ConfigProblem;
 import net.groboclown.idea.p4ic.config.ConfigPropertiesUtil;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.part.DataPart;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.ui.config.props.ConfigurationUpdatedListener;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
@@ -40,11 +41,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.List;
 
 public class ResolvedPropertiesPanel {
     private static final Logger LOG = Logger.getInstance(ResolvedPropertiesPanel.class);
@@ -121,9 +119,7 @@ public class ResolvedPropertiesPanel {
                         }
                         if (lastConfig == null) {
                             final ComputedConfigResults results = new ComputedConfigResults();
-                            results.problemMessages.add(
-                                    P4Bundle.getString("configuration.error.no-config-list")
-                            );
+                            results.problemMessages.add(createNoClientConfigProblem());
                             return results;
                         }
 
@@ -165,7 +161,7 @@ public class ResolvedPropertiesPanel {
                             // No errors, so show the resolved properties
                             resolutionTabbedPane.setSelectedIndex(0);
                         } else {
-                            configProblemsListModel.replaceAll(results.problemMessages);
+                            configProblemsListModel.replaceAll(toProblemMessages(results.problemMessages));
                             // Errors, so show the problems
                             resolutionTabbedPane.setSelectedIndex(1);
                         }
@@ -271,16 +267,15 @@ public class ResolvedPropertiesPanel {
         ComputedConfigResults results = new ComputedConfigResults();
         {
             final Collection<ConfigProblem> problems = projectConfig.getConfigProblems();
-            results.problemMessages = new ArrayList<String>(problems.size());
+            results.problemMessages = new ArrayList<ConfigProblem>(problems.size());
             for (ConfigProblem problem : problems) {
-                results.problemMessages.add(problem.getMessage());
+                results.problemMessages.add(problem);
             }
         }
 
         Collection<ClientConfigSetup> configs = projectConfig.getClientConfigSetups();
         if (configs.isEmpty()) {
-            results.problemMessages.add(
-                    P4Bundle.getString("configuration.error.no-config-list"));
+            results.problemMessages.add(createNoClientConfigProblem());
         }
         for (ClientConfigSetup configSetup : configs) {
             final ClientConfig config = configSetup.getClientConfig();
@@ -288,19 +283,18 @@ public class ResolvedPropertiesPanel {
                 ConfigProblem problem = ConnectionUIConfiguration.checkConnection(config,
                         ServerConnectionManager.getInstance(), false);
                 if (problem != null) {
-                    results.problemMessages.add(problem.getMessage());
+                    results.problemMessages.add(problem);
                 }
                 // We can have a connection without a client, for testing purposes,
                 // but to actually use it, we need a client.
                 if (!config.isWorkspaceCapable()) {
-                    results.problemMessages.add(
-                            P4Bundle.getString("error.config.no-client"));
+                    results.problemMessages.add(new ConfigProblem(configSetup.getSource(), false,
+                            "error.config.no-client"));
                 }
             }
             if (config != null && config.getProjectSourceDirs().isEmpty()) {
-                results.problemMessages.add(
-                        P4Bundle.message("client.root.non-existent",
-                                config.getProject().getBaseDir()));
+                results.problemMessages.add(new ConfigProblem(configSetup.getSource(), false,
+                        "client.root.non-existent", config.getProject().getBaseDir()));
                 if (config.getProject().getBaseDir() != null) {
                     results.configs.add(new ConfigPath(
                             configSetup.getSource(), config.getProject().getBaseDir()));
@@ -316,6 +310,21 @@ public class ResolvedPropertiesPanel {
             }
         }
         return results;
+    }
+
+    private static ConfigProblem createNoClientConfigProblem() {
+        return new ConfigProblem(null,
+                new P4InvalidConfigException(P4Bundle.getString("configuration.error.no-config-list")));
+    }
+
+    private static List toProblemMessages(ArrayList<ConfigProblem> problemMessages) {
+        HashSet<String> ret = new HashSet<String>();
+        for (ConfigProblem problemMessage : problemMessages) {
+            // TODO colorize the messages
+            ret.add(problemMessage.getMessage());
+        }
+        // Condense duplicate values
+        return new ArrayList(ret);
     }
 
     /**
@@ -418,7 +427,7 @@ public class ResolvedPropertiesPanel {
     }
 
     private static class ComputedConfigResults {
-        ArrayList<String> problemMessages = new ArrayList<String>();
+        ArrayList<ConfigProblem> problemMessages = new ArrayList<ConfigProblem>();
         ArrayList<ConfigPath> configs = new ArrayList<ConfigPath>();
         int selectedConfigIndex;
         String selectedConfigText;

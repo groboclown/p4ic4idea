@@ -152,10 +152,11 @@ public class FileDataPart implements DataPart {
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
         if (filePath == null) {
-            return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.no-file"));
+            return Collections.singletonList(new ConfigProblem(this, true, "configuration.p4config.no-file"));
         }
-        if (! filePath.exists()) {
-            return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.bad-file", filePath));
+        if (! filePath.exists() || ! filePath.isFile()) {
+            return Collections.singletonList(new ConfigProblem(this, true, "configuration.p4config.bad-file",
+                    filePath));
         }
         if (loadError != null) {
             return Collections.singletonList(new ConfigProblem(this, loadError));

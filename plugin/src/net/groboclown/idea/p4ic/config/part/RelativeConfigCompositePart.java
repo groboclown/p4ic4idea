@@ -140,7 +140,7 @@ public class RelativeConfigCompositePart extends CompositePart {
     private List<FilePath> findChildP4ConfigFiles() {
         VirtualFile rootSearchPath = project.getBaseDir();
         if (! rootSearchPath.exists()) {
-            problems.add(new ConfigProblem(this, "error.roots.not-directory", rootSearchPath));
+            problems.add(new ConfigProblem(this, true, "error.roots.not-directory", rootSearchPath));
             return Collections.emptyList();
         }
         if (! rootSearchPath.isDirectory()) {

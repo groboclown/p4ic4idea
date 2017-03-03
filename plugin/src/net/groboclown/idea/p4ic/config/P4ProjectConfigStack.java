@@ -118,6 +118,16 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         return problems;
     }
 
+    @Override
+    public boolean hasConfigErrors() {
+        for (ConfigProblem configProblem : getConfigProblems()) {
+            if (configProblem.isError()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @NotNull
     @Override
     public Project getProject() {
@@ -351,6 +361,10 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
 
         private ClientServerSetup(@Nullable ServerConfig serverConfig, @NotNull MultipleDataPart dataPart,
                 @NotNull VirtualFile path) {
+            if (serverConfig != null && ! serverConfig.isSameServer(dataPart)) {
+                throw new IllegalArgumentException("Server config " + serverConfig + " does not match " +
+                        ConfigPropertiesUtil.toProperties(dataPart));
+            }
             this.serverConfig = serverConfig;
             this.clientName = dataPart.getClientname();
             this.dataPart = dataPart;

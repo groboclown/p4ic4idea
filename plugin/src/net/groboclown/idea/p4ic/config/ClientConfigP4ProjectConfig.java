@@ -71,6 +71,11 @@ public class ClientConfigP4ProjectConfig implements P4ProjectConfig {
         return Collections.emptyList();
     }
 
+    @Override
+    public boolean hasConfigErrors() {
+        return false;
+    }
+
     @NotNull
     @Override
     public Project getProject() {

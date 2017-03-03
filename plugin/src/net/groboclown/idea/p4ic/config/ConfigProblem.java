@@ -25,22 +25,24 @@ import org.jetbrains.annotations.Nullable;
 public class ConfigProblem {
     private static final Logger LOG = Logger.getInstance(ConfigProblem.class);
 
-
+    private final boolean isError;
     private final String message;
     private final Object[] args;
     private final ConfigPart source;
 
 
-    public ConfigProblem(@NotNull ConfigPart source, @Nls @NotNull String message, Object... args) {
+    public ConfigProblem(@NotNull ConfigPart source, boolean isError, @Nls @NotNull String message, Object... args) {
         this.source = source;
         this.message = message;
         this.args = args;
+        this.isError = isError;
     }
 
     public ConfigProblem(@Nullable ConfigPart source, @NotNull Exception ex) {
         this.source = source;
         this.message = "configproblem.exception";
         this.args = new Object[] { ex.getMessage(), ex.getClass().getName(), ex.getClass().getSimpleName() };
+        this.isError = true;
         LOG.info("ConfigProblem from " + source, ex);
     }
 
@@ -52,6 +54,10 @@ public class ConfigProblem {
     @NonNls
     public String getMessage() {
         return P4Bundle.message(message, args);
+    }
+
+    public boolean isError() {
+        return isError;
     }
 
     @Override

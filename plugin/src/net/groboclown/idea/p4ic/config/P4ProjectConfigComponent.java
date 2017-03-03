@@ -43,6 +43,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -64,6 +65,9 @@ import java.util.Map;
 public class P4ProjectConfigComponent implements ProjectComponent, PersistentStateComponent<Element> {
     private static final Logger LOG = Logger.getInstance(P4ProjectConfigComponent.class);
     private static final String STATE_TAG_NAME = "project-config-component";
+
+    private final static Map<Project, P4ProjectConfigComponent> temporaryComponent =
+            new HashMap<Project, P4ProjectConfigComponent>();
 
     private final Project project;
 
@@ -93,12 +97,40 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
     @Nullable
     private P4ProjectConfig previouslyAnnouncedConfig = null;
 
+
     public P4ProjectConfigComponent(@NotNull Project project) {
         this.project = project;
     }
 
+    @NotNull
     public static P4ProjectConfigComponent getInstance(@NotNull final Project project) {
-        return project.getComponent(P4ProjectConfigComponent.class);
+        // Some users have reported strange issues where the component isn't in the project.
+        // This seems to indicate that there's a load order issue with the plugin.  This is
+        // a stop-gap to keep those users from being dead in the water.  It's not
+        // perfect by any means - the state can only be saved if the user loads up the
+        // configuration again.
+
+        P4ProjectConfigComponent component = project.getComponent(P4ProjectConfigComponent.class);
+        if (component == null) {
+            synchronized (temporaryComponent) {
+                component = temporaryComponent.get(project);
+                if (component == null) {
+                    LOG.warn("Unable to load P4ProjectConfigComponent; configuration may not be saved.");
+                    component = new P4ProjectConfigComponent(project);
+                    temporaryComponent.put(project, component);
+                }
+            }
+        } else {
+            synchronized (temporaryComponent) {
+                P4ProjectConfigComponent tmp = temporaryComponent.get(project);
+                if (tmp != null) {
+                    LOG.warn("Loading state from temporary component");
+                    temporaryComponent.remove(project);
+                    component.loadState(tmp.getState());
+                }
+            }
+        }
+        return component;
     }
 
 
@@ -211,6 +243,7 @@ public class P4ProjectConfigComponent implements ProjectComponent, PersistentSta
     }
 
 
+    @NotNull
     @Override
     public Element getState() {
         LOG.debug("Fetching XML state");

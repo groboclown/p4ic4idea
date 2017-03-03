@@ -27,6 +27,7 @@ public class P4InvalidClientException extends P4DisconnectedException {
     }
 
     public P4InvalidClientException(@NotNull final ClientServerRef clientServerRef) {
-        super(P4Bundle.message("exception.invalid.client", clientServerRef.getServerDisplayId()));
+        super(P4Bundle.message("exception.invalid.client-server", clientServerRef.getServerDisplayId(),
+                clientServerRef.getClientName()));
     }
 }

@@ -344,8 +344,9 @@ public class SimpleDataPart implements DataPart {
     @Override
     public Element marshal() {
         Element ret = new Element(TAG_NAME);
-        // FIXME debug
-        LOG.info("Marshalling " + properties);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Marshalling " + properties);
+        }
         for (Map.Entry<String, String> entry : properties.entrySet()) {
             Element prop = new Element(PROPERTY_TAG_NAME);
             prop.setAttribute(KEY_ATTRIBUTE_NAME, entry.getKey());
@@ -354,7 +355,9 @@ public class SimpleDataPart implements DataPart {
             }
             ret.addContent(prop);
         }
-        LOG.info("Final marshal: " + ret);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Final marshal: " + ret);
+        }
         return ret;
     }
 
@@ -411,11 +414,8 @@ public class SimpleDataPart implements DataPart {
     private void setTrimmed(@NotNull String key, @Nullable String value) {
         value = trimmedValue(value);
         if (value == null) {
-            // FIXME debug
-            LOG.info("Removing key " + key);
             properties.remove(key);
         } else {
-            LOG.info("Setting key " + key + " = [" + value + "]");
             properties.put(key, value);
         }
     }

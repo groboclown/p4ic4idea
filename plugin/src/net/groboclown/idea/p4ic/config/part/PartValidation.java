@@ -32,7 +32,7 @@ public class PartValidation {
         final PartValidation validation = new PartValidation();
         validation.problems.addAll(part.getConfigProblems());
         if (! part.hasServerNameSet() || part.getServerName() == null) {
-            validation.problems.add(new ConfigProblem(part, "configuration.port.invalid", part.getServerName()));
+            validation.problems.add(new ConfigProblem(part, true, "configuration.port.invalid", part.getServerName()));
         }
         validation.checkUsername(part);
         validation.checkAuthTicketFile(part);
@@ -51,7 +51,7 @@ public class PartValidation {
 
     boolean checkPort(@NotNull ConfigPart part, @Nullable String rawPort, @Nullable P4ServerName serverName) {
         if (rawPort != null && serverName == null) {
-            problems.add(new ConfigProblem(part, "configuration.port.invalid", rawPort));
+            problems.add(new ConfigProblem(part, true, "configuration.port.invalid", rawPort));
             return false;
         }
         return true;
@@ -64,7 +64,7 @@ public class PartValidation {
     boolean checkAuthTicketFile(@NotNull ConfigPart part, @Nullable File file) {
         // If it points to a directory, then we ignore this.
         if (file != null && ! file.exists()) {
-            problems.add(new ConfigProblem(part, "configuration.problem.authticket.exist", file));
+            problems.add(new ConfigProblem(part, false, "configuration.problem.authticket.exist", file));
             return false;
         }
         return true;
@@ -77,7 +77,7 @@ public class PartValidation {
     boolean checkTrustTicketFile(@NotNull ConfigPart part, @Nullable File file) {
         // If it points to a directory, then we ignore this.
         if (file != null && ! file.exists()) {
-            problems.add(new ConfigProblem(part, "configuration.problem.trustticket.exist", file));
+            problems.add(new ConfigProblem(part, false, "configuration.problem.trustticket.exist", file));
             return false;
         }
         return true;
@@ -89,7 +89,7 @@ public class PartValidation {
 
     boolean checkLoginSsoFile(@NotNull ConfigPart part, @Nullable File file) {
         if (file != null && (! file.exists() || ! file.isFile())) {
-            problems.add(new ConfigProblem(part, "configuration.problem.loginsso.exist", file));
+            problems.add(new ConfigProblem(part, false, "configuration.problem.loginsso.exist", file));
             return false;
         }
         return true;
@@ -101,7 +101,7 @@ public class PartValidation {
 
     boolean checkUsername(@NotNull ConfigPart part, @Nullable String username) {
         if (username == null || username.isEmpty()) {
-            problems.add(new ConfigProblem(part, "configuration.problem.username"));
+            problems.add(new ConfigProblem(part, true, "configuration.problem.username"));
             return false;
         }
         return true;

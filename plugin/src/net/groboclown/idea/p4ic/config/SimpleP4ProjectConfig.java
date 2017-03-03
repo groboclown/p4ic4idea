@@ -107,6 +107,16 @@ public class SimpleP4ProjectConfig implements P4ProjectConfig {
         return problems;
     }
 
+    @Override
+    public boolean hasConfigErrors() {
+        for (ConfigProblem configProblem : getConfigProblems()) {
+            if (configProblem.isError()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @NotNull
     @Override
     public Project getProject() {

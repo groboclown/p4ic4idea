@@ -55,6 +55,13 @@ public interface P4ProjectConfig {
     @NotNull
     Collection<ConfigProblem> getConfigProblems();
 
+    /**
+     * Should not consider "no client name defined" as an error.
+     *
+     * @return true if there are config errors.
+     */
+    boolean hasConfigErrors();
+
     @NotNull
     Project getProject();
 }

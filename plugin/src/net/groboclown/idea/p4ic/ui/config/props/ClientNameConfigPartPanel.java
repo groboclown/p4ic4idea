@@ -22,6 +22,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.BackgroundAwtActionRunner;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
+import net.groboclown.idea.p4ic.config.ConfigPropertiesUtil;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.part.ClientNameDataPart;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
@@ -116,12 +117,17 @@ public class ClientNameConfigPartPanel
     }
 
     private void refreshClientList() {
+        // FIXME DEBUG
+        LOG.info("Refreshing client list...");
         final String selected = getSelectedClientName();
         BackgroundAwtActionRunner.runBackgroundAwtAction(listRefreshSpinner,
                 new BackgroundAwtActionRunner.BackgroundAwtAction<Collection<String>>() {
                     @Override
                     public Collection<String> runBackgroundProcess() {
-                        return loadClientList(selected);
+                        Collection<String> list = loadClientList(selected);
+                        // FIXME DEBUG
+                        LOG.info("client list loaded: " + list);
+                        return list;
                     }
 
                     @Override
@@ -149,13 +155,15 @@ public class ClientNameConfigPartPanel
 
     private Collection<String> loadClientList(String selected) {
         final P4ProjectConfig config = loadProjectConfigFromUI();
-        LOG.info("Starting load client list for " + config);
         final Collection<ClientConfig> configs = config == null
                 ? Collections.<ClientConfig>emptyList()
                 : config.getClientConfigs();
-        if (configs.size() != 1) {
+        if (configs.isEmpty()) {
             getConfigPart().addAdditionalProblem(new ConfigProblem(
-                    getConfigPart(), "configuration.client.error.no-single-server"));
+                    getConfigPart(), false, "configuration.client.error.no-server"));
+        } else if (configs.size() != 1) {
+            getConfigPart().addAdditionalProblem(new ConfigProblem(
+                    getConfigPart(), false, "configuration.client.error.no-single-server"));
             // Still load up the client names, though.
         }
         Set<String> ret = new HashSet<String>();
@@ -166,9 +174,7 @@ public class ClientNameConfigPartPanel
                 getConfigPart().addAdditionalProblem(new ConfigProblem(getConfigPart(), result.getConnectionProblem()));
             }
         }
-        if (!ret.contains(selected)) {
-            ret.add(selected);
-        }
+        ret.add(selected);
         return ret;
     }
 

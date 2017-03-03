@@ -381,7 +381,7 @@ public class P4ServerManager implements ProjectComponent {
     private void initializeServers() {
         P4ProjectConfigComponent cp = P4ProjectConfigComponent.getInstance(project);
         final P4ProjectConfig sources = cp.getP4ProjectConfig();
-        if (! sources.getConfigProblems().isEmpty()) {
+        if (! sources.hasConfigErrors()) {
             LOG.info("source load has errors: " + sources.getConfigProblems());
             serverLock.lock();
             try {

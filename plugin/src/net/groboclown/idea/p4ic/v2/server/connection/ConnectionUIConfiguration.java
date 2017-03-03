@@ -22,6 +22,7 @@ import com.perforce.p4java.exception.P4JavaException;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
+import net.groboclown.idea.p4ic.config.ConfigPropertiesUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
@@ -79,15 +80,17 @@ public class ConnectionUIConfiguration {
     }
 
 
-    @Nullable
+    @NotNull
     public static Map<ClientConfig, ClientResult> getClients(
             @Nullable Collection<ClientConfig> sources,
             @NotNull ServerConnectionManager connectionManager) {
         final Map<ClientConfig, ClientResult> ret = new HashMap<ClientConfig, ClientResult>();
         if (sources == null) {
-            return null;
+            return Collections.emptyMap();
         }
         for (ClientConfig source : sources) {
+            // FIXME DEBUG
+            LOG.info("Loading clients for " + ConfigPropertiesUtil.toProperties(source));
             ErrorCollectorVisitorFactory errorCollectorVisitorFactory = new ErrorCollectorVisitorFactory();
             try {
                 // Bug #115: getting the clients should not require that a
@@ -99,6 +102,8 @@ public class ConnectionUIConfiguration {
                 try {
                     final List<String> clients = new P4Exec2(source.getProject(), exec).
                             getClientNames();
+                    // FIXME DEBUG
+                    LOG.info(" - loaded clients " + clients);
                     ret.put(source, new ClientResult(clients));
                 } finally {
                     exec.dispose();

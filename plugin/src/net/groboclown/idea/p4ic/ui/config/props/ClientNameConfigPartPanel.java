@@ -121,7 +121,9 @@ public class ClientNameConfigPartPanel
     private void refreshClientList() {
         LOG.debug("Refreshing client list...");
         final String selected = getSelectedClientName();
-        BackgroundAwtActionRunner.runBackgroundAwtAction(listRefreshSpinner,
+        BackgroundAwtActionRunner.runBackgroundAwtAction(
+                listRefreshSpinner,
+                listRefreshButton,
                 new BackgroundAwtActionRunner.BackgroundAwtAction<Collection<String>>() {
                     @Override
                     public Collection<String> runBackgroundProcess() {

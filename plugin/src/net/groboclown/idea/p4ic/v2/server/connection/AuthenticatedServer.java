@@ -304,8 +304,12 @@ class AuthenticatedServer {
 
             // Do not force a password prompt; let that be at
             // purview of the caller.
+            LOG.debug("A password may be required.  Getting it.");
             OneUseString password =
                     PasswordManager.getInstance().getPassword(project, config.getServerConfig(), false);
+            if (LOG.isDebugEnabled() && password.isNullValue()) {
+                LOG.debug(" - No password known");
+            }
             if (status.isPasswordRequired() && password.isNullValue()) {
                 // We don't have a password, but one is required.
                 if (LOG.isDebugEnabled()) {

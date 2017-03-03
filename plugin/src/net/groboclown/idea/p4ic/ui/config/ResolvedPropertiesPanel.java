@@ -108,7 +108,9 @@ public class ResolvedPropertiesPanel {
     }
 
     public void refresh(@Nullable final P4ProjectConfig config) {
-        BackgroundAwtActionRunner.runBackgroundAwtAction(refreshResolvedPropertiesSpinner,
+        BackgroundAwtActionRunner.runBackgroundAwtAction(
+                refreshResolvedPropertiesSpinner,
+                refreshResolvedPropertiesButton,
                 new BackgroundAwtActionRunner.BackgroundAwtAction<ComputedConfigResults>() {
                     @Override
                     public ComputedConfigResults runBackgroundProcess() {
@@ -225,7 +227,9 @@ public class ResolvedPropertiesPanel {
 
     private void showResolvedPropertiesText(@NotNull final ConfigPath selected) {
         // This can load values from a file, so put in the background.
-        BackgroundAwtActionRunner.runBackgroundAwtAction(refreshResolvedPropertiesSpinner,
+        BackgroundAwtActionRunner.runBackgroundAwtAction(
+                refreshResolvedPropertiesSpinner,
+                refreshResolvedPropertiesButton,
                 new BackgroundAwtActionRunner.BackgroundAwtAction<String>() {
                     @Override
                     public String runBackgroundProcess() {

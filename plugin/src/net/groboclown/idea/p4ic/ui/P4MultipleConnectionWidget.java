@@ -16,10 +16,14 @@
 package net.groboclown.idea.p4ic.ui;
 
 import com.intellij.ide.DataManager;
-import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -42,7 +46,6 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.actions.P4WorkOfflineAction;
 import net.groboclown.idea.p4ic.actions.P4WorkOnlineAction;
 import net.groboclown.idea.p4ic.actions.ReloadP4ConfigAction;
-import net.groboclown.idea.p4ic.compat.UICompat;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
@@ -53,18 +56,20 @@ import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.events.ServerConnectionStateListener;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 
 /**
  * Widget to display Perforce server connection information.
  */
 public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentation, StatusBarWidget.Multiframe {
-    private static final Logger LOG = Logger.getInstance(P4MultipleConnectionWidget.class);
+    // private static final Logger LOG = Logger.getInstance(P4MultipleConnectionWidget.class);
 
 
     @Nullable
@@ -78,6 +83,8 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
     @Nullable
     private StatusBar statusBar;
 
+    private final ArrayList<ClientServerRef> serverRefs = new ArrayList<ClientServerRef>();
+
     @NotNull
     private volatile Icon icon = P4Icons.UNKNOWN;
     private volatile String toolTip;
@@ -88,16 +95,15 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
         myVcs = vcs;
         this.project = project;
 
-        // Setting values requires connecting to the servers, which cannot be
-        // done at startup time (see bug #110).
-        // setValues();
-
         appMessageBus = ApplicationManager.getApplication().getMessageBus().connect();
 
         ConnectionStateListener listener = new ConnectionStateListener();
         Events.registerAppBaseConfigUpdated(appMessageBus, listener);
         Events.registerAppConfigInvalid(appMessageBus, listener);
         Events.appServerConnectionState(appMessageBus, listener);
+
+        // At the end, we want to reload our connection display.
+        reloadServerRefs();
     }
 
     @Override
@@ -126,12 +132,16 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
 
     @NotNull
     private ListPopup createListPopup(DataContext dataContext) {
+        if (hasNoServerRefs()) {
+            reloadServerRefs();
+        }
         DefaultActionGroup connectionGroup = new DefaultActionGroup();
         int groupCount = 0;
         if (myVcs != null) {
-            for (P4Server server: myVcs.getP4Servers()) {
-                connectionGroup.add(new P4ServerWorkOnlineAction(server.getClientServerId()));
-                connectionGroup.add(new P4ServerWorkOfflineAction(server.getClientServerId()));
+            // Don't hang the UI.
+            for (ClientServerRef ref: getServerRefs()) {
+                connectionGroup.add(new P4ServerWorkOnlineAction(ref));
+                connectionGroup.add(new P4ServerWorkOfflineAction(ref));
                 groupCount++;
             }
         }
@@ -202,6 +212,7 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
     private void showPopup(@NotNull MouseEvent event) {
         // it isn't getting bubbled up to the parent
         DataContext dataContext = getContext();
+        reloadServerRefs();
         final ListPopup popup = createListPopup(dataContext);
         if (popup.isVisible()) {
             popup.cancel();
@@ -223,6 +234,9 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
     }
 
     private void update(final boolean refreshStatusBar) {
+        if (hasNoServerRefs()) {
+            reloadServerRefs();
+        }
         UIUtil.invokeLaterIfNeeded(new Runnable() {
             @Override
             public void run() {
@@ -340,6 +354,60 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
     }
 
 
+    private ArrayList<ClientServerRef> getServerRefs() {
+        synchronized (serverRefs) {
+            return new ArrayList<ClientServerRef>(serverRefs);
+        }
+    }
+
+
+    private boolean hasNoServerRefs() {
+        synchronized (serverRefs) {
+            return ! serverRefs.isEmpty();
+        }
+    }
+
+
+    private void setServerRefs(ArrayList<ClientServerRef> refs) {
+        synchronized (serverRefs) {
+            serverRefs.clear();
+            serverRefs.addAll(refs);
+        }
+    }
+
+
+    private void reloadServerRefs() {
+        if (hasNoServerRefs()) {
+            // Populate the server list with the ones we know we don't have
+            // to wait on.
+            ArrayList<ClientServerRef> tmp = new ArrayList<ClientServerRef>();
+            for (P4Server p4Server : P4Vcs.getInstance(project).getOnlineP4Servers()) {
+                tmp.add(p4Server.getClientServerId());
+            }
+            // Make doubly sure we need to load it.
+            if (hasNoServerRefs()) {
+                setServerRefs(tmp);
+            }
+        }
+        Runnable refresher = new Runnable() {
+            @Override
+            public void run() {
+                ArrayList<ClientServerRef> tmp = new ArrayList<ClientServerRef>();
+                for (P4Server p4Server : P4Vcs.getInstance(project).getP4Servers()) {
+                    tmp.add(p4Server.getClientServerId());
+                }
+                setServerRefs(tmp);
+                update(true);
+            }
+        };
+        if (ApplicationManager.getApplication().isDispatchThread()) {
+            ApplicationManager.getApplication().executeOnPooledThread(refresher);
+        } else {
+            refresher.run();
+        }
+    }
+
+
     private class ConnectionStateListener implements
             BaseConfigUpdatedListener, ServerConnectionStateListener, ConfigInvalidListener {
 
@@ -347,22 +415,24 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
         public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig newConfig,
                 @Nullable P4ProjectConfig previousConfiguration) {
             // Just update everything.
-            update(true);
+            reloadServerRefs();
         }
 
         @Override
         public void configurationProblem(@NotNull Project project, @NotNull P4ProjectConfig config, @NotNull VcsConnectionProblem ex) {
             // Just update everything.
-            update(true);
+            reloadServerRefs();
         }
 
         @Override
         public void connected(@NotNull final ServerConfig config) {
+            // No need to reload the configuration.
             update(true);
         }
 
         @Override
         public void disconnected(@NotNull final ServerConfig config) {
+            // No need to reload the configuration.
             update(true);
         }
     }

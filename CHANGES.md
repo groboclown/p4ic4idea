@@ -12,8 +12,13 @@
     * Cleaned up debug logging.
     * Added workaround for an observed issue where the IDE would not load the workspace
       VCS configuration before the plugin was available (part of #143).
+    * The configuration UI now prompts for a password when the client name panel
+      needs a password to find the user's clients.
     * Improved configuration problem reporting to differentiate between warnings and
       actual errors.
+    * Fixed the connection status bar widget to push more activity out of the event
+      thread and into the background.
+    * Fixed the reload buttons to be disabled while the process is running.
     * Moved the client name field spinner to be consistent with the rest of the UI.
 
 

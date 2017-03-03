@@ -33,7 +33,9 @@ public class P4PluginVersion {
             synchronized (P4PluginVersion.class) {
                 version = loadPluginVersion();
             }
-            LOG.info("Running plugin version " + version);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Running plugin version " + version);
+            }
         }
         return version;
     }

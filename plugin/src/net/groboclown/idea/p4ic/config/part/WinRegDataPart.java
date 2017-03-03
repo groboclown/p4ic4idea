@@ -96,7 +96,7 @@ class WinRegDataPart implements DataPart {
             // Do not mark as an actual problem.  This is a JVM incompatible issue.
             e.printStackTrace();
         }
-        return getConfigProblems().isEmpty();
+        return hasError();
     }
 
     String getP4ConfigFile() {
@@ -112,6 +112,16 @@ class WinRegDataPart implements DataPart {
         // validation.checkTrustTicketFile(trustTicket);
         // validation.checkUsername()
         return validation.getProblems();
+    }
+
+    @Override
+    public boolean hasError() {
+        for (ConfigProblem configProblem : getConfigProblems()) {
+            if (configProblem.isError()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Nullable

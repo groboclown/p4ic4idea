@@ -62,7 +62,7 @@ public class EnvCompositePart extends CompositePart {
         // generatedProblems are not thrown here.  ENV loading should not cause exceptions,
         // but instead report problems.
 
-        return getConfigProblems().isEmpty();
+        return hasError();
     }
 
     @NotNull

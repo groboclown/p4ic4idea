@@ -38,18 +38,20 @@ public class BackgroundAwtActionRunner {
 
     // CalledInAwt
     public static <T> void runBackgroundAwtAction(@NotNull final AsyncProcessIcon icon,
-                                                  @NotNull final BackgroundAwtAction<T> action) {
-        runBackgroundAwtActionOptionalIcon(icon, action);
+            @NotNull final JComponent userStartAction,
+            @NotNull final BackgroundAwtAction<T> action) {
+        runBackgroundAwtActionOptionalIcon(icon, userStartAction, action);
     }
 
     // CalledInAwt
     public static <T> void runBackgrounAwtAction(@NotNull final BackgroundAwtAction<T> action) {
-        runBackgroundAwtActionOptionalIcon(null, action);
+        runBackgroundAwtActionOptionalIcon(null, null, action);
     }
 
     // CalledInAwt
     private static <T> void runBackgroundAwtActionOptionalIcon(@Nullable final AsyncProcessIcon icon,
-                                            @NotNull final BackgroundAwtAction<T> action) {
+            @Nullable final JComponent userStartAction,
+            @NotNull final BackgroundAwtAction<T> action) {
         final String processName = icon == null ? action.getClass().getSimpleName() : icon.getName();
         if (LOG.isDebugEnabled()) {
             LOG.debug("Requested background action " + processName);
@@ -66,6 +68,13 @@ public class BackgroundAwtActionRunner {
         if (icon != null) {
             icon.resume();
             icon.setVisible(true);
+        }
+        final boolean userStartActionEnabledState;
+        if (userStartAction != null) {
+            userStartActionEnabledState = userStartAction.isEnabled();
+            userStartAction.setEnabled(false);
+        } else {
+            userStartActionEnabledState = false;
         }
         ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
             @Override
@@ -110,6 +119,9 @@ public class BackgroundAwtActionRunner {
                             if (icon != null) {
                                 icon.suspend();
                                 icon.setVisible(false);
+                            }
+                            if (userStartAction != null) {
+                                userStartAction.setEnabled(userStartActionEnabledState);
                             }
                             synchronized (activeProcesses) {
                                 activeProcesses.remove(processName);

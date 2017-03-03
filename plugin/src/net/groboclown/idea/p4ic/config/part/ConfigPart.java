@@ -32,4 +32,6 @@ public interface ConfigPart {
 
     @NotNull
     Collection<ConfigProblem> getConfigProblems();
+
+    boolean hasError();
 }

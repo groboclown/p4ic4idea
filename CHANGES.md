@@ -10,6 +10,11 @@
 
 * Bug fixes.
     * Cleaned up debug logging.
+    * Added workaround for an observed issue where the IDE would not load the workspace
+      VCS configuration before the plugin was available (part of #143).
+    * Improved configuration problem reporting to differentiate between warnings and
+      actual errors.
+    * Moved the client name field spinner to be consistent with the rest of the UI.
 
 
 ## ::v0.8.3::

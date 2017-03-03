@@ -70,6 +70,9 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
     @NotNull
     @Override
     public Collection<ClientConfig> getClientConfigs() {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Client configs: " + configs);
+        }
         return new HashSet<ClientConfig>(configs.values());
     }
 
@@ -139,6 +142,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
     }
 
     private void loadConfigs(ConfigPart rootPart) {
+        LOG.debug("Creating configuration from parts");
         VirtualFile projectRoot = project.getBaseDir();
         if (! projectRoot.isDirectory()) {
             projectRoot = projectRoot.getParent();
@@ -152,7 +156,11 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
             ConfigPart part = stack.remove(stack.size() - 1);
             configProblems.addAll(part.getConfigProblems());
             if (part instanceof CompositePart) {
-                stack.addAll(((CompositePart) part).getConfigParts());
+                // Preserve the correct ordering; as this is a stack, we need to
+                // add the items in reverse order.
+                List<ConfigPart> toAdd = new ArrayList<ConfigPart>(((CompositePart) part).getConfigParts());
+                Collections.reverse(toAdd);
+                stack.addAll(toAdd);
             } else if (part instanceof DataPart) {
                 final DataPart dataPart = (DataPart) part;
                 VirtualFile partRoot = dataPart.getRootPath();
@@ -223,7 +231,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
 
         for (Map.Entry<VirtualFile, List<DataPart>> entry : parts.entrySet()) {
             MultipleDataPart part = new MultipleDataPart(entry.getKey(), entry.getValue());
-            final Collection<ConfigProblem> partProblems = ServerConfig.getProblems(part);
+            final Collection<ConfigProblem> partProblems = ServerConfig.getErrors(part);
             configProblems.addAll(partProblems);
             final String serverId = ServerConfig.getServerIdForDataPart(part);
             // We only want to create a server config if there are no problems.
@@ -302,8 +310,13 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
             final ClientConfig clientConfig = entry.getValue().getClientConfig(project);
             if (clientConfig != null) {
                 ret.put(entry.getKey(), clientConfig);
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug("null client config for directory " + entry.getKey() + ", value " + entry.getValue());
             }
             clientConfigSetups.add(entry.getValue().getClientConfigSetup(project));
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Computed config directory to client config mapping: " + ret);
         }
 
         return ret;
@@ -365,6 +378,10 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
                 throw new IllegalArgumentException("Server config " + serverConfig + " does not match " +
                         ConfigPropertiesUtil.toProperties(dataPart));
             }
+            if (LOG.isDebugEnabled() && serverConfig == null) {
+                LOG.debug("Created ClientServerSetup with null server config for " +
+                    dataPart);
+            }
             this.serverConfig = serverConfig;
             this.clientName = dataPart.getClientname();
             this.dataPart = dataPart;
@@ -374,8 +391,17 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
 
         ClientConfig getClientConfig(@NotNull Project project) {
             // Data part must be valid to have a client config.
-            if (clientConfig == null && dataPart.getConfigProblems().isEmpty() && serverConfig != null) {
+            if (clientConfig == null && ! dataPart.hasError() && serverConfig != null) {
                 clientConfig = ClientConfig.createFrom(project, serverConfig, dataPart, roots);
+            }
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!
+            // Here's the bug: serverConfig is null
+            if (LOG.isDebugEnabled() && clientConfig == null) {
+                LOG.debug("null clientConfig: has errors? " + dataPart.hasError() +
+                        ", server config: " + serverConfig);
+                if (dataPart.hasError()) {
+                    LOG.debug(" - errors: " + dataPart.getConfigProblems());
+                }
             }
             return clientConfig;
         }

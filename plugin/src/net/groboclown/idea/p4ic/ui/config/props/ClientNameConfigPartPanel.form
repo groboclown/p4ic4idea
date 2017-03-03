@@ -40,7 +40,7 @@
                 </properties>
               </component>
               <component id="973d3" class="com.intellij.util.ui.AsyncProcessIcon" binding="listRefreshSpinner" custom-create="true">
-                <constraints border-constraint="East"/>
+                <constraints border-constraint="West"/>
                 <properties/>
               </component>
             </children>

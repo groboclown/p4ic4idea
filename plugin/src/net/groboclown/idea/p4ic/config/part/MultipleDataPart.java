@@ -95,6 +95,16 @@ public class MultipleDataPart implements DataPart {
         return problems;
     }
 
+    @Override
+    public boolean hasError() {
+        for (ConfigProblem configProblem : getConfigProblems()) {
+            if (configProblem.isError()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Nullable
     @Override
     public VirtualFile getRootPath() {

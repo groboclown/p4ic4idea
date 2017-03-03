@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.config.part;
 
 import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.idea.p4ic.config.ConfigProblem;
 import net.groboclown.idea.p4ic.config.P4ServerName;
 import org.jetbrains.annotations.Nullable;
 
@@ -151,5 +152,15 @@ public abstract class DataPartAdapter implements DataPart {
     @Override
     public String toString() {
         return getClass().getSimpleName();
+    }
+
+    @Override
+    public boolean hasError() {
+        for (ConfigProblem configProblem : getConfigProblems()) {
+            if (configProblem.isError()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

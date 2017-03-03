@@ -14,8 +14,10 @@
 
 package net.groboclown.idea.p4ic.v2.server.connection;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
@@ -23,14 +25,19 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
 import net.groboclown.idea.p4ic.config.ConfigPropertiesUtil;
+import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
+import net.groboclown.idea.p4ic.server.exceptions.P4PasswordException;
 import net.groboclown.idea.p4ic.server.exceptions.P4RetryAuthenticationException;
 import net.groboclown.idea.p4ic.server.exceptions.P4SSLFingerprintException;
 import net.groboclown.idea.p4ic.server.exceptions.P4UnknownLoginException;
+import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
+import net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager;
 import net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator;
+import net.groboclown.idea.p4ic.v2.ui.alerts.LoginFailedHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -54,9 +61,11 @@ public class ConnectionUIConfiguration {
             @NotNull ServerConnectionManager connectionManager, boolean requiresClient) {
         final Project project = clientConfig.getProject();
         try {
-            final ErrorCollectorVisitorFactory errorCollectorVisitorFactory = new ErrorCollectorVisitorFactory();
             final ServerConnection connection = connectionManager
                     .getConnectionFor(project, clientConfig, requiresClient);
+            final ErrorCollectorVisitorFactory errorCollectorVisitorFactory = new ErrorCollectorVisitorFactory(
+                    clientConfig.getServerConfig());
+
             final ClientExec exec = connection.oneOffClientExec(errorCollectorVisitorFactory);
             try {
                 new P4Exec2(clientConfig.getProject(), exec).getServerInfo();
@@ -88,25 +97,37 @@ public class ConnectionUIConfiguration {
         if (sources == null) {
             return Collections.emptyMap();
         }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Finding clients for configs " + sources);
+        }
         for (ClientConfig source : sources) {
-            // FIXME DEBUG
-            LOG.info("Loading clients for " + ConfigPropertiesUtil.toProperties(source));
-            ErrorCollectorVisitorFactory errorCollectorVisitorFactory = new ErrorCollectorVisitorFactory();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Loading clients for " + ConfigPropertiesUtil.toProperties(source));
+            }
             try {
                 // Bug #115: getting the clients should not require that a
                 // client is present.
                 final ServerConnection connection =
                         connectionManager.getConnectionFor(source.getProject(),
                                 source,false);
-                final ClientExec exec = connection.oneOffClientExec(errorCollectorVisitorFactory);
+                final ErrorCollectorVisitorFactory errorCollectorVisitorFactory = new ErrorCollectorVisitorFactory(
+                        source.getServerConfig());
                 try {
-                    final List<String> clients = new P4Exec2(source.getProject(), exec).
-                            getClientNames();
-                    // FIXME DEBUG
-                    LOG.info(" - loaded clients " + clients);
-                    ret.put(source, new ClientResult(clients));
+                    final ClientExec exec = connection.oneOffClientExec(errorCollectorVisitorFactory);
+                    try {
+                        final List<String> clients = new P4Exec2(source.getProject(), exec).
+                                getClientNames();
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug(" - loaded clients " + clients);
+                        }
+                        ret.put(source, new ClientResult(clients));
+                    } finally {
+                        exec.dispose();
+                    }
                 } finally {
-                    exec.dispose();
+                    for (Exception problem : errorCollectorVisitorFactory.problems) {
+                        ret.put(source, new ClientResult(problem));
+                    }
                 }
             } catch (P4InvalidConfigException e) {
                 LOG.info(e);
@@ -117,9 +138,6 @@ public class ConnectionUIConfiguration {
             } catch (VcsException e) {
                 LOG.info(e);
                 ret.put(source, new ClientResult(e));
-            }
-            for (Exception problem : errorCollectorVisitorFactory.problems) {
-                ret.put(source, new ClientResult(problem));
             }
         }
         return ret;
@@ -159,26 +177,36 @@ public class ConnectionUIConfiguration {
 
     private static class ErrorCollectorVisitorFactory implements ServerRunner.ErrorVisitorFactory {
         private final List<Exception> problems = new ArrayList<Exception>();
+        private final ServerConfig serverConfig;
+
+        private ErrorCollectorVisitorFactory(ServerConfig serverConfig) {
+            this.serverConfig = serverConfig;
+        }
 
         @NotNull
         @Override
         public ServerRunner.ErrorVisitor getVisitorFor(@NotNull Project project) {
-            return new ErrorCollectorVisitor(problems);
+            return new ErrorCollectorVisitor(project, problems, serverConfig);
         }
     }
 
     private static class ErrorCollectorVisitor implements ServerRunner.ErrorVisitor {
         private final List<Exception> problems;
+        private final Project project;
+        private final ServerConfig serverConfig;
 
-        private ErrorCollectorVisitor(List<Exception> problems) {
+        private ErrorCollectorVisitor(@NotNull Project project, @NotNull List<Exception> problems,
+                @NotNull ServerConfig serverConfig) {
+            this.project = project;
             this.problems = problems;
+            this.serverConfig = serverConfig;
         }
 
         @NotNull
         @Override
         public P4LoginException loginFailure(@NotNull P4JavaException e)
                 throws VcsException, CancellationException {
-            LOG.info("General login failure", e);
+            LOG.info("General low-level login failure", e);
             problems.add(e);
             return new P4LoginException(e);
         }
@@ -191,10 +219,32 @@ public class ConnectionUIConfiguration {
         }
 
         @Override
-        public void loginRequiresPassword()
+        public void loginRequiresPassword(
+                @NotNull P4PasswordException cause)
                 throws VcsException, CancellationException {
-            LOG.info("Login requires password, but user didn't provide it.");
-            problems.add(new P4UnknownLoginException(P4Bundle.getString("error.requires.password")));
+            LOG.info("Login requires password");
+            problems.add(cause);
+
+            // This is a really weird situation.  The usual approach of using the
+            // AlertManager won't work, because the specific connection is ephemeral.
+            // Instead, we should have a password prompt, and the user can rerun the
+            // refresh.  This is pulled out from the LoginFailedHandler class.
+            ApplicationManager.getApplication().invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        LOG.info("Prompting user for the password");
+                        PasswordManager.getInstance().askPassword(project, serverConfig);
+                    } catch (PasswordStoreException e) {
+                        LOG.warn(e);
+                        problems.add(e);
+                        AlertManager.getInstance().addWarning(project,
+                                P4Bundle.message("password.store.error.title"),
+                                P4Bundle.message("password.store.error"),
+                                e, new FilePath[0]);
+                    }
+                }
+            });
         }
 
         @Override

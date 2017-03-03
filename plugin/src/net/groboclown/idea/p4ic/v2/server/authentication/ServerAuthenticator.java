@@ -33,6 +33,7 @@ import net.groboclown.idea.p4ic.server.exceptions.P4AccessException;
 import net.groboclown.idea.p4ic.server.exceptions.P4ApiException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
+import net.groboclown.idea.p4ic.server.exceptions.P4LoginRequiresPasswordException;
 import net.groboclown.idea.p4ic.server.exceptions.P4SSLException;
 import net.groboclown.idea.p4ic.server.exceptions.P4VcsConnectionException;
 import org.jetbrains.annotations.NotNull;
@@ -537,7 +538,7 @@ public class ServerAuthenticator {
                     .create());
         } catch (LoginRequiresPasswordException e) {
             LOG.debug("Execution failed because login requires a password", e);
-            return new ExecResult<T>(statBuilder(new P4LoginException(e))
+            return new ExecResult<T>(statBuilder(new P4LoginRequiresPasswordException(e))
                     .notLoggedIn()
                     .needsPassword()
                     .create());
@@ -568,7 +569,7 @@ public class ServerAuthenticator {
             }
             if (ExceptionUtil.isLoginRequiresPasswordProblem(e)) {
                 LOG.debug("User requires a password and a login", e);
-                return new ExecResult<T>(statBuilder(new P4LoginException(e))
+                return new ExecResult<T>(statBuilder(new P4LoginRequiresPasswordException(e))
                         .notLoggedIn()
                         .needsPassword()
                         .create());
@@ -598,7 +599,7 @@ public class ServerAuthenticator {
             }
             if (ExceptionUtil.isLoginRequiresPasswordProblem(e)) {
                 LOG.debug("User requires a password and a login", e);
-                return new ExecResult<T>(statBuilder(new P4LoginException(e))
+                return new ExecResult<T>(statBuilder(new P4LoginRequiresPasswordException(e))
                         .notLoggedIn()
                         .needsPassword()
                         .create());

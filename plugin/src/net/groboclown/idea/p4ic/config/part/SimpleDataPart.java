@@ -85,6 +85,16 @@ public class SimpleDataPart implements DataPart {
         return validation.getProblems();
     }
 
+    @Override
+    public boolean hasError() {
+        for (ConfigProblem configProblem : getConfigProblems()) {
+            if (configProblem.isError()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     @Nullable
     @Override

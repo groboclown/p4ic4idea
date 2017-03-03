@@ -80,7 +80,8 @@ public class ServerRunner {
         void loginFailure(@NotNull P4LoginException e)
                 throws VcsException, CancellationException;
 
-        void loginRequiresPassword() throws VcsException, CancellationException;
+        void loginRequiresPassword(@NotNull P4PasswordException cause)
+                throws VcsException, CancellationException;
 
         /**
          * The server refuses to reauthenticate a connection.
@@ -156,15 +157,15 @@ public class ServerRunner {
 
             final ServerAuthenticator.AuthenticationStatus authenticationResult =
                     p4RunWithSkippedPasswordCheck(new P4Runner<ServerAuthenticator.AuthenticationStatus>() {
-                        @Override
-                        public ServerAuthenticator.AuthenticationStatus run()
-                                throws P4JavaException, IOException, InterruptedException, TimeoutException,
-                                URISyntaxException,
-                                P4Exception {
-                            LOG.info("Encountered password issue; attempting to reauthenticate");
-                            return conn.authenticate();
-                        }
-                    }, conn, errorVisitor,
+                                                      @Override
+                                                      public ServerAuthenticator.AuthenticationStatus run()
+                                                              throws P4JavaException, IOException, InterruptedException, TimeoutException,
+                                                              URISyntaxException,
+                                                              P4Exception {
+                                                          LOG.info("Encountered password issue; attempting to reauthenticate");
+                                                          return conn.authenticate();
+                                                      }
+                                                  }, conn, errorVisitor,
                     /* first attempt at this login attempt, so retry is 0 */ 0);
             LOG.info(authenticationResult.toString());
             if (authenticationResult.isPasswordUnnecessary()) {
@@ -183,6 +184,7 @@ public class ServerRunner {
                 throw new HandledVcsException(ex);
             }
             if (authenticationResult.isPasswordInvalid()) {
+                LOG.info("Password is wrong", e);
                 P4LoginException ex = new P4LoginException(e);
                 errorVisitor.loginFailure(ex);
                 // Because we told the error visitor about this,
@@ -197,12 +199,17 @@ public class ServerRunner {
                 return retry(runner, conn, errorVisitor, retryCount, e);
             }
             if (authenticationResult.isPasswordRequired()) {
-                errorVisitor.loginRequiresPassword();
+                errorVisitor.loginRequiresPassword(e);
                 // Because we told the error visitor about this,
                 // we will not tell the user in an alert about it.
                 throw new HandledVcsException(e);
             }
             throw e;
+        } catch (P4LoginRequiresPasswordException e) {
+            errorVisitor.loginRequiresPassword(e);
+            // Because we told the error visitor about this,
+            // we will not tell the user in an alert about it.
+            throw new HandledVcsException(e);
         } catch (P4LoginException e) {
             errorVisitor.loginFailure(e);
             throw e;
@@ -257,7 +264,7 @@ public class ServerRunner {
         } catch (LoginRequiresPasswordException e) {
             LOG.info("No password known, and the server requires a password.");
             // Bubble this up to the password handlers
-            throw new P4LoginException(e);
+            throw new P4LoginRequiresPasswordException(e);
         } catch (AccessException e) {
             // Most probably a password problem.
             LOG.info("Problem accessing resources (password problem?)", e);
@@ -329,7 +336,7 @@ public class ServerRunner {
             if (ExceptionUtil.isLoginRequiresPasswordProblem(e) || ExceptionUtil.isSessionExpiredProblem(e)) {
                 // Bubble this up to the password handlers
                 LOG.info("No password known, but one is expected.");
-                throw new P4LoginException(e);
+                throw new P4LoginRequiresPasswordException(e);
             }
             if (ExceptionUtil.isLoginPasswordProblem(e)) {
                 // This could either be a real password problem, or
@@ -350,7 +357,11 @@ public class ServerRunner {
             errorVisitor.disconnectFailure(ex);
             throw ex;
         } catch (P4JavaException e) {
-            if (ExceptionUtil.isLoginRequiresPasswordProblem(e) || ExceptionUtil.isSessionExpiredProblem(e)) {
+            if (ExceptionUtil.isLoginRequiresPasswordProblem(e)) {
+                // Bubble this up to the password handlers
+                throw new P4LoginRequiresPasswordException(e);
+            }
+            if (ExceptionUtil.isSessionExpiredProblem(e)) {
                 // Bubble this up to the password handlers
                 throw new P4LoginException(e);
             }

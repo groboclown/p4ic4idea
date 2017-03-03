@@ -145,7 +145,7 @@ public class FileDataPart implements DataPart {
         charset = props.getProperty("P4CHARSET");
         loginSsoScript = toFile(props.getProperty("P4LOGINSSO"));
 
-        return getConfigProblems().isEmpty();
+        return hasError();
     }
 
     @NotNull
@@ -166,6 +166,16 @@ public class FileDataPart implements DataPart {
         validation.checkAuthTicketFile(this);
         validation.checkTrustTicketFile(this);
         return validation.getProblems();
+    }
+
+    @Override
+    public boolean hasError() {
+        for (ConfigProblem configProblem : getConfigProblems()) {
+            if (configProblem.isError()) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

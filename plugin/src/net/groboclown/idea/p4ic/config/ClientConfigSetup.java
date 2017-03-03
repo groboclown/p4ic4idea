@@ -55,8 +55,13 @@ public final class ClientConfigSetup {
         return source;
     }
 
-    public boolean hasProblems() {
-        return ! configProblems.isEmpty();
+    public boolean hasErrors() {
+        for (ConfigProblem configProblem : configProblems) {
+            if (configProblem.isError()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean hasClientConfig() {

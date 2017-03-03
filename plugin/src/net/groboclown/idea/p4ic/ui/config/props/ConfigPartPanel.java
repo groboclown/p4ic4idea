@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.ui.config.props;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.part.ConfigPart;
@@ -27,6 +28,9 @@ import java.awt.*;
 public abstract class ConfigPartPanel<T extends ConfigPart>
         implements RequestConfigurationUpdateListener,
             ComponentListPanel.WithRootPanel {
+    private static final Logger LOG = Logger.getInstance(ConfigPartPanel.class);
+
+
     private final Project project;
     private final T part;
     private RequestConfigurationLoadListener requestConfigurationLoadListener;
@@ -48,7 +52,7 @@ public abstract class ConfigPartPanel<T extends ConfigPart>
 
     public abstract boolean isModified(@NotNull T originalPart);
 
-    public void setRequestConfigurationLoadListener(@NotNull RequestConfigurationLoadListener listener) {
+    void setRequestConfigurationLoadListener(@NotNull RequestConfigurationLoadListener listener) {
         this.requestConfigurationLoadListener = listener;
     }
 
@@ -57,6 +61,7 @@ public abstract class ConfigPartPanel<T extends ConfigPart>
         if (requestConfigurationLoadListener != null) {
             return requestConfigurationLoadListener.updateConfigPartFromUI();
         }
+        LOG.warn("Invalid state: No load listener set yet.");
         return null;
     }
 

@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.config.part;
 
+import net.groboclown.idea.p4ic.config.ConfigProblem;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,4 +35,13 @@ public abstract class CompositePart implements ConfigPart {
 
     @NotNull
     public abstract List<ConfigPart> getConfigParts();
+
+    public boolean hasError() {
+        for (ConfigProblem configProblem : getConfigProblems()) {
+            if (configProblem.isError()) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

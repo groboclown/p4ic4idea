@@ -105,7 +105,9 @@ public class ClientNameConfigPartPanel
     @Override
     public void updateConfigPartFromUI() {
         getConfigPart().setClientname(getSelectedClientName());
-        LOG.info("Set the client to " + getConfigPart().getClientname());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Set the client to " + getConfigPart().getClientname());
+        }
     }
 
     private String getSelectedClientName() {
@@ -117,16 +119,16 @@ public class ClientNameConfigPartPanel
     }
 
     private void refreshClientList() {
-        // FIXME DEBUG
-        LOG.info("Refreshing client list...");
+        LOG.debug("Refreshing client list...");
         final String selected = getSelectedClientName();
         BackgroundAwtActionRunner.runBackgroundAwtAction(listRefreshSpinner,
                 new BackgroundAwtActionRunner.BackgroundAwtAction<Collection<String>>() {
                     @Override
                     public Collection<String> runBackgroundProcess() {
                         Collection<String> list = loadClientList(selected);
-                        // FIXME DEBUG
-                        LOG.info("client list loaded: " + list);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("client list loaded: " + list);
+                        }
                         return list;
                     }
 
@@ -159,6 +161,7 @@ public class ClientNameConfigPartPanel
                 ? Collections.<ClientConfig>emptyList()
                 : config.getClientConfigs();
         if (configs.isEmpty()) {
+            LOG.debug("No client configs in project");
             getConfigPart().addAdditionalProblem(new ConfigProblem(
                     getConfigPart(), false, "configuration.client.error.no-server"));
         } else if (configs.size() != 1) {
@@ -166,9 +169,14 @@ public class ClientNameConfigPartPanel
                     getConfigPart(), false, "configuration.client.error.no-single-server"));
             // Still load up the client names, though.
         }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Loading clients with configs " + configs + " from " + config);
+        }
         Set<String> ret = new HashSet<String>();
         for (ConnectionUIConfiguration.ClientResult result : ClientNameDataPart.loadClientNames(configs).values()) {
-            LOG.info("Loaded clients " + result.getClientNames() + "; problem " + result.getConnectionProblem());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Loaded clients " + result.getClientNames() + "; problem " + result.getConnectionProblem());
+            }
             ret.addAll(result.getClientNames());
             if (result.getConnectionProblem() != null) {
                 getConfigPart().addAdditionalProblem(new ConfigProblem(getConfigPart(), result.getConnectionProblem()));

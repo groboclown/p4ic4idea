@@ -381,7 +381,7 @@ public class P4ServerManager implements ProjectComponent {
     private void initializeServers() {
         P4ProjectConfigComponent cp = P4ProjectConfigComponent.getInstance(project);
         final P4ProjectConfig sources = cp.getP4ProjectConfig();
-        if (! sources.hasConfigErrors()) {
+        if (sources.hasConfigErrors()) {
             LOG.info("source load has errors: " + sources.getConfigProblems());
             serverLock.lock();
             try {
@@ -396,6 +396,8 @@ public class P4ServerManager implements ProjectComponent {
         // IDE master password
         Map<ClientServerRef, P4Server> newServers = new HashMap<ClientServerRef, P4Server>();
         for (ClientConfig config: sources.getClientConfigs()) {
+            // FIXME DEBUG
+            LOG.info("Adding server " + config.getServerConfig().getServerName().getDisplayName());
             try {
                 final P4Server server = new P4Server(project, config);
                 newServers.put(server.getClientServerId(), server);

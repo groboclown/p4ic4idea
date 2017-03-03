@@ -347,7 +347,12 @@ public class ConfigStackPanel
             configPartPanel.getConfigPart().reload();
             parts.add(configPartPanel.copyPart());
         }
-        return new P4ProjectConfigStack(project, parts);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Creating project config with " + parts);
+        }
+        P4ProjectConfigStack ret = new P4ProjectConfigStack(project, parts);
+        ret.refresh();
+        return ret;
     }
 
     /**

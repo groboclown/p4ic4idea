@@ -52,7 +52,7 @@ public class MockDataPart
         validation.checkPort(trimmedProperty(PORT_KEY), getServerName());
         validation.checkAuthTicketFile(getAuthTicketFile());
         validation.checkTrustTicketFile(getTrustTicketFile());
-        return validation.getProblems();
+        return validation.getErrors();
         */
         return Collections.emptyList();
     }

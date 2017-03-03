@@ -48,9 +48,10 @@ public class ClientConfig {
     private final ClientServerRef clientServerRef;
     private final String clientId;
 
+    @NotNull
     public static ClientConfig createFrom(@NotNull Project project, @NotNull ServerConfig serverConfig,
             @NotNull DataPart data, @NotNull Collection<VirtualFile> clientProjectBaseDirectories) {
-        if (! data.getConfigProblems().isEmpty()) {
+        if (data.hasError()) {
             throw new IllegalArgumentException("did not validate data");
         }
         return new ClientConfig(project, serverConfig, data, clientProjectBaseDirectories);

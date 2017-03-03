@@ -35,6 +35,7 @@ import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
+import net.groboclown.idea.p4ic.server.exceptions.P4PasswordException;
 import net.groboclown.idea.p4ic.server.exceptions.P4RetryAuthenticationException;
 import net.groboclown.idea.p4ic.server.exceptions.P4SSLFingerprintException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
@@ -335,10 +336,10 @@ public class ClientExec {
         }
 
         @Override
-        public void loginRequiresPassword() throws VcsException, CancellationException {
-            Exception ex = new Exception("Login requires password");
+        public void loginRequiresPassword(@NotNull P4PasswordException cause)
+                throws VcsException, CancellationException {
             AlertManager.getInstance().addCriticalError(
-                    new LoginFailedHandler(project, connectedController, config.getServerConfig(), ex), ex);
+                    new LoginFailedHandler(project, connectedController, config.getServerConfig(), cause), cause);
         }
 
         @Override

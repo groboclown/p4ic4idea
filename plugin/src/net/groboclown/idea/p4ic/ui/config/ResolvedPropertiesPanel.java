@@ -279,7 +279,7 @@ public class ResolvedPropertiesPanel {
         }
         for (ClientConfigSetup configSetup : configs) {
             final ClientConfig config = configSetup.getClientConfig();
-            if (!configSetup.hasProblems() && config != null) {
+            if (!configSetup.hasErrors() && config != null) {
                 ConfigProblem problem = ConnectionUIConfiguration.checkConnection(config,
                         ServerConnectionManager.getInstance(), false);
                 if (problem != null) {

@@ -826,7 +826,8 @@ public class P4Exec2 {
                         ret.add(client.getName());
                     }
                 }
-                return ret;            }
+                return ret;
+            }
         });
     }
 

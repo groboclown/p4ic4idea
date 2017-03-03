@@ -86,14 +86,20 @@ public final class ServerConfig {
 
     public static boolean isValid(@Nullable DataPart part) {
         // Could be optimized in the future.
-        return getProblems(part).isEmpty();
+        return getErrors(part).isEmpty();
     }
 
-    public static Collection<ConfigProblem> getProblems(@Nullable DataPart part) {
+    static Collection<ConfigProblem> getErrors(@Nullable DataPart part) {
         if (part == null) {
             return Collections.singletonList(new ConfigProblem(part, false, "config.display.key.no-value"));
         }
-        return PartValidation.findAllProblems(part);
+        List<ConfigProblem> ret = new ArrayList<ConfigProblem>();
+        for (ConfigProblem configProblem : PartValidation.findAllProblems(part)) {
+            if (configProblem.isError()) {
+                ret.add(configProblem);
+            }
+        }
+        return ret;
     }
 
     private ServerConfig(@NotNull DataPart part) {

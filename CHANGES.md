@@ -22,6 +22,9 @@
       thread and into the background.
     * Fixed the reload buttons to be disabled while the process is running.
     * Moved the client name field spinner to be consistent with the rest of the UI.
+    * Changed validation check for the server configuration and the client
+      configuration so it now reports a warning rather than throwing an
+      error (#144).
     * Added validation check to ensure client name is not purely numeric.
     * Temporarily disabled the client name refresh button until that's all worked out.
 

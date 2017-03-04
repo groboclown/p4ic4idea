@@ -375,8 +375,9 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         private ClientServerSetup(@Nullable ServerConfig serverConfig, @NotNull MultipleDataPart dataPart,
                 @NotNull VirtualFile path) {
             if (serverConfig != null && ! serverConfig.isSameServer(dataPart)) {
-                LOG.error("Server config " + serverConfig + " does not match " +
-                        ConfigPropertiesUtil.toProperties(dataPart));
+                LOG.warn("Server config " + serverConfig + " does not match "
+                        + ConfigPropertiesUtil.toProperties(dataPart) + ".  Turn on debugging for category #"
+                        + ServerConfig.class.getName() + " to understand where the mismatch occurred.");
             }
             if (LOG.isDebugEnabled() && serverConfig == null) {
                 LOG.debug("Created ClientServerSetup with null server config for " +

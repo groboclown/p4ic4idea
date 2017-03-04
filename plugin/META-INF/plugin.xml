@@ -1,7 +1,7 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.8.4-beta.1</version>
+    <version>0.8.4-beta.2</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
@@ -21,7 +21,11 @@
                 thread and into the background.</li>
               <li>Fixed the reload buttons to be disabled while the process is running.</li>
               <li>Moved the client name field spinner to be consistent with the rest of the UI.</li>
+              <li>Changed validation check for the server configuration and the client
+                configuration so it now reports a warning rather than throwing an
+                error.</li>
               <li>Added validation check to ensure client name is not purely numeric.</li>
+              <li>Temporarily disabled the client name refresh button until that's all worked out.</li>
             </ol>
           </li>
           <li><em>0.8.3</em>

@@ -26,6 +26,10 @@
       configuration so it now reports a warning rather than throwing an
       error (#144).
     * Added validation check to ensure client name is not purely numeric.
+    * Added better logging in the case of connection checkout issues.
+    * Fixed configuration panel detection of modification.
+    * Fixed an issue where an invalid password would be considered needing to log in
+      again with the existing, known password.
     * Temporarily disabled the client name refresh button until that's all worked out.
 
 

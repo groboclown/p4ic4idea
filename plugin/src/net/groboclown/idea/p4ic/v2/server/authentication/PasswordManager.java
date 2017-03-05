@@ -147,7 +147,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                     // dispatch and in a read action, reference.
                     ret = setMemoryPassword(config, ret);
                     return ret;
-                } else if (! forceFetch) {
+                } else if (forceFetch) {
                     LOG.warn("Could not get password because the action is called from outside the dispatch thread and in a read action.");
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Read action for " + key, new Throwable());
@@ -184,6 +184,7 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                     throw new PasswordAccessedWrongException();
                 } else {
                     // The user did not force a password fetch.
+                    LOG.debug("Cannot access password at this time; using a blank password");
                     return new OneUseString((char[]) null);
                 }
             }
@@ -350,7 +351,9 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
         if (pass == null) {
             return null;
         }
-        return new OneUseString(pass);
+        char[] copy = new char[pass.length];
+        System.arraycopy(pass, 0, copy, 0, pass.length);
+        return new OneUseString(copy);
     }
 
     private void clearMemoryPassword(@NotNull ServerConfig config) {

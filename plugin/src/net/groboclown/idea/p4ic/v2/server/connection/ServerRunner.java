@@ -153,20 +153,20 @@ public class ServerRunner {
             // "password not set or invalid", which means that the server could
             // have dropped the security token, and we need a new one.
 
-            LOG.info("With with skipped password encountered login problem", e);
+            LOG.info("Encountered login problem", e);
 
             final ServerAuthenticator.AuthenticationStatus authenticationResult =
                     p4RunWithSkippedPasswordCheck(new P4Runner<ServerAuthenticator.AuthenticationStatus>() {
-                                                      @Override
-                                                      public ServerAuthenticator.AuthenticationStatus run()
-                                                              throws P4JavaException, IOException, InterruptedException, TimeoutException,
-                                                              URISyntaxException,
-                                                              P4Exception {
-                                                          LOG.info("Encountered password issue; attempting to reauthenticate");
-                                                          return conn.authenticate();
-                                                      }
-                                                  }, conn, errorVisitor,
-                    /* first attempt at this login attempt, so retry is 0 */ 0);
+                        @Override
+                        public ServerAuthenticator.AuthenticationStatus run()
+                                throws P4JavaException, IOException, InterruptedException, TimeoutException,
+                                URISyntaxException, P4Exception {
+                            LOG.info("Encountered password issue; attempting to reauthenticate");
+                            return conn.authenticate();
+                        }
+                    }, conn, errorVisitor,
+                    /* first attempt at this login attempt, so retry is 0 */
+                    0);
             LOG.info(authenticationResult.toString());
             if (authenticationResult.isPasswordUnnecessary()) {
                 errorVisitor.passwordUnnecessary(authenticationResult);

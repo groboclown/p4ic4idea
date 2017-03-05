@@ -23,8 +23,6 @@ import net.groboclown.idea.p4ic.ui.config.RequestConfigurationLoadListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
-
 public abstract class ConfigPartPanel<T extends ConfigPart>
         implements RequestConfigurationUpdateListener,
             ComponentListPanel.WithRootPanel {
@@ -33,11 +31,22 @@ public abstract class ConfigPartPanel<T extends ConfigPart>
 
     private final Project project;
     private final T part;
+    private final Class<T> type;
     private RequestConfigurationLoadListener requestConfigurationLoadListener;
 
+    @SuppressWarnings("unchecked")
     ConfigPartPanel(@NotNull Project project, @NotNull T part) {
         this.project = project;
         this.part = part;
+        this.type = (Class<T>) part.getClass();
+    }
+
+    @Nullable
+    T castAs(@NotNull ConfigPart part) {
+        if (type.isInstance(part)) {
+            return type.cast(part);
+        }
+        return null;
     }
 
     /**

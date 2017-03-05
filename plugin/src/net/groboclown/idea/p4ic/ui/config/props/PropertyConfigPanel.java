@@ -14,7 +14,7 @@
 
 package net.groboclown.idea.p4ic.ui.config.props;
 
-import com.intellij.openapi.fileChooser.FileChooserDescriptor;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
@@ -30,10 +30,14 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.io.File;
+import java.util.Collections;
 import java.util.ResourceBundle;
 
 public class PropertyConfigPanel
         extends ConfigPartPanel<SimpleDataPart> {
+    private static final Logger LOG = Logger.getInstance(PropertyConfigPanel.class);
+
+
     private JPanel rootPanel;
     private JLabel portFieldLabel;
     private JTextField portField;
@@ -111,14 +115,19 @@ public class PropertyConfigPanel
 
     @Override
     public void updateConfigPartFromUI() {
-        getConfigPart().setDefaultCharset(charsetField.getText());
-        getConfigPart().setIgnoreFilename(ignoreFileNameField.getText());
-        getConfigPart().setClientHostname(hostnameField.getText());
-        getConfigPart().setTrustTicketFile(trustTicketFileField.getText());
-        getConfigPart().setAuthTicketFile(authTicketFileField.getText());
-        getConfigPart().setUsername(userField.getText());
-        getConfigPart().setServerName(portField.getText());
-        getConfigPart().setLoginSsoFile(loginSsoField.getText());
+        updateConfigPartFromUI(getConfigPart());
+    }
+
+    private void updateConfigPartFromUI(@NotNull SimpleDataPart part) {
+        part.setClientname(null);
+        part.setDefaultCharset(charsetField.getText());
+        part.setIgnoreFilename(ignoreFileNameField.getText());
+        part.setClientHostname(hostnameField.getText());
+        part.setTrustTicketFile(trustTicketFileField.getText());
+        part.setAuthTicketFile(authTicketFileField.getText());
+        part.setUsername(userField.getText());
+        part.setServerName(portField.getText());
+        part.setLoginSsoFile(loginSsoField.getText());
     }
 
     @NotNull
@@ -129,18 +138,15 @@ public class PropertyConfigPanel
 
     @Override
     public boolean isModified(@NotNull SimpleDataPart originalPart) {
-        return !isNotEqual(charsetField, originalPart.getDefaultCharset())
-            && !isNotEqual(ignoreFileNameField, originalPart.getIgnoreFileName())
-            && !isNotEqual(hostnameField, originalPart.getClientHostname())
-            && !isNotEqual(trustTicketFileField, originalPart.getTrustTicketFile())
-            && !isNotEqual(authTicketFileField, originalPart.getTrustTicketFile())
-            && !isNotEqual(userField, originalPart.getUsername())
-            && !isNotEqual(portField, originalPart.getRawServerName())
-            && !isNotEqual(loginSsoField, originalPart.getLoginSso());
+        // Accurate is-modified requires creating a new part, so that the real values
+        // can be compared.
+        SimpleDataPart newPart = new SimpleDataPart(getProject(), Collections.<String, String>emptyMap());
+        updateConfigPartFromUI(newPart);
+        return ! newPart.equals(originalPart);
     }
 
     private static boolean isNotEqual(@NotNull JTextField field, @Nullable String value) {
-        return EqualUtil.isEqual(field.getText(), value);
+        return ! EqualUtil.isEqual(field.getText(), value);
     }
 
     private static boolean isNotEqual(@NotNull TextFieldWithBrowseButton field, @Nullable File file) {
@@ -150,7 +156,7 @@ public class PropertyConfigPanel
         } else {
             f = new File(field.getText());
         }
-        return FileUtil.filesEqual(f, file);
+        return ! FileUtil.filesEqual(f, file);
     }
 
     @NotNull
@@ -164,7 +170,8 @@ public class PropertyConfigPanel
     @NotNull
     private static String nullEmptyFile(@NotNull Project project, @Nullable File f) {
         if (f == null) {
-            return project.getBaseDir().getPath();
+            // return project.getBaseDir().getPath();
+            return "";
         }
         return f.getAbsolutePath();
     }

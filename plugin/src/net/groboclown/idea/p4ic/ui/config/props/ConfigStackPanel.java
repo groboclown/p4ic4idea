@@ -329,13 +329,19 @@ public class ConfigStackPanel
         final Iterator<ConfigPartPanel<?>> nows = partPanels.iterator();
         while (origs.hasNext() && nows.hasNext()) {
             ConfigPart orig = origs.next();
-            ConfigPart now = nows.next().getConfigPart();
-            if (!orig.equals(now)) {
+            ConfigPartPanel<?> now = nows.next();
+            if (isModified(now, orig)) {
                 return true;
             }
         }
         return false;
     }
+
+    private <T extends ConfigPart> boolean isModified(@NotNull ConfigPartPanel<T> panel, @NotNull ConfigPart part) {
+        T casted = panel.castAs(part);
+        return casted == null || panel.isModified(casted);
+    }
+
 
     @NotNull
     @Override

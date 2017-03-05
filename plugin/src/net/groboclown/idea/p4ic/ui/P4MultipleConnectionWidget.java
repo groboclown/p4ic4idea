@@ -415,14 +415,12 @@ public class P4MultipleConnectionWidget implements StatusBarWidget.IconPresentat
         @Override
         public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig newConfig,
                 @Nullable P4ProjectConfig previousConfiguration) {
-            // Just update everything.
-            reloadServerRefs();
+            update(true, true);
         }
 
         @Override
         public void configurationProblem(@NotNull Project project, @NotNull P4ProjectConfig config, @NotNull VcsConnectionProblem ex) {
-            // Just update everything.
-            reloadServerRefs();
+            update(true, true);
         }
 
         @Override

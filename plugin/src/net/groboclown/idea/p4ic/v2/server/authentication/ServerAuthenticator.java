@@ -417,19 +417,13 @@ public class ServerAuthenticator {
             @Override
             public Void exec(@NotNull IOptionsServer server)
                     throws P4JavaException {
-                boolean useAuthTicket = config.getAuthTicket() != null;
-                LoginOptions loginOptions = new LoginOptions(false, ! useAuthTicket);
-                // StringBuffer authFileContents = null;
-                // if (config.getAuthTicket() != null) {
-                //     authFileContents = loadAuthTicketContents(config.getAuthTicket());
-                // }
-                // server.login(knownPassword, authFileContents, loginOptions);
-                // if (authFileContents != null) {
-                //     saveAuthTicketContents(authFileContents, config.getAuthTicket());
-                // }
+                boolean useAuthTicket = config.getAuthTicket() != null && config.getAuthTicket().isFile();
+                LoginOptions loginOptions = new LoginOptions();
+                loginOptions.setDontWriteTicket(! useAuthTicket);
+
                 // If the password is blank, then there's no need for the
                 // user to log in; in fact, that wil raise an error by Perforce
-                if (knownPassword != null && knownPassword.length() > 0) {
+                if (knownPassword != null && ! knownPassword.isEmpty()) {
                     server.login(knownPassword, loginOptions);
                     LOG.debug("No issue logging in with known password");
                 } else {

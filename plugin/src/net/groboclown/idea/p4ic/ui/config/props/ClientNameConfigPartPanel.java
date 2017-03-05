@@ -22,9 +22,9 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.BackgroundAwtActionRunner;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
-import net.groboclown.idea.p4ic.config.ConfigPropertiesUtil;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.part.ClientNameDataPart;
+import net.groboclown.idea.p4ic.util.EqualUtil;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -91,10 +91,11 @@ public class ClientNameConfigPartPanel
 
     @Override
     public boolean isModified(@NotNull ClientNameDataPart originalPart) {
-        if (originalPart.getClientname() == null) {
-            return getSelectedClientName() == null;
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Checking if orig (" + originalPart.getClientname() + ") differs from `"
+                    + getSelectedClientName() + "`");
         }
-        return getSelectedClientName() != null && originalPart.getClientname().equals(getSelectedClientName());
+        return ! EqualUtil.isEqual(originalPart.getClientname(), getSelectedClientName());
     }
 
     @Nls

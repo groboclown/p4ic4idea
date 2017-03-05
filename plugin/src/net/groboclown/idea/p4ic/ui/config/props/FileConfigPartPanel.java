@@ -18,8 +18,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.openapi.util.io.FileUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.part.FileDataPart;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -73,9 +73,7 @@ public class FileConfigPartPanel
 
     @Override
     public boolean isModified(@NotNull FileDataPart originalPart) {
-        return (originalPart.getConfigFile() == null && getSelectedLocation() != null)
-                || (originalPart.getConfigFile() != null &&
-                !originalPart.getConfigFile().getParent().equals(getSelectedLocation()));
+        return ! FileUtil.filesEqual(originalPart.getConfigFile(), getSelectedFile());
     }
 
     @Nls
@@ -93,12 +91,16 @@ public class FileConfigPartPanel
 
     @Override
     public void updateConfigPartFromUI() {
-        String newLocation = getSelectedLocation();
-        if (newLocation == null) {
-            getConfigPart().setConfigFile(null);
-        } else {
-            getConfigPart().setConfigFile(new File(newLocation));
+        getConfigPart().setConfigFile(getSelectedFile());
+    }
+
+    @Nullable
+    private File getSelectedFile() {
+        final String location = getSelectedLocation();
+        if (location == null) {
+            return null;
         }
+        return new File(location);
     }
 
     @Nullable

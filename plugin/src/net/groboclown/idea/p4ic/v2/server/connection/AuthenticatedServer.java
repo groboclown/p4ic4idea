@@ -23,6 +23,7 @@ import com.perforce.p4java.exception.ConnectionNotConnectedException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.exception.TrustException;
+import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.callback.ILogCallback;
 import net.groboclown.idea.p4ic.compat.auth.OneUseString;
@@ -80,6 +81,7 @@ class AuthenticatedServer {
     private IOptionsServer server;
 
     private Thread checkedOutBy;
+    private Exception checkedOutStack;
 
     private boolean hasValidatedAuthentication = false;
     private ServerAuthenticator.AuthenticationStatus invalidLoginStatus = null;
@@ -126,7 +128,7 @@ class AuthenticatedServer {
             throw new P4JavaException("Server Connection invalid");
         }
         if (checkedOutBy != null) {
-            throw new P4JavaException("P4ServerName object already checked out by " + checkedOutBy);
+            throw new P4JavaException("P4ServerName object already checked out by " + checkedOutBy, checkedOutStack);
         }
 
         if (LOG.isDebugEnabled()) {
@@ -144,18 +146,26 @@ class AuthenticatedServer {
         }
 
         checkedOutBy = Thread.currentThread();
+        checkedOutStack = new Exception();
+        checkedOutStack.fillInStackTrace();
         return server;
     }
 
     synchronized void checkinServer(@NotNull IOptionsServer server) throws P4JavaException {
         if (checkedOutBy != Thread.currentThread()) {
-            throw new P4JavaException("P4ServerName object not checked out by current thread (current thread: " +
-                Thread.currentThread() + "; checked out by " + checkedOutBy + ")");
+            // We'll allow it for now.  This is indicative that someone is doing something wrong with the
+            // server; it should be handled within the same thread.
+            LOG.error(new P4JavaException("P4ServerName object not checked out by current thread (current thread: " +
+                Thread.currentThread() + "; checked out by " + checkedOutBy + ")", checkedOutStack));
         }
         if (this.server != server) {
             throw new P4JavaException("Incorrect server instance check-in");
         }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Checking in server " + this + " in " + Thread.currentThread());
+        }
         checkedOutBy = null;
+        checkedOutStack = null;
         if (UserProjectPreferences.getReconnectWithEachRequest(project)) {
             // Note that this isn't going to be an absolute reconnect with
             // each request, but a general one.  One or more server requests
@@ -247,12 +257,6 @@ class AuthenticatedServer {
 
 
         if (status.isPasswordRequired()) {
-            // FIXME there is a situation where this can be triggered when the
-            // password has been entered, but hasn't been used.  That situation
-            // happens wit the "Perforce password (%'P4PASSWD'%) invalid or unset." error.
-            // Need to fix the status generator to have the right status with that
-            // error message.
-
             if (LOG.isDebugEnabled()) {
                 LOG.debug("User must enter the password for " + this);
             }
@@ -352,6 +356,15 @@ class AuthenticatedServer {
                 hasValidatedAuthentication = true;
                 return status;
             }
+            if (status.isPasswordInvalid()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Forgetting user password, because it's invalid.  " + this);
+                }
+                PasswordManager.getInstance().forgetPassword(project, config.getServerConfig());
+                hasValidatedAuthentication = false;
+                loginFailedCount++;
+                return status;
+            }
             if (status.isPasswordRequired()) {
                 // Our password is wrong, perhaps.
                 if (LOG.isDebugEnabled()) {
@@ -407,7 +420,7 @@ class AuthenticatedServer {
     private void reconnect()
             throws P4JavaException, URISyntaxException, InterruptedException {
         if (checkedOutBy != null) {
-            throw new P4JavaException("P4ServerName instance already checked out by " + checkedOutBy);
+            throw new P4JavaException("P4ServerName instance already checked out by " + checkedOutBy, checkedOutStack);
         }
         final OneUseString password =
                 PasswordManager.getInstance().getPassword(project, config.getServerConfig(), false);
@@ -525,14 +538,36 @@ class AuthenticatedServer {
                     }
                     activeConnectionCount.incrementAndGet();
 
-                    // Authentication will still be done, but
-                    // outside this call.
+                    initialLoginAttempt(server, knownPassword);
 
                     return server;
                 }
             });
         } catch (InterruptedException e) {
             throw new P4JavaException(e);
+        }
+    }
+
+    private void initialLoginAttempt(@NotNull IOptionsServer server, @Nullable String knownPassword) {
+        // Only try logging in at first connection if there is a password and no existing auth file.
+        if (config.getServerConfig().getAuthTicket() != null
+                && config.getServerConfig().getAuthTicket().isFile()) {
+            LOG.debug("Not attempting initial login - auth ticket file exists");
+            return;
+        }
+        // Initial login attempt.
+        if (knownPassword != null && ! knownPassword.isEmpty()) {
+            LoginOptions options = new LoginOptions();
+            options.setDontWriteTicket(true);
+            options.setHost(config.getClientHostName());
+            try {
+                server.login(knownPassword, options);
+                hasValidatedAuthentication = true;
+            } catch (Exception e) {
+                LOG.info("Initial login attempt failed: ", e);
+            }
+        } else {
+            LOG.debug("No known password at server creation time; skipping initial login.");
         }
     }
 
@@ -637,7 +672,11 @@ class AuthenticatedServer {
 
 
     private int getMaxAuthenticationRetries() {
-        return UserProjectPreferences.getMaxAuthenticationRetries(project);
+        // return UserProjectPreferences.getMaxAuthenticationRetries(project);
+
+        // With the new method of looking at the login details with better clarity,
+        // there isn't a need to have this higher than 1.
+        return 1;
     }
 
 }

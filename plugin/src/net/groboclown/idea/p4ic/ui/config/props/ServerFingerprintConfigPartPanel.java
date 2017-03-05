@@ -19,8 +19,8 @@ import com.intellij.openapi.project.Project;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import net.groboclown.idea.p4ic.config.part.ServerFingerprintDataPart;
+import net.groboclown.idea.p4ic.util.EqualUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
@@ -62,13 +62,13 @@ public class ServerFingerprintConfigPartPanel
     @Override
     ServerFingerprintDataPart copyPart() {
         ServerFingerprintDataPart ret = new ServerFingerprintDataPart();
-        ret.setServerFingerprint(getConfigPart().getServerFingerprint());
+        ret.setServerFingerprint(fingerprintField.getText());
         return ret;
     }
 
     @Override
     public boolean isModified(@NotNull ServerFingerprintDataPart originalPart) {
-        return !originalPart.equals(getConfigPart());
+        return ! EqualUtil.isEqual(originalPart.getServerFingerprint(), fingerprintField.getText());
     }
 
     {

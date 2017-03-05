@@ -98,9 +98,7 @@ public class ExceptionUtil
             RequestException rex = (RequestException) ex;
             return (rex.hasMessageFragment(SESSION_EXPIRED_MESSAGE_1)
                     || rex.hasMessageFragment(SESSION_EXPIRED_MESSAGE_2)
-                    || rex.hasMessageFragment(SESSION_EXPIRED_MESSAGE_3)
-                    || (rex.getGenericCode() == MessageGenericCode.EV_CONFIG &&
-                    rex.getSubCode() == 21));
+                    || rex.hasMessageFragment(SESSION_EXPIRED_MESSAGE_3));
         }
         if (ex instanceof AuthenticationFailedException) {
             AuthenticationFailedException afex = (AuthenticationFailedException) ex;

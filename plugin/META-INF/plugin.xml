@@ -25,6 +25,8 @@
                 configuration so it now reports a warning rather than throwing an
                 error.</li>
               <li>Added validation check to ensure client name is not purely numeric.</li>
+              <li>Added better logging in the case of connection checkout issues.</li>
+              <li>Fixed configuration panel detection of modification.</li>
               <li>Temporarily disabled the client name refresh button until that's all worked out.</li>
             </ol>
           </li>

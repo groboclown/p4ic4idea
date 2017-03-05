@@ -152,7 +152,7 @@ public class SimpleDataPart implements DataPart {
         setTrimmed(PORT_KEY, port);
     }
 
-    public void setServerName(@Nullable P4ServerName port) {
+    private void setServerName(@Nullable P4ServerName port) {
         if (port != null) {
             setTrimmed(PORT_KEY, port.getFullPort());
         } else {

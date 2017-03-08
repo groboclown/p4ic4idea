@@ -20,7 +20,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.compat.auth.OneUseString;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager;
@@ -50,6 +52,34 @@ public class LoginFailedHandler extends AbstractErrorHandler {
 
         if (isInvalid()) {
             return;
+        }
+
+        // First, ensure that the password was in fact cleared.
+        // If it is set, then that means the user has already been prompted
+        // for the password in another connection.
+
+        try {
+            OneUseString password =
+                    PasswordManager.getInstance().getPassword(getProject(), config, false);
+            if (! password.isNullValue()) {
+                // password was reset.
+                LOG.info("Not asking user for password, as it is currently set.");
+                // Try to reconnect in the background.  If the connection has already been made,
+                // then this should be a no-op.
+                ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        connect();
+                    }
+                });
+                return;
+            }
+        } catch (PasswordStoreException e) {
+            // Ignore.  This means that the password was most likely not set.
+            LOG.debug(e);
+        } catch (PasswordAccessedWrongException e) {
+            // Ignore.  This means that the password was most likely not set.
+            LOG.debug(e);
         }
 
         DistinctDialog.performOnDialog(

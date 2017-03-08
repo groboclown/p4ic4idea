@@ -23,6 +23,7 @@ import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.*;
+import net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager;
 import net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator;
 import org.jetbrains.annotations.NotNull;
 

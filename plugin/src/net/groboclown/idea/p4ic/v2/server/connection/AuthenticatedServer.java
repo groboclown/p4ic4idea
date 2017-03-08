@@ -307,22 +307,12 @@ class AuthenticatedServer {
         }
 
 
-        if (status.isPasswordRequired()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("User must enter the password for " + this);
-            }
-            // Mark this connection as needing a password, for future call optimization.
-            requiresPassword = true;
-            return status;
-        }
-
         if (status.isAuthenticated()) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Connection seems authenticated for " + this);
             }
             return status;
         }
-
 
         if (status.isPasswordUnnecessary()) {
             // This kind of status means that the user is probably authenticated,
@@ -332,15 +322,19 @@ class AuthenticatedServer {
                         this);
             }
             PasswordManager.getInstance().forgetPassword(project, config.getServerConfig());
+
+            // Fall through
         }
-        if (status.isAuthenticated()) {
+
+        if (status.isPasswordRequired()) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Authorization successful after " +
-                        " unauthorized connections (but a valid one was seen earlier) for " +
-                        this);
+                LOG.debug("User must enter the password for " + this);
             }
+            // Mark this connection as needing a password, for future call optimization.
+            requiresPassword = true;
             return status;
         }
+
         if (status.isPasswordInvalid()) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Forgetting user password, because it's invalid.  " + this);
@@ -349,6 +343,7 @@ class AuthenticatedServer {
             loginFailedCount++;
             return status;
         }
+
         if (status.isPasswordRequired()) {
             // Our password is wrong, perhaps.
             if (LOG.isDebugEnabled()) {

@@ -19,6 +19,7 @@ import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ClientConfig;
@@ -70,6 +71,7 @@ public class ServerConnectionManager implements ApplicationComponent {
     }
 
     // Used by PicoContainer
+    @SuppressWarnings("unused")
     public ServerConnectionManager() {
         this(new CentralCacheManager(), AlertManager.getInstance());
     }
@@ -254,6 +256,7 @@ public class ServerConnectionManager implements ApplicationComponent {
         ServerConfigStatus(@NotNull ServerConfig config, @NotNull ServerSynchronizer synchronizer) {
             this.config = config;
             this.synchronizer = synchronizer;
+
             // we are online by default
             synchronizer.wentOnline();
         }
@@ -343,18 +346,23 @@ public class ServerConnectionManager implements ApplicationComponent {
                     LOG.warn(e);
                     throw new P4InvalidClientException(clientConfig.getClientServerRef());
                 }
+
+                // Must share one ConnectionSynchronizer per ClientExec.
+                ServerSynchronizer.ConnectionSynchronizer connectionSync =
+                        synchronizer.createConnectionSynchronizer();
+
                 if (! requiresClient && ! clientConfig.isWorkspaceCapable()) {
                     conn = new ServerConnection(alerts,
                             new ClientCacheManager(clientConfig,
                                     createEmptyClientLocalState(clientConfig.getClientServerRef())),
-                            clientConfig, this, synchronizer.createConnectionSynchronizer(), exec);
+                            clientConfig, this, connectionSync, exec);
                     // Do not add the connection to the client names
                     // store, because we don't have a client.
                 } else {
                     conn = new ServerConnection(alerts,
                             cacheManager.getClientCacheManager(
-                                    clientConfig, new CaseInsensitiveCheck(project, exec)),
-                            clientConfig, this, synchronizer.createConnectionSynchronizer(), exec);
+                                    clientConfig, new CaseInsensitiveCheck(project, exec, connectionSync)),
+                            clientConfig, this, connectionSync, exec);
                     clientNames.put(clientConfig.getClientName(), conn);
                 }
             }
@@ -415,15 +423,42 @@ public class ServerConnectionManager implements ApplicationComponent {
     private static class CaseInsensitiveCheck implements Callable<Boolean> {
         private final Project project;
         private final ClientExec exec;
+        private final ServerSynchronizer.ConnectionSynchronizer connectionSync;
+        private P4Exec2 p4exec;
 
-        private CaseInsensitiveCheck(@NotNull final Project project, @NotNull final ClientExec exec) {
+        private CaseInsensitiveCheck(@NotNull final Project project, @NotNull final ClientExec exec,
+                @NotNull final ServerSynchronizer.ConnectionSynchronizer connectionSync) {
             this.project = project;
             this.exec = exec;
+            this.connectionSync = connectionSync;
         }
 
         @Override
         public Boolean call() throws Exception {
-            return ! (new P4Exec2(project, exec)).getServerInfo().isCaseSensitive();
+            // This was causing AuthenticatedServer to sometimes have a
+            // check-out called from two different threads.  It needs a
+            // proper synchronization to prevent that from happening.
+
+            if (p4exec == null) {
+                p4exec = new P4Exec2(project, exec);
+            }
+            final VcsException[] ex = new VcsException[] { null };
+            Boolean ret = connectionSync.runImmediateAction(new Synchronizer.ActionRunner<Boolean>() {
+                @Override
+                public Boolean perform(@NotNull SynchronizedActionRunner runner)
+                        throws InterruptedException {
+                    try {
+                        return ! p4exec.getServerInfo().isCaseSensitive();
+                    } catch (VcsException e) {
+                        ex[0] = e;
+                        return null;
+                    }
+                }
+            });
+            if (ex[0] != null) {
+                throw ex[0];
+            }
+            return ret;
         }
     }
 

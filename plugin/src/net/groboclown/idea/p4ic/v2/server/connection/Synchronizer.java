@@ -168,6 +168,7 @@ class Synchronizer {
 
         class ConnectionSynchronizer {
             private final Lock connectionLock = new ReentrantLock();
+            private volatile boolean inLock = false;
             private long connectionWaitTimeMillis = 1000 * 15;
 
             <T> T runImmediateAction(@NotNull final ActionRunner<T> runner) throws InterruptedException {
@@ -183,10 +184,16 @@ class Synchronizer {
                 if (!acquired) {
                     throw new InterruptedException("lock acquire timeout");
                 }
+                // Should not be re-entrant.
+                if (inLock) {
+                    throw new InterruptedException("Already running in lock");
+                }
+                inLock = true;
                 try {
                     // Run the action.
                     return runner.perform(syncRunner);
                 } finally {
+                    inLock = false;
                     connectionLock.unlock();
                 }
             }

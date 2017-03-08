@@ -47,8 +47,10 @@ public class OneUseString {
         try {
             return block.with(value);
         } finally {
-            for (int i = 0; i < value.length; i++) {
-                value[i] = 0;
+            if (value != null) {
+                for (int i = 0; i < value.length; i++) {
+                    value[i] = 0;
+                }
             }
             value = null;
         }

@@ -20,7 +20,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.P4JavaException;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
@@ -31,13 +30,11 @@ import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
 import net.groboclown.idea.p4ic.server.exceptions.P4PasswordException;
-import net.groboclown.idea.p4ic.server.exceptions.P4RetryAuthenticationException;
 import net.groboclown.idea.p4ic.server.exceptions.P4SSLFingerprintException;
 import net.groboclown.idea.p4ic.server.exceptions.P4UnknownLoginException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
 import net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager;
 import net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator;
-import net.groboclown.idea.p4ic.v2.ui.alerts.LoginFailedHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -202,15 +199,6 @@ public class ConnectionUIConfiguration {
             this.serverConfig = serverConfig;
         }
 
-        @NotNull
-        @Override
-        public P4LoginException loginFailure(@NotNull P4JavaException e)
-                throws VcsException, CancellationException {
-            LOG.info("General low-level login failure", e);
-            problems.add(e);
-            return new P4LoginException(e);
-        }
-
         @Override
         public void loginFailure(@NotNull P4LoginException e)
                 throws VcsException, CancellationException {
@@ -248,13 +236,6 @@ public class ConnectionUIConfiguration {
                     }
                 }
             });
-        }
-
-        @Override
-        public void retryAuthorizationFailure(P4RetryAuthenticationException e)
-                throws VcsException, CancellationException {
-            LOG.info("retried authentication too many times", e);
-            problems.add(new P4UnknownLoginException(P4Bundle.getString("error.authorization.retry")));
         }
 
         @Override

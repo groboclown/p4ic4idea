@@ -102,4 +102,18 @@ public class LoginFailedHandler extends AbstractErrorHandler {
                 }
         );
     }
+
+
+    @Override
+    @NotNull
+    String getExceptionMessage() {
+        String msg = super.getExceptionMessage();
+
+        // Clear out misleading messages.
+        // TODO make this better.
+        if ("Perforce password (%'P4PASSWD'%) invalid or unset.".equals(msg)) {
+            return P4Bundle.getString("error.config.requires-password");
+        }
+        return msg;
+    }
 }

@@ -114,8 +114,7 @@ public class ServerConnection {
     }
 
 
-    public void postSetup(@NotNull
-    final Project project) {
+    public void postSetup(@NotNull final Project project) {
         if (setup) {
             // Already setup, or in the process of being
             // setup.
@@ -144,9 +143,7 @@ public class ServerConnection {
                     // up if we have a mistaken online mode set.  If we know we're
                     // working offline, then don't check if we're online (especially since
                     // the user can manually switch to offline mode).
-                    if (isWorkingOnline()) {
-                        checkIfOnline(project);
-                    }
+                    checkIfOnline(project);
 
                     // Push all the cached pending updates into the queue for future
                     // processing.
@@ -210,9 +207,7 @@ public class ServerConnection {
      *
      * @param action action to run
      */
-    public void runImmediately(@NotNull
-    final Project project, @NotNull
-    final ServerUpdateAction action)
+    public void runImmediately(@NotNull final Project project, @NotNull final ServerUpdateAction action)
             throws InterruptedException {
         synchronizer.runImmediateAction(new ActionRunner<Void>() {
             @Override
@@ -234,9 +229,7 @@ public class ServerConnection {
     }
 
     @Nullable
-    public <T> T query(@NotNull
-    final Project project, @NotNull
-    final ServerQuery<T> query)
+    public <T> T query(@NotNull final Project project, @NotNull final ServerQuery<T> query)
             throws InterruptedException {
         return synchronizer.runImmediateAction(new ActionRunner<T>() {
             @Override
@@ -371,7 +364,7 @@ public class ServerConnection {
     }
 
 
-    P4Exec2 getExec(@NotNull Project project)
+    private P4Exec2 getExec(@NotNull Project project)
             throws P4InvalidConfigException, P4ConnectionDisposedException {
         if (disposed) {
             throw new P4ConnectionDisposedException();
@@ -385,19 +378,44 @@ public class ServerConnection {
         }
     }
 
-    private boolean checkIfOnline(@NotNull Project project) {
+    /**
+     * Informs the status controller about the offline status, if it's now disconnected.
+     *
+     * @param project
+     * @return
+     */
+    private void checkIfOnline(@NotNull final Project project) {
+        if (statusController.isWorkingOffline()) {
+            // Already marked as offline.
+            return;
+        }
         try {
-            final IServerInfo info = getExec(project).getServerInfo();
-            if (info != null) {
-                return true;
-            }
-        } catch (P4DisconnectedException e) {
-            final DisconnectedHandler errorHandler = new DisconnectedHandler(project, statusController, e);
-            AlertManager.getInstance().addCriticalError(errorHandler, e);
-        } catch (VcsException e) {
+            // Make sure we run this action in the synchronizer.  Otherwise, there can
+            // be conflicts with AuthenticatedServer check-out commands.
+            synchronizer.runImmediateAction(new ActionRunner<Void>() {
+                @Override
+                public Void perform(@NotNull SynchronizedActionRunner runner)
+                        throws InterruptedException {
+                    try {
+                        final IServerInfo info = getExec(project).getServerInfo();
+                        if (info != null) {
+                            // correctly online.
+                            return null;
+                        }
+                    } catch (P4DisconnectedException e) {
+                        final DisconnectedHandler errorHandler = new DisconnectedHandler(project, statusController, e);
+                        AlertManager.getInstance().addCriticalError(errorHandler, e);
+                    } catch (VcsException e) {
+                        LOG.warn(e);
+                    }
+                    // offline
+                    return null;
+                }
+            });
+        } catch (InterruptedException e) {
+            // online/offline mode is indeterminate.
             LOG.warn(e);
         }
-        return false;
     }
 
 

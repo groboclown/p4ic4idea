@@ -36,7 +36,6 @@ import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
 import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
 import net.groboclown.idea.p4ic.server.exceptions.P4PasswordException;
-import net.groboclown.idea.p4ic.server.exceptions.P4RetryAuthenticationException;
 import net.groboclown.idea.p4ic.server.exceptions.P4SSLFingerprintException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
 import net.groboclown.idea.p4ic.v2.events.Events;
@@ -45,7 +44,6 @@ import net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerRunner.P4Runner;
 import net.groboclown.idea.p4ic.v2.ui.alerts.DisconnectedHandler;
 import net.groboclown.idea.p4ic.v2.ui.alerts.LoginFailedHandler;
-import net.groboclown.idea.p4ic.v2.ui.alerts.RetryAuthenticationFailedHandler;
 import net.groboclown.idea.p4ic.v2.ui.alerts.SSLFingerprintProblemHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -147,12 +145,14 @@ public class ClientExec {
             throws VcsException, CancellationException {
         return p4RunFor(project, new P4Runner<T>() {
             @Override
-            public T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public T run()
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    VcsException {
                 final AuthenticatedServer server = connectServer(project, getTempDir(project));
+                final IOptionsServer p4server = checkoutServer(project, server);
 
-                // note: we're not caching the client
-                IOptionsServer p4server = server.checkoutServer();
                 try {
+                    // note: cannot cache the client
                     final IClient client = loadClient(p4server);
                     if (client == null) {
                         throw new ConfigException(
@@ -173,10 +173,13 @@ public class ClientExec {
             throws VcsException, CancellationException {
         return p4RunFor(project, new P4Runner<T>() {
             @Override
-            public T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
+            public T run()
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    VcsException {
                 // disconnect happens as a separate activity.
                 final AuthenticatedServer server = connectServer(project, getTempDir(project));
-                IOptionsServer p4server = server.checkoutServer();
+                final IOptionsServer p4server = checkoutServer(project, server);
+
                 try {
                     return runner.run(p4server,
                             new WithClientCount(getServerName()));
@@ -195,6 +198,24 @@ public class ClientExec {
             return File.createTempFile("p4tempfile", "y");
         }
         return P4Vcs.getInstance(project).getTempDir();
+    }
+
+
+    @NotNull
+    private IOptionsServer checkoutServer(@NotNull Project project, @NotNull AuthenticatedServer server)
+            throws InterruptedException, P4JavaException, URISyntaxException, VcsException {
+        AuthenticatedServer.ServerConnection servCon = server.checkoutServer();
+        try {
+            return ServerRunner.getServerFor(servCon,
+                    errorVisitorFactory.getVisitorFor(project));
+        } catch (VcsException e) {
+            // There was a problem getting the actual server, probably because
+            // of an authentication issue.  Need to check the server back in!
+            if (servCon.getServer() != null) {
+                server.checkinServer(servCon.getServer());
+            }
+            throw e;
+        }
     }
 
 
@@ -239,7 +260,6 @@ public class ClientExec {
     private static AuthenticatedServer connectTo(@Nullable Project project,
             @NotNull ClientConfig clientConfig, @NotNull File tempDir)
             throws P4JavaException, URISyntaxException {
-
         return new AuthenticatedServer(project, clientConfig, tempDir);
     }
 
@@ -293,12 +313,6 @@ public class ClientExec {
         public void onSuccessfulCall() {
             connectedController.onConnected();
         }
-
-        @Override
-        public ServerAuthenticator.AuthenticationStatus authenticate()
-                throws InterruptedException, P4JavaException, URISyntaxException {
-            return connectServer(project, tempDir).authenticate();
-        }
     }
 
 
@@ -318,16 +332,6 @@ public class ClientExec {
             this.project = project;
         }
 
-        @NotNull
-        @Override
-        public P4LoginException loginFailure(@NotNull final P4JavaException e) throws VcsException, CancellationException {
-            LOG.info("Incorrect login.", e);
-            P4LoginException ex = new P4LoginException(project, config.getServerConfig(), e);
-            AlertManager.getInstance().addCriticalError(
-                    new LoginFailedHandler(project, connectedController, config.getServerConfig(), e), ex);
-            return ex;
-        }
-
         @Override
         public void loginFailure(@NotNull final P4LoginException e) throws VcsException, CancellationException {
             LOG.info("Gave up on trying to login.  Showing critical error.");
@@ -340,15 +344,6 @@ public class ClientExec {
                 throws VcsException, CancellationException {
             AlertManager.getInstance().addCriticalError(
                     new LoginFailedHandler(project, connectedController, config.getServerConfig(), cause), cause);
-        }
-
-        @Override
-        public void retryAuthorizationFailure(final P4RetryAuthenticationException e)
-                throws VcsException, CancellationException {
-            LOG.warn("Incorrect handling of lost server authentication token", e);
-            AlertManager.getInstance().addCriticalError(
-                    new RetryAuthenticationFailedHandler(project, connectedController, config.getServerConfig(), e), e);
-            throw e;
         }
 
         @Override

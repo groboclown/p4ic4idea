@@ -19,6 +19,8 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.exception.*;
+import com.perforce.p4java.server.IOptionsServer;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.*;
 import net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator;
@@ -40,13 +42,14 @@ import java.util.concurrent.TimeoutException;
  * {@link ClientExec}, and a few other places.  This unifies all that error handling
  * logic in one place.
  */
-public class ServerRunner {
+class ServerRunner {
     private static final Logger LOG = Logger.getInstance(ServerRunner.class);
 
 
     interface P4Runner<T> {
-        T run() throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
-                P4Exception;
+        T run()
+                throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                VcsException;
     }
 
 
@@ -62,18 +65,6 @@ public class ServerRunner {
          * Login is considered to be invalid.
          *
          * @param e source error
-         * @return the actual exception to throw
-         * @throws VcsException exception
-         * @throws CancellationException user canceled execution
-         */
-        @NotNull
-        P4LoginException loginFailure(@NotNull P4JavaException e)
-                throws VcsException, CancellationException;
-
-        /**
-         * Login is considered to be invalid.
-         *
-         * @param e source error
          * @throws VcsException exception
          * @throws CancellationException user canceled execution
          */
@@ -81,16 +72,6 @@ public class ServerRunner {
                 throws VcsException, CancellationException;
 
         void loginRequiresPassword(@NotNull P4PasswordException cause)
-                throws VcsException, CancellationException;
-
-        /**
-         * The server refuses to reauthenticate a connection.
-         *
-         * @param e source error
-         * @throws VcsException exception
-         * @throws CancellationException user canceled execution
-         */
-        void retryAuthorizationFailure(P4RetryAuthenticationException e)
                 throws VcsException, CancellationException;
 
         void disconnectFailure(P4DisconnectedException e)
@@ -130,10 +111,106 @@ public class ServerRunner {
          * When a non-error situation happens.
          */
         void onSuccessfulCall();
+    }
 
+    @NotNull
+    static IOptionsServer getServerFor(@NotNull AuthenticatedServer.ServerConnection servCon,
+            @NotNull ErrorVisitor errorVisitor) throws VcsException {
 
-        ServerAuthenticator.AuthenticationStatus authenticate()
-                throws P4JavaException, URISyntaxException, InterruptedException;
+        // Based on the authentication status, execute the right errorVisitor status and throw
+        // the right exception.
+        final ServerAuthenticator.AuthenticationStatus status = servCon.getAuthStatus();
+
+        // Order is highly important here.
+        if (status.isPasswordUnnecessary()) {
+            errorVisitor.passwordUnnecessary(status);
+            // Do not raise an exception.
+        }
+        if (status.isAuthenticated()) {
+            if (servCon.getServer() != null) {
+                return servCon.getServer();
+            }
+            throw new IllegalStateException("Authenticated status, but null server");
+        }
+        if (status.isClientSetupProblem()) {
+            final P4InvalidConfigException problem;
+            // TODO shouldn't need to do this casting work; instead, use the real problem.
+            if (status.getProblem() != null) {
+                problem = new P4InvalidConfigException(new P4JavaException(status.getProblem()));
+            } else {
+                problem = new P4InvalidConfigException(P4Bundle.message("exception.invalid.client",
+                        // FIXME use a real parameter here.
+                        "<unknown>"));
+            }
+            errorVisitor.configInvalid(problem);
+            throw new HandledVcsException(problem);
+        }
+        if (status.isPasswordInvalid()) {
+            P4VcsConnectionException ex = status.getProblem();
+            final P4LoginException problem;
+            // TODO shouldn't need to do this casting; instead, use the real problem.
+            if (ex == null) {
+                problem = new P4PasswordInvalidException(new P4JavaException());
+            } else {
+                problem = new P4PasswordInvalidException(new P4JavaException(ex));
+            }
+            errorVisitor.loginFailure(problem);
+            throw new HandledVcsException(problem);
+        }
+        if (status.isPasswordRequired()) {
+            // TODO shoulnd't need to do this casting; instead, use the real problem.
+            final P4PasswordException problem;
+            if (status.getProblem() != null && status.getProblem() instanceof P4PasswordException) {
+                problem = (P4PasswordException) status.getProblem();
+            } else {
+                problem = new P4LoginRequiresPasswordException(new P4JavaException());
+            }
+            errorVisitor.loginRequiresPassword(problem);
+            throw new HandledVcsException(problem);
+        }
+        if (status.isSessionExpired()) {
+            // This means that the login session is expired, but the re-authentication
+            // failed.  This shouldn't happen.
+            P4VcsConnectionException ex = status.getProblem();
+            final P4LoginException problem;
+            // TODO shouldn't need to do this casting; instead, use the real problem.
+            if (ex == null) {
+                problem = new P4PasswordInvalidException(new P4JavaException());
+            } else {
+                problem = new P4PasswordInvalidException(new P4JavaException(ex));
+            }
+            errorVisitor.loginFailure(problem);
+            throw new HandledVcsException(problem);
+        }
+        if (status.isNotConnected()) {
+            final P4DisconnectedException problem;
+            if (status.getProblem() == null) {
+                problem = new P4DisconnectedException();
+            } else {
+                problem = new P4DisconnectedException(status.getProblem());
+            }
+            errorVisitor.disconnectFailure(problem);
+            throw new HandledVcsException(problem);
+        }
+        if (status.isNotLoggedIn()) {
+            // This status can only happen if the other errors above are true.
+            // This shouldn't happen.
+            final P4DisconnectedException problem;
+            if (status.getProblem() == null) {
+                problem = new P4DisconnectedException();
+            } else {
+                problem = new P4DisconnectedException(status.getProblem());
+            }
+            errorVisitor.disconnectFailure(problem);
+            throw new HandledVcsException(problem);
+        }
+
+        // At this point, the status is bad.
+        if (servCon.getServer() != null) {
+            LOG.warn("Authentication status is in an unknown state: " + status);
+            return servCon.getServer();
+        }
+        throw new IllegalStateException("Authentication status is in an unknown state: " + status);
     }
 
 
@@ -146,90 +223,9 @@ public class ServerRunner {
     private static <T> T p4RunFor(@NotNull P4Runner<T> runner, @NotNull final Connection conn,
             @NotNull ErrorVisitor errorVisitor, int retryCount)
             throws VcsException, CancellationException {
-        try {
-            return p4RunWithSkippedPasswordCheck(runner, conn, errorVisitor, retryCount);
-        } catch (P4UnknownLoginException e) {
-            // Don't know the kind of password problem.  It was a
-            // "password not set or invalid", which means that the server could
-            // have dropped the security token, and we need a new one.
 
-            LOG.info("Encountered login problem", e);
-
-            final ServerAuthenticator.AuthenticationStatus authenticationResult =
-                    p4RunWithSkippedPasswordCheck(new P4Runner<ServerAuthenticator.AuthenticationStatus>() {
-                        @Override
-                        public ServerAuthenticator.AuthenticationStatus run()
-                                throws P4JavaException, IOException, InterruptedException, TimeoutException,
-                                URISyntaxException, P4Exception {
-                            LOG.info("Encountered password issue; attempting to reauthenticate");
-                            return conn.authenticate();
-                        }
-                    }, conn, errorVisitor,
-                    /* first attempt at this login attempt, so retry is 0 */
-                    0);
-            LOG.info(authenticationResult.toString());
-            if (authenticationResult.isPasswordUnnecessary()) {
-                errorVisitor.passwordUnnecessary(authenticationResult);
-                // Fall through; usually, this is still authenticated.
-            }
-            if (authenticationResult.isAuthenticated()) {
-                // Just fine; no errors.
-                return retry(runner, conn, errorVisitor, retryCount, e);
-            }
-            if (authenticationResult.isNotConnected()) {
-                P4DisconnectedException ex = new P4DisconnectedException(e);
-                errorVisitor.disconnectFailure(ex);
-                // Because we told the error visitor about this,
-                // we will not tell the user in an alert about it.
-                throw new HandledVcsException(ex);
-            }
-            if (authenticationResult.isPasswordInvalid()) {
-                LOG.info("Password is wrong", e);
-                P4LoginException ex = new P4LoginException(e);
-                errorVisitor.loginFailure(ex);
-                // Because we told the error visitor about this,
-                // we will not tell the user in an alert about it.
-                throw new HandledVcsException(ex);
-            }
-            if (authenticationResult.isSessionExpired()) {
-                LOG.info("Session expired.  Notify the user of the expiration, and retry the operation");
-                final P4RetryAuthenticationException ex = new P4RetryAuthenticationException(e);
-                errorVisitor.retryAuthorizationFailure(ex);
-                // FIXME is this the right behavior?
-                return retry(runner, conn, errorVisitor, retryCount, e);
-            }
-            if (authenticationResult.isPasswordRequired()) {
-                errorVisitor.loginRequiresPassword(e);
-                // Because we told the error visitor about this,
-                // we will not tell the user in an alert about it.
-                throw new HandledVcsException(e);
-            }
-            throw e;
-        } catch (P4LoginRequiresPasswordException e) {
-            errorVisitor.loginRequiresPassword(e);
-            // Because we told the error visitor about this,
-            // we will not tell the user in an alert about it.
-            throw new HandledVcsException(e);
-        } catch (P4LoginException e) {
-            errorVisitor.loginFailure(e);
-            throw e;
-        } catch (P4RetryAuthenticationException e) {
-            errorVisitor.retryAuthorizationFailure(e);
-            return retry(runner, conn, errorVisitor, retryCount, e);
-        }
-    }
-
-
-    private static <T> T p4RunWithSkippedPasswordCheck(@NotNull P4Runner<T> runner, @NotNull Connection conn,
-            @NotNull ErrorVisitor errorVisitor, int retryCount)
-            throws VcsException, CancellationException {
-        // If the user is working in offline mode, then
-        // the execution should never have reached this point;
-        // the online/offline status should
-        // have already been determined before entering this method.
-        // See bug #125 for details.  Essentially, checking offline
-        // status here makes the user mad, and the plugin nearly
-        // unusable.
+        // Authentication should be done when the connection is made, and NEVER
+        // at this point.
 
         try {
             T ret = runner.run();
@@ -426,12 +422,17 @@ public class ServerRunner {
 
     private static <T> T retry(final P4Runner<T> runner, final Connection conn, final ErrorVisitor errorVisitor,
             final int retryCount, final Exception e) throws VcsException {
+        /* TODO understand the right behavior here, with the new login flow
         if (retryCount > 1) {
             P4WorkingOfflineException ex = new P4WorkingOfflineException(e);
             errorVisitor.disconnectFailure(ex);
             throw ex;
         }
         return p4RunFor(runner, conn, errorVisitor, retryCount + 1);
+        */
+        P4WorkingOfflineException ex = new P4WorkingOfflineException(e);
+        errorVisitor.disconnectFailure(ex);
+        throw ex;
     }
 
 

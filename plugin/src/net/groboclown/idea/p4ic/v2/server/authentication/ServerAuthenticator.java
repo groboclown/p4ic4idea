@@ -39,10 +39,6 @@ import net.groboclown.idea.p4ic.server.exceptions.P4VcsConnectionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.net.URISyntaxException;
 
 /**
@@ -54,6 +50,8 @@ public class ServerAuthenticator {
 
     public static AuthenticationStatus DISPOSED = new AuthenticationStatus(
             null, true, false, false, false, false, false, false);
+    public static AuthenticationStatus REQUIRES_PASSWORD = new AuthenticationStatus(
+            null, true, false, false, false, true, true, false);
 
     private static class AuthStatBuilder {
         private final P4VcsConnectionException problem;
@@ -321,6 +319,50 @@ public class ServerAuthenticator {
 
 
     /**
+     * After the server is created, attempt the login based on what we know
+     *
+     * @param server p4 server
+     * @param knownPassword password that the user has told the plygin.
+     * @return status after the initial login; can be used with the later authentication checks.
+     */
+    @NotNull
+    public AuthenticationStatus initialLogin(@NotNull IOptionsServer server, @NotNull ServerConfig config,
+            @Nullable final String knownPassword) {
+        // As this is the initial login, we expect the connection to still be connected.
+
+        // Initial login is only necessary if the auth ticket isn't set and the password is given.
+        // If the user wants to use a ticket,
+        if (config.getAuthTicket() != null && config.getAuthTicket().isFile() && config.getAuthTicket().exists()) {
+            AuthenticationStatus status = discoverAuthenticationStatus(server);
+            // Because we're using an auth ticket, we may have to deal with an expired session.
+            // in this case, we fall through to the password login.  However, if we can't log in,
+            // because we don't know the password, then don't attempt to login, and we can
+            // skip the duplicate auth status check.
+            if (! status.isSessionExpired() || knownPassword == null || knownPassword.isEmpty()) {
+                return status;
+            }
+        }
+        if (knownPassword != null && ! knownPassword.isEmpty()) {
+            LOG.debug("Logging into server with known password");
+            final LoginOptions loginOptions = new LoginOptions();
+            final boolean useTicket = config.getAuthTicket() != null && ! config.getAuthTicket().isDirectory();
+            loginOptions.setDontWriteTicket(! useTicket);
+            return runExec(new ExecFunc<Void>() {
+                @Nullable
+                @Override
+                public Void exec(@NotNull IOptionsServer server)
+                        throws P4JavaException {
+                    server.login(knownPassword, loginOptions);
+                    return null;
+                }
+            }, server).status;
+        }
+        LOG.debug("No known password.  Checking authentication status rather than logging in.");
+        return discoverAuthenticationStatus(server);
+    }
+
+
+    /**
      * Attempt to log into the server.  This should only be called if the connection
      * is not authenticated (the above call fails).
      *
@@ -392,7 +434,7 @@ public class ServerAuthenticator {
             }
         }
 
-        if (authenticationCheck.notConnected) {
+        if (authenticationCheck.isNotConnected()) {
             // Previous issue was due to not being connected.
             // Now that we're connected, check the authentication again.
             LOG.debug("Rechecking authentication status, now that we're connected.");
@@ -417,7 +459,9 @@ public class ServerAuthenticator {
             @Override
             public Void exec(@NotNull IOptionsServer server)
                     throws P4JavaException {
-                boolean useAuthTicket = config.getAuthTicket() != null && config.getAuthTicket().isFile();
+                // The auth ticket doesn't need to exist to use it; it just can't
+                // be a directory.
+                boolean useAuthTicket = config.getAuthTicket() != null && ! config.getAuthTicket().isDirectory();
                 LoginOptions loginOptions = new LoginOptions();
                 loginOptions.setDontWriteTicket(! useAuthTicket);
 
@@ -441,39 +485,6 @@ public class ServerAuthenticator {
         return ret;
     }
 
-    @Nullable
-    private StringBuffer loadAuthTicketContents(@NotNull File authTicket) {
-        final StringBuffer ret = new StringBuffer();
-        try {
-            final FileReader inp = new FileReader(authTicket);
-            try {
-                char[] buff = new char[4096];
-                int len;
-                while ((len = inp.read(buff, 0, 4096)) > 0) {
-                    ret.append(buff, 0, len);
-                }
-                return ret;
-            } finally {
-                inp.close();
-            }
-        } catch (IOException e) {
-            LOG.info("Problem reading auth ticket file " + authTicket, e);
-            return null;
-        }
-    }
-
-    private void saveAuthTicketContents(@NotNull StringBuffer authFileContents, @NotNull File authTicket) {
-        try {
-            final FileWriter out = new FileWriter(authTicket);
-            try {
-                out.write(authFileContents.toString());
-            } finally {
-                out.close();
-            }
-        } catch (IOException e) {
-            LOG.info("Problem writing auth ticket file " + authTicket, e);
-        }
-    }
 
     private interface ExecFunc<T> {
         @Nullable

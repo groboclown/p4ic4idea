@@ -137,15 +137,17 @@ public class PasswordManager implements ApplicationComponent, PersistentStateCom
                     final AuthenticationStore passwordStore = getAuthenticationStore(project);
                     OneUseString ret = passwordStore.get(config.getServerName().getFullPort(), config.getUsername());
                     if (ret == null) {
-                        // Weird situation.
+                        // Do not store the null value in memory.
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Storage for password key " + key + " was null");
                         }
-                        ret = new OneUseString(new char[0]);
+                        // Make sure the password is marked as being null.
+                        ret = new OneUseString();
+                    } else {
+                        // keep a local copy of the password for future, outside the
+                        // dispatch and in a read action, reference.
+                        ret = setMemoryPassword(config, ret);
                     }
-                    // keep a local copy of the password for future, outside the
-                    // dispatch and in a read action, reference.
-                    ret = setMemoryPassword(config, ret);
                     return ret;
                 } else if (forceFetch) {
                     LOG.warn("Could not get password because the action is called from outside the dispatch thread and in a read action.");

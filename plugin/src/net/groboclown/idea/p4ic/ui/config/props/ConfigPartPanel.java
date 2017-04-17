@@ -68,6 +68,7 @@ public abstract class ConfigPartPanel<T extends ConfigPart>
     @Nullable
     P4ProjectConfig loadProjectConfigFromUI() {
         if (requestConfigurationLoadListener != null) {
+            LOG.debug("Loading config from the current ui settings.");
             return requestConfigurationLoadListener.updateConfigPartFromUI();
         }
         LOG.warn("Invalid state: No load listener set yet.");

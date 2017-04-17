@@ -51,6 +51,7 @@ public class LoginFailedHandler extends AbstractErrorHandler {
         LOG.warn("Login problem for server " + config.getServerId(), getException());
 
         if (isInvalid()) {
+            LOG.debug("Cannot handle password problem in this context; not in dispatch thread or project disposed.");
             return;
         }
 
@@ -82,6 +83,7 @@ public class LoginFailedHandler extends AbstractErrorHandler {
             LOG.debug(e);
         }
 
+        LOG.debug("Asking the user about the password problem in a dialog.");
         DistinctDialog.performOnDialog(
                 DistinctDialog.key(this, config.getServerName(), config.getUsername()),
                 getProject(),
@@ -101,6 +103,7 @@ public class LoginFailedHandler extends AbstractErrorHandler {
                                 // first option: re-enter password
                                 // This needs to run in another event, otherwise the
                                 // message dialog will stay active forever.
+                                LOG.debug("Asking the user for the password");
                                 onEndHandler.handleInOtherThread();
                                 ApplicationManager.getApplication().invokeLater(new Runnable() {
                                     @Override
@@ -121,10 +124,12 @@ public class LoginFailedHandler extends AbstractErrorHandler {
                                 break;
                             case 1:
                                 // 2nd option: update server config
+                                LOG.debug("Starting up the configuration UI");
                                 tryConfigChange();
                                 break;
                             default:
                                 // 3rd option: work offline
+                                LOG.debug("Going offline");
                                 goOffline();
                                 break;
                         }

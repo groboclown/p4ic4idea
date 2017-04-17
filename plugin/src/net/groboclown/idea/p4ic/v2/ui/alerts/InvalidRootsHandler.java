@@ -88,6 +88,11 @@ public class InvalidRootsHandler extends AbstractErrorHandler {
         }
 
         @Override
+        public boolean isDisposed() {
+            return false;
+        }
+
+        @Override
         public boolean isValid() {
             return true;
         }

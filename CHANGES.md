@@ -31,6 +31,7 @@
     * Fixed an issue where an invalid password would be considered needing to log in
       again with the existing, known password.
     * Stream-lined the server connection process.
+    * Better prevention of incorrect error messages when the connection configuration changes.
     * Temporarily disabled the client name refresh button until that's all worked out.
 
 

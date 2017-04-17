@@ -360,6 +360,7 @@ public class ServerConnection {
     @Deprecated
     ClientExec oneOffClientExec(@Nullable ServerRunner.ErrorVisitorFactory errorVisitorFactory)
             throws P4InvalidConfigException {
+        // This needs to not affect the existing configurations in the status controller.
         return ClientExec.createFor(config, statusController, errorVisitorFactory);
     }
 

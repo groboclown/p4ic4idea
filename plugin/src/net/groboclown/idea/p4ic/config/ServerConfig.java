@@ -214,14 +214,7 @@ public final class ServerConfig {
             return false;
         }
 
-        if (hasAuthTicket() != part.hasAuthTicketFileSet()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("isSameServer: has auth ticket file values don't match: "
-                        + hasAuthTicket() + " <> " + part.hasAuthTicketFileSet());
-            }
-            return false;
-        }
-        if (! FileUtil.filesEqual(getAuthTicket(), part.getAuthTicketFile())) {
+        if (! filesEqual(hasAuthTicket(), getAuthTicket(), part.hasAuthTicketFileSet(), part.getAuthTicketFile())) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("isSameServer: auth ticket doesn't match: "
                         + getAuthTicket() + " <> " + part.getAuthTicketFile());
@@ -229,14 +222,7 @@ public final class ServerConfig {
             return false;
         }
 
-        if (hasTrustTicket() != part.hasTrustTicketFileSet()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("isSameServer: has trust ticket doesn't match: "
-                        + hasTrustTicket() + " <> " + part.hasTrustTicketFileSet());
-            }
-            return false;
-        }
-        if (hasTrustTicket() && ! FileUtil.filesEqual(getTrustTicket(), part.getTrustTicketFile())) {
+        if (! filesEqual(hasTrustTicket(), getTrustTicket(), part.hasTrustTicketFileSet(), part.getTrustTicketFile())) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("isSameServer: trust ticket doesn't match: "
                         + getTrustTicket() + " <> " + part.getTrustTicketFile());
@@ -301,5 +287,21 @@ public final class ServerConfig {
     @Override
     public int hashCode() {
         return getServerId().hashCode();
+    }
+
+
+    private static boolean filesEqual(boolean aSet, @Nullable File aFile, boolean bSet, @Nullable File bFile) {
+        return FileUtil.filesEqual(scrubFile(aSet, aFile), scrubFile(bSet, bFile));
+    }
+
+    @Nullable
+    private static File scrubFile(boolean isSet, @Nullable File file) {
+        if (! isSet || file == null) {
+            return null;
+        }
+        if (file.exists() && file.isFile()) {
+            return file;
+        }
+        return null;
     }
 }

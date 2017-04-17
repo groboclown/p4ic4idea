@@ -14,10 +14,12 @@
 
 package net.groboclown.idea.p4ic.config.part;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.env.PerforceEnvironment;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
+import net.groboclown.idea.p4ic.config.ConfigPropertiesUtil;
 import net.groboclown.idea.p4ic.config.P4ServerName;
 import net.groboclown.idea.p4ic.config.win.PreferencesWinRegistry;
 import org.jdom.Element;
@@ -30,6 +32,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 
 class WinRegDataPart implements DataPart {
+    private static final Logger LOG = Logger.getInstance(WinRegDataPart.class);
+
     @NonNls
     private static final String USER_KEY = "\\Software\\Perforce\\Environment";
     @NonNls
@@ -53,7 +57,7 @@ class WinRegDataPart implements DataPart {
     private String loginSso;
 
 
-    static boolean isAvailble() {
+    static boolean isAvailable() {
         return SystemInfo.isWindows;
     }
 
@@ -89,12 +93,16 @@ class WinRegDataPart implements DataPart {
             ignoreFileName = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4IGNORE);
             charset = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4CHARSET);
             loginSso = PreferencesWinRegistry.readString(hive, key, "P4LOGINSSO");
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Loaded windows registry " + key + " " + ConfigPropertiesUtil.toProperties(this));
+            }
         } catch (IllegalAccessException e) {
             // Do not mark as an actual problem.  This is a JVM incompatible issue.
-            e.printStackTrace();
+            LOG.debug("Could not access Windows registry", e);
         } catch (InvocationTargetException e) {
             // Do not mark as an actual problem.  This is a JVM incompatible issue.
-            e.printStackTrace();
+            LOG.debug("Could not access Windows registry", e);
         }
         return hasError();
     }

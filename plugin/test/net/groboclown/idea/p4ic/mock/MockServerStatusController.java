@@ -53,8 +53,13 @@ public class MockServerStatusController implements ServerStatusController {
     }
 
     @Override
+    public boolean isDisposed() {
+        return disposed;
+    }
+
+    @Override
     public boolean isValid() {
-        return valid;
+        return valid && ! disposed;
     }
 
     @Override

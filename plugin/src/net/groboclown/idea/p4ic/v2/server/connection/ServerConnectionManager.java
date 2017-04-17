@@ -187,19 +187,6 @@ public class ServerConnectionManager implements ApplicationComponent {
     }
 
 
-    private void invalidateAllConfigs() {
-        serverCacheLock.lock();
-        try {
-            for (ServerConfigStatus status: serverCache.values()) {
-                status.dispose();
-            }
-            serverCache.clear();
-        } finally {
-            serverCacheLock.unlock();
-        }
-    }
-
-
     private void setConnectionState(@NotNull ServerConfig config, boolean isOnline) {
         /* Bug #128: This was putting us in a deadlock.
         serverCacheLock.lock();
@@ -262,6 +249,11 @@ public class ServerConnectionManager implements ApplicationComponent {
         }
 
         @Override
+        public boolean isDisposed() {
+            return disposed;
+        }
+
+        @Override
         public boolean isValid() {
             return valid && ! disposed;
         }
@@ -284,11 +276,6 @@ public class ServerConnectionManager implements ApplicationComponent {
         @Override
         public String getServerDescription() {
             return config.getServerName().getDisplayName();
-        }
-
-        public boolean removeClient(@Nullable final String clientName) {
-            clientNames.remove(clientName);
-            return clientNames.isEmpty();
         }
 
         @Override

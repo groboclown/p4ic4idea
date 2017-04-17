@@ -1,7 +1,7 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.8.4-beta.3</version>
+    <version>0.8.4-beta.4</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
@@ -30,6 +30,7 @@
               <li>Fixed an issue where an invalid password would be considered needing to log in
                 again with the existing, known password.</li>
               <li>Stream-lined the server connection process.</li>
+              <li>Better prevention of incorrect error messages when the connection configuration changes.</li>
               <li>Temporarily disabled the client name refresh button until that's all worked out.</li>
             </ol>
           </li>

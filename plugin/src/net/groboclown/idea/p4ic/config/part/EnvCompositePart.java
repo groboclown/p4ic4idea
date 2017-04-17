@@ -90,7 +90,7 @@ public class EnvCompositePart extends CompositePart {
 
         String p4config = null;
 
-        if (WinRegDataPart.isAvailble()) {
+        if (WinRegDataPart.isAvailable()) {
             WinRegDataPart userReg = new WinRegDataPart(true);
             // p4config is always null at this point.
             // if (p4config == null) {

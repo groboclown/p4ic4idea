@@ -55,7 +55,7 @@ public class IgnoreFiles {
     private boolean isMatch(@NotNull final FilePath file, @Nullable final FilePath ignoreFile) {
         LOG.debug("Checking ignore status on " + file + " against ignore file " + ignoreFile);
         if (ignoreFile == null || ignoreFile.getVirtualFile() == null || ignoreFile.getParentPath() == null) {
-            LOG.info("Some part of the ignore file is null (" + ignoreFile + "); not a match");
+            LOG.debug("Some part of the ignore file is null (" + ignoreFile + "); not a match");
             return false;
         }
         if (! file.isUnder(ignoreFile.getParentPath(), false)) {

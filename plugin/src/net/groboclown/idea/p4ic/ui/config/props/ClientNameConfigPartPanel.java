@@ -67,12 +67,6 @@ public class ClientNameConfigPartPanel
                 refreshClientList();
             }
         });
-
-        // FIXME this is a temporary fix to prevent users from pressing the refresh button.
-        // We'll remove this line once the refresh works right.
-        // The underlying issue is with the authentication; the way we're doing it now
-        // does not correctly load the user's password from the PasswordManager.
-        listRefreshButton.setEnabled(false);
     }
 
     @NotNull
@@ -167,6 +161,7 @@ public class ClientNameConfigPartPanel
     }
 
     private Collection<String> loadClientList(String selected) {
+        getConfigPart().clearAdditionalProblems();
         final P4ProjectConfig config = loadProjectConfigFromUI();
         final Collection<ClientConfig> configs = config == null
                 ? Collections.<ClientConfig>emptyList()

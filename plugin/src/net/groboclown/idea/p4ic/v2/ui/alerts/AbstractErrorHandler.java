@@ -61,7 +61,7 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
 
     public boolean isInvalid() {
         ApplicationManager.getApplication().assertIsDispatchThread();
-        return project.isDisposed();
+        return project.isDisposed() || serverConnectedController.isDisposed();
     }
 
     protected boolean isWorkingOnline() {

@@ -31,7 +31,6 @@
                 again with the existing, known password.</li>
               <li>Stream-lined the server connection process.</li>
               <li>Better prevention of incorrect error messages when the connection configuration changes.</li>
-              <li>Temporarily disabled the client name refresh button until that's all worked out.</li>
             </ol>
           </li>
           <li><em>0.8.3</em>

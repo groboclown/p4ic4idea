@@ -73,7 +73,7 @@ public class FileConfigPartPanel
 
     @Override
     public boolean isModified(@NotNull FileDataPart originalPart) {
-        return ! FileUtil.filesEqual(originalPart.getConfigFile(), getSelectedFile());
+        return !FileUtil.filesEqual(originalPart.getConfigFile(), getSelectedFile());
     }
 
     @Nls

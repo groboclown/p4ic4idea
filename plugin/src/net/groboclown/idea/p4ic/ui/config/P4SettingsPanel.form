@@ -12,6 +12,18 @@
         <properties/>
         <border type="none"/>
         <children>
+          <grid id="151ac" layout-manager="BorderLayout" hgap="0" vgap="0">
+            <constraints>
+              <tabbedpane title-resource-bundle="net/groboclown/idea/p4ic/P4Bundle" title-key="configuration.tab.properties"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <nested-form id="bff" form-file="net/groboclown/idea/p4ic/ui/config/props/ConfigStackPanel.form" binding="configStackPanel">
+                <constraints border-constraint="Center"/>
+              </nested-form>
+            </children>
+          </grid>
           <grid id="98e70" layout-manager="BorderLayout" hgap="0" vgap="0">
             <constraints>
               <tabbedpane title-resource-bundle="net/groboclown/idea/p4ic/P4Bundle" title-key="user.settings.connection"/>
@@ -19,7 +31,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <nested-form id="85fd6" form-file="net/groboclown/idea/p4ic/ui/config/P4Config2Panel.form" binding="myConfigPanel">
+              <nested-form id="6c393" form-file="net/groboclown/idea/p4ic/ui/config/ResolvedPropertiesPanel.form" binding="resolvePropertiesPanel">
                 <constraints border-constraint="Center"/>
               </nested-form>
             </children>

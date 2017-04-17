@@ -262,13 +262,7 @@ public class ResolvedPropertiesPanel {
 
     private ComputedConfigResults loadConfigResults(@NotNull final P4ProjectConfig projectConfig) {
         ComputedConfigResults results = new ComputedConfigResults();
-        {
-            final Collection<ConfigProblem> problems = projectConfig.getConfigProblems();
-            results.problemMessages = new ArrayList<ConfigProblem>(problems.size());
-            for (ConfigProblem problem : problems) {
-                results.problemMessages.add(problem);
-            }
-        }
+        results.problemMessages = new ArrayList<ConfigProblem>(projectConfig.getConfigProblems());
 
         Collection<ClientConfigSetup> configs = projectConfig.getClientConfigSetups();
         if (configs.isEmpty()) {
@@ -276,6 +270,7 @@ public class ResolvedPropertiesPanel {
         }
         for (ClientConfigSetup configSetup : configs) {
             final ClientConfig config = configSetup.getClientConfig();
+            // Don't try a connection if there are flagrant errors in the setup.
             if (!configSetup.hasErrors() && config != null) {
                 ConfigProblem problem = ConnectionUIConfiguration.checkConnection(config,
                         ServerConnectionManager.getInstance(), false);

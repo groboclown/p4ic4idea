@@ -68,7 +68,7 @@ public class ServerFingerprintConfigPartPanel
 
     @Override
     public boolean isModified(@NotNull ServerFingerprintDataPart originalPart) {
-        return ! EqualUtil.isEqual(originalPart.getServerFingerprint(), fingerprintField.getText());
+        return !EqualUtil.isEqual(originalPart.getServerFingerprint(), fingerprintField.getText());
     }
 
     {

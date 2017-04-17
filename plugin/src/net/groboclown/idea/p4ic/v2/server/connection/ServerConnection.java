@@ -358,7 +358,7 @@ public class ServerConnection {
      * @throws P4InvalidConfigException
      */
     @Deprecated
-    ClientExec oneOffClientExec(@Nullable ServerRunner.ErrorVisitorFactory errorVisitorFactory)
+    ClientExec oneOffClientExec(@NotNull ServerRunner.ErrorVisitorFactory errorVisitorFactory)
             throws P4InvalidConfigException {
         // This needs to not affect the existing configurations in the status controller.
         return ClientExec.createFor(config, statusController, errorVisitorFactory);
@@ -383,7 +383,6 @@ public class ServerConnection {
      * Informs the status controller about the offline status, if it's now disconnected.
      *
      * @param project
-     * @return
      */
     private void checkIfOnline(@NotNull final Project project) {
         if (statusController.isWorkingOffline()) {

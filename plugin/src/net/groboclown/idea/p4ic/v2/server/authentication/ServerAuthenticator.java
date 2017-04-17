@@ -21,7 +21,6 @@ import com.perforce.p4java.exception.ClientFileAccessException;
 import com.perforce.p4java.exception.ConfigException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.exception.SslException;
 import com.perforce.p4java.option.server.GetClientsOptions;
 import com.perforce.p4java.option.server.LoginOptions;
@@ -331,14 +330,15 @@ public class ServerAuthenticator {
         // As this is the initial login, we expect the connection to still be connected.
 
         // Initial login is only necessary if the auth ticket isn't set and the password is given.
-        // If the user wants to use a ticket,
         if (config.getAuthTicket() != null && config.getAuthTicket().isFile() && config.getAuthTicket().exists()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Trying authentication with existing auth ticket file " + config.getAuthTicket());
+            }
+            // If the session ticket is valid, then immediately return.  Otherwise, we default
+            // to the standard password login (in some cases, it means a login to the server and
+            // save the password to the auth ticket).
             AuthenticationStatus status = discoverAuthenticationStatus(server);
-            // Because we're using an auth ticket, we may have to deal with an expired session.
-            // in this case, we fall through to the password login.  However, if we can't log in,
-            // because we don't know the password, then don't attempt to login, and we can
-            // skip the duplicate auth status check.
-            if (! status.isSessionExpired() || knownPassword == null || knownPassword.isEmpty()) {
+            if (isAuthTicketAuthenticationValid(status, knownPassword != null)) {
                 return status;
             }
         }
@@ -362,127 +362,22 @@ public class ServerAuthenticator {
     }
 
 
-    /**
-     * Attempt to log into the server.  This should only be called if the connection
-     * is not authenticated (the above call fails).
-     *
-     * @param server p4 api server instance
-     * @param config server configuration settings
-     * @param authenticationCheck the status from the call to {@link #discoverAuthenticationStatus(IOptionsServer)}
-     *                            that triggered this call.  Used to figure out how to resolve the authentication
-     *                            issue.
-     * @param knownPassword password as known by the password manager
-     * @return status of the authentication after the attempt.
-     */
-    public AuthenticationStatus authenticate(@NotNull IOptionsServer server, @NotNull final ServerConfig config,
-            @NotNull final AuthenticationStatus authenticationCheck,
-            @Nullable final String knownPassword) {
-        return authenticate(server, config, authenticationCheck, knownPassword, false);
-    }
-
-    private AuthenticationStatus authenticate(@NotNull IOptionsServer server, @NotNull final ServerConfig config,
-            @NotNull final AuthenticationStatus authenticationCheck,
-            @Nullable final String knownPassword,
-            final boolean alreadyAttemptedConnection) {
-        if (authenticationCheck.isAuthenticated()) {
-            LOG.debug("Called authenticate when already authenticated");
-            return authenticationCheck;
-        }
-        if (authenticationCheck.clientSetupProblem) {
-            LOG.debug("Called authenticate when the issue was with the client setup");
-            return authenticationCheck;
-        }
-
-        if (! server.isConnected()) {
-            try {
-                LOG.debug("Connecting to server at start of authentication");
-                server.connect();
-                LOG.debug("Connection succeeded");
-            } catch (ConnectionException e) {
-                LOG.debug("Failed to connect to server during authentication attempt", e);
-                return statBuilder()
-                        .notConnected()
-                        .create();
-            } catch (AccessException e) {
-                if (ExceptionUtil.isAuthenticationProblem(e)) {
-                    LOG.debug("Connection failed due to authentication; going to try authentication", e);
-                    // fall through
-                } else {
-                    LOG.debug("Unknown access problem during connection", e);
-                    return statBuilder(new P4AccessException(e))
-                            .notConnected()
-                            .clientSetupProblem()
-                            .notLoggedIn()
-                            .create();
-                }
-            } catch (RequestException e) {
-                if (ExceptionUtil.isAuthenticationProblem(e)) {
-                    LOG.debug("Connection failed due to authentication; going to try authentication", e);
-                    // fall through
-                } else {
-                    LOG.debug("Unknown server error during connection", e);
-                    return statBuilder(new P4ApiException(e))
-                            .notConnected()
-                            .create();
-                }
-            } catch (ConfigException e) {
-                LOG.debug("Configuration problem during connection", e);
-                return statBuilder(new P4InvalidConfigException(e))
-                        .notConnected()
-                        .clientSetupProblem()
-                        .create();
+    private boolean isAuthTicketAuthenticationValid(@NotNull AuthenticationStatus status, boolean hasPassword) {
+        if (status.isSessionExpired() && ! hasPassword) {
+            // Session is expired and we don't have a password, so just error out with a bad
+            // session.
+            LOG.debug("Session expired and we don't have a password");
+            return true;
+        } else if (!status.isSessionExpired()) {
+            // We have a session-is-not-expired message, which is only half the answer.
+            if (status.isAuthenticated()) {
+                LOG.debug("Session is valid and we're logged in");
+                return true;
             }
         }
 
-        if (authenticationCheck.isNotConnected()) {
-            // Previous issue was due to not being connected.
-            // Now that we're connected, check the authentication again.
-            LOG.debug("Rechecking authentication status, now that we're connected.");
-            AuthenticationStatus nextCheck = discoverAuthenticationStatus(server);
-
-            // If there was a problem that we won't be able to handle, or if the
-            // connection is fine, return without a login attempt.
-            // Even if we've already tried this call, we're going to try again if it's
-            // a login issue - that would mean that the previous attempt failed due to the
-            // connection was closed, and it had to be reopened, but now it's connected.
-            if (nextCheck.isAuthenticated()
-                    || nextCheck.notConnected
-                    || nextCheck.clientSetupProblem) {
-                return nextCheck;
-            }
-            // There was some other problem, but related to authentication.
-            return authenticate(server, config, nextCheck, knownPassword, true);
-        }
-
-        final AuthenticationStatus ret = runExec(new ExecFunc<Void>() {
-            @Nullable
-            @Override
-            public Void exec(@NotNull IOptionsServer server)
-                    throws P4JavaException {
-                // The auth ticket doesn't need to exist to use it; it just can't
-                // be a directory.
-                boolean useAuthTicket = config.getAuthTicket() != null && ! config.getAuthTicket().isDirectory();
-                LoginOptions loginOptions = new LoginOptions();
-                loginOptions.setDontWriteTicket(! useAuthTicket);
-
-                // If the password is blank, then there's no need for the
-                // user to log in; in fact, that wil raise an error by Perforce
-                if (knownPassword != null && ! knownPassword.isEmpty()) {
-                    server.login(knownPassword, loginOptions);
-                    LOG.debug("No issue logging in with known password");
-                } else {
-                    LOG.debug("Skipping login because no known password");
-                }
-
-                return null;
-            }
-        }, server).status;
-        if (ret.notConnected && ! alreadyAttemptedConnection) {
-            // Weird connection issue.  Try again (unless this is another pass where we've already had a connection
-            // issue).
-            return authenticate(server, config, ret, knownPassword, true);
-        }
-        return ret;
+        // The connection, without a login attempt, isn't valid.  Need to try again.
+        return false;
     }
 
 

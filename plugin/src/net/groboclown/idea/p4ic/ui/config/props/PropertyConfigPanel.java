@@ -142,11 +142,11 @@ public class PropertyConfigPanel
         // can be compared.
         SimpleDataPart newPart = new SimpleDataPart(getProject(), Collections.<String, String>emptyMap());
         updateConfigPartFromUI(newPart);
-        return ! newPart.equals(originalPart);
+        return !newPart.equals(originalPart);
     }
 
     private static boolean isNotEqual(@NotNull JTextField field, @Nullable String value) {
-        return ! EqualUtil.isEqual(field.getText(), value);
+        return !EqualUtil.isEqual(field.getText(), value);
     }
 
     private static boolean isNotEqual(@NotNull TextFieldWithBrowseButton field, @Nullable File file) {
@@ -156,7 +156,7 @@ public class PropertyConfigPanel
         } else {
             f = new File(field.getText());
         }
-        return ! FileUtil.filesEqual(f, file);
+        return !FileUtil.filesEqual(f, file);
     }
 
     @NotNull

@@ -18,6 +18,7 @@ import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
+import net.groboclown.idea.p4ic.ui.config.props.ConfigStackPanel;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -27,22 +28,30 @@ import java.util.ResourceBundle;
 public class P4SettingsPanel {
     private UserPreferencesPanel myUserPreferencesPanel;
     private JPanel myRootPanel;
-    private P4Config2Panel myConfigPanel;
+    private ConfigStackPanel configStackPanel;
+    private ResolvedPropertiesPanel resolvePropertiesPanel;
+
+    P4SettingsPanel() {
+        configStackPanel.addConfigurationUpdatedListener(resolvePropertiesPanel.getConfigurationUpdatedListener());
+        resolvePropertiesPanel.setRequestConfigurationLoadListener(configStackPanel);
+    }
 
     boolean isModified(@NotNull final P4ProjectConfigComponent myConfig,
             @NotNull final UserProjectPreferences preferences) {
-        return myConfigPanel.isModified(myConfig) || myUserPreferencesPanel.isModified(preferences);
+        return configStackPanel.isModified(myConfig)
+                || myUserPreferencesPanel.isModified(preferences);
     }
 
     void saveSettingsToConfig(@NotNull final P4ProjectConfigComponent config,
             @NotNull final UserProjectPreferences preferences) {
-        myConfigPanel.saveSettingsToConfig(config);
+        configStackPanel.loadFromUI(config);
         myUserPreferencesPanel.saveSettingsToConfig(preferences);
     }
 
     void loadSettingsIntoGUI(@NotNull final P4ProjectConfigComponent config,
             @NotNull final UserProjectPreferences preferences) {
-        myConfigPanel.loadSettingsIntoGUI(config);
+        configStackPanel.updateUI(config);
+        resolvePropertiesPanel.refresh(config.getP4ProjectConfig());
         myUserPreferencesPanel.loadSettingsIntoGUI(preferences);
     }
 
@@ -51,7 +60,12 @@ public class P4SettingsPanel {
     }
 
     void initialize(final Project project) {
-        myConfigPanel.initialize(project);
+        configStackPanel.initialize(project);
+        if (project != null) {
+            final P4ProjectConfigComponent configComponent = P4ProjectConfigComponent.getInstance(project);
+            resolvePropertiesPanel.getConfigurationUpdatedListener().onConfigurationUpdated(
+                    configComponent.getP4ProjectConfig());
+        }
     }
 
     {
@@ -76,16 +90,22 @@ public class P4SettingsPanel {
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new BorderLayout(0, 0));
         tabbedPane1.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("user.settings.connection"), panel1);
-        myConfigPanel = new P4Config2Panel();
-        panel1.add(myConfigPanel.$$$getRootComponent$$$(), BorderLayout.CENTER);
+                .getString("configuration.tab.properties"), panel1);
+        configStackPanel = new ConfigStackPanel();
+        panel1.add(configStackPanel.$$$getRootComponent$$$(), BorderLayout.CENTER);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new BorderLayout(0, 0));
+        tabbedPane1.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("user.settings.connection"), panel2);
+        resolvePropertiesPanel = new ResolvedPropertiesPanel();
+        panel2.add(resolvePropertiesPanel.$$$getRootComponent$$$(), BorderLayout.CENTER);
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new BorderLayout(0, 0));
         tabbedPane1
                 .addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.settings.prefs"),
-                        panel2);
+                        panel3);
         final JScrollPane scrollPane1 = new JScrollPane();
-        panel2.add(scrollPane1, BorderLayout.CENTER);
+        panel3.add(scrollPane1, BorderLayout.CENTER);
         myUserPreferencesPanel = new UserPreferencesPanel();
         scrollPane1.setViewportView(myUserPreferencesPanel.$$$getRootComponent$$$());
     }

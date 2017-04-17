@@ -218,55 +218,95 @@ public class SyncPanel {
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(3, 2, new Insets(4, 4, 4, 4), -1, -1));
         myRootPane.add(panel1, BorderLayout.NORTH);
-        panel1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.to.title")));
+        panel1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.to.title")));
         mySyncHead = new JRadioButton();
         mySyncHead.setSelected(true);
-        this.$$$loadButtonText$$$(mySyncHead, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.head"));
-        mySyncHead.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.head.tooltip"));
-        panel1.add(mySyncHead, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        this.$$$loadButtonText$$$(mySyncHead,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.head"));
+        mySyncHead.setToolTipText(
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.head.tooltip"));
+        panel1.add(mySyncHead, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         mySyncRev = new JRadioButton();
-        this.$$$loadButtonText$$$(mySyncRev, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.rev"));
-        mySyncRev.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.rev.tooltip"));
-        panel1.add(mySyncRev, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        this.$$$loadButtonText$$$(mySyncRev,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.rev"));
+        mySyncRev.setToolTipText(
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.rev.tooltip"));
+        panel1.add(mySyncRev, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         mySyncChangelist = new JRadioButton();
-        this.$$$loadButtonText$$$(mySyncChangelist, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.change"));
-        mySyncChangelist.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.other.tooltip"));
-        panel1.add(mySyncChangelist, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        this.$$$loadButtonText$$$(mySyncChangelist,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.change"));
+        mySyncChangelist.setToolTipText(
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.other.tooltip"));
+        panel1.add(mySyncChangelist,
+                new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
-        panel1.add(spacer1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel1.add(spacer1,
+                new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panel1.add(panel2, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel1.add(panel2, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+                false));
         myRevision.setColumns(4);
         myRevision.setEnabled(false);
-        myRevision.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.rev.value.tooltip"));
-        panel2.add(myRevision, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        myRevision.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("sync.options.rev.value.tooltip"));
+        panel2.add(myRevision, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+                false));
         myRevLabel = new JLabel();
         myRevLabel.setEnabled(false);
-        this.$$$loadLabelText$$$(myRevLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.rev.value"));
-        panel2.add(myRevLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        this.$$$loadLabelText$$$(myRevLabel,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.rev.value"));
+        panel2.add(myRevLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panel1.add(panel3, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel1.add(panel3, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+                false));
         myOther = new JTextField();
         myOther.setColumns(10);
         myOther.setEnabled(false);
-        myOther.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.other.value.tooltip"));
-        panel3.add(myOther, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        myOther.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("sync.options.other.value.tooltip"));
+        panel3.add(myOther, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+                false));
         myOtherLabel = new JLabel();
         myOtherLabel.setEnabled(false);
-        this.$$$loadLabelText$$$(myOtherLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.other.field"));
-        panel3.add(myOtherLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        this.$$$loadLabelText$$$(myOtherLabel,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.other.field"));
+        panel3.add(myOtherLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         myRootPane.add(panel4, BorderLayout.CENTER);
         panel4.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), null));
         myForce = new JCheckBox();
-        this.$$$loadButtonText$$$(myForce, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.force"));
-        myForce.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.force.tooltip"));
-        panel4.add(myForce, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        this.$$$loadButtonText$$$(myForce,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.force"));
+        myForce.setToolTipText(
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("sync.options.force.tooltip"));
+        panel4.add(myForce, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
-        panel4.add(spacer2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel4.add(spacer2,
+                new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         myRevLabel.setLabelFor(myRevision);
         myOtherLabel.setLabelFor(myOther);
     }
@@ -282,7 +322,9 @@ public class SyncPanel {
         for (int i = 0; i < text.length(); i++) {
             if (text.charAt(i) == '&') {
                 i++;
-                if (i == text.length()) break;
+                if (i == text.length()) {
+                    break;
+                }
                 if (!haveMnemonic && text.charAt(i) != '&') {
                     haveMnemonic = true;
                     mnemonic = text.charAt(i);
@@ -309,7 +351,9 @@ public class SyncPanel {
         for (int i = 0; i < text.length(); i++) {
             if (text.charAt(i) == '&') {
                 i++;
-                if (i == text.length()) break;
+                if (i == text.length()) {
+                    break;
+                }
                 if (!haveMnemonic && text.charAt(i) != '&') {
                     haveMnemonic = true;
                     mnemonic = text.charAt(i);

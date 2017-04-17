@@ -23,6 +23,7 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.callback.ILogCallback;
 import net.groboclown.idea.p4ic.compat.auth.OneUseString;
 import net.groboclown.idea.p4ic.config.ClientConfig;
+import net.groboclown.idea.p4ic.config.ConfigPropertiesUtil;
 import net.groboclown.idea.p4ic.server.P4OptionsServerConnectionFactory;
 import net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager;
 import net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator;
@@ -255,6 +256,11 @@ class AuthenticatedServer {
                      public ServerAuthenticator.AuthenticationStatus with(@Nullable char[] passwd) {
                          final String knownPassword =
                                  passwd == null ? null : new String(passwd);
+                         if (LOG.isDebugEnabled()) {
+                             LOG.debug("Attempting to log in with config "
+                                     + ConfigPropertiesUtil.toProperties(config)
+                                     + "; has password? " + (knownPassword != null));
+                         }
                          return authenticator.initialLogin(server, config.getServerConfig(), knownPassword);
                      }
                  });

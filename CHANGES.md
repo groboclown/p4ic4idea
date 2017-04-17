@@ -31,6 +31,7 @@
     * Fixed an issue where an invalid password would be considered needing to log in
       again with the existing, known password.
     * Stream-lined the server connection process.
+    * Fixed an issue if the user has an authentication ticket file, but isn't logged in.
     * Better prevention of incorrect error messages when the connection configuration changes.
 
 

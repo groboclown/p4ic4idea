@@ -328,6 +328,7 @@ public class ServerConnectionManager implements ApplicationComponent {
             if (conn == null) {
                 final ClientExec exec;
                 try {
+                    LOG.debug("Constructing new connection for " + clientConfig.getClientServerRef().getServerDisplayId());
                     exec = ClientExec.createFor(clientConfig, this);
                 } catch (P4InvalidConfigException e) {
                     LOG.warn(e);

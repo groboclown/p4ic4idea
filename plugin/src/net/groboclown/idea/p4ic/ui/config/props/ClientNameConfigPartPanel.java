@@ -89,7 +89,7 @@ public class ClientNameConfigPartPanel
             LOG.debug("Checking if orig (" + originalPart.getClientname() + ") differs from `"
                     + getSelectedClientName() + "`");
         }
-        return ! EqualUtil.isEqual(originalPart.getClientname(), getSelectedClientName());
+        return !EqualUtil.isEqual(originalPart.getClientname(), getSelectedClientName());
     }
 
     @Nls

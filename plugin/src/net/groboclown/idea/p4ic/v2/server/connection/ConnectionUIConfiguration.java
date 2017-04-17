@@ -56,6 +56,9 @@ public class ConnectionUIConfiguration {
     @Nullable
     public static ConfigProblem checkConnection(@NotNull ClientConfig clientConfig,
             @NotNull ServerConnectionManager connectionManager, boolean requiresClient) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Checking the configuration for " + ConfigPropertiesUtil.toProperties(clientConfig));
+        }
         final Project project = clientConfig.getProject();
         try {
             final ServerConnection connection = connectionManager

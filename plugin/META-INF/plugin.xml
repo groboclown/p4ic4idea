@@ -9,6 +9,8 @@
           <li><em>0.8.4</em>
             <ol>
               <li>Cleaned up debug logging.</li>
+              <li>Changed the configuration UI to split the connection resolved properties from the
+                connection properties definition.</li>
               <li>Added workaround for an observed issue where the IDE would not load the workspace
                 VCS configuration before the plugin was available.</li>
               <li>The client name panel now correctly displays the client name saved in the

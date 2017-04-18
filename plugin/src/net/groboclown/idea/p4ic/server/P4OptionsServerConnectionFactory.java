@@ -120,6 +120,9 @@ public class P4OptionsServerConnectionFactory {
         final IOptionsServer server = ServerFactory.getOptionsServer(uri, props, options);
         if (clientConfig.getServerConfig().getServerName().isSecure()
                 && clientConfig.getServerConfig().hasServerFingerprint()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Setting server fingerprint to " + clientConfig.getServerConfig().getServerFingerprint());
+            }
             server.addTrust(clientConfig.getServerConfig().getServerFingerprint());
         }
         return server;

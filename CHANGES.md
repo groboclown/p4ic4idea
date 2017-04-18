@@ -1,5 +1,20 @@
 # IDEA Community VCS Integration for Perforce
 
+
+## ::v0.8.5::
+
+### Overview
+
+* Bug fixes.
+
+### Details
+
+* Bug fixes.
+    * Remove issues around setting up default Perforce configuration (*File* ->
+        *Other Settings* -> *Default Settings...*) (#143).
+
+
+
 ## ::v0.8.4::
 
 ### Overview

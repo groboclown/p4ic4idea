@@ -113,10 +113,11 @@ class AuthenticatedServer {
         }
 
         @NotNull
-        public ServerAuthenticator.AuthenticationStatus getAuthStatus() {
+        ServerAuthenticator.AuthenticationStatus getAuthStatus() {
             return authStatus;
         }
 
+        @NotNull
         public Project getProject() {
             return project;
         }
@@ -151,6 +152,9 @@ class AuthenticatedServer {
             throws InterruptedException, P4JavaException, URISyntaxException {
         if (! connectLock.tryLock(CONNECT_LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
             throw new InterruptedException();
+        }
+        if (this.project == null) {
+            throw new IllegalStateException("Project not set");
         }
         final IOptionsServer retServer;
         final ServerAuthenticator.AuthenticationStatus retAuthStatus;

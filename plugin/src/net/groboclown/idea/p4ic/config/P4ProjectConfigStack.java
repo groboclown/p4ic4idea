@@ -143,8 +143,10 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
 
     private void loadConfigs(ConfigPart rootPart) {
         LOG.debug("Creating configuration from parts");
+        // Null can happen if we're using the default settings.
+        @Nullable
         VirtualFile projectRoot = project.getBaseDir();
-        if (! projectRoot.isDirectory()) {
+        if (projectRoot != null && ! projectRoot.isDirectory()) {
             projectRoot = projectRoot.getParent();
         }
         final Map<VirtualFile, List<DataPart>> dirToParts = new HashMap<VirtualFile, List<DataPart>>();
@@ -194,15 +196,19 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
     }
 
     private Map<VirtualFile, ClientConfig> convertToClients(
-            @NotNull VirtualFile projectRoot, @NotNull Map<VirtualFile, List<DataPart>> parts,
+            @Nullable VirtualFile projectRoot, @NotNull Map<VirtualFile, List<DataPart>> parts,
             @NotNull Set<ConfigProblem> configProblems,
             @NotNull Set<ClientConfigSetup> clientConfigSetups) {
         // For each part file, climb up our tree and add its parent as a lower priority
         // item.
         for (Map.Entry<VirtualFile, List<DataPart>> entry : parts.entrySet()) {
+            @Nullable
             VirtualFile previous = entry.getKey();
-            VirtualFile current = entry.getKey().getParent();
-            while (current != null && ! current.equals(previous) && ! projectRoot.equals(current)) {
+            @Nullable
+            VirtualFile current = previous == null
+                    ? null
+                    : previous.getParent();
+            while (current != null && ! current.equals(previous) && EqualUtil.isEqual(projectRoot, current)) {
                 if (parts.containsKey(current)) {
                     for (DataPart dataPart : parts.get(current)) {
                         if (! entry.getValue().contains(dataPart)) {
@@ -230,7 +236,10 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         final List<ClientServerSetup> cachedSetups = new ArrayList<ClientServerSetup>();
 
         for (Map.Entry<VirtualFile, List<DataPart>> entry : parts.entrySet()) {
-            MultipleDataPart part = new MultipleDataPart(entry.getKey(), entry.getValue());
+            // path can be null if we're in a default settings panel.
+            @Nullable
+            VirtualFile path = entry.getKey();
+            MultipleDataPart part = new MultipleDataPart(path, entry.getValue());
             final Collection<ConfigProblem> partProblems = ServerConfig.getErrors(part);
             configProblems.addAll(partProblems);
             final String serverId = ServerConfig.getServerIdForDataPart(part);
@@ -250,16 +259,18 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
             }
 
             // Find the cached client server setup object to add this to, if it exists.
-            boolean found = false;
-            for (ClientServerSetup clientServerSetup : cachedSetups) {
-                if (clientServerSetup.addIfSame(part, entry.getKey())) {
-                    found = true;
-                    break;
+            if (path != null) {
+                boolean found = false;
+                for (ClientServerSetup clientServerSetup : cachedSetups) {
+                    if (clientServerSetup.addIfSame(part, path)) {
+                        found = true;
+                        break;
+                    }
                 }
-            }
-            if (! found) {
-                // need to create a new one.
-                cachedSetups.add(new ClientServerSetup(serverConfig, part, entry.getKey()));
+                if (!found) {
+                    // need to create a new one.
+                    cachedSetups.add(new ClientServerSetup(serverConfig, part, path));
+                }
             }
         }
 
@@ -323,13 +334,16 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
     }
 
 
-    private static int getDepthDistance(@NotNull VirtualFile base, @NotNull VirtualFile cmp) {
+    private static int getDepthDistance(@Nullable VirtualFile base, @NotNull VirtualFile cmp) {
         int depth = getSingleDepthDistance(base, cmp);
         if (depth >= 0) {
             return depth;
         }
 
         // cmp is not under base; see if base is under cmp.
+        if (base == null) {
+            return Integer.MIN_VALUE;
+        }
         depth = getSingleDepthDistance(cmp, base);
         if (depth >= 0) {
             // base is under cmp, so return the negative depth.
@@ -340,12 +354,12 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         return Integer.MIN_VALUE;
     }
 
-    private static int getSingleDepthDistance(@NotNull VirtualFile base, @NotNull VirtualFile cmp) {
+    private static int getSingleDepthDistance(@Nullable VirtualFile base, @NotNull VirtualFile cmp) {
         VirtualFile previous = null;
         VirtualFile current = cmp;
         int depth = 0;
         while (current != null && ! current.equals(previous)) {
-            if (base.equals(current)) {
+            if (EqualUtil.isEqual(base, current)) {
                 return depth;
             }
             previous = current;

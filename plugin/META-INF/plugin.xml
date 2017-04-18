@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.8.4</version>
+    <version>0.8.5</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.8.5</em>
+            <ol>
+              <li>bugs...</li>
+            </ol>
+          </li>
           <li><em>0.8.4</em>
             <ol>
               <li>Cleaned up debug logging.</li>
@@ -34,18 +39,6 @@
               <li>Stream-lined the server connection process.</li>
               <li>Fixed an issue if the user has an authentication ticket file, but isn't logged in.</li>
               <li>Better prevention of incorrect error messages when the connection configuration changes.</li>
-            </ol>
-          </li>
-          <li><em>0.8.3</em>
-            <ol>
-              <li>The relative config part of the configuration no longer hangs when
-              the configuration is first loaded.</li>
-              <li>The property configuration did not correctly write its parameters to the
-              <tt>workspace.xml</tt> file.</li>
-              <li>The property configuration did not correctly report itself as not
-              modified.</li>
-              <li>The property configuration pane didn't let you choose the file by
-              pressing the "..." button.</li>
             </ol>
           </li>
         </ol>

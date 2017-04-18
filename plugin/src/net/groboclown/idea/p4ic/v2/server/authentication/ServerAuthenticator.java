@@ -22,6 +22,7 @@ import com.perforce.p4java.exception.ConfigException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.SslException;
+import com.perforce.p4java.exception.SslHandshakeException;
 import com.perforce.p4java.option.server.GetClientsOptions;
 import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
@@ -31,6 +32,7 @@ import net.groboclown.idea.p4ic.server.exceptions.LoginRequiresPasswordException
 import net.groboclown.idea.p4ic.server.exceptions.P4AccessException;
 import net.groboclown.idea.p4ic.server.exceptions.P4ApiException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.server.exceptions.P4JavaSSLStrengthException;
 import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
 import net.groboclown.idea.p4ic.server.exceptions.P4LoginRequiresPasswordException;
 import net.groboclown.idea.p4ic.server.exceptions.P4SSLException;
@@ -406,6 +408,12 @@ public class ServerAuthenticator {
     private static <T> ExecResult<T> runExec(@NotNull ExecFunc<T> exec, @NotNull IOptionsServer server) {
         try {
             return new ExecResult<T>(exec.exec(server));
+        } catch (SslHandshakeException e) {
+            LOG.debug("Low-level SSL problem", e);
+            return new ExecResult<T>(statBuilder(new P4JavaSSLStrengthException(e))
+                    .notConnected()
+                    .notLoggedIn()
+                    .create());
         } catch (SslException e) {
             LOG.debug("Execution generated problem with SSL", e);
             return new ExecResult<T>(statBuilder(new P4SSLException(e))

@@ -23,6 +23,7 @@ import com.perforce.p4java.exception.ConfigException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
+import com.perforce.p4java.exception.SslHandshakeException;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ClientConfig;
@@ -34,17 +35,21 @@ import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.server.exceptions.P4JavaSSLStrengthException;
 import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
 import net.groboclown.idea.p4ic.server.exceptions.P4PasswordException;
+import net.groboclown.idea.p4ic.server.exceptions.P4SSLException;
 import net.groboclown.idea.p4ic.server.exceptions.P4SSLFingerprintException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
 import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager;
 import net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerRunner.P4Runner;
+import net.groboclown.idea.p4ic.v2.ui.alerts.ConfigurationProblemHandler;
 import net.groboclown.idea.p4ic.v2.ui.alerts.DisconnectedHandler;
 import net.groboclown.idea.p4ic.v2.ui.alerts.LoginFailedHandler;
 import net.groboclown.idea.p4ic.v2.ui.alerts.SSLFingerprintProblemHandler;
+import net.groboclown.idea.p4ic.v2.ui.alerts.SSLKeyStrengthProblemHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -365,6 +370,24 @@ public class ClientExec {
                     .getServerFingerprint(), e);
             AlertManager.getInstance().addCriticalError(
                     new SSLFingerprintProblemHandler(project, connectedController, e),
+                    ex);
+            return ex;
+        }
+
+        @Override
+        public P4SSLException sslHandshakeError(SslHandshakeException e) {
+            P4SSLException ex = new P4SSLException(e);
+            AlertManager.getInstance().addCriticalError(
+                    new ConfigurationProblemHandler(project, connectedController, e),
+                    ex);
+            return ex;
+        }
+
+        @Override
+        public P4SSLException sslKeyStrengthError(SslHandshakeException e) {
+            P4JavaSSLStrengthException ex = new P4JavaSSLStrengthException(e);
+            AlertManager.getInstance().addCriticalError(
+                    new SSLKeyStrengthProblemHandler(project, connectedController, e),
                     ex);
             return ex;
         }

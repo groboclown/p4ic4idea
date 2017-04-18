@@ -92,6 +92,10 @@ class ServerRunner {
         @NotNull
         P4SSLFingerprintException sslFingerprintError(ConnectionException e);
 
+        P4SSLException sslHandshakeError(SslHandshakeException e);
+
+        P4SSLException sslKeyStrengthError(SslHandshakeException e);
+
         void passwordUnnecessary(@NotNull ServerAuthenticator.AuthenticationStatus authenticationResult);
     }
 
@@ -286,6 +290,13 @@ class ServerRunner {
         } catch (TrustException e) {
             LOG.info("SSL trust problem", e);
             throw errorVisitor.sslFingerprintError(e);
+        } catch (SslHandshakeException e) {
+            conn.disconnected();
+            if (isUnlimitedStrengthEncryptionInstalled()) {
+                throw errorVisitor.sslHandshakeError(e);
+            }
+            // SSL extensions are not installed, so config is invalid.
+            throw errorVisitor.sslKeyStrengthError(e);
         } catch (ConnectionException e) {
             LOG.info("Connection problem", e);
             conn.disconnected();

@@ -9,6 +9,7 @@ import com.perforce.p4java.exception.NullPointerError;
 import com.perforce.p4java.exception.P4JavaError;
 import com.perforce.p4java.exception.ProtocolError;
 import com.perforce.p4java.exception.SslException;
+import com.perforce.p4java.exception.SslHandshakeException;
 import com.perforce.p4java.impl.mapbased.rpc.ServerStats;
 import com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection;
 import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey;
@@ -23,6 +24,7 @@ import com.perforce.p4java.impl.mapbased.rpc.stream.helper.RpcSocketHelper;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.server.callback.IFilterCallback;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
@@ -288,13 +290,13 @@ public class RpcStreamConnection extends RpcConnection {
 				throw new ConnectionException("Unable to resolve Perforce server host name '"
 						+ hostName
 						+ "' for RPC connection",
-						// groboclown: don't mask the source
+						// p4ic4idea: don't mask the source
 						exc
 						);
 			} catch (IOException exc) {
 				throw new ConnectionException("Unable to connect to Perforce server at "
 						+ hostName + ":" + hostPort,
-						// groboclown: don't mask the source
+						// p4ic4idea: don't mask the source
 						exc);
 			// p4ic4idea: never, never, never catch a Throwable,
 			// unless you're really careful, which this is not.
@@ -328,13 +330,13 @@ public class RpcStreamConnection extends RpcConnection {
 			try {
 				this.inputStream = new RpcSocketInputStream(this.socket, this.stats);
 				this.outputStream = new RpcSocketOutputStream(this.socket, this.stats);
-			// groboclown: Never, never, never catch a Throwable
+			// p4ic4idea: Never, never, never catch a Throwable
 			// unless you're really careful, which this is not.
 			// } catch (Throwable thr) {
 			} catch (Exception thr) {
 				Log.error("Unexpected exception: " + thr.getLocalizedMessage());
 				Log.exception(thr);
-				// groboclown: Don't hide the source
+				// p4ic4idea: Don't hide the source
 				throw new ConnectionException(thr);
 			}
 		}
@@ -347,52 +349,61 @@ public class RpcStreamConnection extends RpcConnection {
 		// Start SSL handshake
 		if (this.socket != null) {
 			try {
-				// The SSLSocket.getSession() method will initiate the initial
-				// handshake if necessary. Thus, the SSLSocket.startHandshake()
-				// call is not necessary.
-				SSLSession sslSession = ((SSLSocket)this.socket).getSession();
-				if (!sslSession.isValid()) {
-					// If an error occurs during the initial handshake,
-					// this method returns an invalid session object which
-					// reports an invalid cipher suite of "SSL_NULL_WITH_NULL_NULL".
-					// p4ic4idea: use a more precise exception
-					throw new SslException("Error occurred during the SSL handshake: invalid SSL session");
-				}
-				// Get the certificates
-				Certificate[] serverCerts = sslSession.getPeerCertificates();
-				if (serverCerts == null || serverCerts.length == 0 || serverCerts[0] == null) {
-					// p4ic4idea: use a more precise exception
-					throw new SslException("Error occurred during the SSL handshake: no certificate retrieved from SSL session");
-				}
-				// Check that the certificate is currently valid. Check the
-				// current date and time are within the validity period given
-				// in the certificate.
-				try {
-					((X509Certificate)serverCerts[0]).checkValidity();
-				} catch (CertificateExpiredException e) {
-					// p4ic4idea: use a more precise exception
-					throw new SslException("Error occurred during the SSL handshake: certificate expired: " + e.toString(), e);
-				} catch (CertificateNotYetValidException e) {
-					// p4ic4idea: use a more precise exception
-					throw new SslException("Error occurred during the SSL handshake: certificate not yet valid: " + e.toString(), e);
-				}
-				// Get the public key from the first certificate
-				PublicKey serverPubKey = serverCerts[0].getPublicKey();
-				if (serverPubKey == null) {
-					// p4ic4idea: use a more precise exception
-					throw new SslException("Error occurred during the SSL handshake: no public key retrieved from server certificate");
-				}
-				// Generate the fingerprint
-				try {
-					this.fingerprint = ClientTrust.generateFingerprint(serverPubKey);
-					//this.fingerprint = ClientTrust.generateFingerprint((X509Certificate)this.serverCerts[0]);
-				} catch (NoSuchAlgorithmException e) {
-					// p4ic4idea: use a more precise exception
-					throw new SslException("Error occurred while generating the fingerprint for the Perforce SSL connection", e);
-				//} catch (CertificateEncodingException e) {
-				//	throw new ConnectionException("Error occurred while generating the fingerprint for the Perforce SSL connection", e);
-				}
-			} catch (IOException e) {
+                // The SSLSocket.getSession() method will initiate the initial
+                // handshake if necessary. Thus, the SSLSocket.startHandshake()
+                // call is not necessary.
+                SSLSession sslSession = ((SSLSocket) this.socket).getSession();
+
+                // p4ic4idea: isValid isn't what this thinks it is.  It's checking whether the
+                // session is resumeable or not, which isn't what we care about.
+                // if (!sslSession.isValid()) {
+                // If an error occurs during the initial handshake,
+                // this method returns an invalid session object which
+                // reports an invalid cipher suite of "SSL_NULL_WITH_NULL_NULL".
+                // p4ic4idea: use a more precise exception
+                // 	throw new SslException("Error occurred during the SSL handshake: invalid SSL session");
+                // }
+
+                // Get the certificates
+                Certificate[] serverCerts = sslSession.getPeerCertificates();
+                if (serverCerts == null || serverCerts.length == 0 || serverCerts[0] == null) {
+                    // p4ic4idea: use a more precise exception
+                    throw new SslException(
+                            "Error occurred during the SSL handshake: no certificate retrieved from SSL session");
+                }
+                // Check that the certificate is currently valid. Check the
+                // current date and time are within the validity period given
+                // in the certificate.
+                try {
+                    ((X509Certificate) serverCerts[0]).checkValidity();
+                } catch (CertificateExpiredException e) {
+                    // p4ic4idea: use a more precise exception
+                    throw new SslException(
+                            "Error occurred during the SSL handshake: certificate expired: " + e.toString(), e);
+                } catch (CertificateNotYetValidException e) {
+                    // p4ic4idea: use a more precise exception
+                    throw new SslException(
+                            "Error occurred during the SSL handshake: certificate not yet valid: " + e.toString(), e);
+                }
+                // Get the public key from the first certificate
+                PublicKey serverPubKey = serverCerts[0].getPublicKey();
+                if (serverPubKey == null) {
+                    // p4ic4idea: use a more precise exception
+                    throw new SslException(
+                            "Error occurred during the SSL handshake: no public key retrieved from server certificate");
+                }
+                // Generate the fingerprint
+                try {
+                    this.fingerprint = ClientTrust.generateFingerprint(serverPubKey);
+                    //this.fingerprint = ClientTrust.generateFingerprint((X509Certificate)this.serverCerts[0]);
+                } catch (NoSuchAlgorithmException e) {
+                    // p4ic4idea: use a more precise exception
+                    throw new SslException(
+                            "Error occurred while generating the fingerprint for the Perforce SSL connection", e);
+                    //} catch (CertificateEncodingException e) {
+                    //	throw new ConnectionException("Error occurred while generating the fingerprint for the Perforce SSL connection", e);
+                }
+            } catch (SSLPeerUnverifiedException e) {
 				// p4ic4idea: fix typo
 				String message = "Error occurred during SSL handshake. "
 						+ "Please check the release notes for known SSL issues: "
@@ -400,7 +411,9 @@ public class RpcStreamConnection extends RpcConnection {
 				Log.error(message);
 				Log.exception(e);
 				// p4ic4idea: use a more precise exception
-				throw new SslException(message, e);
+                // Because this occurred from within one of the API calls, and not in
+                // the processing of the API results, we use the special handshake exception.
+				throw new SslHandshakeException(message, e);
 			}
 		}
 	}

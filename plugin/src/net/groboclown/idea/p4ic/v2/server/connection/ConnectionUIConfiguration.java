@@ -20,6 +20,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.exception.ConnectionException;
+import com.perforce.p4java.exception.SslHandshakeException;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
@@ -28,8 +29,10 @@ import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidClientException;
 import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.server.exceptions.P4JavaSSLStrengthException;
 import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
 import net.groboclown.idea.p4ic.server.exceptions.P4PasswordException;
+import net.groboclown.idea.p4ic.server.exceptions.P4SSLException;
 import net.groboclown.idea.p4ic.server.exceptions.P4SSLFingerprintException;
 import net.groboclown.idea.p4ic.server.exceptions.P4UnknownLoginException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
@@ -261,6 +264,20 @@ public class ConnectionUIConfiguration {
             LOG.info("ssl fingerprint error", e);
             problems.add(e);
             return new P4SSLFingerprintException(null, e);
+        }
+
+        @Override
+        public P4SSLException sslHandshakeError(SslHandshakeException e) {
+            LOG.info("ssl handshake error", e);
+            problems.add(e);
+            return new P4SSLException(e);
+        }
+
+        @Override
+        public P4SSLException sslKeyStrengthError(SslHandshakeException e) {
+            LOG.info("ssl key strength library error", e);
+            problems.add(e);
+            return new P4JavaSSLStrengthException(e);
         }
 
         @Override

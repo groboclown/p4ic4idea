@@ -19,11 +19,15 @@ import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+import java.awt.*;
 
 public class P4ConfigurationProjectPanel {
 
     private final Project project;
     private P4SettingsPanel myMainPanel;
+    private WrapperPanel wrappedPanel;
     private volatile boolean isInitialized = false;
 
     P4ConfigurationProjectPanel(@NotNull Project project) {
@@ -56,14 +60,89 @@ public class P4ConfigurationProjectPanel {
             myMainPanel = new P4SettingsPanel();
             myMainPanel.initialize(project);
             isInitialized = true;
+            wrappedPanel = new WrapperPanel(myMainPanel.getPanel());
         }
         loadSettings(config, preferences);
-        return myMainPanel.getPanel();
+        return wrappedPanel;
     }
 
     public synchronized void dispose() {
         //myMainPanel.dispose();
         myMainPanel = null;
+        wrappedPanel = null;
         isInitialized = false;
+    }
+
+
+    // The scrolling outer panel can cause the inner tabs to get sized all wrong,
+    // because of the scrollpanes in scrollpane.
+    // This helps keep the tabs sized right so we essentially ignore the outer scroll pane.
+    private class WrapperPanel extends JPanel implements Scrollable {
+        private final JPanel wrapped;
+        private Dimension size;
+
+        private WrapperPanel(JPanel wrapped) {
+            this.wrapped = wrapped;
+
+            setLayout(new BorderLayout());
+            add(wrapped, BorderLayout.CENTER);
+
+            updateSize();
+
+            addAncestorListener(new AncestorListener() {
+                @Override
+                public void ancestorAdded(AncestorEvent event) {
+                    updateSize();
+                }
+
+                @Override
+                public void ancestorRemoved(AncestorEvent event) {
+                    updateSize();
+                }
+
+                @Override
+                public void ancestorMoved(AncestorEvent event) {
+                    updateSize();
+                }
+            });
+        }
+
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return size;
+        }
+
+        @Override
+        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 0;
+        }
+
+        @Override
+        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 0;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return false;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            return false;
+        }
+
+        private void updateSize() {
+            final Dimension prevSize = this.size;
+            final Container parent = getParent();
+            if (parent != null) {
+                size = new Dimension(parent.getPreferredSize());
+            } else {
+                size = new Dimension(wrapped.getPreferredSize());
+            }
+            if (! size.equals(prevSize)) {
+                setPreferredSize(size);
+            }
+        }
     }
 }

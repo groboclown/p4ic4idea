@@ -11,7 +11,10 @@
 
 * Bug fixes.
     * Remove issues around setting up default Perforce configuration (*File* ->
-        *Other Settings* -> *Default Settings...*) (#143).
+        *Other Settings* -> *Default Settings...*). (#143)
+    * Added back the SSL key strength checking and error reporting. (#145)
+    * Fixed the configuration panel width - an outer scroll pane confused the
+      tab layout.  The blank text fields shouldn't scroll offscreen anymore.  
 
 
 

@@ -43,13 +43,111 @@ For a full list of supported products, please see
     1. From either the **Version Control** panel (select the pencil
        icon with the Perforce root selected), or the Perforce panel
        under the Version Control.
-    1. Select the connection type and the parameters,
+    1. Select the [connection settings](#connecting-to-your-perforce-server),
        and click **OK**.
     
 
-# Connecting to Your Perforce Server
+# Setting Up The Plugin
 
-(FIXME)
+In the Perforce configuration panel, you setup the connection information in
+the [*Connection Properties* tab](#connecting-to-your-perforce-server).
+
+You can check your configuration by looking at the
+[*Server Connection* tab](#checking-connection-properties).  This
+allows you to see how the plugin resolves the connection properties by the
+identified root directories.
+
+The [*User Preferences* tab](#user-preferences) allows you to tweak how the
+plugin interacts with the server, and how the plugin displays information to
+you.
+
+
+## Connecting to Your Perforce Server
+
+![Connection Properties Tab](plugin/docs/img/settings-connection-properties-1.png)
+
+The configuration shows you a list of configuration parameters.  It's ordered, so
+the plugin uses the properties at the top before the lower ones.
+
+You'll start by adding a new property category with
+the ![plus](plugin/docs/img/settings-connection-properties-plus.png) button.
+A category can be removed with
+the ![minus](plugin/docs/img/settings-connection-properties-minus.png) button,
+and reordered with
+the ![up](plugin/docs/img/settings-connection-properties-up.png) and
+the ![down](plugin/docs/img/settings-connection-properties-down.png) buttons.
+
+
+### Property Values
+
+The *Properties* configuration allows you to explicitly define the connection
+details.  You can leave fields blank if you don't need to use the value.  These
+values have the same meaning as the
+[Perforce environment variables](https://www.perforce.com/perforce/doc.051/manuals/p4guide/ab_envvars.html).
+
+You'll notice that the `P4PASSWD` setting is not present.  If you don't use a
+`P4TICKET` for authorization, the plugin will prompt you for your password.  This
+allows the plugin to use the IDE's password storage mechanism.
+
+
+### Client Name
+
+You can type in your client name in the field, or press
+the ![refresh](plugin/docs/img/settings-connection-properties-refresh.png) button
+to load the drop-down with the clients in your name on the server.  This will
+use the other settings to connect to the server.
+
+
+### Environment Variables
+
+Loads the properties from the environment variables *from the shell that
+launched the IDE*.
+
+In Windows, this will also attempt to inspect your Perforce registry variables.  
+
+
+### File
+
+Load the properties from a specific file.  The format for the file is the
+same as a `P4CONFIG` or `P4ENVIRO` file.
+
+
+### Relative File (P4CONFIG)
+
+Similar to the [File](#file) setting, but works like a `P4CONFIG` environment
+variable.  The project directories are scanned for files matching the relative
+file name, allowing for a single project to span multiple clients or server
+connections.
+
+
+### SSL Server Fingerprint
+
+If you are connecting to an SSL server and are not using a `P4TRUST` file,
+then use this field to declare the server fingerprint for authorizing the
+connection to the server. 
+
+
+### Require a Password
+
+This ignores the `P4TICKET` settings and requires you to enter the password.
+
+
+## Checking Connection Properties
+
+![Server Connection tab](plugin/docs/img/settings-connection-resolved-1.png)
+
+The *Server Connection* tab allows you to review the resolved properties for 
+each identified root directory.  Press
+the ![refresh](plugin/docs/img/settings-connection-properties-refresh.png) button
+to re-examine the configuration properties and look for root directories.
+
+
+## User Preferences
+
+The *User Preferences* tab allows you to change the general operation of the
+plugin. 
+
+
 
 # Workflow
 

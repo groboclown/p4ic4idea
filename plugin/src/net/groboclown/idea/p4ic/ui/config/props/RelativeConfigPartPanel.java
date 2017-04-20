@@ -73,7 +73,7 @@ public class RelativeConfigPartPanel
 
     @Override
     public boolean isModified(@NotNull RelativeConfigCompositePart originalPart) {
-        return !StringUtil.equals(originalPart.getName(), getConfigPart().getName());
+        return !StringUtil.equals(originalPart.getName(), nameField.getText());
     }
 
     {

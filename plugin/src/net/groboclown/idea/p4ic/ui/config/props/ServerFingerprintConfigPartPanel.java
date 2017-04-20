@@ -37,6 +37,9 @@ public class ServerFingerprintConfigPartPanel
 
     ServerFingerprintConfigPartPanel(@NotNull Project project, @NotNull ServerFingerprintDataPart part) {
         super(project, part);
+        if (part.getServerFingerprint() != null) {
+            fingerprintField.setText(part.getServerFingerprint());
+        }
     }
 
     @Override

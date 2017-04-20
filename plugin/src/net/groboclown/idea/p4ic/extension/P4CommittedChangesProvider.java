@@ -70,7 +70,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
     @Nullable
     @Override
     public RepositoryLocation getLocationFor(FilePath root) {
-        // FIXME cache the values?
+        // TODO cache the values?
 
         try {
             final P4Server server = vcs.getP4ServerFor(root);
@@ -88,7 +88,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
             }
             return new P4RepositoryLocation(spec);
         } catch (InterruptedException e) {
-            // FIXME alert the error
+            // FIXME send notification to the Alert system.
         }
 
         return null;

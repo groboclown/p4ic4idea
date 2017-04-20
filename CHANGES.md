@@ -13,8 +13,11 @@
     * Remove issues around setting up default Perforce configuration (*File* ->
         *Other Settings* -> *Default Settings...*). (#143)
     * Added back the SSL key strength checking and error reporting. (#145)
+    * Fixed the error reporting for a changed or invalid SSL fingerprint key.
+      It now correctly reports the underlying issue.
     * Fixed the configuration panel width - an outer scroll pane confused the
-      tab layout.  The blank text fields shouldn't scroll offscreen anymore.  
+      tab layout.  The blank text fields shouldn't scroll offscreen anymore.
+    * Fixed the SSL Fingerprint text field to correctly show the value.
 
 
 

@@ -465,12 +465,24 @@ class ServerRunner {
         }
     }
 
+    private final static String[] FINGERPRINT_PROBLEMS = {
+            "The fingerprint for the public key sent to your client is",
+            "The fingerprint for the mismatched key sent to your client is"
+    };
 
     private static boolean isSSLFingerprintProblem(@NotNull final ConnectionException e) {
-        // TODO replace with error code checking
+        // TODO replace with error code checking, but that means changing around the
+        // ConnectionException class to support an error code.
 
         String message = e.getMessage();
-        return message != null &&
-                message.contains("The fingerprint for the public key sent to your client is");
+        if (message == null) {
+            return false;
+        }
+        for (String fingerprintProblem : FINGERPRINT_PROBLEMS) {
+            if (message.contains(fingerprintProblem)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

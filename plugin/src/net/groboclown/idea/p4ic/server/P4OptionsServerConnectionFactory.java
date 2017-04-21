@@ -174,6 +174,7 @@ public class P4OptionsServerConnectionFactory {
 
         // Socket creation properties
         // See RpcSocketHelper
+        // For Fixing #85.
         props.setProperty(RpcPropertyDefs.RPC_SOCKET_SO_TIMEOUT_NICK,
                 Integer.toString(UserProjectPreferences.getSocketSoTimeoutMillis(clientConfig.getProject())));
 

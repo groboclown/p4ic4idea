@@ -39,10 +39,11 @@ public class UserPreferencesPanel {
     private JSpinner myMaxRetryAuthenticationSpinner;
     private JCheckBox myReconnectWithEachRequest;
     private JCheckBox myConcatenateChangelistNameComment;
+    private JSpinner mySocketSoTimeoutSpinner;
     private ButtonGroup myPreferRevisionGroup;
 
 
-    public UserPreferencesPanel() {
+    UserPreferencesPanel() {
         myMaxTimeout.setModel(new MinMaxSpinnerModel(
                 UserProjectPreferences.MIN_CONNECTION_WAIT_TIME_MILLIS,
                 UserProjectPreferences.MAX_CONNECTION_WAIT_TIME_MILLIS,
@@ -53,16 +54,23 @@ public class UserPreferencesPanel {
                 UserProjectPreferences.MAX_MAX_AUTHENTICATION_RETRIES,
                 1,
                 UserProjectPreferences.DEFAULT_MAX_AUTHENTICATION_RETRIES));
+        mySocketSoTimeoutSpinner.setModel((new MinMaxSpinnerModel(
+                UserProjectPreferences.MIN_SOCKET_SO_TIMEOUT_MILLIS,
+                UserProjectPreferences.MAX_SOCKET_SO_TIMEOUT_MILLIS,
+                100,
+                UserProjectPreferences.DEFAULT_MAX_AUTHENTICATION_RETRIES
+        )));
         myPreferRevisionGroup = new ButtonGroup();
         myPreferRevisionGroup.add(myPreferChangelist);
         myPreferRevisionGroup.add(myPreferRevisionNumber);
     }
 
 
-    protected void loadSettingsIntoGUI(@NotNull UserProjectPreferences userPrefs) {
+    void loadSettingsIntoGUI(@NotNull UserProjectPreferences userPrefs) {
         myOpenForEditInCheckBox.setSelected(userPrefs.getEditInSeparateThread());
         myMaxTimeout.setValue(userPrefs.getMaxConnectionWaitTimeMillis());
         myMaxRetryAuthenticationSpinner.setValue(userPrefs.getMaxAuthenticationRetries());
+        mySocketSoTimeoutSpinner.setValue(userPrefs.getSocketSoTimeoutMillis());
         myPreferRevisionGroup.setSelected(
                 userPrefs.getPreferRevisionsForFiles()
                         ? myPreferRevisionNumber.getModel()
@@ -74,9 +82,10 @@ public class UserPreferencesPanel {
     }
 
 
-    protected void saveSettingsToConfig(@NotNull UserProjectPreferences userPrefs) {
+    void saveSettingsToConfig(@NotNull UserProjectPreferences userPrefs) {
         userPrefs.setEditInSeparateThread(getOpenForEditInSeparateThread());
         userPrefs.setMaxConnectionWaitTimeMillis(getMaxTimeout());
+        userPrefs.setSocketSoTimeoutMillis(getSocketSoTimeout());
         userPrefs.setPreferRevisionsForFiles(getPreferRevisionsForFiles());
         userPrefs.setEditedWithoutCheckoutVerify(getEditedWithoutCheckoutVerify());
         userPrefs.setMaxAuthenticationRetries(getMaxAuthenticationRetries());
@@ -89,6 +98,7 @@ public class UserPreferencesPanel {
         return
                 getOpenForEditInSeparateThread() != preferences.getEditInSeparateThread() ||
                         getMaxTimeout() != preferences.getMaxConnectionWaitTimeMillis() ||
+                        getSocketSoTimeout() != preferences.getSocketSoTimeoutMillis() ||
                         getPreferRevisionsForFiles() != preferences.getPreferRevisionsForFiles() ||
                         getEditedWithoutCheckoutVerify() != preferences.getEditedWithoutCheckoutVerify() ||
                         getMaxAuthenticationRetries() != preferences.getMaxAuthenticationRetries() ||
@@ -119,6 +129,10 @@ public class UserPreferencesPanel {
         return (Integer) myMaxRetryAuthenticationSpinner.getModel().getValue();
     }
 
+    private int getSocketSoTimeout() {
+        return (Integer) mySocketSoTimeoutSpinner.getModel().getValue();
+    }
+
     private boolean getReconnectWithEachRequest() {
         return myReconnectWithEachRequest.isSelected();
     }
@@ -128,7 +142,7 @@ public class UserPreferencesPanel {
     }
 
     private void createUIComponents() {
-        // TODO: place custom component creation code here
+        // place custom component creation code here
     }
 
     {

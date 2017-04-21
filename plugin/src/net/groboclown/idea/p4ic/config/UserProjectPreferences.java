@@ -43,6 +43,9 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public static final boolean DEFAULT_RECONNECT_WITH_EACH_REQUEST = false;
     public static final boolean DEFAULT_CONCATENATE_CHANGELIST_NAME_COMMENT = false;
     public static final boolean DEFAULT_AUTO_OFFLINE = false;
+    public static final int DEFAULT_SOCKET_SO_TIMEOUT_MILLIS = 30000;
+    public static final int MIN_SOCKET_SO_TIMEOUT_MILLIS = 20000;
+    public static final int MAX_SOCKET_SO_TIMEOUT_MILLIS = 5 * 60 * 1000;
 
     @NotNull
     private State state = new State();
@@ -73,6 +76,8 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         public boolean concatenateChangelistNameComment = DEFAULT_CONCATENATE_CHANGELIST_NAME_COMMENT;
 
         public boolean isAutoOffline = DEFAULT_AUTO_OFFLINE;
+
+        public int socketSoTimeoutMillis = DEFAULT_SOCKET_SO_TIMEOUT_MILLIS;
     }
 
     @Nullable
@@ -263,5 +268,25 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
 
     public void setConcatenateChangelistNameComment(final boolean concatenateChangelistNameComment) {
         state.concatenateChangelistNameComment = concatenateChangelistNameComment;
+    }
+
+
+    public static int getSocketSoTimeoutMillis(@Nullable final Project project) {
+        if (project == null) {
+            return DEFAULT_SOCKET_SO_TIMEOUT_MILLIS;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return DEFAULT_SOCKET_SO_TIMEOUT_MILLIS;
+        }
+        return prefs.getSocketSoTimeoutMillis();
+    }
+
+    public int getSocketSoTimeoutMillis() {
+        return state.socketSoTimeoutMillis;
+    }
+
+    public void setSocketSoTimeoutMillis(final int socketSoTimeoutMillis) {
+        state.socketSoTimeoutMillis = socketSoTimeoutMillis;
     }
 }

@@ -5,10 +5,14 @@
 
 ### Overview
 
+* Add user preference for socket SO timeout.
 * Bug fixes.
 
 ### Details
 
+* Add user preference for socket SO timeout.
+    * Added user preference to change the socket SO timeout, to allow for fixing
+      potential SocketTimeoutExceptions. (#85)
 * Bug fixes.
     * Remove issues around setting up default Perforce configuration (*File* ->
         *Other Settings* -> *Default Settings...*). (#143)
@@ -18,7 +22,6 @@
     * Fixed the configuration panel width - an outer scroll pane confused the
       tab layout.  The blank text fields shouldn't scroll offscreen anymore.
     * Fixed the SSL Fingerprint text field to correctly show the value.
-
 
 
 ## ::v0.8.4::

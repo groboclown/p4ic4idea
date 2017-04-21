@@ -23,6 +23,7 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ServerConfig;
+import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.v2.extension.P4PluginVersion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -174,9 +175,7 @@ public class P4OptionsServerConnectionFactory {
         // Socket creation properties
         // See RpcSocketHelper
         props.setProperty(RpcPropertyDefs.RPC_SOCKET_SO_TIMEOUT_NICK,
-                // TODO make a user setting (time is in milliseconds)
-                // This is the default value (30 seconds)
-                Integer.toString(30000));
+                Integer.toString(UserProjectPreferences.getSocketSoTimeoutMillis(clientConfig.getProject())));
 
         // Enable/disable TCP_NODELAY (disable/enable Nagle's algorithm).
         // "true" or "false"; default is "true"

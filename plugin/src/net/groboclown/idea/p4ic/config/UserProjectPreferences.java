@@ -30,9 +30,6 @@ import org.jetbrains.annotations.Nullable;
 )
 public class UserProjectPreferences implements PersistentStateComponent<UserProjectPreferences.State> {
     public static final int DEFAULT_SERVER_CONNECTIONS = 2;
-    public static final int MIN_CONNECTION_WAIT_TIME_MILLIS = 500;
-    public static final int MAX_CONNECTION_WAIT_TIME_MILLIS = 5 * 60 * 1000;
-    public static final int DEFAULT_CONNECTION_WAIT_TIME_MILLIS = 30 * 1000;
     public static final boolean DEFAULT_INTEGRATE_ON_COPY = false;
     public static final boolean DEFAULT_EDIT_IN_SEPARATE_THREAD = false;
     public static final boolean DEFAULT_PREFER_REVISIONS_FOR_FILES = true;
@@ -46,6 +43,9 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public static final int DEFAULT_SOCKET_SO_TIMEOUT_MILLIS = 30000;
     public static final int MIN_SOCKET_SO_TIMEOUT_MILLIS = 20000;
     public static final int MAX_SOCKET_SO_TIMEOUT_MILLIS = 5 * 60 * 1000;
+    public static final int MIN_LOCK_WAIT_TIMEOUT_MILLIS = 20 * 1000;
+    public static final int MAX_LOCK_WAIT_TIMEOUT_MILLIS = 5 * 60 * 1000;
+    public static final int DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS = 30 * 1000;
 
     @NotNull
     private State state = new State();
@@ -55,7 +55,7 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         public int maxServerConnections = DEFAULT_SERVER_CONNECTIONS;
 
         @Deprecated
-        public int maxConnectionWaitTimeMillis = DEFAULT_CONNECTION_WAIT_TIME_MILLIS;
+        public int maxConnectionWaitTimeMillis = 0;
 
         public boolean integrateOnCopy = DEFAULT_INTEGRATE_ON_COPY;
 
@@ -78,6 +78,8 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         public boolean isAutoOffline = DEFAULT_AUTO_OFFLINE;
 
         public int socketSoTimeoutMillis = DEFAULT_SOCKET_SO_TIMEOUT_MILLIS;
+
+        public int lockWaitTimeoutMillis = DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS;
     }
 
     @Nullable
@@ -106,21 +108,6 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
             state = new State();
         }
         this.state = state;
-    }
-
-
-
-    public int getMaxConnectionWaitTimeMillis() {
-        return Math.max(MIN_CONNECTION_WAIT_TIME_MILLIS,
-                Math.min(MAX_CONNECTION_WAIT_TIME_MILLIS,
-                state.maxConnectionWaitTimeMillis));
-    }
-
-
-    public void setMaxConnectionWaitTimeMillis(int value) {
-        state.maxConnectionWaitTimeMillis =
-                Math.max(MIN_CONNECTION_WAIT_TIME_MILLIS,
-                        Math.min(MAX_CONNECTION_WAIT_TIME_MILLIS, value));
     }
 
 
@@ -288,5 +275,25 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
 
     public void setSocketSoTimeoutMillis(final int socketSoTimeoutMillis) {
         state.socketSoTimeoutMillis = socketSoTimeoutMillis;
+    }
+
+
+    public static int getLockWaitTimeoutMillis(@Nullable final Project project) {
+        if (project == null) {
+            return DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS;
+        }
+        return prefs.getLockWaitTimeoutMillis();
+    }
+
+    public int getLockWaitTimeoutMillis() {
+        return state.lockWaitTimeoutMillis;
+    }
+
+    public void setLockWaitTimeoutMillis(final int lockWaitTimeoutMillis) {
+        state.lockWaitTimeoutMillis = lockWaitTimeoutMillis;
     }
 }

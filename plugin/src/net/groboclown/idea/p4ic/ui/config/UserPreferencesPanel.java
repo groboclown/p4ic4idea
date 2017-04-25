@@ -45,10 +45,10 @@ public class UserPreferencesPanel {
 
     UserPreferencesPanel() {
         myMaxTimeout.setModel(new MinMaxSpinnerModel(
-                UserProjectPreferences.MIN_CONNECTION_WAIT_TIME_MILLIS,
-                UserProjectPreferences.MAX_CONNECTION_WAIT_TIME_MILLIS,
+                UserProjectPreferences.MIN_LOCK_WAIT_TIMEOUT_MILLIS,
+                UserProjectPreferences.MAX_LOCK_WAIT_TIMEOUT_MILLIS,
                 500,
-                UserProjectPreferences.DEFAULT_CONNECTION_WAIT_TIME_MILLIS));
+                UserProjectPreferences.DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS));
         myMaxRetryAuthenticationSpinner.setModel(new MinMaxSpinnerModel(
                 UserProjectPreferences.MIN_MAX_AUTHENTICATION_RETRIES,
                 UserProjectPreferences.MAX_MAX_AUTHENTICATION_RETRIES,
@@ -68,7 +68,7 @@ public class UserPreferencesPanel {
 
     void loadSettingsIntoGUI(@NotNull UserProjectPreferences userPrefs) {
         myOpenForEditInCheckBox.setSelected(userPrefs.getEditInSeparateThread());
-        myMaxTimeout.setValue(userPrefs.getMaxConnectionWaitTimeMillis());
+        myMaxTimeout.setValue(userPrefs.getLockWaitTimeoutMillis());
         myMaxRetryAuthenticationSpinner.setValue(userPrefs.getMaxAuthenticationRetries());
         mySocketSoTimeoutSpinner.setValue(userPrefs.getSocketSoTimeoutMillis());
         myPreferRevisionGroup.setSelected(
@@ -84,7 +84,7 @@ public class UserPreferencesPanel {
 
     void saveSettingsToConfig(@NotNull UserProjectPreferences userPrefs) {
         userPrefs.setEditInSeparateThread(getOpenForEditInSeparateThread());
-        userPrefs.setMaxConnectionWaitTimeMillis(getMaxTimeout());
+        userPrefs.setLockWaitTimeoutMillis(getMaxTimeout());
         userPrefs.setSocketSoTimeoutMillis(getSocketSoTimeout());
         userPrefs.setPreferRevisionsForFiles(getPreferRevisionsForFiles());
         userPrefs.setEditedWithoutCheckoutVerify(getEditedWithoutCheckoutVerify());
@@ -97,7 +97,7 @@ public class UserPreferencesPanel {
     boolean isModified(@NotNull final UserProjectPreferences preferences) {
         return
                 getOpenForEditInSeparateThread() != preferences.getEditInSeparateThread() ||
-                        getMaxTimeout() != preferences.getMaxConnectionWaitTimeMillis() ||
+                        getMaxTimeout() != preferences.getLockWaitTimeoutMillis() ||
                         getSocketSoTimeout() != preferences.getSocketSoTimeoutMillis() ||
                         getPreferRevisionsForFiles() != preferences.getPreferRevisionsForFiles() ||
                         getEditedWithoutCheckoutVerify() != preferences.getEditedWithoutCheckoutVerify() ||

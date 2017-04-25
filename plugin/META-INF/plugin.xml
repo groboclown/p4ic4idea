@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.8.5</version>
+    <version>0.8.6</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.8.6</em>
+            <ol>
+              <li>...</li>
+            </ol>
+          </li>
           <li><em>0.8.5</em>
             <ol>
               <li>Remove issues around setting up default Perforce configuration.</li>
@@ -17,36 +22,6 @@
               <li>Fixed the SSL Fingerprint text field to correctly show the value.</li>
               <li>Added user preference to change the socket SO timeout, to allow for fixing
               potential SocketTimeoutExceptions.</li>
-            </ol>
-          </li>
-          <li><em>0.8.4</em>
-            <ol>
-              <li>Cleaned up debug logging.</li>
-              <li>Changed the configuration UI to split the connection resolved properties from the
-                connection properties definition.</li>
-              <li>Added workaround for an observed issue where the IDE would not load the workspace
-                VCS configuration before the plugin was available.</li>
-              <li>The client name panel now correctly displays the client name saved in the
-                <tt>workspace.xml</tt> file.</li>
-              <li>The configuration UI now prompts for a password when the client name panel
-                needs a password to find the user's clients.</li>
-              <li>Improved configuration problem reporting to differentiate between warnings and
-                actual errors.</li>
-              <li>Fixed the connection status bar widget to push more activity out of the event
-                thread and into the background.</li>
-              <li>Fixed the reload buttons to be disabled while the process is running.</li>
-              <li>Moved the client name field spinner to be consistent with the rest of the UI.</li>
-              <li>Changed validation check for the server configuration and the client
-                configuration so it now reports a warning rather than throwing an
-                error.</li>
-              <li>Added validation check to ensure client name is not purely numeric.</li>
-              <li>Added better logging in the case of connection checkout issues.</li>
-              <li>Fixed configuration panel detection of modification.</li>
-              <li>Fixed an issue where an invalid password would be considered needing to log in
-                again with the existing, known password.</li>
-              <li>Stream-lined the server connection process.</li>
-              <li>Fixed an issue if the user has an authentication ticket file, but isn't logged in.</li>
-              <li>Better prevention of incorrect error messages when the connection configuration changes.</li>
             </ol>
           </li>
         </ol>

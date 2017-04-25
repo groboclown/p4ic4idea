@@ -64,7 +64,7 @@ class AuthenticatedServer {
     // lock (tryLock with a timer) should help keep this from being an issue,
     // though.
     private final Lock connectLock = new ReentrantLock();
-    private static final long CONNECT_LOCK_TIMEOUT_MILLIS = 30 * 1000L;
+    private static final long CONNECT_LOCK_TIMEOUT_MILLIS = 90 * 1000L;
 
     private final ServerAuthenticator authenticator = new ServerAuthenticator();
     private final ClientConfig config;

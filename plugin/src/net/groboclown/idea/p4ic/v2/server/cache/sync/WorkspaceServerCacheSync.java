@@ -431,6 +431,9 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         if (! roots.equals(cachedServerWorkspace.getRoots())) {
             doRefresh = true;
         }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Setting server workspace " + roots);
+        }
         cachedServerWorkspace.setRoots(roots);
 
 

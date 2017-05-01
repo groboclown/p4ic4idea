@@ -24,6 +24,7 @@ import com.perforce.p4java.server.callback.ILogCallback;
 import net.groboclown.idea.p4ic.compat.auth.OneUseString;
 import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ConfigPropertiesUtil;
+import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.server.P4OptionsServerConnectionFactory;
 import net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager;
 import net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator;
@@ -64,7 +65,6 @@ class AuthenticatedServer {
     // lock (tryLock with a timer) should help keep this from being an issue,
     // though.
     private final Lock connectLock = new ReentrantLock();
-    private static final long CONNECT_LOCK_TIMEOUT_MILLIS = 90 * 1000L;
 
     private final ServerAuthenticator authenticator = new ServerAuthenticator();
     private final ClientConfig config;
@@ -150,7 +150,7 @@ class AuthenticatedServer {
     @NotNull
     ServerConnection checkoutServer()
             throws InterruptedException, P4JavaException, URISyntaxException {
-        if (! connectLock.tryLock(CONNECT_LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+        if (! connectLock.tryLock(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS)) {
             throw new InterruptedException();
         }
         if (this.project == null) {
@@ -168,7 +168,7 @@ class AuthenticatedServer {
                 LOG.debug("Checking out server " + this + " in " + Thread.currentThread());
             }
 
-            retServer = reconnect();
+            retServer = reconnect(false);
             retAuthStatus = authenticate();
 
             // ONLY set the checked-out-by state if the reconnect and authenticate
@@ -184,7 +184,7 @@ class AuthenticatedServer {
     }
 
     void checkinServer(@NotNull IOptionsServer server) throws P4JavaException, InterruptedException {
-        if (! connectLock.tryLock(CONNECT_LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+        if (! connectLock.tryLock(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS)) {
             throw new InterruptedException();
         }
         try {
@@ -201,16 +201,11 @@ class AuthenticatedServer {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Checking in server " + this + " in " + Thread.currentThread());
             }
+            if (UserProjectPreferences.getReconnectWithEachRequest(project)) {
+                disconnect();
+            }
             checkedOutBy = null;
             checkedOutStack = null;
-            //if (UserProjectPreferences.getReconnectWithEachRequest(project)) {
-            // Note that this isn't going to be an absolute reconnect with
-            // each request, but a general one.  One or more server requests
-            // will actually be associated with this server object, but they
-            // should all run within the same small time frame.
-
-            disconnect();
-            //}
         } finally {
             connectLock.unlock();
         }
@@ -290,7 +285,7 @@ class AuthenticatedServer {
                 LOG.debug("Not connected to server; reconnecting for " + this);
             }
             try {
-                reconnect();
+                reconnect(true);
             } catch (URISyntaxException e) {
                 return authenticator.createStatusFor(e);
             }
@@ -399,32 +394,37 @@ class AuthenticatedServer {
     }
 
 
-    private IOptionsServer reconnect()
+    private IOptionsServer reconnect(boolean forceReconnect)
             throws P4JavaException, URISyntaxException, InterruptedException {
         if (checkedOutBy != null) {
             throw new P4JavaException("P4ServerName instance already checked out by " + checkedOutBy, checkedOutStack);
         }
-        final OneUseString password =
-                PasswordManager.getInstance().getPassword(project, config.getServerConfig(), false);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Fetched the password.  Has it? " + ! password.isNullValue());
-        }
-        disconnect();
-        try {
-            server = reconnect(config, tempDir);
-        } catch (P4JavaException e) {
-            throw e;
-        } catch (URISyntaxException e) {
-            throw e;
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new P4JavaException(e);
+
+        if (forceReconnect || server == null || !server.isConnected() ||
+                UserProjectPreferences.getReconnectWithEachRequest(project)) {
+            final OneUseString password =
+                    PasswordManager.getInstance().getPassword(project, config.getServerConfig(), false);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Fetched the password.  Has it? " + ! password.isNullValue());
+            }
+            disconnect();
+            try {
+                server = reconnect(config, tempDir);
+            } catch (P4JavaException e) {
+                throw e;
+            } catch (URISyntaxException e) {
+                throw e;
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new P4JavaException(e);
+            }
         }
 
         connectedCount++;
         return server;
     }
+
 
     private IOptionsServer reconnect(@NotNull final ClientConfig config, @NotNull final File tempDir)
             throws P4JavaException, URISyntaxException {

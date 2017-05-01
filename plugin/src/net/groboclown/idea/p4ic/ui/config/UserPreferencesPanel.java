@@ -49,17 +49,20 @@ public class UserPreferencesPanel {
                 UserProjectPreferences.MAX_LOCK_WAIT_TIMEOUT_MILLIS,
                 500,
                 UserProjectPreferences.DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS));
+        myMaxTimeout.getEditor().setEnabled(true);
         myMaxRetryAuthenticationSpinner.setModel(new MinMaxSpinnerModel(
                 UserProjectPreferences.MIN_MAX_AUTHENTICATION_RETRIES,
                 UserProjectPreferences.MAX_MAX_AUTHENTICATION_RETRIES,
                 1,
                 UserProjectPreferences.DEFAULT_MAX_AUTHENTICATION_RETRIES));
+        myMaxRetryAuthenticationSpinner.getEditor().setEnabled(true);
         mySocketSoTimeoutSpinner.setModel((new MinMaxSpinnerModel(
                 UserProjectPreferences.MIN_SOCKET_SO_TIMEOUT_MILLIS,
                 UserProjectPreferences.MAX_SOCKET_SO_TIMEOUT_MILLIS,
                 100,
                 UserProjectPreferences.DEFAULT_MAX_AUTHENTICATION_RETRIES
         )));
+        mySocketSoTimeoutSpinner.getEditor().setEnabled(true);
         myPreferRevisionGroup = new ButtonGroup();
         myPreferRevisionGroup.add(myPreferChangelist);
         myPreferRevisionGroup.add(myPreferRevisionNumber);

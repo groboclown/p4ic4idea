@@ -127,7 +127,8 @@ public class P4WorkspaceViewState extends CachedState {
         }
         ret.deserializeDate(wrapper);
         if (LOG.isDebugEnabled()) {
-            LOG.debug("deserialized workspace " + ret.getName());
+            LOG.debug("deserialized workspace " + ret.getName() +
+                    " with serialized workspace roots " + ret.roots);
         }
         return ret;
     }

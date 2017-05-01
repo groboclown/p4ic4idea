@@ -22,6 +22,7 @@
               <li>Fixed the SSL Fingerprint text field to correctly show the value.</li>
               <li>Added user preference to change the socket SO timeout, to allow for fixing
               potential SocketTimeoutExceptions.</li>
+              <li>Went back to actually using the "reconnect with each request" setting.</li>
             </ol>
           </li>
         </ol>

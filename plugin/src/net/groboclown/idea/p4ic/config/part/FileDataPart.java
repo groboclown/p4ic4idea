@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.config.part;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
@@ -32,6 +33,8 @@ import java.util.Collections;
 import java.util.Properties;
 
 public class FileDataPart implements DataPart {
+    private static final Logger LOG = Logger.getInstance(FileDataPart.class);
+
     static final String TAG_NAME = "file-data-part";
     static final ConfigPartFactory<FileDataPart> FACTORY = new Factory();
     private static final String FILE_PATH_ATTRIBUTE = "file";
@@ -402,6 +405,7 @@ public class FileDataPart implements DataPart {
                 reader.close();
             }
         }
+        LOG.debug("Loaded property file " + filePath + " keys " + props.keySet());
         return props;
     }
 }

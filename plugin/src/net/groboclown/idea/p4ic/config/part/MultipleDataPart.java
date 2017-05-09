@@ -27,12 +27,16 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MultipleDataPart implements DataPart {
     private static final Logger LOG = Logger.getInstance(MultipleDataPart.class);
 
+    private static final AtomicInteger COUNT = new AtomicInteger(0);
+
     private final VirtualFile root;
     private final List<DataPart> parts;
+    private final int index = COUNT.incrementAndGet();
 
     public MultipleDataPart(@Nullable VirtualFile root, @NotNull List<DataPart> parts) {
         this.root = root;
@@ -71,14 +75,14 @@ public class MultipleDataPart implements DataPart {
 
     @Override
     public String toString() {
-        return "MultipleDataPart(" + root + ")";
+        return "MultipleDataPart(" + root + "):" + index;
     }
 
     @NotNull
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Config for MultipleDataPart under " + root);
+            LOG.debug(this + ": finding config problems");
         }
         Set<ConfigProblem> problems = new HashSet<ConfigProblem>();
 
@@ -126,6 +130,9 @@ public class MultipleDataPart implements DataPart {
     public P4ServerName getServerName() {
         for (DataPart part : parts) {
             if (part.hasServerNameSet()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(this + ": using server name from " + part);
+                }
                 return part.getServerName();
             }
         }
@@ -147,6 +154,9 @@ public class MultipleDataPart implements DataPart {
     public String getClientname() {
         for (DataPart part : parts) {
             if (part.hasClientnameSet()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(this + ": using client name from " + part);
+                }
                 return part.getClientname();
             }
         }
@@ -168,6 +178,9 @@ public class MultipleDataPart implements DataPart {
     public String getUsername() {
         for (DataPart part : parts) {
             if (part.hasUsernameSet()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(this + ": using user name from " + part);
+                }
                 return part.getUsername();
             }
         }
@@ -189,6 +202,9 @@ public class MultipleDataPart implements DataPart {
     public String getPlaintextPassword() {
         for (DataPart part : parts) {
             if (part.hasPasswordSet()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(this + ": using plaintext password from " + part);
+                }
                 return part.getPlaintextPassword();
             }
         }
@@ -210,6 +226,9 @@ public class MultipleDataPart implements DataPart {
     public File getAuthTicketFile() {
         for (DataPart part : parts) {
             if (part.hasAuthTicketFileSet()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(this + ": using auth ticket file from " + part);
+                }
                 return part.getAuthTicketFile();
             }
         }
@@ -231,6 +250,9 @@ public class MultipleDataPart implements DataPart {
     public File getTrustTicketFile() {
         for (DataPart part : parts) {
             if (part.hasTrustTicketFileSet()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(this + ": using trust ticket file from " + part);
+                }
                 return part.getTrustTicketFile();
             }
         }
@@ -252,6 +274,9 @@ public class MultipleDataPart implements DataPart {
     public String getServerFingerprint() {
         for (DataPart part : parts) {
             if (part.hasServerFingerprintSet()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(this + ": using server fingerprint from " + part);
+                }
                 return part.getServerFingerprint();
             }
         }
@@ -273,6 +298,9 @@ public class MultipleDataPart implements DataPart {
     public String getClientHostname() {
         for (DataPart part : parts) {
             if (part.hasClientHostnameSet()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(this + ": using client hostname from " + part);
+                }
                 return part.getClientHostname();
             }
         }
@@ -294,6 +322,9 @@ public class MultipleDataPart implements DataPart {
     public String getIgnoreFileName() {
         for (DataPart part : parts) {
             if (part.hasIgnoreFileNameSet()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(this + ": using ignore file name from " + part);
+                }
                 return part.getIgnoreFileName();
             }
         }
@@ -315,6 +346,9 @@ public class MultipleDataPart implements DataPart {
     public String getDefaultCharset() {
         for (DataPart part : parts) {
             if (part.hasDefaultCharsetSet()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(this + ": using default charset from " + part);
+                }
                 return part.getDefaultCharset();
             }
         }
@@ -336,6 +370,9 @@ public class MultipleDataPart implements DataPart {
     public File getLoginSso() {
         for (DataPart part : parts) {
             if (part.hasLoginSsoSet()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(this + ": using login sso from " + part);
+                }
                 return part.getLoginSso();
             }
         }

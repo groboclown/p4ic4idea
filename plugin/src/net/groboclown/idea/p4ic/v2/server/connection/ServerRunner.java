@@ -21,9 +21,9 @@ import com.intellij.openapi.vcs.VcsException;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.*;
-import net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager;
 import net.groboclown.idea.p4ic.v2.server.authentication.ServerAuthenticator;
 import org.jetbrains.annotations.NotNull;
 
@@ -72,7 +72,8 @@ class ServerRunner {
         void loginFailure(@NotNull P4LoginException e)
                 throws VcsException, CancellationException;
 
-        void loginRequiresPassword(@NotNull P4PasswordException cause)
+        void loginRequiresPassword(@NotNull P4PasswordException cause,
+                ClientConfig clientConfig)
                 throws VcsException, CancellationException;
 
         void disconnectFailure(P4DisconnectedException e)
@@ -163,14 +164,20 @@ class ServerRunner {
             throw new HandledVcsException(problem);
         }
         if (status.isPasswordRequired()) {
-            // TODO shoulnd't need to do this casting; instead, use the real problem.
+            // TODO shouldn't need to do this casting; instead, use the real problem.
             final P4PasswordException problem;
             if (status.getProblem() != null && status.getProblem() instanceof P4PasswordException) {
                 problem = (P4PasswordException) status.getProblem();
             } else {
                 problem = new P4LoginRequiresPasswordException(new P4JavaException());
             }
-            errorVisitor.loginRequiresPassword(problem);
+            // TODO currently investigating ways to prevent a persistent pestering for the password.
+            // If it's the same client and server ID, then that means it's easy to skip (keep a record
+            // of which configs has been asked; but that might be a memory issue).  Otherwise, this gets
+            // trickier.
+            LOG.info("Password is required for connection ID " + servCon.getClientConfig().getConfigVersion() + "."
+                    + servCon.getClientConfig().getServerConfig().getConfigVersion() + ": " + problem.getMessage());
+            errorVisitor.loginRequiresPassword(problem, servCon.getClientConfig());
             throw new HandledVcsException(problem);
         }
         if (status.isSessionExpired()) {
@@ -306,7 +313,6 @@ class ServerRunner {
                 throw errorVisitor.sslFingerprintError(e);
             }
 
-
             if (isSSLHandshakeProblem(e)) {
                 if (isUnlimitedStrengthEncryptionInstalled()) {
                     // config not invalid
@@ -434,14 +440,6 @@ class ServerRunner {
 
     private static <T> T retry(final P4Runner<T> runner, final Connection conn, final ErrorVisitor errorVisitor,
             final int retryCount, final Exception e) throws VcsException {
-        /* TODO understand the right behavior here, with the new login flow
-        if (retryCount > 1) {
-            P4WorkingOfflineException ex = new P4WorkingOfflineException(e);
-            errorVisitor.disconnectFailure(ex);
-            throw ex;
-        }
-        return p4RunFor(runner, conn, errorVisitor, retryCount + 1);
-        */
         P4WorkingOfflineException ex = new P4WorkingOfflineException(e);
         errorVisitor.disconnectFailure(ex);
         throw ex;

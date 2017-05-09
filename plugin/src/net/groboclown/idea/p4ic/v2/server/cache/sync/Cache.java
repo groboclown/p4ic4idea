@@ -39,7 +39,13 @@ import java.util.List;
  * {@link CacheFrontEnd} objects.
  */
 interface Cache {
-    @NotNull
+    /**
+     *
+     * @param project project
+     * @param alerts alert manager
+     * @return null if the workspace hasn't synchronized yet.
+     */
+    @Nullable
     List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts);
 
 

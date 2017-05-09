@@ -214,7 +214,7 @@ public class ConnectionUIConfiguration {
 
         @Override
         public void loginRequiresPassword(
-                @NotNull P4PasswordException cause)
+                @NotNull P4PasswordException cause, ClientConfig clientConfig)
                 throws VcsException, CancellationException {
             LOG.info("Login requires password");
             problems.add(cause);
@@ -225,7 +225,7 @@ public class ConnectionUIConfiguration {
             // refresh.  This is pulled out from the LoginFailedHandler class.
 
             // FIXME This just sits around and waits for the configuration dialog
-            // to go away.
+            // to go away... sometimes.
             ApplicationManager.getApplication().invokeLater(new Runnable() {
                 @Override
                 public void run() {

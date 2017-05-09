@@ -345,7 +345,8 @@ public class ClientExec {
         }
 
         @Override
-        public void loginRequiresPassword(@NotNull P4PasswordException cause)
+        public void loginRequiresPassword(@NotNull P4PasswordException cause,
+                ClientConfig clientConfig)
                 throws VcsException, CancellationException {
             AlertManager.getInstance().addCriticalError(
                     new LoginFailedHandler(project, connectedController, config.getServerConfig(), cause), cause);

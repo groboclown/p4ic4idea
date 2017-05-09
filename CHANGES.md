@@ -13,7 +13,7 @@
 
 * Change "maximum timeout" setting meaning.
     * The "maximum timeout" user setting hasn't been used since the 0.7
-      release, so it now means the maximum SO socket time to live, which
+      release, so it now means the maximum socket time to live, which
       allows the user to avoid a potential issue with the underlying
       Perforce API. (#85)
 * Add lock timeout user setting.
@@ -21,7 +21,13 @@
       until the next one comes free.
     * Useful for users that have a very slow connection to the server.
 * Bug fixes.
-    * *In progress*
+    * Went back to actually using the "reconnect with each request" setting.
+      Before, this setting was ignored and all connections were reconnected
+      before being used.  Users with slow connections should see a performance
+      boost with this disabled.
+    * Clarified error message when reverting files while working offline.
+    * Reduced number of false error messages when the plugin hasn't loaded the
+      client spec when requests are made.
 
 
 ## ::v0.8.5::
@@ -45,10 +51,6 @@
     * Fixed the configuration panel width - an outer scroll pane confused the
       tab layout.  The blank text fields shouldn't scroll offscreen anymore.
     * Fixed the SSL Fingerprint text field to correctly show the value.
-    * Went back to actually using the "reconnect with each request" setting.
-      Before, this setting was ignored and all connections were reconnected
-      before being used.  Users with slow connections should see a performance
-      boost with this disabled.
 
 
 ## ::v0.8.4::

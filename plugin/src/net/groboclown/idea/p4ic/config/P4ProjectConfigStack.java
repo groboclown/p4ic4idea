@@ -19,6 +19,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.config.part.*;
 import net.groboclown.idea.p4ic.util.EqualUtil;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -166,7 +167,8 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
             } else if (part instanceof DataPart) {
                 final DataPart dataPart = (DataPart) part;
                 VirtualFile partRoot = dataPart.getRootPath();
-                if (partRoot == null) {
+                // Push parent directories of the project root into the project root.
+                if (partRoot == null || (projectRoot != null && FilePathUtil.isSameOrUnder(partRoot, projectRoot))) {
                     partRoot = projectRoot;
                 }
                 List<DataPart> partList = dirToParts.get(partRoot);
@@ -204,22 +206,26 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         for (Map.Entry<VirtualFile, List<DataPart>> entry : parts.entrySet()) {
             @Nullable
             VirtualFile previous = entry.getKey();
-            @Nullable
-            VirtualFile current = previous == null
-                    ? null
-                    : previous.getParent();
-            while (current != null && ! current.equals(previous) && EqualUtil.isEqual(projectRoot, current)) {
-                if (parts.containsKey(current)) {
-                    for (DataPart dataPart : parts.get(current)) {
-                        if (! entry.getValue().contains(dataPart)) {
-                            entry.getValue().add(dataPart);
+            if (previous == null || (projectRoot != null && FilePathUtil.isSameOrUnder(previous, projectRoot))) {
+                previous = projectRoot;
+            }
+            if (previous != null) {
+                for (FilePath parent : FilePathUtil.getTreeTo(previous, projectRoot)) {
+                    // Put all the parent's data parts into the child, as lower priority
+                    // items (at the end of the child's list).
+                    List<DataPart> parentPartList = parts.get(parent.getVirtualFile());
+                    if (parentPartList != null) {
+                        List<DataPart> childParts = entry.getValue();
+                        for (DataPart dataPart : parentPartList) {
+                            if (! childParts.contains(dataPart)) {
+                                childParts.add(dataPart);
+                            }
                         }
                     }
                 }
-                previous = current;
-                current = previous.getParent();
             }
         }
+
 
         // We now have the complete list of client servers, mapped to
         // their section in the project tree.  We now need to organize these

@@ -44,6 +44,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.*;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.AbstractServerUpdateAction.ExecutionStatus;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
+import net.groboclown.idea.p4ic.v2.ui.alerts.InvalidRootsHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -762,6 +763,15 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
      */
     private List<IFileSpec> getClientRootSpecs(@NotNull Project project, @NotNull AlertManager alerts) throws VcsException {
         final List<VirtualFile> roots = cache.getClientRoots(project, alerts);
+        if (roots == null) {
+            // We need to synchronize the workspace.
+            VcsException invalidRootsException =
+                    new VcsException(P4Bundle.getString("error.config.invalid-roots.exception"));
+            // invalidRootsException.fillInStackTrace();
+            alerts.addCriticalError(new InvalidRootsHandler(project, Collections.<String>emptyList(),
+                    cache.getClientServerId(), invalidRootsException), invalidRootsException);
+            return Collections.emptyList();
+        }
         return FileSpecUtil.makeRootFileSpecs(roots.toArray(new VirtualFile[roots.size()]));
     }
 

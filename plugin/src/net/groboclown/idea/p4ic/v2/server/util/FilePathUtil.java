@@ -71,6 +71,14 @@ public final class FilePathUtil {
         }
     }
 
+    @Nullable
+    public static FilePath getNullableFilePath(@Nullable final VirtualFile f) {
+        if (f == null) {
+            return null;
+        }
+        return getFilePath(f);
+    }
+
     @NotNull
     public static Collection<FilePath> getFilePathsForVirtualFiles(@NotNull Collection<VirtualFile> virtualFiles) {
         List<FilePath> ret = new ArrayList<FilePath>(virtualFiles.size());
@@ -83,7 +91,7 @@ public final class FilePathUtil {
     }
 
     @NotNull
-    public static Collection<FilePath> getFilePathsFsrStrings(@NotNull List<String> paths) {
+    public static Collection<FilePath> getFilePathsForStrings(@NotNull List<String> paths) {
         List<FilePath> ret = new ArrayList<FilePath>(paths.size());
         for (String path: paths) {
             if (path != null) {
@@ -109,18 +117,76 @@ public final class FilePathUtil {
         return ret;
     }
 
-    public static boolean isSameOrUnder(@NotNull FilePath parent, @NotNull FilePath child) {
+    /**
+     * Break apart the path so that it contains the complete directory chain.  The
+     * First element returned is the path object passed in.
+     *
+     * @param path
+     * @return list of path directories.
+     */
+    @NotNull
+    public static List<FilePath> getTree(@NotNull FilePath path) {
+        List<FilePath> ret = new ArrayList<FilePath>();
         FilePath prev;
-        FilePath next = child;
+        FilePath next = path;
         do {
-            if (parent.equals(next)) {
-                return true;
-            }
+            ret.add(next);
             prev = next;
             next = next.getParentPath();
         } while (next != null && ! next.equals(prev));
-        return false;
+        return ret;
     }
+
+    /**
+     * Break apart the path into parent directories, up to and including the {@literal parent}.
+     * If the {@literal parent} is never reached, then the complete tree is returned.
+     *
+     * @param path
+     * @param parent
+     * @return
+     */
+    @NotNull
+    public static List<FilePath> getTreeTo(@NotNull FilePath path, @Nullable FilePath parent) {
+        List<FilePath> ret = new ArrayList<FilePath>();
+        FilePath prev;
+        FilePath next = path;
+        do {
+            ret.add(next);
+            prev = next;
+            next = next.getParentPath();
+        } while (next != null && ! next.equals(prev) && ! prev.equals(parent));
+        return ret;
+    }
+
+    public static List<FilePath> getTreeTo(@NotNull VirtualFile path, @Nullable VirtualFile parent) {
+        return getTreeTo(getFilePath(path), getNullableFilePath(parent));
+    }
+
+    /**
+     * Tests if {@literal child} is a child (a sub-directory or sub-file) or the same directory as
+     * {@literal parent}
+     *
+     * @param parent base directory for comparison.
+     * @param child file or directory to check against parent.
+     * @return true if child is the same directory as parent, a sub-directory of parent, or a file in parent.
+     */
+    public static boolean isSameOrUnder(@NotNull FilePath parent, @NotNull FilePath child) {
+        List<FilePath> paths = getTreeTo(child, parent);
+        return ! paths.isEmpty() && parent.equals(paths.get(paths.size() - 1));
+    }
+
+    /**
+     * Tests if {@literal child} is a child (a sub-directory or sub-file) or the same directory as
+     * {@literal parent}
+     *
+     * @param parent base directory for comparison.
+     * @param child file or directory to check against parent.
+     * @return true if child is the same directory as parent, a sub-directory of parent, or a file in parent.
+     */
+    public static boolean isSameOrUnder(@NotNull VirtualFile parent, @NotNull VirtualFile child) {
+        return isSameOrUnder(getFilePath(parent), getFilePath(child));
+    }
+
 
     /**
      *

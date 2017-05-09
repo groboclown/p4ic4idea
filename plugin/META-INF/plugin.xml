@@ -8,7 +8,14 @@
         <ol>
           <li><em>0.8.6</em>
             <ol>
-              <li>...</li>
+              <li>Change "maximum timeout" setting meaning to now mean the maximum
+              socket timeout to live.</li>
+              <li>Add lock timeout user setting.</li>
+              <li>Went back to actually using the "reconnect with each request" setting,
+              so that it can reuse the existing connection.</li>
+              <li>Clarified error message when reverting files while working offline.</li>
+              <li>Reduced number of false error messages when the plugin hasn't loaded the
+              client spec when requests are made.</li>
             </ol>
           </li>
           <li><em>0.8.5</em>
@@ -22,7 +29,6 @@
               <li>Fixed the SSL Fingerprint text field to correctly show the value.</li>
               <li>Added user preference to change the socket SO timeout, to allow for fixing
               potential SocketTimeoutExceptions.</li>
-              <li>Went back to actually using the "reconnect with each request" setting.</li>
             </ol>
           </li>
         </ol>
@@ -30,7 +36,7 @@
     <description><![CDATA[
       <a href="https://github.com/groboclown/p4ic4idea">[ Github ]</a> | <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue">[ Open Issues ]</a>
       <p>
-      Associate your IDEA project with Perforce through the built-in version control.
+      Associate your IDEA project with Perforce ("p4") through the built-in version control.
       </p>
       <p>
       Limitations:

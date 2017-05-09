@@ -94,17 +94,25 @@ class AuthenticatedServer {
 
     public static class ServerConnection {
         private final Project project;
+        private final ClientConfig clientConfig;
         private final IOptionsServer server;
         private final ServerAuthenticator.AuthenticationStatus authStatus;
 
-        public ServerConnection(@NotNull Project project, @Nullable IOptionsServer server,
+        public ServerConnection(@NotNull Project project, @NotNull ClientConfig config,
+                @Nullable IOptionsServer server,
                 @NotNull ServerAuthenticator.AuthenticationStatus authStatus) {
             this.project = project;
+            this.clientConfig = config;
             this.server = server;
             this.authStatus = authStatus;
             if (authStatus.isAuthenticated() && server == null) {
                 throw new IllegalStateException("authenticated status, null server");
             }
+        }
+
+        @NotNull
+        public ClientConfig getClientConfig() {
+            return clientConfig;
         }
 
         @Nullable
@@ -180,7 +188,7 @@ class AuthenticatedServer {
         } finally {
             connectLock.unlock();
         }
-        return new ServerConnection(project, retServer, retAuthStatus);
+        return new ServerConnection(project, config, retServer, retAuthStatus);
     }
 
     void checkinServer(@NotNull IOptionsServer server) throws P4JavaException, InterruptedException {

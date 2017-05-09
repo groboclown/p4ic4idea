@@ -16,8 +16,6 @@ package net.groboclown.idea.p4ic.config;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.perforce.p4java.env.PerforceEnvironment;
-import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.part.DataPart;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
@@ -26,14 +24,14 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Stores information regarding a server configuration and the specific client/workspace in that
  * server.
  */
-public class ClientConfig {
+public final class ClientConfig {
     private static final Logger LOG = Logger.getInstance(ClientConfig.class);
 
 
@@ -41,6 +39,9 @@ public class ClientConfig {
     // is still viewable in a debugger.
     private static final char SEP = (char) 0x2202;
 
+    private static final AtomicInteger COUNT = new AtomicInteger(0);
+
+    private final int configVersion;
     private final Project project;
     private final Set<VirtualFile> rootDirs;
     private final ServerConfig serverConfig;
@@ -71,6 +72,7 @@ public class ClientConfig {
                     " does not match data config " + ConfigPropertiesUtil.toProperties(data));
         }
         */
+        this.configVersion = COUNT.incrementAndGet();
 
         this.project = project;
         this.rootDirs = Collections.unmodifiableSet(new HashSet<VirtualFile>(clientProjectBaseDirectories));
@@ -100,6 +102,10 @@ public class ClientConfig {
                 // root directories are not listed, because all client configs
                 // for the same client and server should be a shared object.
         this.clientServerRef = new ClientServerRef(serverConfig.getServerName(), clientName);
+    }
+
+    public int getConfigVersion() {
+        return this.configVersion;
     }
 
     /**

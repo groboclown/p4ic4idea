@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
@@ -42,6 +43,9 @@ public final class ServerConfig {
     // is still viewable in a debugger.
     private static final char SEP = (char) 0x2202;
 
+    private static final AtomicInteger COUNT = new AtomicInteger(0);
+
+    private final int configVersion;
     private final P4ServerName serverName;
     private final String username;
     private final File authTicket;
@@ -110,6 +114,7 @@ public final class ServerConfig {
         if (! isValid(part)) {
             throw new IllegalStateException("Did not check validity before creating");
         }
+        this.configVersion = COUNT.incrementAndGet();
 
         assert part.hasServerNameSet();
         this.serverName = part.getServerName();
@@ -135,6 +140,11 @@ public final class ServerConfig {
                         : null;
 
         serverId = getServerIdForDataPart(part);
+    }
+
+
+    public int getConfigVersion() {
+        return this.configVersion;
     }
 
 

@@ -176,13 +176,15 @@ public class ClientCacheManager {
         return changeLists.deleteChangelist(changeListId);
     }
 
-    @NotNull
+    @Nullable
     public List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts) {
         return workspace.getClientRoots(project, alerts);
     }
 
     public boolean hasClientRoots(@NotNull Project project) {
-
+        if (project.isDisposed()) {
+            return false;
+        }
         return workspace.getSimpleClientRoots(project) != null;
     }
 
@@ -350,7 +352,7 @@ public class ClientCacheManager {
 
     private class CacheImpl implements Cache {
 
-        @NotNull
+        @Nullable
         @Override
         public List<VirtualFile> getClientRoots(@NotNull final Project project, @NotNull AlertManager alerts) {
             return workspace.getClientRoots(project, alerts);

@@ -39,7 +39,6 @@ import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import net.groboclown.idea.p4ic.v2.ui.alerts.ClientNameMismatchHandler;
 import net.groboclown.idea.p4ic.v2.ui.alerts.InvalidClientHandler;
-import net.groboclown.idea.p4ic.v2.ui.alerts.InvalidRootsHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -233,16 +232,26 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
         return fileRepo.getByLocation(file);
     }
 
-    @NotNull
+    /**
+     *
+     * @param project project
+     * @param alerts alert manager
+     * @return null if the client roots have not been synchronized, or if the list of
+     *      workspace roots is empty.
+     */
+    @Nullable
     List<VirtualFile> getClientRoots(@NotNull Project project, @NotNull AlertManager alerts) {
-        final List<VirtualFile> ret = getSimpleClientRoots(project);
-        if (ret == null) {
-            // no root found.
-            invalidRootsException.fillInStackTrace();
-            alerts.addCriticalError(new InvalidRootsHandler(project,
-                    cachedServerWorkspace.getRoots(),
-                    cache.getClientServerId(), invalidRootsException), invalidRootsException);
+        if (project.isDisposed()) {
+            // Special case to avoid error messages on a disposed client.
             return Collections.emptyList();
+        }
+        final List<VirtualFile> ret = getSimpleClientRoots(project);
+        if (ret == null || ret.isEmpty()) {
+            // no root found.
+            // There are some circumstances where this is fine, and we don't need to
+            // raise an error.  Indeed, all the callers know about checking for
+            // an empty list.
+            return null;
         }
         return ret;
     }
@@ -481,7 +490,7 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                         exec.getProject(),
                         P4Bundle.message("warning.client.updated.title", getCachedClientName()),
                         P4Bundle.message("warning.client.updated", getCachedClientName()),
-                        null, FilePathUtil.getFilePathsFsrStrings(roots));
+                        null, FilePathUtil.getFilePathsForStrings(roots));
             }
             cache.refreshServerState(exec, alerts);
         }

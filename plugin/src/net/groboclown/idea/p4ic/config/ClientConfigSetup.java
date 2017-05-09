@@ -23,13 +23,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class ClientConfigSetup {
     private final ClientConfig config;
     private final Collection<ConfigProblem> configProblems;
     private final DataPart source;
 
-    public ClientConfigSetup(@Nullable ClientConfig config, @Nullable Collection<ConfigProblem> configProblems,
+    ClientConfigSetup(@Nullable ClientConfig config, @Nullable Collection<ConfigProblem> configProblems,
             @NotNull DataPart source) {
         this.config = config;
         this.source = source;
@@ -38,6 +39,10 @@ public final class ClientConfigSetup {
             problems.addAll(configProblems);
         }
         this.configProblems = Collections.unmodifiableCollection(problems);
+    }
+
+    public int getConfigVersion() {
+        return config.getConfigVersion();
     }
 
     @Nullable

@@ -125,6 +125,8 @@ public class ResolvedPropertiesPanel {
                             return results;
                         }
 
+                        LOG.debug("Refreshing last configuration");
+
                         lastConfig.refresh();
 
                         final ComputedConfigResults results = loadConfigResults(lastConfig);
@@ -263,9 +265,13 @@ public class ResolvedPropertiesPanel {
     private ComputedConfigResults loadConfigResults(@NotNull final P4ProjectConfig projectConfig) {
         ComputedConfigResults results = new ComputedConfigResults();
         results.problemMessages = new ArrayList<ConfigProblem>(projectConfig.getConfigProblems());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Base project config problems: " + results.problemMessages);
+        }
 
         Collection<ClientConfigSetup> configs = projectConfig.getClientConfigSetups();
         if (configs.isEmpty()) {
+            LOG.debug("No client configs in setup.");
             results.problemMessages.add(createNoClientConfigProblem());
         }
         for (ClientConfigSetup configSetup : configs) {
@@ -275,6 +281,10 @@ public class ResolvedPropertiesPanel {
                 ConfigProblem problem = ConnectionUIConfiguration.checkConnection(config,
                         ServerConnectionManager.getInstance(), false);
                 if (problem != null) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Config setup " + configSetup.getSource() + " has problem "
+                                + problem);
+                    }
                     results.problemMessages.add(problem);
                 }
                 // We can have a connection without a client, for testing purposes,

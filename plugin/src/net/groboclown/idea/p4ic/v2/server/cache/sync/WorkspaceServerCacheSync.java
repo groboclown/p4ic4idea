@@ -296,7 +296,6 @@ public class WorkspaceServerCacheSync extends CacheFrontEnd {
                 // Valid workspace root directory (can be on this workstation).
                 for (VirtualFile rootVf : projectRoots) {
                     FilePath rootFp = FilePathUtil.getFilePath(rootVf);
-                    // "FilePath.isUnder" has been questionable in its implementation.
                     if (FilePathUtil.isSameOrUnder(fp, rootFp)) {
                         ret.add(rootVf);
                         // keep searching the project roots

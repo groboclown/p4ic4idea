@@ -171,6 +171,9 @@ public final class FilePathUtil {
      * @return true if child is the same directory as parent, a sub-directory of parent, or a file in parent.
      */
     public static boolean isSameOrUnder(@NotNull FilePath parent, @NotNull FilePath child) {
+        // "FilePath.isUnder" has been questionable in its implementation.  Some versions of
+        // Idea have a bug in it.
+
         List<FilePath> paths = getTreeTo(child, parent);
         return ! paths.isEmpty() && parent.equals(paths.get(paths.size() - 1));
     }

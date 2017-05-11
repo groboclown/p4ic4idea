@@ -168,7 +168,10 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
                 final DataPart dataPart = (DataPart) part;
                 VirtualFile partRoot = dataPart.getRootPath();
                 // Push parent directories of the project root into the project root.
-                if (partRoot == null || (projectRoot != null && FilePathUtil.isSameOrUnder(partRoot, projectRoot))) {
+                // #148: Don't set the root directory to the parent project if the
+                // given file is lower than the project root.
+                // if (partRoot == null || (projectRoot != null && FilePathUtil.isSameOrUnder(partRoot, projectRoot))) {
+                if (partRoot == null) {
                     partRoot = projectRoot;
                 }
                 List<DataPart> partList = dirToParts.get(partRoot);
@@ -206,7 +209,9 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         for (Map.Entry<VirtualFile, List<DataPart>> entry : parts.entrySet()) {
             @Nullable
             VirtualFile previous = entry.getKey();
-            if (previous == null || (projectRoot != null && FilePathUtil.isSameOrUnder(previous, projectRoot))) {
+            // #148: Don't set the root to the project root if it's lower than it.
+            // if (previous == null || (projectRoot != null && FilePathUtil.isSameOrUnder(previous, projectRoot))) {
+            if (previous == null) {
                 previous = projectRoot;
             }
             if (previous != null) {

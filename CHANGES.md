@@ -14,7 +14,7 @@
     * Before, the Windows registry loader would not correctly read in the
       `P4ENVIRO` setting from the Windows registry. 
 * Bug fixes.
-    * Fixed the 
+    * Fixed the Windows registry value loading (#146).
 
 
 ## ::v0.8.6::

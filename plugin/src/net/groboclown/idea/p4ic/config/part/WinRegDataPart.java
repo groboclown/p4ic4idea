@@ -90,14 +90,6 @@ class WinRegDataPart implements DataPart {
     @Override
     public boolean reload() {
         try {
-            if (LOG.isDebugEnabled()) {
-                for (String key: keys) {
-                    LOG.debug("String values for " + key + ": " + PreferencesWinRegistry.readStringValues(hive, key));
-                    LOG.debug("");
-                }
-            }
-
-
             rawPort = readRegString(PerforceEnvironment.P4PORT);
             serverName = P4ServerName.forPort(rawPort);
             clientName = readRegString(PerforceEnvironment.P4CLIENT);

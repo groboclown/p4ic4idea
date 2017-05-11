@@ -1,22 +1,15 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.8.6</version>
+    <version>0.8.7</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
           <li><em>0.8.7</em>
             <ol>
-              <li>Remove issues around setting up default Perforce configuration.</li>
-              <li>Added back the SSL key strength checking and error reporting.</li>
-              <li>Fixed the error reporting for a changed or invalid SSL fingerprint key.
-              It now correctly reports the underlying issue.</li>
-              <li>Fixed the configuration panel width - an outer scroll pane confused the
-              tab layout.  The blank text fields shouldn't scroll offscreen anymore.</li>
-              <li>Fixed the SSL Fingerprint text field to correctly show the value.</li>
-              <li>Added user preference to change the socket SO timeout, to allow for fixing
-              potential SocketTimeoutExceptions.</li>
+              <li>Added support for "P4ENVIRO" loaded from the Windows registry.</li>
+              <li>Fixed the Windows registry value loading.</li>
             </ol>
           </li>
           <li><em>0.8.6</em>

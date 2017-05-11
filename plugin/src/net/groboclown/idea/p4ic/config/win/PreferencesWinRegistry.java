@@ -196,27 +196,29 @@ public class PreferencesWinRegistry {
         HashMap<String, String> results = new HashMap<String, String>();
         int[] handles = (int[]) regOpenKey.invoke(
                 root, new Object[]{
-                        new Integer(hkey), toCstr(key), new Integer(KEY_READ)
+                        hkey, toCstr(key), KEY_READ
                 }
         );
         if (handles[1] != REG_SUCCESS) {
             return null;
         }
-        int[] info = (int[]) regQueryInfoKey.invoke(root, new Object[]{new Integer(handles[0])});
+        int[] info = (int[]) regQueryInfoKey.invoke(root, new Object[]{ handles[0] });
 
         int count = info[2]; // count
         int maxlen = info[3]; // value length max
         for (int index = 0; index < count; index++) {
             byte[] name = (byte[]) regEnumValue.invoke(
-                    root, new Object[]{
-                            new Integer(handles[0]), new Integer(index), new Integer(maxlen + 1)
+                    root, new Object[] {
+                            handles[0], index, maxlen + 1
                     }
             );
-            // TODO replace with local
-            String value = readString(hkey, key, new String(name));
-            results.put(new String(name).trim(), value);
+            if (name != null) {
+                // TODO replace with local
+                final String value = readString(hkey, key, new String(name));
+                results.put(new String(name).trim(), value);
+            }
         }
-        regCloseKey.invoke(root, new Object[]{new Integer(handles[0])});
+        regCloseKey.invoke(root, handles[0]);
         return results;
     }
 
@@ -227,26 +229,26 @@ public class PreferencesWinRegistry {
         List<String> results = new ArrayList<String>();
         int[] handles = (int[]) regOpenKey.invoke(
                 root, new Object[]{
-                        new Integer(hkey), toCstr(key), new Integer(KEY_READ)
+                        hkey, toCstr(key), KEY_READ
                 }
         );
         if (handles[1] != REG_SUCCESS) {
             return null;
         }
-        int[] info = (int[]) regQueryInfoKey.invoke(root, new Object[]{new Integer(handles[0])});
+        int[] info = (int[]) regQueryInfoKey.invoke(root, new Object[]{ handles[0] });
 
         int count = info[0]; // count
         int maxlen = info[3]; // value length max
         for (int index = 0; index < count; index++) {
             byte[] name = (byte[]) regEnumKeyEx.invoke(
                     root, new Object[]{
-                            new Integer(handles[0]), new Integer(index), new Integer(maxlen + 1)
+                            handles[0], index, maxlen + 1
                     }
             );
             // TODO replace with locale
             results.add(new String(name).trim());
         }
-        regCloseKey.invoke(root, new Object[]{new Integer(handles[0])});
+        regCloseKey.invoke(root, handles[0]);
         return results;
     }
 
@@ -261,32 +263,4 @@ public class PreferencesWinRegistry {
         result[str.length()] = 0;
         return result;
     }
-
-    /*
-    private static Pattern REGISTRY_REFERENCE_REGEX = Pattern.compile("\\$\\(Registry:([A-Z_]+)\\\\(.*)@(.*)\\)");
-    public String getValue(
-            RegistryHKey registryHKey, String key, String valueName) throws WindowsRegistryAccessException {
-        if (!Os.isFamily(Os.FAMILY_WINDOWS))
-            return null;
-
-        try {
-            String value = WinRegistry.readString(registryHKey.getHKey(), key, valueName);
-            if (value != null) {
-                Matcher m = REGISTRY_REFERENCE_REGEX.matcher(value);
-                if (m.matches()) {
-                    value = getValue(RegistryHKey.tryGetFromName(m.group(1)), m.group(2), m.group(3));
-                }
-            }
-            return value;
-        } catch (InvocationTargetException e) {
-            throw new WindowsRegistryAccessException(
-                    "NPANDAY-117-000: Error while retrieving a windows registry value", e
-            );
-        } catch (IllegalAccessException e) {
-            throw new WindowsRegistryAccessException(
-                    "NPANDAY-117-001: Error while retrieving a windows registry value", e
-            );
-        }
-    }
-    */
 }

@@ -26,21 +26,29 @@ import org.jdom.Element;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import sun.misc.Perf;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.Map;
 
 class WinRegDataPart implements DataPart {
     private static final Logger LOG = Logger.getInstance(WinRegDataPart.class);
 
     @NonNls
-    private static final String USER_KEY = "\\Software\\Perforce\\Environment";
+    private static final String[] USER_KEYS = {
+            "Software\\Perforce\\Environment",
+
+    };
     @NonNls
-    private static final String MACHINE_KEY = "\\SOFTWARE\\Perforce\\Environment";
+    private static final String[] MACHINE_KEYS = {
+            "SOFTWARE\\Perforce\\Environment",
+            "SOFTWARE\\Wow6432Node\\Perforce\\Environment"
+    };
 
     private final int hive;
-    private final String key;
+    private final String[] keys;
 
 
     private String rawPort;
@@ -51,6 +59,7 @@ class WinRegDataPart implements DataPart {
     private String authTicketPath;
     private String trustTicket;
     private String configFile;
+    private String enviroFile;
     private String clientHostname;
     private String ignoreFileName;
     private String charset;
@@ -64,10 +73,10 @@ class WinRegDataPart implements DataPart {
     WinRegDataPart(boolean userReg) {
         if (userReg) {
             hive = PreferencesWinRegistry.HKEY_CURRENT_USER;
-            key = USER_KEY;
+            keys = USER_KEYS;
         } else {
             hive = PreferencesWinRegistry.HKEY_LOCAL_MACHINE;
-            key = MACHINE_KEY;
+            keys = MACHINE_KEYS;
         }
         reload();
     }
@@ -81,21 +90,33 @@ class WinRegDataPart implements DataPart {
     @Override
     public boolean reload() {
         try {
-            rawPort = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4PORT);
+            if (LOG.isDebugEnabled()) {
+                for (String key: keys) {
+                    LOG.debug("String values for " + key + ": " + PreferencesWinRegistry.readStringValues(hive, key));
+                    LOG.debug("");
+                }
+            }
+
+
+            rawPort = readRegString(PerforceEnvironment.P4PORT);
             serverName = P4ServerName.forPort(rawPort);
-            clientName = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4CLIENT);
-            userName = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4USER);
-            password = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4PASSWD);
-            authTicketPath = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4TICKETS);
-            trustTicket = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4TRUST);
-            configFile = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4CONFIG);
-            clientHostname = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4HOST);
-            ignoreFileName = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4IGNORE);
-            charset = PreferencesWinRegistry.readString(hive, key, PerforceEnvironment.P4CHARSET);
-            loginSso = PreferencesWinRegistry.readString(hive, key, "P4LOGINSSO");
+            clientName = readRegString(PerforceEnvironment.P4CLIENT);
+            userName = readRegString(PerforceEnvironment.P4USER);
+            password = readRegString(PerforceEnvironment.P4PASSWD);
+            authTicketPath = readRegString(PerforceEnvironment.P4TICKETS);
+            trustTicket = readRegString(PerforceEnvironment.P4TRUST);
+            configFile = readRegString(PerforceEnvironment.P4CONFIG);
+            enviroFile = readRegString(PerforceEnvironment.P4ENVIRO);
+            clientHostname = readRegString(PerforceEnvironment.P4HOST);
+            ignoreFileName = readRegString(PerforceEnvironment.P4IGNORE);
+            charset = readRegString(PerforceEnvironment.P4CHARSET);
+            loginSso = readRegString("P4LOGINSSO");
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Loaded windows registry " + key + " " + ConfigPropertiesUtil.toProperties(this));
+                Map<String, String> props = ConfigPropertiesUtil.toProperties(this);
+                props.put(PerforceEnvironment.P4CONFIG, configFile);
+                props.put(PerforceEnvironment.P4ENVIRO, enviroFile);
+                LOG.debug("Loaded windows registry " + keys[0] + " " + props);
             }
         } catch (IllegalAccessException e) {
             // Do not mark as an actual problem.  This is a JVM incompatible issue.
@@ -107,8 +128,23 @@ class WinRegDataPart implements DataPart {
         return hasError();
     }
 
+    private String readRegString(String valueName)
+            throws InvocationTargetException, IllegalAccessException {
+        for (String key: keys) {
+            String ret = PreferencesWinRegistry.readString(hive, key, valueName);
+            if (ret != null) {
+                return ret;
+            }
+        }
+        return null;
+    }
+
     String getP4ConfigFile() {
         return configFile;
+    }
+
+    String getP4EnviroFile() {
+        return enviroFile;
     }
 
     @NotNull

@@ -1,6 +1,22 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.8.7::
+
+### Overview
+
+* Added support for "P4ENVIRO" loaded from the Windows registry.
+* Bug fixes.
+
+### Details
+
+* Added support for "P4ENVIRO" loaded from the Windows registry.
+    * Before, the Windows registry loader would not correctly read in the
+      `P4ENVIRO` setting from the Windows registry. 
+* Bug fixes.
+    * Fixed the 
+
+
 ## ::v0.8.6::
 
 ### Overview

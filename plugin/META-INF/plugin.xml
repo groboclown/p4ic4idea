@@ -6,19 +6,7 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
-          <li><em>0.8.6</em>
-            <ol>
-              <li>Change "maximum timeout" setting meaning to now mean the maximum
-              socket timeout to live.</li>
-              <li>Add lock timeout user setting.</li>
-              <li>Went back to actually using the "reconnect with each request" setting,
-              so that it can reuse the existing connection.</li>
-              <li>Clarified error message when reverting files while working offline.</li>
-              <li>Reduced number of false error messages when the plugin hasn't loaded the
-              client spec when requests are made.</li>
-            </ol>
-          </li>
-          <li><em>0.8.5</em>
+          <li><em>0.8.7</em>
             <ol>
               <li>Remove issues around setting up default Perforce configuration.</li>
               <li>Added back the SSL key strength checking and error reporting.</li>
@@ -29,6 +17,18 @@
               <li>Fixed the SSL Fingerprint text field to correctly show the value.</li>
               <li>Added user preference to change the socket SO timeout, to allow for fixing
               potential SocketTimeoutExceptions.</li>
+            </ol>
+          </li>
+          <li><em>0.8.6</em>
+            <ol>
+              <li>Change "maximum timeout" setting meaning to now mean the maximum
+              socket timeout to live.</li>
+              <li>Add lock timeout user setting.</li>
+              <li>Went back to actually using the "reconnect with each request" setting,
+              so that it can reuse the existing connection.</li>
+              <li>Clarified error message when reverting files while working offline.</li>
+              <li>Reduced number of false error messages when the plugin hasn't loaded the
+              client spec when requests are made.</li>
             </ol>
           </li>
         </ol>

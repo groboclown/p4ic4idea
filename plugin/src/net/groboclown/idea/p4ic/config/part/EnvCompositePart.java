@@ -14,9 +14,11 @@
 
 package net.groboclown.idea.p4ic.config.part;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.perforce.p4java.env.PerforceEnvironment;
 import net.groboclown.idea.p4ic.config.ConfigProblem;
+import net.groboclown.idea.p4ic.config.ConfigPropertiesUtil;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +33,8 @@ import java.util.Map;
 public class EnvCompositePart extends CompositePart {
     static final String TAG_NAME = "env-composite-part";
     static final ConfigPartFactory<EnvCompositePart> FACTORY = new Factory();
+    private static final Logger LOG = Logger.getInstance(EnvCompositePart.class);
+
 
     private final Project project;
 
@@ -89,16 +93,29 @@ public class EnvCompositePart extends CompositePart {
         parts = new ArrayList<ConfigPart>();
 
         String p4config = null;
+        String p4enviro = null;
 
         if (WinRegDataPart.isAvailable()) {
             WinRegDataPart userReg = new WinRegDataPart(true);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Loaded user windows registry: " + ConfigPropertiesUtil.toProperties(userReg));
+            }
             // p4config is always null at this point.
             // if (p4config == null) {
                 p4config = userReg.getP4ConfigFile();
             // }
+            // if (p4enviro == null) {
+                p4enviro = userReg.getP4EnviroFile();
+            // }
             WinRegDataPart sysReg = new WinRegDataPart(false);
             if (p4config == null) {
                 p4config = sysReg.getP4ConfigFile();
+            }
+            if (p4enviro == null) {
+                p4enviro = sysReg.getP4EnviroFile();
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Loaded system windows registry: " + ConfigPropertiesUtil.toProperties(sysReg));
             }
             parts.add(userReg);
             parts.add(sysReg);
@@ -115,9 +132,15 @@ public class EnvCompositePart extends CompositePart {
         envData.setAuthTicketFile(PerforceEnvironment.getP4Tickets());
         envData.setTrustTicketFile(PerforceEnvironment.getP4Trust());
         envData.setIgnoreFilename(PerforceEnvironment.getP4Ignore());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Loaded environment variables: " + ConfigPropertiesUtil.toProperties(envData));
+        }
 
         if (p4config == null) {
             p4config = PerforceEnvironment.getP4Config();
+        }
+        if (p4enviro == null) {
+            p4enviro = PerforceEnvironment.getP4Enviro();
         }
 
         // P4CONFIG loading
@@ -129,16 +152,25 @@ public class EnvCompositePart extends CompositePart {
                     if (!f.isAbsolute()) {
                         f = new File(new File(project.getBaseDir().getPath()), p4config);
                     }
-                    parts.add(new FileDataPart(project, f));
+
+                    final FileDataPart envConf = new FileDataPart(project, f);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Env defined absolute P4CONFIG: " + f + ": " +
+                                ConfigPropertiesUtil.toProperties(envConf));
+                    }
+                    parts.add(envConf);
                 } else {
-                    parts.add(new RelativeConfigCompositePart(project, p4config));
+                    final RelativeConfigCompositePart envConf = new RelativeConfigCompositePart(project, p4config);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Env defined relative P4CONFIG: " + p4config);
+                    }
+                    parts.add(envConf);
                 }
             }
         }
 
         // P4ENVIRO loading
         {
-            String p4enviro = PerforceEnvironment.getP4Enviro();
             if (p4enviro != null) {
                 File f = new File(p4enviro);
                 if (!f.isAbsolute()) {
@@ -147,7 +179,12 @@ public class EnvCompositePart extends CompositePart {
                 // The P4ENVIRO will have a default value if the user didn't specify one.
                 // Therefore, if the file doesn't exist, don't complain.
                 if (f.exists()) {
-                    parts.add(new FileDataPart(project, f));
+                    final FileDataPart envConf = new FileDataPart(project, f);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Env defined P4ENVIRO: " + f + ": " +
+                                ConfigPropertiesUtil.toProperties(envConf));
+                    }
+                    parts.add(envConf);
                 }
             }
         }

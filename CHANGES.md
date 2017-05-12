@@ -5,7 +5,7 @@
 
 ### Overview
 
-* Added support for "P4ENVIRO" loaded from the Windows registry.
+* Added support for loading "P4ENVIRO" from the Windows registry.
 * Bug fixes.
 
 ### Details
@@ -15,6 +15,8 @@
       `P4ENVIRO` setting from the Windows registry. 
 * Bug fixes.
     * Fixed the Windows registry value loading (#146).
+    * Reverted back to component file locations being based at their
+      natural file locations, rather than at the project root (#148).
 
 
 ## ::v0.8.6::

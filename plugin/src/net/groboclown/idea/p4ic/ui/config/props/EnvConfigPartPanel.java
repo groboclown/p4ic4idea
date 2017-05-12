@@ -81,7 +81,10 @@ public class EnvConfigPartPanel
         rootPanel = new JPanel();
         rootPanel.setLayout(new BorderLayout(0, 0));
         descriptionLabel = new JTextPane();
-        descriptionLabel.setFont(UIManager.getFont("Label.font"));
+        Font descriptionLabelFont = UIManager.getFont("Label.font");
+        if (descriptionLabelFont != null) {
+            descriptionLabel.setFont(descriptionLabelFont);
+        }
         descriptionLabel.setText(
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("connection.env.description"));
         rootPanel.add(descriptionLabel, BorderLayout.CENTER);

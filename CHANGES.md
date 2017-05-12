@@ -6,6 +6,7 @@
 ### Overview
 
 * Added support for loading "P4ENVIRO" from the Windows registry.
+* Added support for logging in with the "P4LOGINSSO" value. 
 * Bug fixes.
 
 ### Details
@@ -13,12 +14,14 @@
 * Added support for "P4ENVIRO" loaded from the Windows registry.
     * Before, the Windows registry loader would not correctly read in the
       `P4ENVIRO` setting from the Windows registry. 
+* Added support for logging in with the "P4LOGINSSO" value. (#147)
+    * If the user isn't logged in, but has the `P4LOGINSSO` value set,
+      then that is now used in the login dance.  Before, the plugin would
+      ask the user for the password. 
 * Bug fixes.
     * Fixed the Windows registry value loading (#146).
     * Reverted back to component file locations being based at their
       natural file locations, rather than at the project root (#148).
-    * Check the state of the P4LOGINSSO setting when determining whether
-      a login should be attempted. (#147)
 
 
 ## ::v0.8.6::

@@ -88,8 +88,8 @@ public class PartValidation {
         return checkTrustTicketFile(part, part.getTrustTicketFile());
     }
 
-    boolean checkLoginSsoFile(@NotNull ConfigPart part, @Nullable File file) {
-        if (file != null && (! file.exists() || ! file.isFile())) {
+    boolean checkLoginSsoFile(@NotNull ConfigPart part, @Nullable String file) {
+        if (file != null && file.isEmpty()) {
             problems.add(new ConfigProblem(part, false, "configuration.problem.loginsso.exist", file));
             return false;
         }

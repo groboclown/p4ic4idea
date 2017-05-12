@@ -37,7 +37,6 @@ import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
 import net.groboclown.idea.p4ic.server.exceptions.P4LoginRequiresPasswordException;
 import net.groboclown.idea.p4ic.server.exceptions.P4SSLException;
 import net.groboclown.idea.p4ic.server.exceptions.P4VcsConnectionException;
-import org.apache.http.auth.AUTH;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

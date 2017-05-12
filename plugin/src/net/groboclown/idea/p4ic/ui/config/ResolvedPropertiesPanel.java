@@ -376,7 +376,10 @@ public class ResolvedPropertiesPanel {
         scrollPane1.setVerticalScrollBarPolicy(22);
         panel4.add(scrollPane1, BorderLayout.CENTER);
         resolvedValuesText = new JTextArea();
-        resolvedValuesText.setFont(UIManager.getFont("TextArea.font"));
+        Font resolvedValuesTextFont = UIManager.getFont("TextArea.font");
+        if (resolvedValuesTextFont != null) {
+            resolvedValuesText.setFont(resolvedValuesTextFont);
+        }
         resolvedValuesText.setRows(8);
         scrollPane1.setViewportView(resolvedValuesText);
         final JPanel panel5 = new JPanel();
@@ -390,6 +393,28 @@ public class ResolvedPropertiesPanel {
         configProblemsList = new JList();
         scrollPane2.setViewportView(configProblemsList);
         label1.setLabelFor(rootDirDropdownBox);
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    private Font getFont1494608681498(String fontName, int style, int size, Font currentFont) {
+        if (currentFont == null) {
+            return null;
+        }
+        String resultName;
+        if (fontName == null) {
+            resultName = currentFont.getName();
+        } else {
+            Font testFont = new Font(fontName, Font.PLAIN, 10);
+            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
+                resultName = fontName;
+            } else {
+                resultName = currentFont.getName();
+            }
+        }
+        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
+                size >= 0 ? size : currentFont.getSize());
     }
 
     /**

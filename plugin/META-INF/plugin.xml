@@ -9,6 +9,7 @@
           <li><em>0.8.7</em>
             <ol>
               <li>Added support for "P4ENVIRO" loaded from the Windows registry.</li>
+              <li>Added support for logging in with the "P4LOGINSSO" value.</li>
               <li>Fixed the Windows registry value loading.</li>
               <li>Reverted back to component file locations being based at their
               natural file locations, rather than at the project root.</li>

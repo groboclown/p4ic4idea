@@ -25,6 +25,7 @@ import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.v2.extension.P4PluginVersion;
+import net.groboclown.idea.p4ic.v2.server.authentication.LoginSsoCallbackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -119,14 +120,26 @@ public class P4OptionsServerConnectionFactory {
             }
         }
         final IOptionsServer server = ServerFactory.getOptionsServer(uri, props, options);
-        if (clientConfig.getServerConfig().getServerName().isSecure()
-                && clientConfig.getServerConfig().hasServerFingerprint()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Setting server fingerprint to " + clientConfig.getServerConfig().getServerFingerprint());
-            }
-            server.addTrust(clientConfig.getServerConfig().getServerFingerprint());
-        }
+        postCreationSetup(server, clientConfig);
         return server;
+    }
+
+    private void postCreationSetup(@NotNull IOptionsServer server, @NotNull ClientConfig clientConfig)
+            throws P4JavaException {
+        final ServerConfig serverConfig = clientConfig.getServerConfig();
+        if (serverConfig.getServerName().isSecure() && serverConfig.hasServerFingerprint()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Setting server fingerprint to " + serverConfig.getServerFingerprint());
+            }
+            server.addTrust(serverConfig.getServerFingerprint());
+        }
+        if (serverConfig.hasLoginSso() && serverConfig.getLoginSso() != null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Setting up SSO login to execute `" + serverConfig.getLoginSso() + "`");
+            }
+            // TODO look into registering the sso key through user options.
+            server.registerSSOCallback(new LoginSsoCallbackHandler(serverConfig.getLoginSso()), null);
+        }
     }
 
     @NotNull

@@ -234,7 +234,7 @@ public class UserPreferencesPanel {
         panel2.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.rev_display"),
                 TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION,
-                new Font(panel2.getFont().getName(), panel2.getFont().getStyle(), panel2.getFont().getSize())));
+                this.getFont1494608681498(null, -1, -1, panel2.getFont())));
         myPreferRevisionNumber = new JRadioButton();
         this.$$$loadButtonText$$$(myPreferRevisionNumber,
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.revision"));
@@ -287,6 +287,28 @@ public class UserPreferencesPanel {
                         false));
         label1.setLabelFor(myMaxTimeout);
         label2.setLabelFor(myMaxRetryAuthenticationSpinner);
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    private Font getFont1494608681498(String fontName, int style, int size, Font currentFont) {
+        if (currentFont == null) {
+            return null;
+        }
+        String resultName;
+        if (fontName == null) {
+            resultName = currentFont.getName();
+        } else {
+            Font testFont = new Font(fontName, Font.PLAIN, 10);
+            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
+                resultName = fontName;
+            } else {
+                resultName = currentFont.getName();
+            }
+        }
+        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
+                size >= 0 ? size : currentFont.getSize());
     }
 
     /**

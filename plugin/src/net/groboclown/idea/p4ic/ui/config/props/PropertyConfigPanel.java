@@ -90,7 +90,7 @@ public class PropertyConfigPanel
         charsetField.setText(nullEmptyTrim(part.getDefaultCharset()));
 
         loginSsoFieldLabel.setLabelFor(loginSsoField);
-        loginSsoField.setText(nullEmptyFile(project, part.getLoginSso()));
+        loginSsoField.setText(nullEmptyTrim(part.getLoginSso()));
         loginSsoField.setButtonEnabled(true);
         loginSsoField.addBrowseFolderListener(
                 P4Bundle.getString("configuration.properties.loginsso.chooser.title"),

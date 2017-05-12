@@ -89,7 +89,10 @@ public class ConfigStackPanel
         rootPanel.add(panel1, BorderLayout.NORTH);
         panel1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), null));
         final JLabel label1 = new JLabel();
-        label1.setFont(UIManager.getFont("TitledBorder.font"));
+        Font label1Font = UIManager.getFont("TitledBorder.font");
+        if (label1Font != null) {
+            label1.setFont(label1Font);
+        }
         this.$$$loadLabelText$$$(label1,
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.stack.title"));
         panel1.add(label1, BorderLayout.WEST);
@@ -236,7 +239,8 @@ public class ConfigStackPanel
         private final String title;
         private final Icon icon;
 
-        ConfigPartType(@NotNull Class<? extends ConfigPart> partClass, @NotNull @NonNls String title, @NotNull Icon icon) {
+        ConfigPartType(@NotNull Class<? extends ConfigPart> partClass, @NotNull @NonNls String title,
+                @NotNull Icon icon) {
             this.partClass = partClass;
             this.title = title;
             this.icon = icon;
@@ -303,7 +307,7 @@ public class ConfigStackPanel
                     for (ConfigPart part : parts) {
                         addConfigPart(part);
                     }
-                    }
+                }
             });
         }
     }

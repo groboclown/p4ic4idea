@@ -82,5 +82,5 @@ public interface DataPart extends ConfigPart {
     boolean hasLoginSsoSet();
 
     @Nullable
-    File getLoginSso();
+    String getLoginSso();
 }

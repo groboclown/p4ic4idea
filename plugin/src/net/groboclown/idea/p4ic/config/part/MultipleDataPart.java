@@ -367,7 +367,7 @@ public class MultipleDataPart implements DataPart {
 
     @Nullable
     @Override
-    public File getLoginSso() {
+    public String getLoginSso() {
         for (DataPart part : parts) {
             if (part.hasLoginSsoSet()) {
                 if (LOG.isDebugEnabled()) {

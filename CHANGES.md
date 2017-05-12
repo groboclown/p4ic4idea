@@ -17,6 +17,8 @@
     * Fixed the Windows registry value loading (#146).
     * Reverted back to component file locations being based at their
       natural file locations, rather than at the project root (#148).
+    * Check the state of the P4LOGINSSO setting when determining whether
+      a login should be attempted. (#147)
 
 
 ## ::v0.8.6::

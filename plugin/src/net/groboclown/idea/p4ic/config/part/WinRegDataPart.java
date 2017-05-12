@@ -283,7 +283,7 @@ class WinRegDataPart implements DataPart {
 
     @Nullable
     @Override
-    public File getLoginSso() {
-        return loginSso == null ? null : new File(loginSso);
+    public String getLoginSso() {
+        return loginSso;
     }
 }

@@ -51,6 +51,7 @@ public final class ServerConfig {
     private final File authTicket;
     private final File trustTicket;
     private final String serverFingerprint;
+    private final String loginSso;
 
     // This really shouldn't just be here in plaintext, however
     // the source of the value is stored in plaintext on the user's
@@ -132,12 +133,17 @@ public final class ServerConfig {
                 part.hasServerFingerprintSet()
                         ? part.getServerFingerprint()
                         : null;
+        this.loginSso =
+                part.hasLoginSsoSet()
+                        ? part.getLoginSso()
+                        : null;
         this.password =
                 part.hasPasswordSet()
                         ? (part.getPlaintextPassword() == null
                         ? ""
                         : part.getPlaintextPassword())
                         : null;
+
 
         serverId = getServerIdForDataPart(part);
     }
@@ -184,6 +190,11 @@ public final class ServerConfig {
         return serverFingerprint;
     }
 
+    @Nullable
+    public String getLoginSso() {
+        return loginSso;
+    }
+
     public boolean hasServerFingerprint() {
         return getServerFingerprint() != null && getServerFingerprint().length() > 0;
     }
@@ -194,6 +205,10 @@ public final class ServerConfig {
 
     public boolean hasTrustTicket() {
         return getTrustTicket() != null;
+    }
+
+    public boolean hasLoginSso() {
+        return getLoginSso() != null;
     }
 
     /**

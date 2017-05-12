@@ -37,6 +37,7 @@ import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
 import net.groboclown.idea.p4ic.server.exceptions.P4LoginRequiresPasswordException;
 import net.groboclown.idea.p4ic.server.exceptions.P4SSLException;
 import net.groboclown.idea.p4ic.server.exceptions.P4VcsConnectionException;
+import org.apache.http.auth.AUTH;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -339,13 +340,16 @@ public class ServerAuthenticator {
             // If the session ticket is valid, then immediately return.  Otherwise, we default
             // to the standard password login (in some cases, it means a login to the server and
             // save the password to the auth ticket).
-            AuthenticationStatus status = discoverAuthenticationStatus(server);
+            final AuthenticationStatus status = discoverAuthenticationStatus(server);
             if (isAuthTicketAuthenticationValid(status, knownPassword != null)) {
                 return status;
             }
         }
-        if (knownPassword != null && ! knownPassword.isEmpty()) {
-            LOG.debug("Logging into server with known password");
+        // #147 if the user isn't logged in with an authentication ticket, but has P4LOGINSSO
+        // set, then a simple password login attempt should be made.  The P4LOGINSSO will
+        // ignore the password.
+        if (config.hasLoginSso() || (knownPassword != null && ! knownPassword.isEmpty())) {
+            LOG.debug("Logging into server with known password or sso script (" + config.getLoginSso() + ")");
             final LoginOptions loginOptions = new LoginOptions();
             final boolean useTicket = config.getAuthTicket() != null && ! config.getAuthTicket().isDirectory();
             loginOptions.setDontWriteTicket(! useTicket);

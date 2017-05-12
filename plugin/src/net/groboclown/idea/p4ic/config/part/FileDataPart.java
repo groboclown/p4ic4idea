@@ -53,7 +53,7 @@ public class FileDataPart implements DataPart {
     private String clientHostname;
     private String charset;
     private String ignoreFile;
-    private File loginSsoScript;
+    private String loginSsoScript;
 
     private IOException loadError = null;
 
@@ -146,7 +146,7 @@ public class FileDataPart implements DataPart {
         clientHostname = props.getProperty("P4HOST");
         ignoreFile = props.getProperty("P4IGNORE");
         charset = props.getProperty("P4CHARSET");
-        loginSsoScript = toFile(props.getProperty("P4LOGINSSO"));
+        loginSsoScript = props.getProperty("P4LOGINSSO");
 
         return hasError();
     }
@@ -328,7 +328,7 @@ public class FileDataPart implements DataPart {
 
     @Nullable
     @Override
-    public File getLoginSso() {
+    public String getLoginSso() {
         return loginSsoScript;
     }
 

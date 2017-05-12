@@ -145,7 +145,7 @@ public abstract class DataPartAdapter implements DataPart {
 
     @Nullable
     @Override
-    public File getLoginSso() {
+    public String getLoginSso() {
         return null;
     }
 

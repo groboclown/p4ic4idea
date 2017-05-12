@@ -332,8 +332,8 @@ public class SimpleDataPart implements DataPart {
 
     @Nullable
     @Override
-    public File getLoginSso() {
-        return trimmedPropertyFile(LOGIN_SSO_KEY);
+    public String getLoginSso() {
+        return trimmedProperty(LOGIN_SSO_KEY);
     }
 
     public void setLoginSsoFile(@Nullable String path) {

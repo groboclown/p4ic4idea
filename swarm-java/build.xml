@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="p4java" default="main">
+<project name="swarm-java" default="main">
     <import file="../build/common.xml"/>
 
     <property name="output.dir"
@@ -8,6 +8,10 @@
               value="work/test"/>
 
     <path id="production.classpath">
+        <pathelement location="${rootdir}/lib/gson/2.8.0/gson-2.8.0.jar"/>
+        <pathelement location="${rootdir}/lib/httpclient/4.5.2/httpclient-4.5.2.jar"/>
+        <pathelement location="${rootdir}/lib/httpcore/4.4.5/httpcore-4.4.5.jar"/>
+        <pathelement location="${rootdir}/p4java/work/p4ic4idea.p4java.jar"/>
     </path>
 
     <path id="test.compile.classpath">
@@ -39,7 +43,7 @@
     <target name="main" depends="compile, package"/>
 
     <target name="compile" depends="compile.production, compile.tests"
-            description="Compile module p4java"/>
+            description="Compile module swarm-java"/>
 
     <target name="compile.production" depends="register.custom.compilers"
             description="Compile module p4ic4idea; production classes">
@@ -101,8 +105,7 @@
 
 
     <target name="package" depends="compile.production">
-        <jar file="work/p4ic4idea.p4java.jar" basedir="${output.dir}"
-            manifest="${basedir}/resources/META-INF/MANIFEST.MF">
+        <jar file="work/p4ic4idea.swarm.jar" basedir="${output.dir}">
         </jar>
     </target>
 

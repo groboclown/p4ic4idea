@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.8.7</version>
+    <version>0.8.8</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.8.8</em>
+            <ol>
+              <li>...</li>
+            </ol>
+          </li>
           <li><em>0.8.7</em>
             <ol>
               <li>Added support for "P4ENVIRO" loaded from the Windows registry.</li>
@@ -15,18 +20,6 @@
               natural file locations, rather than at the project root.</li>
               <li>Check the state of the P4LOGINSSO setting when determining whether
               a login should be attempted.</li>
-            </ol>
-          </li>
-          <li><em>0.8.6</em>
-            <ol>
-              <li>Change "maximum timeout" setting meaning to now mean the maximum
-              socket timeout to live.</li>
-              <li>Add lock timeout user setting.</li>
-              <li>Went back to actually using the "reconnect with each request" setting,
-              so that it can reuse the existing connection.</li>
-              <li>Clarified error message when reverting files while working offline.</li>
-              <li>Reduced number of false error messages when the plugin hasn't loaded the
-              client spec when requests are made.</li>
             </ol>
           </li>
         </ol>

@@ -14,8 +14,6 @@
 
 package net.groboclown.p4.swarm.model.response;
 
-import net.groboclown.p4.swarm.model.Pageable;
-
 import java.util.List;
 
 public class ActivityPage

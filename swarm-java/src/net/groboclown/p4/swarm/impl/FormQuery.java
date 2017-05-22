@@ -17,8 +17,6 @@ package net.groboclown.p4.swarm.impl;
 import com.google.gson.annotations.Since;
 import net.groboclown.p4.swarm.SwarmVersion;
 import net.groboclown.p4.swarm.exceptions.ObjectSerializationException;
-import net.groboclown.p4.swarm.model.Pageable;
-import net.groboclown.p4.swarm.model.PageableRequest;
 import net.groboclown.p4.swarm.model.request.stringify.RequestFieldToString;
 import net.groboclown.p4.swarm.model.anno.NullIf;
 import net.groboclown.p4.swarm.model.anno.ToString;
@@ -26,6 +24,7 @@ import net.groboclown.p4.swarm.model.anno.ToString;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -68,7 +67,9 @@ public class FormQuery {
             List<FieldItem> ff = new ArrayList<FieldItem>();
             Method[] methods = c.getMethods();
             for (Field field : c.getDeclaredFields()) {
-                ff.add(new FieldItem(field, matchMethodToField(methods, field)));
+                if (isUsableField(field)) {
+                    ff.add(new FieldItem(field, matchMethodToField(methods, field)));
+                }
             }
             this.fields = Collections.unmodifiableList(ff);
         }
@@ -100,6 +101,14 @@ public class FormQuery {
         return null;
     }
 
+
+    private static boolean isUsableField(Field field) {
+        if (field == null) {
+            return false;
+        }
+        final int mods = field.getModifiers();
+        return !Modifier.isFinal(mods) && !Modifier.isStatic(mods) && !Modifier.isNative(mods);
+    }
 
     private static class FieldItem {
         private final String name;

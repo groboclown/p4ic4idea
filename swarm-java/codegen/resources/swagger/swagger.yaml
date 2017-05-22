@@ -1,0 +1,5484 @@
+swagger: '2.0'
+info:
+  version: v0
+  title: Complete Swarm API
+schemes:
+- "http"
+- "https"
+host: "localhost"
+basePath: /api
+produces:
+- application/json
+# For the tags, we'll tag the API by the version number,
+# so that the dynamic code that determines how to call the active
+# connection is better contained.  However, the higher level
+# will break this up better.
+tags:
+- name: "activity"
+  description: "Activity on the server"
+  externalDocs:
+    description: "Source documentation"
+    url: "https://www.perforce.com/perforce/doc.current/manuals/swarm/api.endpoints.html#api.endpoints.Activity"
+- name: "comments"
+  description: "User comments"
+  externalDocs:
+    description: "Source documentation"
+    url: "https://www.perforce.com/perforce/doc.current/manuals/swarm/api.endpoints.html#api.endpoints.Comments"
+- name: "groups"
+  description: "Group management"
+  externalDocs:
+    description: "Source documentation"
+    url: "https://www.perforce.com/perforce/doc.current/manuals/swarm/api.endpoints.html#api.endpoints.Groups"
+- name: "version"
+  description: "Server version query"
+  externalDocs:
+    description: "Source documentation"
+    url: "https://www.perforce.com/perforce/doc.current/manuals/swarm/api.endpoints.html#api.endpoints.Index"
+- name: "projects"
+  description: "Project management"
+  externalDocs:
+    description: "Source documentation"
+    url: "https://www.perforce.com/perforce/doc.current/manuals/swarm/api.endpoints.html#api.endpoints.Projects"
+- name: "reviews"
+  description: "Code reviews"
+  externalDocs:
+    description: "Source documentation"
+    url: "https://www.perforce.com/perforce/doc.current/manuals/swarm/api.endpoints.html#api.endpoints.Reviews"
+- name: "dashboards"
+  description: User dashboards
+- name: v1
+  description: Original Swarm release, which was never made public (or at least isn't currently public)
+- name: v1.1
+  description: Swarm v1.1 release (2014.4/1004403, 2015.1/1060524, 2015.2/1223788)
+- name: v1.2
+  description: Swarm v2 release (2015.3/1257057, 2015.4/1331216)
+- name: v3
+  description: Swarm v3 release (2016.1/1435266)
+- name: v4
+  description: Swarm v4 release (2016.2/1446446)
+- name: v5
+  description: Swarm v5 release (2016.3/1472982)
+- name: v6
+  description: Swarm v6 release (2017.1/1513269)
+paths:
+  v1.1/activity:
+    post:
+      responses:
+        '200':
+          description: Activity created
+          schema:
+            $ref: "#/definitions/ActivityV1Result"
+      description: ''
+      summary: Create Activity Entry
+      operationId: addActivity_v1
+      tags:
+      # - activity
+      - v1.1
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: 'Type of activity, e.g., ''jira'''
+        name: type
+        required: true
+        type: string
+      - in: formData
+        description: User who performed the action
+        name: user
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Action that was performed - post-tense, e.g., 'created' or
+          'commented on'
+        name: action
+        required: true
+        type: string
+      - in: formData
+        description: 'Target that the action was performed on, e.g., ''issue 1234'''
+        name: target
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional topic for the activity entry. Topics are essentially
+          comment thread IDs.  Examples: 'reviews/1234' or 'jobs/job001234'
+        name: topic
+        required: false
+        type: string
+      - in: formData
+        description: Optional description of object or activity to provide context
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Optional changelist ID.  This activity is related to. Used to filter
+          activity related to restricted changes.
+        name: change
+        required: false
+        type: integer
+      - in: formData
+        description: >-
+          Optional array of streams to display on. This can include
+          user-initiated actions ('user-alice'), activity relating to a user's followed projects/users
+          ('personal-alice'), review streams ('review-1234'), and project streams
+          ('project-exampleproject').
+        name: 'streams[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional URL for 'target'
+        name: link
+        required: false
+        type: string
+  v1.1/version:
+    get:
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: "#/definitions/Version"
+      description: ''
+      summary: Show Version Information
+      operationId: getVersion_v1
+      tags:
+      # - version
+      - v1.1
+      produces:
+      - application/json
+      security:
+      - p4_auth
+  v1.1/projects/:
+    get:
+      responses:
+        '200':
+          description: Projects fetched
+          schema:
+            $ref: '#/definitions/ProjectList'
+      description: ''
+      summary: Get List of Projects
+      operationId: getProjects_v1
+      tags:
+      # - projects
+      - v1.1
+      parameters:
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each project.  Omitting this parameter or passing an empty value will show all fields.
+        name: fields
+        required: false
+        type: string
+  v1.1/reviews/:
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '200':
+          description: Created
+          schema:
+            $ref: '#/definitions/ReviewResult'
+      description: ''
+      summary: Create a Review
+      operationId: createReview_v1
+      tags:
+      # - reviews
+      - v1.1
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: Change ID to create a review from
+        name: change
+        required: true
+        type: integer
+      - in: formData
+        description: Description for the new review (defaults to change description)
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: A list of reviewers for the new review
+        name: reviewers
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: A list of required reviewers for the new review (v1.1+)
+        name: requiredReviewers
+        required: false
+        type: array
+        items:
+          type: string
+    get:
+      responses:
+        '200':
+          description: Fetched reviews
+          schema:
+            $ref: '#/definitions/ReviewPage'
+      description: ''
+      summary: Get List of Reviews
+      operationId: getReviews_v1
+      tags:
+      # - reviews
+      - v1.1
+      parameters:
+      - in: query
+        description: >-
+          A review ID to seek to. Reviews up to and including the specified id
+          will be excluded from the results and do not count towards max. Useful for pagination. Commonly set to
+          the 'lastSeen' property from a previous query.
+        name: after
+        required: false
+        type: integer
+      - in: query
+        description: >-
+          Maximum number of reviews to return. This does not guarantee that
+          'max' reviews will be returned. It does guarantee the number of reviews returned won't exceed 'max'.
+          Server-side filtering may exclude some reviews for permissions reasons.
+        name: max
+        required: false
+        type: integer
+        default: 1000
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter or passing an empty value will show all fields.
+        name: fields
+        required: false
+        type: string
+      - in: query
+        description: >-
+          One or more change IDs to limit reviews by. Reviews associated with
+          any of the specified changes will be returned.
+        name: 'change[]'
+        required: false
+        type: array
+        items:
+          type: integer
+      - in: query
+        description: >-
+          Boolean option to limit to reviews to those with or without
+          reviewers. Use 'true' or '1' for true and 'false' or '0' for false. The presence of the parameter
+          without a value will be evaluated as true.
+        name: hasReviewers
+        required: false
+        type: boolean
+      - in: query
+        description: >-
+          One or more review IDs to fetch. Only the specified reviews will be
+          returned. This filter cannot be combined with the 'max' parameter.
+        name: 'ids[]'
+        required: false
+        type: array
+        items:
+          type: integer
+      - in: query
+        description: >-
+          Keywords to limit reviews by. Only reviews where the description,
+          participants list or project list contain the specified keywords will be returned.
+        name: keywords
+        required: false
+        type: string
+      - in: query
+        description: >-
+          One or more participants to limit reviews by. Reviews with any of
+          the specified participants will be returned.
+        name: 'participants[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more projects to limit reviews by. Reviews affecting any of
+          the specified projects will be returned.
+        name: 'project[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more states to limit reviews by. Reviews in any of the
+          specified states will be returned.
+        name: 'state[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          Boolean option to limit reviews by tests passing or failing. Use
+          'true' or '1' for true and 'false' or '0' for false. The presence of the parameter without a value
+          will be evaluated as true.
+        name: passesTests
+        required: false
+        type: string
+  'v1.1/reviews/{id}':
+    get:
+      responses:
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '200':
+          description: Fetched review
+          schema:
+            $ref: '#/definitions/ReviewResult'
+      description: ''
+      summary: Get Review Information
+      operationId: getReview_v1
+      tags:
+      # - reviews
+      - v1.1
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+        format: int32
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter or passing an empty value will show all fields.
+        name: fields
+        required: false
+        type: string
+  'v1.1/reviews/{id}/changes/':
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '405':
+          description: Method Not Allowed
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/ReviewResult'
+      description: Links a changelist to a review and schedules an update.
+      summary: Add Change to Review
+      operationId: addChange_v1
+      tags:
+      # - "reviews"
+      - v1.1
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+      - in: formData
+        description: Change ID
+        name: change
+        required: true
+        type: integer
+  v1.2/activity:
+    post:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/ActivityV1Result'
+      description: ''
+      summary: Create Activity Entry
+      operationId: addActivity_v2
+      tags:
+      # - activity
+      - v1.2
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: 'Type of activity, e.g., ''jira'''
+        name: type
+        required: true
+        type: string
+      - in: formData
+        description: User who performed the action
+        name: user
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Action that was performed - post-tense, e.g., 'created' or
+          'commented on'
+        name: action
+        required: true
+        type: string
+      - in: formData
+        description: 'Target that the action was performed on, e.g., ''issue 1234'''
+        name: target
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional topic for the activity entry. Topics are essentially
+          comment thread IDs.  Examples: 'reviews/1234' or 'jobs/job001234'
+        name: topic
+        required: false
+        type: string
+      - in: formData
+        description: Optional description of object or activity to provide context
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Optional changelist ID this activity is related to. Used to filter
+          activity related to restricted changes.
+        name: change
+        required: false
+        type: integer
+      - in: formData
+        description: >-
+          Optional array of streams to display on. This can include
+          user-initiated actions ('user-alice'), activity relating to a user's followed projects/users
+          ('personal-alice'), review streams ('review-1234'), and project streams
+          ('project-exampleproject').
+        name: 'streams[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional URL for 'target'
+        name: link
+        required: false
+        type: string
+  v1.2/version:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/Version'
+      description: ''
+      summary: Show Version Information
+      operationId: getVersion_v2
+      tags:
+      # - version
+      - v1.2
+  v1.2/projects/:
+    get:
+      responses:
+        '200':
+          description: Fetched projects
+          schema:
+            $ref: '#/definitions/ProjectList'
+      description: ''
+      summary: Get List of Projects
+      operationId: getProjects_v2
+      tags:
+      # - projects
+      - v1.2
+      parameters:
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each project.  Omitting this parameter or passing an empty value will show all fields.
+        name: fields
+        required: false
+        type: string
+  v1.2/reviews/:
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '200':
+          description: Created result
+          schema:
+            $ref: '#/definitions/ReviewResult'
+      description: ''
+      summary: Create a Review
+      operationId: createReview_v2
+      tags:
+      # - reviews
+      - v1.2
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: Changelist ID to create a review from
+        name: change
+        required: true
+        type: integer
+        format: int32
+      - in: formData
+        description: Description for the new review (defaults to change description)
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: A list of reviewers for the new review
+        name: reviewers
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: A list of required reviewers for the new review (v1.1+)
+        name: requiredReviewers
+        required: false
+        type: array
+        items:
+          type: string
+    get:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/ReviewPage'
+      description: Fetch a single page of a review list.
+      summary: Get List of Reviews
+      operationId: getReviews_v2
+      tags:
+      # - reviews
+      - v1.2
+      parameters:
+      - in: query
+        description: >-
+          A review ID to seek to. Reviews up to and including the specified id
+          will be excluded from the results and do not count towards max. Useful for pagination. Commonly set to
+          the 'lastSeen' property from a previous query.
+        name: after
+        required: false
+        type: integer
+      - in: query
+        description: >-
+          Maximum number of reviews to return. This does not guarantee that
+          'max' reviews will be returned. It does guarantee the number of reviews returned won't exceed 'max'.
+          Server-side filtering may exclude some reviews for permissions reasons.
+        name: max
+        required: false
+        type: integer
+        default: 1000
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter or passing an empty value will show all fields.
+        name: fields
+        required: false
+        type: string
+      - in: query
+        description: >-
+          One or more authors to limit reviews by. Reviews with any of the
+          specified authors will be returned. (v1.2+)
+        name: 'author[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more change IDs to limit reviews by. Reviews associated with
+          any of the specified changes will be returned.
+        name: 'change[]'
+        required: false
+        type: array
+        items:
+          type: integer
+      - in: query
+        description: >-
+          Boolean option to limit to reviews to those with or without
+          reviewers. Use 'true' or '1' for true and 'false' or '0' for false. The presence of the parameter
+          without a value will be evaluated as true.
+        name: hasReviewers
+        required: false
+        type: boolean
+      - in: query
+        description: >-
+          One or more review IDs to fetch. Only the specified reviews will be
+          returned. This filter cannot be combined with the 'max' parameter.
+        name: 'ids[]'
+        required: false
+        type: array
+        items:
+          type: integer
+      - in: query
+        description: >-
+          Keywords to limit reviews by. Only reviews where the description,
+          participants list or project list contain the specified keywords will be returned.
+        name: keywords
+        required: false
+        type: string
+      - in: query
+        description: >-
+          One or more participants to limit reviews by. Reviews with any of
+          the specified participants will be returned.
+        name: 'participants[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more projects to limit reviews by. Reviews affecting any of
+          the specified projects will be returned.
+        name: 'project[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more states to limit reviews by. Reviews in any of the
+          specified states will be returned.
+        name: 'state[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          Boolean option to limit reviews by tests passing or failing. Use
+          'true' or '1' for true and 'false' or '0' for false. The presence of the parameter without a value
+          will be evaluated as true.
+        name: passesTests
+        required: false
+        type: string
+  'v1.2/reviews/{id}':
+    get:
+      responses:
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '200':
+          description: Fetched review
+          schema:
+            $ref: '#/definitions/ReviewResult'
+      description: ''
+      summary: Get Review Information
+      operationId: getReview_v2
+      tags:
+      # - reviews
+      - v1.2
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter or passing an empty value will show all fields.
+        name: fields
+        required: false
+        type: string
+  'v1.2/reviews/{id}/changes/':
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '405':
+          description: Method Not Allowed
+        '200':
+          description: change added
+          schema:
+            $ref: '#/definitions/ReviewResult'
+      description: ''
+      summary: Add Change to Review
+      operationId: addChangeToReview_v2
+      tags:
+      # - reviews
+      - v1.2
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+      - in: formData
+        description: Change ID
+        name: change
+        required: true
+        type: integer
+  v3/activity:
+    post:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/ActivityV1Result'
+      description: ''
+      summary: Create Activity Entry
+      operationId: addActivity_v3
+      tags:
+      # - activity
+      - v3
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: |-
+          Type of activity, used for filtering activity streams
+          (values can include `change`, `comment`, `job`, `review`).
+        name: type
+        required: true
+        type: string
+      - in: formData
+        description: User who performed the action.
+        name: user
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Action that was performed - past-tense, e.g., `created` or
+          `commented on`.
+        name: action
+        required: true
+        type: string
+      - in: formData
+        description: 'Target that the action was performed on, e.g., `issue 1234`.'
+        name: target
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional topic for the activity entry. Topics are essentially
+          comment thread IDs. Examples: `reviews/1234` or `jobs/job001234`.
+        name: topic
+        required: false
+        type: string
+      - in: formData
+        description: Optional description of object or activity to provide context.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Optional changelist ID this activity is related to. Used to filter
+          activity related to restricted changes.
+        name: change
+        required: false
+        type: integer
+      - in: formData
+        description: >-
+          Optional array of streams to display on. This can include
+          user-initiated actions (`user-alice`), activity relating to a user's followed projects/users
+          (`personal-alice`), review streams (`review-1234`), and project streams
+          (`project-exampleproject`).
+        name: 'streams[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional URL for `target`.
+        name: link
+        required: false
+        type: string
+    get:
+      responses:
+        '200':
+          description: A single page of activities
+          schema:
+            $ref: '#/definitions/ActivityV1Page'
+      description: ''
+      summary: List Activity Entries
+      operationId: getActivities_v3
+      tags:
+      # - activity
+      - v3
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: |-
+          Optionally filter activity entries by associated Changelist ID. This
+          only includes records for which there is an activity entry in Swarm.
+        name: change
+        required: false
+        type: integer
+      - in: formData
+        description: |-
+          Optional activity stream to query for entries. This can include
+          user-initiated actions (`user-alice`), activity relating to a user's
+          followed projects/users (`personal-alice`), review streams
+          (`review-1234`), and project streams (`project-exampleproject`).
+        name: stream
+        required: false
+        type: string
+      - in: formData
+        description: 'Type of activity, e.g., `change`, `comment`, `job`, or `review`.'
+        name: type
+        required: false
+        type: string
+      - in: query
+        description: |-
+          An activity ID to seek to. Activity entries up to and including the
+          specified ID are excluded from the results and do not count towards
+          `max`. Useful for pagination. Commonly set to the `lastSeen`
+          property from a previous query.
+        name: after
+        required: false
+        type: integer
+      - in: query
+        description: |-
+          Maximum number of activity entries to return. This does not
+          guarantee that `max` entries are returned. It does guarantee that
+          the number of entries returned won't exceed `max`. Server-side
+          filtering may exclude some activity entries for permissions
+          reasons.
+        name: max
+        required: false
+        type: integer
+        default: 100
+      - in: query
+        description: |-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter or passing an empty value shows all
+          fields.
+        name: fields
+        required: false
+        type: string
+  v3/comments/:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/CommentPage'
+      description: ''
+      summary: Get List of Comments
+      operationId: getComments_v3
+      tags:
+      # - "comments"
+      - v3
+      parameters:
+      - in: query
+        description: |-
+          A comment ID to seek to. Comments up to and including the specified
+          ID are excluded from the results and do not count towards `max`.
+          Useful for pagination. Commonly set to the `lastSeen` property from
+          a previous query.
+        name: after
+        required: false
+        type: integer
+      - in: query
+        description: |-
+          Maximum number of comments to return. This does not guarantee that
+          `max` comments are returned. It does guarantee that the number of
+          comments returned won't exceed `max`.
+        name: max
+        required: false
+        type: integer
+        default: 100
+      - in: query
+        description: |-
+          Only comments for given topic are returned.
+          Examples: `reviews/1234`, `changes/1234` or `jobs/job001234`.
+        name: topic
+        required: false
+        type: string
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each comment.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+    post:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/CommentResult'
+      description: ''
+      summary: Add A Comment
+      operationId: addComment_v3
+      tags:
+      # - comments
+      - v3
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: |-
+          Topic to comment on.
+          Examples: `reviews/1234`, `changes/1234` or `jobs/job001234`.
+        name: topic
+        required: true
+        type: string
+      - in: formData
+        description: Content of the comment.
+        name: body
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional task state of the comment. Valid values when adding a
+          comment are `comment`
+          and `open`. This creates a plain comment or opens a task, respectively.
+        name: taskState
+        required: false
+        type: string
+        default: comment
+      - in: formData
+        description: >-
+          Optional flags on the comment. Typically set to `closed` to archive
+          a comment.
+        name: 'flags[]'
+        required: false
+        type: array
+        items:
+          type: string
+  'v3/comments/{id}':
+    patch:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/CommentResult'
+      description: ''
+      summary: Edit A Comment
+      operationId: editComment_v3
+      tags:
+      # - "comments"
+      - v3
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: ID of the comment to be edited
+        name: id
+        required: true
+        type: integer
+      - in: formData
+        description: |-
+          Topic to comment on.
+          Examples: `reviews/1234`, `changes/1234` or `jobs/job001234`.
+        name: topic
+        required: false
+        type: string
+      - in: formData
+        description: Content of the comment.
+        name: body
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional task state of the comment. Note that certain transitions
+          (such as moving from
+          `open` to `verified`) are not possible without an intermediate step (`addressed`, in
+          this case).
+          Examples: `comment` (not a task), `open`, `addressed`, `verified`.
+        name: taskState
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Optional flags on the comment. Typically set to `closed` to archive
+          a comment.
+        name: 'flags[]'
+        required: false
+        type: array
+        items:
+          type: string
+  v3/groups/:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/GroupPage'
+      description: Returns the complete list of groups; no paging.
+      summary: Get List of Groups
+      operationId: getGroups_v3
+      tags:
+      # - "groups"
+      - v3
+      parameters:
+      - in: query
+        description: |-
+          A group ID to seek to. Groups prior to and including the specified
+          ID are excluded from the results and do not count towards `max`.
+          Useful for pagination. Commonly set to the `lastSeen` property from
+          a previous query.
+        name: after
+        required: false
+        type: string
+      - in: query
+        description: |-
+          Maximum number of groups to return. This does not guarantee that
+          `max` groups are returned. It does guarantee that the number of
+          groups returned won't exceed `max`.
+        name: max
+        required: false
+        type: integer
+        default: 100
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each group.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+      - in: query
+        description: >-
+          Keywords to limit groups on. Only groups where the group ID, group
+          name (if set), or
+          description contain the specified keywords are returned.
+        name: keywords
+        required: false
+        type: string
+    post:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/GroupResult'
+      description: ''
+      summary: Create a new Group
+      operationId: createGroup_v3
+      tags:
+      # - "groups"
+      - v3
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: Group identifier string.
+        name: Group
+        required: true
+        type: string
+      - in: formData
+        description: |-
+          An optional array of group users.
+          At least one of Users, Owners, or Subgroups is required.
+        name: Users
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: |-
+          An optional array of group owners.
+          At least one of Users, Owners, or Subgroups is required.
+        name: Owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: |-
+          An optional array of subgroups.
+          At least one of Users, Owners, or Subgroups is required.
+        name: Subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional full name for the group.
+        name: 'config[name]'
+        required: false
+        type: string
+      - in: formData
+        description: An optional group description.
+        name: 'config[description]'
+        required: false
+        type: string
+      - in: formData
+        description: Email members when a change is committed.
+        name: 'config[emailFlags][commits]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members when a new review is requested.
+        name: 'config[emailFlags][reviews]'
+        required: false
+        type: boolean
+  'v3/groups/{id}':
+    get:
+      responses:
+        '404':
+          description: Not Found
+        '200':
+          description: Fetched group
+          schema:
+            $ref: '#/definitions/GroupResult'
+      description: ''
+      summary: Get Group Information
+      operationId: getGroup_v3
+      tags:
+      # - "groups"
+      - v3
+      parameters:
+        - in: path
+          description: Group ID
+          name: id
+          required: true
+          type: string
+        - in: query
+          description: >-
+            An optional comma-separated list (or array) of fields to show for
+            each group.
+            Omitting this parameter or passing an empty value shows all fields.
+          name: fields
+          required: false
+          type: string
+    patch:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/GroupResult'
+      description: ''
+      summary: Edit a Group
+      operationId: patchGroup_v3
+      tags:
+      # - "groups"
+      - v3
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Group ID
+        name: id
+        required: true
+        type: string
+      - in: formData
+        description: An optional array of group users.
+        name: Users
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of group owners.
+        name: Owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of group subgroups.
+        name: Subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional full name for the group.
+        name: 'config[name]'
+        required: false
+        type: string
+      - in: formData
+        description: An optional group description.
+        name: 'config[description]'
+        required: false
+        type: string
+      - in: formData
+        description: Email members when a change is committed.
+        name: 'config[emailFlags][commits]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members when a new review is requested.
+        name: 'config[emailFlags][reviews]'
+        required: false
+        type: boolean
+    delete:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/StringIdResult'
+      description: ''
+      summary: Delete a Group
+      operationId: deleteGroup_v3
+      tags:
+      # - "groups"
+      - v3
+      parameters:
+      - in: path
+        description: Group ID.
+        name: id
+        required: true
+        type: string
+  v3/version:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/Version'
+      description: ''
+      summary: Show Version Information
+      operationId: getVersion_v3
+      tags:
+      # - "version"
+      - v3
+  v3/projects/:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/ProjectList'
+      description: ''
+      summary: Get List of Projects
+      operationId: getProjects_v3
+      tags:
+      # - "projects"
+      - v3
+      parameters:
+        - in: query
+          description: >-
+            An optional comma-separated list (or array) of fields to show for
+            each project.
+            Omitting this parameter or passing an empty value shows all fields.
+          name: fields
+          required: false
+          type: string
+    post:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/ProjectResult'
+      description: ''
+      summary: Create a new Project
+      operationId: createProject_v3
+      tags:
+      # - "projects"
+      - v3
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: Project Name (is also used to generate the Project ID)
+        name: name
+        required: true
+        type: string
+      - in: formData
+        description: An array of project members.
+        name: members
+        required: true
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project subgroups.
+        name: subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project owners.
+        name: owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional project description.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: |-
+          Configuration for automated deployment.
+          Example: {&quot;enabled&quot;: true,
+          &quot;url&quot;: &quot;pass:q[http://localhost/?change={change}]&quot;}
+        name: deploy
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Configuration for testing/continuous integration.
+        name: tests
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional branch definitions for this project.
+        name: branches
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional jobview for associating certain jobs with this project.
+        name: jobview
+        required: false
+        type: string
+      - in: formData
+        description: 'Email members, moderators and followers when a change is committed.'
+        name: 'emailFlags[change_email_project_users]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members and moderators when a new review is requested.
+        name: 'emailFlags[review_email_project_members]'
+        required: false
+        type: boolean
+  'v3/projects/{id}':
+    get:
+      responses:
+        '404':
+          description: Not Found
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/ProjectResult'
+      description: ''
+      summary: Get Project Information
+      operationId: getProject_v3
+      tags:
+      # - "projects"
+      - v3
+      parameters:
+      - in: path
+        description: Project ID
+        name: id
+        required: true
+        type: string
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each project.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+    patch:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/ProjectResult'
+      description: ''
+      summary: Edit a Project
+      operationId: patchProject_v3
+      tags:
+      # - "projects"
+      - v3
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Project ID
+        name: id
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Project Name (changing the project name does not change the project
+          ID)
+        name: name
+        required: false
+        type: string
+      - in: formData
+        description: An array of project members.
+        name: members
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project subgroups.
+        name: subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project owners.
+        name: owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Your project description.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: |-
+          Configuration for automated deployment.
+          Example: {&quot;enabled&quot;: true,
+          &quot;url&quot;: &quot;pass:q[http://localhost/?change={change}]&quot;}
+        name: deploy
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Configuration for testing/continuous integration.
+        name: tests
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional branch definitions for this project.
+        name: branches
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: A jobview for associating certain jobs with this project.
+        name: jobview
+        required: false
+        type: string
+      - in: formData
+        description: 'Email members, moderators and followers when a change is committed.'
+        name: 'emailFlags[change_email_project_users]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members and moderators when a new review is requested.
+        name: 'emailFlags[review_email_project_members]'
+        required: false
+        type: boolean
+    delete:
+      responses:
+        '200':
+          description: No response was specified
+          schema:
+            $ref: '#/definitions/StringIdResult'
+      description: ''
+      summary: Delete a Project
+      operationId: deleteProject_v3
+      tags:
+      # - "projects"
+      - v3
+      parameters:
+      - in: path
+        description: Project ID
+        name: id
+        required: true
+        type: string
+  v3/reviews/:
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '200':
+          schema:
+            $ref: '#/definitions/ReviewResult'
+      description: ''
+      summary: Create a Review
+      operationId: createReview_v3
+      tags:
+      # - "reviews"
+      - v3
+      # FIXME here
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: Change ID to create a review from
+        name: change
+        required: true
+        type: integer
+      - in: formData
+        description: Description for the new review (defaults to change description)
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: A list of reviewers for the new review
+        name: reviewers
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: A list of required reviewers for the new review (v1.1+)
+        name: requiredReviewers
+        required: false
+        type: array
+        items:
+          type: string
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Get List of Reviews
+      operationId: getReviews
+      tags:
+      # - "reviews"
+      - v3
+      parameters:
+      - in: query
+        description: |-
+          A review ID to seek to. Reviews up to and including the specified
+          `id` are excluded from the results and do not count towards `max`.
+          Useful for pagination. Commonly set to the `lastSeen` property from
+          a previous query.
+        name: after
+        required: false
+        type: integer
+      - in: query
+        description: |-
+          Maximum number of reviews to return. This does not guarantee that
+          `max` reviews are returned. It does guarantee that the number of
+          reviews returned won't exceed `max`. Server-side filtering may
+          exclude some reviews for permissions reasons.
+        name: max
+        required: false
+        type: integer
+        default: 1000
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter
+          or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+      - in: query
+        description: >-
+          One or more authors to limit reviews by. Reviews with any of the
+          specified authors
+          are returned. (v1.2+)
+        name: 'author[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more change IDs to limit reviews by. Reviews associated with
+          any of the
+          specified changes are returned.
+        name: 'change[]'
+        required: false
+        type: array
+        items:
+          type: integer
+      - in: query
+        description: >-
+          Boolean option to limit to reviews to those with or without
+          reviewers. Use
+          `true` or `false` for JSON-encoded data, `1` for true and or `0` for
+          false for form-encoded data. The presence of the parameter without a
+          value is evaluated as true.
+        name: hasReviewers
+        required: false
+        type: boolean
+      - in: query
+        description: >-
+          One or more review IDs to fetch. Only the specified reviews are
+          returned. This
+          filter cannot be combined with the `max` parameter.
+        name: 'ids[]'
+        required: false
+        type: array
+        items:
+          type: integer
+      - in: query
+        description: >-
+          Keywords to limit reviews by. Only reviews where the description,
+          participants list
+          or project list contain the specified keywords are returned.
+        name: keywords
+        required: false
+        type: string
+      - in: query
+        description: >-
+          One or more participants to limit reviews by. Reviews with any of
+          the specified
+          participants are returned.
+        name: 'participants[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more projects to limit reviews by. Reviews affecting any of
+          the specified
+          projects are returned.
+        name: 'project[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more states to limit reviews by. Reviews in any of the
+          specified states
+          are returned.
+        name: 'state[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: |-
+          Boolean option to limit reviews by tests passing or failing. Use
+          `true` or `false` for JSON-encoded data, `1` for true and `0` for false for
+          form-encoded data. The presence of the parameter without a value is evaluated as
+          true.
+        name: passesTests
+        required: false
+        type: string
+  'v3/reviews/{id}':
+    get:
+      responses:
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      description: ''
+      summary: Get Review Information
+      operationId: getReview
+      tags:
+      # - "reviews"
+      - v3
+      parameters:
+        - in: path
+          description: Review ID
+          name: id
+          required: true
+          type: integer
+        - in: query
+          description: >-
+            An optional comma-separated list (or array) of fields to show.
+            Omitting this parameter
+            or passing an empty value shows all fields.
+          name: fields
+          required: false
+          type: string
+  'v3/reviews/{id}/changes/':
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '405':
+          description: Method Not Allowed
+      description: ''
+      summary: Add Change to Review
+      operationId: addChange
+      tags:
+      # - "reviews"
+      - v3
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+      - in: formData
+        description: Change ID
+        name: change
+        required: true
+        type: integer
+  'v3/reviews/{id}/state/':
+    patch:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '405':
+          description: Method Not Allowed
+      description: ''
+      summary: Transition the Review State (v2+)
+      operationId: state
+      tags:
+      # - "reviews"
+      - v3
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+      - in: formData
+        description: >-
+          Review State. Valid options: needsReview, needsRevision, approved,
+          archived, rejected
+        name: state
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          An optional description that is posted as a comment for non-commit
+          transitions.
+          Commits that do not include a description default to using the Review description
+          in the resulting change description.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Set this flag to true and provide a state of `approved` in order to
+          trigger the
+          *Approve and Commit* action in Swarm.
+        name: commit
+        required: false
+        type: boolean
+      - in: formData
+        description: Instruct Swarm to wait for a commit to finish before returning.
+        name: wait
+        required: false
+        type: boolean
+      - in: formData
+        description: >-
+          When performing an 'Approve and Commit', one or more jobs can be
+          attached to the review
+          as part of the commit process.
+        name: 'jobs[]'
+        required: false
+        schema:
+          $ref: '#/definitions/stringArray'
+      - in: formData
+        description: >-
+          Provide a fix status for the attached job(s) when performing an
+          'Approve and Commit'.
+          Possible status values vary by job specification, but often include:
+          open, suspended, closed, review, fixed.
+        name: fixStatus
+        required: false
+        type: string
+  v4/activity:
+    post:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Create Activity Entry
+      operationId: addActivity
+      tags:
+      # - "activity"
+      - v4
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: |-
+          Type of activity, used for filtering activity streams
+          (values can include `change`, `comment`, `job`, `review`).
+        name: type
+        required: true
+        type: string
+      - in: formData
+        description: User who performed the action.
+        name: user
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Action that was performed - past-tense, e.g., `created` or
+          `commented on`.
+        name: action
+        required: true
+        type: string
+      - in: formData
+        description: 'Target that the action was performed on, e.g., `issue 1234`.'
+        name: target
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional topic for the activity entry. Topics are essentially
+          comment thread IDs.
+          Examples: `reviews/1234` or `jobs/job001234`.
+        name: topic
+        required: false
+        type: string
+      - in: formData
+        description: Optional description of object or activity to provide context.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Optional changelist ID this activity is related to. Used to filter
+          activity related to
+          restricted changes.
+        name: change
+        required: false
+        type: integer
+      - in: formData
+        description: >-
+          Optional array of streams to display on. This can include
+          user-initiated actions
+          (`user-alice`), activity relating to a user's followed projects/users
+          (`personal-alice`), review streams (`review-1234`), and project streams
+          (`project-exampleproject`).
+        name: 'streams[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional URL for `target`.
+        name: link
+        required: false
+        type: string
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: List Activity Entries
+      operationId: listActivity
+      tags:
+      # - "activity"
+      - v4
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: |-
+          Optionally filter activity entries by associated Changelist ID. This
+          only includes records for which there is an activity entry in
+          Swarm.
+        name: change
+        required: false
+        type: integer
+      - in: formData
+        description: |-
+          Optional activity stream to query for entries. This can include
+          user-initiated actions (`user-alice`), activity relating to a user's
+          followed projects/users (`personal-alice`), review streams
+          (`review-1234`), and project streams (`project-exampleproject`).
+        name: stream
+        required: false
+        type: string
+      - in: formData
+        description: 'Type of activity, e.g., `change`, `comment`, `job`, or `review`.'
+        name: type
+        required: false
+        type: string
+      - in: query
+        description: |-
+          An activity ID to seek to. Activity entries up to and including the
+          specified ID are excluded from the results and do not count towards
+          `max`. Useful for pagination. Commonly set to the `lastSeen`
+          property from a previous query.
+        name: after
+        required: false
+        type: integer
+      - in: query
+        description: |-
+          Maximum number of activity entries to return. This does not
+          guarantee that `max` entries are returned. It does guarantee that
+          the number of entries returned won't exceed `max`. Server-side
+          filtering may exclude some activity entries for permissions
+          reasons.
+        name: max
+        required: false
+        type: integer
+        default: 100
+      - in: query
+        description: |-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter or passing an empty value shows all
+          fields.
+        name: fields
+        required: false
+        type: string
+  v4/comments/:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Get List of Comments
+      operationId: getComments
+      tags:
+      # - "comments"
+      - v4
+      parameters:
+      - in: query
+        description: |-
+          A comment ID to seek to. Comments up to and including the specified
+          ID are excluded from the results and do not count towards `max`.
+          Useful for pagination. Commonly set to the `lastSeen` property from
+          a previous query.
+        name: after
+        required: false
+        type: integer
+      - in: query
+        description: |-
+          Maximum number of comments to return. This does not guarantee that
+          `max` comments are returned. It does guarantee that the number of
+          comments returned won't exceed `max`.
+        name: max
+        required: false
+        type: integer
+        default: 100
+      - in: query
+        description: |-
+          Only comments for given topic are returned.
+          Examples: `reviews/1234`, `changes/1234` or `jobs/job001234`.
+        name: topic
+        required: false
+        type: string
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each comment.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+    post:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Add A Comment
+      operationId: addComment
+      tags:
+      # - "comments"
+      - v4
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: |-
+          Topic to comment on.
+          Examples: `reviews/1234`, `changes/1234` or `jobs/job001234`.
+        name: topic
+        required: true
+        type: string
+      - in: formData
+        description: Content of the comment.
+        name: body
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional task state of the comment. Valid values when adding a
+          comment are `comment`
+          and `open`. This creates a plain comment or opens a task, respectively.
+        name: taskState
+        required: false
+        type: string
+        default: comment
+      - in: formData
+        description: >-
+          Optional flags on the comment. Typically set to `closed` to archive
+          a comment.
+        name: 'flags[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: |-
+          File to comment on. Valid only for `changes` and `reviews` topics.
+          Example: `//depot/main/README.txt`.
+        name: 'context[file]'
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Left-side diff line to attach the inline comment to.  Valid only for
+          `changes` and
+          `reviews` topics. If this is specified, `context[file]` must also be specified.
+        name: 'context[leftLine]'
+        required: false
+        type: integer
+      - in: formData
+        description: >-
+          Right-side diff line to attach the inline comment to.  Valid only
+          for `changes` and
+          `reviews` topics. If this is specified, `context[file]` must also be specified.
+        name: 'context[rightLine]'
+        required: false
+        type: integer
+      - in: formData
+        description: >-
+          Optionally provide content of the specified line and its four
+          preceding lines. This
+          is used to specify a short excerpt of context in case the lines being commented
+          on change during the review.
+          When not provided, Swarm makes an effort to build the content on its own - as this
+          involves file operations, it could become slow.
+        name: 'context[content]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: >-
+          With a `reviews` topic, this field specifies which version to attach
+          the comment to.
+        name: 'context[version]'
+        required: false
+        type: integer
+  'v4/comments/{id}':
+    patch:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Edit A Comment
+      operationId: editComment
+      tags:
+      # - "comments"
+      - v4
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: ID of the comment to be edited
+        name: id
+        required: true
+        type: integer
+      - in: formData
+        description: |-
+          Topic to comment on.
+          Examples: `reviews/1234`, `changes/1234` or `jobs/job001234`.
+        name: topic
+        required: false
+        type: string
+      - in: formData
+        description: Content of the comment.
+        name: body
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional task state of the comment. Note that certain transitions
+          (such as moving from
+          `open` to `verified`) are not possible without an intermediate step (`addressed`, in
+          this case).
+          Examples: `comment` (not a task), `open`, `addressed`, `verified`.
+        name: taskState
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Optional flags on the comment. Typically set to `closed` to archive
+          a comment.
+        name: 'flags[]'
+        required: false
+        type: array
+        items:
+          type: string
+  v4/version:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Show Version Information
+      operationId: version
+      tags:
+      # - "version"
+      - v4
+  v4/projects/:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Get List of Projects
+      operationId: listProjects
+      tags:
+      # - "projects"
+      - v4
+      parameters:
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each project.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+    post:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Create a new Project
+      operationId: createProject
+      tags:
+      # - "projects"
+      - v4
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: Project Name (is also used to generate the Project ID)
+        name: name
+        required: true
+        type: string
+      - in: formData
+        description: An array of project members.
+        name: members
+        required: true
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project subgroups.
+        name: subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project owners.
+        name: owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional project description.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Private projects are visible only to Members, Moderators, Owners,
+          and Administrators. (Default: false)
+        name: private
+        required: false
+        type: boolean
+      - in: formData
+        description: |-
+          Configuration for automated deployment.
+          Example: {&quot;enabled&quot;: true,
+          &quot;url&quot;: &quot;pass:q[http://localhost/?change={change}]&quot;}
+        name: deploy
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Configuration for testing/continuous integration.
+        name: tests
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional branch definitions for this project.
+        name: branches
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional jobview for associating certain jobs with this project.
+        name: jobview
+        required: false
+        type: string
+      - in: formData
+        description: 'Email members, moderators and followers when a change is committed.'
+        name: 'emailFlags[change_email_project_users]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members and moderators when a new review is requested.
+        name: 'emailFlags[review_email_project_members]'
+        required: false
+        type: boolean
+  'v4/projects/{id}':
+    get:
+      responses:
+        '404':
+          description: Not Found
+      description: ''
+      summary: Get Project Information
+      operationId: getProject
+      tags:
+      # - "projects"
+      - v4
+      parameters:
+      - in: path
+        description: Project ID
+        name: id
+        required: true
+        type: string
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each project.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+    patch:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Edit a Project
+      operationId: patchProject
+      tags:
+      # - "projects"
+      - v4
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Project ID
+        name: id
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Project Name (changing the project name does not change the project
+          ID)
+        name: name
+        required: false
+        type: string
+      - in: formData
+        description: An array of project members.
+        name: members
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project subgroups.
+        name: subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project owners.
+        name: owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Your project description.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Private projects are visible only to Members, Moderators, Owners,
+          and Administrators. (Default: false)
+        name: private
+        required: false
+        type: boolean
+      - in: formData
+        description: |-
+          Configuration for automated deployment.
+          Example: {&quot;enabled&quot;: true,
+          &quot;url&quot;: &quot;pass:q[http://localhost/?change={change}]&quot;}
+        name: deploy
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Configuration for testing/continuous integration.
+        name: tests
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional branch definitions for this project.
+        name: branches
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: A jobview for associating certain jobs with this project.
+        name: jobview
+        required: false
+        type: string
+      - in: formData
+        description: 'Email members, moderators and followers when a change is committed.'
+        name: 'emailFlags[change_email_project_users]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members and moderators when a new review is requested.
+        name: 'emailFlags[review_email_project_members]'
+        required: false
+        type: boolean
+    delete:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Delete a Project
+      operationId: deleteProject
+      tags:
+      # - "projects"
+      - v4
+      parameters:
+      - in: path
+        description: Project ID
+        name: id
+        required: true
+        type: string
+  v4/reviews/:
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+      description: ''
+      summary: Create a Review
+      operationId: createReview
+      tags:
+      # - "reviews"
+      - v4
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: Change ID to create a review from
+        name: change
+        required: true
+        type: integer
+      - in: formData
+        description: Description for the new review (defaults to change description)
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: A list of reviewers for the new review
+        name: reviewers
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: A list of required reviewers for the new review (v1.1+)
+        name: requiredReviewers
+        required: false
+        type: array
+        items:
+          type: string
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Get List of Reviews
+      operationId: getReviews
+      tags:
+      # - "reviews"
+      - v4
+      parameters:
+      - in: query
+        description: |-
+          A review ID to seek to. Reviews up to and including the specified
+          `id` are excluded from the results and do not count towards `max`.
+          Useful for pagination. Commonly set to the `lastSeen` property from
+          a previous query.
+        name: after
+        required: false
+        type: integer
+      - in: query
+        description: |-
+          Maximum number of reviews to return. This does not guarantee that
+          `max` reviews are returned. It does guarantee that the number of
+          reviews returned won't exceed `max`. Server-side filtering may
+          exclude some reviews for permissions reasons.
+        name: max
+        required: false
+        type: integer
+        default: 1000
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter
+          or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+      - in: query
+        description: >-
+          One or more authors to limit reviews by. Reviews with any of the
+          specified authors
+          are returned. (v1.2+)
+        name: 'author[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more change IDs to limit reviews by. Reviews associated with
+          any of the
+          specified changes are returned.
+        name: 'change[]'
+        required: false
+        type: array
+        items:
+          type: integer
+      - in: query
+        description: >-
+          Boolean option to limit to reviews to those with or without
+          reviewers. Use
+          `true` or `false` for JSON-encoded data, `1` for true and or `0` for
+          false for form-encoded data. The presence of the parameter without a
+          value is evaluated as true.
+        name: hasReviewers
+        required: false
+        type: boolean
+      - in: query
+        description: >-
+          One or more review IDs to fetch. Only the specified reviews are
+          returned. This
+          filter cannot be combined with the `max` parameter.
+        name: 'ids[]'
+        required: false
+        type: array
+        items:
+          type: integer
+      - in: query
+        description: >-
+          Keywords to limit reviews by. Only reviews where the description,
+          participants list
+          or project list contain the specified keywords are returned.
+        name: keywords
+        required: false
+        type: string
+      - in: query
+        description: >-
+          One or more participants to limit reviews by. Reviews with any of
+          the specified
+          participants are returned.
+        name: 'participants[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more projects to limit reviews by. Reviews affecting any of
+          the specified
+          projects are returned.
+        name: 'project[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more states to limit reviews by. Reviews in any of the
+          specified states
+          are returned.
+        name: 'state[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: |-
+          Boolean option to limit reviews by tests passing or failing. Use
+          `true` or `false` for JSON-encoded data, `1` for true and `0` for false for
+          form-encoded data. The presence of the parameter without a value is evaluated as
+          true.
+        name: passesTests
+        required: false
+        type: string
+  'v4/reviews/{id}':
+    get:
+      responses:
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      description: ''
+      summary: Get Review Information
+      operationId: getReview
+      tags:
+      # - "reviews"
+      - v4
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter
+          or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+  'v4/reviews/{id}/changes/':
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '405':
+          description: Method Not Allowed
+      description: ''
+      summary: Add Change to Review
+      operationId: addChange
+      tags:
+      # - "reviews"
+      - v4
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+        - in: path
+          description: Review ID
+          name: id
+          required: true
+          type: integer
+        - in: formData
+          description: Change ID
+          name: change
+          required: true
+          type: integer
+  'v4/reviews/{id}/state/':
+    patch:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '405':
+          description: Method Not Allowed
+      description: ''
+      summary: Transition the Review State (v2+)
+      operationId: state
+      tags:
+      # - "reviews"
+      - v4
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+      - in: formData
+        description: >-
+          Review State. Valid options: needsReview, needsRevision, approved,
+          archived, rejected
+        name: state
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          An optional description that is posted as a comment for non-commit
+          transitions.
+          Commits that do not include a description default to using the Review description
+          in the resulting change description.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Set this flag to true and provide a state of `approved` in order to
+          trigger the
+          *Approve and Commit* action in Swarm.
+        name: commit
+        required: false
+        type: boolean
+      - in: formData
+        description: Instruct Swarm to wait for a commit to finish before returning.
+        name: wait
+        required: false
+        type: boolean
+      - in: formData
+        description: >-
+          When performing an 'Approve and Commit', one or more jobs can be
+          attached to the review as part of the commit process.
+        name: 'jobs[]'
+        required: false
+        schema:
+          $ref: '#/definitions/stringArray'
+      - in: formData
+        description: >-
+          Provide a fix status for the attached job(s) when performing an
+          'Approve and Commit'.  Possible status values vary by job specification, but often include:
+          open, suspended, closed, review, fixed.
+        name: fixStatus
+        required: false
+        type: string
+  v5/activity:
+    post:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Create Activity Entry
+      operationId: addActivity
+      tags:
+      # - "activity"
+      - v5
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: |-
+          Type of activity, used for filtering activity streams
+          (values can include `change`, `comment`, `job`, `review`).
+        name: type
+        required: true
+        type: string
+      - in: formData
+        description: User who performed the action.
+        name: user
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Action that was performed - past-tense, e.g., `created` or
+          `commented on`.
+        name: action
+        required: true
+        type: string
+      - in: formData
+        description: 'Target that the action was performed on, e.g., `issue 1234`.'
+        name: target
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional topic for the activity entry. Topics are essentially
+          comment thread IDs.
+          Examples: `reviews/1234` or `jobs/job001234`.
+        name: topic
+        required: false
+        type: string
+      - in: formData
+        description: Optional description of object or activity to provide context.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Optional changelist ID this activity is related to. Used to filter
+          activity related to
+          restricted changes.
+        name: change
+        required: false
+        type: integer
+      - in: formData
+        description: >-
+          Optional array of streams to display on. This can include
+          user-initiated actions
+          (`user-alice`), activity relating to a user's followed projects/users
+          (`personal-alice`), review streams (`review-1234`), and project streams
+          (`project-exampleproject`).
+        name: 'streams[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional URL for `target`.
+        name: link
+        required: false
+        type: string
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: List Activity Entries
+      operationId: listActivity
+      tags:
+      # - "activity"
+      - v5
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: |-
+          Optionally filter activity entries by associated Changelist ID. This
+          only includes records for which there is an activity entry in
+          Swarm.
+        name: change
+        required: false
+        type: integer
+      - in: formData
+        description: |-
+          Optional activity stream to query for entries. This can include
+          user-initiated actions (`user-alice`), activity relating to a user's
+          followed projects/users (`personal-alice`), review streams
+          (`review-1234`), and project streams (`project-exampleproject`).
+        name: stream
+        required: false
+        type: string
+      - in: formData
+        description: 'Type of activity, e.g., `change`, `comment`, `job`, or `review`.'
+        name: type
+        required: false
+        type: string
+      - in: query
+        description: |-
+          An activity ID to seek to. Activity entries up to and including the
+          specified ID are excluded from the results and do not count towards
+          `max`. Useful for pagination. Commonly set to the `lastSeen`
+          property from a previous query.
+        name: after
+        required: false
+        type: integer
+      - in: query
+        description: |-
+          Maximum number of activity entries to return. This does not
+          guarantee that `max` entries are returned. It does guarantee that
+          the number of entries returned won't exceed `max`. Server-side
+          filtering may exclude some activity entries for permissions
+          reasons.
+        name: max
+        required: false
+        type: integer
+        default: 100
+      - in: query
+        description: |-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter or passing an empty value shows all
+          fields.
+        name: fields
+        required: false
+        type: string
+  v5/comments/:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Get List of Comments
+      operationId: getComments
+      tags:
+      # - "comments"
+      - v5
+      parameters:
+      - in: query
+        description: |-
+          A comment ID to seek to. Comments up to and including the specified
+          ID are excluded from the results and do not count towards `max`.
+          Useful for pagination. Commonly set to the `lastSeen` property from
+          a previous query.
+        name: after
+        required: false
+        type: integer
+      - in: query
+        description: |-
+          Maximum number of comments to return. This does not guarantee that
+          `max` comments are returned. It does guarantee that the number of
+          comments returned won't exceed `max`.
+        name: max
+        required: false
+        type: integer
+        default: 100
+      - in: query
+        description: |-
+          Only comments for given topic are returned.
+          Examples: `reviews/1234`, `changes/1234` or `jobs/job001234`.
+        name: topic
+        required: false
+        type: string
+      - in: query
+        description: >-
+          If a `reviews/1234` topic is provided, limit returned comments to a
+          specific version of
+          the provided review.
+        name: 'context[version]'
+        required: false
+        type: integer
+      - in: query
+        description: Prevents archived comments from being returned. (v5+)
+        name: ignoreArchived
+        required: false
+        type: boolean
+      - in: query
+        description: Returns only comments that have been flagged as tasks. (v5+)
+        name: tasksOnly
+        required: false
+        type: boolean
+      - in: query
+        description: >-
+          Limit the returned comments to ones that match the provided task
+          state (one or more of
+          `open`, `closed`, `verified`, or `comment`). (v5+)
+        name: taskStates
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each comment.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+    post:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Add A Comment
+      operationId: addComment
+      tags:
+      # - "comments"
+      - v5
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: |-
+          Topic to comment on.
+          Examples: `reviews/1234`, `changes/1234` or `jobs/job001234`.
+        name: topic
+        required: true
+        type: string
+      - in: formData
+        description: Content of the comment.
+        name: body
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional task state of the comment. Valid values when adding a
+          comment are `comment`
+          and `open`. This creates a plain comment or opens a task, respectively.
+        name: taskState
+        required: false
+        type: string
+        default: comment
+      - in: formData
+        description: >-
+          Optional flags on the comment. Typically set to `closed` to archive
+          a comment.
+        name: 'flags[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: |-
+          File to comment on. Valid only for `changes` and `reviews` topics.
+          Example: `//depot/main/README.txt`.
+        name: 'context[file]'
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Left-side diff line to attach the inline comment to.  Valid only for
+          `changes` and
+          `reviews` topics. If this is specified, `context[file]` must also be specified.
+        name: 'context[leftLine]'
+        required: false
+        type: integer
+      - in: formData
+        description: >-
+          Right-side diff line to attach the inline comment to.  Valid only
+          for `changes` and
+          `reviews` topics. If this is specified, `context[file]` must also be specified.
+        name: 'context[rightLine]'
+        required: false
+        type: integer
+      - in: formData
+        description: >-
+          Optionally provide content of the specified line and its four
+          preceding lines. This
+          is used to specify a short excerpt of context in case the lines being commented
+          on change during the review.
+          When not provided, Swarm makes an effort to build the content on its own - as this
+          involves file operations, it could become slow.
+        name: 'context[content]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: >-
+          With a `reviews` topic, this field specifies which version to attach
+          the comment to.
+        name: 'context[version]'
+        required: false
+        type: integer
+  'v5/comments/{id}':
+    patch:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Edit A Comment
+      operationId: editComment
+      tags:
+      # - "comments"
+      - v5
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: ID of the comment to be edited
+        name: id
+        required: true
+        type: integer
+      - in: formData
+        description: |-
+          Topic to comment on.
+          Examples: `reviews/1234`, `changes/1234` or `jobs/job001234`.
+        name: topic
+        required: false
+        type: string
+      - in: formData
+        description: Content of the comment.
+        name: body
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional task state of the comment. Note that certain transitions
+          (such as moving from
+          `open` to `verified`) are not possible without an intermediate step (`addressed`, in
+          this case).
+          Examples: `comment` (not a task), `open`, `addressed`, `verified`.
+        name: taskState
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Optional flags on the comment. Typically set to `closed` to archive
+          a comment.
+        name: 'flags[]'
+        required: false
+        type: array
+        items:
+          type: string
+  v5/groups/:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Get List of Groups
+      operationId: listGroups
+      tags:
+      # - "groups"
+      - v5
+      parameters:
+      - in: query
+        description: |-
+          A group ID to seek to. Groups prior to and including the specified
+          ID are excluded from the results and do not count towards `max`.
+          Useful for pagination. Commonly set to the `lastSeen` property from
+          a previous query.
+        name: after
+        required: false
+        type: string
+      - in: query
+        description: |-
+          Maximum number of groups to return. This does not guarantee that
+          `max` groups are returned. It does guarantee that the number of
+          groups returned won't exceed `max`.
+        name: max
+        required: false
+        type: integer
+        default: 100
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each group.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+      - in: query
+        description: >-
+          Keywords to limit groups on. Only groups where the group ID, group
+          name (if set), or
+          description contain the specified keywords are returned.
+        name: keywords
+        required: false
+        type: string
+    post:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Create a new Group
+      operationId: createGroup
+      tags:
+      # - "groups"
+      - v5
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: Group identifier string.
+        name: Group
+        required: true
+        type: string
+      - in: formData
+        description: |-
+          An optional array of group users.
+          At least one of Users, Owners, or Subgroups is required.
+        name: Users
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: |-
+          An optional array of group owners.
+          At least one of Users, Owners, or Subgroups is required.
+        name: Owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: |-
+          An optional array of subgroups.
+          At least one of Users, Owners, or Subgroups is required.
+        name: Subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional full name for the group.
+        name: 'config[name]'
+        required: false
+        type: string
+      - in: formData
+        description: An optional group description.
+        name: 'config[description]'
+        required: false
+        type: string
+      - in: formData
+        description: Email members when a change is committed.
+        name: 'config[emailFlags][commits]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members when a new review is requested.
+        name: 'config[emailFlags][reviews]'
+        required: false
+        type: boolean
+  'v5/groups/{id}':
+    get:
+      responses:
+        '404':
+          description: Not Found
+      description: ''
+      summary: Get Group Information
+      operationId: getGroup
+      tags:
+      # - groups
+      - v5
+      parameters:
+      - in: path
+        description: Group ID
+        name: id
+        required: true
+        type: string
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each group.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+    patch:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Edit a Group
+      operationId: patchGroup
+      tags:
+      # - "groups"
+      - v5
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Group ID
+        name: id
+        required: true
+        type: string
+      - in: formData
+        description: An optional array of group users.
+        name: Users
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of group owners.
+        name: Owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of group subgroups.
+        name: Subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional full name for the group.
+        name: 'config[name]'
+        required: false
+        type: string
+      - in: formData
+        description: An optional group description.
+        name: 'config[description]'
+        required: false
+        type: string
+      - in: formData
+        description: Email members when a change is committed.
+        name: 'config[emailFlags][commits]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members when a new review is requested.
+        name: 'config[emailFlags][reviews]'
+        required: false
+        type: boolean
+    delete:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Delete a Group
+      operationId: deleteGroup
+      tags:
+      # - "groups"
+      - v5
+      parameters:
+      - in: path
+        description: Group ID.
+        name: id
+        required: true
+        type: string
+  v5/version:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Show Version Information
+      operationId: version
+      tags:
+      # - "version"
+      - v5
+  v5/projects/:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Get List of Projects
+      operationId: listProjects
+      tags:
+      # - "projects"
+      - v5
+      parameters:
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each project.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+    post:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Create a new Project
+      operationId: createProject
+      tags:
+      # - "projects"
+      - v5
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: Project Name (is also used to generate the Project ID)
+        name: name
+        required: true
+        type: string
+      - in: formData
+        description: An array of project members.
+        name: members
+        required: true
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project subgroups.
+        name: subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project owners.
+        name: owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional project description.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Private projects are visible only to Members, Moderators, Owners,
+          and Administrators. (Default: false)
+        name: private
+        required: false
+        type: boolean
+      - in: formData
+        description: |-
+          Configuration for automated deployment.
+          Example: {&quot;enabled&quot;: true,
+          &quot;url&quot;: &quot;pass:q[http://localhost/?change={change}]&quot;}
+        name: deploy
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Configuration for testing/continuous integration.
+        name: tests
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional branch definitions for this project.
+        name: branches
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional jobview for associating certain jobs with this project.
+        name: jobview
+        required: false
+        type: string
+      - in: formData
+        description: 'Email members, moderators and followers when a change is committed.'
+        name: 'emailFlags[change_email_project_users]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members and moderators when a new review is requested.
+        name: 'emailFlags[review_email_project_members]'
+        required: false
+        type: boolean
+  'v5/projects/{id}':
+    get:
+      responses:
+        '404':
+          description: Not Found
+      description: ''
+      summary: Get Project Information
+      operationId: getProject
+      tags:
+      # - "projects"
+      - v5
+      parameters:
+      - in: path
+        description: Project ID
+        name: id
+        required: true
+        type: string
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each project.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+    patch:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Edit a Project
+      operationId: patchProject
+      tags:
+      # - "projects"
+      - v5
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Project ID
+        name: id
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Project Name (changing the project name does not change the project
+          ID)
+        name: name
+        required: false
+        type: string
+      - in: formData
+        description: An array of project members.
+        name: members
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project subgroups.
+        name: subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project owners.
+        name: owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Your project description.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Private projects are visible only to Members, Moderators, Owners,
+          and Administrators.  (Default: false)
+        name: private
+        required: false
+        type: boolean
+      - in: formData
+        description: |-
+          Configuration for automated deployment.
+          Example: {&quot;enabled&quot;: true,
+          &quot;url&quot;: &quot;pass:q[http://localhost/?change={change}]&quot;}
+        name: deploy
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Configuration for testing/continuous integration.
+        name: tests
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional branch definitions for this project.
+        name: branches
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: A jobview for associating certain jobs with this project.
+        name: jobview
+        required: false
+        type: string
+      - in: formData
+        description: 'Email members, moderators and followers when a change is committed.'
+        name: 'emailFlags[change_email_project_users]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members and moderators when a new review is requested.
+        name: 'emailFlags[review_email_project_members]'
+        required: false
+        type: boolean
+    delete:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Delete a Project
+      operationId: deleteProject
+      tags:
+      # - "projects"
+      - v5
+      parameters:
+        - in: path
+          description: Project ID
+          name: id
+          required: true
+          type: string
+  v5/reviews/:
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+      description: ''
+      summary: Create a Review
+      operationId: createReview
+      tags:
+      # - "reviews"
+      - v5
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: Change ID to create a review from
+        name: change
+        required: true
+        type: integer
+      - in: formData
+        description: Description for the new review (defaults to change description)
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: A list of reviewers for the new review
+        name: reviewers
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: A list of required reviewers for the new review (v1.1+)
+        name: requiredReviewers
+        required: false
+        type: array
+        items:
+          type: string
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Get List of Reviews
+      operationId: getReviews
+      tags:
+      # - "reviews"
+      - v5
+      parameters:
+      - in: query
+        description: |-
+          A review ID to seek to. Reviews up to and including the specified
+          `id` are excluded from the results and do not count towards `max`.
+          Useful for pagination. Commonly set to the `lastSeen` property from
+          a previous query.
+        name: after
+        required: false
+        type: integer
+      - in: query
+        description: |-
+          Maximum number of reviews to return. This does not guarantee that
+          `max` reviews are returned. It does guarantee that the number of
+          reviews returned won't exceed `max`. Server-side filtering may
+          exclude some reviews for permissions reasons.
+        name: max
+        required: false
+        type: integer
+        default: 1000
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter
+          or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+      - in: query
+        description: >-
+          One or more authors to limit reviews by. Reviews with any of the
+          specified authors
+          are returned. (v1.2+)
+        name: 'author[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more change IDs to limit reviews by. Reviews associated with
+          any of the
+          specified changes are returned.
+        name: 'change[]'
+        required: false
+        type: array
+        items:
+          type: integer
+      - in: query
+        description: >-
+          Boolean option to limit to reviews to those with or without
+          reviewers. Use
+          `true` or `false` for JSON-encoded data, `1` for true and or `0` for
+          false for form-encoded data. The presence of the parameter without a
+          value is evaluated as true.
+        name: hasReviewers
+        required: false
+        type: boolean
+      - in: query
+        description: >-
+          One or more review IDs to fetch. Only the specified reviews are
+          returned. This
+          filter cannot be combined with the `max` parameter.
+        name: 'ids[]'
+        required: false
+        type: array
+        items:
+          type: integer
+      - in: query
+        description: >-
+          Keywords to limit reviews by. Only reviews where the description,
+          participants list
+          or project list contain the specified keywords are returned.
+        name: keywords
+        required: false
+        type: string
+      - in: query
+        description: >-
+          One or more participants to limit reviews by. Reviews with any of
+          the specified
+          participants are returned.
+        name: 'participants[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more projects to limit reviews by. Reviews affecting any of
+          the specified
+          projects are returned.
+        name: 'project[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          One or more states to limit reviews by. Reviews in any of the
+          specified states
+          are returned.
+        name: 'state[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: |-
+          Boolean option to limit reviews by tests passing or failing. Use
+          `true` or `false` for JSON-encoded data, `1` for true and `0` for false for
+          form-encoded data. The presence of the parameter without a value is evaluated as
+          true.
+        name: passesTests
+        required: false
+        type: string
+  'v5/reviews/{id}':
+    get:
+      responses:
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      description: ''
+      summary: Get Review Information
+      operationId: getReview
+      tags:
+      # - "reviews"
+      - v5
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter
+          or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+  'v5/reviews/{id}/changes/':
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '405':
+          description: Method Not Allowed
+      description: ''
+      summary: Add Change to Review
+      operationId: addChange
+      tags:
+      # - "reviews"
+      - v5
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+      - in: formData
+        description: Change ID
+        name: change
+        required: true
+        type: integer
+  'v5/reviews/{id}/state/':
+    patch:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '405':
+          description: Method Not Allowed
+      description: ''
+      summary: Transition the Review State (v2+)
+      operationId: state
+      tags:
+      # - reviews
+      - v5
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+      - in: formData
+        description: >-
+          Review State. Valid options: needsReview, needsRevision, approved,
+          archived, rejected
+        name: state
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          An optional description that is posted as a comment for non-commit
+          transitions.
+          Commits that do not include a description default to using the Review description
+          in the resulting change description.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Set this flag to true and provide a state of `approved` in order to
+          trigger the
+          *Approve and Commit* action in Swarm.
+        name: commit
+        required: false
+        type: boolean
+      - in: formData
+        description: Instruct Swarm to wait for a commit to finish before returning.
+        name: wait
+        required: false
+        type: boolean
+      - in: formData
+        description: >-
+          When performing an 'Approve and Commit', one or more jobs can be
+          attached to the review
+          as part of the commit process.
+        name: 'jobs[]'
+        required: false
+        schema:
+          $ref: '#/definitions/stringArray'
+      - in: formData
+        description: >-
+          Provide a fix status for the attached job(s) when performing an
+          'Approve and Commit'.
+          Possible status values vary by job specification, but often include:
+          open, suspended, closed, review, fixed.
+        name: fixStatus
+        required: false
+        type: string
+  v6/activity:
+    post:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Create Activity Entry
+      operationId: addActivity
+      tags:
+      # - "activity"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: |-
+          Type of activity, used for filtering activity streams
+          (values can include `change`, `comment`, `job`, `review`).
+        name: type
+        required: true
+        type: string
+      - in: formData
+        description: User who performed the action.
+        name: user
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Action that was performed - past-tense, e.g., `created` or
+          `commented on`.
+        name: action
+        required: true
+        type: string
+      - in: formData
+        description: 'Target that the action was performed on, e.g., `issue 1234`.'
+        name: target
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional topic for the activity entry. Topics are essentially
+          comment thread IDs.
+          Examples: `reviews/1234` or `jobs/job001234`.
+        name: topic
+        required: false
+        type: string
+      - in: formData
+        description: Optional description of object or activity to provide context.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Optional changelist ID this activity is related to. Used to filter
+          activity related to
+          restricted changes.
+        name: change
+        required: false
+        type: integer
+      - in: formData
+        description: >-
+          Optional array of streams to display on. This can include
+          user-initiated actions
+          (`user-alice`), activity relating to a user's followed projects/users
+          (`personal-alice`), review streams (`review-1234`), and project streams
+          (`project-exampleproject`).
+        name: 'streams[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional URL for `target`.
+        name: link
+        required: false
+        type: string
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: List Activity Entries
+      operationId: listActivity
+      tags:
+      # - "activity"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: |-
+          Optionally filter activity entries by associated Changelist ID. This
+          only includes records for which there is an activity entry in
+          Swarm.
+        name: change
+        required: false
+        type: integer
+      - in: formData
+        description: |-
+          Optional activity stream to query for entries. This can include
+          user-initiated actions (`user-alice`), activity relating to a user's
+          followed projects/users (`personal-alice`), review streams
+          (`review-1234`), and project streams (`project-exampleproject`).
+        name: stream
+        required: false
+        type: string
+      - in: formData
+        description: 'Type of activity, e.g., `change`, `comment`, `job`, or `review`.'
+        name: type
+        required: false
+        type: string
+      - in: query
+        description: |-
+          An activity ID to seek to. Activity entries up to and including the
+          specified ID are excluded from the results and do not count towards
+          `max`. Useful for pagination. Commonly set to the `lastSeen`
+          property from a previous query.
+        name: after
+        required: false
+        type: integer
+      - in: query
+        description: |-
+          Maximum number of activity entries to return. This does not
+          guarantee that `max` entries are returned. It does guarantee that
+          the number of entries returned won't exceed `max`. Server-side
+          filtering may exclude some activity entries for permissions
+          reasons.
+        name: max
+        required: false
+        type: integer
+        default: 100
+      - in: query
+        description: |-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter or passing an empty value shows all
+          fields.
+        name: fields
+        required: false
+        type: string
+  v6/comments/:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Get List of Comments
+      operationId: getComments
+      tags:
+      # - "comments"
+      - v6
+      parameters:
+      - in: query
+        description: |-
+          A comment ID to seek to. Comments up to and including the specified
+          ID are excluded from the results and do not count towards `max`.
+          Useful for pagination. Commonly set to the `lastSeen` property from
+          a previous query.
+        name: after
+        required: false
+        type: integer
+      - in: query
+        description: |-
+          Maximum number of comments to return. This does not guarantee that
+          `max` comments are returned. It does guarantee that the number of
+          comments returned won't exceed `max`.
+        name: max
+        required: false
+        type: integer
+        default: 100
+      - in: query
+        description: |-
+          Only comments for given topic are returned.
+          Examples: `reviews/1234`, `changes/1234` or `jobs/job001234`.
+        name: topic
+        required: false
+        type: string
+      - in: query
+        description: >-
+          If a `reviews/1234` topic is provided, limit returned comments to a
+          specific version of
+          the provided review.
+        name: 'context[version]'
+        required: false
+        type: integer
+      - in: query
+        description: Prevents archived comments from being returned. (v5+)
+        name: ignoreArchived
+        required: false
+        type: boolean
+      - in: query
+        description: Returns only comments that have been flagged as tasks. (v5+)
+        name: tasksOnly
+        required: false
+        type: boolean
+      - in: query
+        description: >-
+          Limit the returned comments to ones that match the provided task
+          state (one or more of
+          `open`, `closed`, `verified`, or `comment`). (v5+)
+        name: taskStates
+        required: false
+        type: array
+        items:
+          type: string
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each comment.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+    post:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Add A Comment
+      operationId: addComment
+      tags:
+      # - "comments"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: |-
+          Topic to comment on.
+          Examples: `reviews/1234`, `changes/1234` or `jobs/job001234`.
+        name: topic
+        required: true
+        type: string
+      - in: formData
+        description: Content of the comment.
+        name: body
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional task state of the comment. Valid values when adding a
+          comment are `comment`
+          and `open`. This creates a plain comment or opens a task, respectively.
+        name: taskState
+        required: false
+        type: string
+        default: comment
+      - in: formData
+        description: >-
+          Optional flags on the comment. Typically set to `closed` to archive
+          a comment.
+        name: 'flags[]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: |-
+          File to comment on. Valid only for `changes` and `reviews` topics.
+          Example: `//depot/main/README.txt`.
+        name: 'context[file]'
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Left-side diff line to attach the inline comment to.  Valid only for
+          `changes` and
+          `reviews` topics. If this is specified, `context[file]` must also be specified.
+        name: 'context[leftLine]'
+        required: false
+        type: integer
+      - in: formData
+        description: >-
+          Right-side diff line to attach the inline comment to.  Valid only
+          for `changes` and
+          `reviews` topics. If this is specified, `context[file]` must also be specified.
+        name: 'context[rightLine]'
+        required: false
+        type: integer
+      - in: formData
+        description: >-
+          Optionally provide content of the specified line and its four
+          preceding lines. This
+          is used to specify a short excerpt of context in case the lines being commented
+          on change during the review.
+          When not provided, Swarm makes an effort to build the content on its own - as this
+          involves file operations, it could become slow.
+        name: 'context[content]'
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: >-
+          With a `reviews` topic, this field specifies which version to attach
+          the comment to.
+        name: 'context[version]'
+        required: false
+        type: integer
+  'v6/comments/{id}':
+    patch:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Edit A Comment
+      operationId: editComment
+      tags:
+      # - "comments"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: ID of the comment to be edited
+        name: id
+        required: true
+        type: integer
+      - in: formData
+        description: |-
+          Topic to comment on.
+          Examples: `reviews/1234`, `changes/1234` or `jobs/job001234`.
+        name: topic
+        required: false
+        type: string
+      - in: formData
+        description: Content of the comment.
+        name: body
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Optional task state of the comment. Note that certain transitions
+          (such as moving from
+          `open` to `verified`) are not possible without an intermediate step (`addressed`, in
+          this case).
+          Examples: `comment` (not a task), `open`, `addressed`, `verified`.
+        name: taskState
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Optional flags on the comment. Typically set to `closed` to archive
+          a comment.
+        name: 'flags[]'
+        required: false
+        type: array
+        items:
+          type: string
+  v6/groups/:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Get List of Groups
+      operationId: listGroups
+      tags:
+      # - "groups"
+      - v6
+      parameters:
+      - in: query
+        description: |-
+          A group ID to seek to. Groups prior to and including the specified
+          ID are excluded from the results and do not count towards `max`.
+          Useful for pagination. Commonly set to the `lastSeen` property from
+          a previous query.
+        name: after
+        required: false
+        type: string
+      - in: query
+        description: |-
+          Maximum number of groups to return. This does not guarantee that
+          `max` groups are returned. It does guarantee that the number of
+          groups returned won't exceed `max`.
+        name: max
+        required: false
+        type: integer
+        default: 100
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each group.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+      - in: query
+        description: >-
+          Keywords to limit groups on. Only groups where the group ID, group
+          name (if set), or
+          description contain the specified keywords are returned.
+        name: keywords
+        required: false
+        type: string
+    post:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Create a new Group
+      operationId: createGroup
+      tags:
+      # - "groups"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: Group identifier string.
+        name: Group
+        required: true
+        type: string
+      - in: formData
+        description: |-
+          An optional array of group users.
+          At least one of Users, Owners, or Subgroups is required.
+        name: Users
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: |-
+          An optional array of group owners.
+          At least one of Users, Owners, or Subgroups is required.
+        name: Owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: |-
+          An optional array of subgroups.
+          At least one of Users, Owners, or Subgroups is required.
+        name: Subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional full name for the group.
+        name: 'config[name]'
+        required: false
+        type: string
+      - in: formData
+        description: An optional group description.
+        name: 'config[description]'
+        required: false
+        type: string
+      - in: formData
+        description: Email members when a change is committed.
+        name: 'config[emailFlags][commits]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members when a new review is requested.
+        name: 'config[emailFlags][reviews]'
+        required: false
+        type: boolean
+  'v6/groups/{id}':
+    get:
+      responses:
+        '404':
+          description: Not Found
+      description: ''
+      summary: Get Group Information
+      operationId: getGroup
+      tags:
+      # - "groups"
+      - v6
+      parameters:
+      - in: path
+        description: Group ID
+        name: id
+        required: true
+        type: string
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each group.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+    patch:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Edit a Group
+      operationId: patchGroup
+      tags:
+      # - "groups"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Group ID
+        name: id
+        required: true
+        type: string
+      - in: formData
+        description: An optional array of group users.
+        name: Users
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of group owners.
+        name: Owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of group subgroups.
+        name: Subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional full name for the group.
+        name: 'config[name]'
+        required: false
+        type: string
+      - in: formData
+        description: An optional group description.
+        name: 'config[description]'
+        required: false
+        type: string
+      - in: formData
+        description: Email members when a change is committed.
+        name: 'config[emailFlags][commits]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members when a new review is requested.
+        name: 'config[emailFlags][reviews]'
+        required: false
+        type: boolean
+    delete:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Delete a Group
+      operationId: deleteGroup
+      tags:
+      # - "groups"
+      - v6
+      parameters:
+        - in: path
+          description: Group ID.
+          name: id
+          required: true
+          type: string
+  v6/version:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Show Version Information
+      operationId: version
+      tags:
+      # - "version"
+      - v6
+  v6/projects/:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Get List of Projects
+      operationId: listProjects
+      tags:
+      # - "projects"
+      - v6
+      parameters:
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each project.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+    post:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Create a new Project
+      operationId: createProject
+      tags:
+      # - "projects"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: Project Name (is also used to generate the Project ID)
+        name: name
+        required: true
+        type: string
+      - in: formData
+        description: An array of project members.
+        name: members
+        required: true
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project subgroups.
+        name: subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project owners.
+        name: owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional project description.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Private projects are visible only to Members, Moderators, Owners,
+          and Administrators.  (Default: false)
+        name: private
+        required: false
+        type: boolean
+      - in: formData
+        description: |-
+          Configuration for automated deployment.
+          Example: {&quot;enabled&quot;: true,
+          &quot;url&quot;: &quot;pass:q[http://localhost/?change={change}]&quot;}
+        name: deploy
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Configuration for testing/continuous integration.
+        name: tests
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional branch definitions for this project.
+        name: branches
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional jobview for associating certain jobs with this project.
+        name: jobview
+        required: false
+        type: string
+      - in: formData
+        description: 'Email members, moderators and followers when a change is committed.'
+        name: 'emailFlags[change_email_project_users]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members and moderators when a new review is requested.
+        name: 'emailFlags[review_email_project_members]'
+        required: false
+        type: boolean
+  'v6/projects/{id}':
+    get:
+      responses:
+        '404':
+          description: Not Found
+      description: ''
+      summary: Get Project Information
+      operationId: getProject
+      tags:
+      # - "projects"
+      - v6
+      parameters:
+      - in: path
+        description: Project ID
+        name: id
+        required: true
+        type: string
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show for
+          each project.
+          Omitting this parameter or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+    patch:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Edit a Project
+      operationId: patchProject
+      tags:
+      # - "projects"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Project ID
+        name: id
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          Project Name (changing the project name does not change the project
+          ID)
+        name: name
+        required: false
+        type: string
+      - in: formData
+        description: An array of project members.
+        name: members
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project subgroups.
+        name: subgroups
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: An optional array of project owners.
+        name: owners
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Your project description.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Private projects are visible only to Members, Moderators, Owners,
+          and Administrators.  (Default: false)
+        name: private
+        required: false
+        type: boolean
+      - in: formData
+        description: |-
+          Configuration for automated deployment.
+          Example: {&quot;enabled&quot;: true,
+          &quot;url&quot;: &quot;pass:q[http://localhost/?change={change}]&quot;}
+        name: deploy
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Configuration for testing/continuous integration.
+        name: tests
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: Optional branch definitions for this project.
+        name: branches
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: A jobview for associating certain jobs with this project.
+        name: jobview
+        required: false
+        type: string
+      - in: formData
+        description: 'Email members, moderators and followers when a change is committed.'
+        name: 'emailFlags[change_email_project_users]'
+        required: false
+        type: boolean
+      - in: formData
+        description: Email members and moderators when a new review is requested.
+        name: 'emailFlags[review_email_project_members]'
+        required: false
+        type: boolean
+    delete:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Delete a Project
+      operationId: deleteProject
+      tags:
+      # - "projects"
+      - v6
+      parameters:
+        - in: path
+          description: Project ID
+          name: id
+          required: true
+          type: string
+  v6/dashboards/action:
+    get:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Get reviews for action dashboard
+      operationId: dashboardAction
+      tags:
+      # - "dashboards"
+      - v6
+  v6/reviews/:
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+      description: ''
+      summary: Create a Review
+      operationId: createReview
+      tags:
+      # - "reviews"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: Change ID to create a review from
+        name: change
+        required: true
+        type: integer
+      - in: formData
+        description: Description for the new review (defaults to change description)
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: A list of reviewers for the new review
+        name: reviewers
+        required: false
+        type: array
+        items:
+          type: string
+      - in: formData
+        description: A list of required reviewers for the new review (v1.1+)
+        name: requiredReviewers
+        required: false
+        type: array
+        items:
+          type: string
+  v6/reviews/archive/:
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '405':
+          description: Method Not Allowed
+      description: ''
+      summary: Archiving the inactive reviews (v6+)
+      operationId: archive
+      tags:
+      # - "reviews"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: >-
+          Updated since date. Requires the date to be in the format
+          YYYY-mm-dd, for example `2017-01-01`
+        name: notUpdatedSince
+        required: true
+        type: string
+      - in: formData
+        description: A description that is posted as a comment for archiving.
+        name: description
+        required: true
+        type: string
+  'v6/reviews/{id}':
+    get:
+      responses:
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      description: ''
+      summary: Get Review Information
+      operationId: getReview
+      tags:
+      # - "reviews"
+      - v6
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+      - in: query
+        description: >-
+          An optional comma-separated list (or array) of fields to show.
+          Omitting this parameter
+          or passing an empty value shows all fields.
+        name: fields
+        required: false
+        type: string
+  'v6/reviews/{id}/changes/':
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '405':
+          description: Method Not Allowed
+      description: ''
+      summary: Add Change to Review
+      operationId: addChange
+      tags:
+      # - "reviews"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+      - in: formData
+        description: Change ID
+        name: change
+        required: true
+        type: integer
+  'v6/reviews/{id}/cleanup':
+    post:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '405':
+          description: Method Not Allowed
+      description: ''
+      summary: Clean up a review (v6+)
+      operationId: cleanup
+      tags:
+      # - "reviews"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: formData
+        description: >-
+          Expected to be a boolean (defaulting to false). If true then an
+          attempt will be made to reopen files into a default changelist
+        name: reopen
+        required: false
+        type: boolean
+  'v6/reviews/{id}/state/':
+    patch:
+      responses:
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '405':
+          description: Method Not Allowed
+      description: ''
+      summary: Transition the Review State (v2+)
+      operationId: state
+      tags:
+      # - "reviews"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Review ID
+        name: id
+        required: true
+        type: integer
+      - in: formData
+        description: >-
+          Review State. Valid options: needsReview, needsRevision, approved,
+          archived, rejected
+        name: state
+        required: true
+        type: string
+      - in: formData
+        description: >-
+          An optional description that is posted as a comment for non-commit
+          transitions.
+          Commits that do not include a description default to using the Review description
+          in the resulting change description.
+        name: description
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          Set this flag to true and provide a state of `approved` in order to
+          trigger the
+          *Approve and Commit* action in Swarm.
+        name: commit
+        required: false
+        type: boolean
+      - in: formData
+        description: Instruct Swarm to wait for a commit to finish before returning.
+        name: wait
+        required: false
+        type: boolean
+      - in: formData
+        description: >-
+          When performing an 'Approve and Commit', one or more jobs can be
+          attached to the review
+          as part of the commit process.
+        name: 'jobs[]'
+        required: false
+        schema:
+          $ref: '#/definitions/stringArray'
+      - in: formData
+        description: >-
+          Provide a fix status for the attached job(s) when performing an
+          'Approve and Commit'.
+          Possible status values vary by job specification, but often include:
+          open, suspended, closed, review, fixed.
+        name: fixStatus
+        required: false
+        type: string
+  'v6/reviews/{review_id}':
+    patch:
+      responses:
+        '200':
+          description: No response was specified
+      description: ''
+      summary: Update Review Description
+      operationId: updateReview
+      tags:
+      # - "reviews"
+      - v6
+      consumes:
+      - 'application/x-www-form-urlencoded'
+      parameters:
+      - in: path
+        description: Review ID
+        name: review_id
+        required: true
+        type: integer
+      - in: formData
+        description: >-
+          The new author for the specified review. (At least one of Author or
+          Description are
+          required.)
+        name: author
+        required: false
+        type: string
+      - in: formData
+        description: >-
+          The new description for the specified review. (At least one of
+          Description or Author are
+          required.)
+        name: description
+        required: false
+        type: string
+      - in: query
+        description: >-
+          Method Override. If your client cannot submit HTTP PATCH, use an
+          HTTP POST with the
+          parameter ?_method=PATCH to override.
+        name: _method
+        required: false
+        type: string
+securityDefinitions:
+  p4_auth:
+    type: "basic"
+    description: "username:p4token or username:password"
+definitions:
+  # /v1/version response.  Note that we don't support version 1 of Swarm; it's here
+  # for reference for the version detection code.
+  ReleaseVersion:
+    type: "object"
+    description: "Simple release information"
+    properties:
+      year:
+        description: "the year of the Swarm release, not necessarily the current year"
+        type: "string"
+      version:
+        description: "the Swarm specific version release; format is: `SWARM/2014.3-MAIN/885869 (2014/06/25)`"
+        type: "string"
+    required:
+    - year
+    - version
+  Version:
+    type: "object"
+    description: "Swarm server release information and API compatibility report"
+    properties:
+      apiVersions:
+        type: "array"
+        description: "list of supported version numbers"
+        items:
+          type: "number"
+          format: "float"
+      year:
+        description: "the year of the Swarm release, not necessarily the current year"
+        type: "string"
+      version:
+        description: "the Swarm specific version release; format is: `SWARM/2014.3-MAIN/885869 (2014/06/25)`"
+        type: "string"
+    required:
+    - apiVersions
+    - year
+    - version
+  ActivityV1:
+    type: object
+    description: Summary of an action that occurred on the server.
+    properties:
+      id:
+        $ref: "#/definitions/Id"
+      action:
+        type: string
+        description: action that occurred
+      behalfOf:
+        type: string
+      behalfOfExists:
+        type: boolean
+      change:
+        type: integer
+        format: int32
+        description: changelist id
+      comments:
+        type: array
+        description: comment IDs associated with this activity.
+        items:
+          type: integer
+          format: int32
+      date:
+        type: string
+        format: date-time
+        description: date and time of the activity
+      depotFile:
+        type: string
+        description: affected Perforce depot file
+      description:
+        type: string
+        description: details about the action, usually the user's text
+      details:
+        type: array
+        items:
+          $ref: '#/definitions/ActivityDetail'
+      followers:
+        $ref: '#/definitions/stringArray'
+      link:
+        $ref: '#/definitions/Link'
+      preposition:
+        type: string
+        description: helper for building human-readable text
+      projectList:
+        # should be an object with project name mapped to list of streams.
+        $ref: '#/definitions/ProjectStreamMap'
+      projects:
+        # should be an object with project name mapped to list of streams.
+        type: object
+      streams:
+        $ref: '#/definitions/streamArray'
+      target:
+        type: string
+        description: Human readable version of `topic`
+      time:
+        type: integer
+        format: int64
+      topic:
+        type: string
+        description: Looks like the relative URI to the link.
+      type:
+        enum:
+        - review
+        - comment
+        - project
+        - group
+      url:
+        type: string
+        description: relative URI to the link; has the "/api/v(#)" stripped off.
+      user:
+        type: string
+      userExists:
+        type: boolean
+    required:
+    - id
+    - date
+  ActivityV2:
+    type: object
+    description: Summary of an action that occurred on the server.
+    properties:
+      id:
+        $ref: "#/definitions/Id"
+      action:
+        type: string
+        description: action that occurred
+      behalfOf:
+        type: string
+      behalfOfExists:
+        type: boolean
+      change:
+        type: integer
+        format: int32
+        description: changelist id
+      comments:
+        type: array
+        description: comment IDs associated with this activity.
+        items:
+          type: integer
+          format: int32
+      date:
+        type: string
+        format: date-time
+        description: date and time of the activity
+      depotFile:
+        type: string
+        description: affected Perforce depot file
+      description:
+        type: string
+        description: details about the action, usually the user's text
+      details:
+        type: array
+        items:
+          $ref: '#/definitions/ActivityDetail'
+      followers:
+        $ref: '#/definitions/stringArray'
+      link:
+        $ref: '#/definitions/Link'
+      preposition:
+        type: string
+        description: helper for building human-readable text
+      projectList:
+        # should be an object with project name mapped to list of streams.
+        $ref: '#/definitions/ProjectStreamMap'
+      projects:
+        # should be an object with project name mapped to list of streams.
+        type: object
+      streams:
+        $ref: '#/definitions/streamMap'
+      target:
+        type: string
+        description: Human readable version of `topic`
+      time:
+        type: integer
+        format: int64
+      topic:
+        type: string
+        description: Looks like the relative URI to the link.
+      type:
+        enum:
+        - review
+        - comment
+        - project
+        - group
+      url:
+        type: string
+        description: relative URI to the link; has the "/api/v(#)" stripped off.
+      user:
+        type: string
+      userExists:
+        type: boolean
+    required:
+    - id
+    - date
+  ActivityV1Page:
+    type: object
+    description: Paged result for querying the activity list (<= API v3).
+    properties:
+      activity:
+        type: array
+        items:
+          $ref: '#/definitions/ActivityV1'
+      lastSeen:
+        type: integer
+        format: int32
+  ActivityV2Page:
+    type: object
+    description: Paged result for querying the activity list (>= API v4).
+    properties:
+      activity:
+        type: array
+        items:
+          $ref: '#/definitions/ActivityV2'
+      lastSeen:
+        type: integer
+        format: int32
+  ActivityV1Result:
+    type: object
+    description: Contains a single acitivty (<= API v3).
+    properties:
+      activity:
+        $ref: '#/definitions/ActivityV1'
+  ActivityV2Result:
+    type: object
+    description: Contains a single acitivty (>= API v4).
+    properties:
+      activity:
+        $ref: '#/definitions/ActivityV2'
+  ActivityDetail:
+    type: object
+    description: Details behind the action
+    # This object is not documented at all.  The description in
+    # module/Activity/src/Activity/Model/Activity.php shows that this
+    # is a free-form data block.  So, the property list here is based
+    # upon experimentation.
+    properties:
+      reviewers:
+        type: object
+        properties:
+          addedOptional:
+            $ref: '#/definitions/stringArray'
+          addedRequired:
+            $ref: '#/definitions/stringArray'
+          removedOptional:
+            $ref: '#/definitions/stringArray'
+          removedRequired:
+            $ref: '#/definitions/stringArray'
+      authors:
+        # Code shows that this is a thing that can be added, but doesn't
+        # describe what it is.
+        $ref: '#/definitions/stringArray'
+  Link:
+    type: array
+    description: Reference to another object
+    items:
+    # What the object description should be:
+    # - enum:
+    #   - review
+    #   - group
+    #   - activity
+    #   - comment
+    #   - project
+    #   description: link reference type; this is the key value
+    #     in the next item in the array.
+    # - type: object
+    #   description: link connection information
+    #   properties:
+    #     review:
+    #       type: string
+    #     group:
+    #       type: string
+    #     activity:
+    #       type: string
+    # But we can't have that.  So, instead, we'll have a dumb object.
+      type: object
+    example:
+      link:
+      - review
+      - review: "280113"
+  ProjectList:
+    description: complete list of projects; this is not paginated.
+    type: object
+    properties:
+      projects:
+        type: array
+        items:
+          $ref: '#/definitions/Project'
+  ProjectResult:
+    description: a single project in a result
+    type: object
+    properties:
+      project:
+        $ref: '#/definitions/Project'
+  Project:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Name of the project
+      branches:
+        type: array
+        items:
+          $ref: '#/definitions/Branch'
+      deleted:
+        type: boolean
+      description:
+        type: string
+      emailFlags:
+        $ref: '#/definitions/EmailFlags'
+      followers:
+        $ref: '#/definitions/stringArray'
+      jobview:
+        type: string
+      members:
+        $ref: '#/definitions/stringArray'
+      name:
+        type: string
+      owners:
+        $ref: '#/definitions/stringArray'
+      private:
+        type: boolean
+      subgroups:
+        $ref: '#/definitions/stringArray'
+  Branch:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Name of the branch
+      name:
+        type: string
+        description: Full name of the branch
+      paths:
+        type: array
+        description: Depot views of the branch
+        items:
+          type: string
+          example: "//depot/path/..."
+      moderators:
+        type: array
+        description: Perforce users who have admin access to the Swarm branch details.
+        items:
+          type: string
+  streamMap:
+    description: >-
+      Map between index string and the activity stream name (not a p4 depot stream).
+      Api Version 4 and higher.
+    # Key seems to be a string representation of base-10 array index.
+    type: object
+    additionalProperties:
+      type: string
+  streamArray:
+    description: >-
+      List of activity stream names (not a p4 depot stream).  Api Versions <= 3.
+    type: array
+    items:
+      type: string
+  EmailFlags:
+    type: object
+    properties:
+      review_email_project_members:
+        type: string
+      change_email_project_users:
+        type: string
+  ProjectStreamMap:
+    type: object
+    additionalProperties:
+      $ref: '#/definitions/stringArray'
+  Review:
+    type: object
+    properties:
+      id:
+        $ref: '#/definitions/Id'
+      author:
+        type: string
+        description: Username that created the review
+      changes:
+        type: array
+        description: Changelists in the review
+        items:
+          type: integer
+          format: int64
+      commits:
+        type: array
+        description: Changelists committed
+        items:
+          type: integer
+          format: int64
+      commitStatus:
+        $ref: '#/definitions/stringArray'
+      created:
+        description: timestamp of the review creation
+        type: integer
+        format: int64
+      deployDetails:
+        type: array
+        items:
+          # TODO Need more details about the contents.  This is a guess
+          type: string
+      depoyStatus:
+        type: string
+        items:
+          # TODO get the enum of valid values
+          type: string
+      description:
+        type: string
+        description: Details about the review.
+      participants:
+        $ref: '#/definitions/ParticipantMap'
+      pending:
+        type: boolean
+      projects:
+        # TODO find out what the array really contains
+        $ref: '#/definitions/stringArray'
+      state:
+        # TODO replace with valid enum
+        # known entries: needsReview
+        type: string
+      stateLabel:
+        type: string
+        description: human readable description of the state
+      testDetails:
+        # TODO find out what the array really contains
+        $ref: '#/definitions/stringArray'
+      testStatus:
+        # TODO find out what valid values exist
+        type: string
+      type:
+        # TODO find out valid enum values.
+        # Discovered so far: 'default'
+        type: string
+      updated:
+        description: time stamp for when the review was last updated
+        type: integer
+        format: int64
+  ReviewPage:
+    description: single, paged result of a review query
+    type: object
+    properties:
+      lastSeen:
+        description: Page index used for requesting the next page.
+        type: integer
+        format: int64
+      totalCount:
+        description: Number of results across all pages
+        type: integer
+        format: int64
+      reviews:
+        type: array
+        items:
+          $ref: '#/definitions/Review'
+  ReviewResult:
+    description: a single review result
+    type: object
+    properties:
+      review:
+        $ref: '#/definitions/Review'
+  CommentPage:
+    description: a page of comments, sometimes for a single topic
+    type: object
+    properties:
+      topic:
+        description: If not-empty, then this is the topic (a URI path) that all the comments in this list belong to.
+        type: string
+      comments:
+        $ref: '#/definitions/CommentMap'
+      lastSeen:
+        description: Paging index
+        type: integer
+        format: int32
+  CommentResult:
+    description: A single user comment.
+    type: object
+    properties:
+      comment:
+        $ref: '#/definitions/Comment'
+  Comment:
+    description: A user comment on a topic.
+    type: object
+    properties:
+      id:
+        $ref: '#/definitions/Id'
+      attachments:
+        # TODO better understand this structure.  This is a guess
+        type: array
+        items:
+          type: string
+      body:
+        description: comment text
+        type: string
+      context:
+        type: array
+        items:
+          $ref: '#/definitions/CommentContextItem'
+      edited:
+        # TODO figure out this type.  The examples only show `null`
+        type: string
+      flags:
+        description: Optional flags on the comment. Typically set to closed to archive a comment.
+        type: array
+        items:
+          type: string
+      likes:
+        # TODO better understand this structure
+        # Guessing this is the list of users who like it.
+        type: array
+        items:
+          type: string
+      taskState:
+        type: string
+      time:
+        description: Timestamp of when the comment was created.
+        type: integer
+        format: int64
+      topic:
+        description: "URI path of the object for which this is a comment.  Example: `reviews/885`"
+        type: string
+      updated:
+        description: Timestamp of when this comment was last updated.
+        type: integer
+        format: int64
+      user:
+        description: User who created the comment
+        type: string
+  CommentMap:
+    description: maps a string version of the comment ID to the comment.
+    type: object
+    additionalProperties:
+      $ref: '#/definitions/Comment'
+  CommentContextItem:
+    description: a single item within the comment context array
+    type: object
+    properties:
+      file:
+        type: string
+      leftLine:
+        type: integer
+        format: int32
+      rightLine:
+        type: integer
+        format: int32
+      content:
+        $ref: '#/definitions/stringArray'
+      version:
+        type: integer
+        format: int32
+  GroupPage:
+    type: object
+    properties:
+      groups:
+        type: array
+        items:
+          $ref: '#/definitions/Group'
+      lastSeen:
+        description: paging index; provided only if the request was for a paged result.
+        type: string
+    required:
+    - groups
+  GroupResult:
+    type: object
+    properties:
+      group:
+        $ref: '#/definitions/Group'
+  Group:
+    type: object
+    properties:
+      Group:
+        description: Swarm group name
+        type: string
+      MaxLockTime:
+        type: integer
+        format: int32
+      MaxResults:
+        type: integer
+        format: int32
+      MaxScanRows:
+        type: integer
+        format: int32
+      Owners:
+        type: array
+        items:
+          type: string
+      PasswordTimeout:
+        type: integer
+        format: int32
+      Subgroups:
+        $ref: '#/definitions/stringArray'
+      Timeout:
+        type: integer
+        format: int32
+      Users:
+        $ref: '#/definitions/stringArray'
+      config:
+        type: object
+        properties:
+          description:
+            type: string
+          emailFlags:
+            $ref: '#/definitions/stringArray'
+          name:
+            type: string
+  ParticipantMap:
+    type: object
+    description: mapping of usernames to their participation type.
+    additionalProperties:
+      # TODO find out what it can really contain
+      $ref: '#/definitions/stringArray'
+  StringIdResult:
+    type: object
+    description: the identifier
+    properties:
+      id:
+        type: string
+    required:
+    - id
+  Id:
+    type: integer
+    format: int64
+    minimum: 0
+    description: unique object identifier
+  stringArray:
+    type: array
+    items:
+      type: string

@@ -1,0 +1,30 @@
+{
+    "apiVersion": "v4",
+    "swaggerVersion": "1.2",
+    "apis": [
+        {
+            "path": "/activity.json",
+            "description": "Swarm Activity List"
+        },
+        {
+            "path": "/comments.json",
+            "description": "Swarm Comments"
+        },
+        {
+            "path": "/groups.json",
+            "description": "Swarm Groups"
+        },
+        {
+            "path": "/index.json",
+            "description": "Basic API controller providing a simple version action"
+        },
+        {
+            "path": "/projects.json",
+            "description": "Swarm Projects"
+        },
+        {
+            "path": "/reviews.json",
+            "description": "Swarm Reviews"
+        }
+    ]
+}

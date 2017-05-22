@@ -14,6 +14,9 @@
 
 package net.groboclown.p4.swarm;
 
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.server.IOptionsServer;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -25,6 +28,34 @@ public class SwarmConfig {
 
     private SwarmConfig() {
         // Do nothing
+    }
+
+    /**
+     * Loads the URI from the p4d server.
+     *
+     * @param server Perforce server to reference
+     * @return this
+     * @throws P4JavaException if there was a problem communicating with the server
+     */
+    public SwarmConfig withServerInfo(IOptionsServer server)
+            throws P4JavaException {
+        return withUri(P4ServerSwarmUtil.getSwarmURI(server));
+    }
+
+    /**
+     * Loads the URI and creates a new ticket from the p4d server.
+     *
+     * @param server Perforce server to reference
+     * @param password user's password
+     * @return this
+     * @throws P4JavaException if there was a problem communicating with the server,
+     *      or if the login was invalid.
+     */
+    public SwarmConfig withServerInfo(IOptionsServer server, String password)
+            throws P4JavaException {
+        return
+                withUri(P4ServerSwarmUtil.getSwarmURI(server))
+                .withTicket(P4ServerSwarmUtil.getTicket(server, password));
     }
 
     public SwarmConfig withUri(URI uri) {
@@ -54,9 +85,10 @@ public class SwarmConfig {
 
     /**
      * The authentication for the swarm server might allow a password.
+     * Recommended to not use this.
      *
-     * @param passwd
-     * @return
+     * @param passwd user password.
+     * @return this
      */
     public SwarmConfig withPassword(String passwd) {
         // The underlying API is the same, whether you pass a password or

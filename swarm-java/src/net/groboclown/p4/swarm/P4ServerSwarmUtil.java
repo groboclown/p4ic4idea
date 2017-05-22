@@ -17,6 +17,7 @@ package net.groboclown.p4.swarm;
 import com.perforce.p4java.admin.IProperty;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.server.GetPropertyOptions;
+import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
 
 import java.net.URI;
@@ -37,5 +38,14 @@ public class P4ServerSwarmUtil {
             return null;
         }
         return URI.create(res.get(0).getValue());
+    }
+
+    public static String getTicket(IOptionsServer server, String password)
+            throws P4JavaException {
+        // need an all-host ticket
+        final LoginOptions opts = new LoginOptions(true, true);
+        final StringBuffer ticket = new StringBuffer();
+        server.login(password, ticket, opts);
+        return ticket.toString();
     }
 }

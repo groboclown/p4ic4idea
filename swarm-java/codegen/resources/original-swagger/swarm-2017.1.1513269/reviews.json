@@ -1,0 +1,355 @@
+{
+    "basePath": "/api/v6/",
+    "swaggerVersion": "1.2",
+    "apiVersion": "v6",
+    "resourcePath": "/reviews",
+    "apis": [
+        {
+            "path": "dashboards/action",
+            "operations": [
+                {
+                    "method": "GET",
+                    "summary": "Get reviews for action dashboard",
+                    "nickname": "dashboardAction",
+                    "notes": "Gets reviews for the action dashboard for the authenticated user"
+                }
+            ]
+        },
+        {
+            "path": "reviews/",
+            "operations": [
+                {
+                    "method": "POST",
+                    "summary": "Create a Review",
+                    "nickname": "createReview",
+                    "parameters": [
+                        {
+                            "paramType": "form",
+                            "name": "change",
+                            "type": "integer",
+                            "required": true,
+                            "description": "Change ID to create a review from"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "description",
+                            "type": "string",
+                            "required": false,
+                            "description": "Description for the new review (defaults to change description)"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "reviewers",
+                            "type": "array",
+                            "required": false,
+                            "description": "A list of reviewers for the new review",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "requiredReviewers",
+                            "type": "array",
+                            "required": false,
+                            "description": "A list of required reviewers for the new review (v1.1+)",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    ],
+                    "responseMessages": [
+                        {
+                            "code": 400,
+                            "message": "Bad Request"
+                        },
+                        {
+                            "code": 401,
+                            "message": "Unauthorized"
+                        }
+                    ],
+                    "notes": "Pass in a changelist ID to create a review. Optionally, you can also provide a\n               description and a list of reviewers."
+                }
+            ]
+        },
+        {
+            "path": "reviews/archive/",
+            "operations": [
+                {
+                    "method": "POST",
+                    "summary": "Archiving the inactive reviews (v6+)",
+                    "nickname": "archive",
+                    "parameters": [
+                        {
+                            "paramType": "form",
+                            "name": "notUpdatedSince",
+                            "type": "string",
+                            "required": true,
+                            "description": "Updated since date. Requires the date to be in the format YYYY-mm-dd, for example\n     *             2017-01-01"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "description",
+                            "type": "string",
+                            "required": true,
+                            "description": "A description that is posted as a comment for archiving."
+                        }
+                    ],
+                    "responseMessages": [
+                        {
+                            "code": 400,
+                            "message": "Bad Request"
+                        },
+                        {
+                            "code": 405,
+                            "message": "Method Not Allowed"
+                        },
+                        {
+                            "code": 401,
+                            "message": "Unauthorized"
+                        }
+                    ],
+                    "notes": "Archiving reviews not updated since the date (v6+)"
+                }
+            ]
+        },
+        {
+            "path": "reviews/{id}",
+            "operations": [
+                {
+                    "method": "GET",
+                    "summary": "Get Review Information",
+                    "nickname": "getReview",
+                    "parameters": [
+                        {
+                            "paramType": "path",
+                            "name": "id",
+                            "type": "integer",
+                            "required": true,
+                            "description": "Review ID"
+                        },
+                        {
+                            "paramType": "query",
+                            "name": "fields",
+                            "type": "string",
+                            "required": false,
+                            "description": "An optional comma-separated list (or array) of fields to show. Omitting this parameter\n     *                          or passing an empty value shows all fields."
+                        }
+                    ],
+                    "responseMessages": [
+                        {
+                            "code": 404,
+                            "message": "Not Found"
+                        },
+                        {
+                            "code": 401,
+                            "message": "Unauthorized"
+                        }
+                    ],
+                    "notes": "Retrieve information about a review."
+                }
+            ]
+        },
+        {
+            "path": "reviews/{id}/changes/",
+            "operations": [
+                {
+                    "method": "POST",
+                    "summary": "Add Change to Review",
+                    "nickname": "addChange",
+                    "parameters": [
+                        {
+                            "paramType": "path",
+                            "name": "id",
+                            "type": "integer",
+                            "required": true,
+                            "description": "Review ID"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "change",
+                            "type": "integer",
+                            "required": true,
+                            "description": "Change ID"
+                        }
+                    ],
+                    "responseMessages": [
+                        {
+                            "code": 400,
+                            "message": "Bad Request"
+                        },
+                        {
+                            "code": 404,
+                            "message": "Not Found"
+                        },
+                        {
+                            "code": 405,
+                            "message": "Method Not Allowed"
+                        },
+                        {
+                            "code": 401,
+                            "message": "Unauthorized"
+                        }
+                    ],
+                    "notes": "Links the given change to the review and schedules an update."
+                }
+            ]
+        },
+        {
+            "path": "reviews/{id}/cleanup",
+            "operations": [
+                {
+                    "method": "POST",
+                    "summary": "Clean up a review (v6+)",
+                    "nickname": "cleanup",
+                    "parameters": [
+                        {
+                            "paramType": "form",
+                            "name": "reopen",
+                            "type": "boolean",
+                            "required": false,
+                            "description": "Expected to be a boolean (defaulting to false). If true then an attempt will\n     *             be made to reopen files into a default changelist"
+                        }
+                    ],
+                    "responseMessages": [
+                        {
+                            "code": 400,
+                            "message": "Bad Request"
+                        },
+                        {
+                            "code": 405,
+                            "message": "Method Not Allowed"
+                        },
+                        {
+                            "code": 401,
+                            "message": "Unauthorized"
+                        }
+                    ],
+                    "notes": "Clean up a review for the given id."
+                }
+            ]
+        },
+        {
+            "path": "reviews/{id}/state/",
+            "operations": [
+                {
+                    "method": "PATCH",
+                    "summary": "Transition the Review State (v2+)",
+                    "nickname": "state",
+                    "parameters": [
+                        {
+                            "paramType": "path",
+                            "name": "id",
+                            "type": "integer",
+                            "required": true,
+                            "description": "Review ID"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "state",
+                            "type": "string",
+                            "required": true,
+                            "description": "Review State. Valid options: needsReview, needsRevision, approved, archived, rejected"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "description",
+                            "type": "string",
+                            "required": false,
+                            "description": "An optional description that is posted as a comment for non-commit transitions.\n     *                          Commits that do not include a description default to using the Review description\n     *                          in the resulting change description."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "commit",
+                            "type": "boolean",
+                            "required": false,
+                            "description": "Set this flag to true and provide a state of `approved` in order to trigger the\n     *                          *Approve and Commit* action in Swarm."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "wait",
+                            "type": "boolean",
+                            "required": false,
+                            "description": "Instruct Swarm to wait for a commit to finish before returning."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "jobs[]",
+                            "type": "stringArray",
+                            "required": false,
+                            "description": "When performing an 'Approve and Commit', one or more jobs can be attached to the review\n     *                          as part of the commit process."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "fixStatus",
+                            "type": "string",
+                            "required": false,
+                            "description": "Provide a fix status for the attached job(s) when performing an 'Approve and Commit'.\n     *                          Possible status values vary by job specification, but often include:\n     *                          open, suspended, closed, review, fixed."
+                        }
+                    ],
+                    "responseMessages": [
+                        {
+                            "code": 400,
+                            "message": "Bad Request"
+                        },
+                        {
+                            "code": 404,
+                            "message": "Not Found"
+                        },
+                        {
+                            "code": 405,
+                            "message": "Method Not Allowed"
+                        },
+                        {
+                            "code": 401,
+                            "message": "Unauthorized"
+                        }
+                    ],
+                    "notes": "Transition the review to a new state. When transitioning to approved, you can optionally\n               commit the review. (v2+)"
+                }
+            ]
+        },
+        {
+            "path": "reviews/{review_id}",
+            "description": "Update review description",
+            "operations": [
+                {
+                    "method": "PATCH",
+                    "summary": "Update Review Description",
+                    "nickname": "updateReview",
+                    "parameters": [
+                        {
+                            "paramType": "path",
+                            "name": "review_id",
+                            "type": "integer",
+                            "required": true,
+                            "description": "Review ID"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "author",
+                            "type": "string",
+                            "required": false,
+                            "description": "The new author for the specified review. (At least one of Author or Description are\n     *                          required.)"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "description",
+                            "type": "string",
+                            "required": false,
+                            "description": "The new description for the specified review. (At least one of Description or Author are\n     *                          required.)"
+                        },
+                        {
+                            "paramType": "query",
+                            "name": "_method",
+                            "type": "string",
+                            "required": false,
+                            "description": "Method Override. If your client cannot submit HTTP PATCH, use an HTTP POST with the\n     *                          parameter ?_method=PATCH to override."
+                        }
+                    ],
+                    "notes": "Update the description field of a review."
+                }
+            ]
+        }
+    ]
+}

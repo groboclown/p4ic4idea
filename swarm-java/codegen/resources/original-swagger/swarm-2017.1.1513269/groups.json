@@ -1,0 +1,226 @@
+{
+    "basePath": "/api/v6/",
+    "swaggerVersion": "1.2",
+    "apiVersion": "v6",
+    "resourcePath": "/groups",
+    "apis": [
+        {
+            "path": "groups/",
+            "operations": [
+                {
+                    "method": "GET",
+                    "summary": "Get List of Groups",
+                    "nickname": "listGroups",
+                    "parameters": [
+                        {
+                            "paramType": "query",
+                            "name": "after",
+                            "type": "string",
+                            "required": false,
+                            "description": "A group ID to seek to. Groups prior to and including the specified\n     *                          ID are excluded from the results and do not count towards `max`.\n     *                          Useful for pagination. Commonly set to the `lastSeen` property from\n     *                          a previous query."
+                        },
+                        {
+                            "paramType": "query",
+                            "name": "max",
+                            "type": "integer",
+                            "required": false,
+                            "description": "Maximum number of groups to return. This does not guarantee that\n     *                          `max` groups are returned. It does guarantee that the number of\n     *                          groups returned won't exceed `max`.",
+                            "defaultValue": "100"
+                        },
+                        {
+                            "paramType": "query",
+                            "name": "fields",
+                            "type": "string",
+                            "required": false,
+                            "description": "An optional comma-separated list (or array) of fields to show for each group.\n     *                          Omitting this parameter or passing an empty value shows all fields."
+                        },
+                        {
+                            "paramType": "query",
+                            "name": "keywords",
+                            "type": "string",
+                            "required": false,
+                            "description": "Keywords to limit groups on. Only groups where the group ID, group name (if set), or\n     *                          description contain the specified keywords are returned."
+                        }
+                    ],
+                    "notes": "Returns the complete list of groups in Swarm."
+                },
+                {
+                    "method": "POST",
+                    "summary": "Create a new Group",
+                    "nickname": "createGroup",
+                    "parameters": [
+                        {
+                            "paramType": "form",
+                            "name": "Group",
+                            "type": "string",
+                            "required": true,
+                            "description": "Group identifier string."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "Users",
+                            "type": "array",
+                            "required": false,
+                            "description": "An optional array of group users.\n     *                          At least one of Users, Owners, or Subgroups is required."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "Owners",
+                            "type": "array",
+                            "required": false,
+                            "description": "An optional array of group owners.\n     *                          At least one of Users, Owners, or Subgroups is required."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "Subgroups",
+                            "type": "array",
+                            "required": false,
+                            "description": "An optional array of subgroups.\n     *                          At least one of Users, Owners, or Subgroups is required."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "config[name]",
+                            "type": "string",
+                            "required": false,
+                            "description": "An optional full name for the group."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "config[description]",
+                            "type": "string",
+                            "required": false,
+                            "description": "An optional group description."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "config[emailFlags][commits]",
+                            "type": "boolean",
+                            "required": false,
+                            "description": "Email members when a change is committed."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "config[emailFlags][reviews]",
+                            "type": "boolean",
+                            "required": false,
+                            "description": "Email members when a new review is requested."
+                        }
+                    ],
+                    "notes": "Creates a new group in Swarm."
+                }
+            ]
+        },
+        {
+            "path": "groups/{id}",
+            "operations": [
+                {
+                    "method": "GET",
+                    "summary": "Get Group Information",
+                    "nickname": "getGroup",
+                    "parameters": [
+                        {
+                            "paramType": "path",
+                            "name": "id",
+                            "type": "string",
+                            "required": true,
+                            "description": "Group ID"
+                        },
+                        {
+                            "paramType": "query",
+                            "name": "fields",
+                            "type": "string",
+                            "required": false,
+                            "description": "An optional comma-separated list (or array) of fields to show for each group.\n     *                          Omitting this parameter or passing an empty value shows all fields."
+                        }
+                    ],
+                    "responseMessages": [
+                        {
+                            "code": 404,
+                            "message": "Not Found"
+                        }
+                    ],
+                    "notes": "Retrieve information about a group."
+                },
+                {
+                    "method": "PATCH",
+                    "summary": "Edit a Group",
+                    "nickname": "patchGroup",
+                    "parameters": [
+                        {
+                            "paramType": "path",
+                            "name": "id",
+                            "type": "string",
+                            "required": true,
+                            "description": "Group ID"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "Users",
+                            "type": "array",
+                            "required": false,
+                            "description": "An optional array of group users."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "Owners",
+                            "type": "array",
+                            "required": false,
+                            "description": "An optional array of group owners."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "Subgroups",
+                            "type": "array",
+                            "required": false,
+                            "description": "An optional array of group subgroups."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "config[name]",
+                            "type": "string",
+                            "required": false,
+                            "description": "An optional full name for the group."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "config[description]",
+                            "type": "string",
+                            "required": false,
+                            "description": "An optional group description."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "config[emailFlags][commits]",
+                            "type": "boolean",
+                            "required": false,
+                            "description": "Email members when a change is committed."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "config[emailFlags][reviews]",
+                            "type": "boolean",
+                            "required": false,
+                            "description": "Email members when a new review is requested."
+                        }
+                    ],
+                    "notes": "Change the settings of a group in Swarm.\n               Only super users and group owners can perform this action."
+                },
+                {
+                    "method": "DELETE",
+                    "summary": "Delete a Group",
+                    "nickname": "deleteGroup",
+                    "parameters": [
+                        {
+                            "paramType": "path",
+                            "name": "id",
+                            "type": "string",
+                            "required": true,
+                            "description": "Group ID."
+                        }
+                    ],
+                    "notes": "Delete a group. Only super users and group owners can perform this action."
+                }
+            ]
+        }
+    ]
+}

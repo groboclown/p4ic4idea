@@ -15,14 +15,19 @@
 package net.groboclown.p4.swarm.impl;
 
 import net.groboclown.p4.swarm.SwarmConfig;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.HttpClientUtils;
+import org.apache.http.entity.BasicHttpEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 
@@ -44,9 +49,23 @@ public class BasicRequest {
 
     public static BasicResponse get(SwarmConfig config, String path, Map<String, String> query)
             throws IOException {
-        String url = toUrl(config, path, query);
-        HttpGet request = new HttpGet(url);
+        final String url = toUrl(config, path, query);
+        final HttpGet request = new HttpGet(url);
         return request(config, request);
+    }
+
+    public static BasicResponse post(SwarmConfig config, String path, String body)
+            throws IOException {
+        final String url = toUrl(config, path, null);
+        final HttpPost request = new HttpPost(url);
+        final HttpEntity entity = new StringEntity(body, ContentType.APPLICATION_JSON);
+        request.setEntity(entity);
+        return request(config, request);
+    }
+
+    public static BasicResponse patch(SwarmConfig config, String path, String body) {
+        // FIXME
+        return null;
     }
 
 

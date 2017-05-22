@@ -1,0 +1,148 @@
+{
+  "apiVersion": "v0",
+  "swaggerVersion": "1.2",
+  "apis": [
+    {
+      "path": "/swarm-2015.2.1223788/activity.json",
+      "description": "Swarm Activity List v1.1"
+    },
+    {
+      "path": "/swarm-2015.2.1223788/index.json",
+      "description": "Basic API controller providing a simple version action v1.1"
+    },
+    {
+      "path": "/swarm-2015.2.1223788/projects.json",
+      "description": "Swarm Projects v1.1"
+    },
+    {
+      "path": "/swarm-2015.2.1223788/reviews.json",
+      "description": "Swarm Reviews v1.1"
+    },
+
+
+    {
+      "path": "/swarm-2015.4.1331216/activity.json",
+      "description": "Swarm Activity List v1.2"
+    },
+    {
+      "path": "/swarm-2015.4.1331216/index.json",
+      "description": "Basic API controller providing a simple version action v1.2"
+    },
+    {
+      "path": "/swarm-2015.4.1331216/projects.json",
+      "description": "Swarm Projects v1.2"
+    },
+    {
+      "path": "/swarm-2015.4.1331216/reviews.json",
+      "description": "Swarm Reviews v1.2"
+    },
+
+
+
+    {
+      "path": "/swarm-2016.1.1435266/activity.json",
+      "description": "Swarm Activity List v3"
+    },
+    {
+      "path": "/swarm-2016.1.1435266/comments.json",
+      "description": "Swarm Comments v3"
+    },
+    {
+      "path": "/swarm-2016.1.1435266/groups.json",
+      "description": "Swarm Groups v3"
+    },
+    {
+      "path": "/swarm-2016.1.1435266/index.json",
+      "description": "Basic API controller providing a simple version action v3"
+    },
+    {
+      "path": "/swarm-2016.1.1435266/projects.json",
+      "description": "Swarm Projects v3"
+    },
+    {
+      "path": "/swarm-2016.1.1435266/reviews.json",
+      "description": "Swarm Reviews v3"
+    },
+
+
+
+    {
+      "path": "/swarm-2016.2.1446446/activity.json",
+      "description": "Swarm Activity List v4"
+    },
+    {
+      "path": "/swarm-2016.2.1446446/comments.json",
+      "description": "Swarm Comments v4"
+    },
+    {
+      "path": "/swarm-2016.2.1446446/groups.json",
+      "description": "Swarm Groups v4"
+    },
+    {
+      "path": "/swarm-2016.2.1446446/index.json",
+      "description": "Basic API controller providing a simple version action v4"
+    },
+    {
+      "path": "/swarm-2016.2.1446446/projects.json",
+      "description": "Swarm Projects v4"
+    },
+    {
+      "path": "/swarm-2016.2.1446446/reviews.json",
+      "description": "Swarm Reviews v4"
+    },
+
+
+
+    {
+      "path": "/swarm-2016.3.1472982/activity.json",
+      "description": "Swarm Activity List v5"
+    },
+    {
+      "path": "/swarm-2016.3.1472982/comments.json",
+      "description": "Swarm Comments v5"
+    },
+    {
+      "path": "/swarm-2016.3.1472982/groups.json",
+      "description": "Swarm Groups v5"
+    },
+    {
+      "path": "/swarm-2016.3.1472982/index.json",
+      "description": "Basic API controller providing a simple version action v5"
+    },
+    {
+      "path": "/swarm-2016.3.1472982/projects.json",
+      "description": "Swarm Projects v5"
+    },
+    {
+      "path": "/swarm-2016.3.1472982/reviews.json",
+      "description": "Swarm Reviews v5"
+    },
+
+
+
+    {
+      "path": "/swarm-2017.1.1513269/activity.json",
+      "description": "Swarm Activity List v6"
+    },
+    {
+      "path": "/swarm-2017.1.1513269/comments.json",
+      "description": "Swarm Comments v6"
+    },
+    {
+      "path": "/swarm-2017.1.1513269/groups.json",
+      "description": "Swarm Groups v6"
+    },
+    {
+      "path": "/swarm-2017.1.1513269/index.json",
+      "description": "Basic API controller providing a simple version action v6"
+    },
+    {
+      "path": "/swarm-2017.1.1513269/projects.json",
+      "description": "Swarm Projects v6"
+    },
+    {
+      "path": "/swarm-2017.1.1513269/reviews.json",
+      "description": "Swarm Reviews v6"
+    }
+  ]
+}

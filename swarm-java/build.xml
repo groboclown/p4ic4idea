@@ -3,14 +3,16 @@
     <import file="../build/common.xml"/>
 
     <property name="output.dir"
-              value="work/production"/>
+              location="work/production"/>
     <property name="testoutput.dir"
-              value="work/test"/>
+              location="work/test"/>
+    <property name="codegen.out.dir"
+              location="work/codegen-src"/>
 
     <path id="production.classpath">
         <pathelement location="${rootdir}/lib/gson/2.8.0/gson-2.8.0.jar"/>
-        <pathelement location="${rootdir}/lib/httpclient/4.5.2/httpclient-4.5.2.jar"/>
-        <pathelement location="${rootdir}/lib/httpcore/4.4.5/httpcore-4.4.5.jar"/>
+        <pathelement location="${rootdir}/lib/okhttp/2.7.5/okhttp-2.7.5.jar"/>
+        <pathelement location="${rootdir}/lib/okhttp/2.7.5/okio-1.13.0.jar"/>
         <pathelement location="${rootdir}/p4java/work/p4ic4idea.p4java.jar"/>
     </path>
 
@@ -42,7 +44,51 @@
     <!-- <target name="main" depends="compile, test, plugin.build.jar.p4ic4idea"/> -->
     <target name="main" depends="compile, package"/>
 
-    <target name="compile" depends="compile.production, compile.tests"
+    <target name="codegen" depends="codegen.create, codegen.compile">
+    </target>
+
+    <target name="codegen.create">
+        <delete dir="work/codegen-src"/>
+        <java jar="${rootdir}/lib/swagger-codegen-cli/2.2.2/swagger-codegen-cli-2.2.2.jar"
+                fork="true">
+            <sysproperty key="debugParser" value="true"/>
+            <arg value="generate"/>
+            <arg value="--api-package"/><arg value="org.groboclown.p4.swarm.client.api"/>
+            <arg value="--config"/><arg file="codegen/resources/swagger-codegen-config.json"/>
+            <arg value="--input-spec"/><arg file="codegen/resources/swagger/swagger.yaml"/>
+            <arg value="--invoker-package"/><arg value="org.groboclown.p4.swarm.client"/>
+            <arg value="--lang"/><arg value="java"/>
+            <arg value="--output"/><arg file="${codegen.out.dir}"/>
+        </java>
+        <!-- remove files we really don't want -->
+        <delete>
+            <fileset dir="work/codegen-src/">
+                <exclude name="src/org/**"/>
+                <exclude name="docs/**"/>
+            </fileset>
+        </delete>
+    </target>
+
+    <target name="codegen.compile" depends="register.custom.compilers">
+        <mkdir dir="${output.dir}"/>
+        <javac2-135 destdir="${output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}"
+                    memorymaximumsize="${compiler.max.memory}" fork="true" executable="${jdk.bin}/javac"
+                    includeantruntime="false" target="1.6" source="1.6">
+            <compilerarg line="${compiler.args}"/>
+            <bootclasspath refid="bootclasspath.6"/>
+            <classpath refid="production.classpath"/>
+            <src>
+                <path>
+                    <dirset dir="work/codegen-src/">
+                        <include name="src"/>
+                    </dirset>
+                </path>
+            </src>
+            <patternset refid="excluded.from.compilation"/>
+        </javac2-135>
+    </target>
+
+    <target name="compile" depends="codegen, compile.production, compile.tests"
             description="Compile module swarm-java"/>
 
     <target name="compile.production" depends="register.custom.compilers"

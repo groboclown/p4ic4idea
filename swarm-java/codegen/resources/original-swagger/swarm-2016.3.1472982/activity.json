@@ -1,0 +1,136 @@
+{
+    "basePath": "/api/v5/",
+    "swaggerVersion": "1.2",
+    "apiVersion": "v5",
+    "resourcePath": "/activity",
+    "apis": [
+        {
+            "path": "activity",
+            "operations": [
+                {
+                    "method": "POST",
+                    "summary": "Create Activity Entry",
+                    "nickname": "addActivity",
+                    "parameters": [
+                        {
+                            "paramType": "form",
+                            "name": "type",
+                            "type": "string",
+                            "required": true,
+                            "description": "Type of activity, used for filtering activity streams\n     *                          (values can include `change`, `comment`, `job`, `review`)."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "user",
+                            "type": "string",
+                            "required": true,
+                            "description": "User who performed the action."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "action",
+                            "type": "string",
+                            "required": true,
+                            "description": "Action that was performed - past-tense, e.g., `created` or `commented on`."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "target",
+                            "type": "string",
+                            "required": true,
+                            "description": "Target that the action was performed on, e.g., `issue 1234`."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "topic",
+                            "type": "string",
+                            "required": false,
+                            "description": "Optional topic for the activity entry. Topics are essentially comment thread IDs.\n     *                          Examples: `reviews/1234` or `jobs/job001234`."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "description",
+                            "type": "string",
+                            "required": false,
+                            "description": "Optional description of object or activity to provide context."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "change",
+                            "type": "integer",
+                            "required": false,
+                            "description": "Optional changelist ID this activity is related to. Used to filter activity related to\n     *                          restricted changes."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "streams[]",
+                            "type": "array",
+                            "required": false,
+                            "description": "Optional array of streams to display on. This can include user-initiated actions\n     *                          (`user-alice`), activity relating to a user's followed projects/users\n     *                          (`personal-alice`), review streams (`review-1234`), and project streams\n     *                          (`project-exampleproject`).",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "link",
+                            "type": "string",
+                            "required": false,
+                            "description": "Optional URL for `target`."
+                        }
+                    ],
+                    "notes": "Creates an entry in the Activity List.\n               Note: admin-level privileges are required for this action."
+                },
+                {
+                    "method": "GET",
+                    "summary": "List Activity Entries",
+                    "nickname": "listActivity",
+                    "parameters": [
+                        {
+                            "paramType": "form",
+                            "name": "change",
+                            "type": "integer",
+                            "required": false,
+                            "description": "Optionally filter activity entries by associated Changelist ID. This\n     *                          only includes records for which there is an activity entry in\n     *                          Swarm."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "stream",
+                            "type": "string",
+                            "required": false,
+                            "description": "Optional activity stream to query for entries. This can include\n     *                          user-initiated actions (`user-alice`), activity relating to a user's\n     *                          followed projects/users (`personal-alice`), review streams\n     *                          (`review-1234`), and project streams (`project-exampleproject`)."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "type",
+                            "type": "string",
+                            "required": false,
+                            "description": "Type of activity, e.g., `change`, `comment`, `job`, or `review`."
+                        },
+                        {
+                            "paramType": "query",
+                            "name": "after",
+                            "type": "integer",
+                            "description": "An activity ID to seek to. Activity entries up to and including the\n     *                          specified ID are excluded from the results and do not count towards\n     *                          `max`. Useful for pagination. Commonly set to the `lastSeen`\n     *                          property from a previous query."
+                        },
+                        {
+                            "paramType": "query",
+                            "name": "max",
+                            "type": "integer",
+                            "description": "Maximum number of activity entries to return. This does not\n     *                          guarantee that `max` entries are returned. It does guarantee that\n     *                          the number of entries returned won't exceed `max`. Server-side\n     *                          filtering may exclude some activity entries for permissions\n     *                          reasons.",
+                            "defaultValue": "100"
+                        },
+                        {
+                            "paramType": "query",
+                            "name": "fields",
+                            "type": "string",
+                            "required": false,
+                            "description": "An optional comma-separated list (or array) of fields to show.\n     *                          Omitting this parameter or passing an empty value shows all\n     *                          fields."
+                        }
+                    ],
+                    "notes": "Retrieve the Activity List."
+                }
+            ]
+        }
+    ]
+}

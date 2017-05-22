@@ -1,0 +1,267 @@
+{
+    "basePath": "/api/v5/",
+    "swaggerVersion": "1.2",
+    "apiVersion": "v5",
+    "resourcePath": "/projects",
+    "apis": [
+        {
+            "path": "projects/",
+            "operations": [
+                {
+                    "method": "GET",
+                    "summary": "Get List of Projects",
+                    "nickname": "listProjects",
+                    "parameters": [
+                        {
+                            "paramType": "query",
+                            "name": "fields",
+                            "type": "string",
+                            "required": false,
+                            "description": "An optional comma-separated list (or array) of fields to show for each project.\n     *                          Omitting this parameter or passing an empty value shows all fields."
+                        }
+                    ],
+                    "notes": "Returns a list of projects in Swarm that are visible to the current user. Administrators will see\n               all projects, including private ones."
+                },
+                {
+                    "method": "POST",
+                    "summary": "Create a new Project",
+                    "nickname": "createProject",
+                    "parameters": [
+                        {
+                            "paramType": "form",
+                            "name": "name",
+                            "type": "string",
+                            "required": true,
+                            "description": "Project Name (is also used to generate the Project ID)"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "members",
+                            "type": "array",
+                            "required": true,
+                            "description": "An array of project members."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "subgroups",
+                            "type": "array",
+                            "required": false,
+                            "description": "An optional array of project subgroups."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "owners",
+                            "type": "array",
+                            "required": false,
+                            "description": "An optional array of project owners."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "description",
+                            "type": "string",
+                            "required": false,
+                            "description": "An optional project description."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "private",
+                            "type": "boolean",
+                            "required": false,
+                            "description": "Private projects are visible only to Members, Moderators, Owners, and Administrators.\n     *                          (Default: false)\n     *             "
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "deploy",
+                            "type": "array",
+                            "required": false,
+                            "description": "Configuration for automated deployment.\n     *                          Example: {&quot;enabled&quot;: true,\n     *                          &quot;url&quot;: &quot;pass:q[http://localhost/?change={change}]&quot;}"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "tests",
+                            "type": "array",
+                            "required": false,
+                            "description": "Configuration for testing/continuous integration."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "branches",
+                            "type": "array",
+                            "required": false,
+                            "description": "Optional branch definitions for this project."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "jobview",
+                            "type": "string",
+                            "required": false,
+                            "description": "An optional jobview for associating certain jobs with this project."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "emailFlags[change_email_project_users]",
+                            "type": "boolean",
+                            "required": false,
+                            "description": "Email members, moderators and followers when a change is committed."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "emailFlags[review_email_project_members]",
+                            "type": "boolean",
+                            "required": false,
+                            "description": "Email members and moderators when a new review is requested."
+                        }
+                    ],
+                    "notes": "Creates a new project in Swarm."
+                }
+            ]
+        },
+        {
+            "path": "projects/{id}",
+            "operations": [
+                {
+                    "method": "GET",
+                    "summary": "Get Project Information",
+                    "nickname": "getProject",
+                    "parameters": [
+                        {
+                            "paramType": "path",
+                            "name": "id",
+                            "type": "string",
+                            "required": true,
+                            "description": "Project ID"
+                        },
+                        {
+                            "paramType": "query",
+                            "name": "fields",
+                            "type": "string",
+                            "required": false,
+                            "description": "An optional comma-separated list (or array) of fields to show for each project.\n     *                          Omitting this parameter or passing an empty value shows all fields."
+                        }
+                    ],
+                    "responseMessages": [
+                        {
+                            "code": 404,
+                            "message": "Not Found"
+                        }
+                    ],
+                    "notes": "Retrieve information about a project."
+                },
+                {
+                    "method": "PATCH",
+                    "summary": "Edit a Project",
+                    "nickname": "patchProject",
+                    "parameters": [
+                        {
+                            "paramType": "path",
+                            "name": "id",
+                            "type": "string",
+                            "required": true,
+                            "description": "Project ID"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "name",
+                            "type": "string",
+                            "required": false,
+                            "description": "Project Name (changing the project name does not change the project ID)"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "members",
+                            "type": "array",
+                            "required": false,
+                            "description": "An array of project members."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "subgroups",
+                            "type": "array",
+                            "required": false,
+                            "description": "An optional array of project subgroups."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "owners",
+                            "type": "array",
+                            "required": false,
+                            "description": "An optional array of project owners."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "description",
+                            "type": "string",
+                            "required": false,
+                            "description": "Your project description."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "private",
+                            "type": "boolean",
+                            "required": false,
+                            "description": "Private projects are visible only to Members, Moderators, Owners, and Administrators.\n     *                          (Default: false)\n     *             "
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "deploy",
+                            "type": "array",
+                            "required": false,
+                            "description": "Configuration for automated deployment.\n     *                          Example: {&quot;enabled&quot;: true,\n     *                          &quot;url&quot;: &quot;pass:q[http://localhost/?change={change}]&quot;}"
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "tests",
+                            "type": "array",
+                            "required": false,
+                            "description": "Configuration for testing/continuous integration."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "branches",
+                            "type": "array",
+                            "required": false,
+                            "description": "Optional branch definitions for this project."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "jobview",
+                            "type": "string",
+                            "required": false,
+                            "description": "A jobview for associating certain jobs with this project."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "emailFlags[change_email_project_users]",
+                            "type": "boolean",
+                            "required": false,
+                            "description": "Email members, moderators and followers when a change is committed."
+                        },
+                        {
+                            "paramType": "form",
+                            "name": "emailFlags[review_email_project_members]",
+                            "type": "boolean",
+                            "required": false,
+                            "description": "Email members and moderators when a new review is requested."
+                        }
+                    ],
+                    "notes": "Change the settings of a project in Swarm.\n               If a project has owners set, only the owners can perform this action."
+                },
+                {
+                    "method": "DELETE",
+                    "summary": "Delete a Project",
+                    "nickname": "deleteProject",
+                    "parameters": [
+                        {
+                            "paramType": "path",
+                            "name": "id",
+                            "type": "string",
+                            "required": true,
+                            "description": "Project ID"
+                        }
+                    ],
+                    "notes": "Mark a Swarm project as deleted. The project ID and name cannot be reused.\n               If a project has owners set, only the owners can perform this action."
+                }
+            ]
+        }
+    ]
+}

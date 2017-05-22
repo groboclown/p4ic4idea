@@ -14,7 +14,6 @@
 
 package net.groboclown.p4.swarm.model.request;
 
-import net.groboclown.p4.swarm.model.PageableRequest;
 import net.groboclown.p4.swarm.model.anno.NullIf;
 import net.groboclown.p4.swarm.model.anno.ToString;
 import net.groboclown.p4.swarm.model.request.stringify.ListToString;

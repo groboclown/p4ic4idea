@@ -14,31 +14,23 @@
 
 package net.groboclown.p4.swarm.model.request;
 
-import net.groboclown.p4.swarm.model.anno.NullIf;
-import net.groboclown.p4.swarm.model.anno.ToString;
-import net.groboclown.p4.swarm.model.request.stringify.ListToString;
-
 import java.util.List;
 
-public class ActivityRequest implements PageableRequest {
+public class ActivityRequest {
     public enum ActivityType {
         change, comment, job, review
     }
 
-    @NullIf
     private int change = -1;
 
     private String stream = null;
 
     private ActivityType type;
 
-    @NullIf
     private int after = -1;
 
-    @NullIf
     private int max = -1;
 
-    @ToString(ListToString.class)
     private List<String> fields;
 
 
@@ -70,7 +62,6 @@ public class ActivityRequest implements PageableRequest {
         return after;
     }
 
-    @Override
     public void setAfter(int after) {
         this.after = after;
     }
@@ -79,7 +70,6 @@ public class ActivityRequest implements PageableRequest {
         return max;
     }
 
-    @Override
     public void setMax(int max) {
         this.max = max;
     }

@@ -26,10 +26,6 @@ public class SwarmConfig {
     private String ticket;
     private SwarmVersion version;
 
-    private SwarmConfig() {
-        // Do nothing
-    }
-
     /**
      * Loads the URI from the p4d server.
      *

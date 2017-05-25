@@ -15,16 +15,16 @@
 package net.groboclown.p4.swarm;
 
 public class SwarmVersion {
-    private static final float EPSILON = 0.0001f;
-    private final float floatVersion;
+    private static final double EPSILON = 0.0001;
+    private final double floatVersion;
     private final String pathVersion;
 
     SwarmVersion(float floatVersion) {
         if (floatVersion < 1.1) {
-            this.floatVersion = 1.0f + EPSILON;
+            this.floatVersion = 1.0 + EPSILON;
             this.pathVersion = "v1/";
         } else if (floatVersion < 1.9) {
-            this.floatVersion = 1.1f + EPSILON;
+            this.floatVersion = 1.1 + EPSILON;
             this.pathVersion = "v1.1/";
         } else {
             // Take the nearest integer value.
@@ -45,5 +45,9 @@ public class SwarmVersion {
 
     public String asPath() {
         return pathVersion;
+    }
+
+    public boolean isAtLeast(double version) {
+        return (version + EPSILON) <= (floatVersion - EPSILON);
     }
 }

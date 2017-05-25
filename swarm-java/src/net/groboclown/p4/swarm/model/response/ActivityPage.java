@@ -16,13 +16,11 @@ package net.groboclown.p4.swarm.model.response;
 
 import java.util.List;
 
-public class ActivityPage
-        implements Pageable {
+public class ActivityPage {
     private int lastSeen;
 
     private List<Activity> activity;
 
-    @Override
     public int getLastSeen() {
         return lastSeen;
     }

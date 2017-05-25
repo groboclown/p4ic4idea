@@ -10,16 +10,24 @@
               location="work/codegen-src"/>
 
     <path id="production.classpath">
+        <!-- swagger generated code -->
         <pathelement location="${rootdir}/lib/gson/2.8.0/gson-2.8.0.jar"/>
         <pathelement location="${rootdir}/lib/okhttp/2.7.5/okhttp-2.7.5.jar"/>
+        <pathelement location="${rootdir}/lib/okhttp/2.7.5/logging-interceptor-2.7.5.jar"/>
         <pathelement location="${rootdir}/lib/okhttp/2.7.5/okio-1.13.0.jar"/>
+        <pathelement location="${rootdir}/lib/joda-time/2.9.9/joda-time-2.9.9.jar"/>
+        <pathelement location="${rootdir}/lib/swagger/annotations-1.5.13/swagger-annotations-1.5.13.jar"/>
+        <pathelement location="${rootdir}/lib/commons-lang3/3.5/commons-lang3-3.5.jar"/>
+
         <pathelement location="${rootdir}/p4java/work/p4ic4idea.p4java.jar"/>
     </path>
 
     <path id="test.compile.classpath">
         <path refid="production.classpath"/>
         <pathelement location="${output.dir}"/>
-        <pathelement location="lib/mockito-all-1.9.5.jar"/>
+        <pathelement location="${rootdir}/lib/junit/4.12/hamcrest-core-1.3.jar"/>
+        <pathelement location="${rootdir}/lib/junit/4.12/junit-4.12.jar"/>
+        <pathelement location="${rootdir}/lib/mockito-all-1.9.5.jar"/>
     </path>
 
     <path id="test.runtime.classpath">
@@ -49,24 +57,25 @@
 
     <target name="codegen.create">
         <delete dir="work/codegen-src"/>
-        <java jar="${rootdir}/lib/swagger-codegen-cli/2.2.2/swagger-codegen-cli-2.2.2.jar"
+        <java jar="${rootdir}/lib/swagger/codegen-cli-2.2.2/swagger-codegen-cli-2.2.2.jar"
                 fork="true">
             <sysproperty key="debugParser" value="true"/>
             <arg value="generate"/>
-            <arg value="--api-package"/><arg value="org.groboclown.p4.swarm.client.api"/>
+            <arg value="--api-package"/><arg value="net.groboclown.p4.swarm.client.api"/>
             <arg value="--config"/><arg file="codegen/resources/swagger-codegen-config.json"/>
             <arg value="--input-spec"/><arg file="codegen/resources/swagger/swagger.yaml"/>
-            <arg value="--invoker-package"/><arg value="org.groboclown.p4.swarm.client"/>
+            <arg value="--invoker-package"/><arg value="net.groboclown.p4.swarm.client"/>
             <arg value="--lang"/><arg value="java"/>
             <arg value="--output"/><arg file="${codegen.out.dir}"/>
         </java>
         <!-- remove files we really don't want -->
         <delete>
             <fileset dir="work/codegen-src/">
-                <exclude name="src/org/**"/>
+                <exclude name="src/net/**"/>
                 <exclude name="docs/**"/>
             </fileset>
         </delete>
+        <delete file="work/codegen-src/.gitignore"/>
     </target>
 
     <target name="codegen.compile" depends="register.custom.compilers">
@@ -91,7 +100,7 @@
     <target name="compile" depends="codegen, compile.production, compile.tests"
             description="Compile module swarm-java"/>
 
-    <target name="compile.production" depends="register.custom.compilers"
+    <target name="compile.production" depends="register.custom.compilers,codegen.compile"
             description="Compile module p4ic4idea; production classes">
         <mkdir dir="${output.dir}"/>
         <javac2-135 destdir="${output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}"
@@ -120,18 +129,16 @@
     <target name="compile.tests"
             depends="register.custom.compilers,compile.production"
             description="compile module p4ic4idea; test classes" unless="skip.tests">
-        <!-- no tests right now
-
         <mkdir dir="${testoutput.dir}"/>
-        <javac2 destdir="${testoutput.dir}" debug="${compiler.debug}"
+        <javac2-135 destdir="${testoutput.dir}" debug="${compiler.debug}"
                 nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true"
                 executable="${jdk.bin}/javac" includeantruntime="false">
             <compilerarg line="${compiler.args}"/>
-            <bootclasspath refid="bootclasspath"/>
+            <bootclasspath refid="bootclasspath.6"/>
             <classpath refid="test.compile.classpath"/>
             <src refid="test.sourcepath"/>
             <patternset refid="excluded.from.compilation"/>
-        </javac2>
+        </javac2-135>
 
         <copy todir="${testoutput.dir}">
             <fileset dir="${basedir}/test">
@@ -139,8 +146,6 @@
                 <type type="file"/>
             </fileset>
         </copy>
-
-        -->
     </target>
 
     <target name="clean" description="cleanup module">
@@ -156,7 +161,26 @@
     </target>
 
 
-    <target name="test" unless="skip.tests">
-        <!-- no tests right now -->
+    <target name="test" depends="compile,unit-tests"/>
+
+    <target name="unit-tests" unless="skip.tests">
+        <property name="base.test-data.dir" location="${basedir}/work/test-data"/>
+        <mkdir dir="${base.test-data.dir}"/>
+        <echo>${jdk.bin}/java</echo>
+        <junit printsummary="yes" fork="yes" forkmode="once" failureProperty="tests.failure"
+               errorProperty="tests.error" dir="${base.test-data.dir}">
+            <classpath>
+                <path location="${testoutput.dir}"/>
+                <path refid="test.runtime.classpath"/>
+            </classpath>
+
+            <!-- Add the plain output to allow for step-by-step reporting of tests -->
+            <formatter type="plain" usefile="no"/>
+            <formatter type="xml" usefile="yes"/>
+
+            <batchtest todir="${base.test-data.dir}">
+                <fileset dir="${testoutput.dir}" includes="**/*Test.class"/>
+            </batchtest>
+        </junit>
     </target>
 </project>

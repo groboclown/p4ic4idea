@@ -5,8 +5,11 @@ info:
 schemes:
 - "http"
 - "https"
+# Because we need to dynamically assign the host, based on the
+# real hostname, we have to set the basePath to '/' (otherwise,
+# if we reassign the host, we have to include the base path).
 host: "localhost"
-basePath: /api
+basePath: /
 produces:
 - application/json
 # For the tags, we'll tag the API by the version number,
@@ -61,7 +64,7 @@ tags:
 - name: v6
   description: Swarm v6 release (2017.1/1513269)
 paths:
-  v1.1/activity:
+  api/v1.1/activity:
     post:
       responses:
         '200':
@@ -134,7 +137,7 @@ paths:
         name: link
         required: false
         type: string
-  v1.1/version:
+  api/v1.1/version:
     get:
       responses:
         '200':
@@ -151,7 +154,7 @@ paths:
       - application/json
       security:
       - p4_auth
-  v1.1/projects/:
+  api/v1.1/projects/:
     get:
       responses:
         '200':
@@ -172,7 +175,7 @@ paths:
         name: fields
         required: false
         type: string
-  v1.1/reviews/:
+  api/v1.1/reviews/:
     post:
       responses:
         '400':
@@ -321,7 +324,7 @@ paths:
         name: passesTests
         required: false
         type: string
-  'v1.1/reviews/{id}':
+  'api/v1.1/reviews/{id}':
     get:
       responses:
         '401':
@@ -352,7 +355,7 @@ paths:
         name: fields
         required: false
         type: string
-  'v1.1/reviews/{id}/changes/':
+  'api/v1.1/reviews/{id}/changes/':
     post:
       responses:
         '400':
@@ -386,7 +389,7 @@ paths:
         name: change
         required: true
         type: integer
-  v1.2/activity:
+  api/v1.2/activity:
     post:
       responses:
         '200':
@@ -459,7 +462,7 @@ paths:
         name: link
         required: false
         type: string
-  v1.2/version:
+  api/v1.2/version:
     get:
       responses:
         '200':
@@ -472,7 +475,7 @@ paths:
       tags:
       # - version
       - v1.2
-  v1.2/projects/:
+  api/v1.2/projects/:
     get:
       responses:
         '200':
@@ -493,7 +496,7 @@ paths:
         name: fields
         required: false
         type: string
-  v1.2/reviews/:
+  api/v1.2/reviews/:
     post:
       responses:
         '400':
@@ -652,7 +655,7 @@ paths:
         name: passesTests
         required: false
         type: string
-  'v1.2/reviews/{id}':
+  'api/v1.2/reviews/{id}':
     get:
       responses:
         '401':
@@ -682,7 +685,7 @@ paths:
         name: fields
         required: false
         type: string
-  'v1.2/reviews/{id}/changes/':
+  'api/v1.2/reviews/{id}/changes/':
     post:
       responses:
         '400':
@@ -716,7 +719,7 @@ paths:
         name: change
         required: true
         type: integer
-  v3/activity:
+  api/v3/activity:
     post:
       responses:
         '200':
@@ -855,7 +858,7 @@ paths:
         name: fields
         required: false
         type: string
-  v3/comments/:
+  api/v3/comments/:
     get:
       responses:
         '200':
@@ -947,7 +950,7 @@ paths:
         type: array
         items:
           type: string
-  'v3/comments/{id}':
+  'api/v3/comments/{id}':
     patch:
       responses:
         '200':
@@ -999,7 +1002,7 @@ paths:
         type: array
         items:
           type: string
-  v3/groups/:
+  api/v3/groups/:
     get:
       responses:
         '200':
@@ -1114,7 +1117,7 @@ paths:
         name: 'config[emailFlags][reviews]'
         required: false
         type: boolean
-  'v3/groups/{id}':
+  'api/v3/groups/{id}':
     get:
       responses:
         '404':
@@ -1222,7 +1225,7 @@ paths:
         name: id
         required: true
         type: string
-  v3/version:
+  api/v3/version:
     get:
       responses:
         '200':
@@ -1235,7 +1238,7 @@ paths:
       tags:
       # - "version"
       - v3
-  v3/projects/:
+  api/v3/projects/:
     get:
       responses:
         '200':
@@ -1342,7 +1345,7 @@ paths:
         name: 'emailFlags[review_email_project_members]'
         required: false
         type: boolean
-  'v3/projects/{id}':
+  'api/v3/projects/{id}':
     get:
       responses:
         '404':
@@ -1481,7 +1484,7 @@ paths:
         name: id
         required: true
         type: string
-  v3/reviews/:
+  api/v3/reviews/:
     post:
       responses:
         '400':
@@ -1497,7 +1500,6 @@ paths:
       tags:
       # - "reviews"
       - v3
-      # FIXME here
       consumes:
       - 'application/x-www-form-urlencoded'
       parameters:
@@ -1529,9 +1531,11 @@ paths:
       responses:
         '200':
           description: No response was specified
+          schema:
+            $ref: '#/definitions/ReviewPage'
       description: ''
       summary: Get List of Reviews
-      operationId: getReviews
+      operationId: getReviews_v3
       tags:
       # - "reviews"
       - v3
@@ -1650,16 +1654,19 @@ paths:
         name: passesTests
         required: false
         type: string
-  'v3/reviews/{id}':
+  'api/v3/reviews/{id}':
     get:
       responses:
         '401':
           description: Unauthorized
         '404':
           description: Not Found
+        '200':
+          schema:
+            $ref: '#/definitions/ReviewResult'
       description: ''
       summary: Get Review Information
-      operationId: getReview
+      operationId: getReview_v3
       tags:
       # - "reviews"
       - v3
@@ -1677,7 +1684,7 @@ paths:
           name: fields
           required: false
           type: string
-  'v3/reviews/{id}/changes/':
+  'api/v3/reviews/{id}/changes/':
     post:
       responses:
         '400':
@@ -1688,9 +1695,12 @@ paths:
           description: Not Found
         '405':
           description: Method Not Allowed
+        '200':
+          schema:
+            $ref: '#/definitions/ReviewResult'
       description: ''
-      summary: Add Change to Review
-      operationId: addChange
+      summary: Add Changelist ID to Review
+      operationId: addChange_v3
       tags:
       # - "reviews"
       - v3
@@ -1707,7 +1717,7 @@ paths:
         name: change
         required: true
         type: integer
-  'v3/reviews/{id}/state/':
+  'api/v3/reviews/{id}/state/':
     patch:
       responses:
         '400':
@@ -1718,9 +1728,12 @@ paths:
           description: Not Found
         '405':
           description: Method Not Allowed
+        '200':
+          schema:
+            $ref: '#/definitions/ReviewTransitionResult'
       description: ''
       summary: Transition the Review State (v2+)
-      operationId: state
+      operationId: setState
       tags:
       # - "reviews"
       - v3
@@ -1779,11 +1792,14 @@ paths:
         name: fixStatus
         required: false
         type: string
-  v4/activity:
+  api/v4/activity:
     post:
       responses:
         '200':
           description: No response was specified
+          schema:
+            $ref: '#/definitions/ActivityV2'
+      # FIXME here
       description: ''
       summary: Create Activity Entry
       operationId: addActivity
@@ -1918,7 +1934,7 @@ paths:
         name: fields
         required: false
         type: string
-  v4/comments/:
+  api/v4/comments/:
     get:
       responses:
         '200':
@@ -2049,7 +2065,7 @@ paths:
         name: 'context[version]'
         required: false
         type: integer
-  'v4/comments/{id}':
+  'api/v4/comments/{id}':
     patch:
       responses:
         '200':
@@ -2099,7 +2115,7 @@ paths:
         type: array
         items:
           type: string
-  v4/version:
+  api/v4/version:
     get:
       responses:
         '200':
@@ -2110,7 +2126,7 @@ paths:
       tags:
       # - "version"
       - v4
-  v4/projects/:
+  api/v4/projects/:
     get:
       responses:
         '200':
@@ -2220,7 +2236,7 @@ paths:
         name: 'emailFlags[review_email_project_members]'
         required: false
         type: boolean
-  'v4/projects/{id}':
+  'api/v4/projects/{id}':
     get:
       responses:
         '404':
@@ -2358,7 +2374,7 @@ paths:
         name: id
         required: true
         type: string
-  v4/reviews/:
+  api/v4/reviews/:
     post:
       responses:
         '400':
@@ -2523,7 +2539,7 @@ paths:
         name: passesTests
         required: false
         type: string
-  'v4/reviews/{id}':
+  'api/v4/reviews/{id}':
     get:
       responses:
         '401':
@@ -2550,7 +2566,7 @@ paths:
         name: fields
         required: false
         type: string
-  'v4/reviews/{id}/changes/':
+  'api/v4/reviews/{id}/changes/':
     post:
       responses:
         '400':
@@ -2580,7 +2596,7 @@ paths:
           name: change
           required: true
           type: integer
-  'v4/reviews/{id}/state/':
+  'api/v4/reviews/{id}/state/':
     patch:
       responses:
         '400':
@@ -2650,7 +2666,7 @@ paths:
         name: fixStatus
         required: false
         type: string
-  v5/activity:
+  api/v5/activity:
     post:
       responses:
         '200':
@@ -2789,7 +2805,7 @@ paths:
         name: fields
         required: false
         type: string
-  v5/comments/:
+  api/v5/comments/:
     get:
       responses:
         '200':
@@ -2948,7 +2964,7 @@ paths:
         name: 'context[version]'
         required: false
         type: integer
-  'v5/comments/{id}':
+  'api/v5/comments/{id}':
     patch:
       responses:
         '200':
@@ -2998,7 +3014,7 @@ paths:
         type: array
         items:
           type: string
-  v5/groups/:
+  api/v5/groups/:
     get:
       responses:
         '200':
@@ -3109,7 +3125,7 @@ paths:
         name: 'config[emailFlags][reviews]'
         required: false
         type: boolean
-  'v5/groups/{id}':
+  'api/v5/groups/{id}':
     get:
       responses:
         '404':
@@ -3209,7 +3225,7 @@ paths:
         name: id
         required: true
         type: string
-  v5/version:
+  api/v5/version:
     get:
       responses:
         '200':
@@ -3220,7 +3236,7 @@ paths:
       tags:
       # - "version"
       - v5
-  v5/projects/:
+  api/v5/projects/:
     get:
       responses:
         '200':
@@ -3330,7 +3346,7 @@ paths:
         name: 'emailFlags[review_email_project_members]'
         required: false
         type: boolean
-  'v5/projects/{id}':
+  'api/v5/projects/{id}':
     get:
       responses:
         '404':
@@ -3468,7 +3484,7 @@ paths:
           name: id
           required: true
           type: string
-  v5/reviews/:
+  api/v5/reviews/:
     post:
       responses:
         '400':
@@ -3633,7 +3649,7 @@ paths:
         name: passesTests
         required: false
         type: string
-  'v5/reviews/{id}':
+  'api/v5/reviews/{id}':
     get:
       responses:
         '401':
@@ -3660,7 +3676,7 @@ paths:
         name: fields
         required: false
         type: string
-  'v5/reviews/{id}/changes/':
+  'api/v5/reviews/{id}/changes/':
     post:
       responses:
         '400':
@@ -3690,7 +3706,7 @@ paths:
         name: change
         required: true
         type: integer
-  'v5/reviews/{id}/state/':
+  'api/v5/reviews/{id}/state/':
     patch:
       responses:
         '400':
@@ -3762,7 +3778,7 @@ paths:
         name: fixStatus
         required: false
         type: string
-  v6/activity:
+  api/v6/activity:
     post:
       responses:
         '200':
@@ -3901,7 +3917,7 @@ paths:
         name: fields
         required: false
         type: string
-  v6/comments/:
+  api/v6/comments/:
     get:
       responses:
         '200':
@@ -4060,7 +4076,7 @@ paths:
         name: 'context[version]'
         required: false
         type: integer
-  'v6/comments/{id}':
+  'api/v6/comments/{id}':
     patch:
       responses:
         '200':
@@ -4110,7 +4126,7 @@ paths:
         type: array
         items:
           type: string
-  v6/groups/:
+  api/v6/groups/:
     get:
       responses:
         '200':
@@ -4221,7 +4237,7 @@ paths:
         name: 'config[emailFlags][reviews]'
         required: false
         type: boolean
-  'v6/groups/{id}':
+  'api/v6/groups/{id}':
     get:
       responses:
         '404':
@@ -4321,7 +4337,7 @@ paths:
           name: id
           required: true
           type: string
-  v6/version:
+  api/v6/version:
     get:
       responses:
         '200':
@@ -4332,7 +4348,7 @@ paths:
       tags:
       # - "version"
       - v6
-  v6/projects/:
+  api/v6/projects/:
     get:
       responses:
         '200':
@@ -4442,7 +4458,7 @@ paths:
         name: 'emailFlags[review_email_project_members]'
         required: false
         type: boolean
-  'v6/projects/{id}':
+  'api/v6/projects/{id}':
     get:
       responses:
         '404':
@@ -4580,7 +4596,7 @@ paths:
           name: id
           required: true
           type: string
-  v6/dashboards/action:
+  api/v6/dashboards/action:
     get:
       responses:
         '200':
@@ -4591,7 +4607,7 @@ paths:
       tags:
       # - "dashboards"
       - v6
-  v6/reviews/:
+  api/v6/reviews/:
     post:
       responses:
         '400':
@@ -4631,7 +4647,7 @@ paths:
         type: array
         items:
           type: string
-  v6/reviews/archive/:
+  api/v6/reviews/archive/:
     post:
       responses:
         '400':
@@ -4661,7 +4677,7 @@ paths:
         name: description
         required: true
         type: string
-  'v6/reviews/{id}':
+  'api/v6/reviews/{id}':
     get:
       responses:
         '401':
@@ -4688,7 +4704,7 @@ paths:
         name: fields
         required: false
         type: string
-  'v6/reviews/{id}/changes/':
+  'api/v6/reviews/{id}/changes/':
     post:
       responses:
         '400':
@@ -4718,7 +4734,7 @@ paths:
         name: change
         required: true
         type: integer
-  'v6/reviews/{id}/cleanup':
+  'api/v6/reviews/{id}/cleanup':
     post:
       responses:
         '400':
@@ -4743,7 +4759,7 @@ paths:
         name: reopen
         required: false
         type: boolean
-  'v6/reviews/{id}/state/':
+  'api/v6/reviews/{id}/state/':
     patch:
       responses:
         '400':
@@ -4815,7 +4831,7 @@ paths:
         name: fixStatus
         required: false
         type: string
-  'v6/reviews/{review_id}':
+  'api/v6/reviews/{review_id}':
     patch:
       responses:
         '200':
@@ -5328,6 +5344,19 @@ definitions:
         description: Paging index
         type: integer
         format: int32
+  ReviewTransitionResult:
+    type: object
+    properties:
+      review:
+        $ref: '#/definitions/Review'
+      transitions:
+        $ref: '#/definitions/TranslationMap'
+  TranslationMap:
+    description: Translate a key into a human readable string.
+    type: object
+    additionalProperties:
+      type: string
+      description: Human translation of the key
   CommentResult:
     description: A single user comment.
     type: object

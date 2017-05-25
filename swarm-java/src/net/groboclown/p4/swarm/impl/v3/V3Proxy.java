@@ -12,18 +12,21 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.swarm.impl;
+package net.groboclown.p4.swarm.impl.v3;
 
 import net.groboclown.p4.swarm.SwarmClient;
 import net.groboclown.p4.swarm.SwarmConfig;
+import net.groboclown.p4.swarm.client.api.V3Api;
+import net.groboclown.p4.swarm.impl.AbstractProxyClient;
 import net.groboclown.p4.swarm.model.request.ActivityRequest;
 import net.groboclown.p4.swarm.model.response.ActivityPage;
 
-public class SwarmClientProxy implements SwarmClient {
-    private final SwarmConfig config;
+public class V3Proxy extends AbstractProxyClient {
+    private final V3Api api;
 
-    public SwarmClientProxy(SwarmConfig config) {
-        this.config = config;
+    public V3Proxy(SwarmConfig config) {
+        super(config);
+        this.api = new V3Api(createClient());
     }
 
     @Override

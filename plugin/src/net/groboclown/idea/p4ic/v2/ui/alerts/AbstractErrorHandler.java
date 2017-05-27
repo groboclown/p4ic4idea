@@ -14,10 +14,10 @@
 
 package net.groboclown.idea.p4ic.v2.ui.alerts;
 
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.compat.UICompat;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
@@ -93,10 +93,10 @@ public abstract class AbstractErrorHandler implements CriticalErrorHandler {
 
     protected void goOffline() {
         serverConnectedController.disconnect();
-        Messages.showMessageDialog(getProject(),
+        DistinctDialog.showMessageDialog(getProject(),
                 P4Bundle.message("dialog.offline.went-offline.message"),
                 P4Bundle.message("dialog.offline.went-offline.title"),
-                Messages.getInformationIcon());
+                NotificationType.INFORMATION);
     }
 
     protected void connect() {

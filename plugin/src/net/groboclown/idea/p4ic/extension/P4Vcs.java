@@ -14,13 +14,13 @@
 package net.groboclown.idea.p4ic.extension;
 
 import com.intellij.mock.MockProject;
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.AbstractVcs;
@@ -73,6 +73,7 @@ import net.groboclown.idea.p4ic.v2.server.P4ServerManager;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
+import net.groboclown.idea.p4ic.v2.ui.alerts.DistinctDialog;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -257,13 +258,13 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             ApplicationManager.getApplication().invokeLater(new Runnable() {
                 @Override
                 public void run() {
-                    Messages.showMessageDialog(myProject,
+                    DistinctDialog.showMessageDialog(myProject,
                             P4Bundle.message("ide.not.supported.message",
                                     ApplicationInfo.getInstance().getApiVersion(),
                                     P4Bundle.getString("p4ic.name"),
                                     P4Bundle.getString("p4ic.bug.url")),
                             P4Bundle.message("ide.not.supported.title"),
-                            Messages.getErrorIcon());
+                            NotificationType.ERROR);
                 }
             });
             throw new VcsException(P4Bundle.message("ide.not.supported.title"));

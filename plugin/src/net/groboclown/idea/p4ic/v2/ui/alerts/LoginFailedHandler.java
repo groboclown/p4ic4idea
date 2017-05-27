@@ -14,10 +14,10 @@
 
 package net.groboclown.idea.p4ic.v2.ui.alerts;
 
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.compat.auth.OneUseString;
@@ -94,8 +94,8 @@ public class LoginFailedHandler extends AbstractErrorHandler {
                         P4Bundle.message("configuration.login-problem.no"),
                         P4Bundle.message("configuration.login-problem.cancel")
                 },
-                Messages.getErrorIcon(),
-                new DistinctDialog.ChoiceActor() {
+                NotificationType.ERROR,
+                new DistinctDialog.AsyncChoiceActor() {
                     @Override
                     public void onChoice(int choice, @NotNull final DistinctDialog.OnEndHandler onEndHandler) {
                         switch (choice) {
@@ -117,7 +117,7 @@ public class LoginFailedHandler extends AbstractErrorHandler {
                                                     P4Bundle.message("password.store.error"),
                                                     e, new FilePath[0]);
                                         } finally {
-                                            onEndHandler.handleInOtherThread();
+                                            onEndHandler.end();
                                         }
                                     }
                                 });

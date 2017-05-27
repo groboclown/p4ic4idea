@@ -14,9 +14,9 @@
 
 package net.groboclown.idea.p4ic.v2.ui.alerts;
 
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
@@ -58,19 +58,25 @@ public class InvalidRootsHandler extends AbstractErrorHandler {
         String messageKey = workspaceRoots.isEmpty()
                 ? "error.config.no-workspace-roots"
                 : "error.config.invalid-roots";
-        int result = DistinctDialog.showDialog(
+        DistinctDialog.performOnDialog(
                 DistinctDialog.key(this, clientServerRef.getServerName(), clientServerRef.getClientName()),
                 getProject(),
                 P4Bundle.message(messageKey, workspaceRoots, vcsPresentableRoots),
                 P4Bundle.message("error.config.invalid-roots.title", clientServerRef.getClientName()),
-                new String[] { P4Bundle.message("error.config.invalid-roots.yes"), P4Bundle.message("error.config.invalid-roots.no") },
-                Messages.getErrorIcon());
-        if (result == YES) {
-            // Signal to the API to try again only if
-            // the user selected "okay".
-            tryConfigChange(false);
-        }
-        // Don't go offline if not changed.
+                new String[] { P4Bundle.message("error.config.invalid-roots.yes"),
+                        P4Bundle.message("error.config.invalid-roots.no") },
+                NotificationType.ERROR,
+                new DistinctDialog.ChoiceActor() {
+                    @Override
+                    public void onChoice(int choice) {
+                        if (choice == YES) {
+                            // Signal to the API to try again only if
+                            // the user selected "okay".
+                            tryConfigChange(false);
+                        }
+                        // Don't go offline if not changed.
+                    }
+                });
     }
 
     private static final FakeServerConnectedController FAKE_CONTROLLER =

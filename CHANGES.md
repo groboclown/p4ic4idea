@@ -4,10 +4,20 @@
 
 ### Overview
 
+* Added option to show Perforce connection issues as notifications, rather than as
+    dialog boxes.
 * Bug fixes.
 
 ### Details
 
+* Added option to show Perforce connection issues as notifications, rather than as
+    dialog boxes.
+    * In the user preferences, you can change the alert behavior to show informative
+      messages, and errors that require actions, in the notification pop-ups.
+    * If this seems like a preferred method, the default behavior will change to
+      showing messages as notifications.
+    * Notification behavior can be changed in the Settings dialog, under
+      Appearance / Notification.
 * Bug fixes.
     * ... 
 

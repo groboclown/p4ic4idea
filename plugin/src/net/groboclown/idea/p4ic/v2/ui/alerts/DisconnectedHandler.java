@@ -14,9 +14,9 @@
 
 package net.groboclown.idea.p4ic.v2.ui.alerts;
 
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
 import org.jetbrains.annotations.NotNull;
@@ -51,20 +51,25 @@ public class DisconnectedHandler extends AbstractErrorHandler {
 
         // Ask the user if they want to disconnect.
         LOG.info("Asking user to reconnect");
-        int choice = DistinctDialog.showDialog(
+        DistinctDialog.performOnDialog(
                 DistinctDialog.key(this, getServerKey()),
                 getProject(),
                 P4Bundle.message("dialog.offline.message"),
                 P4Bundle.message("dialog.offline.title"),
-                new String[]{
+                new String[] {
                         P4Bundle.message("dialog.offline.reconnect"),
                         P4Bundle.message("dialog.offline.offline-mode")
                 },
-                Messages.getErrorIcon());
-        if (choice == 0) {
-            connect();
-        } else if (choice == 1) {
-            goOffline();
-        }
+                NotificationType.ERROR,
+                new DistinctDialog.ChoiceActor() {
+                    @Override
+                    public void onChoice(int choice) {
+                        if (choice == 0) {
+                            connect();
+                        } else if (choice == 1) {
+                            goOffline();
+                        }
+                    }
+                });
     }
 }

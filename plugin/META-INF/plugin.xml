@@ -8,6 +8,8 @@
         <ol>
           <li><em>0.8.8</em>
             <ol>
+              <li>Added option to show Perforce connection issues as notifications, rather than as
+              dialog boxes.</li>
               <li>...</li>
             </ol>
           </li>

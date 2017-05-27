@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.ui;
 
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -21,6 +22,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4WorkingOfflineException;
+import net.groboclown.idea.p4ic.v2.ui.alerts.DistinctDialog;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -55,10 +57,10 @@ public class ErrorDialog {
                         // Some P4 exceptions can have trailing EOLs.
                         message = message.trim();
                     }
-                    Messages.showMessageDialog(project,
+                    DistinctDialog.showMessageDialog(project,
                             P4Bundle.message("errordialog.message", message),
                             P4Bundle.message("errordialog.title", action),
-                            Messages.getErrorIcon());
+                            NotificationType.ERROR);
                 }
             }
         });

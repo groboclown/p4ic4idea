@@ -14,10 +14,10 @@
 
 package net.groboclown.idea.p4ic.v2.ui.alerts;
 
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
 import org.jetbrains.annotations.NotNull;
@@ -46,18 +46,23 @@ public class ClientNameMismatchHandler extends AbstractErrorHandler {
 
         ApplicationManager.getApplication().assertIsDispatchThread();
 
-        int result = DistinctDialog.showYesNoDialog(
+        DistinctDialog.performOnYesNoDialog(
                 DistinctDialog.key(this, cachedClientName, p4ClientName),
                 getProject(),
                 P4Bundle.message("configuration.client-mismatch-ask", cachedClientName, p4ClientName),
                 P4Bundle.message("configuration.check-connection"),
-                Messages.getErrorIcon());
-        if (result == DistinctDialog.YES) {
-            // Signal to the API to try again only if
-            // the user selected "okay".
-            tryConfigChange();
-        } else if (result > DistinctDialog.DIALOG_ALREADY_ACTIVE) {
-            goOffline();
-        }
+                NotificationType.ERROR,
+                new DistinctDialog.ChoiceActor() {
+                    @Override
+                    public void onChoice(int choice) {
+                        if (choice == DistinctDialog.YES) {
+                            // Signal to the API to try again only if
+                            // the user selected "okay".
+                            tryConfigChange();
+                        } else if (choice > DistinctDialog.DIALOG_ALREADY_ACTIVE) {
+                            goOffline();
+                        }
+                    }
+                });
     }
 }

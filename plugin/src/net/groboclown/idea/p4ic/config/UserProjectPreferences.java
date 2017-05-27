@@ -46,10 +46,13 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public static final int MIN_LOCK_WAIT_TIMEOUT_MILLIS = 20 * 1000;
     public static final int MAX_LOCK_WAIT_TIMEOUT_MILLIS = 5 * 60 * 1000;
     public static final int DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS = 30 * 1000;
+    public static final boolean DEFAULT_SHOW_DIALOG_CONNECTION_MESSAGES = true;
 
     @NotNull
     private State state = new State();
 
+    // Fields need public access for IDEA state management.
+    @SuppressWarnings("WeakerAccess")
     public static class State {
         @Deprecated
         public int maxServerConnections = DEFAULT_SERVER_CONNECTIONS;
@@ -80,6 +83,8 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         public int socketSoTimeoutMillis = DEFAULT_SOCKET_SO_TIMEOUT_MILLIS;
 
         public int lockWaitTimeoutMillis = DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS;
+
+        public boolean showDialogConnectionMessages = DEFAULT_SHOW_DIALOG_CONNECTION_MESSAGES;
     }
 
     @Nullable
@@ -255,6 +260,26 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
 
     public void setConcatenateChangelistNameComment(final boolean concatenateChangelistNameComment) {
         state.concatenateChangelistNameComment = concatenateChangelistNameComment;
+    }
+
+
+    public static boolean getShowDialogConnectionMessages(@Nullable final Project project) {
+        if (project == null) {
+            return DEFAULT_SHOW_DIALOG_CONNECTION_MESSAGES;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return DEFAULT_SHOW_DIALOG_CONNECTION_MESSAGES;
+        }
+        return prefs.getShowDialogConnectionMessages();
+    }
+
+    public boolean getShowDialogConnectionMessages() {
+        return state.showDialogConnectionMessages;
+    }
+
+    public void setShowDialogConnectionMessages(final boolean showDialogConnectionMessages) {
+        state.showDialogConnectionMessages = showDialogConnectionMessages;
     }
 
 

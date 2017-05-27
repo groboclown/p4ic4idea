@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.ui.alerts;
 
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.v2.server.connection.CriticalErrorHandler;
@@ -40,19 +41,15 @@ public class LoginSsoExecFailedHandler implements CriticalErrorHandler {
     public void handleError(@NotNull Date when) {
         ApplicationManager.getApplication().assertIsDispatchThread();
 
-        DistinctDialog.performOnDialog(
+        String errMsg = error == null ? null : error.getMessage();
+        if (errMsg == null) {
+            errMsg = P4Bundle.message("error.unknown");
+        }
+        DistinctDialog.showMessageDialog(
                 DistinctDialog.key(this, cmd),
                 null,
-                P4Bundle.message("error.loginsso.exec-failed", cmd, error.getMessage(), stdout, stderr),
+                P4Bundle.message("error.loginsso.exec-failed", cmd, errMsg, stdout, stderr),
                 P4Bundle.getString("error.loginsso.exec-failed.title"),
-                new String[0],
-                null,
-                new DistinctDialog.ChoiceActor() {
-                    @Override
-                    public void onChoice(int choice, @NotNull DistinctDialog.OnEndHandler onEndHandler) {
-                        // do nothing
-                    }
-                }
-        );
+                NotificationType.ERROR);
     }
 }

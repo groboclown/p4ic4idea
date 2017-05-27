@@ -14,9 +14,9 @@
 
 package net.groboclown.idea.p4ic.v2.ui.alerts;
 
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerStatusController;
 import org.jetbrains.annotations.NotNull;
@@ -42,19 +42,24 @@ public class ConfigurationProblemHandler extends AbstractErrorHandler {
             return;
         }
 
-        int result = DistinctDialog.showYesNoDialog(
+        DistinctDialog.performOnYesNoDialog(
                 DistinctDialog.key(this, getServerKey()),
                 getProject(),
                 P4Bundle.message("configuration.connection-problem-ask", getExceptionMessage()),
                 P4Bundle.message("configuration.check-connection"),
-                Messages.getErrorIcon());
-        if (result == YES) {
-            // Signal to the API to try again only if
-            // the user selected "okay".
-            tryConfigChange();
-        } else if (result == NO) {
-            // Work offline
-            goOffline();
-        }
+                NotificationType.ERROR,
+                new DistinctDialog.ChoiceActor() {
+                    @Override
+                    public void onChoice(int choice) {
+                        if (choice == YES) {
+                            // Signal to the API to try again only if
+                            // the user selected "okay".
+                            tryConfigChange();
+                        } else if (choice == NO) {
+                            // Work offline
+                            goOffline();
+                        }
+                    }
+                });
     }
 }

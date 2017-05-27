@@ -40,6 +40,7 @@ public class UserPreferencesPanel {
     private JCheckBox myReconnectWithEachRequest;
     private JCheckBox myConcatenateChangelistNameComment;
     private JSpinner mySocketSoTimeoutSpinner;
+    private JCheckBox myShowMessageDialog;
     private ButtonGroup myPreferRevisionGroup;
 
 
@@ -82,6 +83,7 @@ public class UserPreferencesPanel {
         myEditedWithoutCheckoutCheckBox.setSelected(userPrefs.getEditedWithoutCheckoutVerify());
         myReconnectWithEachRequest.setSelected(userPrefs.getReconnectWithEachRequest());
         myConcatenateChangelistNameComment.setSelected(userPrefs.getConcatenateChangelistNameComment());
+        myShowMessageDialog.setSelected(userPrefs.getShowDialogConnectionMessages());
     }
 
 
@@ -94,6 +96,7 @@ public class UserPreferencesPanel {
         userPrefs.setMaxAuthenticationRetries(getMaxAuthenticationRetries());
         userPrefs.setReconnectWithEachRequest(getReconnectWithEachRequest());
         userPrefs.setConcatenateChangelistNameComment(getConcatenateChangelistNameComment());
+        userPrefs.setShowDialogConnectionMessages(getShowMessageDialog());
     }
 
 
@@ -106,7 +109,8 @@ public class UserPreferencesPanel {
                         getEditedWithoutCheckoutVerify() != preferences.getEditedWithoutCheckoutVerify() ||
                         getMaxAuthenticationRetries() != preferences.getMaxAuthenticationRetries() ||
                         getReconnectWithEachRequest() != preferences.getReconnectWithEachRequest() ||
-                        getConcatenateChangelistNameComment() != preferences.getConcatenateChangelistNameComment();
+                        getConcatenateChangelistNameComment() != preferences.getConcatenateChangelistNameComment() ||
+                        getShowMessageDialog() != preferences.getShowDialogConnectionMessages();
     }
 
 
@@ -144,8 +148,56 @@ public class UserPreferencesPanel {
         return myConcatenateChangelistNameComment.isSelected();
     }
 
+    private boolean getShowMessageDialog() {
+        return myShowMessageDialog.isSelected();
+    }
+
     private void createUIComponents() {
         // place custom component creation code here
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    private Font getFont1494608681498(String fontName, int style, int size, Font currentFont) {
+        if (currentFont == null) {
+            return null;
+        }
+        String resultName;
+        if (fontName == null) {
+            resultName = currentFont.getName();
+        } else {
+            Font testFont = new Font(fontName, Font.PLAIN, 10);
+            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
+                resultName = fontName;
+            } else {
+                resultName = currentFont.getName();
+            }
+        }
+        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
+                size >= 0 ? size : currentFont.getSize());
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    private Font getFont1495815520855(String fontName, int style, int size, Font currentFont) {
+        if (currentFont == null) {
+            return null;
+        }
+        String resultName;
+        if (fontName == null) {
+            resultName = currentFont.getName();
+        } else {
+            Font testFont = new Font(fontName, Font.PLAIN, 10);
+            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
+                resultName = fontName;
+            } else {
+                resultName = currentFont.getName();
+            }
+        }
+        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
+                size >= 0 ? size : currentFont.getSize());
     }
 
     {
@@ -180,7 +232,7 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
         myRootPanel.add(panel1,
                 new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
@@ -224,6 +276,15 @@ public class UserPreferencesPanel {
                 new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        myShowMessageDialog = new JCheckBox();
+        this.$$$loadButtonText$$$(myShowMessageDialog,
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.message-dialog"));
+        myShowMessageDialog.setToolTipText(
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.message-dialog"));
+        panel1.add(myShowMessageDialog,
+                new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         myRootPanel.add(panel2,
@@ -234,7 +295,7 @@ public class UserPreferencesPanel {
         panel2.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.rev_display"),
                 TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION,
-                this.getFont1494608681498(null, -1, -1, panel2.getFont())));
+                this.getFont1495815749256(null, -1, -1, panel2.getFont())));
         myPreferRevisionNumber = new JRadioButton();
         this.$$$loadButtonText$$$(myPreferRevisionNumber,
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.revision"));
@@ -292,7 +353,7 @@ public class UserPreferencesPanel {
     /**
      * @noinspection ALL
      */
-    private Font getFont1494608681498(String fontName, int style, int size, Font currentFont) {
+    private Font getFont1495815749256(String fontName, int style, int size, Font currentFont) {
         if (currentFont == null) {
             return null;
         }

@@ -12,6 +12,7 @@
         <!-- <pathelement location="${lib.p4java}"/> -->
         <pathelement location="${rootdir}/idea-compat/work/production"/>
         <pathelement location="${rootdir}/p4java/work/production"/>
+        <pathelement location="${rootdir}/swarm-java-simplified/work/production"/>
     </path>
 
     <path id="production.classpath">
@@ -238,6 +239,8 @@
             file="${rootdir}/p4java/LICENSE"/>
         <copy todir="${tmp.dir.p4ic4idea}/lib"
               file="${rootdir}/p4java/work/p4ic4idea.p4java.jar"/>
+        <copy todir="${tmp.dir.p4ic4idea}/lib"
+              file="${rootdir}/swarm-java-simplified/work/p4ic4idea.swarm-simplified.jar"/>
         <copy todir="${tmp.dir.p4ic4idea}/lib"
             file="${rootdir}/idea-compat/work/p4ic4idea.idea-compat.jar" />
         <copy todir="${tmp.dir.p4ic4idea}/lib"

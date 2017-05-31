@@ -14,7 +14,9 @@
             inheritrefs="false" inheritall="false"/>
         <ant antfile="p4java/build.xml" target="clean"
             inheritrefs="false" inheritall="false"/>
-        <ant antfile="plugin/build.xml" target="clean"
+        <ant antfile="p4java/build.xml" target="clean"
+             inheritrefs="false" inheritall="false"/>
+        <ant antfile="swarm-java-simplified/build.xml" target="clean"
             inheritrefs="false" inheritall="false"/>
         <delete file="p4ic4idea.zip"/>
     </target>
@@ -33,6 +35,8 @@
              inheritrefs="false" inheritall="false"/>
         <ant antfile="p4java/build.xml" target="all"
             inheritrefs="false" inheritall="false"/>
+        <ant antfile="swarm-java-simplified/build.xml" target="all"
+             inheritrefs="false" inheritall="false"/>
         <ant antfile="plugin/build.xml" target="all"
             inheritrefs="false" inheritall="false"/>
     </target>
@@ -58,6 +62,8 @@
         <ant antfile="idea160/build.xml" target="package"
              inheritrefs="false" inheritall="false"/>
         <ant antfile="p4java/build.xml" target="package"
+             inheritrefs="false" inheritall="false"/>
+        <ant antfile="swarm-java-simplified/build.xml" target="package"
              inheritrefs="false" inheritall="false"/>
         <delete file="p4ic4idea.zip" failonerror="false"/>
         <ant antfile="plugin/build.xml" target="package"

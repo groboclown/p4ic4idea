@@ -170,8 +170,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
                 // Push parent directories of the project root into the project root.
                 // #148: Don't set the root directory to the parent project if the
                 // given file is lower than the project root.
-                // if (partRoot == null || (projectRoot != null && FilePathUtil.isSameOrUnder(partRoot, projectRoot))) {
-                if (partRoot == null) {
+                if (partRoot == null || (projectRoot != null && FilePathUtil.isSameOrUnder(partRoot, projectRoot))) {
                     partRoot = projectRoot;
                 }
                 List<DataPart> partList = dirToParts.get(partRoot);
@@ -204,35 +203,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
             @Nullable VirtualFile projectRoot, @NotNull Map<VirtualFile, List<DataPart>> parts,
             @NotNull Set<ConfigProblem> configProblems,
             @NotNull Set<ClientConfigSetup> clientConfigSetups) {
-        // For each part file, climb up our tree and add its parent as a lower priority
-        // item.
-        for (Map.Entry<VirtualFile, List<DataPart>> entry : parts.entrySet()) {
-            @Nullable
-            VirtualFile previous = entry.getKey();
-            // #148: Don't set the root to the project root if it's lower than it.
-            // if (previous == null || (projectRoot != null && FilePathUtil.isSameOrUnder(previous, projectRoot))) {
-            if (previous == null) {
-                previous = projectRoot;
-            }
-            if (previous != null) {
-                for (FilePath parent : FilePathUtil.getTreeTo(previous, projectRoot)) {
-                    // Put all the parent's data parts into the child, as lower priority
-                    // items (at the end of the child's list).
-                    List<DataPart> parentPartList = parts.get(parent.getVirtualFile());
-                    if (parentPartList != null) {
-                        List<DataPart> childParts = entry.getValue();
-                        for (DataPart dataPart : parentPartList) {
-                            if (! childParts.contains(dataPart)) {
-                                childParts.add(dataPart);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-
-        // We now have the complete list of client servers, mapped to
+        // We have the complete list of client servers, mapped to
         // their section in the project tree.  We now need to organize these
         // into shared ClientConfig objects, while maintaining their
         // organization in the tree.
@@ -250,7 +221,11 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
             // path can be null if we're in a default settings panel.
             @Nullable
             VirtualFile path = entry.getKey();
-            MultipleDataPart part = new MultipleDataPart(path, entry.getValue());
+            List<DataPart> completeDataParts = getTreeDataParts(parts, path);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(path + " -> " + completeDataParts);
+            }
+            MultipleDataPart part = new MultipleDataPart(path, completeDataParts);
             final Collection<ConfigProblem> partProblems = ServerConfig.getErrors(part);
             configProblems.addAll(partProblems);
             final String serverId = ServerConfig.getServerIdForDataPart(part);
@@ -341,6 +316,21 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
             LOG.debug("Computed config directory to client config mapping: " + ret);
         }
 
+        return ret;
+    }
+
+    @NotNull
+    private static List<DataPart> getTreeDataParts(@NotNull Map<VirtualFile, List<DataPart>> parts,
+            @Nullable VirtualFile path) {
+        List<DataPart> ret = new ArrayList<DataPart>(parts.get(path));
+        if (path != null) {
+            for (FilePath fp : FilePathUtil.getTreeTo(path, null)) {
+                List<DataPart> parent = parts.get(fp.getVirtualFile());
+                if (parent != null) {
+                    ret.addAll(parent);
+                }
+            }
+        }
         return ret;
     }
 

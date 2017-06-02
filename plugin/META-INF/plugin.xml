@@ -6,6 +6,11 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.9.1</em>
+            <ol>
+              <li>Better handling of shelved files in the changelist view on a refresh request.</li>
+            </ol>
+          </li>
           <li><em>0.9.0</em>
             <ol>
               <li>Added option to show Perforce connection issues as notifications, rather than as
@@ -14,17 +19,6 @@
               <li>Fixed regression where the multiple config file paths would not look
               at the parents correctly.</li>
               <li>Fixed a null filespec error.</li>
-            </ol>
-          </li>
-          <li><em>0.8.7</em>
-            <ol>
-              <li>Added support for "P4ENVIRO" loaded from the Windows registry.</li>
-              <li>Added support for logging in with the "P4LOGINSSO" value.</li>
-              <li>Fixed the Windows registry value loading.</li>
-              <li>Reverted back to component file locations being based at their
-              natural file locations, rather than at the project root.</li>
-              <li>Check the state of the P4LOGINSSO setting when determining whether
-              a login should be attempted.</li>
             </ol>
           </li>
         </ol>

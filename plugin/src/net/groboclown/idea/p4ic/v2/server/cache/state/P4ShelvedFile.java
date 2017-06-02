@@ -17,13 +17,19 @@ package net.groboclown.idea.p4ic.v2.server.cache.state;
 import com.intellij.openapi.vcs.FileStatus;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class P4ShelvedFile {
+    private static final String BASE_PREFIX = "//";
+
     private final String depotPath;
     private final String localPath;
     private final FileStatus status;
 
-    public P4ShelvedFile(@NotNull String depotPath, @NotNull String localPath, @NotNull FileStatus status) {
+    P4ShelvedFile(@NotNull String depotPath, @NotNull String localPath, @NotNull FileStatus status) {
+        if (! depotPath.startsWith(BASE_PREFIX)) {
+            throw new IllegalArgumentException("Invalid depot path " + depotPath);
+        }
         this.depotPath = depotPath;
         this.localPath = localPath;
         this.status = status;
@@ -69,5 +75,9 @@ public class P4ShelvedFile {
 
     public String getLocalPath() {
         return localPath;
+    }
+
+    public static boolean isShelvedPath(@Nullable String path) {
+        return (path != null && path.startsWith(BASE_PREFIX));
     }
 }

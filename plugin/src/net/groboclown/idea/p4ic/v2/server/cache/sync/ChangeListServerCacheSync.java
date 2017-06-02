@@ -39,6 +39,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterName
 import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ChangeListState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4ShelvedFile;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.util.ChangelistDescriptionGenerator;
@@ -121,7 +122,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
 
 
     @Nullable
-    public PendingUpdateState deleteChangelist(final int changelistId) {
+    PendingUpdateState deleteChangelist(final int changelistId) {
         if (changelistId == P4ChangeListId.P4_UNKNOWN || changelistId == P4ChangeListId.P4_DEFAULT) {
             // can't delete these ones
             return null;
@@ -142,7 +143,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
 
 
     @Nullable
-    public PendingUpdateState moveFileToChangelist(final Project project, @NotNull Collection<FilePath> files,
+    PendingUpdateState moveFileToChangelist(final Project project, @NotNull Collection<FilePath> files,
             @NotNull LocalChangeList source, @Nullable P4ChangeListId changelistId) {
         if (files.isEmpty()) {
             return null;
@@ -355,13 +356,6 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
     }
 
 
-    void markLocalStateCommitted(final int changeListId) {
-        synchronized (localCacheSync) {
-            committed.add(changeListId);
-        }
-    }
-
-
     /**
      * Gets a locally modified version of the changelist state.  If the
      * state is only server cached, then a local copy is made.  If the
@@ -566,8 +560,12 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 final List<FilePath> files = new ArrayList<FilePath>();
                 for (Map.Entry<String, Object> entry: update.getParameters().entrySet()) {
                     if (UpdateParameterNames.FIELD.matches(entry.getKey())) {
-                        files.add(FilePathUtil.getFilePath(
-                                (String) UpdateParameterNames.FIELD.getValue(entry.getValue())));
+                        String path = UpdateParameterNames.FIELD.getValue(entry.getValue());
+                        if (! P4ShelvedFile.isShelvedPath(path)) {
+                            files.add(FilePathUtil.getFilePath(path));
+                        } else {
+                            LOG.info("Skipping shelved file path " + path);
+                        }
                     }
                 }
                 if (changelistId == null || files.isEmpty() || description == null) {
@@ -659,8 +657,8 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                         markFailed(update);
                         continue;
                     } catch (IllegalArgumentException e) {
-                        LOG.error("Bad spec from file " + files.get(statusIndex), e);
-                        markFailed(update);
+                        LOG.warn("Bad spec from file " + files.get(statusIndex), e);
+                        // Don't mark this as failed, though.
                         continue;
                     }
                     statusIndex++;

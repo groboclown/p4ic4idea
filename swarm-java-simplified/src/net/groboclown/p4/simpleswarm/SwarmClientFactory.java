@@ -30,4 +30,19 @@ public class SwarmClientFactory {
         // We don't support version 1.0
         throw new InvalidSwarmServerException("Unsupported swarm version " + version.asPath());
     }
+
+
+    public static boolean isSwarmSupported(SwarmConfig config) {
+        if (config.getUri() == null) {
+            return false;
+        }
+        try {
+            createSwarmClient(config);
+            return true;
+        } catch (IOException e) {
+            return false;
+        } catch (InvalidSwarmServerException e) {
+            return false;
+        }
+    }
 }

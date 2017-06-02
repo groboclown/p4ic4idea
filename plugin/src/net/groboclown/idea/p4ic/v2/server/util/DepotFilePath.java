@@ -19,24 +19,19 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.nio.charset.Charset;
-import java.util.List;
 
 public class DepotFilePath implements FilePath {
-    private final P4Vcs vcs;
     private final ClientServerRef clientServerRef;
     private final String depotPath;
     private final String name;
 
-    public DepotFilePath(@Nullable Project project,
-            @NotNull final ClientServerRef clientServerRef, @NotNull  final String depotPath) {
-        this.vcs = P4Vcs.getInstance(project);
+    public DepotFilePath(@NotNull final ClientServerRef clientServerRef, @NotNull  final String depotPath) {
         this.clientServerRef = clientServerRef;
         this.depotPath = depotPath;
 
@@ -128,14 +123,6 @@ public class DepotFilePath implements FilePath {
     @Nullable
     @Override
     public FilePath getParentPath() {
-        // For compatibility with the discovery of the owning VCS tree, we return one of the
-        // VcsRoot paths from the project.
-        if (vcs != null) {
-            List<VirtualFile> roots = vcs.getVcsRoots();
-            if (! roots.isEmpty()) {
-                return FilePathUtil.getFilePath(roots.get(0));
-            }
-        }
         return null;
     }
 

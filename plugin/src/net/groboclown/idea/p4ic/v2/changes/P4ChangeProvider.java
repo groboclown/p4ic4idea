@@ -31,7 +31,6 @@ import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ShelvedFile;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.util.DepotFilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -141,8 +140,7 @@ public class P4ChangeProvider implements ChangeProvider {
                 }
             }
 
-            syncChanges(dirtyFiles, builder, addGate, progress,
-                    dirtyScope);
+            syncChanges(dirtyFiles, builder, addGate, progress);
         } catch (InterruptedException e) {
             throw new VcsInterruptedException(e);
         }
@@ -151,10 +149,7 @@ public class P4ChangeProvider implements ChangeProvider {
     private void syncChanges(@Nullable final Set<FilePath> dirtyFiles,
             @NotNull final ChangelistBuilder builder,
             @NotNull final ChangeListManagerGate addGate,
-            final ProgressIndicator progress,
-
-            // FIXME DEBUG
-            VcsDirtyScope scope) throws InterruptedException {
+            final ProgressIndicator progress) throws InterruptedException {
         MappedOpenFiles mapped = getOpenedFiles(dirtyFiles, progress);
         progress.setFraction(0.60);
 
@@ -250,13 +245,14 @@ public class P4ChangeProvider implements ChangeProvider {
         }
 
         progress.setFraction(0.80);
-        LOG.debug("Starting shelved file population");
-        LOG.debug("Processing " + changeListMappings.size() + " Perforce servers");
-        for (Entry<P4Server, Map<P4ChangeListValue, LocalChangeList>> serverEntry : changeListMappings.entrySet()) {
-            LOG.debug("Processing " + serverEntry.getValue().size() + " change lists");
-            for (Entry<P4ChangeListValue, LocalChangeList> listEntry : serverEntry.getValue().entrySet()) {
-                updateShelvedFiles(listEntry.getValue(), listEntry.getKey(), builder,
-                        scope);
+        if (UserProjectPreferences.getShowShelvedFiles(project)) {
+            LOG.debug("Starting shelved file population");
+            LOG.debug("Processing " + changeListMappings.size() + " Perforce servers");
+            for (Entry<P4Server, Map<P4ChangeListValue, LocalChangeList>> serverEntry : changeListMappings.entrySet()) {
+                LOG.debug("Processing " + serverEntry.getValue().size() + " change lists");
+                for (Entry<P4ChangeListValue, LocalChangeList> listEntry : serverEntry.getValue().entrySet()) {
+                    updateShelvedFiles(listEntry.getValue(), listEntry.getKey(), builder);
+                }
             }
         }
         LOG.debug("Completed change provider update");
@@ -294,10 +290,7 @@ public class P4ChangeProvider implements ChangeProvider {
 
 
     private void updateShelvedFiles(@NotNull LocalChangeList localChangeList,
-            @NotNull P4ChangeListValue p4Changelist, @NotNull ChangelistBuilder builder,
-
-            // FIXME DEBUG
-            VcsDirtyScope scope) {
+            @NotNull P4ChangeListValue p4Changelist, @NotNull ChangelistBuilder builder) {
         LOG.debug("Processing shelved files for changelist " + p4Changelist.getChangeListId());
         for (P4ShelvedFile shelvedFile : p4Changelist.getShelved()) {
             LOG.debug("Processing shelved file " + shelvedFile.getDepotPath());
@@ -306,11 +299,6 @@ public class P4ChangeProvider implements ChangeProvider {
                 LOG.debug(" --- Put shelved file " + shelvedFile.getDepotPath() + " into " + localChangeList +
                     " as " + shelvedFile.getStatus());
             }
-
-            // FIXME DEBUG
-            LOG.debug("**** Starting belongsTo call");
-            scope.belongsTo(new DepotFilePath(project, p4Changelist.getClientServerRef(), shelvedFile.getDepotPath()));
-            LOG.debug("**** Ended belongsTo call");
 
             builder.processChangeInList(change, localChangeList, P4Vcs.getKey());
             if (LOG.isDebugEnabled()) {

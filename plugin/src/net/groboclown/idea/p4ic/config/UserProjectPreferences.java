@@ -47,6 +47,7 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
     public static final int MAX_LOCK_WAIT_TIMEOUT_MILLIS = 5 * 60 * 1000;
     public static final int DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS = 30 * 1000;
     public static final boolean DEFAULT_SHOW_DIALOG_CONNECTION_MESSAGES = true;
+    public static final boolean DEFAULT_SHOW_SHELVED_FILES = false;
 
     @NotNull
     private State state = new State();
@@ -85,6 +86,8 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
         public int lockWaitTimeoutMillis = DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS;
 
         public boolean showDialogConnectionMessages = DEFAULT_SHOW_DIALOG_CONNECTION_MESSAGES;
+
+        public boolean showShelvedFiles = DEFAULT_SHOW_SHELVED_FILES;
     }
 
     @Nullable
@@ -320,5 +323,25 @@ public class UserProjectPreferences implements PersistentStateComponent<UserProj
 
     public void setLockWaitTimeoutMillis(final int lockWaitTimeoutMillis) {
         state.lockWaitTimeoutMillis = lockWaitTimeoutMillis;
+    }
+
+
+    public static boolean getShowShelvedFiles(@Nullable final Project project) {
+        if (project == null) {
+            return DEFAULT_SHOW_SHELVED_FILES;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return DEFAULT_SHOW_SHELVED_FILES;
+        }
+        return prefs.getShowShelvedFiles();
+    }
+
+    public boolean getShowShelvedFiles() {
+        return state.showShelvedFiles;
+    }
+
+    public void setShowShelvedFiles(final boolean showShelvedFiles) {
+        state.showShelvedFiles = showShelvedFiles;
     }
 }

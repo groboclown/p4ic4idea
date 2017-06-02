@@ -793,12 +793,12 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
 
     private static int lighten(int base, boolean isLight) {
-        double newVal;
+        int newVal;
         if (isLight) {
             // light color scheme, so darken it.
-            newVal = base * 0.8;
+            newVal = base - 32;
         } else {
-            newVal = base * 1.2;
+            newVal = base + 32;
         }
         return Math.max(0, Math.min(256, (int) newVal));
     }

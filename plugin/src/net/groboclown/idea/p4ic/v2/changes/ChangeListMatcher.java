@@ -37,21 +37,27 @@ import java.util.regex.Pattern;
  * Matches up {@link LocalChangeList} objects to {@link P4ChangeListValue}
  * objects, and creates local changes if there isn't one for a P4 change.
  */
-public class ChangeListMatcher {
+class ChangeListMatcher {
     private static final Logger LOG = Logger.getInstance(ChangeListMatcher.class);
 
     private final Project project;
     private final P4ChangeListMapping changeListMapping;
 
 
-    public ChangeListMatcher(@NotNull final P4Vcs vcs, @NotNull AlertManager alerts) {
+    ChangeListMatcher(@NotNull final P4Vcs vcs, @NotNull AlertManager alerts) {
         this.project = vcs.getProject();
         this.changeListMapping = P4ChangeListMapping.getInstance(project);
     }
 
 
+    ChangeListMatcher(@NotNull final Project project, @NotNull P4ChangeListMapping mapping) {
+        this.project = project;
+        this.changeListMapping = mapping;
+    }
+
+
     @NotNull
-    public Map<P4Server, Map<P4ChangeListValue, LocalChangeList>> getLocalChangelistMapping(
+    Map<P4Server, Map<P4ChangeListValue, LocalChangeList>> getLocalChangelistMapping(
             @NotNull Set<P4Server> p4Servers, @NotNull ChangeListManagerGate addGate)
             throws InterruptedException {
         Map<P4Server, Map<P4ChangeListValue, LocalChangeList>> ret =
@@ -117,19 +123,19 @@ public class ChangeListMatcher {
 
     @NotNull
     Change createChange(@NotNull ClientServerRef clientServerRef, @NotNull P4ShelvedFile shelvedFile) {
-        final ContentRevision rev = new P4ShelvedContentRevision(project, clientServerRef, shelvedFile.getDepotPath());
+        final ContentRevision rev = new P4ShelvedContentRevision(project, clientServerRef, shelvedFile);
         if (shelvedFile.isAdded()) {
-            return new Change(null, rev, shelvedFile.getStatus());
+            return new ShelveChange(null, rev, shelvedFile.getStatus());
         }
         if (shelvedFile.isDeleted()) {
-            return new Change(rev, null, shelvedFile.getStatus());
+            return new ShelveChange(rev, null, shelvedFile.getStatus());
         }
         if (shelvedFile.isEdited()) {
             // TODO understand this better.  We need to somehow construct the
             // before revision right.
-            return new Change(null, rev, shelvedFile.getStatus());
+            return new ShelveChange(null, rev, shelvedFile.getStatus());
         }
-        return new Change(null, rev, shelvedFile.getStatus());
+        return new ShelveChange(null, rev, shelvedFile.getStatus());
     }
 
     @NotNull

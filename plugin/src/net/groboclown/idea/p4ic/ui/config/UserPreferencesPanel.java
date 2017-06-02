@@ -41,6 +41,7 @@ public class UserPreferencesPanel {
     private JCheckBox myConcatenateChangelistNameComment;
     private JSpinner mySocketSoTimeoutSpinner;
     private JCheckBox myShowMessageDialog;
+    private JCheckBox myShowShelvedFiles;
     private ButtonGroup myPreferRevisionGroup;
 
 
@@ -84,6 +85,7 @@ public class UserPreferencesPanel {
         myReconnectWithEachRequest.setSelected(userPrefs.getReconnectWithEachRequest());
         myConcatenateChangelistNameComment.setSelected(userPrefs.getConcatenateChangelistNameComment());
         myShowMessageDialog.setSelected(userPrefs.getShowDialogConnectionMessages());
+        myShowShelvedFiles.setSelected(userPrefs.getShowShelvedFiles());
     }
 
 
@@ -97,20 +99,22 @@ public class UserPreferencesPanel {
         userPrefs.setReconnectWithEachRequest(getReconnectWithEachRequest());
         userPrefs.setConcatenateChangelistNameComment(getConcatenateChangelistNameComment());
         userPrefs.setShowDialogConnectionMessages(getShowMessageDialog());
+        userPrefs.setShowShelvedFiles(getShowShelvedFiles());
     }
 
 
     boolean isModified(@NotNull final UserProjectPreferences preferences) {
         return
-                getOpenForEditInSeparateThread() != preferences.getEditInSeparateThread() ||
-                        getMaxTimeout() != preferences.getLockWaitTimeoutMillis() ||
-                        getSocketSoTimeout() != preferences.getSocketSoTimeoutMillis() ||
-                        getPreferRevisionsForFiles() != preferences.getPreferRevisionsForFiles() ||
-                        getEditedWithoutCheckoutVerify() != preferences.getEditedWithoutCheckoutVerify() ||
-                        getMaxAuthenticationRetries() != preferences.getMaxAuthenticationRetries() ||
-                        getReconnectWithEachRequest() != preferences.getReconnectWithEachRequest() ||
-                        getConcatenateChangelistNameComment() != preferences.getConcatenateChangelistNameComment() ||
-                        getShowMessageDialog() != preferences.getShowDialogConnectionMessages();
+            getOpenForEditInSeparateThread() != preferences.getEditInSeparateThread() ||
+            getMaxTimeout() != preferences.getLockWaitTimeoutMillis() ||
+            getSocketSoTimeout() != preferences.getSocketSoTimeoutMillis() ||
+            getPreferRevisionsForFiles() != preferences.getPreferRevisionsForFiles() ||
+            getEditedWithoutCheckoutVerify() != preferences.getEditedWithoutCheckoutVerify() ||
+            getMaxAuthenticationRetries() != preferences.getMaxAuthenticationRetries() ||
+            getReconnectWithEachRequest() != preferences.getReconnectWithEachRequest() ||
+            getConcatenateChangelistNameComment() != preferences.getConcatenateChangelistNameComment() ||
+            getShowMessageDialog() != preferences.getShowDialogConnectionMessages() ||
+            getShowShelvedFiles() != preferences.getShowShelvedFiles();
     }
 
 
@@ -152,6 +156,10 @@ public class UserPreferencesPanel {
         return myShowMessageDialog.isSelected();
     }
 
+    private boolean getShowShelvedFiles() {
+        return myShowShelvedFiles.isSelected();
+    }
+
     private void createUIComponents() {
         // place custom component creation code here
     }
@@ -182,6 +190,28 @@ public class UserPreferencesPanel {
      * @noinspection ALL
      */
     private Font getFont1495815520855(String fontName, int style, int size, Font currentFont) {
+        if (currentFont == null) {
+            return null;
+        }
+        String resultName;
+        if (fontName == null) {
+            resultName = currentFont.getName();
+        } else {
+            Font testFont = new Font(fontName, Font.PLAIN, 10);
+            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
+                resultName = fontName;
+            } else {
+                resultName = currentFont.getName();
+            }
+        }
+        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
+                size >= 0 ? size : currentFont.getSize());
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    private Font getFont1495815749256(String fontName, int style, int size, Font currentFont) {
         if (currentFont == null) {
             return null;
         }
@@ -279,8 +309,8 @@ public class UserPreferencesPanel {
         myShowMessageDialog = new JCheckBox();
         this.$$$loadButtonText$$$(myShowMessageDialog,
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.message-dialog"));
-        myShowMessageDialog.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.message-dialog"));
+        myShowMessageDialog.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("user.prefs.message-dialog.tooltip"));
         panel1.add(myShowMessageDialog,
                 new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
@@ -295,7 +325,7 @@ public class UserPreferencesPanel {
         panel2.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.rev_display"),
                 TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION,
-                this.getFont1495815749256(null, -1, -1, panel2.getFont())));
+                this.$$$getFont$$$(null, -1, -1, panel2.getFont())));
         myPreferRevisionNumber = new JRadioButton();
         this.$$$loadButtonText$$$(myPreferRevisionNumber,
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.revision"));
@@ -353,7 +383,7 @@ public class UserPreferencesPanel {
     /**
      * @noinspection ALL
      */
-    private Font getFont1495815749256(String fontName, int style, int size, Font currentFont) {
+    private Font $$$getFont$$$(String fontName, int style, int size, Font currentFont) {
         if (currentFont == null) {
             return null;
         }

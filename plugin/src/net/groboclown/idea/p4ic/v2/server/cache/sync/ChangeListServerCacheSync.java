@@ -644,8 +644,8 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 List<IFileSpec> edit = new ArrayList<IFileSpec>(status.size());
                 List<IFileSpec> add = new ArrayList<IFileSpec>(status.size());
 
+                int statusIndex = 0;
                 for (IExtendedFileSpec spec: status) {
-
                     // the spec file will need to be re-escaped and stripped of annotations (#103)
                     final IFileSpec forServer;
                     try {
@@ -658,7 +658,12 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                                 e, files);
                         markFailed(update);
                         continue;
+                    } catch (IllegalArgumentException e) {
+                        LOG.error("Bad spec from file " + files.get(statusIndex), e);
+                        markFailed(update);
+                        continue;
                     }
+                    statusIndex++;
 
                     if (spec.getOpStatus() != FileSpecOpStatus.VALID) {
                         LOG.debug("File status: " + spec.getOpStatus() + ": " + spec.getStatusMessage());
@@ -667,7 +672,8 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                             // already opened; reopen it
                             reopen.add(forServer);
                         } else {
-                            LOG.info("Ignoring reopen request for " + spec.getDepotPathString() + "; already in the right changelist");
+                            LOG.info("Ignoring reopen request for " + spec.getDepotPathString()
+                                    + "; already in the right changelist");
                         }
                     } else if (spec.getHeadRev() <= 0) {
                         // add

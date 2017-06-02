@@ -1,11 +1,12 @@
 # IDEA Community VCS Integration for Perforce
 
-## ::v0.8.8::
+## ::v0.9.0::
 
 ### Overview
 
 * Added option to show Perforce connection issues as notifications, rather than as
     dialog boxes.
+* Added option to view shelved files in the changelist view.
 * Bug fixes.
 
 ### Details
@@ -18,9 +19,14 @@
       showing messages as notifications.
     * Notification behavior can be changed in the Settings dialog, under
       Appearance / Notification.
+* Added option to view shelved files in the changelist view.
+    * Change the user preference to see shelved files in the changelist view.
+    * This is the start of support for working with shelved files, and integration
+      with Perforce Swarm servers.
 * Bug fixes.
     * Fixed regression where the multiple config file paths would not look
       at the parents correctly. (#148)
+    * Fixed a null filespec error.
 
 
 ## ::v0.8.7::

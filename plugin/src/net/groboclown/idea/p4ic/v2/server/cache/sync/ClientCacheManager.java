@@ -331,7 +331,7 @@ public class ClientCacheManager {
             } else {
                 // No known mapping for the spec.
                 // But we need something!
-                ret.put(spec, new DepotFilePath(project, state.getClientServerId(), spec.getDepotPathString()));
+                ret.put(spec, new DepotFilePath(state.getClientServerId(), spec.getDepotPathString()));
             }
         }
 

@@ -114,8 +114,9 @@ public class P4ChangeListState extends UpdateRef {
 
     public void addShelved(@NotNull IExtendedFileSpec spec) {
         String depotPath = spec.getDepotPathString();
+        String clientPath = spec.getClientPathString();
         FileStatus status = getShelvedFileStatusFor(spec.getAction());
-        this.shelved.add(new P4ShelvedFile(depotPath, status));
+        this.shelved.add(new P4ShelvedFile(depotPath, clientPath, status));
     }
 
     private static FileStatus getShelvedFileStatusFor(FileAction action) {
@@ -223,6 +224,7 @@ public class P4ChangeListState extends UpdateRef {
             Element el = new Element("h");
             wrapper.addContent(el);
             el.setAttribute("d", shelvedFile.getDepotPath());
+            el.setAttribute("l", shelvedFile.getLocalPath());
             el.setAttribute("s", shelvedFile.getStatus().getId());
         }
         for (P4JobState job : jobs) {
@@ -253,6 +255,7 @@ public class P4ChangeListState extends UpdateRef {
         for (Element el: wrapper.getChildren("h")) {
             P4ShelvedFile file = createShelvedFile(
                     getAttribute(el, "d"),
+                    getAttribute(el, "l"),
                     getAttribute(el, "s")
             );
             if (file != null) {
@@ -277,13 +280,14 @@ public class P4ChangeListState extends UpdateRef {
     }
 
     @Nullable
-    private static P4ShelvedFile createShelvedFile(String depotPath, String status) {
-        if (status == null || depotPath == null) {
+    private static P4ShelvedFile createShelvedFile(@Nullable String depotPath, @Nullable String localPath,
+            @Nullable String status) {
+        if (status == null || depotPath == null || localPath == null) {
             return null;
         }
         for (FileStatus shelvedFileStatus : SHELVED_FILE_STATUSES) {
             if (shelvedFileStatus.getId().equals(status)) {
-                return new P4ShelvedFile(depotPath, shelvedFileStatus);
+                return new P4ShelvedFile(depotPath, localPath, shelvedFileStatus);
             }
         }
         return null;

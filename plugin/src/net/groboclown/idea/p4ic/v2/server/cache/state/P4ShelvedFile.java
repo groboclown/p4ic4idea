@@ -20,10 +20,12 @@ import org.jetbrains.annotations.NotNull;
 
 public class P4ShelvedFile {
     private final String depotPath;
+    private final String localPath;
     private final FileStatus status;
 
-    P4ShelvedFile(@NotNull String depotPath, @NotNull FileStatus status) {
+    public P4ShelvedFile(@NotNull String depotPath, @NotNull String localPath, @NotNull FileStatus status) {
         this.depotPath = depotPath;
+        this.localPath = localPath;
         this.status = status;
     }
 
@@ -63,5 +65,9 @@ public class P4ShelvedFile {
             return false;
         }
         return ((P4ShelvedFile) that).depotPath.equals(depotPath);
+    }
+
+    public String getLocalPath() {
+        return localPath;
     }
 }

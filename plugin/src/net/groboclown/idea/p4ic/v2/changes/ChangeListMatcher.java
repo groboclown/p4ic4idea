@@ -21,7 +21,9 @@ import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4ShelvedFile;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -91,7 +93,7 @@ public class ChangeListMatcher {
     }
 
     @NotNull
-    public Change createChange(@NotNull P4FileAction file) {
+    Change createChange(@NotNull P4FileAction file) {
         final ContentRevision beforeRev;
         final ContentRevision afterRev;
         switch (file.getFileUpdateAction()) {
@@ -111,6 +113,23 @@ public class ChangeListMatcher {
                 afterRev = new CurrentContentRevision(file.getFile());
         }
         return new Change(beforeRev, afterRev, file.getClientFileStatus());
+    }
+
+    @NotNull
+    Change createChange(@NotNull ClientServerRef clientServerRef, @NotNull P4ShelvedFile shelvedFile) {
+        final ContentRevision rev = new P4ShelvedContentRevision(project, clientServerRef, shelvedFile.getDepotPath());
+        if (shelvedFile.isAdded()) {
+            return new Change(null, rev, shelvedFile.getStatus());
+        }
+        if (shelvedFile.isDeleted()) {
+            return new Change(rev, null, shelvedFile.getStatus());
+        }
+        if (shelvedFile.isEdited()) {
+            // TODO understand this better.  We need to somehow construct the
+            // before revision right.
+            return new Change(null, rev, shelvedFile.getStatus());
+        }
+        return new Change(null, rev, shelvedFile.getStatus());
     }
 
     @NotNull

@@ -14,5 +14,54 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import com.intellij.openapi.vcs.FileStatus;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
+import org.jetbrains.annotations.NotNull;
+
 public class P4ShelvedFile {
+    private final String depotPath;
+    private final FileStatus status;
+
+    P4ShelvedFile(@NotNull String depotPath, @NotNull FileStatus status) {
+        this.depotPath = depotPath;
+        this.status = status;
+    }
+
+    @NotNull
+    public String getDepotPath() {
+        return depotPath;
+    }
+
+    @NotNull
+    public FileStatus getStatus() {
+        return status;
+    }
+
+    public boolean isDeleted() {
+        return P4Vcs.SHELVED_DELETED.getId().equals(status.getId());
+    }
+
+    public boolean isAdded() {
+        return P4Vcs.SHELVED_ADDED.getId().equals(status.getId());
+    }
+
+    public boolean isEdited() {
+        return P4Vcs.SHELVED_MODIFIED.getId().equals(status.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return depotPath.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+        if (that == this) {
+            return true;
+        }
+        if (that == null || !(that.getClass().equals(P4ShelvedFile.class))) {
+            return false;
+        }
+        return ((P4ShelvedFile) that).depotPath.equals(depotPath);
+    }
 }

@@ -630,6 +630,30 @@ public class P4Exec2 {
 
 
     @NotNull
+    public List<IExtendedFileSpec> getShelvedFilesForChangelist(final int changelistId)
+            throws VcsException, CancellationException {
+
+        return exec.runWithClient(project, new WithClient<List<IExtendedFileSpec>>() {
+            @Override
+            public List<IExtendedFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client,
+                    @NotNull ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                final List<IFileSpec> fspecs = FileSpecUtil.getP4RootFileSpec();
+                final FileStatOutputOptions fso = new FileStatOutputOptions();
+                fso.setShelvedFiles(true);
+                final GetExtendedFilesOptions efo = new GetExtendedFilesOptions();
+                efo.setOutputOptions(fso);
+                efo.setAffectedByChangelist(changelistId);
+
+                count.invoke("fstat");
+                return server.getExtendedFiles(fspecs, efo);
+            }
+        });
+    }
+
+
+    @NotNull
     public List<P4StatusMessage> reopenFiles(@NotNull final List<IFileSpec> files,
             final int newChangelistId, @Nullable final String newFileType) throws VcsException, CancellationException {
         return exec.runWithClient(project, new ClientExec.WithClient<List<P4StatusMessage>>() {

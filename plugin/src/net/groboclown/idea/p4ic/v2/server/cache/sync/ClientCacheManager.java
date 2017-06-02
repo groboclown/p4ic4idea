@@ -23,7 +23,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.config.ClientConfig;
-import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
@@ -46,6 +45,7 @@ import java.util.*;
  * Public front-end to the cache infrastructure.
  */
 public class ClientCacheManager {
+    private final Project project;
     private final ClientLocalServerState state;
     private final WorkspaceServerCacheSync workspace;
     private final FileActionsServerCacheSync fileActions;
@@ -61,6 +61,7 @@ public class ClientCacheManager {
     // creation and other actions on jobs is not supported.
 
     public ClientCacheManager(@NotNull ClientConfig config, @NotNull ClientLocalServerState state) {
+        this.project = config.getProject();
         this.state = state;
 
         final CacheImpl cache = new CacheImpl();
@@ -182,10 +183,7 @@ public class ClientCacheManager {
     }
 
     public boolean hasClientRoots(@NotNull Project project) {
-        if (project.isDisposed()) {
-            return false;
-        }
-        return workspace.getSimpleClientRoots(project) != null;
+        return !project.isDisposed() && workspace.getSimpleClientRoots(project) != null;
     }
 
     @NotNull
@@ -314,8 +312,8 @@ public class ClientCacheManager {
      * known, then a surrogate file path is used, so that it will always do the right
      * thing.
      *
-     * @param specs
-     * @return
+     * @param specs specs to map
+     * @return mapped specs
      */
     @NotNull
     public Map<IExtendedFileSpec, FilePath> mapSpecsToPath(@NotNull final Collection<IExtendedFileSpec> specs) {
@@ -333,7 +331,7 @@ public class ClientCacheManager {
             } else {
                 // No known mapping for the spec.
                 // But we need something!
-                ret.put(spec, new DepotFilePath(state.getClientServerId(), spec.getDepotPathString()));
+                ret.put(spec, new DepotFilePath(project, state.getClientServerId(), spec.getDepotPathString()));
             }
         }
 
@@ -405,8 +403,8 @@ public class ClientCacheManager {
 
         @NotNull
         @Override
-        public Collection<P4JobState> refreshJobState(final P4Exec2 exec, final AlertManager alerts,
-                final Collection<String> jobIds) {
+        public Collection<P4JobState> refreshJobState(@NotNull final P4Exec2 exec, final AlertManager alerts,
+                @NotNull final Collection<String> jobIds) {
             return jobs.loadServerCache(exec, alerts, jobIds);
         }
 

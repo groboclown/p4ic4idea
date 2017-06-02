@@ -29,7 +29,9 @@ import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4ShelvedFile;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
+import net.groboclown.idea.p4ic.v2.server.util.DepotFilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -139,7 +141,8 @@ public class P4ChangeProvider implements ChangeProvider {
                 }
             }
 
-            syncChanges(dirtyFiles, builder, addGate, progress);
+            syncChanges(dirtyFiles, builder, addGate, progress,
+                    dirtyScope);
         } catch (InterruptedException e) {
             throw new VcsInterruptedException(e);
         }
@@ -148,9 +151,12 @@ public class P4ChangeProvider implements ChangeProvider {
     private void syncChanges(@Nullable final Set<FilePath> dirtyFiles,
             @NotNull final ChangelistBuilder builder,
             @NotNull final ChangeListManagerGate addGate,
-            final ProgressIndicator progress) throws InterruptedException {
+            final ProgressIndicator progress,
+
+            // FIXME DEBUG
+            VcsDirtyScope scope) throws InterruptedException {
         MappedOpenFiles mapped = getOpenedFiles(dirtyFiles, progress);
-        progress.setFraction(0.80);
+        progress.setFraction(0.60);
 
         // marking dirty may cause infinite loops.
         // This is why we have the special case for "everything is dirty",
@@ -168,7 +174,7 @@ public class P4ChangeProvider implements ChangeProvider {
                 builder.processIgnoredFile(file.getVirtualFile());
             }
         }
-        progress.setFraction(0.82);
+        progress.setFraction(0.62);
 
         for (Entry<FilePath, P4Server> entry : mapped.notAddedDirtyFiles.entrySet()) {
             FilePath file = entry.getKey();
@@ -182,7 +188,7 @@ public class P4ChangeProvider implements ChangeProvider {
                 builder.processUnversionedFile(virt);
             }
         }
-        progress.setFraction(0.84);
+        progress.setFraction(0.64);
 
         Map<P4Server, List<VirtualFile>> notCheckedOutServerFiles =
                 new HashMap<P4Server, List<VirtualFile>>();
@@ -227,11 +233,11 @@ public class P4ChangeProvider implements ChangeProvider {
         }
 
 
-        progress.setFraction(0.85);
+        progress.setFraction(0.70);
         final Map<P4Server, Map<P4ChangeListValue, LocalChangeList>> changeListMappings =
                 changeListMatcher.getLocalChangelistMapping(mapped.affectedServers, addGate);
 
-        progress.setFraction(0.98);
+        progress.setFraction(0.78);
         for (Entry<FilePath, ServerAction> entry : mapped.dirtyP4Files.entrySet()) {
             LocalChangeList changeList = changeListMatcher.getChangeList(
                     entry.getValue().action, entry.getValue().server, changeListMappings);
@@ -242,6 +248,18 @@ public class P4ChangeProvider implements ChangeProvider {
                         " no longer exists; it was either submitted or deleted on the server");
             }
         }
+
+        progress.setFraction(0.80);
+        LOG.debug("Starting shelved file population");
+        LOG.debug("Processing " + changeListMappings.size() + " Perforce servers");
+        for (Entry<P4Server, Map<P4ChangeListValue, LocalChangeList>> serverEntry : changeListMappings.entrySet()) {
+            LOG.debug("Processing " + serverEntry.getValue().size() + " change lists");
+            for (Entry<P4ChangeListValue, LocalChangeList> listEntry : serverEntry.getValue().entrySet()) {
+                updateShelvedFiles(listEntry.getValue(), listEntry.getKey(), builder,
+                        scope);
+            }
+        }
+        LOG.debug("Completed change provider update");
 
         progress.setFraction(1.0);
     }
@@ -269,6 +287,36 @@ public class P4ChangeProvider implements ChangeProvider {
                 change,
                 changeList,
                 P4Vcs.getKey());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Completed put for " + action.getFile());
+        }
+    }
+
+
+    private void updateShelvedFiles(@NotNull LocalChangeList localChangeList,
+            @NotNull P4ChangeListValue p4Changelist, @NotNull ChangelistBuilder builder,
+
+            // FIXME DEBUG
+            VcsDirtyScope scope) {
+        LOG.debug("Processing shelved files for changelist " + p4Changelist.getChangeListId());
+        for (P4ShelvedFile shelvedFile : p4Changelist.getShelved()) {
+            LOG.debug("Processing shelved file " + shelvedFile.getDepotPath());
+            final Change change = changeListMatcher.createChange(p4Changelist.getClientServerRef(), shelvedFile);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(" --- Put shelved file " + shelvedFile.getDepotPath() + " into " + localChangeList +
+                    " as " + shelvedFile.getStatus());
+            }
+
+            // FIXME DEBUG
+            LOG.debug("**** Starting belongsTo call");
+            scope.belongsTo(new DepotFilePath(project, p4Changelist.getClientServerRef(), shelvedFile.getDepotPath()));
+            LOG.debug("**** Ended belongsTo call");
+
+            builder.processChangeInList(change, localChangeList, P4Vcs.getKey());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Completed put for " + shelvedFile.getDepotPath());
+            }
+        }
     }
 
 
@@ -376,9 +424,7 @@ public class P4ChangeProvider implements ChangeProvider {
             for (Entry<P4Server, List<FilePath>> serverListEntry : unknownMap.entrySet()) {
                 P4Server server = serverListEntry.getKey();
                 if (server == null) {
-                    for (FilePath filePath : serverListEntry.getValue()) {
-                        noServerDirtyFiles.add(filePath);
-                    }
+                    noServerDirtyFiles.addAll(serverListEntry.getValue());
                 } else if (! serverListEntry.getValue().isEmpty()) {
                     affectedServers.add(server);
                     final Map<FilePath, IExtendedFileSpec> status =

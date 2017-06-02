@@ -47,6 +47,7 @@ import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
+import com.intellij.ui.JBColor;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.TempFileWatchDog;
@@ -79,6 +80,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.picocontainer.alternatives.EmptyPicoContainer;
 
+import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,6 +113,30 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
                     P4Bundle.message("filestatus.reverted_offline"),
                     FileStatus.NOT_CHANGED_IMMEDIATE.getColor()
             );
+    public static final FileStatus SHELVED_ADDED =
+            FileStatusFactory.getInstance().createFileStatus(
+                    "SHELVED_ADDED",
+                    P4Bundle.message("filestatus.shelved_added"),
+                    toShelvedColor(FileStatus.ADDED.getColor())
+            );
+    public static final FileStatus SHELVED_DELETED =
+            FileStatusFactory.getInstance().createFileStatus(
+                    "SHELVED_DELETED",
+                    P4Bundle.message("filestatus.shelved_deleted"),
+                    toShelvedColor(FileStatus.DELETED.getColor())
+            );
+    public static final FileStatus SHELVED_MODIFIED =
+            FileStatusFactory.getInstance().createFileStatus(
+                    "SHELVED_MODIFIED",
+                    P4Bundle.message("filestatus.shelved_modified"),
+                    toShelvedColor(FileStatus.MODIFIED.getColor())
+            );
+    public static final FileStatus SHELVED_UNKNOWN =
+            FileStatusFactory.getInstance().createFileStatus(
+                    "SHELVED_UNKNOWN",
+                    P4Bundle.message("filestatus.shelved_unknown"),
+                    toShelvedColor(FileStatus.UNKNOWN.getColor())
+            );
 
 
     private static final FileStatus[] PREFERRED_STATUS = new FileStatus[] {
@@ -124,7 +150,12 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             ADDED_OFFLINE,
             MODIFIED_OFFLINE,
             DELETED_OFFLINE,
-            REVERTED_OFFLINE
+            REVERTED_OFFLINE,
+
+            SHELVED_ADDED,
+            SHELVED_DELETED,
+            SHELVED_MODIFIED,
+            SHELVED_UNKNOWN
     };
 
     @NonNls
@@ -739,5 +770,36 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
                 }
             }
         }
+    }
+
+    @Nullable
+    private static Color toShelvedColor(@Nullable Color color) {
+        if (color == null) {
+            return null;
+        }
+
+        return new JBColor(
+            new Color(
+                lighten(color.getRed(), true),
+                lighten(color.getGreen(), true),
+                lighten(color.getBlue(), true)
+            ), new Color(
+                lighten(color.getRed(), false),
+                lighten(color.getGreen(), false),
+                lighten(color.getBlue(), false)
+            )
+        );
+    }
+
+
+    private static int lighten(int base, boolean isLight) {
+        double newVal;
+        if (isLight) {
+            // light color scheme, so darken it.
+            newVal = base * 0.8;
+        } else {
+            newVal = base * 1.2;
+        }
+        return Math.max(0, Math.min(256, (int) newVal));
     }
 }

@@ -222,7 +222,7 @@ public class FileSpecUtil {
 
 
     @NotNull
-    static List<IFileSpec> getP4RootFileSpec() {
+    public static List<IFileSpec> getP4RootFileSpec() {
         return FileSpecBuilder.makeFileSpecList("//...");
     }
 

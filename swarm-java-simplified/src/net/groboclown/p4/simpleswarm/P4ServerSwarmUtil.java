@@ -34,7 +34,6 @@ public class P4ServerSwarmUtil {
         );
         List<IProperty> res = server.getProperty(opts);
         if (res.isEmpty()) {
-
             return null;
         }
         return URI.create(res.get(0).getValue());

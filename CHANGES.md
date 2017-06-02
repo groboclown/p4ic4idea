@@ -19,7 +19,8 @@
     * Notification behavior can be changed in the Settings dialog, under
       Appearance / Notification.
 * Bug fixes.
-    * ... 
+    * Fixed regression where the multiple config file paths would not look
+      at the parents correctly. (#148)
 
 
 ## ::v0.8.7::

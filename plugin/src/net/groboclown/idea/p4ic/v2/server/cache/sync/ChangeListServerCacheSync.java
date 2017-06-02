@@ -65,7 +65,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
     private final Object localCacheSync = new Object();
     private Date lastRefreshDate;
 
-    public ChangeListServerCacheSync(final Cache cache,
+    ChangeListServerCacheSync(final Cache cache,
             final Set<P4ChangeListState> localClientChanges,
             final Set<P4ChangeListState> cachedServerChanges) {
         this.cache = cache;
@@ -91,7 +91,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
 
 
     @NotNull
-    public Collection<P4ChangeListValue> getOpenedChangeLists() {
+    Collection<P4ChangeListValue> getOpenedChangeLists() {
         Map<Integer, P4ChangeListValue> ret = new HashMap<Integer, P4ChangeListValue>();
 
         // Load up the cached server changes, then overlay with the
@@ -193,7 +193,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
     }
 
     @Nullable
-    public PendingUpdateState renameChangelist(final int changelistId, final String description) {
+    PendingUpdateState renameChangelist(final int changelistId, final String description) {
         if (changelistId == P4ChangeListId.P4_UNKNOWN || changelistId == P4ChangeListId.P4_DEFAULT) {
             return null;
         }
@@ -265,6 +265,18 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                         exec.getProject(),
                         P4Bundle.message("error.getJobIdsForChangelist",
                         pendingChange.getId(), exec.getClientName()), e);
+            }
+
+            try {
+                List<IExtendedFileSpec> specs = exec.getShelvedFilesForChangelist(state.getChangelistId());
+                for (IExtendedFileSpec spec : specs) {
+                    state.addShelved(spec);
+                }
+            } catch (VcsException e) {
+                alerts.addNotice(
+                        exec.getProject(),
+                        P4Bundle.message("error.getShelvedFilesForChangelist",
+                                pendingChange.getId(), exec.getClientName()), e);
             }
         }
         if (! foundDefault) {
@@ -384,7 +396,7 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
 
 
     @NotNull
-    public Collection<P4ChangeListJob> getJobsInChangelists(@NotNull final Collection<P4ChangeListId> changes) {
+    Collection<P4ChangeListJob> getJobsInChangelists(@NotNull final Collection<P4ChangeListId> changes) {
         final Collection<P4ChangeListValue> allChanges = getOpenedChangeLists();
         Set<P4ChangeListJob> ret = new HashSet<P4ChangeListJob>();
         for (P4ChangeListValue change : allChanges) {
@@ -413,12 +425,12 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
     static abstract class AbstractChangelistAction extends AbstractServerUpdateAction {
 
 
-        protected AbstractChangelistAction(@NotNull final Collection<PendingUpdateState> pendingUpdateStates) {
+        AbstractChangelistAction(@NotNull final Collection<PendingUpdateState> pendingUpdateStates) {
             super(pendingUpdateStates);
         }
 
         @Nullable
-        protected Integer mapToState(final PendingUpdateState update) {
+        Integer mapToState(final PendingUpdateState update) {
             return UpdateParameterNames.CHANGELIST.getParameterValue(update);
         }
     }

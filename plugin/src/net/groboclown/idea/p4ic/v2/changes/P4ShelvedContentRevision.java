@@ -14,5 +14,44 @@
 
 package net.groboclown.idea.p4ic.v2.changes;
 
-public class P4ShelvedContentRevision {
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.changes.ContentRevision;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
+import net.groboclown.idea.p4ic.v2.server.util.DepotFilePath;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public class P4ShelvedContentRevision implements ContentRevision {
+    private static final P4CurrentContentRevision.CurrentRevisionNumber
+            HAVE_REV = new P4CurrentContentRevision.CurrentRevisionNumber();
+
+    private final DepotFilePath filePath;
+
+    public P4ShelvedContentRevision(@Nullable Project project, @NotNull ClientServerRef clientServerRef,
+            @NotNull String depotPath) {
+        this.filePath = new DepotFilePath(project, clientServerRef, depotPath);
+    }
+
+    @Nullable
+    @Override
+    public String getContent()
+            throws VcsException {
+        // TODO Not yet supported
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public FilePath getFile() {
+        return this.filePath;
+    }
+
+    @NotNull
+    @Override
+    public VcsRevisionNumber getRevisionNumber() {
+        return HAVE_REV;
+    }
 }

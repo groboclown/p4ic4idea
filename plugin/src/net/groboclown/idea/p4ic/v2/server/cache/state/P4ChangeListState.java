@@ -14,8 +14,12 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import com.intellij.openapi.vcs.FileStatus;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IChangelistSummary.Visibility;
+import com.perforce.p4java.core.file.FileAction;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
 import org.jdom.Element;
 import org.jdom.Text;
 import org.jetbrains.annotations.NotNull;
@@ -34,6 +38,11 @@ import java.util.Set;
  * the user of the instances to ensure data isn't lost.
  */
 public class P4ChangeListState extends UpdateRef {
+
+    private static final FileStatus[] SHELVED_FILE_STATUSES = {
+            P4Vcs.SHELVED_ADDED, P4Vcs.SHELVED_DELETED, P4Vcs.SHELVED_MODIFIED, P4Vcs.SHELVED_UNKNOWN
+    };
+
     private int id;
     private String comment;
     private final Set<P4JobState> jobs = new HashSet<P4JobState>();
@@ -41,8 +50,9 @@ public class P4ChangeListState extends UpdateRef {
     private boolean isShelved = false;
     private boolean isRestricted = false;
     private boolean isDeleted = false;
+    private final Set<P4ShelvedFile> shelved = new HashSet<P4ShelvedFile>();
 
-    P4ChangeListState() {
+    private P4ChangeListState() {
         // intentionally empty
         super(null);
     }
@@ -71,6 +81,7 @@ public class P4ChangeListState extends UpdateRef {
         this.isShelved = remote.isShelved();
         this.isRestricted = remote.isRestricted();
         this.isDeleted = remote.isDeleted();
+        this.shelved.addAll(remote.getShelved());
     }
 
     /*
@@ -101,9 +112,60 @@ public class P4ChangeListState extends UpdateRef {
         this.jobs.add(job);
     }
 
+    public void addShelved(@NotNull IExtendedFileSpec spec) {
+        String depotPath = spec.getDepotPathString();
+        FileStatus status = getShelvedFileStatusFor(spec.getAction());
+        this.shelved.add(new P4ShelvedFile(depotPath, status));
+    }
+
+    private static FileStatus getShelvedFileStatusFor(FileAction action) {
+        switch (action) {
+            case ADD:
+            case ADD_EDIT:
+            case ADDED:
+            case BRANCH:
+            case MOVE:
+            case MOVE_ADD:
+            case COPY_FROM:
+            case MERGE_FROM:
+                return P4Vcs.SHELVED_ADDED;
+
+            case EDIT:
+            case INTEGRATE:
+            case REPLACED:
+            case UPDATED:
+            case EDIT_FROM:
+                return P4Vcs.SHELVED_MODIFIED;
+
+            case DELETE:
+            case DELETED:
+            case MOVE_DELETE:
+                return P4Vcs.SHELVED_DELETED;
+
+            case SYNC:
+            case REFRESHED:
+            case IGNORED:
+            case ABANDONED:
+            case EDIT_IGNORED:
+            case RESOLVED:
+            case UNRESOLVED:
+            case PURGE:
+            case IMPORT:
+            case ARCHIVE:
+            case UNKNOWN:
+            default:
+                return P4Vcs.SHELVED_UNKNOWN;
+        }
+    }
+
     @NotNull
     public Set<P4JobState> getJobs() {
         return Collections.unmodifiableSet(jobs);
+    }
+
+    @NotNull
+    public Set<P4ShelvedFile> getShelved() {
+        return Collections.unmodifiableSet(shelved);
     }
 
     public String getComment() {
@@ -157,6 +219,12 @@ public class P4ChangeListState extends UpdateRef {
         if (fixState != null) {
             wrapper.setAttribute("f", fixState);
         }
+        for (P4ShelvedFile shelvedFile : shelved) {
+            Element el = new Element("h");
+            wrapper.addContent(el);
+            el.setAttribute("d", shelvedFile.getDepotPath());
+            el.setAttribute("s", shelvedFile.getStatus().getId());
+        }
         for (P4JobState job : jobs) {
             Element el = new Element("j");
             wrapper.addContent(el);
@@ -182,8 +250,17 @@ public class P4ChangeListState extends UpdateRef {
                 ret.jobs.add(job);
             }
         }
-        String shelved = getAttribute(wrapper, "s");
-        if (shelved != null && shelved.equals("y")) {
+        for (Element el: wrapper.getChildren("h")) {
+            P4ShelvedFile file = createShelvedFile(
+                    getAttribute(el, "d"),
+                    getAttribute(el, "s")
+            );
+            if (file != null) {
+                ret.shelved.add(file);
+            }
+        }
+        String shelvedState = getAttribute(wrapper, "s");
+        if (shelvedState != null && shelvedState.equals("y")) {
             ret.isShelved = true;
         }
         String visibility = getAttribute(wrapper, "v");
@@ -197,6 +274,19 @@ public class P4ChangeListState extends UpdateRef {
         ret.fixState = getAttribute(wrapper, "f");
 
         return ret;
+    }
+
+    @Nullable
+    private static P4ShelvedFile createShelvedFile(String depotPath, String status) {
+        if (status == null || depotPath == null) {
+            return null;
+        }
+        for (FileStatus shelvedFileStatus : SHELVED_FILE_STATUSES) {
+            if (shelvedFileStatus.getId().equals(status)) {
+                return new P4ShelvedFile(depotPath, shelvedFileStatus);
+            }
+        }
+        return null;
     }
 
 

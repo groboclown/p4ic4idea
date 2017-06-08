@@ -122,7 +122,8 @@ public class P4ChangeListState extends UpdateRef {
             FileStatus status = getShelvedFileStatusFor(spec.getAction());
             this.shelved.add(new P4ShelvedFile(depotPath, clientPath, status));
         } else {
-            LOG.warn("Invalid shelved file " + spec);
+            // This can happen if the shelved file is not in the client view.
+            LOG.info("Invalid shelved file " + spec);
         }
     }
 

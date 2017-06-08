@@ -12,7 +12,7 @@
 * Bug fixes.
     * Better handling of shelved files in the changelist view on a refresh request.
     * Changed the shelved file colors so that they're less obvious than the normal files.
-
+    * Fix a `NullPointerException` that occurred on reading the state of some shelved files. (#150)
 
 ## ::v0.9.0::
 

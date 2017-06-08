@@ -41,6 +41,10 @@ public final class FilePathUtil {
         // utility class
     }
 
+    public static boolean isShelved(@Nullable FilePath path) {
+        return path != null && path instanceof ShelvedFilePath;
+    }
+
     @Nullable
     public static FilePath getFilePath(@Nullable String path) {
         if (path == null) {

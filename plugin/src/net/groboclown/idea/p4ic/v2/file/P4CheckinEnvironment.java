@@ -48,6 +48,8 @@ import javax.swing.*;
 import java.util.*;
 import java.util.Map.Entry;
 
+// TODO look at switching to a CommitExecutor and CommitSession, CommitSessionContextAware
+// to fix the long standing issue where changelists must have comments.
 public class P4CheckinEnvironment implements CheckinEnvironment {
     private static final Logger LOG = Logger.getInstance(P4CheckinEnvironment.class);
 

@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FileStatus;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IChangelistSummary.Visibility;
@@ -38,6 +39,8 @@ import java.util.Set;
  * the user of the instances to ensure data isn't lost.
  */
 public class P4ChangeListState extends UpdateRef {
+    private static final Logger LOG = Logger.getInstance(P4ChangeListState.class);
+
 
     private static final FileStatus[] SHELVED_FILE_STATUSES = {
             P4Vcs.SHELVED_ADDED, P4Vcs.SHELVED_DELETED, P4Vcs.SHELVED_MODIFIED, P4Vcs.SHELVED_UNKNOWN
@@ -115,11 +118,16 @@ public class P4ChangeListState extends UpdateRef {
     public void addShelved(@NotNull IExtendedFileSpec spec) {
         String depotPath = spec.getDepotPathString();
         String clientPath = spec.getClientPathString();
-        FileStatus status = getShelvedFileStatusFor(spec.getAction());
-        this.shelved.add(new P4ShelvedFile(depotPath, clientPath, status));
+        if (depotPath != null && clientPath != null && spec.getAction() != null) {
+            FileStatus status = getShelvedFileStatusFor(spec.getAction());
+            this.shelved.add(new P4ShelvedFile(depotPath, clientPath, status));
+        } else {
+            LOG.warn("Invalid shelved file " + spec);
+        }
     }
 
-    private static FileStatus getShelvedFileStatusFor(FileAction action) {
+    @NotNull
+    private static FileStatus getShelvedFileStatusFor(@NotNull FileAction action) {
         switch (action) {
             case ADD:
             case ADD_EDIT:

@@ -1,7 +1,7 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.9.0</version>
+    <version>0.9.1</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
@@ -9,6 +9,8 @@
           <li><em>0.9.1</em>
             <ol>
               <li>Better handling of shelved files in the changelist view on a refresh request.</li>
+              <li>Changed the shelved file colors so that they're less obvious than the normal files.</li>
+              <li>Fix a NullPointerException that occurred on reading the state of some shelved files.</li>
             </ol>
           </li>
           <li><em>0.9.0</em>
@@ -87,9 +89,17 @@
                     />
 
 
+            <!--
+            We want to change the shelve behavior, but we can't replace an action id.
+            <action id="ChangesView.Shelve" class="net.groboclown.idea.p4ic.v2.actions.P4ShelveChangesAction"/>
+            -->
+            <action id="P4.Shelve" class="net.groboclown.idea.p4ic.v2.actions.P4ShelveChangesAction"
+                    description="Preserve work to the Perforce server without committing them"/>
+
             <!-- Add the revert unchanged to the changelist menu -->
             <add-to-group group-id="ChangesViewPopupMenu"
                           anchor="after" relative-to-action="ChangesView.Edit"/>
+
         </group>
 
         <!-- Uncomment when ready
@@ -116,6 +126,8 @@
             <reference ref="ChangesView.Revert"/>
             <reference ref="UpdateFiles" />
             <reference ref="P4.RevertUnchanged"/>
+            <reference ref="P4.Shelve"/>
+
             <separator/>
             <reference ref="Annotate"/>
             <reference ref="Show.Current.Revision"/>

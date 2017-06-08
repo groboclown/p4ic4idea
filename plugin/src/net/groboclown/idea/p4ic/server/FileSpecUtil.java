@@ -25,6 +25,7 @@ import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
+import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -76,19 +77,23 @@ public class FileSpecUtil {
         if (file.isDirectory()) {
             throw new P4FileException(P4Bundle.message("error.filespec.directory"), file);
         }
+
+        final String specPath;
+
+        if (FilePathUtil.isShelved(file)) {
+            specPath = file.getName();
+        } else {
+            specPath = file.getIOFile().getAbsolutePath();
+        }
+
         // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
         // use this instead: getIOFile().getAbsolutePath()
-        String path = getPathWithRev(escapeToP4Path(file.getIOFile().getAbsolutePath()), rev);
+        String path = getPathWithRev(escapeToP4Path(specPath), rev);
         final List<IFileSpec> spec = FileSpecBuilder.makeFileSpecList(path);
         if (spec.size() != 1) {
             throw new P4Exception(P4Bundle.message("error.annotate.multiple-files", path, spec));
         }
-        IFileSpec ret = spec.get(0);
-        //if (rev > 0) {
-        //    ret.setBaseRev(rev);
-        //    ret.setWorkRev(rev);
-        //}
-        return ret;
+        return spec.get(0);
     }
 
 
@@ -138,7 +143,12 @@ public class FileSpecUtil {
         for (FilePath fp : files) {
             // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
             // use this instead: getIOFile().getAbsolutePath()
-            String path = escapeToP4Path(fp.getIOFile().getAbsolutePath());
+            String path;
+            if (FilePathUtil.isShelved(fp)) {
+                path = escapeToP4Path(fp.getName());
+            } else {
+                path = escapeToP4Path(fp.getIOFile().getAbsolutePath());;
+            }
             if (fp.isDirectory()) {
                 if (allowDirectories) {
                     if (!path.endsWith("/") && !path.endsWith("\\") &&
@@ -311,8 +321,8 @@ public class FileSpecUtil {
 
     /**
      * Strips off the revision or changelist suffix from the spec.
-     * @param spec
-     * @return
+     * @param spec the source spec
+     * @return the spec without revs or changelist.
      */
     @NotNull
     public static IFileSpec stripAnnotations(@NotNull IFileSpec spec) {
@@ -343,8 +353,8 @@ public class FileSpecUtil {
     /**
      * For use when the spec pulled from one request is reused for another request.
      *
-     * @param spec
-     * @return
+     * @param spec Perforce source spec
+     * @return the cleaned up spec
      */
     @NotNull
     public static IFileSpec escapeAndStripSpec(@NotNull IFileSpec spec) throws P4FileException {

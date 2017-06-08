@@ -295,12 +295,15 @@ public class DistinctDialog {
             StringBuilder optionMessage = new StringBuilder(message);
             String sep = "<br>";
             for (String option : options) {
+                // Strip off the '&' from the option - this is used in the message
+                // dialog to make a hotkey for the action.
+                String stripped = option.replace("&", "");
                 optionMessage
                         .append(sep)
                         .append("<a href=\"http://localhost:99999/")
-                        .append(option)
+                        .append(stripped)
                         .append("\">")
-                        .append(option)
+                        .append(stripped)
                         .append("</a>");
                 sep = "&nbsp;&nbsp;";
             }

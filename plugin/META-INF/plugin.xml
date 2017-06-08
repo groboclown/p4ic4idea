@@ -1,26 +1,21 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.9.1</version>
+    <version>0.9.2</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
         <ol>
+          <li><em>0.9.2</em>
+            <ol>
+                <li>Fixed the pop-up link text no longer show an invalid character.</li>
+            </ol>
+          </li>
           <li><em>0.9.1</em>
             <ol>
               <li>Better handling of shelved files in the changelist view on a refresh request.</li>
               <li>Changed the shelved file colors so that they're less obvious than the normal files.</li>
               <li>Fix a NullPointerException that occurred on reading the state of some shelved files.</li>
-            </ol>
-          </li>
-          <li><em>0.9.0</em>
-            <ol>
-              <li>Added option to show Perforce connection issues as notifications, rather than as
-              dialog boxes.</li>
-              <li>Added option to view shelved files in the changelist view.</li>
-              <li>Fixed regression where the multiple config file paths would not look
-              at the parents correctly.</li>
-              <li>Fixed a null filespec error.</li>
             </ol>
           </li>
         </ol>

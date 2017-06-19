@@ -35,6 +35,10 @@ public class ReviewActions {
         this.config = config;
     }
 
+    public SwarmConfig getConfig() {
+        return config;
+    }
+
     public Review create(String description, int changelistId,
             String[] reviewers, String[] requiredReviewers)
             throws IOException, SwarmServerResponseException {

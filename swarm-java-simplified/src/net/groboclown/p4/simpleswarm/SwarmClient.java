@@ -20,6 +20,8 @@ import net.groboclown.p4.simpleswarm.model.Review;
 import java.io.IOException;
 
 public interface SwarmClient {
+    SwarmConfig getConfig();
+
     Review createReview(String description, int changelistId,
             String[] reviewers, String[] requiredReviewers)
             throws IOException, SwarmServerResponseException;

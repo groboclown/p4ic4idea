@@ -40,6 +40,7 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerInfo;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
+import net.groboclown.idea.p4ic.compat.auth.OneUseString;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
@@ -47,9 +48,11 @@ import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
+import net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import net.groboclown.idea.p4ic.v2.server.connection.ClientExec.ServerCount;
 import net.groboclown.idea.p4ic.v2.server.connection.ClientExec.WithClient;
+import net.groboclown.p4.simpleswarm.SwarmConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -178,10 +181,10 @@ public class P4Exec2 {
      * <tt>first</tt> set to the base file, and if it moved from another location, its source will be the
      * <tt>second</tt>; otherwise, the second will be <tt>null</tt>.
      *
-     * @param changeListNumber
-     * @return
-     * @throws VcsException
-     * @throws CancellationException
+     * @param changeListNumber changelist number
+     * @return  pairs of base file and moved-to location.
+     * @throws VcsException perforce error
+     * @throws CancellationException user canceled
      */
     @NotNull
     public List<Pair<IExtendedFileSpec, IExtendedFileSpec>> getFileStatusForChangelist(final int changeListNumber)
@@ -316,8 +319,8 @@ public class P4Exec2 {
      * @param openedSpecs query file specs, expected to be a "..." style.
      * @param fast runs with the "-s" argument, which means the revision and file type is not returned.
      * @return messages and results
-     * @throws VcsException
-     * @throws CancellationException
+     * @throws VcsException perforce error
+     * @throws CancellationException user canceled
      */
     @NotNull
     public MessageResult<List<IExtendedFileSpec>> loadOpenedFiles(@NotNull final List<IFileSpec> openedSpecs, final boolean fast)
@@ -603,8 +606,8 @@ public class P4Exec2 {
      *
      * @param files files
      * @return file status
-     * @throws VcsException
-     * @throws CancellationException
+     * @throws VcsException perforce error
+     * @throws CancellationException user canceled
      */
     @NotNull
     public List<IExtendedFileSpec> getFileStatus(@NotNull final List<IFileSpec> files)
@@ -823,7 +826,7 @@ public class P4Exec2 {
         });
     }
 
-    public IServerInfo getServerInfo() throws VcsException, CancellationException {
+    IServerInfo getServerInfo() throws VcsException, CancellationException {
         return exec.runWithServer(project, new ClientExec.WithServer<IServerInfo>() {
             @Override
             public IServerInfo run(@NotNull IOptionsServer server, @NotNull ServerCount count)
@@ -835,7 +838,7 @@ public class P4Exec2 {
     }
 
 
-    public List<String> getClientNames() throws VcsException, CancellationException {
+    List<String> getClientNames() throws VcsException, CancellationException {
         return exec.runWithServer(project, new ClientExec.WithServer<List<String>>() {
             @Override
             public List<String> run(@NotNull IOptionsServer server, @NotNull ServerCount count)
@@ -888,7 +891,7 @@ public class P4Exec2 {
      * problem reading the list, then the default list is returned instead.
      *
      * @return list of job status used by the server
-     * @throws CancellationException
+     * @throws CancellationException user cancels operation
      */
     public List<String> getJobStatusValues() throws CancellationException {
         try {
@@ -917,8 +920,8 @@ public class P4Exec2 {
      *
      * @param changelistId Perforce changelist id
      * @return null if there is no such changelist.
-     * @throws VcsException
-     * @throws CancellationException
+     * @throws VcsException perforce encountered a problem
+     * @throws CancellationException operation was canceled.
      */
     @Nullable
     public Collection<String> getJobIdsForChangelist(final int changelistId) throws VcsException, CancellationException {
@@ -1051,7 +1054,7 @@ public class P4Exec2 {
 
 
     @NotNull
-    public String loadMd5For(final IFileSpec spec) throws VcsException {
+    public String loadMd5For(final IFileSpec spec) throws VcsException, CancellationException {
         return exec.runWithClient(project, new WithClient<String>() {
             @Override
             public String run(@NotNull final IOptionsServer server, @NotNull final IClient client,
@@ -1075,6 +1078,27 @@ public class P4Exec2 {
                     in.close();
                 }
                 return digester.digestAs32ByteHex();
+            }
+        });
+    }
+
+
+    @Nullable
+    public SwarmConfig createSwarmConfigSettings() throws VcsException, CancellationException {
+        return exec.runWithServer(project, new ClientExec.WithServer<SwarmConfig>() {
+            @Override
+            public SwarmConfig run(@NotNull final IOptionsServer server, @NotNull ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                return PasswordManager.getInstance().getPassword(project, exec.getServerConfig(), false)
+                        .use(new OneUseString.WithStringThrows<SwarmConfig, P4JavaException>() {
+                            @Override
+                            public SwarmConfig with(@Nullable char[] value) throws P4JavaException {
+                                return new SwarmConfig()
+                                    .withUsername(exec.getServerConfig().getUsername())
+                                    .withServerInfo(server, getServerConfig().getPlaintextPassword());
+                            }
+                        });
             }
         });
     }

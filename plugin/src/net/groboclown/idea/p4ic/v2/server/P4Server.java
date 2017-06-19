@@ -52,6 +52,7 @@ import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import net.groboclown.idea.p4ic.v2.server.util.RemoteFileReader;
 import net.groboclown.idea.p4ic.v2.server.util.RootDiscoveryUtil;
 import net.groboclown.idea.p4ic.v2.ui.alerts.DisconnectedHandler;
+import net.groboclown.p4.simpleswarm.SwarmConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -1259,6 +1260,25 @@ public class P4Server {
         return source;
     }
 
+    @Nullable
+    public SwarmConfig createSwarmConfig()
+            throws InterruptedException {
+        return connection.query(project, new ServerQuery<SwarmConfig>() {
+            @Nullable
+            @Override
+            public SwarmConfig query(@NotNull P4Exec2 exec, @NotNull ClientCacheManager cacheManager,
+                    @NotNull ServerConnection connection, @NotNull SynchronizedActionRunner runner,
+                    @NotNull AlertManager alerts)
+                    throws InterruptedException {
+                try {
+                    return exec.createSwarmConfigSettings();
+                } catch (VcsException e) {
+                    LOG.warn("Problem finding swarm configuration for " + exec.getServerConfig(), e);
+                    return null;
+                }
+            }
+        });
+    }
 
     public void flushCache(boolean includeLocal, boolean force) throws InterruptedException {
         connection.flushCache(project, includeLocal, force);

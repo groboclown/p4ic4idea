@@ -29,6 +29,11 @@ public class SimpleClient implements SwarmClient {
     }
 
     @Override
+    public SwarmConfig getConfig() {
+        return review.getConfig();
+    }
+
+    @Override
     public Review createReview(String description, int changelistId, String[] reviewers, String[] requiredReviewers)
             throws IOException, SwarmServerResponseException {
         return review.create(description, changelistId, reviewers, requiredReviewers);

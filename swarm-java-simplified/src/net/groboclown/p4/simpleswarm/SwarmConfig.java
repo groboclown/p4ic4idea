@@ -112,4 +112,9 @@ public class SwarmConfig {
     public SwarmVersion getVersion() {
         return version;
     }
+
+    @Override
+    public String toString() {
+        return uri + " for " + username;
+    }
 }

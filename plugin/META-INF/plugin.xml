@@ -237,5 +237,8 @@
         <component>
             <implementation-class>net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager</implementation-class>
         </component>
+        <component>
+            <implementation-class>net.groboclown.idea.p4ic.swarm.SwarmConnectionComponent</implementation-class>
+        </component>
     </application-components>
 </idea-plugin>

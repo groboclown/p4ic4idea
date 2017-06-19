@@ -31,6 +31,11 @@ public class ClientConfigP4ProjectConfig implements P4ProjectConfig {
     }
 
     @Override
+    public boolean isDisposed() {
+        return false;
+    }
+
+    @Override
     public void refresh() {
         // Do nothing
     }
@@ -80,5 +85,10 @@ public class ClientConfigP4ProjectConfig implements P4ProjectConfig {
     @Override
     public Project getProject() {
         return config.getProject();
+    }
+
+    @Override
+    public void dispose() {
+        // nothing to do
     }
 }

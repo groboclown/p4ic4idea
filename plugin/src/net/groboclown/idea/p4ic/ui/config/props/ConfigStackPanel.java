@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.ui.config.props;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -22,6 +23,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.ui.popup.ListPopup;
 import com.intellij.openapi.ui.popup.PopupStep;
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.util.Consumer;
 import com.intellij.util.ui.EmptyIcon;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -57,13 +59,14 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 public class ConfigStackPanel
-        implements RequestConfigurationLoadListener {
+        implements RequestConfigurationLoadListener, Disposable {
     private static final Logger LOG = Logger.getInstance(ConfigStackPanel.class);
 
     private Project project;
     private JPanel rootPanel;
     private JButton addEntryButton;
     private ComponentListPanel<ConfigPartPanel<?>> componentList;
+    private P4ProjectConfig tempConfig;
 
     private final ArrayList<ConfigurationUpdatedListener> changeListeners =
             new ArrayList<ConfigurationUpdatedListener>(2);
@@ -347,6 +350,16 @@ public class ConfigStackPanel
     }
 
 
+    @Override
+    public void dispose() {
+        this.componentList.removeAllChildren();
+        if (tempConfig != null) {
+            Disposer.dispose(tempConfig);
+        }
+        this.project = null;
+        this.tempConfig = null;
+    }
+
     @NotNull
     @Override
     public P4ProjectConfig updateConfigPartFromUI() {
@@ -401,28 +414,51 @@ public class ConfigStackPanel
 
     private void sendConfigStackUpdated() {
         // The refresh can take a long time, so run it in the background.
-        BackgroundAwtActionRunner
-                .runBackgrounAwtAction(new BackgroundAwtActionRunner.BackgroundAwtAction<P4ProjectConfig>() {
-                    @Override
-                    public P4ProjectConfig runBackgroundProcess() {
-                        final List<ConfigPartPanel<?>> partComponents = componentList.getChildren();
-                        ArrayList<ConfigPart> parts = new ArrayList<ConfigPart>(partComponents.size());
-                        for (ConfigPartPanel<?> configPartPanel : partComponents) {
-                            parts.add(configPartPanel.getConfigPart());
+        if (! Disposer.isDisposed(this)) {
+            BackgroundAwtActionRunner
+                    .runBackgrounAwtAction(new BackgroundAwtActionRunner.BackgroundAwtAction<P4ProjectConfig>() {
+                        @Override
+                        public P4ProjectConfig runBackgroundProcess() {
+                            final List<ConfigPartPanel<?>> partComponents = componentList.getChildren();
+                            ArrayList<ConfigPart> parts = new ArrayList<ConfigPart>(partComponents.size());
+                            for (ConfigPartPanel<?> configPartPanel : partComponents) {
+                                parts.add(configPartPanel.getConfigPart());
+                            }
+
+                            if (tempConfig != null) {
+                                Disposer.dispose(tempConfig);
+                                tempConfig = null;
+                            }
+                            final P4ProjectConfig config;
+                            if (project == null) {
+                                config = null;
+                            } else {
+                                config = new P4ProjectConfigStack(project, parts);
+                                config.refresh();
+                            }
+                            return config;
                         }
 
-                        P4ProjectConfig config = new P4ProjectConfigStack(project, parts);
-                        config.refresh();
-                        return config;
-                    }
-
-                    @Override
-                    public void runAwtProcess(final P4ProjectConfig config) {
-                        for (ConfigurationUpdatedListener changeListener : changeListeners) {
-                            changeListener.onConfigurationUpdated(config);
+                        @Override
+                        public void runAwtProcess(final @Nullable P4ProjectConfig config) {
+                            // Yes, this performs extra work that shouldn't be in the AWT;
+                            // however, because of the slowness of the background process, we
+                            // want to wait on performing dispose checks until the last possible
+                            // moment.
+                            if (config != null) {
+                                if (Disposer.isDisposed(ConfigStackPanel.this)) {
+                                    Disposer.dispose(config);
+                                } else {
+                                    Disposer.register(ConfigStackPanel.this, config);
+                                    for (ConfigurationUpdatedListener changeListener : changeListeners) {
+                                        changeListener.onConfigurationUpdated(config);
+                                    }
+                                    tempConfig = config;
+                                }
+                            }
                         }
-                    }
-                });
+                    });
+        }
     }
 
 

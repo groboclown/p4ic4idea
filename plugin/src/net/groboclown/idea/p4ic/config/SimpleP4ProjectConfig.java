@@ -31,6 +31,7 @@ public class SimpleP4ProjectConfig implements P4ProjectConfig {
     private final Collection<ClientConfig> configs;
     private final Collection<ClientConfigSetup> configSetups;
     private final Collection<ConfigProblem> problems;
+    private boolean disposed;
 
     SimpleP4ProjectConfig(@NotNull P4ProjectConfig config) {
         this(config.getProject(), config.getClientConfigs(), config.getClientConfigSetups(),
@@ -45,6 +46,11 @@ public class SimpleP4ProjectConfig implements P4ProjectConfig {
         this.configs = Collections.unmodifiableCollection(new ArrayList<ClientConfig>(configs));
         this.configSetups = Collections.unmodifiableCollection(new ArrayList<ClientConfigSetup>(configSetups));
         this.problems = Collections.unmodifiableCollection(new ArrayList<ConfigProblem>(problems));
+    }
+
+    @Override
+    public boolean isDisposed() {
+        return project.isDisposed() || disposed;
     }
 
     @Override
@@ -140,5 +146,10 @@ public class SimpleP4ProjectConfig implements P4ProjectConfig {
         }
         // child is not a child of parent.
         return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public void dispose() {
+        disposed = true;
     }
 }

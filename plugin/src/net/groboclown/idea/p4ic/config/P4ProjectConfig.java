@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.config;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -25,7 +26,9 @@ import java.util.Collection;
  * Manages the configuration for an entire project.  The configuration must be refined through a file path,
  * or by getting a list of configurations.
  */
-public interface P4ProjectConfig {
+public interface P4ProjectConfig extends Disposable {
+
+    boolean isDisposed();
 
     void refresh();
 

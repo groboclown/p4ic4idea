@@ -15,8 +15,10 @@
 package net.groboclown.idea.p4ic.config;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.part.ConfigPart;
+import net.groboclown.idea.p4ic.config.part.DataPart;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -44,6 +46,14 @@ public class ConfigProblem {
         this.args = new Object[] { ex.getMessage(), ex.getClass().getName(), ex.getClass().getSimpleName() };
         this.isError = true;
         LOG.info("ConfigProblem from " + source, ex);
+    }
+
+    @Nullable
+    public VirtualFile getRootPath() {
+        if (source != null && source instanceof DataPart) {
+            return ((DataPart) source).getRootPath();
+        }
+        return null;
     }
 
     @Nullable

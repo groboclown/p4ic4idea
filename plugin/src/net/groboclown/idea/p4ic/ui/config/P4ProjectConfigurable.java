@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.ui.config;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
@@ -82,7 +83,7 @@ public class P4ProjectConfigurable implements SearchableConfigurable {
 
     @Override
     public void disposeUIResources() {
-        myPanel.dispose();
+        Disposer.dispose(myPanel);
     }
 
     @Override

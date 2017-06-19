@@ -5,12 +5,26 @@
 
 ### Overview
 
+* Started Helix Swarm integration.
 * Bug fixes.
 
 ### Details
 
+* Started Helix Swarm integration.
+    * The beginnings of Helix Swarm server integration is present in the code.
+        It checks whether the Perforce server has a Swarm server registered with it,
+        and will attempt to make a connection to the registered Swarm servers.
 * Bug fixes.
+    * Changed (again) the method for looking up the directory path for different
+      configurations.  Configurations now can be associated with the VCS roots,
+      rather than the project root.  This means that file location configurations
+      will mark themselves as the directory where the file is located (or up to the
+      VCS roots); future work may include a "global" file location vs. a local
+      file location. (#148) 
     * Fixed the pop-up link text no longer show an invalid character.
+    * Added a minor improvement that limits the number of duplicate "enter a password"
+      error messages in some circumstances.
+    * Dead code clean up.
 
 
 ## ::v0.9.1::

@@ -14,7 +14,9 @@
 
 package net.groboclown.idea.p4ic.ui.config;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import net.groboclown.idea.p4ic.config.ManualP4Config;
 import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
@@ -25,7 +27,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ResourceBundle;
 
-public class P4SettingsPanel {
+public class P4SettingsPanel implements Disposable {
     private UserPreferencesPanel myUserPreferencesPanel;
     private JPanel myRootPanel;
     private ConfigStackPanel configStackPanel;
@@ -33,6 +35,7 @@ public class P4SettingsPanel {
 
     P4SettingsPanel() {
         configStackPanel.addConfigurationUpdatedListener(resolvePropertiesPanel.getConfigurationUpdatedListener());
+        Disposer.register(this, configStackPanel);
         resolvePropertiesPanel.setRequestConfigurationLoadListener(configStackPanel);
     }
 
@@ -65,6 +68,13 @@ public class P4SettingsPanel {
             final P4ProjectConfigComponent configComponent = P4ProjectConfigComponent.getInstance(project);
             resolvePropertiesPanel.getConfigurationUpdatedListener().onConfigurationUpdated(
                     configComponent.getP4ProjectConfig());
+        }
+    }
+
+    @Override
+    public void dispose() {
+        if (configStackPanel != null) {
+            Disposer.dispose(configStackPanel);
         }
     }
 

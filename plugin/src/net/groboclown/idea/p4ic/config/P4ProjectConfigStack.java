@@ -16,14 +16,30 @@ package net.groboclown.idea.p4ic.config;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.vcs.VcsListener;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.idea.p4ic.config.part.*;
+import net.groboclown.idea.p4ic.config.part.CompositePart;
+import net.groboclown.idea.p4ic.config.part.ConfigPart;
+import net.groboclown.idea.p4ic.config.part.DataPart;
+import net.groboclown.idea.p4ic.config.part.DefaultDataPart;
+import net.groboclown.idea.p4ic.config.part.MultipleDataPart;
+import net.groboclown.idea.p4ic.config.part.MutableCompositePart;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.util.EqualUtil;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class P4ProjectConfigStack implements P4ProjectConfig {
     private static final Logger LOG = Logger.getInstance(P4ProjectConfigStack.class);
@@ -32,6 +48,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
     private final Object sync = new Object();
 
     private final Project project;
+    private boolean disposed = false;
 
     @NotNull
     private ConfigPart parts = new MutableCompositePart();
@@ -48,13 +65,25 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
     @NotNull
     private Set<ConfigProblem> problems = Collections.emptySet();
 
+    @NotNull
+    private final List<VirtualFile> vcsRootsCache = new ArrayList<VirtualFile>();
+
     public P4ProjectConfigStack(@NotNull Project project, @NotNull List<ConfigPart> userParts) {
         this.project = project;
         MutableCompositePart newParts = new MutableCompositePart(new DefaultDataPart());
         for (ConfigPart userPart : userParts) {
             newParts.addPriorityConfigPart(userPart);
         }
+        loadVcsRoots();
         loadConfigs(newParts);
+        project.getMessageBus().connect(this).subscribe(
+                ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED,
+                new VcsListenerImpl());
+    }
+
+    @Override
+    public boolean isDisposed() {
+        return project.isDisposed() || disposed;
     }
 
     @Override
@@ -144,14 +173,9 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
 
     private void loadConfigs(ConfigPart rootPart) {
         LOG.debug("Creating configuration from parts");
-        // Null can happen if we're using the default settings.
-        @Nullable
-        VirtualFile projectRoot = project.getBaseDir();
-        if (projectRoot != null && ! projectRoot.isDirectory()) {
-            projectRoot = projectRoot.getParent();
-        }
         final Map<VirtualFile, List<DataPart>> dirToParts = new HashMap<VirtualFile, List<DataPart>>();
         final Set<ConfigProblem> configProblems = new HashSet<ConfigProblem>();
+        final List<VirtualFile> vcsRoots = getVcsRoots();
 
         List<ConfigPart> stack = new ArrayList<ConfigPart>();
         stack.add(rootPart);
@@ -169,26 +193,41 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
                 VirtualFile partRoot = dataPart.getRootPath();
                 // Push parent directories of the project root into the project root.
                 // #148: Don't set the root directory to the parent project if the
-                // given file is lower than the project root.
-                if (partRoot == null || (projectRoot != null && FilePathUtil.isSameOrUnder(partRoot, projectRoot))) {
-                    partRoot = projectRoot;
+                // given file is lower than the VCS roots.
+                List<VirtualFile> realRoots = new ArrayList<VirtualFile>();
+                for (VirtualFile vcsRoot : vcsRoots) {
+                    if (partRoot == null || (vcsRoot != null && FilePathUtil.isSameOrUnder(partRoot, vcsRoot))) {
+                        realRoots.add(vcsRoot);
+                    }
                 }
-                List<DataPart> partList = dirToParts.get(partRoot);
-                if (partList == null) {
-                    partList = new ArrayList<DataPart>();
-                    dirToParts.put(partRoot, partList);
+                if (realRoots.isEmpty()) {
+                    if (partRoot == null) {
+                        configProblems.add(new ConfigProblem(part, true,
+                                "configpart.no.roots"));
+                    } else {
+                        realRoots.add(partRoot);
+                    }
                 }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Adding " + dataPart + " into " + partRoot);
+                for (VirtualFile realRoot : realRoots) {
+                    List<DataPart> partList = dirToParts.get(realRoot);
+                    if (partList == null) {
+                        partList = new ArrayList<DataPart>();
+                        dirToParts.put(realRoot, partList);
+                    }
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Adding " + dataPart + " into " + realRoot);
+                    }
+                    if (! partList.contains(dataPart)) {
+                        partList.add(dataPart);
+                    }
                 }
-                partList.add(dataPart);
             } else {
                 throw new IllegalStateException("Unknown config part " + part);
             }
         }
 
         final Set<ClientConfigSetup> clientConfigSetups = new HashSet<ClientConfigSetup>();
-        final Map<VirtualFile, ClientConfig> tmpConfigs = convertToClients(projectRoot, dirToParts, configProblems,
+        final Map<VirtualFile, ClientConfig> tmpConfigs = convertToClients(vcsRoots, dirToParts, configProblems,
                 clientConfigSetups);
 
         synchronized (sync) {
@@ -200,7 +239,7 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
     }
 
     private Map<VirtualFile, ClientConfig> convertToClients(
-            @Nullable VirtualFile projectRoot, @NotNull Map<VirtualFile, List<DataPart>> parts,
+            @NotNull List<VirtualFile> vcsRoots, @NotNull Map<VirtualFile, List<DataPart>> parts,
             @NotNull Set<ConfigProblem> configProblems,
             @NotNull Set<ClientConfigSetup> clientConfigSetups) {
         // We have the complete list of client servers, mapped to
@@ -271,31 +310,33 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         // We now need the final step of cleaning up the roots.
         // There can be a situation where some roots in the list are below the project root.
         // In this case, find the root that is "closest" to the base.
-        List<VirtualFile> belowProjectRoot = new ArrayList<VirtualFile>();
-        VirtualFile bestProjectRoot = null;
-        int bestProjectRootDistance = Integer.MIN_VALUE;
-        for (Map.Entry<VirtualFile, ClientServerSetup> entry : fileMappedSetup.entrySet()) {
-            final VirtualFile base = entry.getKey();
-            final int depth = getDepthDistance(projectRoot, base);
-            if (depth <= 0 && depth > bestProjectRootDistance) {
-                belowProjectRoot.add(base);
-                bestProjectRoot = base;
-                bestProjectRootDistance = depth;
+        for (VirtualFile vcsRoot : vcsRoots) {
+            List<VirtualFile> belowProjectRoot = new ArrayList<VirtualFile>();
+            VirtualFile bestProjectRoot = null;
+            int bestProjectRootDistance = Integer.MIN_VALUE;
+            for (Map.Entry<VirtualFile, ClientServerSetup> entry : fileMappedSetup.entrySet()) {
+                final VirtualFile base = entry.getKey();
+                final int depth = getDepthDistance(vcsRoot, base);
+                if (depth <= 0 && depth > bestProjectRootDistance) {
+                    belowProjectRoot.add(base);
+                    bestProjectRoot = base;
+                    bestProjectRootDistance = depth;
+                }
             }
-        }
-        if (bestProjectRoot != null) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Best root config: " + bestProjectRoot);
-                LOG.debug("All root configs " + belowProjectRoot);
+            if (bestProjectRoot != null) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Best root config: " + bestProjectRoot);
+                    LOG.debug("All root configs " + belowProjectRoot);
+                }
+                final ClientServerSetup bestConfig = fileMappedSetup.get(bestProjectRoot);
+                belowProjectRoot.remove(bestProjectRoot);
+                for (VirtualFile file : belowProjectRoot) {
+                    fileMappedSetup.remove(file);
+                }
+                fileMappedSetup.put(vcsRoot, bestConfig);
+            } else {
+                LOG.debug("No root configs found at or under the vcs root " + vcsRoot);
             }
-            final ClientServerSetup bestConfig = fileMappedSetup.get(bestProjectRoot);
-            belowProjectRoot.remove(bestProjectRoot);
-            for (VirtualFile file : belowProjectRoot) {
-                fileMappedSetup.remove(file);
-            }
-            fileMappedSetup.put(projectRoot, bestConfig);
-        } else {
-            LOG.debug("No root configs found at or under the project root.");
         }
         if (LOG.isDebugEnabled()) {
             LOG.debug("Final pruned config directories: " + fileMappedSetup.keySet());
@@ -372,6 +413,47 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         return Integer.MIN_VALUE;
     }
 
+    @Override
+    public void dispose() {
+        this.disposed = true;
+        // listeners are auto-cleaned up.
+    }
+
+
+    private void loadVcsRoots() {
+        final VirtualFile[] cache = ProjectLevelVcsManager.getInstance(project).
+                getRootsUnderVcs(P4Vcs.getInstance(project));
+        List<VirtualFile> roots;
+        VirtualFile projectRoot = project.getBaseDir();
+        if (projectRoot != null) {
+            if (! projectRoot.isDirectory()) {
+                projectRoot = projectRoot.getParent();
+            }
+        }
+        if (projectRoot != null) {
+            roots = new ArrayList<VirtualFile>(cache.length);
+            roots.add(projectRoot);
+            for (VirtualFile vcsRoot : cache) {
+                if (! roots.contains(vcsRoot) && ! FilePathUtil.isSameOrUnder(projectRoot, vcsRoot)) {
+                    roots.add(vcsRoot);
+                }
+            }
+        } else {
+            roots = Arrays.asList(cache);
+        }
+        synchronized (vcsRootsCache) {
+            vcsRootsCache.clear();
+            vcsRootsCache.addAll(roots);
+        }
+    }
+
+    private List<VirtualFile> getVcsRoots() {
+        synchronized (vcsRootsCache) {
+            return Collections.unmodifiableList(vcsRootsCache);
+        }
+    }
+
+
     /**
      * Class used as a way-point in the construction of a
      * ClientConfig.  It has the messy implications of the
@@ -440,6 +522,16 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
                 return true;
             }
             return false;
+        }
+    }
+
+
+    private class VcsListenerImpl implements VcsListener {
+        @Override
+        public void directoryMappingChanged() {
+            loadVcsRoots();
+            // Force a reload of the stack directories
+            loadConfigs(parts);
         }
     }
 }

@@ -24,17 +24,23 @@ import net.groboclown.idea.p4ic.compat.auth.OneUseString;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordAccessedWrongException;
 import net.groboclown.idea.p4ic.server.exceptions.PasswordStoreException;
-import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectedController;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LoginFailedHandler extends AbstractErrorHandler {
     private static final Logger LOG = Logger.getInstance(LoginFailedHandler.class);
 
+    // A memory leak of sorts, but it's limited to the distinct number of server IDs.
+    private static final Map<String, Integer> ACTIVE_DIALOGS = new HashMap<String, Integer>();
+
     private final ServerConfig config;
+    private final int activeId;
 
 
     public LoginFailedHandler(@NotNull final Project project,
@@ -44,11 +50,35 @@ public class LoginFailedHandler extends AbstractErrorHandler {
         super(project, connectedController, exception);
         LOG.info("Generated login failed error for server " + config.getServerId(), exception);
         this.config = config;
+        synchronized (ACTIVE_DIALOGS) {
+            final Integer topId = ACTIVE_DIALOGS.get(getServerKey());
+            if (topId == null) {
+                activeId = 0;
+            } else {
+                activeId = topId + 1;
+            }
+            ACTIVE_DIALOGS.put(getServerKey(), activeId);
+        }
+    }
+
+    protected void finalize() throws Throwable {
+        super.finalize();
     }
 
     @Override
     public void handleError(@NotNull final Date when) {
         LOG.warn("Login problem for server " + config.getServerId(), getException());
+
+        // Attempt to limit the number of "you need a password" dialog prompts that can
+        // pop up all at once.  If there was a more recent LoginFailed error, then don't
+        // show this older one.
+        synchronized (ACTIVE_DIALOGS) {
+            final Integer topId = ACTIVE_DIALOGS.get(getServerKey());
+            if (topId != null && topId > activeId) {
+                LOG.warn("Skipping - this dialog is already active.");
+                return;
+            }
+        }
 
         if (isInvalid()) {
             LOG.debug("Cannot handle password problem in this context; not in dispatch thread or project disposed.");

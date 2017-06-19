@@ -13,7 +13,9 @@
  */
 package net.groboclown.idea.p4ic.ui.config;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +25,7 @@ import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 import java.awt.*;
 
-public class P4ConfigurationProjectPanel {
+public class P4ConfigurationProjectPanel implements Disposable {
 
     private final Project project;
     private P4SettingsPanel myMainPanel;
@@ -67,7 +69,9 @@ public class P4ConfigurationProjectPanel {
     }
 
     public synchronized void dispose() {
-        //myMainPanel.dispose();
+        if (myMainPanel != null) {
+            Disposer.dispose(myMainPanel);
+        }
         myMainPanel = null;
         wrappedPanel = null;
         isInitialized = false;

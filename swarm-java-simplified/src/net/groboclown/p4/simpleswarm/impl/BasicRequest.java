@@ -55,6 +55,9 @@ class BasicRequest {
     static BasicResponse get(SwarmConfig config, String path, Map<String, ?> query)
             throws IOException, UnauthorizedAccessException {
         final String url = toUrl(config, path, query);
+        if (url == null) {
+            throw new IOException("No swarm URL in configuration");
+        }
         final HttpGet request = new HttpGet(url);
         return request(config, request);
     }
@@ -210,6 +213,9 @@ class BasicRequest {
 
     static String toUrl(SwarmConfig config, String path, Map<String, ?> query)
             throws UnsupportedEncodingException {
+        if (config == null || path == null || config.getUri() == null) {
+            return null;
+        }
         return config.getUri().toASCIIString() + API_PATH + config.getVersionPath() + path +
                 toQuery(query);
     }

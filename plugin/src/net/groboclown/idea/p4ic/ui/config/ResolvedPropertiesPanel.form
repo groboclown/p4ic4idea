@@ -55,64 +55,63 @@
           </grid>
         </children>
       </grid>
-      <tabbedpane id="550eb" binding="resolutionTabbedPane">
+      <grid id="9f6e1" layout-manager="FormLayout">
+        <rowspec value="center:max(d;4px):noGrow"/>
+        <rowspec value="top:4dlu:noGrow"/>
+        <rowspec value="center:max(d;4px):noGrow"/>
+        <rowspec value="top:4dlu:noGrow"/>
+        <rowspec value="center:d:grow"/>
+        <colspec value="fill:d:grow"/>
         <constraints border-constraint="Center"/>
         <properties/>
         <border type="none"/>
         <children>
-          <grid id="a0af" layout-manager="BorderLayout" hgap="0" vgap="0">
+          <grid id="3d51a" binding="myProblemsPanel" layout-manager="FormLayout">
+            <rowspec value="center:d:grow"/>
+            <colspec value="fill:d:grow"/>
             <constraints>
-              <tabbedpane title-resource-bundle="net/groboclown/idea/p4ic/P4Bundle" title-key="configurations.resolved-values.tab"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <forms/>
             </constraints>
             <properties/>
-            <border type="empty">
-              <size top="4" left="4" bottom="4" right="4"/>
-            </border>
+            <border type="line" title-resource-bundle="net/groboclown/idea/p4ic/P4Bundle" title-key="config.resolved.problem-panel"/>
             <children>
-              <scrollpane id="5e2fc">
-                <constraints border-constraint="Center"/>
-                <properties>
-                  <verticalScrollBarPolicy value="22"/>
-                </properties>
-                <border type="none"/>
-                <children>
-                  <component id="8e2eb" class="javax.swing.JTextArea" binding="resolvedValuesText">
-                    <constraints/>
-                    <properties>
-                      <font swing-font="TextArea.font"/>
-                      <rows value="8"/>
-                    </properties>
-                  </component>
-                </children>
-              </scrollpane>
+              <component id="77ae7" class="javax.swing.JList" binding="selectedProblemsList">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+                  <forms/>
+                </constraints>
+                <properties/>
+              </component>
             </children>
           </grid>
-          <grid id="5f8a1" layout-manager="BorderLayout" hgap="0" vgap="0">
+          <grid id="eb0cf" layout-manager="FormLayout">
+            <rowspec value="center:d:grow"/>
+            <colspec value="fill:d:grow"/>
             <constraints>
-              <tabbedpane title-resource-bundle="net/groboclown/idea/p4ic/P4Bundle" title-key="configuration.problems-list.tab"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <forms/>
             </constraints>
             <properties/>
-            <border type="empty">
-              <size top="4" left="4" bottom="4" right="4"/>
-            </border>
+            <border type="line" title-resource-bundle="net/groboclown/idea/p4ic/P4Bundle" title-key="config.resolved.config-panel"/>
             <children>
-              <scrollpane id="d8cd4">
-                <constraints border-constraint="Center"/>
-                <properties>
-                  <visible value="true"/>
-                </properties>
-                <border type="none"/>
-                <children>
-                  <component id="7a703" class="javax.swing.JList" binding="configProblemsList">
-                    <constraints/>
-                    <properties/>
-                  </component>
-                </children>
-              </scrollpane>
+              <component id="2e48c" class="javax.swing.JTextArea" binding="resolvedValuesText">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+                  <forms/>
+                </constraints>
+                <properties/>
+              </component>
             </children>
           </grid>
+          <vspacer id="d23e1">
+            <constraints>
+              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+              <forms defaultalign-vert="false"/>
+            </constraints>
+          </vspacer>
         </children>
-      </tabbedpane>
+      </grid>
     </children>
   </grid>
 </form>

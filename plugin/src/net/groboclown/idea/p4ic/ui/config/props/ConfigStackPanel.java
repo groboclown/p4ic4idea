@@ -414,7 +414,7 @@ public class ConfigStackPanel
 
     private void sendConfigStackUpdated() {
         // The refresh can take a long time, so run it in the background.
-        if (! Disposer.isDisposed(this)) {
+        if (!Disposer.isDisposed(this)) {
             BackgroundAwtActionRunner
                     .runBackgrounAwtAction(new BackgroundAwtActionRunner.BackgroundAwtAction<P4ProjectConfig>() {
                         @Override

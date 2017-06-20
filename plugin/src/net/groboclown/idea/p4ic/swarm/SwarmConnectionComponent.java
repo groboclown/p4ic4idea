@@ -93,7 +93,7 @@ public class SwarmConnectionComponent implements ApplicationComponent, Disposabl
                 final SwarmConfig config = server.createSwarmConfig();
                 if (config != null) {
                     LOG.info("Trying Swarm Server " + config.getUri() + "; username " +
-                            config.getUsername() + "; ticket " + config.getTicket());
+                            config.getUsername());
                     final SwarmClient client = SwarmClientFactory.createSwarmClient(config);
                     validClients.put(server.getClientServerId(), client);
                     LOG.info("Found valid swarm server: " + config);

@@ -19,9 +19,14 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.CollectionListModel;
+import com.intellij.ui.ColorUtil;
+import com.intellij.ui.JBColor;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.Spacer;
 import com.intellij.util.ui.AsyncProcessIcon;
+import com.jgoodies.forms.layout.CellConstraints;
+import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.BackgroundAwtActionRunner;
 import net.groboclown.idea.p4ic.config.ClientConfig;
@@ -38,11 +43,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.awt.*;
+import java.awt.Font;
+import java.awt.Color;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.ResourceBundle;
 
 public class ResolvedPropertiesPanel {
     private static final Logger LOG = Logger.getInstance(ResolvedPropertiesPanel.class);
@@ -55,10 +69,10 @@ public class ResolvedPropertiesPanel {
     private JButton refreshResolvedPropertiesButton;
     private JTextArea resolvedValuesText;
 
-    private JList configProblemsList;
     private AsyncProcessIcon refreshResolvedPropertiesSpinner;
-    private JTabbedPane resolutionTabbedPane;
-    private CollectionListModel/*<String>*/ configProblemsListModel; // JDK 1.6 doesn't have generic models
+    private JPanel myProblemsPanel;
+    private JList selectedProblemsList;
+    private CollectionListModel/*<String>*/ selectedProblemsListModel; // JDK 1.6 doesn't have generic models
 
     private P4ProjectConfig lastConfig;
 
@@ -81,8 +95,8 @@ public class ResolvedPropertiesPanel {
         // Initialize GUI constant values
         $$$setupUI$$$();
 
-        configProblemsListModel = new CollectionListModel/*<String>*/();
-        configProblemsList.setModel(configProblemsListModel);
+        selectedProblemsListModel = new CollectionListModel/*<String>*/();
+        selectedProblemsList.setModel(selectedProblemsListModel);
 
         rootDirDropdownBoxModel = new DefaultComboBoxModel/*<ConfigPath>*/();
         rootDirDropdownBox.setModel(rootDirDropdownBoxModel);
@@ -120,8 +134,10 @@ public class ResolvedPropertiesPanel {
                             lastConfig = config;
                         }
                         if (lastConfig == null) {
+                            // FIXME eliminate possible NPE
                             final ComputedConfigResults results = new ComputedConfigResults();
-                            results.problemMessages.add(createNoClientConfigProblem());
+                            results.configs.add(new ConfigPath(null, config.getProject().getBaseDir(),
+                                    Collections.singletonList(createNoClientConfigProblem())));
                             return results;
                         }
 
@@ -149,8 +165,11 @@ public class ResolvedPropertiesPanel {
                             }
                         }
                         if (found) {
+                            ConfigPath selectedPath = results.configs.get(results.selectedConfigIndex);
                             results.selectedConfigText = createResolvedPropertiesText(
-                                    results.configs.get(results.selectedConfigIndex)).toString();
+                                    selectedPath).toString();
+                            results.selectedProblemText = toProblemMessages(selectedPath.file,
+                                    selectedPath.allProblems);
                         } else {
                             results.selectedConfigText = null;
                         }
@@ -160,39 +179,31 @@ public class ResolvedPropertiesPanel {
 
                     @Override
                     public void runAwtProcess(ComputedConfigResults results) {
-                        if (results.problemMessages.isEmpty()) {
-                            configProblemsListModel.removeAll();
-                            // No errors, so show the resolved properties
-                            resolutionTabbedPane.setSelectedIndex(0);
-                        } else {
-                            configProblemsListModel.replaceAll(toProblemMessages(results.problemMessages));
-                            // Errors, so show the problems
-                            resolutionTabbedPane.setSelectedIndex(1);
-                        }
                         if (results.configs == null || results.configs.isEmpty()) {
                             rootDirDropdownBoxModel.removeAllElements();
                             rootDirDropdownBox.setEnabled(false);
                             LOG.debug("No configurations; showing no resolved properties.");
-                            showResolvedPropertiesNone();
+                            showResolvedProperties(null, results.selectedProblemText);
                         } else {
                             rootDirDropdownBox.setEnabled(true);
                             rootDirDropdownBoxModel.removeAllElements();
                             for (ConfigPath config : results.configs) {
                                 rootDirDropdownBoxModel.addElement(config);
                             }
-                            if (results.selectedConfigIndex < 0 || results.selectedConfigText == null) {
+                            if (results.selectedConfigIndex < 0) {
                                 if (LOG.isDebugEnabled()) {
                                     LOG.debug("Selected dropdown path in model is null or invalid: "
                                             + results.selectedConfigIndex);
                                 }
-                                showResolvedPropertiesNone();
+                                results.selectedConfigText = null;
                             } else {
                                 if (LOG.isDebugEnabled()) {
                                     LOG.debug("Showing dropdown path on reload for " + results.selectedConfigIndex);
                                 }
                                 rootDirDropdownBox.setSelectedIndex(results.selectedConfigIndex);
-                                resolvedValuesText.setText(results.selectedConfigText);
                             }
+                            showResolvedProperties(results.selectedConfigText,
+                                    results.selectedProblemText);
                         }
                     }
                 });
@@ -204,7 +215,7 @@ public class ResolvedPropertiesPanel {
 
         if (rootDirDropdownBoxModel.getSize() <= 0) {
             LOG.debug("No items in dropdown path box; showing no properties.");
-            showResolvedPropertiesNone();
+            showResolvedProperties(null, null);
         } else {
             Object selected = rootDirDropdownBoxModel.getSelectedItem();
             if (selected == null || !(selected instanceof ConfigPath)) {
@@ -221,10 +232,27 @@ public class ResolvedPropertiesPanel {
         }
     }
 
-    private void showResolvedPropertiesNone() {
+    private void showResolvedProperties(String configText, List<String> problemText) {
         ApplicationManager.getApplication().assertIsDispatchThread();
 
-        resolvedValuesText.setText(P4Bundle.message("config.display.properties.no_path"));
+        if (configText == null || configText.isEmpty()) {
+            configText = P4Bundle.message("config.display.properties.no_path");
+        }
+        resolvedValuesText.setText(configText);
+
+        if (problemText == null || problemText.isEmpty()) {
+            selectedProblemsListModel.removeAll();
+            if (myProblemsPanel.isVisible()) {
+                myProblemsPanel.setVisible(false);
+                rootPanel.doLayout();
+            }
+        } else {
+            selectedProblemsListModel.replaceAll(problemText);
+            if (!myProblemsPanel.isVisible()) {
+                myProblemsPanel.setVisible(true);
+                rootPanel.doLayout();
+            }
+        }
     }
 
     private void showResolvedPropertiesText(@NotNull final ConfigPath selected) {
@@ -232,23 +260,28 @@ public class ResolvedPropertiesPanel {
         BackgroundAwtActionRunner.runBackgroundAwtAction(
                 refreshResolvedPropertiesSpinner,
                 refreshResolvedPropertiesButton,
-                new BackgroundAwtActionRunner.BackgroundAwtAction<String>() {
+                new BackgroundAwtActionRunner.BackgroundAwtAction<ComputedConfigResults>() {
                     @Override
-                    public String runBackgroundProcess() {
-                        StringBuilder sb = createResolvedPropertiesText(selected);
-                        return sb.toString();
+                    public ComputedConfigResults runBackgroundProcess() {
+                        ComputedConfigResults ret = new ComputedConfigResults();
+                        ret.selectedConfigText = createResolvedPropertiesText(selected).toString();
+                        ret.selectedProblemText = toProblemMessages(selected.file, selected.allProblems);
+                        return ret;
                     }
 
                     @Override
-                    public void runAwtProcess(String value) {
-                        resolvedValuesText.setText(value);
+                    public void runAwtProcess(ComputedConfigResults value) {
+                        showResolvedProperties(value.selectedConfigText, value.selectedProblemText);
                     }
                 });
     }
 
     private StringBuilder createResolvedPropertiesText(@NotNull final ConfigPath selected) {
+        if (selected.config == null) {
+            return new StringBuilder();
+        }
         Map<String, String> props = ConfigPropertiesUtil.toProperties(selected.config);
-        ArrayList<String> keys = new ArrayList<String>(props.keySet());
+        List<String> keys = new ArrayList<String>(props.keySet());
         Collections.sort(keys);
         StringBuilder sb = new StringBuilder();
         for (String key : keys) {
@@ -257,6 +290,7 @@ public class ResolvedPropertiesPanel {
         return sb;
     }
 
+
     void setRequestConfigurationLoadListener(
             @NotNull RequestConfigurationLoadListener requestConfigurationLoadListener) {
         this.requestConfigurationLoadListener = requestConfigurationLoadListener;
@@ -264,15 +298,16 @@ public class ResolvedPropertiesPanel {
 
     private ComputedConfigResults loadConfigResults(@NotNull final P4ProjectConfig projectConfig) {
         ComputedConfigResults results = new ComputedConfigResults();
-        results.problemMessages = new ArrayList<ConfigProblem>(projectConfig.getConfigProblems());
+        List<ConfigProblem> problemMessages = new ArrayList<ConfigProblem>(projectConfig.getConfigProblems());
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Base project config problems: " + results.problemMessages);
+            LOG.debug("Base project config problems: " + problemMessages);
         }
 
         Collection<ClientConfigSetup> configs = projectConfig.getClientConfigSetups();
         if (configs.isEmpty()) {
             LOG.debug("No client configs in setup.");
-            results.problemMessages.add(createNoClientConfigProblem());
+            problemMessages.add(createNoClientConfigProblem());
+            results.configs.add(new ConfigPath(null, projectConfig.getProject().getBaseDir(), problemMessages));
         }
         for (ClientConfigSetup configSetup : configs) {
             final ClientConfig config = configSetup.getClientConfig();
@@ -285,21 +320,21 @@ public class ResolvedPropertiesPanel {
                         LOG.debug("Config setup " + configSetup.getSource() + " has problem "
                                 + problem);
                     }
-                    results.problemMessages.add(problem);
+                    problemMessages.add(problem);
                 }
                 // We can have a connection without a client, for testing purposes,
                 // but to actually use it, we need a client.
                 if (!config.isWorkspaceCapable()) {
-                    results.problemMessages.add(new ConfigProblem(configSetup.getSource(), false,
+                    problemMessages.add(new ConfigProblem(configSetup.getSource(), false,
                             "error.config.no-client"));
                 }
             }
             if (config != null && config.getProjectSourceDirs().isEmpty()) {
-                results.problemMessages.add(new ConfigProblem(configSetup.getSource(), false,
+                problemMessages.add(new ConfigProblem(configSetup.getSource(), false,
                         "client.root.non-existent", config.getProject().getBaseDir()));
                 if (config.getProject().getBaseDir() != null) {
                     results.configs.add(new ConfigPath(
-                            configSetup.getSource(), config.getProject().getBaseDir()));
+                            configSetup.getSource(), config.getProject().getBaseDir(), problemMessages));
                 }
             }
             Collection<VirtualFile> sourceDirs = config == null
@@ -307,7 +342,7 @@ public class ResolvedPropertiesPanel {
                     : config.getProjectSourceDirs();
             for (VirtualFile virtualFile : sourceDirs) {
                 if (virtualFile != null) {
-                    results.configs.add(new ConfigPath(configSetup.getSource(), virtualFile));
+                    results.configs.add(new ConfigPath(configSetup.getSource(), virtualFile, problemMessages));
                 }
             }
         }
@@ -319,14 +354,79 @@ public class ResolvedPropertiesPanel {
                 new P4InvalidConfigException(P4Bundle.getString("configuration.error.no-config-list")));
     }
 
-    private static List toProblemMessages(ArrayList<ConfigProblem> problemMessages) {
+    private static List<String> toProblemMessages(
+            @Nullable VirtualFile root, @NotNull List<ConfigProblem> problemMessages) {
+        // Be sure to get this color anew each time, because the theme may have
+        // changed.
+
+        //noinspection UseJBColor
+        final String errorColor = ColorUtil.toHex(new Color(JBColor.RED.getRGB()));
+
         HashSet<String> ret = new HashSet<String>();
-        for (ConfigProblem problemMessage : problemMessages) {
-            // TODO colorize the messages
-            ret.add(problemMessage.getMessage());
+        for (ConfigProblem configProblem: problemMessages) {
+            // Filter out problems that don't belong to this root path.
+            if (configProblem.getRootPath() == null || configProblem.getRootPath().equals(root)) {
+                StringBuilder text = new StringBuilder("<html>");
+                if (configProblem.isError()) {
+                    text.append("<font color=\"").append(errorColor).append("\">")
+                            .append(configProblem.getMessage())
+                            .append("</font>");
+                } else {
+                    text.append(configProblem.getMessage());
+                }
+                ret.add(text.toString());
+            }
+        }
+        if (ret.isEmpty() && ! problemMessages.isEmpty()) {
+            // Tell the user that there are problems on other root directories.
+            ret.add("<html><i>" + P4Bundle.getString("config.resolve.other-roots-have-errors") + "</i>");
         }
         // Condense duplicate values
-        return new ArrayList(ret);
+        return new ArrayList<String>(ret);
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    private Font getFont1494608681498(String fontName, int style, int size, Font currentFont) {
+        if (currentFont == null) {
+            return null;
+        }
+        String resultName;
+        if (fontName == null) {
+            resultName = currentFont.getName();
+        } else {
+            Font testFont = new Font(fontName, Font.PLAIN, 10);
+            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
+                resultName = fontName;
+            } else {
+                resultName = currentFont.getName();
+            }
+        }
+        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
+                size >= 0 ? size : currentFont.getSize());
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    private Font $$$getFont$$$(String fontName, int style, int size, Font currentFont) {
+        if (currentFont == null) {
+            return null;
+        }
+        String resultName;
+        if (fontName == null) {
+            resultName = currentFont.getName();
+        } else {
+            Font testFont = new Font(fontName, Font.PLAIN, 10);
+            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
+                resultName = fontName;
+            } else {
+                resultName = currentFont.getName();
+            }
+        }
+        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
+                size >= 0 ? size : currentFont.getSize());
     }
 
     /**
@@ -365,56 +465,33 @@ public class ResolvedPropertiesPanel {
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.resolved.path"));
         panel3.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        resolutionTabbedPane = new JTabbedPane();
-        rootPanel.add(resolutionTabbedPane, BorderLayout.CENTER);
-        final JPanel panel4 = new JPanel();
-        panel4.setLayout(new BorderLayout(0, 0));
-        resolutionTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("configurations.resolved-values.tab"), panel4);
-        panel4.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), null));
         final JScrollPane scrollPane1 = new JScrollPane();
-        scrollPane1.setVerticalScrollBarPolicy(22);
-        panel4.add(scrollPane1, BorderLayout.CENTER);
-        resolvedValuesText = new JTextArea();
-        Font resolvedValuesTextFont = UIManager.getFont("TextArea.font");
-        if (resolvedValuesTextFont != null) {
-            resolvedValuesText.setFont(resolvedValuesTextFont);
-        }
-        resolvedValuesText.setRows(8);
-        scrollPane1.setViewportView(resolvedValuesText);
+        rootPanel.add(scrollPane1, BorderLayout.CENTER);
+        scrollPane1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0), null));
+        final JPanel panel4 = new JPanel();
+        panel4.setLayout(new FormLayout("fill:d:grow",
+                "center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:d:grow"));
+        scrollPane1.setViewportView(panel4);
+        myProblemsPanel = new JPanel();
+        myProblemsPanel.setLayout(new FormLayout("fill:d:grow", "center:d:grow"));
+        CellConstraints cc = new CellConstraints();
+        panel4.add(myProblemsPanel, cc.xy(1, 1));
+        myProblemsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder(),
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                        .getString("config.resolved.problem-panel")));
+        selectedProblemsList = new JList();
+        myProblemsPanel.add(selectedProblemsList, cc.xy(1, 1));
         final JPanel panel5 = new JPanel();
-        panel5.setLayout(new BorderLayout(0, 0));
-        resolutionTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("configuration.problems-list.tab"), panel5);
-        panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), null));
-        final JScrollPane scrollPane2 = new JScrollPane();
-        scrollPane2.setVisible(true);
-        panel5.add(scrollPane2, BorderLayout.CENTER);
-        configProblemsList = new JList();
-        scrollPane2.setViewportView(configProblemsList);
+        panel5.setLayout(new FormLayout("fill:d:grow", "center:d:grow"));
+        panel4.add(panel5, cc.xy(1, 3));
+        panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder(),
+                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                        .getString("config.resolved.config-panel")));
+        resolvedValuesText = new JTextArea();
+        panel5.add(resolvedValuesText, cc.xy(1, 1));
+        final Spacer spacer1 = new Spacer();
+        panel4.add(spacer1, cc.xy(1, 5, CellConstraints.DEFAULT, CellConstraints.FILL));
         label1.setLabelFor(rootDirDropdownBox);
-    }
-
-    /**
-     * @noinspection ALL
-     */
-    private Font getFont1494608681498(String fontName, int style, int size, Font currentFont) {
-        if (currentFont == null) {
-            return null;
-        }
-        String resultName;
-        if (fontName == null) {
-            resultName = currentFont.getName();
-        } else {
-            Font testFont = new Font(fontName, Font.PLAIN, 10);
-            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
-                resultName = fontName;
-            } else {
-                resultName = currentFont.getName();
-            }
-        }
-        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
-                size >= 0 ? size : currentFont.getSize());
     }
 
     /**
@@ -454,20 +531,23 @@ public class ResolvedPropertiesPanel {
     }
 
     private static class ComputedConfigResults {
-        ArrayList<ConfigProblem> problemMessages = new ArrayList<ConfigProblem>();
-        ArrayList<ConfigPath> configs = new ArrayList<ConfigPath>();
+        List<ConfigPath> configs = new ArrayList<ConfigPath>();
         int selectedConfigIndex;
         String selectedConfigText;
+        List<String> selectedProblemText;
     }
 
 
     private static class ConfigPath {
-        final DataPart config;
+        @Nullable final DataPart config;
+        private final List<ConfigProblem> allProblems;
         final VirtualFile file;
 
-        private ConfigPath(@NotNull DataPart config, @NotNull VirtualFile virtualFile) {
+        private ConfigPath(@Nullable DataPart config, @NotNull VirtualFile virtualFile,
+                @NotNull List<ConfigProblem> problems) {
             this.config = config;
             this.file = virtualFile;
+            this.allProblems = problems;
         }
 
         @Override

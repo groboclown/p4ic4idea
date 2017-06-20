@@ -41,6 +41,7 @@ public interface IUser extends IUserSummary {
 	 * 				its processing of the request
 	 * @throws AccessException if the Perforce server denies access to the caller 
 	 */
+	@Override
 	void update(boolean force)
 				throws ConnectionException, RequestException, AccessException;
 }

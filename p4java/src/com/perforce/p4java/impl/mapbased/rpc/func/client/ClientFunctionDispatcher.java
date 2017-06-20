@@ -110,6 +110,8 @@ public static final String TRACE_PREFIX = "ClientFunctionDispatcher";
 					result = RpcPacketDispatcherResult.CONTINUE;
 					break;
 				}
+				// p4ic4idea: added break to prevent fall-through
+				break;
 				
 			case CLIENT_FSTATINFO:
 
@@ -239,6 +241,7 @@ public static final String TRACE_PREFIX = "ClientFunctionDispatcher";
 			case CLIENT_OUTPUTERROR:
 				
 				resultsMap.remove("func");
+				// FIXME replace with using correct charset
 				String msg = new String((byte[])resultsMap.remove("data"));
 				int code = 1 | // subcode = 1
 						(14 << 10) |	// subsystem = ES_P4QT
@@ -276,6 +279,7 @@ public static final String TRACE_PREFIX = "ClientFunctionDispatcher";
 					try {
 						String dataString = (String) resultsMap.get(RpcFunctionMapKey.DATA);
 						if (dataString != null) {
+							// FIXME use correct charset
 							dataOutStream.write(dataString.getBytes());
 						}
 					} catch (IOException e) {
@@ -305,6 +309,7 @@ public static final String TRACE_PREFIX = "ClientFunctionDispatcher";
 					if (sb.length() > 0) {
 						try {
 							sb.append(CommandEnv.LINE_SEPARATOR);
+							// FIXME use correct charset
 							progressOutStream.write(sb.toString().getBytes());
 						} catch (IOException ioexc) {
 							Log.warn("Unexpected exception in client function dispatch: "

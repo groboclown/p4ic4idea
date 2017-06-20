@@ -249,9 +249,13 @@ public enum RpcPerforceFileType {
 
 		switch (str.length()) {
 			default:
+				// fallthrough
 			case 3:	tu = StringHelper.hexcharToInt(str.charAt(2));
+				// fallthrough
 			case 2:	tl = StringHelper.hexcharToInt(str.charAt(1));
+				// fallthrough
 			case 1:	tf = StringHelper.hexcharToInt(str.charAt(0));
+				// fallthrough
 			case 0:	// nothing??? ;
 		}
 

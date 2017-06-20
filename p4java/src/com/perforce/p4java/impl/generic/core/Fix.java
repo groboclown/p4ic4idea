@@ -46,7 +46,8 @@ public class Fix extends ServerResource implements IFix {
 					this.changeListId = IChangelist.DEFAULT;
 				} else {
 					try {
-						this.changeListId = new Integer(idString);
+						// p4ic4idea: valueOf has etter time and space performance than new Integer
+						this.changeListId = Integer.valueOf(idString);
 					} catch (Exception exc) {
 						this.changeListId = IChangelist.UNKNOWN;
 					}
@@ -54,7 +55,8 @@ public class Fix extends ServerResource implements IFix {
 				
 				String dateStr = (String) map.get("Date");
 				if (dateStr != null) {
-					this.date = new Date((new Long(dateStr)) * 1000);
+					// p4ic4idea: valueOf has better time and space performance
+					this.date = new Date((Long.valueOf(dateStr)) * 1000);
 				}
 				
 				this.status =
@@ -73,6 +75,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#getChangelistId()
 	 */
+	@Override
 	public int getChangelistId() {
 		return this.changeListId;
 	}
@@ -80,6 +83,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#getJobId()
 	 */
+	@Override
 	public String getJobId() {
 		return this.jobId;
 	}
@@ -87,6 +91,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#getClientName()
 	 */
+	@Override
 	public String getClientName() {
 		return this.clientName;
 	}
@@ -94,6 +99,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#getDate()
 	 */
+	@Override
 	public Date getDate() {
 		return this.date;
 	}
@@ -101,6 +107,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#getStatus()
 	 */
+	@Override
 	public String getStatus() {
 		return this.status;
 	}
@@ -108,6 +115,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#getUserName()
 	 */
+	@Override
 	public String getUserName() {
 		return this.userName;
 	}
@@ -115,6 +123,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#getAction()
 	 */
+	@Override
 	public String getAction() {
 		return this.action;
 	}
@@ -122,6 +131,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#setJobId(java.lang.String)
 	 */
+	@Override
 	public void setJobId(String jobId) {
 		this.jobId = jobId;
 	}
@@ -129,6 +139,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#setChangelistId(int)
 	 */
+	@Override
 	public void setChangelistId(int changeListId) {
 		this.changeListId = changeListId;
 	}
@@ -136,6 +147,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#setClientName(java.lang.String)
 	 */
+	@Override
 	public void setClientName(String clientName) {
 		this.clientName = clientName;
 	}
@@ -143,6 +155,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#setDate(java.util.Date)
 	 */
+	@Override
 	public void setDate(Date date) {
 		this.date = date;
 	}
@@ -150,6 +163,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#setStatus(java.lang.String)
 	 */
+	@Override
 	public void setStatus(String status) {
 		this.status = status;
 	}
@@ -157,6 +171,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#setUserName(java.lang.String)
 	 */
+	@Override
 	public void setUserName(String userName) {
 		this.userName = userName;
 	}
@@ -164,6 +179,7 @@ public class Fix extends ServerResource implements IFix {
 	/**
 	 * @see com.perforce.p4java.core.IFix#setAction(java.lang.String)
 	 */
+	@Override
 	public void setAction(String action) {
 		this.action = action;
 	}

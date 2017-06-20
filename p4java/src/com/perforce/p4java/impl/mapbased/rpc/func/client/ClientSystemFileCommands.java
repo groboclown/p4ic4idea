@@ -1489,11 +1489,14 @@ public class ClientSystemFileCommands {
 					switch (fileType) {
 						case FST_UTF16:
 							digestCharset = CharsetDefs.UTF16;
+							// fallthrough
 						case FST_UNICODE:
 							if( digestCharset == null) {
 								digestCharset = rpcConnection.getClientCharset();
 							}
+							// fallthrough
 						case FST_XTEXT:
+							// fallthrough
 						case FST_TEXT:
 							// Convert line endings
 							convertLineEndings = true;

@@ -56,22 +56,28 @@ public class ClientView extends ViewMap<IClientViewMapping> {
 		public ClientViewMapping(int order, EntryType type, String depotSpec, String clientSpec) {
 			super(order, type, depotSpec, clientSpec);
 		}
-		
+
+		@Override
 		public String getDepotSpec() {
 			return this.left;
 		}
+		@Override
 		public String getDepotSpec(boolean quoteBlanks) {
 			return this.getLeft(quoteBlanks);
 		}
+		@Override
 		public void setDepotSpec(String depotSpec) {
 			this.left = depotSpec;
 		}
+		@Override
 		public String getClient() {
 			return this.right;
 		}
+		@Override
 		public void setClient(String client) {
 			this.right = client;
 		}
+		@Override
 		public String getClient(boolean quoteBlanks) {
 			return this.getRight(quoteBlanks);
 		}

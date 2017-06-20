@@ -86,6 +86,7 @@ public interface IClient extends IClientSummary {
 	 * @param server the IServer object representing the server associated with this
 	 * 			client, or null if there's no such server.
 	 */
+	@Override
 	void setServer(IServer server);
 
 	/**

@@ -162,6 +162,7 @@ public class GetFileAnnotationsOptions extends Options {
 	 * 
 	 * @see com.perforce.p4java.option.Options#processOptions(com.perforce.p4java.server.IServer)
 	 */
+	@Override
 	public List<String> processOptions(IServer server) throws OptionsException {
 		if (wsOpts != null) {
 			switch (wsOpts) {

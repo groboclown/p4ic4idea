@@ -91,7 +91,7 @@ public interface ILabel extends ILabelSummary {
 	 * @throws AccessException if the Perforce server denies access to the caller
 	 * 
 	 */
-	
+	@Override
 	void update() throws ConnectionException, RequestException, AccessException;
 	
 	/**
@@ -106,5 +106,6 @@ public interface ILabel extends ILabelSummary {
 	 * 
 	 * @param server possibly-null IServer object to be associated with this label.
 	 */
+	@Override
 	void setServer(IServer server);
 }

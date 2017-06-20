@@ -63,6 +63,7 @@ public interface IChangelist extends IServerResource, IChangelistSummary {
 		 * 
 		 * @see Enum#toString()
 		 */
+		@Override
 		public String toString() {
 			return super.toString().toLowerCase(Locale.ENGLISH);
 		}
@@ -80,7 +81,7 @@ public interface IChangelist extends IServerResource, IChangelistSummary {
 	 * 				its processing of the request
 	 * @throws AccessException if the Perforce server denies access to the caller 
 	 */
-	
+	@Override
 	void refresh() throws ConnectionException, RequestException, AccessException;
 	
 	/**

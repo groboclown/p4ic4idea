@@ -414,6 +414,7 @@ public interface IFileSpec extends IFileOperationResult {
 	/**
 	 * Useful alias for getPreferredPathString().
 	 */
+	@Override
 	String toString();
 	
 	// IFileSpec methods:

@@ -117,6 +117,7 @@ public class GetDiffFilesOptions extends Options {
 	/**
 	 * @see com.perforce.p4java.option.Options#processOptions(com.perforce.p4java.server.IServer)
 	 */
+	@Override
 	public List<String> processOptions(IServer server) throws OptionsException {
 		this.optionList = this.processFields(OPTIONS_SPECS,
 										this.getMaxFiles(),

@@ -246,15 +246,16 @@ public class PathAnnotations {
 				Matcher mat = revNumNum.matcher(pathStr);
 				
 				if (mat.find()) {
-					pathAnnotations.startRevision = new Integer(mat.group(2));
-					pathAnnotations.endRevision = new Integer(mat.group(3));
+					// p4ic4idea: valueOf has better time and space performance than new Integer
+					pathAnnotations.startRevision = Integer.valueOf(mat.group(2));
+					pathAnnotations.endRevision = Integer.valueOf(mat.group(3));
 					return true;
 				}
 				
 				mat = revNumHead.matcher(pathStr);
 					
 				if (mat.find()) {
-					pathAnnotations.startRevision = new Integer(mat.group(2));
+					pathAnnotations.startRevision = Integer.valueOf(mat.group(2));
 					pathAnnotations.endRevision = IFileSpec.HEAD_REVISION;
 					return true;
 				}
@@ -262,7 +263,7 @@ public class PathAnnotations {
 				mat = revNumHave.matcher(pathStr);
 				
 				if (mat.find()) {
-					pathAnnotations.startRevision = new Integer(mat.group(2));
+					pathAnnotations.startRevision = Integer.valueOf(mat.group(2));
 					pathAnnotations.endRevision = IFileSpec.HAVE_REVISION;
 					return true;
 				}
@@ -271,7 +272,7 @@ public class PathAnnotations {
 				
 				if (mat.find()) {
 					pathAnnotations.startRevision = IFileSpec.HAVE_REVISION;
-					pathAnnotations.endRevision = new Integer(mat.group(1));
+					pathAnnotations.endRevision = Integer.valueOf(mat.group(1));
 					return true;
 				}
 				
@@ -287,7 +288,7 @@ public class PathAnnotations {
 	
 				if (mat.find()) {
 					pathAnnotations.startRevision = IFileSpec.NO_FILE_REVISION;
-					pathAnnotations.endRevision = new Integer(mat.group(2));
+					pathAnnotations.endRevision = Integer.valueOf(mat.group(2));
 					return true;
 				}
 				
@@ -351,7 +352,7 @@ public class PathAnnotations {
 				Matcher mat = nonrevChange.matcher(pathStr);
 				
 				if (mat.find()) {
-					pathAnnotations.changelistId = new Integer(mat.group(2));
+					pathAnnotations.changelistId = Integer.valueOf(mat.group(2));
 					return true;
 				}
 				
@@ -390,7 +391,7 @@ public class PathAnnotations {
 	 * annotation. Will return an empty (not null) string if there's
 	 * nothing to represent.
 	 */
-	
+	@Override
 	public String toString() {
 		if ((startRevision != IFileSpec.NO_FILE_REVISION)
 					&& (endRevision != IFileSpec.NO_FILE_REVISION)) {

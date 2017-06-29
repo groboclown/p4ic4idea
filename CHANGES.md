@@ -17,6 +17,7 @@
     * Backed out attempted fix to limit the login failure error dialogs.
       This seems to have caused the dialog to not show up at all in some cases.
       (#154, #151)
+    * Backed out the swarm login attempt. (#153)
 
 
 ## ::v0.9.2::

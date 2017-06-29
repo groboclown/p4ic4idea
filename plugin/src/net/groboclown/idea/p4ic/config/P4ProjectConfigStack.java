@@ -265,13 +265,13 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
                 LOG.debug(path + " -> " + completeDataParts);
             }
             MultipleDataPart part = new MultipleDataPart(path, completeDataParts);
-            final Collection<ConfigProblem> partProblems = ServerConfig.getErrors(part);
-            configProblems.addAll(partProblems);
+            final Collection<ConfigProblem> partErrors = ServerConfig.getErrors(part);
+            configProblems.addAll(ServerConfig.getProblems(part));
             final String serverId = ServerConfig.getServerIdForDataPart(part);
             // We only want to create a server config if there are no problems.
             // Otherwise, a validation error will be created.
             final ServerConfig serverConfig;
-            if (partProblems.isEmpty()) {
+            if (partErrors.isEmpty()) {
                 if (serverIdMap.containsKey(serverId)) {
                     // Throws away the just constructed server config object.
                     serverConfig = serverIdMap.get(serverId);

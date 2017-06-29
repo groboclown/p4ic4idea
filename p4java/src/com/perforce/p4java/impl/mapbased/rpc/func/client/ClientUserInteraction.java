@@ -333,7 +333,7 @@ public class ClientUserInteraction {
 						secretKey = this.server.getAuthTicket();
 					}
 
-					// FIXME use correct charset
+					// p4ic4idea: FIXME use correct charset
 					ticket = new String(data);
 					Mangle mangler = new Mangle();
 					String token2 = mangler.mangle(digest, secretKey, true);
@@ -342,7 +342,7 @@ public class ClientUserInteraction {
 				
 				if (data != null) {
 					if (ticket == null) {
-						// FIXME use correct charset
+						// p4ic4idea: FIXME use correct charset
 						ticket = new String(data);
 					}
 					this.server.setAuthTicket(userName, ticket);
@@ -570,7 +570,7 @@ public class ClientUserInteraction {
 			digester.reset();
 			
 			digester.update(token.getBytes(CharsetDefs.UTF8.name()));
-			// FIXME use correct charset
+			// p4ic4idea: FIXME use correct charset
 			digester.update(ticketStr.getBytes());
 			resp = digester.digestAs32ByteHex();
 
@@ -580,9 +580,9 @@ public class ClientUserInteraction {
 			// See job081080
 			if (daddr != null) {
 				digester.reset();
-				// FIXME use correct charset
+				// p4ic4idea: FIXME use correct charset
 				digester.update(resp.getBytes());
-				// FIXME use correct charset
+				// p4ic4idea: FIXME use correct charset
 				digester.update(daddr.getBytes());
 				resp = digester.digestAs32ByteHex();
 

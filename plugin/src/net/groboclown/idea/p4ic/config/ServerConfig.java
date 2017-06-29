@@ -100,7 +100,7 @@ public final class ServerConfig {
 
     static Collection<ConfigProblem> getErrors(@Nullable DataPart part) {
         if (part == null) {
-            return Collections.singletonList(new ConfigProblem(part, false, "config.display.key.no-value"));
+            return Collections.singletonList(new ConfigProblem(null, false, "config.display.key.no-value"));
         }
         List<ConfigProblem> ret = new ArrayList<ConfigProblem>();
         for (ConfigProblem configProblem : PartValidation.findAllProblems(part)) {
@@ -109,6 +109,13 @@ public final class ServerConfig {
             }
         }
         return ret;
+    }
+
+    static Collection<ConfigProblem> getProblems(@Nullable DataPart part) {
+        if (part == null) {
+            return Collections.singletonList(new ConfigProblem(null, false, "config.display.key.no-value"));
+        }
+        return PartValidation.findAllProblems(part);
     }
 
     private ServerConfig(@NotNull DataPart part) {

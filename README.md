@@ -77,6 +77,20 @@ and reordered with
 the ![up](plugin/docs/img/settings-connection-properties-up.png) and
 the ![down](plugin/docs/img/settings-connection-properties-down.png) buttons.
 
+You can see how the plugin evaluates the properties across your project by
+viewing the [*Server Connection* tab](#checking-connection-properties).
+
+For most people, the [environment variables](#environment-variables) will be
+sufficient to use the same mechanism to connect to the Perforce server as
+what the command-line `p4` tool does.  However, you may need to explicitly
+set the [property values](#property-values), or use a [file](#file) that
+contains the settings.
+
+For SSL, you will want to use a `P4PORT` setting that starts with `ssl://`
+(such as `ssl://perforce:1666`).  If you have the server registered in the
+authorized hosts, then make sure that `P4TRUST` setting points to that file;
+or you can add a [SSL server fingerprint](#ssl-server-fingerprint) setting
+to explicitly state the expected SSL fingerprint.
 
 ### Property Values
 

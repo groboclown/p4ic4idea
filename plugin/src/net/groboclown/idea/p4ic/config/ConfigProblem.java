@@ -33,7 +33,7 @@ public class ConfigProblem {
     private final ConfigPart source;
 
 
-    public ConfigProblem(@NotNull ConfigPart source, boolean isError, @Nls @NotNull String message, Object... args) {
+    public ConfigProblem(@Nullable ConfigPart source, boolean isError, @Nls @NotNull String message, Object... args) {
         this.source = source;
         this.message = message;
         this.args = args;

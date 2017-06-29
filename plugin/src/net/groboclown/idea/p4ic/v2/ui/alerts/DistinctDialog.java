@@ -278,7 +278,9 @@ public class DistinctDialog {
         }
     }
 
-
+    // TODO could change this to be like the official IDEA notifications:
+    // Have a top summary, and a "Details..." link that shows the real
+    // dialog with the question.
     private static class Question implements NotificationListener {
         private final String[] options;
         private final int defaultOptionIndex;

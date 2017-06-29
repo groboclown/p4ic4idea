@@ -53,7 +53,8 @@ public class SwarmConnectionComponent implements ApplicationComponent, Disposabl
                     @Override
                     public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig newConfig,
                             @Nullable P4ProjectConfig previousConfiguration) {
-                        refreshSwarmConfigsFor(project);
+                        // TODO re-enable swarm detection at some point.
+                        // refreshSwarmConfigsFor(project);
                     }
                 });
     }

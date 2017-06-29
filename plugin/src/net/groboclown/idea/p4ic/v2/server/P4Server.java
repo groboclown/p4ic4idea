@@ -308,6 +308,15 @@ public class P4Server {
                     filePathList);
             return null;
         }
+        if (fileSpecs.size() != filePathList.size()) {
+            // See bug #152.  This was occurring when the file status returned
+            // a list of different length than the original list.  From what I
+            // can tell, this is either a bug in the p4 java code, or some paths
+            // are getting stripped when they shouldn't
+            throw new IllegalStateException("A path was stripped by `getFromFilePaths`: input "
+                + filePathList + "; specs " + fileSpecs);
+        }
+
         final List<IExtendedFileSpec> extended = connection.query(project, new ServerQuery<List<IExtendedFileSpec>>() {
             @Nullable
             @Override

@@ -53,12 +53,13 @@ public class LoginFailedHandler extends AbstractErrorHandler {
         synchronized (ACTIVE_DIALOGS) {
             final Integer topId = ACTIVE_DIALOGS.get(getServerKey());
             if (topId == null) {
-                activeId = 0;
+                this.activeId = 0;
             } else {
-                activeId = topId + 1;
+                this.activeId = topId + 1;
             }
             ACTIVE_DIALOGS.put(getServerKey(), activeId);
         }
+        LOG.debug("Created dialog " + activeId);
     }
 
     protected void finalize() throws Throwable {
@@ -74,9 +75,13 @@ public class LoginFailedHandler extends AbstractErrorHandler {
         // show this older one.
         synchronized (ACTIVE_DIALOGS) {
             final Integer topId = ACTIVE_DIALOGS.get(getServerKey());
+            LOG.debug("Showing dialog " + activeId + "; most recent dialog is " + topId);
             if (topId != null && topId > activeId) {
-                LOG.warn("Skipping - this dialog is already active.");
-                return;
+                LOG.warn("The login failed dialog appears active, but showing it anyway.");
+
+                // There appears to be a bug in this.  The GUI is no longer being activated.
+                // See #154, #153, #151.
+                // return;
             }
         }
 
@@ -179,6 +184,7 @@ public class LoginFailedHandler extends AbstractErrorHandler {
         if ("Perforce password (%'P4PASSWD'%) invalid or unset.".equals(msg)) {
             return P4Bundle.getString("error.config.requires-password");
         }
+        msg = msg.replace("%'", "'").replace("'%", "'");
         return msg;
     }
 }

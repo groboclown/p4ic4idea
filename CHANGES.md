@@ -1,6 +1,24 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.9.3::
+
+### Overview
+
+* Plugin description improvements
+* Bug fixes.
+
+### Details
+
+* Plugin description improvements
+    * Added details to the plugin description page to better describe the
+        configuration process.
+* Bug fixes.
+    * Backed out attempted fix to limit the login failure error dialogs.
+      This seems to have caused the dialog to not show up at all in some cases.
+      (#154, #151)
+
+
 ## ::v0.9.2::
 
 ### Overview

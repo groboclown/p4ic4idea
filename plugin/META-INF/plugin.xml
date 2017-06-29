@@ -1,31 +1,30 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.9.2</version>
+    <version>0.9.3</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
-        <ol>
-          <li><em>0.9.2</em>
-            <ol>
-                <li>Started Helix Swarm integration.</li>
-                <li>Minor improvements to the configuration panel.</li>
-                <li>Changed (again) the method for looking up the directory path for different
-                configurations.  Configurations now can be associated with the VCS roots,
-                rather than the project root.</li>
-                <li>Added a minor improvement that limits the number of duplicate "enter a password"
-                error messages in some circumstances.</li>
-                <li>Dead code clean up.</li>
-            </ol>
-          </li>
-          <li><em>0.9.1</em>
-            <ol>
-              <li>Better handling of shelved files in the changelist view on a refresh request.</li>
-              <li>Changed the shelved file colors so that they're less obvious than the normal files.</li>
-              <li>Fix a NullPointerException that occurred on reading the state of some shelved files.</li>
-            </ol>
-          </li>
-        </ol>
+       <ol>
+         <li><em>0.9.3</em>
+           <ol>
+             <li>Plugin description improvements.</li>
+             <li>Backed out attempted fix to limit the login failure error dialogs.</li>
+           </ol>
+         </li>
+         <li><em>0.9.2</em>
+           <ol>
+               <li>Started Helix Swarm integration.</li>
+               <li>Minor improvements to the configuration panel.</li>
+               <li>Changed (again) the method for looking up the directory path for different
+               configurations.  Configurations now can be associated with the VCS roots,
+               rather than the project root.</li>
+               <li>Added a minor improvement that limits the number of duplicate "enter a password"
+               error messages in some circumstances.</li>
+               <li>Dead code clean up.</li>
+           </ol>
+         </li>
+       </ol>
     ]]></change-notes>
     <description><![CDATA[
       <a href="https://github.com/groboclown/p4ic4idea">[ Github ]</a> | <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue">[ Open Issues ]</a>
@@ -41,14 +40,6 @@
         <li>No repository browsing.</li>
         <li>No resolving merge conflicts.</li>
       </ul>
-      <p><strong>Getting Started</strong></p>
-      <p>
-      Once you install the plugin, you can associate a project directory
-      with Perforce in the project settings (<b>File</b> - <b>Settings...</b>,
-      then navigate to the <b>Version Control</b> panel).
-      Make sure to edit the Perforce configuration to set the proper server
-      connection settings.
-      </p>
       <p>
       The plugin will keep Your client's open changelists
       synchronized with the IDEA backed changelists, viewable
@@ -63,6 +54,34 @@
       IDEA changelist.  Per-file history allows for comparing
       against the depot versions, even against the inherited file
       history.
+      </p>
+      <p><strong>Getting Started</strong></p>
+      <p>
+      Once you install the plugin, you can associate a project directory
+      with Perforce in the project settings (<b>File</b> - <b>Settings...</b>,
+      then navigate to the <b>Version Control</b> panel).
+      Make sure to edit the Perforce configuration to set the proper server
+      connection settings.  You can see how the plugin evaluates the
+      properties across your project by viewing the <b>Server Connection</b>
+      tab.
+      </p>
+      <p>
+      For most people, the environment variables will be sufficient to use the
+      same mechanism to connect to the Perforce server as what the
+      command-line <code>p4</code> tool does.  However, you may need to
+      explicitly set the property values, or use a file that contains the
+      settings.
+      </p>
+      <p>
+      For SSL, you will want to use a <code>P4PORT</code> setting that starts
+      with <code>ssl://</code> (such as <code>ssl://perforce:1666</code>).  If
+      you have the server registered in the authorized hosts, then make sure
+      that `P4TRUST` setting points to that file; or you can add a SSL server
+      fingerprint setting to explicitly state the expected SSL fingerprint.
+      </p>
+      <p>
+      Full documentation on the configuration settings is on the
+      <a href="https://github.com/groboclown/p4ic4idea">main project page</a>.
       </p>
       <p>
       Please visit the GitHub project

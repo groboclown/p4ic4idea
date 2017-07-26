@@ -119,15 +119,20 @@ public class RpcOutputStream extends FileOutputStream {
 		if (this.fileType != null) {
 			switch	(this.fileType) {
 				case FST_UTF16:
+					// fall through
 				case FST_XUTF16:
 					this.charset = CharsetDefs.UTF16;
+					// fall through
 				case FST_UNICODE:
+					// fall through
 				case FST_XUNICODE:
 					if ((this.charset != null) &&
 								(isUnicodeServer || (this.charset == CharsetDefs.UTF16))) {
 						this.converter = new CharsetConverter(CharsetDefs.UTF8, this.charset);
 					}
+					// fall through
 				case FST_TEXT:
+					// fall through
 				case FST_XTEXT:
 					if (ClientLineEnding.needsLineEndFiltering(lineEnding)) {
 						this.lineEndStream = new RpcLineEndFilterOutputStream(
@@ -137,6 +142,7 @@ public class RpcOutputStream extends FileOutputStream {
 					break;
 					
 				case FST_GUNZIP:
+					// fall through
 				case FST_XGUNZIP:
 					this.inflater = new Inflater(true);
 					this.crc = new RpcCRC32Checksum();

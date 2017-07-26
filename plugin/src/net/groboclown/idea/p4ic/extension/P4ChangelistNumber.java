@@ -16,6 +16,7 @@ package net.groboclown.idea.p4ic.extension;
 
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.core.IChangelistSummary;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -28,6 +29,10 @@ public class P4ChangelistNumber implements VcsRevisionNumber {
 
     public P4ChangelistNumber(@NotNull final IChangelist changelist) {
         this.changelist = changelist.getId();
+    }
+
+    public P4ChangelistNumber(@NotNull IChangelistSummary change) {
+        this.changelist = change.getId();
     }
 
     public int getChangelist() {

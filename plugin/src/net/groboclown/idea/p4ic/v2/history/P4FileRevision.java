@@ -121,7 +121,7 @@ public class P4FileRevision implements VcsFileRevision {
 
 
     @Nullable
-    private P4Server getServer() {
+    P4Server getServer() {
         final List<P4Server> servers = P4Vcs.getInstance(project).getP4Servers();
         for (P4Server server: servers) {
             if (clientServerRef.equals(server.getClientServerId())) {
@@ -137,6 +137,7 @@ public class P4FileRevision implements VcsFileRevision {
         return loadContent();
     }
 
+    @NotNull
     @Override
     public VcsRevisionNumber getRevisionNumber() {
         return revision;
@@ -144,6 +145,10 @@ public class P4FileRevision implements VcsFileRevision {
 
     public int getRev() {
         return revision.getRev();
+    }
+
+    public int getChangeListId() {
+        return revision.getChangelist();
     }
 
     @Override

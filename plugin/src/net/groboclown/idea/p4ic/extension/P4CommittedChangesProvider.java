@@ -13,6 +13,7 @@
  */
 package net.groboclown.idea.p4ic.extension;
 
+import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.*;
@@ -27,16 +28,20 @@ import com.intellij.openapi.vcs.versionBrowser.StandardVersionFilterComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.AsynchConsumer;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
+import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4CommittedChangesProvider.P4ChangeBrowserSettings;
+import net.groboclown.idea.p4ic.ui.history.ChangelistDescriptionAction;
 import net.groboclown.idea.p4ic.v2.changes.P4CommittedChangeList;
 import net.groboclown.idea.p4ic.v2.history.P4RepositoryLocation;
+import net.groboclown.idea.p4ic.v2.history.P4SimpleRepositoryLocation;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -108,14 +113,56 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
 
     @Override
     public List<P4CommittedChangeList> getCommittedChanges(P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount) throws VcsException {
-        // FIXME implement the API behavior.
+        final List<P4CommittedChangeList> ret = new ArrayList<P4CommittedChangeList>();
+        loadCommittedChanges(settings, location, maxCount, new AsynchConsumer<CommittedChangeList>() {
+            @Override
+            public void finished() {
+                // do nothing
+            }
 
-        return null;
+            @Override
+            public void consume(CommittedChangeList committedChangeList) {
+                if (committedChangeList instanceof P4CommittedChangeList) {
+                    ret.add((P4CommittedChangeList) committedChangeList);
+                } else {
+                    throw new IllegalArgumentException("Must be P4CommitedChangeList: " + committedChangeList);
+                }
+            }
+        });
+        return ret;
     }
 
     @Override
-    public void loadCommittedChanges(P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount, AsynchConsumer<CommittedChangeList> consumer) throws VcsException {
-        // FIXME implement the API behavior.
+    public void loadCommittedChanges(P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount,
+            AsynchConsumer<CommittedChangeList> consumer) throws VcsException {
+        if (consumer == null) {
+            return;
+        }
+        if (location == null) {
+            consumer.finished();
+            return;
+        }
+        final IFileSpec spec;
+        if (location instanceof P4RepositoryLocation) {
+            spec = ((P4RepositoryLocation) location).getP4FileInfo();
+        } else if (location instanceof P4SimpleRepositoryLocation) {
+            spec = ((P4SimpleRepositoryLocation) location).getP4FileInfo();
+        } else {
+            LOG.warn("Must be P4RepositoryLocation or P4SimpleRepositoryLocation: " + location);
+            consumer.finished();
+            return;
+        }
+
+        for (P4Server p4Server : vcs.getP4Servers()) {
+            try {
+                for (P4CommittedChangeList changeList: p4Server.getChangelistsForOnline(spec, maxCount)) {
+                    consumer.consume(changeList);
+                }
+            } catch (InterruptedException e) {
+                LOG.info(e);
+            }
+        }
+        consumer.finished();
     }
 
     @Override
@@ -132,7 +179,17 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
     @Nullable
     @Override
     public VcsCommittedViewAuxiliary createActions(DecoratorManager manager, RepositoryLocation location) {
-        return null;
+        List<AnAction> allActions = Collections.<AnAction>singletonList(new ChangelistDescriptionAction());
+        return new VcsCommittedViewAuxiliary(
+                allActions,
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        // do nothing
+                    }
+                },
+                allActions
+        );
     }
 
     /**
@@ -229,8 +286,6 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
 
             return ret;
         }
-
-
     }
 
 

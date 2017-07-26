@@ -23,6 +23,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -43,6 +44,7 @@ import net.groboclown.idea.p4ic.v2.history.P4FileRevision;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileSyncState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
@@ -1076,10 +1078,10 @@ public class P4Server {
     @Nullable
     public P4CommittedChangeList getChangelistForOnline(@NotNull final FilePath file, @NotNull final String revision)
             throws InterruptedException {
-        return connection.query(project, new ServerQuery<P4CommittedChangeList>() {
+        P4CommittedChangeList.Factory ret = connection.query(project, new ServerQuery<P4CommittedChangeList.Factory>() {
             @Nullable
             @Override
-            public P4CommittedChangeList query(@NotNull final P4Exec2 exec,
+            public P4CommittedChangeList.Factory query(@NotNull final P4Exec2 exec,
                     @NotNull final ClientCacheManager cacheManager,
                     @NotNull final ServerConnection connection,
                     @NotNull final SynchronizedActionRunner runner,
@@ -1088,7 +1090,8 @@ public class P4Server {
                 final List<IFileSpec> specs;
                 try {
                     final MessageResult<List<IFileSpec>> result = MessageResult.create(
-                            FileSpecUtil.getFromFilePathsAt(Collections.singletonList(file), revision, false));
+                            FileSpecUtil
+                                    .getFromFilePathsAt(Collections.singletonList(file), revision, false));
                     specs = result.getResult();
                 } catch (P4Exception e) {
                     alertManager.addWarning(project,
@@ -1122,42 +1125,96 @@ public class P4Server {
                 if (change <= 0) {
                     change = status.get(0).getChangelistId();
                     if (change <= 0) {
-                        LOG.warn("FileStat for " + file + " rev " + revision + " has invalid changelist number; " +
+                        LOG.warn("FileStat for " + file + " rev " + revision
+                                + " has invalid changelist number; " +
                                 status);
                         return null;
                     }
                 }
-                final IChangelist changelist;
-                List<Pair<IExtendedFileSpec, IExtendedFileSpec>> changelistFiles;
+                return getInnerChangelistForOnline(exec, change, new FilePath[] { file });
+            }
+        });
+        if (ret != null) {
+            return ret.create(alertManager);
+        }
+        return null;
+    }
+
+    @Nullable
+    public P4CommittedChangeList getChangelistForOnline(final int change)
+            throws InterruptedException {
+        P4CommittedChangeList.Factory ret = connection.query(project, new ServerQuery<P4CommittedChangeList.Factory>() {
+            @Nullable
+            @Override
+            public P4CommittedChangeList.Factory query(@NotNull final P4Exec2 exec,
+                    @NotNull final ClientCacheManager cacheManager,
+                    @NotNull final ServerConnection connection,
+                    @NotNull final SynchronizedActionRunner runner,
+                    @NotNull final AlertManager alerts)
+                    throws InterruptedException {
+                return getInnerChangelistForOnline(exec, change, new FilePath[0]);
+            }
+        });
+        if (ret != null) {
+            return ret.create(alertManager);
+        }
+        return null;
+    }
+
+    @Nullable
+    private P4CommittedChangeList.Factory getInnerChangelistForOnline(@NotNull P4Exec2 exec, int change,
+            @NotNull FilePath[] file)
+            throws InterruptedException {
+        final IChangelist changelist;
+        List<Pair<IExtendedFileSpec, IExtendedFileSpec>> changelistFiles;
+        try {
+            changelist = exec.getChangelist(change);
+            if (changelist == null) {
+                return null;
+            }
+            changelistFiles = exec.getFileStatusForChangelist(changelist.getId());
+        } catch (VcsException e) {
+            alertManager.addWarning(project,
+                    P4Bundle.message("exception.changelist-fetch", change),
+                    P4Bundle.message("exception.changelist-fetch", change),
+                    e, file);
+            return null;
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Returning committed changelist for " +
+                    changelist.getId() + ": " + changelistFiles);
+        }
+        return new P4CommittedChangeList.Factory(P4Vcs.getInstance(project), P4Server.this,
+                changelist, changelistFiles);
+    }
+
+    @NotNull
+    public List<P4CommittedChangeList> getChangelistsForOnline(@NotNull final IFileSpec spec, final int maxCount)
+            throws InterruptedException {
+        List<P4CommittedChangeList> ret = connection.query(project, new ServerQuery<List<P4CommittedChangeList>>() {
+            @Override
+            public List<P4CommittedChangeList> query(@NotNull P4Exec2 exec, @NotNull ClientCacheManager cacheManager,
+                    @NotNull ServerConnection connection, @NotNull SynchronizedActionRunner runner,
+                    @NotNull AlertManager alerts)
+                    throws InterruptedException {
+                P4Vcs vcs = P4Vcs.getInstance(project);
                 try {
-                    changelist = exec.getChangelist(change);
-                    if (changelist == null) {
-                        return null;
+                    List<IChangelistSummary> changes = exec.getChangelists(spec, maxCount);
+                    List<P4CommittedChangeList> ret = new ArrayList<P4CommittedChangeList>(changes.size());
+                    for (IChangelistSummary change : changes) {
+                        ret.add(new P4CommittedChangeList(vcs, change));
                     }
-                    changelistFiles = exec.getFileStatusForChangelist(changelist.getId());
+                    return ret;
                 } catch (VcsException e) {
                     alertManager.addWarning(project,
-                            P4Bundle.message("exception.changelist-fetch", change),
-                            P4Bundle.message("exception.changelist-fetch", change),
-                            e, file);
-                    return null;
-                }
-                try {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Returning committed changelist for " +
-                            changelist.getId() + ": " + changelistFiles);
-                    }
-                    return new P4CommittedChangeList(P4Vcs.getInstance(project), P4Server.this,
-                            changelist, changelistFiles);
-                } catch (VcsException e) {
-                    alertManager.addWarning(project,
-                            P4Bundle.message("exception.changelist-fetch", change),
-                            P4Bundle.message("exception.changelist-fetch", change),
-                            e, file);
-                    return null;
+                            P4Bundle.message("exception.changelist-list-fetch"),
+                            P4Bundle.message("exception.changelist-list-fetch"),
+                            e, Collections.singletonList(spec));
+                    return Collections.emptyList();
                 }
             }
         });
+        return ret == null ? Collections.<P4CommittedChangeList>emptyList() : ret;
     }
 
     @NotNull
@@ -1191,6 +1248,48 @@ public class P4Server {
                 return mgr.getCachedJobIds(jobId);
             }
         });
+    }
+
+
+    @NotNull
+    public Collection<P4ChangeListJob> getJobsInChangelistForOnline(final int changelistId)
+            throws InterruptedException {
+        if (changelistId <= 0) {
+            return Collections.emptyList();
+        }
+        Collection<P4ChangeListJob> ret = connection.query(project, new ServerQuery<Collection<P4ChangeListJob>>() {
+            @Nullable
+            @Override
+            public Collection<P4ChangeListJob> query(@NotNull P4Exec2 exec, @NotNull ClientCacheManager cacheManager,
+                    @NotNull ServerConnection connection, @NotNull SynchronizedActionRunner runner,
+                    @NotNull AlertManager alerts)
+                    throws InterruptedException {
+                try {
+                    Collection<String> jobIds = exec.getJobIdsForChangelist(changelistId);
+                    if (jobIds == null) {
+                        return Collections.emptyList();
+                    }
+                    List<P4ChangeListJob> ret = new ArrayList<P4ChangeListJob>(jobIds.size());
+                    for (String jobId : jobIds) {
+                        P4JobState job = exec.getJobForId(jobId);
+                        if (job != null) {
+                            ret.add(new P4ChangeListJob(getClientServerId(), job));
+                        }
+                    }
+                    return ret;
+                } catch (VcsException e) {
+                    alertManager.addWarning(project,
+                            P4Bundle.message("exception.job-fetch"),
+                            P4Bundle.message("exception.job-fetch"),
+                            e, new FilePath[0]);
+                    return Collections.emptyList();
+                }
+            }
+        });
+        if (ret == null) {
+            return Collections.emptyList();
+        }
+        return ret;
     }
 
 

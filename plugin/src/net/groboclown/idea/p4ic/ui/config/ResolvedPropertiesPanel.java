@@ -363,7 +363,7 @@ public class ResolvedPropertiesPanel {
         final String errorColor = ColorUtil.toHex(new Color(JBColor.RED.getRGB()));
 
         HashSet<String> ret = new HashSet<String>();
-        for (ConfigProblem configProblem: problemMessages) {
+        for (ConfigProblem configProblem : problemMessages) {
             // Filter out problems that don't belong to this root path.
             if (configProblem.getRootPath() == null || configProblem.getRootPath().equals(root)) {
                 StringBuilder text = new StringBuilder("<html>");
@@ -377,7 +377,7 @@ public class ResolvedPropertiesPanel {
                 ret.add(text.toString());
             }
         }
-        if (ret.isEmpty() && ! problemMessages.isEmpty()) {
+        if (ret.isEmpty() && !problemMessages.isEmpty()) {
             // Tell the user that there are problems on other root directories.
             ret.add("<html><i>" + P4Bundle.getString("config.resolve.other-roots-have-errors") + "</i>");
         }
@@ -465,18 +465,15 @@ public class ResolvedPropertiesPanel {
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("configuration.resolved.path"));
         panel3.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JScrollPane scrollPane1 = new JScrollPane();
-        rootPanel.add(scrollPane1, BorderLayout.CENTER);
-        scrollPane1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0), null));
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new FormLayout("fill:d:grow",
                 "center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:d:grow"));
-        scrollPane1.setViewportView(panel4);
+        rootPanel.add(panel4, BorderLayout.CENTER);
         myProblemsPanel = new JPanel();
         myProblemsPanel.setLayout(new FormLayout("fill:d:grow", "center:d:grow"));
         CellConstraints cc = new CellConstraints();
         panel4.add(myProblemsPanel, cc.xy(1, 1));
-        myProblemsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder(),
+        myProblemsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                         .getString("config.resolved.problem-panel")));
         selectedProblemsList = new JList();
@@ -484,7 +481,7 @@ public class ResolvedPropertiesPanel {
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new FormLayout("fill:d:grow", "center:d:grow"));
         panel4.add(panel5, cc.xy(1, 3));
-        panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder(),
+        panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                         .getString("config.resolved.config-panel")));
         resolvedValuesText = new JTextArea();

@@ -416,7 +416,7 @@ public class ConfigStackPanel
         // The refresh can take a long time, so run it in the background.
         if (!Disposer.isDisposed(this)) {
             BackgroundAwtActionRunner
-                    .runBackgrounAwtAction(new BackgroundAwtActionRunner.BackgroundAwtAction<P4ProjectConfig>() {
+                    .runBackgroundAwtAction(new BackgroundAwtActionRunner.BackgroundAwtAction<P4ProjectConfig>() {
                         @Override
                         public P4ProjectConfig runBackgroundProcess() {
                             final List<ConfigPartPanel<?>> partComponents = componentList.getChildren();

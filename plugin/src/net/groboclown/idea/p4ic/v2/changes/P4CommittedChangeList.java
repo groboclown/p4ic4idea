@@ -24,12 +24,15 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeListImpl;
 import com.intellij.openapi.vcs.versionBrowser.VcsRevisionNumberAware;
 import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4ChangelistNumber;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.history.P4ContentRevision;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,6 +41,33 @@ import java.util.*;
 public class P4CommittedChangeList extends CommittedChangeListImpl implements VcsRevisionNumberAware {
     private static final Logger LOG = Logger.getInstance(P4CommittedChangeList.class);
 
+    public static class Factory {
+        private final P4Vcs vcs;
+        private final P4Server server;
+        private final IChangelist changelist;
+        private final List<Pair<IExtendedFileSpec, IExtendedFileSpec>> changelistFiles;
+
+        public Factory(P4Vcs vcs, P4Server server, IChangelist changelist,
+                List<Pair<IExtendedFileSpec, IExtendedFileSpec>> changelistFiles) {
+            this.vcs = vcs;
+            this.server = server;
+            this.changelist = changelist;
+            this.changelistFiles = changelistFiles;
+        }
+
+        @Nullable
+        public P4CommittedChangeList create(@NotNull AlertManager alertManager) {
+            try {
+                return new P4CommittedChangeList(vcs, server, changelist, changelistFiles);
+            } catch (VcsException e) {
+                alertManager.addWarning(vcs.getProject(),
+                        P4Bundle.message("exception.changelist-fetch", changelist.getId()),
+                        P4Bundle.message("exception.changelist-fetch", changelist.getId()),
+                        e, new FilePath[0]);
+                return null;
+            }
+        }
+    }
 
     @NotNull
     private final P4Vcs myVcs;
@@ -59,6 +89,19 @@ public class P4CommittedChangeList extends CommittedChangeListImpl implements Vc
 
         // Does not use the P4CurrentRevisionNumber, because this is for changelist
         myRevision = new P4ChangelistNumber(changelist);
+    }
+
+    public P4CommittedChangeList(@NotNull P4Vcs vcs, @NotNull IChangelistSummary change) {
+        // FIXME format via bundle
+        super(change.getId() + ": " + change.getDescription(),
+                change.getDescription(),
+                change.getUsername(),
+                change.getId(),
+                change.getDate(),
+                Collections.<Change>emptyList());
+        myVcs = vcs;
+        hasShelved = change.isShelved();
+        myRevision = new P4ChangelistNumber(change);
     }
 
     @Override

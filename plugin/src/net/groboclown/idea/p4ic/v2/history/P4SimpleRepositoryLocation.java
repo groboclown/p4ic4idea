@@ -15,12 +15,20 @@ package net.groboclown.idea.p4ic.v2.history;
 
 import com.intellij.openapi.vcs.RepositoryLocation;
 import com.intellij.openapi.vcs.VcsException;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
+import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.idea.p4ic.server.FileSpecUtil;
+import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 
 public class P4SimpleRepositoryLocation implements RepositoryLocation {
     private final String depotPath;
 
     public P4SimpleRepositoryLocation(String depotPath) {
         this.depotPath = depotPath;
+    }
+
+    public IFileSpec getP4FileInfo() throws P4FileException {
+        return FileSpecUtil.getFromDepotPath(depotPath, IFileSpec.NO_FILE_REVISION);
     }
 
     @Override

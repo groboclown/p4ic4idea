@@ -21,6 +21,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
@@ -38,18 +39,22 @@ public class P4ContentRevision implements ContentRevision {
     private final Project myProject;
     private final P4RevisionNumber rev;
     private final FilePath file;
+    private final String depotPath;
     private Reference<String> previous = null;
 
     public P4ContentRevision(@NotNull Project project, @NotNull FilePath file, @NotNull P4RevisionNumber rev) {
         this.myProject = project;
         this.file = file;
         this.rev = rev;
+        this.depotPath = file.getPath();
     }
 
     public P4ContentRevision(@NotNull Project project, @NotNull FilePath file, @NotNull IExtendedFileSpec p4file) {
         this.myProject = project;
         this.file = file;
         this.rev = new P4RevisionNumber(file, p4file.getDepotPathString(), p4file, P4RevisionNumber.RevType.HEAD);
+        String depot = FileSpecUtil.stripAnnotations(p4file).getDepotPathString();
+        this.depotPath = depot == null ? file.getPath() : depot;
     }
 
     public P4ContentRevision(@NotNull Project project, @NotNull FilePath file, @NotNull IExtendedFileSpec p4file, int rev) {
@@ -81,7 +86,7 @@ public class P4ContentRevision implements ContentRevision {
         if (server == null) {
             throw new P4FileException(P4Bundle.message("error.filespec.no-client", file));
         }
-        String ret = null;
+        String ret;
         try {
             ret = rev.loadContentAsString(server, file);
         } catch (InterruptedException e) {
@@ -106,5 +111,10 @@ public class P4ContentRevision implements ContentRevision {
     @Override
     public VcsRevisionNumber getRevisionNumber() {
         return rev;
+    }
+
+    @NotNull
+    public String getDepotPath() {
+        return depotPath;
     }
 }

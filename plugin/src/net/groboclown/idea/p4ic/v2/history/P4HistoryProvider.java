@@ -26,6 +26,7 @@ import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.compat.HistoryCompat;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
+import net.groboclown.idea.p4ic.ui.history.ChangelistDescriptionAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,7 +58,9 @@ public class P4HistoryProvider implements VcsHistoryProvider {
 
     @Override
     public AnAction[] getAdditionalActions(Runnable refresher) {
-        return new AnAction[0];
+        return new AnAction[] {
+                new ChangelistDescriptionAction()
+        };
     }
 
     @Override
@@ -182,4 +185,6 @@ public class P4HistoryProvider implements VcsHistoryProvider {
         }
         return Collections.emptyList();
     }
+
+
 }

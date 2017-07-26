@@ -1,27 +1,20 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.9.3</version>
+    <version>0.9.4</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
        <ol>
+         <li><em>0.9.4</em>
+           <ol>
+               <li>?</li>
+           </ol>
+         </li>
          <li><em>0.9.3</em>
            <ol>
              <li>Plugin description improvements.</li>
              <li>Backed out attempted fix to limit the login failure error dialogs.</li>
-           </ol>
-         </li>
-         <li><em>0.9.2</em>
-           <ol>
-               <li>Started Helix Swarm integration.</li>
-               <li>Minor improvements to the configuration panel.</li>
-               <li>Changed (again) the method for looking up the directory path for different
-               configurations.  Configurations now can be associated with the VCS roots,
-               rather than the project root.</li>
-               <li>Added a minor improvement that limits the number of duplicate "enter a password"
-               error messages in some circumstances.</li>
-               <li>Dead code clean up.</li>
            </ol>
          </li>
        </ol>
@@ -240,6 +233,10 @@
         <component>
             <implementation-class>net.groboclown.idea.p4ic.config.P4ProjectConfigComponent</implementation-class>
             <interface-class>net.groboclown.idea.p4ic.config.P4ProjectConfigComponent</interface-class>
+        </component>
+        <component>
+            <implementation-class>net.groboclown.idea.p4ic.ui.VcsDockedComponent</implementation-class>
+            <interface-class>net.groboclown.idea.p4ic.ui.VcsDockedComponent</interface-class>
         </component>
     </project-components>
 

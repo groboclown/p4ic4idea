@@ -89,6 +89,12 @@ public class SwarmConnectionComponent implements ApplicationComponent, Disposabl
         }
         for (P4Server server: P4ServerManager.getInstance(project).getServers()) {
             // Always override the existing swarm client settings for this project.
+            // Note that if a previous refresh had client A, and this one has client B,
+            // then this leads to a memory leak.  The proper solution is to associate
+            // the clients with the project, and clear those out first (if only
+            // associated with the one project). However, that
+            // leads to its own issue of needing to clean up the memory when the
+            // project is removed, which this is not aware of.
             validClients.put(server.getClientServerId(), null);
             try {
                 final SwarmConfig config = server.createSwarmConfig();
@@ -116,6 +122,8 @@ public class SwarmConnectionComponent implements ApplicationComponent, Disposabl
 
     @Override
     public void dispose() {
-        // Do nothing
+        synchronized (swarmClients) {
+            swarmClients.clear();
+        }
     }
 }

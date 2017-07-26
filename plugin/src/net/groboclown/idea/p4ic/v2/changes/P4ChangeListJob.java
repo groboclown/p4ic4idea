@@ -57,6 +57,11 @@ public final class P4ChangeListJob implements Comparable<P4ChangeListJob> {
         return job.getDescription();
     }
 
+    @Nullable
+    public String getStatus() {
+        return job.getDetails().get("Status");
+    }
+
 
     @Override
     public int compareTo(final P4ChangeListJob o) {

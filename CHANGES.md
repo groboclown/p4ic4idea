@@ -1,6 +1,20 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.9.4::
+
+### Overview
+
+* Able to show changelist details from the file history view.
+* Bug fixes.
+
+### Details
+
+* Able to show changelist details from the file history view.
+    * Right-click on the history entry and select *Describe Changelist*
+* Bug fixes.
+    * ?
+
 ## ::v0.9.3::
 
 ### Overview

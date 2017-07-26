@@ -44,7 +44,7 @@ public class BackgroundAwtActionRunner {
     }
 
     // CalledInAwt
-    public static <T> void runBackgrounAwtAction(@NotNull final BackgroundAwtAction<T> action) {
+    public static <T> void runBackgroundAwtAction(@NotNull final BackgroundAwtAction<T> action) {
         runBackgroundAwtActionOptionalIcon(null, null, action);
     }
 

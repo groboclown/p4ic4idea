@@ -573,6 +573,23 @@ public class P4Exec2 {
 
 
     @NotNull
+    public List<IChangelistSummary> getChangelists(@NotNull final IFileSpec rootPath, final int maxCount)
+            throws VcsException, CancellationException {
+        return exec.runWithServer(project, new ClientExec.WithServer<List<IChangelistSummary>>() {
+            @Override
+            public List<IChangelistSummary> run(@NotNull IOptionsServer server, @NotNull ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                GetChangelistsOptions opts = new GetChangelistsOptions(maxCount, null,
+                        null, false, null, true);
+                count.invoke("getChangelists");
+                return server.getChangelists(Collections.singletonList(rootPath), opts);
+            }
+        });
+    }
+
+
+    @NotNull
     public IChangelist createChangeList(@NotNull final String comment)
             throws VcsException, CancellationException {
         return exec.runWithClient(project, new ClientExec.WithClient<IChangelist>() {
@@ -1094,9 +1111,13 @@ public class P4Exec2 {
                         .use(new OneUseString.WithStringThrows<SwarmConfig, P4JavaException>() {
                             @Override
                             public SwarmConfig with(@Nullable char[] value) throws P4JavaException {
+                                String passwd = null;
+                                if (value != null) {
+                                    passwd = new String(value);
+                                }
                                 return new SwarmConfig()
                                     .withUsername(exec.getServerConfig().getUsername())
-                                    .withServerInfo(server, getServerConfig().getPlaintextPassword());
+                                    .withServerInfo(server, passwd);
                             }
                         });
             }

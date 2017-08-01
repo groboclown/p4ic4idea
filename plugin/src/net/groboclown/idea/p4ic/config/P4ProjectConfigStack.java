@@ -68,12 +68,15 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
     @NotNull
     private final List<VirtualFile> vcsRootsCache = new ArrayList<VirtualFile>();
 
+    private volatile boolean vcsCacheLoaded = false;
+
     public P4ProjectConfigStack(@NotNull Project project, @NotNull List<ConfigPart> userParts) {
         this.project = project;
         MutableCompositePart newParts = new MutableCompositePart(new DefaultDataPart());
         for (ConfigPart userPart : userParts) {
             newParts.addPriorityConfigPart(userPart);
         }
+
         loadVcsRoots();
         loadConfigs(newParts);
         project.getMessageBus().connect(this).subscribe(
@@ -421,6 +424,13 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
 
 
     private void loadVcsRoots() {
+        // This might be happening too early, that is, calling into the cache before
+        // the project is properly setup, causing the project to not load correctly.
+        // See #155.
+        if (! project.isInitialized() || project.isDisposed()) {
+            return;
+        }
+
         final VirtualFile[] cache = ProjectLevelVcsManager.getInstance(project).
                 getRootsUnderVcs(P4Vcs.getInstance(project));
         List<VirtualFile> roots;
@@ -444,10 +454,17 @@ public class P4ProjectConfigStack implements P4ProjectConfig {
         synchronized (vcsRootsCache) {
             vcsRootsCache.clear();
             vcsRootsCache.addAll(roots);
+            vcsCacheLoaded = true;
         }
     }
 
     private List<VirtualFile> getVcsRoots() {
+        if (! vcsCacheLoaded) {
+            // Note that, if the cache isn't loaded but the current
+            // thread is blocked from read actions, then this will
+            // fail.
+            loadVcsRoots();
+        }
         synchronized (vcsRootsCache) {
             return Collections.unmodifiableList(vcsRootsCache);
         }

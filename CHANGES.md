@@ -11,9 +11,12 @@
 ### Details
 
 * Able to show changelist details from the file history view.
-    * Right-click on the history entry and select *Describe Changelist*
+    * Right-click on the history entry and select *Describe Changelist*, or
+      click the info icon on the history window toolbar.
 * Bug fixes.
-    * ?
+    * Fixed issue with stored Perforce server configuration causing the project
+      list to not load correctly.  This only affected projects that were opened
+      with an existing Perforce connection. (#155) 
 
 ## ::v0.9.3::
 

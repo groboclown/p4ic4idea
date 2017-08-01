@@ -8,7 +8,12 @@
        <ol>
          <li><em>0.9.4</em>
            <ol>
-               <li>?</li>
+               <li>Able to show changelist details from the file history view.
+               Right-click on the history entry and select <i>Describe Changelist</i>, or
+               click the info icon on the history window toolbar.
+               <li>Fixed issue with stored Perforce server configuration causing the project
+               list to not load correctly.  This only affected projects that were opened
+               with an existing Perforce connection.</li>
            </ol>
          </li>
          <li><em>0.9.3</em>

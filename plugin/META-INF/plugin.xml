@@ -1,11 +1,16 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.9.4</version>
+    <version>0.9.5</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
        <ol>
+         <li><em>0.9.5</em>
+           <ol>
+             <li>???</li>
+           </ol>
+         </li>
          <li><em>0.9.4</em>
            <ol>
                <li>Able to show changelist details from the file history view.
@@ -14,12 +19,6 @@
                <li>Fixed issue with stored Perforce server configuration causing the project
                list to not load correctly.  This only affected projects that were opened
                with an existing Perforce connection.</li>
-           </ol>
-         </li>
-         <li><em>0.9.3</em>
-           <ol>
-             <li>Plugin description improvements.</li>
-             <li>Backed out attempted fix to limit the login failure error dialogs.</li>
            </ol>
          </li>
        </ol>

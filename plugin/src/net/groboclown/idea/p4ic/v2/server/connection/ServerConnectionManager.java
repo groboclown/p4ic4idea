@@ -40,6 +40,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.JobStatusListState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4WorkspaceViewState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.UserSummaryStateList;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.connection.Synchronizer.ServerSynchronizer;
 import net.groboclown.idea.p4ic.v2.ui.alerts.DisconnectedHandler;
@@ -459,11 +460,13 @@ public class ServerConnectionManager implements ApplicationComponent {
                 new P4ClientState(false, clientServer,
                         new P4WorkspaceViewState("workspace"),
                         new JobStatusListState(),
-                        new JobStateList()),
+                        new JobStateList(),
+                        new UserSummaryStateList()),
                 new P4ClientState(false, clientServer,
                         new P4WorkspaceViewState("workspace"),
                         new JobStatusListState(),
-                        new JobStateList()),
+                        new JobStateList(),
+                        new UserSummaryStateList()),
                 new ArrayList<PendingUpdateState>());
     }
 }

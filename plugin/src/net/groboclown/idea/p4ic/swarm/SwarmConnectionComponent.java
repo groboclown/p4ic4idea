@@ -21,6 +21,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
 import net.groboclown.idea.p4ic.v2.events.Events;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
@@ -29,18 +30,26 @@ import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.p4.simpleswarm.SwarmClient;
 import net.groboclown.p4.simpleswarm.SwarmClientFactory;
 import net.groboclown.p4.simpleswarm.SwarmConfig;
+import net.groboclown.p4.simpleswarm.SwarmLogger;
 import net.groboclown.p4.simpleswarm.exceptions.InvalidSwarmServerException;
+import net.groboclown.p4.simpleswarm.exceptions.UnauthorizedAccessException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SwarmConnectionComponent implements ApplicationComponent, Disposable {
     private static final Logger LOG = Logger.getInstance(SwarmConnectionComponent.class);
 
     private final Map<ClientServerRef, SwarmClient> swarmClients = new HashMap<ClientServerRef, SwarmClient>();
+
+    @NotNull
+    public static SwarmConnectionComponent getInstance() {
+        return ApplicationManager.getApplication().getComponent(SwarmConnectionComponent.class);
+    }
 
     public SwarmConnectionComponent() {
     }
@@ -53,8 +62,7 @@ public class SwarmConnectionComponent implements ApplicationComponent, Disposabl
                     @Override
                     public void configUpdated(@NotNull Project project, @NotNull P4ProjectConfig newConfig,
                             @Nullable P4ProjectConfig previousConfiguration) {
-                        // TODO re-enable swarm detection at some point.
-                        // refreshSwarmConfigsFor(project);
+                        refreshSwarmConfigsFor(project);
                     }
                 });
     }
@@ -76,8 +84,26 @@ public class SwarmConnectionComponent implements ApplicationComponent, Disposabl
     @Nullable
     public SwarmClient getClientFor(ClientServerRef ref) {
         synchronized (swarmClients) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Has swarm clients for refs " + swarmClients.keySet() + "; request for " + ref);
+            }
             return swarmClients.get(ref);
         }
+    }
+
+    @NotNull
+    public Map<ClientServerRef, SwarmClient> getClientsFor(@NotNull Project project) {
+        List<ClientServerRef> refs = P4Vcs.getInstance(project).getClientServerRefs();
+        Map<ClientServerRef, SwarmClient> ret = new HashMap<ClientServerRef, SwarmClient>();
+        for (ClientServerRef ref : refs) {
+            synchronized (swarmClients) {
+                SwarmClient client = swarmClients.get(ref);
+                if (client != null) {
+                    ret.put(ref, client);
+                }
+            }
+        }
+        return ret;
     }
 
     public void refreshSwarmConfigsFor(@NotNull Project project) {
@@ -99,6 +125,7 @@ public class SwarmConnectionComponent implements ApplicationComponent, Disposabl
             try {
                 final SwarmConfig config = server.createSwarmConfig();
                 if (config != null) {
+                    config.withLogger(SWARM_LOGGER);
                     LOG.info("Trying Swarm Server " + config.getUri() + "; username " +
                             config.getUsername());
                     final SwarmClient client = SwarmClientFactory.createSwarmClient(config);
@@ -109,6 +136,8 @@ public class SwarmConnectionComponent implements ApplicationComponent, Disposabl
                 }
             } catch (InterruptedException e) {
                 LOG.warn(e);
+            } catch (UnauthorizedAccessException e) {
+                LOG.info("Failed to authenticate to swarm server for " + server.getServerConfig(), e);
             } catch (InvalidSwarmServerException e) {
                 LOG.warn("Swarm server seems invalid for " + server.getServerConfig(), e);
             } catch (IOException e) {
@@ -126,4 +155,73 @@ public class SwarmConnectionComponent implements ApplicationComponent, Disposabl
             swarmClients.clear();
         }
     }
+
+    private static class SwarmLoggerImpl implements SwarmLogger {
+
+        @Override
+        public boolean isDebugEnabled() {
+            return LOG.isDebugEnabled();
+        }
+
+        @Override
+        public void debug(String msg) {
+            LOG.debug(msg);
+        }
+
+        @Override
+        public void debug(Throwable e) {
+            LOG.debug(e);
+        }
+
+        @Override
+        public void debug(String msg, Throwable e) {
+            LOG.debug(msg, e);
+        }
+
+        @Override
+        public void info(String msg) {
+            LOG.info(msg);
+        }
+
+        @Override
+        public void info(Throwable e) {
+            LOG.info(e);
+        }
+
+        @Override
+        public void info(String msg, Throwable e) {
+            LOG.info(msg, e);
+        }
+
+        @Override
+        public void warn(String msg) {
+            LOG.warn(msg);
+        }
+
+        @Override
+        public void warn(Throwable e) {
+            LOG.warn(e);
+        }
+
+        @Override
+        public void warn(String msg, Throwable e) {
+            LOG.warn(msg, e);
+        }
+
+        @Override
+        public void error(String msg) {
+            LOG.error(msg);
+        }
+
+        @Override
+        public void error(Throwable e) {
+            LOG.error(e);
+        }
+
+        @Override
+        public void error(String msg, Throwable e) {
+            LOG.error(msg, e);
+        }
+    }
+    private static final SwarmLogger SWARM_LOGGER = new SwarmLoggerImpl();
 }

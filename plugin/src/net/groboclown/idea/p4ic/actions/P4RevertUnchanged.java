@@ -24,6 +24,7 @@ import com.intellij.openapi.vcs.actions.AbstractVcsAction;
 import com.intellij.openapi.vcs.actions.VcsContext;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
+import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
@@ -108,12 +109,14 @@ public class P4RevertUnchanged extends AbstractVcsAction {
             return;
         }
         P4Vcs vcs = P4Vcs.getInstance(project);
+        presentation.setText(P4Bundle.getString("action.revert-unchanged"));
 
         final ChangeList[] changes = vcsContext.getSelectedChangeLists();
         if (changes != null && changes.length > 0) {
             for (ChangeList cl: changes) {
-                if (cl instanceof LocalChangeList && P4ChangeListMapping.getInstance(project).
-                        hasPerforceChangelist((LocalChangeList) cl)) {
+                if (cl instanceof LocalChangeList
+                        && (P4ChangeListMapping.getInstance(project).hasPerforceChangelist((LocalChangeList) cl)
+                        || ((LocalChangeList) cl).isDefault())) {
                     presentation.setVisible(true);
                     presentation.setEnabled(true);
                     return;
@@ -135,7 +138,8 @@ public class P4RevertUnchanged extends AbstractVcsAction {
             }
         }
 
-        presentation.setVisible(false);
+        presentation.setVisible(true);
+        presentation.setEnabled(false);
     }
 
 

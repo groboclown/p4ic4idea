@@ -20,6 +20,7 @@ import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
+import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
@@ -38,6 +39,8 @@ import java.util.Map.Entry;
  * creation should only happen during the
  * {@link P4ChangeProvider} life cycle.
  * </p>
+ * Note that this does not handle the special case of the Perforce client's
+ * default changelist, as that is <i>always</i> included in the server.
  */
 @State(
         name = "P4ChangeListMapping",
@@ -188,13 +191,21 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
             return null;
         }
         LocalChangeList cl = clm.getChangeList(id);
-        LOG.debug("Mapped p4 changelist " + p4id + " to " + cl);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Mapped p4 changelist " + p4id + " to " + cl);
+        }
         return cl;
     }
 
     @NotNull
     public Collection<P4ChangeListId> getAllPerforceChangelistsFor(@NotNull LocalChangeList idea) {
         Set<P4ChangeListId> ret = new HashSet<P4ChangeListId>();
+        if (isDefaultChangelist(idea)) {
+            for (ClientServerRef ref : P4Vcs.getInstance(project).getClientServerRefs()) {
+                ret.add(new P4ChangeListIdImpl(ref, P4ChangeListId.P4_DEFAULT));
+            }
+            return ret;
+        }
         synchronized (sync) {
             final Map<ClientServerRef, P4ChangeListId> perServer = state.ideaToPerforce.get(idea.getId());
             if (perServer != null) {
@@ -224,7 +235,18 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
         return ret;
     }
 
+    /**
+     * Is the given changelist mapped to a Perforce changelist?  Includes special handling
+     * for the default changelist.
+     *
+     * @param cl
+     * @return true if it has a mapped Perforce changelist, false otherwise.
+     */
     public boolean hasPerforceChangelist(@NotNull LocalChangeList cl) {
+        if (isDefaultChangelist(cl)) {
+            // default change is always in the Perforce server
+            return true;
+        }
         synchronized (sync) {
             return state.ideaToPerforce.containsKey(cl.getId());
         }

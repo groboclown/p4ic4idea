@@ -34,6 +34,7 @@ import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
+import com.perforce.p4java.option.client.ShelveFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.*;
 import com.perforce.p4java.server.IOptionsServer;
@@ -993,6 +994,28 @@ public class P4Exec2 {
         });
     }
 
+    @NotNull
+    public List<IUserSummary> getUsers(final boolean includeServiceUsers, final int maxCount)
+            throws VcsException, CancellationException {
+        final GetUsersOptions options = new GetUsersOptions(maxCount, includeServiceUsers, false);
+        List<IUserSummary> ret = exec.runWithServer(project, new ClientExec.WithServer<List<IUserSummary>>() {
+            @Override
+            public List<IUserSummary> run(@NotNull IOptionsServer server, @NotNull ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                count.invoke("getUserStatusList");
+                return server.getUsers(null, options);
+            }
+        });
+        if (ret == null) {
+            return Collections.emptyList();
+        }
+        for (IUserSummary userSummary : ret) {
+            userSummary.setServer(null);
+        }
+        return ret;
+    }
+
 
     public int updateChangelist(final int changelistId, @Nullable final String comment,
             @NotNull final List<IFileSpec> files) throws VcsException, CancellationException {
@@ -1054,6 +1077,19 @@ public class P4Exec2 {
         });
     }
 
+
+    @NotNull
+    public List<IFileSpec> shelveFilesForChangelist(final int changeListId) throws VcsException, CancellationException {
+        return exec.runWithClient(project, new WithClient<List<IFileSpec>>() {
+            @Override
+            public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                ShelveFilesOptions options = new ShelveFilesOptions(true, true, true);
+                return client.shelveFiles(null, changeListId, options);
+            }
+        });
+    }
 
     @NotNull
     public List<IFileSpec> getHaveList(@NotNull final List<IFileSpec> specs)
@@ -1199,4 +1235,5 @@ public class P4Exec2 {
         }
         return specs;
     }
+
 }

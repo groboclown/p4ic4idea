@@ -15,7 +15,6 @@
 package net.groboclown.idea.p4ic.ui;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.project.Project;
@@ -49,6 +48,10 @@ public class VcsDockedComponent implements Disposable, ProjectComponent {
                     return;
                 }
                 final ToolWindow toolWindow = getToolWindow();
+                if (toolWindow == null) {
+                    // can happen if the project isn't fully initialized yet
+                    return;
+                }
                 final ContentManager contentManager = toolWindow.getContentManager();
                 contentManager.addContentManagerListener(new ContentManagerAdapter() {
                     @Override
@@ -91,7 +94,7 @@ public class VcsDockedComponent implements Disposable, ProjectComponent {
     }
 
 
-    @NotNull
+    @Nullable
     private ToolWindow getToolWindow() {
         return ToolWindowManager.getInstance(project).getToolWindow(ToolWindowId.VCS);
     }
@@ -102,15 +105,17 @@ public class VcsDockedComponent implements Disposable, ProjectComponent {
     }
 
 
-    public void addVcsTab(String title,
-            JComponent component,
+    public void addVcsTab(@NotNull @NonNls String title,
+            @NotNull JComponent component,
             boolean showTab,
-            boolean replaceExistingComponent,
-            boolean addDefaultToolbar,
-            @Nullable final ActionGroup toolbarActions,
-            @NonNls String helpId) {
+            boolean replaceExistingComponent) {
         if (component instanceof Disposable) {
             Disposer.register(this, (Disposable) component);
+        }
+        final ToolWindow toolW = getToolWindow();
+        if (toolW == null) {
+            // cannot do anything
+            return;
         }
         final ContentManager contentManager = getToolWindow().getContentManager();
         final Content existingContent = contentManager.findContent(title);

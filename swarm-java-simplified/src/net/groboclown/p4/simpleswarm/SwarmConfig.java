@@ -25,6 +25,12 @@ public class SwarmConfig {
     private String username;
     private String ticket;
     private SwarmVersion version;
+    private SwarmLogger logger;
+
+    public SwarmConfig withLogger(SwarmLogger logger) {
+        this.logger = logger;
+        return this;
+    }
 
     /**
      * Loads the URI from the p4d server.
@@ -111,6 +117,10 @@ public class SwarmConfig {
 
     public SwarmVersion getVersion() {
         return version;
+    }
+
+    public SwarmLogger getLogger() {
+        return logger;
     }
 
     @Override

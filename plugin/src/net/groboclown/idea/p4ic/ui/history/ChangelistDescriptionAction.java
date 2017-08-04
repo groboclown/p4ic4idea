@@ -83,10 +83,7 @@ public class ChangelistDescriptionAction extends AnAction {
                                     value.getChangeListId() == null ? "" : value.getChangeListId().asString()),
                             new ChangelistDetails(value).getRoot(),
                             true,
-                            true,
-                            false,
-                            null,
-                            null);
+                            true);
                 }
             }
         });

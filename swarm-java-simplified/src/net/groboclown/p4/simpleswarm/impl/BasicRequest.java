@@ -17,23 +17,29 @@ package net.groboclown.p4.simpleswarm.impl;
 import net.groboclown.p4.simpleswarm.SwarmConfig;
 import net.groboclown.p4.simpleswarm.exceptions.UnauthorizedAccessException;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.AuthCache;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -80,9 +86,10 @@ class BasicRequest {
         return request(config, request);
     }
 
-    static BasicResponse patch(SwarmConfig config, String path, String body) {
+    static BasicResponse patch(SwarmConfig config, String path, String body)
+            throws IOException, UnauthorizedAccessException {
         // FIXME
-        return null;
+        throw new IOException("unsupported operation at the moment");
     }
 
 
@@ -99,15 +106,23 @@ class BasicRequest {
     private static BasicResponse request(SwarmConfig config, HttpUriRequest request)
             throws IOException, UnauthorizedAccessException {
         CredentialsProvider provider = new BasicCredentialsProvider();
+        config.getLogger().debug("Request to server with " + config.getUsername() + ": " + request);
         UsernamePasswordCredentials credentials
                 = new UsernamePasswordCredentials(config.getUsername(), config.getTicket());
         provider.setCredentials(AuthScope.ANY, credentials);
+        AuthCache authCache = new BasicAuthCache();
+        authCache.put(getHost(request), new BasicScheme());
+
+        // Add AuthCache to the execution context
+        final HttpClientContext context = HttpClientContext.create();
+        context.setCredentialsProvider(provider);
+        context.setAuthCache(authCache);
 
         HttpClient client = HttpClientBuilder.create()
                 .setDefaultCredentialsProvider(provider)
                 .build();
         try {
-            HttpResponse response = client.execute(request);
+            HttpResponse response = client.execute(request, context);
             if (response.getStatusLine().getStatusCode() == 401) {
                 throw new UnauthorizedAccessException(response.getStatusLine().getReasonPhrase());
             }
@@ -115,6 +130,11 @@ class BasicRequest {
         } finally {
             HttpClientUtils.closeQuietly(client);
         }
+    }
+
+    private static HttpHost getHost(HttpUriRequest request) {
+        URI uri = request.getURI();
+        return new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
     }
 
 
@@ -208,7 +228,6 @@ class BasicRequest {
         }
         throw new IllegalArgumentException(key + ": " + val.getClass() + "=" + val);
     }
-
 
 
     static String toUrl(SwarmConfig config, String path, Map<String, ?> query)

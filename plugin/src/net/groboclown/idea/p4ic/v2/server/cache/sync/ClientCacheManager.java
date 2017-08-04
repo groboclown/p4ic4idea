@@ -52,6 +52,7 @@ public class ClientCacheManager {
     private final ChangeListServerCacheSync changeLists;
     private final JobStatusListStateServerCacheSync jobStatusList;
     private final JobServerCacheSync jobs;
+    private final UserSummaryListStateServerCacheSync userList;
     private final KnownHaveStateServerCacheSync haveFiles;
     private final IgnoreFiles ignoreFiles;
 
@@ -66,19 +67,20 @@ public class ClientCacheManager {
 
         final CacheImpl cache = new CacheImpl();
 
-        workspace = new WorkspaceServerCacheSync(cache, state.getFileMappingRepo(),
+        this.workspace = new WorkspaceServerCacheSync(cache, state.getFileMappingRepo(),
                 state.getCachedServerState().getWorkspaceView());
-        fileActions = new FileActionsServerCacheSync(cache,
+        this.fileActions = new FileActionsServerCacheSync(cache,
                 state.getLocalClientState().getUpdatedFiles(),
                 state.getCachedServerState().getUpdatedFiles());
-        changeLists = new ChangeListServerCacheSync(cache,
+        this.changeLists = new ChangeListServerCacheSync(cache,
                 state.getLocalClientState().getChanges(),
                 state.getCachedServerState().getChanges());
-        jobStatusList = new JobStatusListStateServerCacheSync(
+        this.jobStatusList = new JobStatusListStateServerCacheSync(
                 state.getCachedServerState().getJobStatusList());
-        haveFiles = new KnownHaveStateServerCacheSync(
+        this.haveFiles = new KnownHaveStateServerCacheSync(
                 state.getCachedServerState().getKnownHave(), state.getFileMappingRepo());
-        jobs = new JobServerCacheSync(state.getCachedServerState().getJobs());
+        this.jobs = new JobServerCacheSync(state.getCachedServerState().getJobs());
+        this.userList = new UserSummaryListStateServerCacheSync(state.getCachedServerState().getUserStatusList());
         ignoreFiles = new IgnoreFiles(config);
     }
 
@@ -112,6 +114,11 @@ public class ClientCacheManager {
     @NotNull
     public ServerQuery createJobListRefreshQuery() {
         return jobs.createRefreshQuery(false);
+    }
+
+    @NotNull
+    public ServerQuery<CacheFrontEnd> createUserSummaryRefreshQuery() {
+        return userList.createRefreshQuery(false);
     }
 
     @NotNull
@@ -212,6 +219,11 @@ public class ClientCacheManager {
     @NotNull
     public Collection<PendingUpdateState> getCachedPendingUpdates() {
         return state.getPendingUpdates();
+    }
+
+    @NotNull
+    public Collection<UserSummaryState> getCachedUsers() {
+        return userList.getUserSummaryStateList();
     }
 
     public void addPendingUpdateState(@NotNull final PendingUpdateState updateState) {

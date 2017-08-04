@@ -20,6 +20,7 @@ import javax.swing.*;
 public interface P4Icons {
     Icon CONNECTED = IconLoader.getIcon("/icons/p4connected.png");
     Icon DISCONNECTED = IconLoader.getIcon("/icons/p4disconnected.png");
+    Icon SWARM = IconLoader.getIcon("/icons/swarm.png");
 
     // TODO make this its own icon
     Icon MIXED = CONNECTED;

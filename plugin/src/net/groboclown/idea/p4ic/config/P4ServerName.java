@@ -68,6 +68,15 @@ public class P4ServerName {
         return new P4ServerName(port, parseProtocol(protocolText));
     }
 
+    @NotNull
+    public static P4ServerName forPortNotNull(@Nullable final String portText) {
+        P4ServerName ret = forPort(portText);
+        if (ret == null) {
+            ret = new P4ServerName("unknown server", IServerAddress.Protocol.P4JAVA);
+        }
+        return ret;
+    }
+
     private P4ServerName(
             @NotNull String server,
             @NotNull IServerAddress.Protocol protocol) {

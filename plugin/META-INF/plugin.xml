@@ -114,6 +114,10 @@
             <action id="P4.Shelve" class="net.groboclown.idea.p4ic.v2.actions.P4ShelveChangesAction"
                     description="Preserve work to the Perforce server without committing them"/>
 
+            <action id="P4.CreateSwarmReview" class="net.groboclown.idea.p4ic.actions.CreateSwarmReviewAction"
+                    text=""
+                    description="Send a review request from the selected changelist"/>
+
             <!-- Add the revert unchanged to the changelist menu -->
             <add-to-group group-id="ChangesViewPopupMenu"
                           anchor="after" relative-to-action="ChangesView.Edit"/>

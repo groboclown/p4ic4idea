@@ -36,6 +36,7 @@ import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.*;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListIdImpl;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.changes.P4CommittedChangeList;
@@ -46,6 +47,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileSyncState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.UserSummaryState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.ClientCacheManager;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection.CacheQuery;
@@ -438,6 +440,23 @@ public class P4Server {
             }
         });
     }
+
+    @NotNull
+    public Collection<UserSummaryState> getUsers()
+            throws InterruptedException {
+        return connection.cacheQuery(new CacheQuery<Collection<UserSummaryState>>() {
+            @Override
+            public Collection<UserSummaryState> query(@NotNull ClientCacheManager mgr)
+                    throws InterruptedException {
+                if (isWorkingOnline()) {
+                    connection.query(project, mgr.createUserSummaryRefreshQuery());
+                }
+                return mgr.getCachedUsers();
+            }
+        });
+    }
+
+
 
     /**
      * Needs to be run immediately.
@@ -981,6 +1000,95 @@ public class P4Server {
                 return null;
             }
         });
+    }
+
+    public static class ShelveFileResult {
+        private final P4ChangeListId shelvedChangelist;
+        private final MessageResult<List<IFileSpec>> shelvedFiles;
+        private final boolean failed;
+
+        public ShelveFileResult(P4ChangeListId shelvedChangelist,
+                MessageResult<List<IFileSpec>> shelvedFiles, boolean failed) {
+            this.shelvedChangelist = shelvedChangelist;
+            this.shelvedFiles = shelvedFiles;
+            this.failed = failed;
+        }
+
+        public boolean hasShelvedFiles() {
+            return (! isError() && ! shelvedFiles.getResult().isEmpty());
+        }
+
+        public boolean isError() {
+            return failed || shelvedFiles.isError();
+        }
+
+        public P4ChangeListId getChangelistId() {
+            return shelvedChangelist;
+        }
+    }
+
+    /**
+     * Shelves the files in the changelist.  If the changelist is the default changelist, then a
+     * new changelist is created with the given description, and the files are shelved in that one.
+     *
+     * @param changeList
+     * @param newChangelistNameIfNeeded
+     * @return
+     * @throws P4DisconnectedException
+     * @throws InterruptedException
+     */
+    @NotNull
+    public ShelveFileResult shelveFilesInChangelistForOnline(
+            @NotNull final P4ChangeListId changeList,
+            @NotNull final String newChangelistNameIfNeeded)
+            throws P4DisconnectedException, InterruptedException {
+        validateOnline();
+        ShelveFileResult ret =
+                connection.query(project, new ServerQuery<ShelveFileResult>() {
+                    @Nullable
+                    @Override
+                    public ShelveFileResult query(@NotNull P4Exec2 exec,
+                            @NotNull ClientCacheManager cacheManager,
+                            @NotNull ServerConnection connection, @NotNull SynchronizedActionRunner runner,
+                            @NotNull AlertManager alerts)
+                            throws InterruptedException {
+                        try {
+                            // TODO this might need to run through the changelist cache instead.
+                            int changelistId = changeList.getChangeListId();
+                            if (changeList.isDefaultChangelist()) {
+                                List<Pair<IExtendedFileSpec, IExtendedFileSpec>> files =
+                                        exec.getFileStatusForChangelist(changeList.getChangeListId());
+                                List<IFileSpec> filesToReopen = new ArrayList<IFileSpec>();
+                                for (Pair<IExtendedFileSpec, IExtendedFileSpec> file : files) {
+                                    if (file.first != null) {
+                                        filesToReopen.add(file.first);
+                                    }
+                                    if (file.second != null) {
+                                        filesToReopen.add(file.second);
+                                    }
+                                }
+                                IChangelist newChange = exec.createChangeList(newChangelistNameIfNeeded);
+                                changelistId = newChange.getId();
+                                exec.reopenFiles(filesToReopen, changelistId, null);
+                            }
+                            return new ShelveFileResult(
+                                    new P4ChangeListIdImpl(getClientServerId(), changelistId),
+                                    MessageResult.create(exec.shelveFilesForChangelist(changelistId)),
+                                    false);
+                        } catch (VcsException e) {
+                            alerts.addWarning(exec.getProject(),
+                                    P4Bundle.message("error.shelve-files-changelist.title"),
+                                    P4Bundle.message("error.shelve-files-changelist", changeList.getChangeListId()),
+                                    e,
+                                    new FilePath[0]);
+                            return null;
+                        }
+                    }
+                });
+        if (ret == null) {
+            ret = new ShelveFileResult(null, null, true);
+        }
+        return ret;
     }
 
     @NotNull

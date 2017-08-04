@@ -127,6 +127,27 @@ public class P4ServerManager implements ProjectComponent {
 
 
     @NotNull
+    public List<ClientServerRef> getClientServerRefs() {
+        // As lightweight a call as possible.
+        if (! hasServers) {
+            return Collections.emptyList();
+        }
+
+        List<ClientServerRef> ret;
+        serverLock.lock();
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Found server configs " + servers);
+            }
+            ret = new ArrayList<ClientServerRef>(servers.keySet());
+        } finally {
+            serverLock.unlock();
+        }
+        return ret;
+    }
+
+
+    @NotNull
     public List<P4Server> getServers() {
         if (! connectionsValid) {
             return Collections.emptyList();

@@ -99,10 +99,10 @@ public class AllClientsState implements ApplicationComponent, PersistentStateCom
             ret = new ClientLocalServerState(
                     new P4ClientState(isServerCaseInsensitive,
                             clientServerRef, new P4WorkspaceViewState(clientServerRef.getClientName()),
-                            new JobStatusListState(), new JobStateList()),
+                            new JobStatusListState(), new JobStateList(), new UserSummaryStateList()),
                     new P4ClientState(isServerCaseInsensitive,
                             clientServerRef, new P4WorkspaceViewState(clientServerRef.getClientName()),
-                            new JobStatusListState(), new JobStateList()),
+                            new JobStatusListState(), new JobStateList(), new UserSummaryStateList()),
                     new ArrayList<PendingUpdateState>());
             // It's okay to overwrite any existing value here.  The initialization
             // work has already been done, and we shouldn't be getting an inconsistent

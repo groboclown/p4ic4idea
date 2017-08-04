@@ -26,7 +26,7 @@ public class JobStateList implements Iterable<P4JobState> {
     private final Map<String, P4JobState> jobs;
     private final Object sync = new Object();
 
-    public JobStateList(@NotNull Collection<P4JobState> jobs) {
+    JobStateList(@NotNull Collection<P4JobState> jobs) {
         this.jobs = new HashMap<String, P4JobState>();
         for (P4JobState job : jobs) {
             this.jobs.put(job.getId(), job);

@@ -71,6 +71,7 @@ import net.groboclown.idea.p4ic.v2.history.P4DiffProvider;
 import net.groboclown.idea.p4ic.v2.history.P4HistoryProvider;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.P4ServerManager;
+import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
@@ -723,6 +724,10 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     }
 
 
+    public List<ClientServerRef> getClientServerRefs() {
+        return serverManager.getClientServerRefs();
+    }
+
     public List<P4Server> getOnlineP4Servers() {
         return serverManager.getOnlineServers();
     }
@@ -802,4 +807,5 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         }
         return Math.max(0, Math.min(256, newVal));
     }
+
 }

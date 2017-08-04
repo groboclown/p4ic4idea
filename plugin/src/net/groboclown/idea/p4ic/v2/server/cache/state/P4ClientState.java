@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.perforce.p4java.server.IServerAddress;
 import net.groboclown.idea.p4ic.config.P4ServerName;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import org.jdom.Element;
@@ -43,15 +44,17 @@ public class P4ClientState {
     private final FileUpdateStateList updatedFiles = new FileUpdateStateList();
     private final JobStatusListState jobStatusList;
     private final JobStateList jobs;
+    private final UserSummaryStateList userStatusList;
 
     public P4ClientState(boolean isServerCaseInsensitive, @NotNull ClientServerRef clientServerRef,
             @NotNull P4WorkspaceViewState workspace, @NotNull JobStatusListState jobStatusList,
-            @NotNull JobStateList jobs) {
+            @NotNull JobStateList jobs, @NotNull UserSummaryStateList userStatusList) {
         this.isServerCaseInsensitive = isServerCaseInsensitive;
         this.clientServerRef = clientServerRef;
         this.workspace = workspace;
         this.jobStatusList = jobStatusList;
         this.jobs = jobs;
+        this.userStatusList = userStatusList;
     }
 
 
@@ -66,6 +69,7 @@ public class P4ClientState {
         knownHave.clear();
         updatedFiles.flush();
         jobs.flush();
+        userStatusList.flush();
     }
 
 
@@ -102,6 +106,11 @@ public class P4ClientState {
     @NotNull
     public JobStateList getJobs() {
         return jobs;
+    }
+
+    @NotNull
+    public UserSummaryStateList getUserStatusList() {
+        return userStatusList;
     }
 
     @NotNull
@@ -149,6 +158,12 @@ public class P4ClientState {
             jobStatusList.serialize(el, refs);
         }
 
+        {
+            Element el = new Element("users");
+            wrapper.addContent(el);
+            userStatusList.serialize(el, refs);
+        }
+
         for (P4ChangeListState change : changes) {
             Element el = new Element("ch");
             wrapper.addContent(el);
@@ -172,7 +187,7 @@ public class P4ClientState {
     public static P4ClientState deserialize(@NotNull Element state, @NotNull DecodeReferences refs) {
         boolean isServerCaseInsensitive = Boolean.parseBoolean(getAttribute(state, "isServerCaseInsensitive"));
         String serverConnection = getAttribute(state, "serverConnection");
-        P4ServerName serverName = P4ServerName.forPort(serverConnection);
+        P4ServerName serverName = P4ServerName.forPortNotNull(serverConnection);
         String clientName = getAttribute(state, "clientName");
 
         Element workspaceEl = state.getChild("workspace");
@@ -187,15 +202,24 @@ public class P4ClientState {
         Element jobStatusEl = state.getChild("job-status");
         JobStatusListState jobStatusList = null;
         if (jobStatusEl != null) {
-            jobStatusList = JobStatusListState.deserialize(state, refs);
+            jobStatusList = JobStatusListState.deserialize(jobStatusEl, refs);
         }
         if (jobStatusList == null) {
             jobStatusList = new JobStatusListState();
         }
 
+        Element usersEl = state.getChild("users");
+        UserSummaryStateList userList = null;
+        if (usersEl != null) {
+            userList = UserSummaryStateList.deserialize(usersEl, refs);
+        }
+        if (userList == null) {
+            userList = new UserSummaryStateList();
+        }
+
         ClientServerRef clientServerRef = ClientServerRef.create(serverName, clientName);
         final P4ClientState ret = new P4ClientState(isServerCaseInsensitive, clientServerRef,
-                workspace, jobStatusList, refs.getJobStateList());
+                workspace, jobStatusList, refs.getJobStateList(), userList);
 
         for (Element el: state.getChildren("ch")) {
             P4ChangeListState change = P4ChangeListState.deserialize(el, refs);

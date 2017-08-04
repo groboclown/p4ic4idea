@@ -5,12 +5,14 @@
 
 ### Overview
 
+* Started on the Create Swarm Review dialog.
 * Bug fixes.
 
 ### Details
 
 * Bug Fixes.
-    * ???
+    * Improved detection of changelist membership in a Perforce server.  It was missing the
+      default changelist.
 
 
 ## ::v0.9.4::

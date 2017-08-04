@@ -141,4 +141,8 @@ public class Review {
         this.type = JsonUtil.getNullableStringKey(json, "type");
         this.updated = JsonUtil.getNullableTimestampKey(json, "updated");
     }
+
+    public int getId() {
+        return id;
+    }
 }

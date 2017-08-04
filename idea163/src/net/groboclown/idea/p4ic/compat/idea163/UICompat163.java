@@ -34,7 +34,7 @@ public class UICompat163 extends UICompat {
     }
 
     @Override
-    public void editVcsConfiguration(Project project, Configurable configurable) {
+    public void editVcsConfiguration(final Project project, final Configurable configurable) {
         // With the latest updates to IntelliJ, we can no longer run the "editConfigurable" inside an "invokeLater",
         // because editConfigurable shows a dialog, and this call hangs until the dialog returns, which is
         // supposed to be an "invokeAndWait" kind of call.

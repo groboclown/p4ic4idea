@@ -50,4 +50,9 @@ public class SimpleClient implements SwarmClient {
             throws IOException, SwarmServerResponseException {
         return review.getReviewIdsForChangelist(changelistId);
     }
+
+    @Override
+    public String toString() {
+        return "Swarm Client for " + review.getConfig().getUri();
+    }
 }

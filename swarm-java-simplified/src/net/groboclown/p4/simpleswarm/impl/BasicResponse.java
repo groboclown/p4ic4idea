@@ -19,6 +19,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import net.groboclown.p4.simpleswarm.SwarmLogger;
 import net.groboclown.p4.simpleswarm.SwarmVersion;
 import net.groboclown.p4.simpleswarm.exceptions.SwarmServerResponseException;
 import org.apache.http.Header;
@@ -36,20 +37,23 @@ class BasicResponse {
     private final int code;
     private final String reason;
     private final String body;
+    private final String error;
 
-    BasicResponse(SwarmVersion version, HttpResponse response)
+    BasicResponse(SwarmLogger logger, SwarmVersion version, HttpResponse response)
             throws IOException {
         this.version = version;
         this.code = response.getStatusLine().getStatusCode();
         this.reason = response.getStatusLine().getReasonPhrase();
         this.body = read(response.getEntity());
+        this.error = getBodyError(logger, this.code, this.body);
     }
 
-    BasicResponse(SwarmVersion version, int code, String reason, String body) {
+    BasicResponse(SwarmLogger logger, SwarmVersion version, int code, String reason, String body) {
         this.version = version;
         this.code = code;
         this.reason = reason;
         this.body = body;
+        this.error = getBodyError(logger, code, body);
     }
 
     int getStatusCode() {
@@ -107,6 +111,32 @@ class BasicResponse {
 
     SwarmServerResponseException getResponseException(String object, String action) {
         return new SwarmServerResponseException("Swarm server failed during " + action + " of " + object + ": " +
-            reason);
+            (error == null ? reason : error));
+    }
+
+    private static String getBodyError(SwarmLogger logger, int code, String body) {
+        if (code >= 400) {
+            logger.warn("Swarm error response: " + body);
+            JsonObject json = null;
+            try {
+                JsonElement el = JsonUtil.parse(body);
+                if (el.isJsonObject()) {
+                    json = el.getAsJsonObject();
+                }
+            } catch (SwarmServerResponseException e) {
+                // Ignore error
+                json = null;
+            }
+            if (json != null && json.has("error")) {
+                return json.get("error").toString();
+            } else {
+                return null;
+            }
+        } else {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Swarm data response: " + body);
+            }
+            return null;
+        }
     }
 }

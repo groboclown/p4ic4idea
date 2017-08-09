@@ -156,7 +156,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
         return (idea != null && isIdeaDefaultChangelistName(idea.getName()));
     }
 
-    public static boolean isIdeaDefaultChangelistName(@Nullable String name) {
+    static boolean isIdeaDefaultChangelistName(@Nullable String name) {
         return P4ChangeListId.DEFAULT_CHANGE_NAME.equals(name);
     }
 
@@ -167,7 +167,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
 
 
     @Nullable
-    public LocalChangeList getIdeaChangelistFor(@NotNull P4ChangeListValue p4cl) {
+    LocalChangeList getIdeaChangelistFor(@NotNull P4ChangeListValue p4cl) {
         ChangeListManager clm = ChangeListManager.getInstance(project);
         int changeListId = p4cl.getChangeListId();
         if (changeListId <= P4ChangeListId.P4_DEFAULT) {
@@ -239,7 +239,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
      * Is the given changelist mapped to a Perforce changelist?  Includes special handling
      * for the default changelist.
      *
-     * @param cl
+     * @param cl local IDE changelist
      * @return true if it has a mapped Perforce changelist, false otherwise.
      */
     public boolean hasPerforceChangelist(@NotNull LocalChangeList cl) {
@@ -253,7 +253,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
     }
 
 
-    public Map<ClientServerRef, P4ChangeListId> rebindChangelistAsDefault(@NotNull LocalChangeList list) {
+    Map<ClientServerRef, P4ChangeListId> rebindChangelistAsDefault(@NotNull LocalChangeList list) {
         if (! isDefaultChangelist(list)) {
             throw new IllegalStateException("Can only be called after list has been renamed to the default change");
         }

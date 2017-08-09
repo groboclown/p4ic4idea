@@ -9,6 +9,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -25,6 +26,7 @@ import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.P4ServerManager;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.cache.state.UserSummaryState;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.p4.simpleswarm.SwarmClient;
 import net.groboclown.p4.simpleswarm.exceptions.SwarmServerResponseException;
 import net.groboclown.p4.simpleswarm.model.Review;
@@ -36,8 +38,6 @@ import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.InputMethodEvent;
-import java.awt.event.InputMethodListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
@@ -69,7 +69,7 @@ public class CreateSwarmReviewDialog
     private UserSelectionPanel userSelection;
 
     private CreateSwarmReviewDialog(@NotNull Project project,
-            @NotNull List<Pair<SwarmClient, P4ChangeListId>> changeLists) {
+            String description, @NotNull List<Pair<SwarmClient, P4ChangeListId>> changeLists) {
         super(WindowManager.getInstance().suggestParentWindow(project),
                 P4Bundle.message("swarm.review.create.title"));
         this.project = project;
@@ -83,6 +83,7 @@ public class CreateSwarmReviewDialog
             }
         });
 
+        descTextArea.setText(description);
         descTextArea.addKeyListener(new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent e) {
@@ -130,18 +131,13 @@ public class CreateSwarmReviewDialog
         boolean enabled =
                 ! userSelection.getSelectedUsers().isEmpty()
                 && text != null && !text.isEmpty();
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Swarm review dialog state: text size is "
-                    + (text == null ? -1 : text.length())
-                    + "; user count: " + userSelection.getSelectedUsers().size()
-                    + "; is ok? " + enabled);
-        }
         buttonOK.setEnabled(enabled);
         return enabled;
     }
 
-    public static void show(@NotNull Project project, @NotNull List<Pair<SwarmClient, P4ChangeListId>> changeList) {
-        CreateSwarmReviewDialog dialog = new CreateSwarmReviewDialog(project, changeList);
+    public static void show(@NotNull Project project, @NotNull String description,
+            @NotNull List<Pair<SwarmClient, P4ChangeListId>> changeList) {
+        CreateSwarmReviewDialog dialog = new CreateSwarmReviewDialog(project, description, changeList);
         dialog.pack();
         final Dimension bounds = dialog.getSize();
         final Rectangle parentBounds = dialog.getOwner().getBounds();
@@ -207,8 +203,8 @@ public class CreateSwarmReviewDialog
                         shelvedChanges.add(Pair.create(pair.first, res.getChangelistId()));
                     }
                 } catch (P4DisconnectedException e) {
-                    // FIXME
-                    LOG.error(e);
+                    // TODO ensure that it's already handled by looking at the calls that were made.
+                    LOG.warn(e);
                 }
             }
         }
@@ -223,6 +219,7 @@ public class CreateSwarmReviewDialog
     // Run in background
     private List<Pair<SwarmClient, Review>> createReview(String text, @NotNull List<UserSummaryState> users,
             @NotNull List<Pair<SwarmClient, P4ChangeListId>> shelvedChangelists) {
+        LOG.info("Creating review for " + shelvedChangelists);
         List<String> loginIds = new ArrayList<String>();
         for (UserSummaryState user : users) {
             loginIds.add(user.getLoginId());
@@ -238,11 +235,17 @@ public class CreateSwarmReviewDialog
                         new String[0]);
                 ret.add(Pair.create(shelvedChangelist.first, res));
             } catch (IOException e) {
-                // FIXME
-                LOG.error(e);
+                AlertManager.getInstance().addWarning(project,
+                        P4Bundle.message("swarm-client.connection.failed.title"),
+                        P4Bundle.message("swarm-client.connection.failed",
+                                shelvedChangelist.first.getConfig().getUri()),
+                        e, new FilePath[0]);
             } catch (SwarmServerResponseException e) {
-                // FIXME
-                LOG.error(e);
+                AlertManager.getInstance().addWarning(project,
+                        P4Bundle.message("create-swarm-review.review.failed.title"),
+                        P4Bundle.message("create-swarm-review.review.failed",
+                                shelvedChangelist.first.getConfig().getUri()),
+                        e, new FilePath[0]);
             }
         }
 

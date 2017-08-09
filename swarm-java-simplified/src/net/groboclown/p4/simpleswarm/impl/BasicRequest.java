@@ -126,7 +126,7 @@ class BasicRequest {
             if (response.getStatusLine().getStatusCode() == 401) {
                 throw new UnauthorizedAccessException(response.getStatusLine().getReasonPhrase());
             }
-            return new BasicResponse(config.getVersion(), response);
+            return new BasicResponse(config.getLogger(), config.getVersion(), response);
         } finally {
             HttpClientUtils.closeQuietly(client);
         }

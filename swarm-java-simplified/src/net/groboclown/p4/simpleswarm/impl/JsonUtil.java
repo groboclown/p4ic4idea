@@ -51,7 +51,7 @@ public class JsonUtil {
     public static int getIntKey(JsonObject obj, String key)
             throws ResponseFormatException {
         if (obj == null || ! obj.has(key)) {
-            throw new ResponseFormatException(key, null);
+            throw new ResponseFormatException(key, obj);
         }
         JsonElement val = obj.get(key);
         if (! val.isJsonPrimitive()) {

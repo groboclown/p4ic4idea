@@ -666,12 +666,15 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                     if (spec.getOpStatus() != FileSpecOpStatus.VALID) {
                         LOG.debug("File status: " + spec.getOpStatus() + ": " + spec.getStatusMessage());
                     } else if (spec.getOpenAction() != null || spec.getAction() != null) {
-                        if (spec.getOpenChangelistId() != changelistId) {
-                            // already opened; reopen it
-                            reopen.add(forServer);
-                        } else {
-                            LOG.info("Ignoring reopen request for " + spec.getDepotPathString()
-                                    + "; already in the right changelist");
+                        // the getOpenChangelistId can be misleading if the desired destination
+                        // changelist is the default changelist.  So, don't pay attention to this;
+                        // just make the requested attempt.
+
+                        // already opened; reopen it
+                        reopen.add(forServer);
+                        if (spec.getOpenChangelistId() == changelistId) {
+                            LOG.info("Possibly reopen request for " + spec.getDepotPathString()
+                                    + " with it already in the right changelist: " + changelistId);
                         }
                     } else if (spec.getHeadRev() <= 0) {
                         // add

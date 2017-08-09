@@ -1009,6 +1009,8 @@ public class P4Server {
 
         public ShelveFileResult(P4ChangeListId shelvedChangelist,
                 MessageResult<List<IFileSpec>> shelvedFiles, boolean failed) {
+            LOG.info("Shelved " + (shelvedChangelist == null ? null : shelvedChangelist.getChangeListId()) + ": " +
+                    shelvedFiles);
             this.shelvedChangelist = shelvedChangelist;
             this.shelvedFiles = shelvedFiles;
             this.failed = failed;
@@ -1056,8 +1058,12 @@ public class P4Server {
                             // TODO this might need to run through the changelist cache instead.
                             int changelistId = changeList.getChangeListId();
                             if (changeList.isDefaultChangelist()) {
+                                LOG.info("Creating changelist for shelve, because invoked with default changelist");
                                 List<Pair<IExtendedFileSpec, IExtendedFileSpec>> files =
-                                        exec.getFileStatusForChangelist(changeList.getChangeListId());
+                                        exec.getFileStatusForChangelist(IChangelist.DEFAULT, true);
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Files in default changelist: " + files);
+                                }
                                 List<IFileSpec> filesToReopen = new ArrayList<IFileSpec>();
                                 for (Pair<IExtendedFileSpec, IExtendedFileSpec> file : files) {
                                     if (file.first != null) {
@@ -1069,6 +1075,7 @@ public class P4Server {
                                 }
                                 IChangelist newChange = exec.createChangeList(newChangelistNameIfNeeded);
                                 changelistId = newChange.getId();
+                                LOG.info("Moving files to changelist " + changelistId + ": " + filesToReopen);
                                 exec.reopenFiles(filesToReopen, changelistId, null);
                             }
                             return new ShelveFileResult(
@@ -1280,7 +1287,7 @@ public class P4Server {
             if (changelist == null) {
                 return null;
             }
-            changelistFiles = exec.getFileStatusForChangelist(changelist.getId());
+            changelistFiles = exec.getFileStatusForChangelist(changelist.getId(), false);
         } catch (VcsException e) {
             alertManager.addWarning(project,
                     P4Bundle.message("exception.changelist-fetch", change),

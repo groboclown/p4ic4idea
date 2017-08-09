@@ -18,10 +18,10 @@ import com.google.gson.JsonElement;
 
 public class ResponseFormatException extends SwarmServerResponseException {
     public ResponseFormatException(String element, JsonElement el, Throwable cause) {
-        super("Incorrect Json format in " + element + ": " + el.toString(), cause);
+        super("Incorrect Json format in " + element + ": " + (el == null ? "null data" : el.toString()), cause);
     }
 
     public ResponseFormatException(String element, JsonElement el) {
-        super("Incorrect Json format in " + element + ": " + el.toString());
+        super("Incorrect Json format in " + element + ": " + (el == null ? "null data" : el.toString()));
     }
 }

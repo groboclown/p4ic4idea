@@ -33,6 +33,7 @@ import com.perforce.p4java.impl.mapbased.rpc.func.helper.MD5Digester;
 import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
+import com.perforce.p4java.option.client.ReopenFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.ShelveFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
@@ -188,7 +189,8 @@ public class P4Exec2 {
      * @throws CancellationException user canceled
      */
     @NotNull
-    public List<Pair<IExtendedFileSpec, IExtendedFileSpec>> getFileStatusForChangelist(final int changeListNumber)
+    public List<Pair<IExtendedFileSpec, IExtendedFileSpec>> getFileStatusForChangelist(
+            final int changeListNumber, boolean pending)
             throws VcsException, CancellationException {
 
         // The only way I've figured out how to get the integration
@@ -198,11 +200,30 @@ public class P4Exec2 {
 
         // FIXME limit the output of files (-m X)
 
-        final GetExtendedFilesOptions opts = new GetExtendedFilesOptions(
-                "-e", Integer.toString(changeListNumber),
-                "-Of",
-                "-T", "depotFile,clientFile,isMapped,headAction,headRev,movedFile"
-        );
+        String changelistValue;
+        if (changeListNumber == IChangelist.DEFAULT) {
+            changelistValue = "default";
+        } else {
+            changelistValue = Integer.toString(changeListNumber);
+        }
+
+        final String[] optArgs;
+        if (pending) {
+            optArgs = new String[] {
+                    "-e", changelistValue,
+                    "-Ro",
+                    "-Of",
+                    "-T", "depotFile,clientFile,isMapped,headAction,headRev,movedFile"
+            };
+        } else {
+            optArgs = new String[] {
+                    "-e", changelistValue,
+                    "-Of",
+                    "-T", "depotFile,clientFile,isMapped,headAction,headRev,movedFile"
+
+            };
+        }
+        final GetExtendedFilesOptions opts = new GetExtendedFilesOptions(optArgs);
         return exec.runWithClient(project, new WithClient<List<Pair<IExtendedFileSpec, IExtendedFileSpec>>>() {
             @Override
             public List<Pair<IExtendedFileSpec, IExtendedFileSpec>> run(@NotNull final IOptionsServer server, @NotNull final IClient client,
@@ -231,25 +252,29 @@ public class P4Exec2 {
                 for (IExtendedFileSpec spec : first) {
                     if (spec.getOpStatus() == FileSpecOpStatus.VALID) {
                         depotToSpec.put(spec.getDepotPathString(), spec);
-
-                        // TODO check if there are more states that match
-                        switch (spec.getHeadAction()) {
-                            case BRANCH:
-                            case MOVE_ADD:
-                                filelogRequest.add(FileSpecUtil.getFromDepotPath(spec.getDepotPathString(),
-                                        IFileSpec.NO_FILE_REVISION));
-                                break;
-                            case INTEGRATE:
-                                // Integrate can be a move of sorts.
-                                if (spec.getHeadRev() <= 1) {
+                        if (spec.getHeadAction() == null) {
+                            // This means a new file that isn't in the server yet.
+                            ret.add(Pair.create(spec, (IExtendedFileSpec) null));
+                        } else {
+                            // TODO check if there are more states that match
+                            switch (spec.getHeadAction()) {
+                                case BRANCH:
+                                case MOVE_ADD:
                                     filelogRequest.add(FileSpecUtil.getFromDepotPath(spec.getDepotPathString(),
                                             IFileSpec.NO_FILE_REVISION));
-                                } else {
+                                    break;
+                                case INTEGRATE:
+                                    // Integrate can be a move of sorts.
+                                    if (spec.getHeadRev() <= 1) {
+                                        filelogRequest.add(FileSpecUtil.getFromDepotPath(spec.getDepotPathString(),
+                                                IFileSpec.NO_FILE_REVISION));
+                                    } else {
+                                        ret.add(Pair.create(spec, (IExtendedFileSpec) null));
+                                    }
+                                    break;
+                                default:
                                     ret.add(Pair.create(spec, (IExtendedFileSpec) null));
-                                }
-                                break;
-                            default:
-                                ret.add(Pair.create(spec, (IExtendedFileSpec) null));
+                            }
                         }
                     }
                 }
@@ -676,14 +701,34 @@ public class P4Exec2 {
 
     @NotNull
     public List<P4StatusMessage> reopenFiles(@NotNull final List<IFileSpec> files,
-            final int newChangelistId, @Nullable final String newFileType) throws VcsException, CancellationException {
+            int newChangelistId, @Nullable final String newFileType) throws VcsException, CancellationException {
+        if (newChangelistId < IChangelist.UNKNOWN) {
+            newChangelistId = IChangelist.UNKNOWN;
+        }
+        final List<String> args = new ArrayList<String>();
+        if (newChangelistId == IChangelist.DEFAULT) {
+            args.add("-c");
+            args.add("default");
+        } else if (newChangelistId != IChangelist.UNKNOWN) {
+            args.add("-c");
+            args.add(Integer.toString(newChangelistId));
+        }
+        if (newFileType != null) {
+            args.add("-t");
+            args.add(newFileType);
+        }
+        if (args.isEmpty()) {
+            // nothing to do
+            return Collections.emptyList();
+        }
         return exec.runWithClient(project, new ClientExec.WithClient<List<P4StatusMessage>>() {
             @Override
             public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client,
                     @NotNull ClientExec.ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException, P4Exception {
                 count.invoke("reopenFiles");
-                return getErrors(client.reopenFiles(files, newChangelistId, newFileType));
+                ReopenFilesOptions opts = new ReopenFilesOptions(args.toArray(new String[args.size()]));
+                return getErrors(client.reopenFiles(files, opts));
             }
         });
     }
@@ -1085,8 +1130,24 @@ public class P4Exec2 {
             public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
                     P4Exception {
-                ShelveFilesOptions options = new ShelveFilesOptions(true, true, true);
+                ShelveFilesOptions options = new ShelveFilesOptions(false, true, false);
                 return client.shelveFiles(null, changeListId, options);
+            }
+        });
+    }
+
+    @NotNull
+    public List<P4StatusMessage> deleteShelvedFiles(@NotNull final List<IFileSpec> deleted,
+            final int changelistId) throws VcsException, CancellationException {
+        return exec.runWithClient(project, new ClientExec.WithClient<List<P4StatusMessage>>() {
+            @Override
+            public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client,
+                    @NotNull ClientExec.ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                count.invoke("deleteShelvedFiles");
+                ShelveFilesOptions options = new ShelveFilesOptions(false, false, true);
+                return getErrors(client.shelveFiles(deleted, changelistId, options));
             }
         });
     }

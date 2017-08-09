@@ -44,6 +44,7 @@ import net.groboclown.idea.p4ic.v2.server.cache.state.*;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.AbstractServerUpdateAction.ExecutionStatus;
 import net.groboclown.idea.p4ic.v2.server.connection.*;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
+import net.groboclown.idea.p4ic.v2.server.util.ShelvedFilePath;
 import net.groboclown.idea.p4ic.v2.ui.alerts.InvalidRootsHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1128,7 +1129,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     // TODO all this logic below is really complicated.  Look at ways to simplify it.
 
     static abstract class AbstractFileAction extends AbstractServerUpdateAction {
-        protected AbstractFileAction(@NotNull final Collection<PendingUpdateState> pendingUpdateStates) {
+        AbstractFileAction(@NotNull final Collection<PendingUpdateState> pendingUpdateStates) {
             super(pendingUpdateStates);
         }
 
@@ -1440,12 +1441,64 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 LOG.debug("Marking files for delete: " + deletes);
             }
 
+            // If the file path is a shelved file, then we need the
+            // special shelved file syntax.
+            Set<FilePath> shelveDeleted = new HashSet<FilePath>();
+            for (Entry<Integer, Set<FilePath>> entry : deletes.entrySet()) {
+                Set<FilePath> clShelveDelete = new HashSet<FilePath>();
+                for (FilePath filePath : entry.getValue()) {
+                    if (filePath instanceof ShelvedFilePath) {
+                        shelveDeleted.add(filePath);
+                        clShelveDelete.add(filePath);
+                    }
+                    List<IFileSpec> specs;
+                    try {
+                        specs = FileSpecUtil.getFromFilePaths(clShelveDelete);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Deleting shelved specs " + specs);
+                        }
+
+                        final List<P4StatusMessage> msgs =
+                                exec.deleteShelvedFiles(specs, entry.getKey());
+                        markUpdated(entry.getValue(), msgs);
+                        // Note: any errors here will be displayed to the
+                        // user, but they do not indicate that the actual
+                        // actions were errors.  Instead, they are notifications
+                        // to the user that they must do something again
+                        // with a correction.
+                        alerts.addWarnings(exec.getProject(),
+                                P4Bundle.message("warning.edit.file.delete-shelved",
+                                        FilePathUtil.toStringList(clShelveDelete)),
+                                msgs, false);
+                        hasUpdate = true;
+                    } catch (P4DisconnectedException e) {
+                        // error already handled as critical
+                        return ExecutionStatus.RETRY;
+                    } catch (VcsException e) {
+                        alerts.addWarning(exec.getProject(),
+                                P4Bundle.message("error.delete.title"),
+                                P4Bundle.message("error.delete",
+                                        FilePathUtil.toStringList(entry.getValue())),
+                                e, entry.getValue());
+                        markFailedFiles(entry.getValue());
+                        returnCode = ExecutionStatus.FAIL;
+                    }
+
+                }
+            }
+
+
             for (Entry<Integer, Set<FilePath>> entry : deletes.entrySet()) {
                 try {
-                    List<IFileSpec> specs = FileSpecUtil.getFromFilePaths(entry.getValue());
+                    // Make sure we don't perform a Perforce delete request on the
+                    // shelved files.
+                    Set<FilePath> toDelete = entry.getValue();
+                    toDelete.removeAll(shelveDeleted);
+                    List<IFileSpec> specs = FileSpecUtil.getFromFilePaths(toDelete);
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Deleting specs " + specs);
                     }
+
                     final List<P4StatusMessage> msgs =
                             exec.deleteFiles(specs, entry.getKey(), true);
                     markUpdated(entry.getValue(), msgs);
@@ -1455,8 +1508,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     // to the user that they must do something again
                     // with a correction.
                     alerts.addWarnings(exec.getProject(),
-                            P4Bundle.message("warning.edit.file.edit",
-                                    FilePathUtil.toStringList(entry.getValue())),
+                            P4Bundle.message("warning.edit.file.delete",
+                                    FilePathUtil.toStringList(toDelete)),
                             msgs, false);
                     hasUpdate = true;
                 } catch (P4DisconnectedException e) {

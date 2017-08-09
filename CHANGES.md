@@ -13,6 +13,9 @@
 * Bug Fixes.
     * Improved detection of changelist membership in a Perforce server.  It was missing the
       default changelist.
+    * Fixed bug where files couldn't be moved to the default changelist from a numbered changelist.
+      This had to do with the new changelist being called "default", and instead the command was silently
+      failing with "unknown changelist 0".
 
 
 ## ::v0.9.4::

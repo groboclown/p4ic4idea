@@ -33,6 +33,7 @@ import net.groboclown.idea.p4ic.ui.swarm.CreateSwarmReviewDialog;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
+import net.groboclown.idea.p4ic.v2.server.util.ChangelistDescriptionGenerator;
 import net.groboclown.p4.simpleswarm.SwarmClient;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,6 +60,7 @@ public class CreateSwarmReviewAction extends AbstractVcsAction {
         final ChangeList[] changes = e.getSelectedChangeLists();
         if (changes != null && changes.length == 1 && changes[0] instanceof LocalChangeList &&
                 P4ChangeListMapping.getInstance(project).hasPerforceChangelist((LocalChangeList) changes[0])) {
+            final String description = ChangelistDescriptionGenerator.getDescription(project, changes[0]);
             ApplicationManager.getApplication().invokeLater(new Runnable() {
                 @Override
                 public void run() {
@@ -80,7 +82,7 @@ public class CreateSwarmReviewAction extends AbstractVcsAction {
                                 P4Bundle.message("swarm.review.no-swarm-client", changes[0].getName()),
                                 null, new FilePath[0]);
                     } else {
-                        CreateSwarmReviewDialog.show(project, swarmChanges);
+                        CreateSwarmReviewDialog.show(project, description, swarmChanges);
                     }
                 }
             });

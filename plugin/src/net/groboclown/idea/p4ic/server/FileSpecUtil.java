@@ -378,6 +378,19 @@ public class FileSpecUtil {
                     PathType.CLIENT,
                     escapeToP4Path(spec.getOriginalPath().getPathString()), false));
         }
+        if (spec instanceof IExtendedFileSpec) {
+            IExtendedFileSpec espec = (IExtendedFileSpec) spec;
+            if (espec.isShelved()) {
+                LOG.info("Shelved file with no path information"
+                    + ": desc=" + espec.getDesc()
+                    + "; base file=" + espec.getBaseFile()
+                    + "; from file=" + espec.getFromFile()
+                    + "; to file=" + espec.getToFile()
+                    + "; preferred path=" + spec.getPreferredPath());
+            } else if (espec.getMovedFile() != null) {
+                LOG.info("Non-shelved file with no path information but moved file " + espec.getMovedFile());
+            }
+        }
         throw new IllegalArgumentException("no path information in spec " + spec);
     }
 

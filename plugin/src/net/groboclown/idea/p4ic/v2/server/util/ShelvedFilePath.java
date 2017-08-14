@@ -49,6 +49,11 @@ public class ShelvedFilePath implements FilePath {
         this.local = FilePathUtil.getFilePath(shelvedFile.getLocalPath());
     }
 
+    @NotNull
+    public P4ShelvedFile getShelvedFile() {
+        return shelvedFile;
+    }
+
     @Nullable
     @Override
     public VirtualFile getVirtualFile() {

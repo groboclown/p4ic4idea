@@ -14,11 +14,14 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache.state;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
+import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
+import net.groboclown.idea.p4ic.v2.server.util.ShelvedFilePath;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +43,8 @@ import org.jetbrains.annotations.Nullable;
  * file system.
  */
 public final class P4ClientFileMapping {
+    private static final Logger LOG = Logger.getInstance(P4ClientFileMapping.class);
+
     // NOTE: this does not implement hashCode or equals.  Due to the changing
     // nature of the class, it leads to too many problems when this is used
     // in a hash set or as a hash map key.  Instead, use an invariant
@@ -65,6 +70,9 @@ public final class P4ClientFileMapping {
         }
         this.depotPath = depotPath;
         this.localFilePath = localFilePath;
+        if (FilePathUtil.isShelved(localFilePath)) {
+            LOG.error("Using a shelved file in P4ClientFileMapping: " + localFilePath);
+        }
     }
 
     @Nullable
@@ -96,6 +104,9 @@ public final class P4ClientFileMapping {
     // called by FileMappingRepo; requires local path maps to be updated
     void updateLocalPath(@Nullable FilePath localFilePath) {
         this.localFilePath = localFilePath;
+        if (FilePathUtil.isShelved(localFilePath)) {
+            LOG.error("Using a shelved file in P4ClientFileMapping: " + localFilePath);
+        }
     }
 
     // called by FileMappingRepo; requires depot maps to be updated
@@ -114,6 +125,9 @@ public final class P4ClientFileMapping {
         if (localFilePath == null) {
             return depotPath;
         }
+        if (FilePathUtil.isShelved(localFilePath)) {
+            return depotPath + "@" + ((ShelvedFilePath) localFilePath).getShelvedFile().getChangeListId();
+        }
         return depotPath + " -> " + localFilePath.getIOFile().getAbsolutePath();
     }
 
@@ -121,6 +135,11 @@ public final class P4ClientFileMapping {
     protected void serialize(@NotNull Element wrapper) {
         if (depotPath != null) {
             wrapper.setAttribute("d", depotPath);
+        }
+        if (FilePathUtil.isShelved(localFilePath)) {
+            ShelvedFilePath sp = (ShelvedFilePath) localFilePath;
+            wrapper.setAttribute("c", Integer.toString(sp.getShelvedFile().getChangeListId()));
+            wrapper.setAttribute("f", sp.getShelvedFile().getStatus().getId());
         }
         wrapper.setAttribute("l", getLocalPath() == null ? "" : getLocalPath());
     }
@@ -131,7 +150,17 @@ public final class P4ClientFileMapping {
         if (depot != null && depot.length() <= 0) {
             depot = null;
         }
+        String shelvedChangeIdS = CachedState.getAttribute(wrapper, "s");
+        int shelvedChangeId = IChangelist.UNKNOWN;
+        if (shelvedChangeIdS != null) {
+            try {
+                shelvedChangeId = Integer.parseInt(shelvedChangeIdS);
+            } catch (NumberFormatException e) {
+                shelvedChangeId = IChangelist.UNKNOWN;
+            }
+        }
         String localPath = CachedState.getAttribute(wrapper, "l");
+
         FilePath localFilePath = FilePathUtil.getFilePath(localPath);
         if (depot == null && localFilePath == null) {
             return null;

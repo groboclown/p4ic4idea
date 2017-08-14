@@ -75,7 +75,7 @@ public class P4RevertUnchanged extends AbstractVcsAction {
                                 files.add(action.getFile());
                             }
                         }
-                        final MessageResult<Collection<FilePath>> messages =
+                        final MessageResult<List<FilePath>> messages =
                                 server.revertUnchangedFilesOnline(files, en.getValue().getChangeListId());
                         reverted.addAll(messages.getResult());
                         errors.addAll(messages.getMessages());

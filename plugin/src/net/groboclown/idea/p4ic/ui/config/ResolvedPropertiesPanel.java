@@ -17,6 +17,7 @@ package net.groboclown.idea.p4ic.ui.config;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.CollectionListModel;
 import com.intellij.ui.ColorUtil;
@@ -61,6 +62,9 @@ import java.util.ResourceBundle;
 public class ResolvedPropertiesPanel {
     private static final Logger LOG = Logger.getInstance(ResolvedPropertiesPanel.class);
 
+    @Nullable
+    private Project project;
+
     private JPanel rootPanel;
 
     private JComboBox rootDirDropdownBox;
@@ -95,6 +99,8 @@ public class ResolvedPropertiesPanel {
         // Initialize GUI constant values
         $$$setupUI$$$();
 
+        LOG.debug("Completed UI setup, now setting listeners and models.");
+
         selectedProblemsListModel = new CollectionListModel/*<String>*/();
         selectedProblemsList.setModel(selectedProblemsListModel);
 
@@ -114,6 +120,13 @@ public class ResolvedPropertiesPanel {
                 refresh(null);
             }
         });
+        LOG.debug("Completed setup");
+    }
+
+    void initialize(@Nullable Project project) {
+        if (project != null) {
+            this.project = project;
+        }
     }
 
     @NotNull
@@ -133,11 +146,15 @@ public class ResolvedPropertiesPanel {
                         } else {
                             lastConfig = config;
                         }
+                        if (config != null) {
+                            initialize(config.getProject());
+                        }
                         if (lastConfig == null) {
-                            // FIXME eliminate possible NPE
                             final ComputedConfigResults results = new ComputedConfigResults();
-                            results.configs.add(new ConfigPath(null, config.getProject().getBaseDir(),
-                                    Collections.singletonList(createNoClientConfigProblem())));
+                            if (project != null) {
+                                results.configs.add(new ConfigPath(null, project.getBaseDir(),
+                                        Collections.singletonList(createNoClientConfigProblem())));
+                            }
                             return results;
                         }
 
@@ -233,6 +250,7 @@ public class ResolvedPropertiesPanel {
     }
 
     private void showResolvedProperties(String configText, List<String> problemText) {
+        LOG.debug("Showing resolved properties");
         ApplicationManager.getApplication().assertIsDispatchThread();
 
         if (configText == null || configText.isEmpty()) {

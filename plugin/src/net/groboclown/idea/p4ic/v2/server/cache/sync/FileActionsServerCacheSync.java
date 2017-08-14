@@ -488,7 +488,21 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
     @Nullable
     public ServerUpdateAction revertFilesOnline(@NotNull final List<FilePath> files,
-            @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
+            @NotNull final Ref<MessageResult<List<FilePath>>> ret) {
+        final List<FilePath> filesToRevert = new ArrayList<FilePath>();
+        final Map<Integer, List<FilePath>> shelvedFilesToRemove = new HashMap<Integer, List<FilePath>>();
+        for (FilePath file : files) {
+            if (FilePathUtil.isShelved(file)) {
+                ShelvedFilePath sp = (ShelvedFilePath) file;
+                if (! shelvedFilesToRemove.containsKey(sp.getShelvedFile().getChangeListId())) {
+                    shelvedFilesToRemove.put(sp.getShelvedFile().getChangeListId(), new ArrayList<FilePath>());
+                }
+                shelvedFilesToRemove.get(sp.getShelvedFile().getChangeListId()).add(sp);
+            } else {
+                filesToRevert.add(file);
+            }
+        }
+
         return new ImmediateServerUpdateAction() {
             @Override
             public void perform(@NotNull final P4Exec2 exec,
@@ -498,10 +512,18 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                     @NotNull final AlertManager alerts)
                     throws InterruptedException {
                 try {
-                    final List<IFileSpec> results = exec.revertFiles(FileSpecUtil.getFromFilePaths(files));
-                    // FIXME if reverting both sides of a move operation, this
-                    // can return invalid results
-                    ret.set(MessageResult.createForFilePath(files, results, false));
+                    MessageResult<List<FilePath>> res = MessageResult.emptyList();
+                    for (Entry<Integer, List<FilePath>> entry : shelvedFilesToRemove.entrySet()) {
+                        res = MessageResult.updateForFilePathMessages(res,
+                                entry.getValue(),
+                                exec.deleteShelvedFiles(
+                                        FileSpecUtil.getFromFilePaths(entry.getValue()),
+                                        entry.getKey()));
+                    }
+                    res = MessageResult.updateForFilePath(res,
+                            filesToRevert, exec.revertFiles(FileSpecUtil.getFromFilePaths(filesToRevert)), false);
+                            // exec.deleteShelvedFiles(shelvedFilesToRemove);
+                    ret.set(res);
 
                     for (P4FileUpdateState update : localClientUpdatedFiles) {
                         if (files.contains(update.getLocalFilePath())) {
@@ -525,7 +547,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     @Nullable
     public ServerUpdateAction revertFilesIfUnchangedOnline(@NotNull Collection<FilePath> files,
             final int changelistId,
-            @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
+            @NotNull final Ref<MessageResult<List<FilePath>>> ret) {
         final List<FilePath> orderedFiles = new ArrayList<FilePath>(files);
         return new ImmediateServerUpdateAction() {
             @Override

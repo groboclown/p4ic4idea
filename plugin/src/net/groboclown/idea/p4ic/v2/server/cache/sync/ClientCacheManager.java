@@ -274,13 +274,13 @@ public class ClientCacheManager {
 
     @Nullable
     public ServerUpdateAction revertFilesOnline(@NotNull final List<FilePath> files,
-            @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
+            @NotNull final Ref<MessageResult<List<FilePath>>> ret) {
         return fileActions.revertFilesOnline(files, ret);
     }
 
     @Nullable
     public ServerUpdateAction revertFilesIfUnchangedOnline(@NotNull final Collection<FilePath> files,
-            int changelistId, @NotNull final Ref<MessageResult<Collection<FilePath>>> ret) {
+            int changelistId, @NotNull final Ref<MessageResult<List<FilePath>>> ret) {
         return fileActions.revertFilesIfUnchangedOnline(files, changelistId, ret);
     }
 

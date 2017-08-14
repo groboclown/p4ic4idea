@@ -14,6 +14,7 @@
 package net.groboclown.idea.p4ic.ui.config;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
@@ -26,6 +27,7 @@ import javax.swing.event.AncestorListener;
 import java.awt.*;
 
 public class P4ConfigurationProjectPanel implements Disposable {
+    private static final Logger LOG = Logger.getInstance(P4ConfigurationProjectPanel.class);
 
     private final Project project;
     private P4SettingsPanel myMainPanel;
@@ -54,12 +56,15 @@ public class P4ConfigurationProjectPanel implements Disposable {
             return;
         }
 
+        LOG.debug("Loading settings into the main panel");
         myMainPanel.loadSettingsIntoGUI(config, preferences);
     }
 
     synchronized JPanel getPanel(@NotNull P4ProjectConfigComponent config, @NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
+            LOG.debug("Creating settings panel");
             myMainPanel = new P4SettingsPanel();
+            LOG.debug("Initializing settings panel");
             myMainPanel.initialize(project);
             isInitialized = true;
             wrappedPanel = new WrapperPanel(myMainPanel.getPanel());

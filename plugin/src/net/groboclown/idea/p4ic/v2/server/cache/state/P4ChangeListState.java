@@ -120,7 +120,7 @@ public class P4ChangeListState extends UpdateRef {
         String clientPath = spec.getClientPathString();
         if (depotPath != null && clientPath != null && spec.getAction() != null) {
             FileStatus status = getShelvedFileStatusFor(spec.getAction());
-            this.shelved.add(new P4ShelvedFile(depotPath, clientPath, status));
+            this.shelved.add(new P4ShelvedFile(depotPath, clientPath, status, spec.getChangelistId()));
         } else {
             // This can happen if the shelved file is not in the client view.
             LOG.info("Invalid shelved file " + spec);
@@ -265,7 +265,8 @@ public class P4ChangeListState extends UpdateRef {
             P4ShelvedFile file = createShelvedFile(
                     getAttribute(el, "d"),
                     getAttribute(el, "l"),
-                    getAttribute(el, "s")
+                    getAttribute(el, "s"),
+                    ret.id
             );
             if (file != null) {
                 ret.shelved.add(file);
@@ -289,14 +290,14 @@ public class P4ChangeListState extends UpdateRef {
     }
 
     @Nullable
-    private static P4ShelvedFile createShelvedFile(@Nullable String depotPath, @Nullable String localPath,
-            @Nullable String status) {
+    public static P4ShelvedFile createShelvedFile(@Nullable String depotPath, @Nullable String localPath,
+            @Nullable String status, int changeListId) {
         if (status == null || depotPath == null || localPath == null) {
             return null;
         }
         for (FileStatus shelvedFileStatus : SHELVED_FILE_STATUSES) {
             if (shelvedFileStatus.getId().equals(status)) {
-                return new P4ShelvedFile(depotPath, localPath, shelvedFileStatus);
+                return new P4ShelvedFile(depotPath, localPath, shelvedFileStatus, changeListId);
             }
         }
         return null;

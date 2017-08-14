@@ -115,7 +115,7 @@ public class FileSpecUtil {
 
 
     @NotNull
-    public static List<IFileSpec> getFromFilePaths(@NotNull Collection<FilePath> files) throws P4Exception {
+    public static List<IFileSpec> getFromFilePaths(@NotNull Collection<? extends FilePath> files) throws P4Exception {
         return getFromFilePathsAt(files, "", false);
     }
 
@@ -134,7 +134,8 @@ public class FileSpecUtil {
      * @throws P4Exception
      */
     @NotNull
-    public static List<IFileSpec> getFromFilePathsAt(Collection<FilePath> files, @NotNull String revisionPart, boolean allowDirectories)
+    public static List<IFileSpec> getFromFilePathsAt(Collection<? extends FilePath> files,
+            @NotNull String revisionPart, boolean allowDirectories)
             throws P4Exception {
         if (files.isEmpty()) {
             return Collections.emptyList();
@@ -147,7 +148,7 @@ public class FileSpecUtil {
             if (FilePathUtil.isShelved(fp)) {
                 path = escapeToP4Path(fp.getName());
             } else {
-                path = escapeToP4Path(fp.getIOFile().getAbsolutePath());;
+                path = escapeToP4Path(fp.getIOFile().getAbsolutePath());
             }
             if (fp.isDirectory()) {
                 if (allowDirectories) {

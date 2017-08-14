@@ -33,11 +33,15 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
     // We know we have a local file system in the state, because this stores a local update,
     // which can only happen with a file.
 
+    private final Set<P4FileUpdateState> allFiles;
     private final Map<File, P4FileUpdateState> updatedFiles;
+    private final Map<String, P4FileUpdateState> shelvedUpdatedFiles;
     private final Object sync = new Object();
 
     FileUpdateStateList() {
+        this.allFiles = new HashSet<P4FileUpdateState>();
         this.updatedFiles = new HashMap<File, P4FileUpdateState>();
+        this.shelvedUpdatedFiles = new HashMap<String, P4FileUpdateState>();
     }
 
     @NotNull
@@ -52,7 +56,9 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
      */
     void flush() {
         synchronized (sync) {
+            allFiles.clear();
             updatedFiles.clear();
+            shelvedUpdatedFiles.clear();
         }
     }
 
@@ -60,7 +66,7 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
     @NotNull
     public Set<P4FileUpdateState> copy() {
         synchronized (sync) {
-            return new HashSet<P4FileUpdateState>(updatedFiles.values());
+            return new HashSet<P4FileUpdateState>(allFiles);
         }
     }
 
@@ -70,8 +76,10 @@ public class FileUpdateStateList implements Iterable<P4FileUpdateState> {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Replacing update state files with " + newValues + "; was " + updatedFiles);
             }
-            updatedFiles.clear();
+            flush();
             for (P4FileUpdateState newValue : newValues) {
+                allFiles.add(newValue);
+
                 updatedFiles.put(getKey(newValue), newValue);
             }
         }

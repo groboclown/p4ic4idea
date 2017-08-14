@@ -21,8 +21,11 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FilePathImpl;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
+import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4ShelvedFile;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,6 +54,27 @@ public final class FilePathUtil {
             return null;
         }
         return getFilePath(new File(path));
+    }
+
+    @Nullable
+    public static FilePath getFilePath(@Nullable IFileSpec spec) {
+        if (spec == null) {
+            return null;
+        }
+        if (spec instanceof IExtendedFileSpec) {
+            ShelvedFilePath shelved = P4ShelvedFile.createShelvedFile((IExtendedFileSpec) spec);
+            if (shelved != null) {
+                return shelved;
+            }
+        }
+        if (spec.getClientPathString() != null) {
+            return FilePathUtil.getFilePath(spec.getClientPathString());
+        }
+        // TODO this is kind of a hack
+        if (spec.getOriginalPathString() != null && ! spec.getOriginalPathString().startsWith("//")) {
+            return FilePathUtil.getFilePath(spec.getClientPathString());
+        }
+        return null;
     }
 
     @NotNull
@@ -125,7 +149,7 @@ public final class FilePathUtil {
      * Break apart the path so that it contains the complete directory chain.  The
      * First element returned is the path object passed in.
      *
-     * @param path
+     * @param path endpoint path
      * @return list of path directories.
      */
     @NotNull
@@ -145,8 +169,8 @@ public final class FilePathUtil {
      * Break apart the path into parent directories, up to and including the {@literal parent}.
      * If the {@literal parent} is never reached, then the complete tree is returned.
      *
-     * @param path
-     * @param parent
+     * @param path child path
+     * @param parent parent path
      * @return
      */
     @NotNull
@@ -197,8 +221,8 @@ public final class FilePathUtil {
 
     /**
      *
-     * @param project
-     * @param files
+     * @param project project invoking
+     * @param files files to make writable
      */
     public static void makeWritable(@NotNull final Project project, @NotNull final VirtualFile[] files) {
         // write actions can only be in the dispatch thread.
@@ -219,8 +243,8 @@ public final class FilePathUtil {
     }
 
     /**
-     * @param project
-     * @param file
+     * @param project project invoking
+     * @param file file to make writable
      * @return true if there was no failure on changing the state, or false if there was a failure.  Only local files
      * that are not writable will have this action be run; all other virtual files will cause this to return true.
      */
@@ -261,8 +285,8 @@ public final class FilePathUtil {
     }
 
     /**
-     * @param project
-     * @param file
+     * @param project project invoking
+     * @param file file to make writable
      * @return true if there was no failure on changing the state, or false if there was a failure.  Only local files
      * that are not writable will have this action be run; all other virtual files will cause this to return true.
      */

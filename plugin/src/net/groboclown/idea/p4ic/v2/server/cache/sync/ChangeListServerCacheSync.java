@@ -642,51 +642,61 @@ public class ChangeListServerCacheSync extends CacheFrontEnd {
                 List<IFileSpec> edit = new ArrayList<IFileSpec>(status.size());
                 List<IFileSpec> add = new ArrayList<IFileSpec>(status.size());
 
-                int statusIndex = 0;
-                for (IExtendedFileSpec spec: status) {
-                    // the spec file will need to be re-escaped and stripped of annotations (#103)
-                    final IFileSpec forServer;
-                    try {
-                        forServer = FileSpecUtil.escapeAndStripSpec(spec);
-                    } catch (P4FileException e) {
-                        alerts.addWarning(
-                                exec.getProject(),
-                                P4Bundle.message("filestatus.error.title"),
-                                P4Bundle.message("filestatus.error", files),
-                                e, files);
-                        markFailed(update);
-                        continue;
-                    } catch (IllegalArgumentException e) {
-                        LOG.warn("Bad spec from file " + files.get(statusIndex), e);
-                        // Don't mark this as failed, though.
-                        continue;
-                    }
-                    statusIndex++;
-
-                    if (spec.getOpStatus() != FileSpecOpStatus.VALID) {
-                        LOG.debug("File status: " + spec.getOpStatus() + ": " + spec.getStatusMessage());
-                    } else if (spec.getOpenAction() != null || spec.getAction() != null) {
-                        // the getOpenChangelistId can be misleading if the desired destination
-                        // changelist is the default changelist.  So, don't pay attention to this;
-                        // just make the requested attempt.
-
-                        // already opened; reopen it
-                        reopen.add(forServer);
-                        if (spec.getOpenChangelistId() == changelistId) {
-                            LOG.info("Possibly reopen request for " + spec.getDepotPathString()
-                                    + " with it already in the right changelist: " + changelistId);
-                        }
-                    } else if (spec.getHeadRev() <= 0) {
-                        // add
-                        add.add(forServer);
-                    } else {
+                for (int statusIndex = 0; statusIndex < status.size(); statusIndex++) {
+                    final IExtendedFileSpec spec = status.get(statusIndex);
+                    final FilePath srcFile = files.get(statusIndex);
+                    if (spec == null || spec.isShelved()) {
+                        // Ignore shelved files.
+                        LOG.info("Ignoring move operation for shelved file " + spec + " from "
+                                + srcFile);
+                    } else if (spec.getOpStatus() != FileSpecOpStatus.VALID) {
+                        // Status message.
                         if (LOG.isDebugEnabled()) {
-                            LOG.debug("Marking as edit: " + spec +
-                                    "; action: " + spec.getOpenAction() + "/" + spec.getAction() + "/" + spec
-                                    .getHeadAction() + "/" + spec.getOtherAction() +
-                                    "; change: " + spec.getOpenChangelistId());
+                            LOG.debug("File status: " + spec.getOpStatus() + ": "
+                                    + spec.getStatusMessage());
                         }
-                        edit.add(forServer);
+                    } else {
+                        // the spec file will need to be re-escaped and stripped of annotations (#103)
+                        final IFileSpec forServer;
+                        try {
+                            forServer = FileSpecUtil.escapeAndStripSpec(spec);
+                        } catch (P4FileException e) {
+                            alerts.addWarning(
+                                    exec.getProject(),
+                                    P4Bundle.message("filestatus.error.title"),
+                                    P4Bundle.message("filestatus.error", files),
+                                    e, files);
+                            markFailed(update);
+                            continue;
+                        } catch (IllegalArgumentException e) {
+                            LOG.warn("Bad spec from file " + srcFile, e);
+                            // Don't mark this as failed, though.
+                            continue;
+                        }
+
+                        if (spec.getOpenAction() != null || spec.getAction() != null) {
+                            // the getOpenChangelistId can be misleading if the desired destination
+                            // changelist is the default changelist.  So, don't pay attention to this;
+                            // just make the requested attempt.
+
+                            // already opened; reopen it
+                            reopen.add(forServer);
+                            if (spec.getOpenChangelistId() == changelistId) {
+                                LOG.info("Possibly reopen request for " + spec.getDepotPathString()
+                                        + " with it already in the right changelist: " + changelistId);
+                            }
+                        } else if (spec.getHeadRev() <= 0) {
+                            // add
+                            add.add(forServer);
+                        } else {
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Marking as edit: " + spec +
+                                        "; action: " + spec.getOpenAction() + "/" + spec.getAction() + "/" + spec
+                                        .getHeadAction() + "/" + spec.getOtherAction() +
+                                        "; change: " + spec.getOpenChangelistId());
+                            }
+                            edit.add(forServer);
+                        }
                     }
                 }
 

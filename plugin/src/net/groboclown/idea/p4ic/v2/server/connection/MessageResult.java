@@ -33,9 +33,39 @@ public class MessageResult<T> {
     private final List<P4StatusMessage> messages;
     private final boolean error;
 
-    public static <T extends IFileOperationResult> MessageResult<List<T>> create(@NotNull  List<T> specs) {
-        List<T> results = new ArrayList<T>(specs.size());
-        List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
+    public static <T> MessageResult<List<T>> emptyList() {
+        return new MessageResult<List<T>>(new ArrayList<T>(), new ArrayList<P4StatusMessage>());
+    }
+
+
+    public static <T extends IFileOperationResult> MessageResult<List<T>> create(@NotNull List<T> specs) {
+        return update(MessageResult.<T>emptyList(), specs);
+    }
+
+
+    public static <T extends IFileOperationResult> MessageResult<List<T>> create(
+            @NotNull List<T> specs, boolean markFileNotFoundAsValid) {
+        return update(MessageResult.<T>emptyList(), specs, markFileNotFoundAsValid);
+    }
+
+
+    @NotNull
+    public static MessageResult<List<FilePath>> createForFilePath(
+            @NotNull List<FilePath> originalFiles,
+            @NotNull List<IFileSpec> specs,
+            boolean markFileNotFoundAsValid) {
+        return updateForFilePath(
+                new MessageResult<List<FilePath>>(
+                    new ArrayList<FilePath>(), new ArrayList<P4StatusMessage>()),
+                originalFiles, specs, markFileNotFoundAsValid);
+    }
+
+
+    public static <T extends IFileOperationResult> MessageResult<List<T>> update(
+            @NotNull MessageResult<List<T>> base,
+            @NotNull List<T> specs) {
+        List<T> results = new ArrayList<T>(base.result);
+        List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>(base.messages);
         for (T spec : specs) {
             if (P4StatusMessage.isValid(spec)) {
                 results.add(spec);
@@ -48,10 +78,11 @@ public class MessageResult<T> {
     }
 
 
-    public static <T extends IFileOperationResult> MessageResult<List<T>> create(@NotNull  List<T> specs,
-            boolean markFileNotFoundAsValid) {
-        List<T> results = new ArrayList<T>(specs.size());
-        List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
+    public static <T extends IFileOperationResult> MessageResult<List<T>> update(
+            @NotNull MessageResult<List<T>> base,
+            @NotNull List<T> specs, boolean markFileNotFoundAsValid) {
+        List<T> results = new ArrayList<T>(base.result);
+        List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>(base.messages);
         for (T spec : specs) {
             if (P4StatusMessage.isValid(spec)) {
                 results.add(spec);
@@ -66,13 +97,30 @@ public class MessageResult<T> {
     }
 
 
+
+
+
     @NotNull
-    public static MessageResult<Collection<FilePath>> createForFilePath(
+    public static MessageResult<List<FilePath>> updateForFilePathMessages(
+            @NotNull MessageResult<List<FilePath>> base,
+            @NotNull List<FilePath> originalFiles,
+            @NotNull List<P4StatusMessage> newMessages) {
+        List<FilePath> results = new ArrayList<FilePath>(base.result);
+        results.addAll(originalFiles);
+        List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>(base.messages);
+        messages.addAll(newMessages);
+        return new MessageResult<List<FilePath>>(results, messages);
+    }
+
+
+    @NotNull
+    public static MessageResult<List<FilePath>> updateForFilePath(
+            @NotNull MessageResult<List<FilePath>> base,
             @NotNull List<FilePath> originalFiles,
             @NotNull List<IFileSpec> specs,
             boolean markFileNotFoundAsValid) {
-        List<FilePath> results = new ArrayList<FilePath>(specs.size());
-        List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>();
+        List<FilePath> results = new ArrayList<FilePath>(base.result);
+        List<P4StatusMessage> messages = new ArrayList<P4StatusMessage>(base.messages);
         Iterator<FilePath> iter = originalFiles.iterator();
         for (IFileSpec spec : specs) {
             if (P4StatusMessage.isValid(spec) ||
@@ -96,7 +144,7 @@ public class MessageResult<T> {
                 messages.add(msg);
             }
         }
-        return new MessageResult<Collection<FilePath>>(results, messages);
+        return new MessageResult<List<FilePath>>(results, messages);
     }
 
 

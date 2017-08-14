@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.ui.config;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -30,6 +31,8 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class UserPreferencesPanel {
+    private static final Logger LOG = Logger.getInstance(UserPreferencesPanel.class);
+
     private JSpinner myMaxTimeout;
     private JPanel myRootPanel;
     private JCheckBox myOpenForEditInCheckBox;
@@ -46,6 +49,7 @@ public class UserPreferencesPanel {
 
 
     UserPreferencesPanel() {
+        LOG.debug("UI constructed, now setting up models");
         myMaxTimeout.setModel(new MinMaxSpinnerModel(
                 UserProjectPreferences.MIN_LOCK_WAIT_TIMEOUT_MILLIS,
                 UserProjectPreferences.MAX_LOCK_WAIT_TIMEOUT_MILLIS,
@@ -68,10 +72,12 @@ public class UserPreferencesPanel {
         myPreferRevisionGroup = new ButtonGroup();
         myPreferRevisionGroup.add(myPreferChangelist);
         myPreferRevisionGroup.add(myPreferRevisionNumber);
+        LOG.debug("Completed panel setup");
     }
 
 
     void loadSettingsIntoGUI(@NotNull UserProjectPreferences userPrefs) {
+        LOG.debug("Loading settings into UI");
         myOpenForEditInCheckBox.setSelected(userPrefs.getEditInSeparateThread());
         myMaxTimeout.setValue(userPrefs.getLockWaitTimeoutMillis());
         myMaxRetryAuthenticationSpinner.setValue(userPrefs.getMaxAuthenticationRetries());
@@ -86,6 +92,7 @@ public class UserPreferencesPanel {
         myConcatenateChangelistNameComment.setSelected(userPrefs.getConcatenateChangelistNameComment());
         myShowMessageDialog.setSelected(userPrefs.getShowDialogConnectionMessages());
         myShowShelvedFiles.setSelected(userPrefs.getShowShelvedFiles());
+        LOG.debug("Finished loading settings into the UI");
     }
 
 

@@ -129,8 +129,8 @@ public class CreateSwarmReviewDialog
     private boolean checkOkButtonState() {
         String text = descTextArea.getText();
         boolean enabled =
-                ! userSelection.getSelectedUsers().isEmpty()
-                && text != null && !text.isEmpty();
+                !userSelection.getSelectedUsers().isEmpty()
+                        && text != null && !text.isEmpty();
         buttonOK.setEnabled(enabled);
         return enabled;
     }

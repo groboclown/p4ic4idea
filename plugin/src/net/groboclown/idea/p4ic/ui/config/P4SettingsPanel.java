@@ -15,6 +15,7 @@
 package net.groboclown.idea.p4ic.ui.config;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
@@ -27,15 +28,26 @@ import java.awt.*;
 import java.util.ResourceBundle;
 
 public class P4SettingsPanel implements Disposable {
+    private static final Logger LOG = Logger.getInstance(P4SettingsPanel.class);
+
+
     private UserPreferencesPanel myUserPreferencesPanel;
     private JPanel myRootPanel;
     private ConfigStackPanel configStackPanel;
     private ResolvedPropertiesPanel resolvePropertiesPanel;
 
     P4SettingsPanel() {
-        configStackPanel.addConfigurationUpdatedListener(resolvePropertiesPanel.getConfigurationUpdatedListener());
+        // FIXME the creation of these components causes a whole bunch of
+        // AWT events to be added.  This needs to be delayed as much as
+        // possible until after creation.  This is probably due to listeners
+        // added at the wrong time.  The big hang-up is the DefaultCaret sending
+        // out a signal.
+        LOG.debug("Panel GUI constructed.  Now registering listeners for settings panel.");
         Disposer.register(this, configStackPanel);
+
+        configStackPanel.addConfigurationUpdatedListener(resolvePropertiesPanel.getConfigurationUpdatedListener());
         resolvePropertiesPanel.setRequestConfigurationLoadListener(configStackPanel);
+        LOG.debug("Completed listener initialization");
     }
 
     boolean isModified(@NotNull final P4ProjectConfigComponent myConfig,
@@ -63,6 +75,7 @@ public class P4SettingsPanel implements Disposable {
 
     void initialize(final Project project) {
         configStackPanel.initialize(project);
+        resolvePropertiesPanel.initialize(project);
         if (project != null) {
             final P4ProjectConfigComponent configComponent = P4ProjectConfigComponent.getInstance(project);
             resolvePropertiesPanel.getConfigurationUpdatedListener().onConfigurationUpdated(

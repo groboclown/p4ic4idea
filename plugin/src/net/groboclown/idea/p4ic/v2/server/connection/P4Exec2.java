@@ -1139,6 +1139,9 @@ public class P4Exec2 {
     @NotNull
     public List<P4StatusMessage> deleteShelvedFiles(@NotNull final List<IFileSpec> deleted,
             final int changelistId) throws VcsException, CancellationException {
+        if (deleted.isEmpty()) {
+            return Collections.emptyList();
+        }
         return exec.runWithClient(project, new ClientExec.WithClient<List<P4StatusMessage>>() {
             @Override
             public List<P4StatusMessage> run(@NotNull IOptionsServer server, @NotNull IClient client,

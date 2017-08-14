@@ -624,10 +624,10 @@ public class P4Server {
      * @param files files to revert.
      */
     @NotNull
-    private MessageResult<Collection<FilePath>> revertFilesOnline(@NotNull final List<FilePath> files)
+    private MessageResult<List<FilePath>> revertFilesOnline(@NotNull final List<FilePath> files)
             throws InterruptedException, P4DisconnectedException {
         if (files.isEmpty()) {
-            return new MessageResult<Collection<FilePath>>(
+            return new MessageResult<List<FilePath>>(
                     Collections.<FilePath>emptyList(), Collections.<P4StatusMessage>emptyList());
         }
         validateOnline();
@@ -635,17 +635,17 @@ public class P4Server {
         // TODO this API usage here is not the right way to go about it;
         // the runImmediately needs to be called inside another call (usually cacheQuery,
         // but probably shouldn't be).  It's too easy to mess up this usage pattern.
-        return connection.cacheQuery(new CacheQuery<MessageResult<Collection<FilePath>>>() {
+        return connection.cacheQuery(new CacheQuery<MessageResult<List<FilePath>>>() {
             @Override
-            public MessageResult<Collection<FilePath>> query(@NotNull final ClientCacheManager mgr)
+            public MessageResult<List<FilePath>> query(@NotNull final ClientCacheManager mgr)
                     throws InterruptedException {
-                Ref<MessageResult<Collection<FilePath>>> ret = new Ref<MessageResult<Collection<FilePath>>>();
+                Ref<MessageResult<List<FilePath>>> ret = new Ref<MessageResult<List<FilePath>>>();
                 ServerUpdateAction action = mgr.revertFilesOnline(files, ret);
                 if (action != null) {
                     connection.runImmediately(project, action);
                 }
                 if (ret.isNull()) {
-                    return new MessageResult<Collection<FilePath>>(
+                    return new MessageResult<List<FilePath>>(
                             Collections.<FilePath>emptyList(), Collections.<P4StatusMessage>emptyList());
                 }
                 return ret.get();
@@ -675,25 +675,25 @@ public class P4Server {
      * @return all files that were reverted
      */
     @NotNull
-    public MessageResult<Collection<FilePath>> revertUnchangedFilesOnline(@NotNull final Collection<FilePath> files,
+    public MessageResult<List<FilePath>> revertUnchangedFilesOnline(@NotNull final Collection<FilePath> files,
             final int changelistId)
             throws InterruptedException, P4DisconnectedException {
         if (files.isEmpty()) {
-            return new MessageResult<Collection<FilePath>>(
+            return new MessageResult<List<FilePath>>(
                     Collections.<FilePath>emptyList(), Collections.<P4StatusMessage>emptyList());
         }
         validateOnline();
-        return connection.cacheQuery(new CacheQuery<MessageResult<Collection<FilePath>>>() {
+        return connection.cacheQuery(new CacheQuery<MessageResult<List<FilePath>>>() {
             @Override
-            public MessageResult<Collection<FilePath>> query(@NotNull final ClientCacheManager mgr)
+            public MessageResult<List<FilePath>> query(@NotNull final ClientCacheManager mgr)
                     throws InterruptedException {
-                Ref<MessageResult<Collection<FilePath>>> ret = new Ref<MessageResult<Collection<FilePath>>>();
+                Ref<MessageResult<List<FilePath>>> ret = new Ref<MessageResult<List<FilePath>>>();
                 ServerUpdateAction action = mgr.revertFilesIfUnchangedOnline(files, changelistId, ret);
                 if (action != null) {
                     connection.runImmediately(project, action);
                 }
                 if (ret.isNull()) {
-                    return new MessageResult<Collection<FilePath>>(
+                    return new MessageResult<List<FilePath>>(
                             Collections.<FilePath>emptyList(), Collections.<P4StatusMessage>emptyList());
                 }
                 return ret.get();

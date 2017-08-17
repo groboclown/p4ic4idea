@@ -30,11 +30,13 @@ public class FileMappingRepoTest {
 
         final File f1 = new File("f1");
         final FilePath fp1 = createFilePath(f1);
-        repo.getByDepotLocation("//depot/file1", fp1);
+        // Keep the returned value for weak reference maintenance
+        final P4ClientFileMapping fm1 = repo.getByDepotLocation("//depot/file1", fp1);
 
         final File f2 = new File("f2");
         final FilePath fp2 = createFilePath(f2);
-        repo.getByDepotLocation("//depot/file2", fp2);
+        // Keep the returned value for weak reference maintenance
+        final P4ClientFileMapping fm2 = repo.getByDepotLocation("//depot/file2", fp2);
 
         final File f3 = new File("f3");
         final FilePath fp3 = createFilePath(f3);
@@ -51,16 +53,16 @@ public class FileMappingRepoTest {
             pairs.put("//depot/file2", fp2.getIOFile());
 
             final Iterator<P4ClientFileMapping> iter = iterable.iterator();
-            assertThat(iter.hasNext(), is(true));
+            assertThat("All file index " + i, iter.hasNext(), is(true));
 
             P4ClientFileMapping next = iter.next();
-            assertThat(expectedDepotPaths.remove(next.getDepotPath()), is(true));
-            assertThat(expectedFiles.remove(next.getLocalFilePath().getIOFile()), is(true));
+            assertThat("remove depot path " + next, expectedDepotPaths.remove(next.getDepotPath()), is(true));
+            assertThat("remove io file " + next, expectedFiles.remove(next.getLocalFilePath().getIOFile()), is(true));
             assertThat(next.getLocalFilePath().getIOFile(), is(pairs.get(next.getDepotPath())));
 
             next = iter.next();
-            assertThat(expectedDepotPaths.remove(next.getDepotPath()), is(true));
-            assertThat(expectedFiles.remove(next.getLocalFilePath().getIOFile()), is(true));
+            assertThat("remove depot path " + next, expectedDepotPaths.remove(next.getDepotPath()), is(true));
+            assertThat("remove io file " + next, expectedFiles.remove(next.getLocalFilePath().getIOFile()), is(true));
             assertThat(next.getLocalFilePath().getIOFile(), is(pairs.get(next.getDepotPath())));
 
             assertThat(iter.hasNext(), is(false));

@@ -37,28 +37,32 @@ public class RpcPerforceFile extends File {
 	private RpcPerforceFileType fileType = null;
 	private ClientLineEnding lineEnding = null;
 
+	// p4ic4idea: a version that never returns null.
+	public static String createNotNullTempFileName(String tmpDirName)
+			throws IOException {
+
+		// Kinda cheating, really...
+
+		File tmpDir = null;
+
+		if (tmpDirName != null) {
+			tmpDir = new File(tmpDirName);
+		}
+
+		File tmpFile = File.createTempFile(TMP_FILE_PFX, TMP_FILE_SFX,
+				tmpDir);
+		return tmpFile.getPath();
+	}
 	
 	public static String createTempFileName(String tmpDirName) {
-		
-		// Kinda cheating, really...
-		
-		File tmpDir = null;
-		
 		try {
-			if (tmpDirName != null) {
-				tmpDir = new File(tmpDirName);
-			}
-			
-			File tmpFile = File.createTempFile(TMP_FILE_PFX, TMP_FILE_SFX,
-													tmpDir);
-			
-			return tmpFile.getPath();
+			return createNotNullTempFileName(tmpDirName);
 		} catch (IOException ioexc) {
 			Log.error(
-					"Unable to create temporary file: " + ioexc.getLocalizedMessage());
+					"Unable to create temporary file for directory "
+							+ tmpDirName + ": " + ioexc.getLocalizedMessage());
+			return null;
 		}
-		
-		return null;
 	}
 	
 	public RpcPerforceFile(String fileName, String fileTypeStr) {
@@ -266,7 +270,7 @@ public class RpcPerforceFile extends File {
 	}
 
 	/**
-	 * @see java.io.File#equals()
+	 * @see java.io.File#equals(Object)
 	 */
 	@Override
     public boolean equals(Object obj) {

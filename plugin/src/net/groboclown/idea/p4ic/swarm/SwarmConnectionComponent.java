@@ -107,6 +107,9 @@ public class SwarmConnectionComponent implements ApplicationComponent, Disposabl
     }
 
     public void refreshSwarmConfigsFor(@NotNull Project project) {
+        if (project.isDisposed() || !project.isInitialized()) {
+            return;
+        }
         final Map<ClientServerRef, SwarmClient> validClients;
         synchronized (swarmClients) {
             // In case one project has client-servers that are not in another project,

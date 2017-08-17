@@ -1544,7 +1544,9 @@ public class P4Server {
                     FilePathUtil.getFilePath(spec.getClientPathString()));
             return null;
         }
-        LOG.info("Finding location of " + spec);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Finding location of " + spec);
+        }
         // Note: check above performs the NPE checks.
         return new P4FileRevision(project, getClientServerId(),
                 baseFile, spec.getDepotPathString(), rev.getDepotFileName(), rev);

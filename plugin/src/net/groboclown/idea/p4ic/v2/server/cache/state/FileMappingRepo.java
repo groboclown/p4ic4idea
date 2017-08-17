@@ -50,11 +50,11 @@ public class FileMappingRepo {
 
     private int cacheMissCount = 0;
 
-    public FileMappingRepo(final boolean serverIsCaseInsensitive) {
+    FileMappingRepo(final boolean serverIsCaseInsensitive) {
         this(serverIsCaseInsensitive, new ReferenceQueue<P4ClientFileMapping>());
     }
 
-    FileMappingRepo(final boolean serverIsCaseInsensitive, @NotNull ReferenceQueue<P4ClientFileMapping> queue) {
+    private FileMappingRepo(final boolean serverIsCaseInsensitive, @NotNull ReferenceQueue<P4ClientFileMapping> queue) {
         this.serverIsCaseInsensitive = serverIsCaseInsensitive;
         this.queue = queue;
     }

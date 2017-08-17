@@ -20,17 +20,19 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.idea.p4ic.ui.TextFieldListener;
+import net.groboclown.idea.p4ic.ui.TextFieldUtil;
 import net.groboclown.idea.p4ic.ui.sync.SyncOptionConfigurable.SyncOptions;
 import net.groboclown.idea.p4ic.ui.sync.SyncOptionConfigurable.SyncType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.text.NumberFormat;
 import java.util.ResourceBundle;
 
@@ -56,7 +58,7 @@ public class SyncPanel {
     private ButtonGroup syncTypeGroup;
 
 
-    public SyncPanel(@NotNull final SyncOptionConfigurable parent) {
+    SyncPanel(@NotNull final SyncOptionConfigurable parent) {
         syncTypeGroup = new ButtonGroup();
         $$$setupUI$$$();
         syncTypeGroup.add(mySyncHead);
@@ -86,9 +88,9 @@ public class SyncPanel {
                 updateValues(parent);
             }
         });
-        myRevision.addPropertyChangeListener("value", new PropertyChangeListener() {
+        TextFieldUtil.addTo(myRevision, new TextFieldListener() {
             @Override
-            public void propertyChange(final PropertyChangeEvent evt) {
+            public void textUpdated(@NotNull DocumentEvent e, @Nullable String text) {
                 if (getSelectedSyncType() == SyncType.REV && getRevValue() == null) {
                     Messages.showMessageDialog(
                             P4Bundle.message("sync.options.rev.error"),
@@ -98,10 +100,20 @@ public class SyncPanel {
                     updateValues(parent);
                 }
             }
-        });
-        myOther.addPropertyChangeListener("value", new PropertyChangeListener() {
+
             @Override
-            public void propertyChange(final PropertyChangeEvent evt) {
+            public void enabledStateChanged(@NotNull PropertyChangeEvent evt) {
+                updateValues(parent);
+            }
+        });
+        TextFieldUtil.addTo(myOther, new TextFieldListener() {
+            @Override
+            public void textUpdated(@NotNull DocumentEvent e, @Nullable String text) {
+                updateValues(parent);
+            }
+
+            @Override
+            public void enabledStateChanged(@NotNull PropertyChangeEvent evt) {
                 updateValues(parent);
             }
         });
@@ -158,15 +170,17 @@ public class SyncPanel {
 
     @Nullable
     private String getOtherValue() {
-        if (myOther.isEditable()) {
+        if (myOther.isEnabled()) {
+            LOG.info("Read 'other' value as [" + myOther.getText() + "]");
             return myOther.getText();
         }
+        LOG.info("Read 'other' value as null");
         return null;
     }
 
     @Nullable
     private Integer getRevValue() {
-        if (myRevision.isEditable()) {
+        if (myRevision.isEnabled()) {
             final String text = myRevision.getText();
             if (text != null && text.length() > 0) {
                 try {
@@ -278,6 +292,7 @@ public class SyncPanel {
                 false));
         myOther = new JTextField();
         myOther.setColumns(10);
+        myOther.setEditable(true);
         myOther.setEnabled(false);
         myOther.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("sync.options.other.value.tooltip"));

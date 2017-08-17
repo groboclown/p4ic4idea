@@ -116,13 +116,15 @@ public class AlertManager implements ApplicationComponent {
     }
 
     @NotNull
-    public static String injectReason(@NotNull String message, @Nullable Throwable ex) {
+    private static String injectReason(@NotNull String message, @Nullable Throwable ex) {
         if (message.contains("%%")) {
             String inject = P4Bundle.message("error.unknown");
             if (ex != null) {
                 String msg = getErrorMessage(ex);
-                if (msg != null && msg.length() > 0) {
-                    inject = P4Bundle.message("error.injected", msg);
+                if (! msg.isEmpty()) {
+                    // If an error message contains a backslash, it
+                    // will end up being stripped.
+                    inject = P4Bundle.message("error.injected", msg.replace("\\", "\\\\"));
                 }
             }
             message = message.replaceFirst("%%", inject);
@@ -271,7 +273,7 @@ public class AlertManager implements ApplicationComponent {
         Throwable lowest = cause;
         while (cause != null && ! seen.contains(cause)) {
             seen.add(cause);
-            if (cause.getMessage() != null && cause.getMessage().length() > 0) {
+            if (cause.getMessage() != null && ! cause.getMessage().isEmpty()) {
                 return cause.getMessage();
             }
             cause = cause.getCause();

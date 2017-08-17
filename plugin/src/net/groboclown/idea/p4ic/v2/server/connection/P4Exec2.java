@@ -1202,7 +1202,7 @@ public class P4Exec2 {
 
     @Nullable
     public SwarmConfig createSwarmConfigSettings() throws VcsException, CancellationException {
-        return exec.runWithServer(project, new ClientExec.WithServer<SwarmConfig>() {
+        SwarmConfig ret = exec.runWithServer(project, new ClientExec.WithServer<SwarmConfig>() {
             @Override
             public SwarmConfig run(@NotNull final IOptionsServer server, @NotNull ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
@@ -1210,18 +1210,25 @@ public class P4Exec2 {
                 return PasswordManager.getInstance().getPassword(project, exec.getServerConfig(), false)
                         .use(new OneUseString.WithStringThrows<SwarmConfig, P4JavaException>() {
                             @Override
-                            public SwarmConfig with(@Nullable char[] value) throws P4JavaException {
+                            public SwarmConfig with(@Nullable char[] value)
+                                    throws P4JavaException {
                                 String passwd = null;
                                 if (value != null) {
                                     passwd = new String(value);
                                 }
                                 return new SwarmConfig()
-                                    .withUsername(exec.getServerConfig().getUsername())
-                                    .withServerInfo(server, passwd);
+                                        .withUsername(exec.getServerConfig().getUsername())
+                                        .withServerInfo(server, passwd);
                             }
                         });
             }
         });
+        if (ret == null || ret.getUri() == null || ret.getUsername() == null) {
+            // If the user hasn't set a password, I believe it's okay for the ticket to be null.
+            // So, we don't need to check that part.
+            return null;
+        }
+        return ret;
     }
 
 
@@ -1243,12 +1250,16 @@ public class P4Exec2 {
                 // strip off any extra information we don't want to query.
                 spec = FileSpecUtil.getAlreadyEscapedSpec(spec.getDepotPathString());
                 fstatSpecs.add(spec);
-            } else {
+            } else if (spec.getStatusMessage() != null) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Found spec message (not going to fstat on it): " + spec.getOpStatus() + "/" +
                             spec.getStatusMessage());
                 }
                 retSpecs.add(new ExtendedFileSpec(spec.getStatusMessage()));
+            } else if (spec.getLocalPathString() != null) {
+                fstatSpecs.add(spec);
+            } else {
+                LOG.info("Unknown request for file status on " + spec);
             }
         }
         if (! fstatSpecs.isEmpty()) {

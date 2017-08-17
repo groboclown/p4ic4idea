@@ -21,6 +21,8 @@ import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
+import net.groboclown.idea.p4ic.ui.TextFieldListener;
+import net.groboclown.idea.p4ic.ui.TextFieldUtil;
 import net.groboclown.idea.p4ic.ui.UserSelectionPanel;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.P4ServerManager;
@@ -34,6 +36,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
 import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -42,6 +45,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -84,10 +88,15 @@ public class CreateSwarmReviewDialog
         });
 
         descTextArea.setText(description);
-        descTextArea.addKeyListener(new KeyAdapter() {
+        TextFieldUtil.addTo(descTextArea, new TextFieldListener() {
             @Override
-            public void keyTyped(KeyEvent e) {
+            public void textUpdated(@NotNull DocumentEvent e, @Nullable String text) {
                 checkOkButtonState();
+            }
+
+            @Override
+            public void enabledStateChanged(@NotNull PropertyChangeEvent evt) {
+                // ignore
             }
         });
 

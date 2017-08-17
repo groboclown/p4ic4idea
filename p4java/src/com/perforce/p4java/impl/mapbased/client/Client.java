@@ -319,9 +319,15 @@ public class Client extends ClientSummary implements IClient {
 				Log.exception(exc);
 			}
 			try {
-				if (map.get("Update") != null) {
-					this.updated =
-						new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").parse((String) map.get("Update"));
+				// p4ic4idea: Some situations have seen servers returning unix time.
+				String update = (String) map.get("Update");
+				if (update != null) {
+					if (update.matches("\\d+")) {
+						this.updated = new Date(Long.parseLong(update));
+					} else {
+						this.updated =
+								new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").parse(update);
+					}
 				}
 			} catch (Exception exc) {
 				Log.error("Update date parse error in Client constructor "

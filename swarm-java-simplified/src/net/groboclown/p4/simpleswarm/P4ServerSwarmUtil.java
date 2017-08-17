@@ -36,11 +36,18 @@ public class P4ServerSwarmUtil {
         if (res.isEmpty()) {
             return null;
         }
+        String value = res.get(0).getValue();
+        if (value == null) {
+            return null;
+        }
         return URI.create(res.get(0).getValue());
     }
 
     public static String getTicket(IOptionsServer server, String password)
             throws P4JavaException {
+        if (password == null) {
+            return null;
+        }
         // need an all-host ticket
         final LoginOptions opts = new LoginOptions(true, true);
         final StringBuffer ticket = new StringBuffer();

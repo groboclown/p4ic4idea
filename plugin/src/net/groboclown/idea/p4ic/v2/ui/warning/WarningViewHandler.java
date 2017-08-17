@@ -14,10 +14,13 @@
 
 package net.groboclown.idea.p4ic.v2.ui.warning;
 
-import com.intellij.ide.errorTreeView.*;
+import com.intellij.ide.errorTreeView.GroupingElement;
+import com.intellij.ide.errorTreeView.HotfixData;
+import com.intellij.ide.errorTreeView.HotfixGate;
+import com.intellij.ide.errorTreeView.NewErrorTreeViewPanel;
+import com.intellij.ide.errorTreeView.SimpleErrorData;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.CommandProcessor;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
@@ -32,7 +35,12 @@ import com.intellij.util.Consumer;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 /**
@@ -41,8 +49,6 @@ import java.util.Map.Entry;
  * kept around.
  */
 public class WarningViewHandler {
-    private static final Logger LOG = Logger.getInstance(WarningViewHandler.class);
-
     private final Project project;
 
 
@@ -50,7 +56,7 @@ public class WarningViewHandler {
         this.project = project;
     }
 
-    public void showWarnings(@NotNull final Collection<WarningMessage> warnings) {
+    void showWarnings(@NotNull final Collection<WarningMessage> warnings) {
         showWarningsPanel(new Consumer<P4WarningViewPanel>() {
             @Override
             public void consume(@NotNull final P4WarningViewPanel errorViewStructure) {
@@ -74,7 +80,7 @@ public class WarningViewHandler {
     }
 
 
-    public void showWarningsPanel(@NotNull final Consumer<P4WarningViewPanel> viewFiller) {
+    private void showWarningsPanel(@NotNull final Consumer<P4WarningViewPanel> viewFiller) {
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             public void run() {
                 if (project.isDisposed()) {
@@ -171,7 +177,7 @@ public class WarningViewHandler {
      * @return sorted warnings.
      */
     @NotNull
-    protected Map<HotfixData, List<WarningMessage>> sortWarningsByHotfix(@NotNull Collection<WarningMessage> warnings) {
+    private Map<HotfixData, List<WarningMessage>> sortWarningsByHotfix(@NotNull Collection<WarningMessage> warnings) {
         Map<HotfixData, List<WarningMessage>> ret = new HashMap<HotfixData, List<WarningMessage>>();
         for (WarningMessage warning : warnings) {
             final Consumer<HotfixGate> hotfix = warning.getHotfix();
@@ -195,7 +201,7 @@ public class WarningViewHandler {
 
 
     @NotNull
-    protected List<P4MessageElement> createMessageElementsFor(@NotNull Collection<WarningMessage> warnings) {
+    private List<P4MessageElement> createMessageElementsFor(@NotNull Collection<WarningMessage> warnings) {
         VirtualFile root = project.getBaseDir();
         Map<String, GroupingElement> groups = new HashMap<String, GroupingElement>();
         List<P4MessageElement> ret = new ArrayList<P4MessageElement>();

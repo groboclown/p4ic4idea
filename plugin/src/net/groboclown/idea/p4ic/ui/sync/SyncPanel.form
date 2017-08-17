@@ -90,6 +90,7 @@
                 </constraints>
                 <properties>
                   <columns value="10"/>
+                  <editable value="true"/>
                   <enabled value="false"/>
                   <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="sync.options.other.value.tooltip"/>
                 </properties>

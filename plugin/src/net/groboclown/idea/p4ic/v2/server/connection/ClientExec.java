@@ -202,7 +202,13 @@ public class ClientExec {
         if (project == null) {
             return File.createTempFile("p4tempfile", "y");
         }
-        return P4Vcs.getInstance(project).getTempDir();
+        File tmpDir = P4Vcs.getInstance(project).getTempDir();
+        if (! tmpDir.exists()) {
+            if (! tmpDir.mkdirs()) {
+                LOG.info("Problem creating directory " + tmpDir);
+            }
+        }
+        return tmpDir;
     }
 
 

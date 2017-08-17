@@ -1999,8 +1999,11 @@ public class ClientSystemFileCommands {
 		if (outStream == null) {
 			if (cmdEnv.isStreamCmd() || cmdEnv.getProtocolSpecs().isEnableTracking()) {
 				try {
+					// p4ic4idea: this could, in some cases, return null.  That
+					// would end up causing the RpcPerforceFile creation to throw
+					// an exception which would end up swallowing the root cause.
 					String tmpFileName = RpcPerforceFile
-							.createTempFileName(RpcPropertyDefs.getProperty(
+							.createNotNullTempFileName(RpcPropertyDefs.getProperty(
 									this.server.getProperties(),
 									PropertyDefs.P4JAVA_TMP_DIR_KEY,
 									System.getProperty("java.io.tmpdir")));

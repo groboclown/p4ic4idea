@@ -68,6 +68,7 @@ public class P4ServerManager implements ProjectComponent {
 
     private volatile boolean hasServers = false;
     private volatile boolean connectionsValid = true;
+    private volatile boolean serversInitializing = false;
 
 
     @NotNull
@@ -406,46 +407,54 @@ public class P4ServerManager implements ProjectComponent {
 
 
     private void initializeServers() {
-        P4ProjectConfigComponent cp = P4ProjectConfigComponent.getInstance(project);
-        final P4ProjectConfig sources = cp.getP4ProjectConfig();
-        if (sources.hasConfigErrors()) {
-            LOG.info("source load has errors: " + sources.getConfigProblems());
+        if (serversInitializing) {
+            return;
+        }
+        serversInitializing = true;
+        try {
+            P4ProjectConfigComponent cp = P4ProjectConfigComponent.getInstance(project);
+            final P4ProjectConfig sources = cp.getP4ProjectConfig();
+            if (sources.hasConfigErrors()) {
+                LOG.info("source load has errors: " + sources.getConfigProblems());
+                serverLock.lock();
+                try {
+                    servers.clear();
+                } finally {
+                    serverLock.unlock();
+                }
+                return;
+            }
+
+            // If this was inside the lock, it could cause a deadlock if waiting on
+            // IDE master password
+            Map<ClientServerRef, P4Server> newServers = new HashMap<ClientServerRef, P4Server>();
+            for (ClientConfig config : sources.getClientConfigs()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Adding server " + config.getServerConfig().getServerName().getDisplayName());
+                }
+                try {
+                    final P4Server server = new P4Server(project, config);
+                    newServers.put(server.getClientServerId(), server);
+                } catch (P4InvalidClientException e) {
+                    alertManager.addWarning(project,
+                            P4Bundle.message("errors.no-client.source", config),
+                            P4Bundle.message("errors.no-client.source", config),
+                            e, new FilePath[0]);
+                }
+            }
             serverLock.lock();
             try {
                 servers.clear();
+                servers.putAll(newServers);
             } finally {
                 serverLock.unlock();
             }
-            return;
-        }
 
-        // If this was inside the lock, it could cause a deadlock if waiting on
-        // IDE master password
-        Map<ClientServerRef, P4Server> newServers = new HashMap<ClientServerRef, P4Server>();
-        for (ClientConfig config: sources.getClientConfigs()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Adding server " + config.getServerConfig().getServerName().getDisplayName());
-            }
-            try {
-                final P4Server server = new P4Server(project, config);
-                newServers.put(server.getClientServerId(), server);
-            } catch (P4InvalidClientException e) {
-                alertManager.addWarning(project,
-                        P4Bundle.message("errors.no-client.source", config),
-                        P4Bundle.message("errors.no-client.source", config),
-                        e, new FilePath[0]);
-            }
-        }
-        serverLock.lock();
-        try {
-            servers.clear();
-            servers.putAll(newServers);
+            // Send the announcement that the configs are updated.
+            cp.announceBaseConfigUpdated();
         } finally {
-            serverLock.unlock();
+            serversInitializing = false;
         }
-
-        // Send the announcement that the configs are updated.
-        cp.announceBaseConfigUpdated();
     }
 
 

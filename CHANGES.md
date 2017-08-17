@@ -10,12 +10,24 @@
 
 ### Details
 
+* Started on the Create Swarm Review dialog.
+    * By right clicking on a changelist, you can select to create a swarm review,
+      if the plugin detected a swarm server (by looking at the result of
+      `p4 property -l -n P4.Swarm.URL`).  Development is still in the early phases.
 * Bug Fixes.
     * Improved detection of changelist membership in a Perforce server.  It was missing the
       default changelist.
     * Fixed bug where files couldn't be moved to the default changelist from a numbered changelist.
       This had to do with the new changelist being called "default", and instead the command was silently
       failing with "unknown changelist 0".
+    * Some error messages were stripping a backslash when being displayed.
+    * Reduced some cases where a low-level exception would be thrown when synchronizing files
+      from the server.
+    * Fixed a NullPointerException that could happen when trying to connect to a swarm server.
+    * Fixed a date parse error that could happen while fetching the client workspace.
+    * Fixed a IllegalStateException that could happen when trying to show a docked
+      component to the version control window. (#158)
+    * Fixed a recursion error on Android Studio. (#157)
 
 
 ## ::v0.9.4::
@@ -34,6 +46,7 @@
     * Fixed issue with stored Perforce server configuration causing the project
       list to not load correctly.  This only affected projects that were opened
       with an existing Perforce connection. (#155) 
+
 
 ## ::v0.9.3::
 

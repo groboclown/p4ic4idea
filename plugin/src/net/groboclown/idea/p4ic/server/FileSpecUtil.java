@@ -25,7 +25,6 @@ import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
 import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
-import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -78,13 +77,7 @@ public class FileSpecUtil {
             throw new P4FileException(P4Bundle.message("error.filespec.directory"), file);
         }
 
-        final String specPath;
-
-        if (FilePathUtil.isShelved(file)) {
-            specPath = file.getName();
-        } else {
-            specPath = file.getIOFile().getAbsolutePath();
-        }
+        final String specPath = file.getIOFile().getAbsolutePath();
 
         // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
         // use this instead: getIOFile().getAbsolutePath()
@@ -127,11 +120,11 @@ public class FileSpecUtil {
     /**
      * Must return the files in the same order in which they are passed in.
      *
-     * @param files
-     * @param revisionPart
-     * @param allowDirectories
-     * @return
-     * @throws P4Exception
+     * @param files files to convert
+     * @param revisionPart part to add (if any)
+     * @param allowDirectories allow directory paths (which will be appended with ...)
+     * @return specs
+     * @throws P4Exception if there was an invalid file path
      */
     @NotNull
     public static List<IFileSpec> getFromFilePathsAt(Collection<? extends FilePath> files,
@@ -144,12 +137,7 @@ public class FileSpecUtil {
         for (FilePath fp : files) {
             // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
             // use this instead: getIOFile().getAbsolutePath()
-            String path;
-            if (FilePathUtil.isShelved(fp)) {
-                path = escapeToP4Path(fp.getName());
-            } else {
-                path = escapeToP4Path(fp.getIOFile().getAbsolutePath());
-            }
+            String path = escapeToP4Path(fp.getIOFile().getAbsolutePath());
             if (fp.isDirectory()) {
                 if (allowDirectories) {
                     if (!path.endsWith("/") && !path.endsWith("\\") &&
@@ -269,8 +257,8 @@ public class FileSpecUtil {
      * Use only when dealing with the depot paths returned directly from the server,
      * where you KNOW that the value returned is already escaped.
      *
-     * @param depotPath
-     * @return
+     * @param depotPath the already escaped spec path
+     * @return the spec
      */
     @NotNull
     public static IFileSpec getAlreadyEscapedSpec(@NotNull String depotPath) {

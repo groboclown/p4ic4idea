@@ -16,11 +16,7 @@ package net.groboclown.idea.p4ic.v2.server.cache.state;
 
 import com.intellij.openapi.vcs.FileStatus;
 import com.perforce.p4java.core.file.FileAction;
-import com.perforce.p4java.core.file.IExtendedFileSpec;
-import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.FileSpecUtil;
-import net.groboclown.idea.p4ic.v2.server.util.ShelvedFilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,23 +32,6 @@ public class P4ShelvedFile {
     // but shelved files are special; you can have multiple shelved versions of
     // the same file path in different changelists.
     private final int changeListId;
-
-    @Nullable
-    public static ShelvedFilePath createShelvedFile(@Nullable IExtendedFileSpec spec) {
-        if (spec == null || ! spec.isShelved()) {
-            return null;
-        }
-        IFileSpec stripped = FileSpecUtil.stripAnnotations(spec);
-        if (stripped.getDepotPath() == null || stripped.getClientPath() == null) {
-            return null;
-        }
-        P4ShelvedFile shelvedFile = new P4ShelvedFile(
-                stripped.getDepotPathString(),
-                spec.getClientPathString(),
-                P4ShelvedFile.getShelvedFileStatusFor(spec.getOpenAction()),
-                spec.getOpenChangelistId());
-        return new ShelvedFilePath(shelvedFile);
-    }
 
     P4ShelvedFile(@NotNull String depotPath, @NotNull String localPath, @NotNull FileStatus status,
             int changeListId) {

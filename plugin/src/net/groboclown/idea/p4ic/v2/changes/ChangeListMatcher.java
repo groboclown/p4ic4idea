@@ -16,20 +16,29 @@ package net.groboclown.idea.p4ic.v2.changes;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.vcs.changes.*;
+import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vcs.changes.ChangeListManagerGate;
+import com.intellij.openapi.vcs.changes.ContentRevision;
+import com.intellij.openapi.vcs.changes.CurrentContentRevision;
+import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
 import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
-import net.groboclown.idea.p4ic.v2.server.cache.state.P4ShelvedFile;
 import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,12 +56,6 @@ class ChangeListMatcher {
     ChangeListMatcher(@NotNull final P4Vcs vcs, @NotNull AlertManager alerts) {
         this.project = vcs.getProject();
         this.changeListMapping = P4ChangeListMapping.getInstance(project);
-    }
-
-
-    ChangeListMatcher(@NotNull final Project project, @NotNull P4ChangeListMapping mapping) {
-        this.project = project;
-        this.changeListMapping = mapping;
     }
 
 
@@ -119,23 +122,6 @@ class ChangeListMatcher {
                 afterRev = new CurrentContentRevision(file.getFile());
         }
         return new Change(beforeRev, afterRev, file.getClientFileStatus());
-    }
-
-    @NotNull
-    Change createChange(@NotNull ClientServerRef clientServerRef, @NotNull P4ShelvedFile shelvedFile) {
-        final ContentRevision rev = new P4ShelvedContentRevision(project, clientServerRef, shelvedFile);
-        if (shelvedFile.isAdded()) {
-            return new ShelveChange(null, rev, shelvedFile.getStatus());
-        }
-        if (shelvedFile.isDeleted()) {
-            return new ShelveChange(rev, null, shelvedFile.getStatus());
-        }
-        if (shelvedFile.isEdited()) {
-            // TODO understand this better.  We need to somehow construct the
-            // before revision right.
-            return new ShelveChange(null, rev, shelvedFile.getStatus());
-        }
-        return new ShelveChange(null, rev, shelvedFile.getStatus());
     }
 
     @NotNull

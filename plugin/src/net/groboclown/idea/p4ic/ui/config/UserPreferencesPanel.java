@@ -44,7 +44,6 @@ public class UserPreferencesPanel {
     private JCheckBox myConcatenateChangelistNameComment;
     private JSpinner mySocketSoTimeoutSpinner;
     private JCheckBox myShowMessageDialog;
-    private JCheckBox myShowShelvedFiles;
     private ButtonGroup myPreferRevisionGroup;
 
 
@@ -91,7 +90,6 @@ public class UserPreferencesPanel {
         myReconnectWithEachRequest.setSelected(userPrefs.getReconnectWithEachRequest());
         myConcatenateChangelistNameComment.setSelected(userPrefs.getConcatenateChangelistNameComment());
         myShowMessageDialog.setSelected(userPrefs.getShowDialogConnectionMessages());
-        myShowShelvedFiles.setSelected(userPrefs.getShowShelvedFiles());
         LOG.debug("Finished loading settings into the UI");
     }
 
@@ -106,7 +104,6 @@ public class UserPreferencesPanel {
         userPrefs.setReconnectWithEachRequest(getReconnectWithEachRequest());
         userPrefs.setConcatenateChangelistNameComment(getConcatenateChangelistNameComment());
         userPrefs.setShowDialogConnectionMessages(getShowMessageDialog());
-        userPrefs.setShowShelvedFiles(getShowShelvedFiles());
     }
 
 
@@ -120,8 +117,7 @@ public class UserPreferencesPanel {
                         getMaxAuthenticationRetries() != preferences.getMaxAuthenticationRetries() ||
                         getReconnectWithEachRequest() != preferences.getReconnectWithEachRequest() ||
                         getConcatenateChangelistNameComment() != preferences.getConcatenateChangelistNameComment() ||
-                        getShowMessageDialog() != preferences.getShowDialogConnectionMessages() ||
-                        getShowShelvedFiles() != preferences.getShowShelvedFiles();
+                        getShowMessageDialog() != preferences.getShowDialogConnectionMessages();
     }
 
 
@@ -161,10 +157,6 @@ public class UserPreferencesPanel {
 
     private boolean getShowMessageDialog() {
         return myShowMessageDialog.isSelected();
-    }
-
-    private boolean getShowShelvedFiles() {
-        return myShowShelvedFiles.isSelected();
     }
 
     private void createUIComponents() {
@@ -291,7 +283,7 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(6, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
         myRootPanel.add(panel1,
                 new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
@@ -342,15 +334,6 @@ public class UserPreferencesPanel {
                 .getString("user.prefs.message-dialog.tooltip"));
         panel1.add(myShowMessageDialog,
                 new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
-        myShowShelvedFiles = new JCheckBox();
-        this.$$$loadButtonText$$$(myShowShelvedFiles,
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user-prefs.show-shelved"));
-        myShowShelvedFiles.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("user-prefs.show-shelved.tooltip"));
-        panel1.add(myShowShelvedFiles,
-                new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         final JPanel panel2 = new JPanel();

@@ -44,10 +44,6 @@ public final class FilePathUtil {
         // utility class
     }
 
-    public static boolean isShelved(@Nullable FilePath path) {
-        return path != null && path instanceof ShelvedFilePath;
-    }
-
     @Nullable
     public static FilePath getFilePath(@Nullable String path) {
         if (path == null) {
@@ -60,12 +56,6 @@ public final class FilePathUtil {
     public static FilePath getFilePath(@Nullable IFileSpec spec) {
         if (spec == null) {
             return null;
-        }
-        if (spec instanceof IExtendedFileSpec) {
-            ShelvedFilePath shelved = P4ShelvedFile.createShelvedFile((IExtendedFileSpec) spec);
-            if (shelved != null) {
-                return shelved;
-            }
         }
         if (spec.getClientPathString() != null) {
             return FilePathUtil.getFilePath(spec.getClientPathString());

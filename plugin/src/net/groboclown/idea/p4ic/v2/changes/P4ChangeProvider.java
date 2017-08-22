@@ -243,18 +243,6 @@ public class P4ChangeProvider implements ChangeProvider {
                         " no longer exists; it was either submitted or deleted on the server");
             }
         }
-
-        progress.setFraction(0.80);
-        if (UserProjectPreferences.getShowShelvedFiles(project)) {
-            LOG.debug("Starting shelved file population");
-            LOG.debug("Processing " + changeListMappings.size() + " Perforce servers");
-            for (Entry<P4Server, Map<P4ChangeListValue, LocalChangeList>> serverEntry : changeListMappings.entrySet()) {
-                LOG.debug("Processing " + serverEntry.getValue().size() + " change lists");
-                for (Entry<P4ChangeListValue, LocalChangeList> listEntry : serverEntry.getValue().entrySet()) {
-                    updateShelvedFiles(listEntry.getValue(), listEntry.getKey(), builder);
-                }
-            }
-        }
         LOG.debug("Completed change provider update");
 
         progress.setFraction(1.0);
@@ -285,25 +273,6 @@ public class P4ChangeProvider implements ChangeProvider {
                 P4Vcs.getKey());
         if (LOG.isDebugEnabled()) {
             LOG.debug("Completed put for " + action.getFile());
-        }
-    }
-
-
-    private void updateShelvedFiles(@NotNull LocalChangeList localChangeList,
-            @NotNull P4ChangeListValue p4Changelist, @NotNull ChangelistBuilder builder) {
-        LOG.debug("Processing shelved files for changelist " + p4Changelist.getChangeListId());
-        for (P4ShelvedFile shelvedFile : p4Changelist.getShelved()) {
-            LOG.debug("Processing shelved file " + shelvedFile.getDepotPath());
-            final Change change = changeListMatcher.createChange(p4Changelist.getClientServerRef(), shelvedFile);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(" --- Put shelved file " + shelvedFile.getDepotPath() + " into " + localChangeList +
-                    " as " + shelvedFile.getStatus());
-            }
-
-            builder.processChangeInList(change, localChangeList, P4Vcs.getKey());
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Completed put for " + shelvedFile.getDepotPath());
-            }
         }
     }
 

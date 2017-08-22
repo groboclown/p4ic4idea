@@ -122,6 +122,10 @@ public class Review {
      */
     public Review(JsonObject json)
             throws ResponseFormatException {
+        // The review object can be embedded in the object.
+        if (json.has("review")) {
+            json = json.getAsJsonObject("review");
+        }
         this.id = JsonUtil.getIntKey(json, "id");
         this.author = JsonUtil.getNullableStringKey(json, "author");
         this.changelists = JsonUtil.getNullableIntArrayKey(json, "changes");

@@ -105,7 +105,24 @@ public class VcsDockedComponent implements Disposable, ProjectComponent {
     }
 
 
-    public void addVcsTab(@NotNull @NonNls String title,
+    public void removeFromVcsTab(@NotNull @NonNls String title) {
+        final ToolWindow toolW = getToolWindow();
+        if (toolW == null) {
+            // cannot do anything
+            return;
+        }
+        final ContentManager contentManager = getToolWindow().getContentManager();
+        final Content existingContent = contentManager.findContent(title);
+        if (existingContent != null) {
+            if (!existingContent.isPinned()) {
+                contentManager.removeContent(existingContent, true);
+                existingContent.release();
+            }
+        }
+    }
+
+
+    public boolean addVcsTab(@NotNull @NonNls String title,
             @NotNull JComponent component,
             boolean showTab,
             boolean replaceExistingComponent) {
@@ -115,14 +132,14 @@ public class VcsDockedComponent implements Disposable, ProjectComponent {
         final ToolWindow toolW = getToolWindow();
         if (toolW == null) {
             // cannot do anything
-            return;
+            return false;
         }
         final ContentManager contentManager = getToolWindow().getContentManager();
         final Content existingContent = contentManager.findContent(title);
         if (existingContent != null) {
             if (!replaceExistingComponent) {
                 contentManager.setSelectedContent(existingContent);
-                return;
+                return true;
             }
             else if (!existingContent.isPinned()) {
                 contentManager.removeContent(existingContent, true);
@@ -136,16 +153,6 @@ public class VcsDockedComponent implements Disposable, ProjectComponent {
             getToolWindow().activate(null, false);
         }
 
-        /*
-        final CvsTabbedWindowComponent newComponent =
-                new CvsTabbedWindowComponent(component, addDefaultToolbar, toolbarActions, contentManager, helpId);
-        final Content content = contentManager.getFactory().createContent(newComponent.getShownComponent(), title,
-                false);
-        newComponent.setContent(content);
-        contentManager.addContent(content);
-        if (showTab) {
-            getToolWindow().activate(null, false);
-        }
-        */
+        return true;
     }
 }

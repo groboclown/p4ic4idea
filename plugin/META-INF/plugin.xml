@@ -1,13 +1,18 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.9.5</version>
+    <version>0.9.6</version>
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
-       <ol>
+       <ul>
+         <li><em>0.9.4</em>
+           <ul>
+               <li>???</li>
+           </ul>
+         </li>
          <li><em>0.9.5</em>
-           <ol>
+           <ul>
              <li>Started on the Create Swarm Review dialog.
              By right clicking on a changelist, you can select to create a swarm review,
              if the plugin detected a swarm server (by looking at the result of
@@ -25,19 +30,9 @@
              <li>Fixed a IllegalStateException that could happen when trying to show a docked
              component to the version control window.</li>
              <li>Fixed a recursion error on Android Studio.</li>
-           </ol>
+           </ul>
          </li>
-         <li><em>0.9.4</em>
-           <ol>
-               <li>Able to show changelist details from the file history view.
-               Right-click on the history entry and select <i>Describe Changelist</i>, or
-               click the info icon on the history window toolbar.
-               <li>Fixed issue with stored Perforce server configuration causing the project
-               list to not load correctly.  This only affected projects that were opened
-               with an existing Perforce connection.</li>
-           </ol>
-         </li>
-       </ol>
+       </ul>
     ]]></change-notes>
     <description><![CDATA[
       <a href="https://github.com/groboclown/p4ic4idea">[ Github ]</a> | <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue">[ Open Issues ]</a>
@@ -261,6 +256,9 @@
         <component>
             <implementation-class>net.groboclown.idea.p4ic.ui.VcsDockedComponent</implementation-class>
             <interface-class>net.groboclown.idea.p4ic.ui.VcsDockedComponent</interface-class>
+        </component>
+        <component>
+            <implementation-class>net.groboclown.idea.p4ic.ui.pending.PendingChangesView</implementation-class>
         </component>
     </project-components>
 

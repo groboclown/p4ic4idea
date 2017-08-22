@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.p4ic.v2.server.cache;
 
+import com.intellij.openapi.vcs.changes.Change;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.impl.generic.core.ChangelistSummary;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;

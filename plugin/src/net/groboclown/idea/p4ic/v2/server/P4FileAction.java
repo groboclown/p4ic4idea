@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
  * The front-end view of an action on a file object.  This is a copy of the local
  * cached version.
  */
-public class P4FileAction {
+public class P4FileAction implements Comparable<P4FileAction> {
     private final P4FileUpdateState local;
     private final UpdateAction action;
 
@@ -118,9 +118,75 @@ public class P4FileAction {
         }
     }
 
+    @Nullable
+    public String getPath() {
+        String depotPath = getDepotPath();
+        if (depotPath != null) {
+            return depotPath;
+        }
+        FilePath fp = getFile();
+        if (fp != null) {
+            return fp.getPath();
+        }
+        return null;
+    }
+
+    @Nullable
+    public String getName() {
+        String depotPath = getDepotPath();
+        if (depotPath != null) {
+            int p = depotPath.lastIndexOf('/');
+            if (p >= 0) {
+                return depotPath.substring(p + 1);
+            }
+            return depotPath;
+        }
+        FilePath fp = getFile();
+        if (fp != null) {
+            return fp.getName();
+        }
+        return null;
+    }
+
+    @Nullable
+    public String getParentPath() {
+        String depotPath = getDepotPath();
+        if (depotPath != null) {
+            int p = depotPath.lastIndexOf('/');
+            if (p >= 0) {
+                return depotPath.substring(p);
+            }
+            return null;
+        }
+        FilePath fp = getFile();
+        if (fp != null && fp.getParentPath() != null) {
+            return fp.getParentPath().getPath();
+        }
+        return null;
+    }
+
 
     @Override
     public String toString() {
         return local + "->" + action;
+    }
+
+    @Override
+    public int compareTo(@NotNull P4FileAction o) {
+        String n1 = getName();
+        String n2 = o.getName();
+
+        // We want to handle null case here and easy cases.
+        //noinspection StringEquality
+        if (n1 == n2) {
+            return 0;
+        }
+        if (n1 == null) {
+            return -1;
+        }
+        if (n2 == null) {
+            return 1;
+        }
+        return n1.compareTo(n2);
     }
 }

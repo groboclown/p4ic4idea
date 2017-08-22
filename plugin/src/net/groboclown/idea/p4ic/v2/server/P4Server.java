@@ -1007,7 +1007,7 @@ public class P4Server {
         private final MessageResult<List<IFileSpec>> shelvedFiles;
         private final boolean failed;
 
-        public ShelveFileResult(P4ChangeListId shelvedChangelist,
+        ShelveFileResult(P4ChangeListId shelvedChangelist,
                 MessageResult<List<IFileSpec>> shelvedFiles, boolean failed) {
             LOG.info("Shelved " + (shelvedChangelist == null ? null : shelvedChangelist.getChangeListId()) + ": " +
                     shelvedFiles);
@@ -1033,16 +1033,37 @@ public class P4Server {
      * Shelves the files in the changelist.  If the changelist is the default changelist, then a
      * new changelist is created with the given description, and the files are shelved in that one.
      *
-     * @param changeList
-     * @param newChangelistNameIfNeeded
-     * @return
-     * @throws P4DisconnectedException
-     * @throws InterruptedException
+     * @param changeList changelist to shelve
+     * @param newChangelistNameIfNeeded description if the changelist is the default changelist.
+     * @return results
+     * @throws P4DisconnectedException if the server is disconnected
+     * @throws InterruptedException if the action is interrupted
      */
     @NotNull
     public ShelveFileResult shelveFilesInChangelistForOnline(
             @NotNull final P4ChangeListId changeList,
             @NotNull final String newChangelistNameIfNeeded)
+            throws P4DisconnectedException, InterruptedException {
+        return shelveFilesInChangelistForOnline(changeList, newChangelistNameIfNeeded, null);
+    }
+
+
+    /**
+     * Shelves the files in the changelist.  If the changelist is the default changelist, then a
+     * new changelist is created with the given description, and the files are shelved in that one.
+     *
+     * @param changeList changelist to shelve
+     * @param newChangelistNameIfNeeded description if the changelist is the default changelist.
+     * @param files files to shelve; null for all the files in the changelist.
+     * @return results
+     * @throws P4DisconnectedException if the server is disconnected
+     * @throws InterruptedException if the action is interrupted
+     */
+    @NotNull
+    public ShelveFileResult shelveFilesInChangelistForOnline(
+            @NotNull final P4ChangeListId changeList,
+            @NotNull final String newChangelistNameIfNeeded,
+            @Nullable final List<FilePath> files)
             throws P4DisconnectedException, InterruptedException {
         validateOnline();
         ShelveFileResult ret =
@@ -1055,23 +1076,31 @@ public class P4Server {
                             @NotNull AlertManager alerts)
                             throws InterruptedException {
                         try {
+                            List<IFileSpec> fileSpecs = null;
+                            if (files != null) {
+                                fileSpecs = FileSpecUtil.getFromFilePaths(files);
+                            }
                             // TODO this might need to run through the changelist cache instead.
                             int changelistId = changeList.getChangeListId();
                             if (changeList.isDefaultChangelist()) {
                                 LOG.info("Creating changelist for shelve, because invoked with default changelist");
-                                List<Pair<IExtendedFileSpec, IExtendedFileSpec>> files =
-                                        exec.getFileStatusForChangelist(IChangelist.DEFAULT, true);
-                                if (LOG.isDebugEnabled()) {
-                                    LOG.debug("Files in default changelist: " + files);
-                                }
                                 List<IFileSpec> filesToReopen = new ArrayList<IFileSpec>();
-                                for (Pair<IExtendedFileSpec, IExtendedFileSpec> file : files) {
-                                    if (file.first != null) {
-                                        filesToReopen.add(file.first);
+                                if (files == null) {
+                                    List<Pair<IExtendedFileSpec, IExtendedFileSpec>> openedFiles =
+                                            exec.getFileStatusForChangelist(IChangelist.DEFAULT, true);
+                                    if (LOG.isDebugEnabled()) {
+                                        LOG.debug("Files in default changelist: " + openedFiles);
                                     }
-                                    if (file.second != null) {
-                                        filesToReopen.add(file.second);
+                                    for (Pair<IExtendedFileSpec, IExtendedFileSpec> file : openedFiles) {
+                                        if (file.first != null) {
+                                            filesToReopen.add(file.first);
+                                        }
+                                        if (file.second != null) {
+                                            filesToReopen.add(file.second);
+                                        }
                                     }
+                                } else {
+                                    filesToReopen = fileSpecs;
                                 }
                                 IChangelist newChange = exec.createChangeList(newChangelistNameIfNeeded);
                                 changelistId = newChange.getId();
@@ -1080,7 +1109,7 @@ public class P4Server {
                             }
                             return new ShelveFileResult(
                                     new P4ChangeListIdImpl(getClientServerId(), changelistId),
-                                    MessageResult.create(exec.shelveFilesForChangelist(changelistId)),
+                                    MessageResult.create(exec.shelveFilesForChangelist(changelistId, fileSpecs)),
                                     false);
                         } catch (VcsException e) {
                             alerts.addWarning(exec.getProject(),

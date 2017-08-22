@@ -133,7 +133,7 @@ public class CentralCacheManager {
      */
     @NotNull
     public ClientCacheManager getClientCacheManager(@NotNull ClientConfig clientConfig,
-            @NotNull  Callable<Boolean> isServerCaseInsensitiveCallable) throws P4InvalidClientException {
+            @NotNull Callable<Boolean> isServerCaseInsensitiveCallable) throws P4InvalidClientException {
         if (disposed) {
             // Coding error; no bundled message
             throw new IllegalStateException("disposed");

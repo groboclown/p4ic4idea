@@ -167,7 +167,7 @@ public class P4ChangeListMapping implements PersistentStateComponent<Element>, P
 
 
     @Nullable
-    LocalChangeList getIdeaChangelistFor(@NotNull P4ChangeListValue p4cl) {
+    public LocalChangeList getIdeaChangelistFor(@NotNull P4ChangeListValue p4cl) {
         ChangeListManager clm = ChangeListManager.getInstance(project);
         int changeListId = p4cl.getChangeListId();
         if (changeListId <= P4ChangeListId.P4_DEFAULT) {

@@ -25,6 +25,7 @@ import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.VcsExceptionUtil;
 import net.groboclown.idea.p4ic.server.exceptions.HandledVcsException;
+import net.groboclown.idea.p4ic.server.exceptions.P4LoginException;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import net.groboclown.idea.p4ic.v2.ui.warning.WarningMessage;
 import net.groboclown.idea.p4ic.v2.ui.warning.WarningUI;
@@ -52,6 +53,8 @@ public class AlertManager implements ApplicationComponent {
 
     private static final long POLL_TIMEOUT = 10;
     private static final TimeUnit POLL_TIMEOUT_UNIT = TimeUnit.SECONDS;
+
+    private static final long LOGIN_ALLOW_TIMEOUT_MS = 5000L;
 
     private static ThrowableHandled throwableHandled = new ThrowableHandled();
 
@@ -426,6 +429,7 @@ public class AlertManager implements ApplicationComponent {
         // scope (the stacks have finished dealing with it), it will be removed
         // from the list.
         private final List<WeakReference<Throwable>> refs = new ArrayList<WeakReference<Throwable>>();
+        private volatile long lastLoginFailureAttempt = 0;
         private final Lock lock = new ReentrantLock();
 
         /**
@@ -436,6 +440,13 @@ public class AlertManager implements ApplicationComponent {
         boolean isHandled(@NotNull Throwable t) {
             if (t instanceof HandledVcsException) {
                 return true;
+            }
+
+            if (t instanceof P4LoginException) {
+                long now = System.currentTimeMillis();
+                long diff = now - lastLoginFailureAttempt;
+                lastLoginFailureAttempt = now;
+                return diff <= LOGIN_ALLOW_TIMEOUT_MS;
             }
 
             Set<Throwable> causes = new HashSet<Throwable>();

@@ -13,7 +13,6 @@
  */
 package net.groboclown.idea.p4ic.v2.history;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
@@ -27,7 +26,11 @@ import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
-import net.groboclown.idea.p4ic.server.exceptions.*;
+import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
+import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
+import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
+import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
+import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
@@ -37,16 +40,15 @@ import java.util.List;
 import java.util.Map;
 
 public class P4AnnotationProvider implements AnnotationProvider {
-    private static final Logger LOG = Logger.getInstance(P4AnnotationProvider.class);
-
     private final P4Vcs vcs;
 
     public P4AnnotationProvider(@NotNull P4Vcs vcs) {
         this.vcs = vcs;
     }
 
+    @NotNull
     @Override
-    public FileAnnotation annotate(VirtualFile file) throws VcsException {
+    public FileAnnotation annotate(@NotNull VirtualFile file) throws VcsException {
         // Use the "have" revision, not the "head" revision
         try {
             final P4Server server = vcs.getP4ServerFor(file);
@@ -78,8 +80,9 @@ public class P4AnnotationProvider implements AnnotationProvider {
         }
     }
 
+    @NotNull
     @Override
-    public FileAnnotation annotate(VirtualFile file, VcsFileRevision revision) throws VcsException {
+    public FileAnnotation annotate(@NotNull VirtualFile file, VcsFileRevision revision) throws VcsException {
         FilePath filePath = VcsUtil.getFilePath(file);
         P4Server server;
         try {
@@ -123,7 +126,7 @@ public class P4AnnotationProvider implements AnnotationProvider {
      * @return true if annotation it valid for the given revision.
      */
     @Override
-    public boolean isAnnotationValid(VcsFileRevision rev) {
+    public boolean isAnnotationValid(@NotNull VcsFileRevision rev) {
         if (!(rev instanceof P4FileRevision)) {
             return false;
         }

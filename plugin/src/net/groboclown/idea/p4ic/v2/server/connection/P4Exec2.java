@@ -1124,14 +1124,15 @@ public class P4Exec2 {
 
 
     @NotNull
-    public List<IFileSpec> shelveFilesForChangelist(final int changeListId) throws VcsException, CancellationException {
+    public List<IFileSpec> shelveFilesForChangelist(final int changeListId,
+            @Nullable final List<IFileSpec> files) throws VcsException, CancellationException {
         return exec.runWithClient(project, new WithClient<List<IFileSpec>>() {
             @Override
             public List<IFileSpec> run(@NotNull IOptionsServer server, @NotNull IClient client, @NotNull ServerCount count)
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
                     P4Exception {
                 ShelveFilesOptions options = new ShelveFilesOptions(false, true, false);
-                return client.shelveFiles(null, changeListId, options);
+                return client.shelveFiles(files, changeListId, options);
             }
         });
     }

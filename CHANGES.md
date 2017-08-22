@@ -1,6 +1,22 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.9.6::
+
+### Overview
+
+* Implemented "Shelve files to Server" action.
+* Bug fixes.
+
+### Details
+
+* Implemented "Shelve files to Server" action.
+    * Performs the Perforce "shelve" command to archive files to the server.
+* Bug fixes.
+    * Cleaned up some error messages from the Perforce server (removes the
+      `%'` and `'%` markings).
+
+
 ## ::v0.9.5::
 
 ### Overview

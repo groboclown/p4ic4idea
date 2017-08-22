@@ -15,7 +15,6 @@
 package net.groboclown.idea.p4ic.ui.pending;
 
 import com.intellij.icons.AllIcons;
-import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -40,7 +39,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
 import java.util.Collections;
 import java.util.List;
@@ -51,6 +49,8 @@ public class PendingChangesView
 
     private final Project project;
 
+    private JComponent view;
+
     private volatile boolean createdTab = false;
 
     public PendingChangesView(Project project) {
@@ -58,67 +58,55 @@ public class PendingChangesView
         LOG.debug("Created pending view component");
     }
 
+
+    @Override
+    public void initComponent() {
+        // do nothing; wait for the project to be opened.
+        LOG.debug("initializing");
+    }
+
+    public void projectOpened() {
+        LOG.debug("adding pending changes tab");
+        createTab();
+    }
+
     private JComponent createView() {
+        if (view != null) {
+            return view;
+        }
+
         final PendingChangesTreeList changeTree = new PendingChangesTreeList(project,
                 false, null);
         final ChangeTreeButton[] buttons = createActionButtons(changeTree);
-        JPanel root = new JPanel(new BorderLayout()) {
-            public void addNotify() {
-                super.addNotify();
-                updateButtons(changeTree, buttons);
-            }
-        };
-        // Initialize the buttons
-        updateButtons(changeTree, buttons);
+        for (ChangeTreeButton button : buttons) {
+            button.setContextComponent(changeTree);
+        }
 
         JScrollPane scrollPane = ScrollPaneFactory.createScrollPane(changeTree);
-        root.add(scrollPane, BorderLayout.CENTER);
 
         boolean decorateButtons = UIUtil.isUnderAquaLookAndFeel() && BorderLayout.SOUTH.equals(getToolbarPlacement());
         ActionManagerEx mgr = (ActionManagerEx) ActionManager.getInstance();
-        ActionToolbar toolbar = mgr.createActionToolbar("ToolbarDecorator",
+        final ActionToolbar toolbar = mgr.createActionToolbar("ToolbarDecorator",
                 new DefaultActionGroup(buttons),
                 isToolbarVertical(),
                 decorateButtons);
-        toolbar.getComponent().setBorder((Border) null);
+        toolbar.getComponent().setBorder(null);
+
+        JPanel root = new JPanel(new BorderLayout()) {
+            public void addNotify() {
+                super.addNotify();
+                updateButtons(changeTree, toolbar, buttons);
+            }
+        };
+        // Initialize the buttons
+        updateButtons(changeTree, toolbar, buttons);
+
+        root.add(scrollPane, BorderLayout.CENTER);
         root.add(toolbar.getComponent(), getToolbarPlacement());
 
+        view = root;
         return root;
     }
-
-    /*
-    private JComponent createView() {
-        final SpinnerChangeTreeButton spinner = new SpinnerChangeTreeButton();
-        final PendingChangesTreeList changeTree = new PendingChangesTreeList(project,
-                false, null);
-        final ChangeTreeButton[] buttons = createActionButtons(spinner, changeTree);
-        JPanel root = new JPanel(new BorderLayout()) {
-            public void addNotify() {
-                super.addNotify();
-                updateButtons(changeTree, buttons);
-            }
-        };
-        // Initialize the buttons
-        updateButtons(changeTree, buttons);
-
-        JScrollPane scrollPane = ScrollPaneFactory.createScrollPane(changeTree);
-        root.add(scrollPane, BorderLayout.CENTER);
-
-        JPanel buttonPanel = new JPanel(new BorderLayout());
-        boolean decorateButtons = UIUtil.isUnderAquaLookAndFeel() && BorderLayout.SOUTH.equals(getToolbarPlacement());
-        ActionManagerEx mgr = (ActionManagerEx) ActionManager.getInstance();
-        ActionToolbar toolbar = mgr.createActionToolbar("ToolbarDecorator",
-                new DefaultActionGroup(buttons),
-                isToolbarVertical(),
-                decorateButtons);
-        toolbar.getComponent().setBorder((Border) null);
-        buttonPanel.add(spinner.icon, spinner.getPosition(getToolbarPlacement()));
-        buttonPanel.add(toolbar.getComponent(), BorderLayout.CENTER);
-        root.add(buttonPanel, getToolbarPlacement());
-
-        return root;
-    }
-    */
 
     @NotNull
     private ChangeTreeButton[] createActionButtons(@NotNull final PendingChangesTreeList changeTree) {
@@ -185,19 +173,6 @@ public class PendingChangesView
         return ! (BorderLayout.WEST.equals(getToolbarPlacement()) || BorderLayout.EAST.equals(getToolbarPlacement()));
     }
 
-
-
-    @Override
-    public void initComponent() {
-        // do nothing; wait for the project to be opened.
-        LOG.debug("initializing");
-    }
-
-    public void projectOpened() {
-        LOG.debug("adding pending changes tab");
-        createTab();
-    }
-
     private void createTab() {
         if (! createdTab) {
             ApplicationManager.getApplication().invokeLater(new Runnable() {
@@ -233,11 +208,13 @@ public class PendingChangesView
 
 
 
-    private static void updateButtons(PendingChangesTreeList changeTree, ChangeTreeButton[] buttons) {
+    private static void updateButtons(PendingChangesTreeList changeTree,
+            ActionToolbar toolbar, ChangeTreeButton[] buttons) {
         PendingChangeItemSet items = changeTree.getSelectedItems();
         for (ChangeTreeButton button : buttons) {
             button.updateState(changeTree, items);
         }
+        toolbar.updateActionsImmediately();
     }
 
     private static abstract class ChangeTreeButton extends DumbAwareActionButton {
@@ -345,20 +322,12 @@ public class PendingChangesView
         protected abstract void after(@Nullable T value);
 
 
-
         void updateState(@NotNull PendingChangesTreeList tree, @NotNull PendingChangeItemSet items) {
             this.changeTree = tree;
             // FIXME DEBUG
             setEnabledInModalContext(true);
             setEnabled(true);
             // setEnabled(checkEnabled(items));
-
-            update(new AnActionEvent(null,
-                    DataManager.getInstance().getDataContext(),
-                    name,
-                    getTemplatePresentation(),
-                    ActionManager.getInstance(),
-                    0));
         }
     }
 

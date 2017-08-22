@@ -15,7 +15,9 @@
 package net.groboclown.idea.p4ic.ui.pending;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ui.ChangeListRemoteState;
 import com.intellij.openapi.vcs.changes.ui.ChangesBrowserChangeListNode;
 import com.intellij.openapi.vcs.changes.ui.ChangesBrowserNode;
@@ -32,6 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 class PendingTreeModel extends DefaultTreeModel {
+    private static final Logger LOG = Logger.getInstance(PendingTreeModel.class);
+
+
     private final Project project;
 
     PendingTreeModel(@NotNull Project project) {
@@ -55,13 +60,24 @@ class PendingTreeModel extends DefaultTreeModel {
 
     @NotNull
     private ChangesBrowserChangeListNode createFor(@NotNull PendingChangelist value) {
-        ChangesBrowserChangeListNode ret = new ChangesBrowserChangeListNode(project, value, new ChangeListRemoteState(1));
+        PendingChangelistNode ret = new PendingChangelistNode(project,
+                value, new ChangeListRemoteState(1));
+        // TODO this isn't showing the list of files for some reason.  Are they just not
+        // loaded?
+        for (Change change : value.getChanges()) {
+            ret.add(createChangeNode(change));
+        }
         for (P4FileAction action : value.getNonProjectFiles()) {
             ret.add(createNonProjectNode(action));
         }
         ret.add(createShelvedFilesNode(value));
         ret.add(createJobNodes(value));
         return ret;
+    }
+
+    @NotNull
+    private MutableTreeNode createChangeNode(@NotNull Change change) {
+        return ChangesBrowserNode.create(project, change);
     }
 
     @NotNull
@@ -72,9 +88,10 @@ class PendingTreeModel extends DefaultTreeModel {
     @NotNull
     private MutableTreeNode createJobNodes(@NotNull PendingChangelist value) {
         // TODO allow drag + drop
-        ChangesBrowserNode<String> jobsRoot = new ChangesBrowserStringNode(
+        ChangesBrowserStringNode jobsRoot = new ChangesBrowserStringNode(
                 P4Bundle.getString("changes.browser.jobs.root")
         );
+        jobsRoot.setItemCountLabel("changes.browser.jobs.count");
         jobsRoot.setAttributes(SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
         for (P4JobState job : value.getJobs()) {
             // TODO make full flavored.
@@ -89,9 +106,10 @@ class PendingTreeModel extends DefaultTreeModel {
 
     @NotNull
     private MutableTreeNode createShelvedFilesNode(@NotNull PendingChangelist value) {
-        ChangesBrowserNode<String> shelvedRoot = new ChangesBrowserStringNode(
+        ChangesBrowserStringNode shelvedRoot = new ChangesBrowserStringNode(
                 P4Bundle.getString("changes.browser.shelved.root")
         );
+        shelvedRoot.setItemCountLabel("changes.browser.shelved.count");
         shelvedRoot.setAttributes(SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
         for (P4ShelvedFile shelvedFile : value.getShelvedFiles()) {
             // TODO make full flavored.
@@ -105,5 +123,6 @@ class PendingTreeModel extends DefaultTreeModel {
         }
         return shelvedRoot;
     }
+
 
 }

@@ -27,7 +27,7 @@ public class P4Bundle {
     private static Reference<ResourceBundle> ourBundle;
 
     @NonNls
-    private static final String BUNDLE =
+    public static final String BUNDLE =
             //P4Bundle.class.getName();
             "net.groboclown.idea.p4ic.P4Bundle";
 

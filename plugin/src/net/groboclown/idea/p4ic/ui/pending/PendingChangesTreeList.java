@@ -20,7 +20,6 @@ import com.intellij.openapi.vcs.changes.ui.ChangeNodeDecorator;
 import com.intellij.openapi.vcs.changes.ui.ChangesBrowserNode;
 import com.intellij.openapi.vcs.changes.ui.ChangesTreeList;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.v2.server.cache.P4ChangeListValue;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4ShelvedFile;
 import org.jetbrains.annotations.NotNull;
@@ -68,4 +67,5 @@ public class PendingChangesTreeList
         Object userObject = changesBrowserNode.getUserObject();
         return userObject instanceof PendingChangelist ? (PendingChangelist) userObject : null;
     }
+
 }

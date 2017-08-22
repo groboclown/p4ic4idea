@@ -16,14 +16,20 @@ package net.groboclown.idea.p4ic.ui.pending;
 
 import com.intellij.openapi.vcs.changes.ui.ChangesBrowserNode;
 import com.intellij.openapi.vcs.changes.ui.ChangesBrowserNodeRenderer;
+import net.groboclown.idea.p4ic.P4Bundle;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.PropertyKey;
 
 import javax.swing.*;
+
+import static net.groboclown.idea.p4ic.P4Bundle.BUNDLE;
 
 class ChangesBrowserStringNode extends ChangesBrowserNode<String> {
     private Icon icon;
     private String toolTip;
+    private String itemCountLabel;
 
     ChangesBrowserStringNode(String userObject) {
         super(userObject);
@@ -31,6 +37,10 @@ class ChangesBrowserStringNode extends ChangesBrowserNode<String> {
 
     public void setIcon(@Nullable Icon icon) {
         this.icon = icon;
+    }
+
+    public void setItemCountLabel(@Nullable @Nls @PropertyKey(resourceBundle = BUNDLE) String label) {
+        this.itemCountLabel = label;
     }
 
     @Override
@@ -42,6 +52,16 @@ class ChangesBrowserStringNode extends ChangesBrowserNode<String> {
         if (toolTip != null) {
             renderer.setToolTipText(toolTip);
         }
+    }
+
+
+    @NotNull
+    protected String getCountText() {
+        if (itemCountLabel == null) {
+            return "";
+        }
+        int count = getChildCount() == 0 ? 0 : getLeafCount();
+        return "  " + P4Bundle.message(itemCountLabel, count);
     }
 
     public void setToolTip(String toolTip) {

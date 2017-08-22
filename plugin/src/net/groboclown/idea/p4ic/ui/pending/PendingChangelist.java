@@ -77,10 +77,10 @@ public class PendingChangelist implements ChangeList {
      * @return the pending changelist object.
      */
     @NotNull
-    static PendingChangelist create(@NotNull Project project, @NotNull P4ChangeListValue p4,
+    private static PendingChangelist create(@NotNull Project project, @NotNull P4ChangeListValue p4,
             @NotNull Collection<P4FileAction> allOpenedFiles) {
         List<P4FileAction> files = new ArrayList<P4FileAction>(allOpenedFiles.size());
-        for (P4FileAction file : files) {
+        for (P4FileAction file : allOpenedFiles) {
             if (file.getChangeList() == p4.getChangeListId()) {
                 files.add(file);
             }
@@ -191,5 +191,13 @@ public class PendingChangelist implements ChangeList {
     @NotNull
     public Collection<P4JobState> getJobs() {
         return p4.getJobStates();
+    }
+
+    public ChangeList getLocal() {
+        return local;
+    }
+
+    public P4ChangeListValue getP4ChangeListValue() {
+        return p4;
     }
 }

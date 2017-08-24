@@ -22,6 +22,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.ColumnInfo;
+import com.intellij.vcs.history.VcsHistoryProviderEx;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.compat.HistoryCompat;
 import net.groboclown.idea.p4ic.extension.P4Vcs;
@@ -37,7 +38,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class P4HistoryProvider implements VcsHistoryProvider {
+public class P4HistoryProvider implements VcsHistoryProviderEx {
     private static final Logger LOG = Logger.getInstance(P4HistoryProvider.class);
 
     private final Project project;
@@ -52,7 +53,6 @@ public class P4HistoryProvider implements VcsHistoryProvider {
 
     @Override
     public VcsDependentHistoryComponents getUICustomization(VcsHistorySession session, JComponent forShortcutRegistration) {
-        // TODO give better history.
         return VcsDependentHistoryComponents.createOnlyColumns(new ColumnInfo[0]);
     }
 
@@ -158,13 +158,18 @@ public class P4HistoryProvider implements VcsHistoryProvider {
 
     @NotNull
     private static List<P4FileRevision> getHistory(@Nullable FilePath filePath, @NotNull P4Vcs vcs) throws VcsException {
-        if (filePath == null || ! vcs.fileIsUnderVcs(filePath)) {
+        if (filePath == null || !vcs.fileIsUnderVcs(filePath)) {
             return Collections.emptyList();
         }
 
         VcsConfiguration vcsConfiguration = VcsConfiguration.getInstance(vcs.getProject());
         int limit = vcsConfiguration.LIMIT_HISTORY ? vcsConfiguration.MAXIMUM_HISTORY_ROWS : -1;
+        return getHistory(filePath, vcs, limit);
+    }
 
+    @NotNull
+    private static List<P4FileRevision> getHistory(@NotNull FilePath filePath, @NotNull P4Vcs vcs, int limit)
+            throws VcsException {
         try {
             P4Server server = vcs.getP4ServerFor(filePath);
             if (server != null) {
@@ -187,4 +192,53 @@ public class P4HistoryProvider implements VcsHistoryProvider {
     }
 
 
+    @Nullable
+    @Override
+    public VcsFileRevision getLastRevision(FilePath filePath)
+            throws VcsException {
+        if (filePath == null || ! vcs.fileIsUnderVcs(filePath)) {
+            return null;
+        }
+
+        List<P4FileRevision> history = getHistory(filePath, vcs, 1);
+        if (history.isEmpty()) {
+            return null;
+        }
+        return history.get(0);
+    }
+
+    @Override
+    public void reportAppendableHistory(@NotNull FilePath path, @Nullable VcsRevisionNumber startingRevision,
+            @NotNull VcsAppendableHistorySessionPartner partner)
+            throws VcsException {
+        if (vcs.fileIsUnderVcs(path)) {
+            try {
+                List<P4FileRevision> history = getHistory(path, vcs);
+                for (P4FileRevision p4FileRevision : history) {
+                    if (isSameOrAfter(p4FileRevision, startingRevision)) {
+                        partner.acceptRevision(p4FileRevision);
+                    }
+                }
+            } catch (VcsException e) {
+                partner.reportException(e);
+            }
+        }
+        partner.finished();
+
+    }
+
+    private static boolean isSameOrAfter(@Nullable P4FileRevision p4Revision,
+            @Nullable VcsRevisionNumber startingRevision) {
+        if (p4Revision == null) {
+            return false;
+        }
+        if (startingRevision == null) {
+            return true;
+        }
+        if (startingRevision instanceof P4RevisionNumber) {
+            P4RevisionNumber rn = (P4RevisionNumber) startingRevision;
+            return p4Revision.getChangeListId() >= rn.getChangelist();
+        }
+        return p4Revision.getRevisionNumber().compareTo(startingRevision) >= 0;
+    }
 }

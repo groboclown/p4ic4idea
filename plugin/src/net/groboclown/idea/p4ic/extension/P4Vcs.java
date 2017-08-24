@@ -36,6 +36,7 @@ import com.intellij.openapi.vcs.VcsListener;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
+import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.diff.RevisionSelector;
@@ -48,6 +49,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.ui.JBColor;
+import com.intellij.util.ThreeState;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.background.TempFileWatchDog;
@@ -57,6 +59,7 @@ import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.ui.P4MultipleConnectionWidget;
 import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
+import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeProvider;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangelistListener;
 import net.groboclown.idea.p4ic.v2.changes.P4CommittedChangeList;
@@ -76,6 +79,7 @@ import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
 import net.groboclown.idea.p4ic.v2.ui.alerts.DistinctDialog;
+import org.jetbrains.annotations.CalledInAwt;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -278,11 +282,32 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         return P4Bundle.message("p4ic.name");
     }
 
+    /* TODO look at switching the configurable to be:
+        1. Configurable is for Perforce top-level stuff.
+        2. Root configurable is for connection settings.
+
+  public UnnamedConfigurable getRootConfigurable(VcsDirectoryMapping mapping) {
+    return null;
+  }
+
+  @Nullable
+  public VcsRootSettings createEmptyVcsRootSettings() {
+    return null;
+  }
+
+        This could also allow for using a VirtualFile to represent a depot path.
+  @Nullable
+  public RootsConvertor getCustomConvertor() {
+    return null;
+  }
+
+     */
+
+
     @Override
     public Configurable getConfigurable() {
         return myConfigurable;
     }
-
 
     @Override
     protected void start() throws VcsException {
@@ -621,6 +646,21 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     }
 
 
+    @Override
+    @CalledInAwt
+    @NotNull
+    public ThreeState mayRemoveChangeList(@NotNull LocalChangeList list, boolean explicitly) {
+        if (!explicitly || P4ChangeListMapping.isDefaultChangelist(list)) {
+            return ThreeState.NO;
+        }
+        return ThreeState.YES;
+    }
+
+    // TODO can this be switched to false?
+    public boolean fileListenerIsSynchronous() {
+        return true;
+    }
+
     // TODO implement these
 
 
@@ -646,6 +686,16 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @Nullable
     public MergeProvider getMergeProvider() {
         return null;
+    }
+
+
+    /**
+     * Can be temporarily forbidden, for instance, when authorization credentials are wrong - to
+     * don't repeat wrong credentials passing (in some cases it can produce user's account blocking)
+     */
+    @Override
+    public boolean isVcsBackgroundOperationsAllowed(final VirtualFile root) {
+        return true;
     }
 
 

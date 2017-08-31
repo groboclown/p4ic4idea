@@ -20,12 +20,12 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.CollectionListModel;
-import com.intellij.ui.ColorUtil;
 import com.intellij.ui.JBColor;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.intellij.util.ui.AsyncProcessIcon;
+import com.intellij.util.ui.UIUtil;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -44,23 +44,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.awt.Font;
-import java.awt.Color;
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.Insets;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
 public class ResolvedPropertiesPanel {
     private static final Logger LOG = Logger.getInstance(ResolvedPropertiesPanel.class);
+
+    private static final ConfigProblem PROBLEM_ELSEWHERE = new ConfigProblem(null, true, "");
 
     @Nullable
     private Project project;
@@ -75,8 +72,8 @@ public class ResolvedPropertiesPanel {
 
     private AsyncProcessIcon refreshResolvedPropertiesSpinner;
     private JPanel myProblemsPanel;
-    private JList selectedProblemsList;
-    private CollectionListModel/*<String>*/ selectedProblemsListModel; // JDK 1.6 doesn't have generic models
+    private JList/*<RootedConfigProblem>*/ selectedProblemsList;
+    private CollectionListModel/*<RootedConfigProblem>*/ selectedProblemsListModel; // JDK 1.6 doesn't have generic models
 
     private P4ProjectConfig lastConfig;
 
@@ -103,6 +100,7 @@ public class ResolvedPropertiesPanel {
 
         selectedProblemsListModel = new CollectionListModel/*<String>*/();
         selectedProblemsList.setModel(selectedProblemsListModel);
+        selectedProblemsList.setCellRenderer(new ProblemListRenderer());
 
         rootDirDropdownBoxModel = new DefaultComboBoxModel/*<ConfigPath>*/();
         rootDirDropdownBox.setModel(rootDirDropdownBoxModel);
@@ -249,7 +247,7 @@ public class ResolvedPropertiesPanel {
         }
     }
 
-    private void showResolvedProperties(String configText, List<String> problemText) {
+    private void showResolvedProperties(String configText, List<ConfigProblem> problemText) {
         LOG.debug("Showing resolved properties");
         ApplicationManager.getApplication().assertIsDispatchThread();
 
@@ -372,36 +370,105 @@ public class ResolvedPropertiesPanel {
                 new P4InvalidConfigException(P4Bundle.getString("configuration.error.no-config-list")));
     }
 
-    private static List<String> toProblemMessages(
+    private static List<ConfigProblem> toProblemMessages(
             @Nullable VirtualFile root, @NotNull List<ConfigProblem> problemMessages) {
-        // Be sure to get this color anew each time, because the theme may have
-        // changed.
-
-        //noinspection UseJBColor
-        final String errorColor = ColorUtil.toHex(new Color(JBColor.RED.getRGB()));
-
-        HashSet<String> ret = new HashSet<String>();
-        for (ConfigProblem configProblem : problemMessages) {
-            // Filter out problems that don't belong to this root path.
-            if (configProblem.getRootPath() == null || configProblem.getRootPath().equals(root)) {
-                StringBuilder text = new StringBuilder("<html>");
-                if (configProblem.isError()) {
-                    text.append("<font color=\"").append(errorColor).append("\">")
-                            .append(configProblem.getMessage())
-                            .append("</font>");
-                } else {
-                    text.append(configProblem.getMessage());
-                }
-                ret.add(text.toString());
+        List<ConfigProblem> ret = new ArrayList<ConfigProblem>(problemMessages.size());
+        for (ConfigProblem problem : problemMessages) {
+            if ((problem.getRootPath() == null || problem.getRootPath().equals(root))
+                    && !containsDuplicate(problem, ret)) {
+                ret.add(problem);
             }
         }
         if (ret.isEmpty() && !problemMessages.isEmpty()) {
             // Tell the user that there are problems on other root directories.
-            ret.add("<html><i>" + P4Bundle.getString("config.resolve.other-roots-have-errors") + "</i>");
+            ret.add(PROBLEM_ELSEWHERE);
         }
-        // Condense duplicate values
-        return new ArrayList<String>(ret);
+        return ret;
     }
+
+    private static boolean containsDuplicate(ConfigProblem c, List<ConfigProblem> problems) {
+        for (ConfigProblem problem : problems) {
+            if (problem.isSameMessage(c)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    private static class ComputedConfigResults {
+        List<ConfigPath> configs = new ArrayList<ConfigPath>();
+        int selectedConfigIndex;
+        String selectedConfigText;
+        List<ConfigProblem> selectedProblemText;
+    }
+
+
+    private static class ConfigPath {
+        @Nullable final DataPart config;
+        private final List<ConfigProblem> allProblems;
+        final VirtualFile file;
+
+        private ConfigPath(@Nullable DataPart config, @NotNull VirtualFile virtualFile,
+                @NotNull List<ConfigProblem> problems) {
+            this.config = config;
+            this.file = virtualFile;
+            this.allProblems = problems;
+        }
+
+        @Override
+        public String toString() {
+            return file.getPath();
+        }
+    }
+
+
+    private static class ProblemListRenderer implements ListCellRenderer/*<ConfigProblem>*/ {
+        private final JTextArea cell;
+        private final Font normal;
+        private final Font italic;
+
+        private ProblemListRenderer() {
+            this.cell = new JTextArea();
+            cell.setLineWrap(true);
+            cell.setWrapStyleWord(true);
+            this.normal = cell.getFont();
+            this.italic = normal.deriveFont(Font.ITALIC);
+        }
+
+        @Override
+        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
+                boolean cellHasFocus) {
+            if (value == PROBLEM_ELSEWHERE) {
+                cell.setFont(italic);
+                cell.setForeground(UIUtil.getTextAreaForeground());
+                cell.setText(P4Bundle.getString("config.resolve.other-roots-have-errors"));
+            } else if (value instanceof ConfigProblem) {
+                ConfigProblem problem = (ConfigProblem) value;
+                cell.setFont(normal);
+                cell.setForeground(problem.isError()
+                        ? JBColor.RED
+                        : UIUtil.getTextAreaForeground());
+                cell.setText(problem.getMessage());
+            } else {
+                cell.setFont(normal);
+                cell.setForeground(UIUtil.getTextAreaForeground());
+            }
+            return cell;
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // UI form stuff
+
+    private void createUIComponents() {
+        // Add custom component construction here.
+        refreshResolvedPropertiesSpinner = new AsyncProcessIcon("Refresh Resolved Progress");
+        refreshResolvedPropertiesSpinner.setName("Refresh Resolved Progress");
+        refreshResolvedPropertiesSpinner.setVisible(false);
+    }
+
+
 
     /**
      * @noinspection ALL
@@ -544,43 +611,4 @@ public class ResolvedPropertiesPanel {
     public JComponent $$$getRootComponent$$$() {
         return rootPanel;
     }
-
-    private static class ComputedConfigResults {
-        List<ConfigPath> configs = new ArrayList<ConfigPath>();
-        int selectedConfigIndex;
-        String selectedConfigText;
-        List<String> selectedProblemText;
-    }
-
-
-    private static class ConfigPath {
-        @Nullable final DataPart config;
-        private final List<ConfigProblem> allProblems;
-        final VirtualFile file;
-
-        private ConfigPath(@Nullable DataPart config, @NotNull VirtualFile virtualFile,
-                @NotNull List<ConfigProblem> problems) {
-            this.config = config;
-            this.file = virtualFile;
-            this.allProblems = problems;
-        }
-
-        @Override
-        public String toString() {
-            return file.getPath();
-        }
-    }
-
-
-    // -----------------------------------------------------------------------
-    // UI form stuff
-
-    private void createUIComponents() {
-        // Add custom component construction here.
-        refreshResolvedPropertiesSpinner = new AsyncProcessIcon("Refresh Resolved Progress");
-        refreshResolvedPropertiesSpinner.setName("Refresh Resolved Progress");
-        refreshResolvedPropertiesSpinner.setVisible(false);
-    }
-
-
 }

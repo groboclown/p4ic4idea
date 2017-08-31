@@ -15,6 +15,8 @@
 * Bug fixes.
     * Cleaned up some error messages from the Perforce server (removes the
       `%'` and `'%` markings).
+    * Improved the configuration UI to show the full text of error messages.
+      (#161)
 
 
 ## ::v0.9.5::

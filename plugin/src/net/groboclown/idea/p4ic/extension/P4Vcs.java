@@ -79,7 +79,6 @@ import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
 import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
 import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
 import net.groboclown.idea.p4ic.v2.ui.alerts.DistinctDialog;
-import org.jetbrains.annotations.CalledInAwt;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -646,8 +645,9 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     }
 
 
-    @Override
-    @CalledInAwt
+    // After v135.
+    // @Override
+    // @CalledInAwt
     @NotNull
     public ThreeState mayRemoveChangeList(@NotNull LocalChangeList list, boolean explicitly) {
         if (!explicitly || P4ChangeListMapping.isDefaultChangelist(list)) {

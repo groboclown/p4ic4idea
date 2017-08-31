@@ -38,7 +38,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class P4HistoryProvider implements VcsHistoryProviderEx {
+// TODO add support for VcsHistoryProviderEx, but that means making this conditional as part of the version
+// dependency.
+public class P4HistoryProvider implements VcsHistoryProvider {
     private static final Logger LOG = Logger.getInstance(P4HistoryProvider.class);
 
     private final Project project;
@@ -192,8 +194,9 @@ public class P4HistoryProvider implements VcsHistoryProviderEx {
     }
 
 
+    // Later than v136
+    //@Override
     @Nullable
-    @Override
     public VcsFileRevision getLastRevision(FilePath filePath)
             throws VcsException {
         if (filePath == null || ! vcs.fileIsUnderVcs(filePath)) {
@@ -207,7 +210,8 @@ public class P4HistoryProvider implements VcsHistoryProviderEx {
         return history.get(0);
     }
 
-    @Override
+    // Later than v136
+    // @Override
     public void reportAppendableHistory(@NotNull FilePath path, @Nullable VcsRevisionNumber startingRevision,
             @NotNull VcsAppendableHistorySessionPartner partner)
             throws VcsException {

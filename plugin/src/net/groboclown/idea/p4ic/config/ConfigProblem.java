@@ -19,6 +19,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.part.ConfigPart;
 import net.groboclown.idea.p4ic.config.part.DataPart;
+import net.groboclown.idea.p4ic.util.EqualUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -128,5 +129,10 @@ public class ConfigProblem {
             whitespace = Character.isWhitespace(c);
         }
         return sb.toString();
+    }
+
+    public boolean isSameMessage(@Nullable ConfigProblem c) {
+        return c != null && c.isError == isError && EqualUtil.isEqual(c.message, message) &&
+                EqualUtil.isArrayEqual(args, c.args);
     }
 }

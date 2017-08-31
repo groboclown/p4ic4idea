@@ -1,0 +1,19 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+</head>
+<body bgcolor="white">
+Provides exception and error classes for signaling and handling user, internal, and Perforce server errors.
+<p>
+P4Java uses a fairly standard set of extensions to java.lang.Exception to signal recoverable errors,
+but it also uses extensions to java.lang.Error to signal unrecoverable errors that it's detected itself
+(such as null pointers or out-of-range values). Since they're defined as extensions to Error, they're
+not typically declared in method &quot;throws&quot; clauses, which means users are free to ignore them in the same
+way that they can ignore non-P4Java Error throwables.
+<p>
+However, if you wish to keep control in the face of all possible errors,
+it's probably a good idea to keep an outer catch block for P4JError catching as well as other exceptions
+and throwables &mdash; P4Java does not throw such errors lightly, only for conditions that
+show a serious programming error (either internally or by the user).
+</body>
+</html>

@@ -31,7 +31,6 @@ import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
-import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
@@ -41,17 +40,38 @@ import net.groboclown.idea.p4ic.v2.server.cache.ServerUpdateActionFactory;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateAction.UpdateParameterNames;
 import net.groboclown.idea.p4ic.v2.server.cache.UpdateGroup;
-import net.groboclown.idea.p4ic.v2.server.cache.state.*;
+import net.groboclown.idea.p4ic.v2.server.cache.state.CachedState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.FileUpdateStateList;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4ClientFileMapping;
+import net.groboclown.idea.p4ic.v2.server.cache.state.P4FileUpdateState;
+import net.groboclown.idea.p4ic.v2.server.cache.state.PendingUpdateState;
 import net.groboclown.idea.p4ic.v2.server.cache.sync.AbstractServerUpdateAction.ExecutionStatus;
-import net.groboclown.idea.p4ic.v2.server.connection.*;
+import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
+import net.groboclown.idea.p4ic.v2.server.connection.MessageResult;
+import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerConnection;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerQuery;
+import net.groboclown.idea.p4ic.v2.server.connection.ServerUpdateAction;
+import net.groboclown.idea.p4ic.v2.server.connection.SynchronizedActionRunner;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import net.groboclown.idea.p4ic.v2.ui.alerts.InvalidRootsHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * Keeps track of all the file actions (files open for edit, move, etc).
@@ -1928,8 +1948,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                                     LOG.debug("open source file for edit (pre-move action) failed");
                                     continue;
                                 }
-                            } /* debugging stuff:
-                            else {
+                            } else if (LOG.isDebugEnabled()) {
                                 final List<IExtendedFileSpec> details =
                                         exec.getFileStatus(Collections.singletonList(sourceSpec));
                                 for (IExtendedFileSpec detail : details) {
@@ -1942,7 +1961,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                                             detail.getStatusMessage());
                                     }
                                 }
-                            } */
+                            }
 
                             final IFileSpec targetSpec = FileSpecUtil.getFromFilePath(target);
                             if (LOG.isDebugEnabled()) {

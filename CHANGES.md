@@ -1,12 +1,13 @@
 # IDEA Community VCS Integration for Perforce
 
 
-## ::v0.9.7::
+## ::v0.9.6::
 
 ### Overview
 
 * First step at proper symlink handling.
-* Testing improvements
+* Implemented "Shelve files to Server" action.
+* Bug fixes.
 
 ### Details
 
@@ -20,20 +21,6 @@
       to add a file.  Now, the parent directories of the added file are
       checked to see if any of them are symlinks.  If so, that triggers
       the new symlink resolution logic.
-* Testing improvements
-    * Added gradle scripts to setup integration testing environments more
-      easily.
-
-
-## ::v0.9.6::
-
-### Overview
-
-* Implemented "Shelve files to Server" action.
-* Bug fixes.
-
-### Details
-
 * Implemented "Shelve files to Server" action.
     * Performs the Perforce "shelve" command to archive files to the server.
 * Bug fixes.
@@ -41,6 +28,11 @@
       `%'` and `'%` markings).
     * Improved the configuration UI to show the full text of error messages.
       (#161)
+    * Improved the properties UI elements to provide tool tips for each property.
+      (#159)
+* Testing improvements
+    * Added gradle scripts to setup integration testing environments more
+      easily.
 
 
 ## ::v0.9.5::

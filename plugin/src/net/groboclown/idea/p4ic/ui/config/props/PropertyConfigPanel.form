@@ -34,6 +34,7 @@
           <horizontalAlignment value="11"/>
           <labelFor value="c9621"/>
           <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.port.label"/>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4port.tooltip"/>
         </properties>
       </component>
       <component id="c9621" class="javax.swing.JTextField" binding="portField">
@@ -43,7 +44,9 @@
           </grid>
           <forms defaultalign-horz="false"/>
         </constraints>
-        <properties/>
+        <properties>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4port.tooltip"/>
+        </properties>
       </component>
       <component id="447ba" class="javax.swing.JTextField" binding="userField">
         <constraints>
@@ -52,7 +55,9 @@
           </grid>
           <forms defaultalign-horz="false"/>
         </constraints>
-        <properties/>
+        <properties>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4user.tooltip"/>
+        </properties>
       </component>
       <component id="5aaf8" class="javax.swing.JLabel" binding="userFieldLabel">
         <constraints>
@@ -63,6 +68,7 @@
           <horizontalAlignment value="11"/>
           <labelFor value="447ba"/>
           <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.username.label"/>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4user.tooltip"/>
         </properties>
       </component>
       <component id="3f48" class="com.intellij.openapi.ui.TextFieldWithBrowseButton" binding="authTicketFileField">
@@ -70,7 +76,9 @@
           <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
           <forms/>
         </constraints>
-        <properties/>
+        <properties>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4tickets.tooltip"/>
+        </properties>
       </component>
       <component id="27e7d" class="javax.swing.JLabel" binding="authTicketFileFieldLabel">
         <constraints>
@@ -80,6 +88,7 @@
         <properties>
           <horizontalAlignment value="11"/>
           <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.authticketfile.label"/>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4tickets.tooltip"/>
         </properties>
       </component>
       <component id="5ee33" class="com.intellij.openapi.ui.TextFieldWithBrowseButton" binding="trustTicketFileField">
@@ -87,7 +96,9 @@
           <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
           <forms/>
         </constraints>
-        <properties/>
+        <properties>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4trust.tooltip"/>
+        </properties>
       </component>
       <component id="2be64" class="javax.swing.JLabel" binding="trustTicketFileFieldLabel">
         <constraints>
@@ -97,6 +108,7 @@
         <properties>
           <horizontalAlignment value="11"/>
           <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.trustticketfile.label"/>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4trust.tooltip"/>
         </properties>
       </component>
       <component id="8a0df" class="javax.swing.JTextField" binding="hostnameField">
@@ -106,7 +118,9 @@
           </grid>
           <forms defaultalign-horz="false"/>
         </constraints>
-        <properties/>
+        <properties>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4host.tooltip"/>
+        </properties>
       </component>
       <component id="c81be" class="javax.swing.JLabel" binding="hostnameFieldLabel">
         <constraints>
@@ -116,6 +130,7 @@
         <properties>
           <horizontalAlignment value="11"/>
           <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.hostname.label"/>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4host.tooltip"/>
         </properties>
       </component>
       <component id="5275b" class="javax.swing.JTextField" binding="ignoreFileNameField">
@@ -125,7 +140,9 @@
           </grid>
           <forms defaultalign-horz="false"/>
         </constraints>
-        <properties/>
+        <properties>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4ignore.tooltip"/>
+        </properties>
       </component>
       <component id="5f0f9" class="javax.swing.JLabel" binding="ignoreFileNameFieldLabel">
         <constraints>
@@ -136,6 +153,7 @@
           <horizontalAlignment value="11"/>
           <labelFor value="5275b"/>
           <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.ignore.label"/>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4ignore.tooltip"/>
         </properties>
       </component>
       <component id="a163f" class="javax.swing.JTextField" binding="charsetField">
@@ -145,7 +163,9 @@
           </grid>
           <forms defaultalign-horz="false"/>
         </constraints>
-        <properties/>
+        <properties>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4charset.tooltip"/>
+        </properties>
       </component>
       <component id="f0f10" class="javax.swing.JLabel" binding="charsetFieldLabel">
         <constraints>
@@ -156,6 +176,7 @@
           <horizontalAlignment value="11"/>
           <labelFor value="a163f"/>
           <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.charset.label"/>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4charset.tooltip"/>
         </properties>
       </component>
       <component id="b4d76" class="javax.swing.JLabel" binding="loginSsoFieldLabel">
@@ -166,6 +187,7 @@
         <properties>
           <horizontalAlignment value="11"/>
           <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.loginsso.label"/>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4loginsso.tooltip"/>
         </properties>
       </component>
       <component id="2f0bf" class="com.intellij.openapi.ui.TextFieldWithBrowseButton" binding="loginSsoField">
@@ -173,7 +195,9 @@
           <grid row="14" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
           <forms/>
         </constraints>
-        <properties/>
+        <properties>
+          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.properties.p4loginsso.tooltip"/>
+        </properties>
       </component>
     </children>
   </grid>

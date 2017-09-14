@@ -157,6 +157,25 @@ public class FileSpecUtil {
         return FileSpecBuilder.makeFileSpecList(paths);
     }
 
+    /**
+     * Allows for directories, because this is explicitly for scanning for directories that
+     * might be symlinks on the server.
+     *
+     * @param file file to convert
+     * @return specs
+     * @throws P4Exception if there was an invalid file path
+     */
+    @NotNull
+    public static IFileSpec getFromFilePathSymlink(@NotNull FilePath file)
+            throws P4Exception {
+        String path = escapeToP4Path(file.getIOFile().getAbsolutePath());
+        List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(new String[] { path });
+        if (specs == null || specs.size() != 1) {
+            throw new P4FileException(P4Bundle.message("error.annotate.multiple-files", path, specs));
+        }
+        return specs.get(0);
+    }
+
     @NotNull
     public static List<IFileSpec> getFromVirtualFilesAt(@NotNull Collection<VirtualFile> files, @NotNull String revisionPart, boolean allowDirectories) throws P4Exception {
         if (files.isEmpty()) {

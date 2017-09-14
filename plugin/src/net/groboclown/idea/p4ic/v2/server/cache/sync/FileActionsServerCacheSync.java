@@ -31,6 +31,7 @@ import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
+import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
 import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
 import net.groboclown.idea.p4ic.v2.server.P4FileAction;
@@ -48,6 +49,7 @@ import net.groboclown.idea.p4ic.v2.ui.alerts.InvalidRootsHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -85,7 +87,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
 
-    public Collection<P4FileAction> getOpenFiles() {
+    @NotNull
+    Collection<P4FileAction> getOpenFiles() {
         // Get all the cached files that we know about from the server
         final Set<P4FileUpdateState> files = new HashSet<P4FileUpdateState>(cachedServerUpdatedFiles.copy());
         // Overwrite them with the locally updated versions of them.
@@ -204,7 +207,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
      * @return the update state
      */
     @Nullable
-    public PendingUpdateState addFile(@NotNull Project project, @NotNull final FilePath file, int changeListId) {
+    PendingUpdateState addFile(@NotNull Project project, @NotNull final FilePath file, int changeListId) {
         // Edit operations will need to have the file be writable.  The Perforce
         // command may delay when the edit action actually occurs, so ensure
         // the file is set to writable first.
@@ -243,7 +246,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
      * @return the update state
      */
     @Nullable
-    public PendingUpdateState addOrEditFile(@NotNull Project project, @NotNull final FilePath file, int changeListId) {
+    PendingUpdateState addOrEditFile(@NotNull Project project, @NotNull final FilePath file, int changeListId) {
         // Edit operations will need to have the file be writable.  The Perforce
         // command may delay when the edit action actually occurs, so ensure
         // the file is set to writable first.
@@ -282,7 +285,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
      * @return the update state
      */
     @Nullable
-    public PendingUpdateState editFile(@NotNull Project project, @NotNull final VirtualFile file, int changeListId) {
+    PendingUpdateState editFile(@NotNull Project project, @NotNull final VirtualFile file, int changeListId) {
         // Edit operations will need to have the file be writable.  The Perforce
         // command may delay when the edit action actually occurs, so ensure
         // the file is set to writable first.
@@ -314,7 +317,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
 
     @Nullable
-    public PendingUpdateState deleteFile(@NotNull Project project, @NotNull FilePath file, int changeListId) {
+    PendingUpdateState deleteFile(@NotNull Project project, @NotNull FilePath file, int changeListId) {
         // Let the IDE deal with the actual removal of the file.
         // But just to be sure, make it writable first.
         if (file.getIOFile().exists()) {
@@ -348,7 +351,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
     @Nullable
-    public PendingUpdateState moveFile(@NotNull final Project project,
+    PendingUpdateState moveFile(@NotNull final Project project,
             @NotNull final IntegrateFile file, final int changelistId) {
         // Let the IDE deal with the actual removal of the file.
         // But just to be sure, make it writable first.
@@ -425,7 +428,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
 
     @Nullable
-    public PendingUpdateState integrateFile(@NotNull final IntegrateFile file, final int changelistId) {
+    PendingUpdateState integrateFile(@NotNull final IntegrateFile file, final int changelistId) {
         // The destination file does not need to be writable
 
 
@@ -463,7 +466,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
      * @return the files that were reverted.
      */
     @NotNull
-    public Collection<FilePath> revertFilesOffline(@NotNull final List<FilePath> files) {
+    Collection<FilePath> revertFilesOffline(@NotNull final List<FilePath> files) {
         List<FilePath> ret = new ArrayList<FilePath>(files.size());
         Set<FilePath> toRevert = new HashSet<FilePath>(files);
         for (P4FileUpdateState update : localClientUpdatedFiles) {
@@ -486,7 +489,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
 
     @Nullable
-    public ServerUpdateAction revertFilesOnline(@NotNull final List<FilePath> files,
+    ServerUpdateAction revertFilesOnline(@NotNull final List<FilePath> files,
             @NotNull final Ref<MessageResult<List<FilePath>>> ret) {
         final List<FilePath> filesToRevert = new ArrayList<FilePath>();
         filesToRevert.addAll(files);
@@ -526,7 +529,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
     @Nullable
-    public ServerUpdateAction revertFilesIfUnchangedOnline(@NotNull Collection<FilePath> files,
+    ServerUpdateAction revertFilesIfUnchangedOnline(@NotNull Collection<FilePath> files,
             final int changelistId,
             @NotNull final Ref<MessageResult<List<FilePath>>> ret) {
         final List<FilePath> orderedFiles = new ArrayList<FilePath>(files);
@@ -557,7 +560,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
     @Nullable
-    public ServerUpdateAction synchronizeFilesOnline(@NotNull Collection<FilePath> files,
+    ServerUpdateAction synchronizeFilesOnline(@NotNull Collection<FilePath> files,
             final int revisionNumber,
             @Nullable final String syncSpec, final boolean force,
             final Ref<MessageResult<Collection<FileSyncResult>>> ref) {
@@ -650,7 +653,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
     }
 
     @Nullable
-    public ServerUpdateAction submitChangelistOnline(@NotNull final List<FilePath> files,
+    ServerUpdateAction submitChangelistOnline(@NotNull final List<FilePath> files,
             @NotNull final List<P4ChangeListJob> jobs,
             @Nullable final String submitStatus, final int changelistId,
             @Nullable final String comment,
@@ -828,7 +831,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 spec.getStatusMessage().hasMessageFragment(" is not under client's root ");
     }
 
-    private static boolean isStatusMessage(@NotNull final IExtendedFileSpec spec) {
+    private static boolean isStatusMessage(@NotNull final IFileSpec spec) {
         return spec.getOpStatus() == FileSpecOpStatus.INFO ||
                 spec.getOpStatus() == FileSpecOpStatus.CLIENT_ERROR ||
                 spec.getOpStatus() == FileSpecOpStatus.UNKNOWN;
@@ -879,6 +882,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         final Map<Integer, Set<FilePath>> deleted = new HashMap<Integer, Set<FilePath>>();
         final Map<Integer, Set<FilePath>> integrated = new HashMap<Integer, Set<FilePath>>();
         final Map<Integer, Set<FilePath>> move_deleted = new HashMap<Integer, Set<FilePath>>();
+        final Map<FilePath, IFileSpec> depotMapping = new HashMap<FilePath, IFileSpec>();
 
         ActionSplit(@NotNull P4Exec2 exec,
                 @NotNull Collection<PendingUpdateState> pendingUpdateStates,
@@ -915,9 +919,13 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                 LOG.debug("Full specs: " + fullSpecs);
             }
 
+            // Find the file to spec mapping.
+            // Need to do this by itself before the
+            // analysis of the files so that the symlinks can be correctly handled.
+            Map<PendingUpdateState, IExtendedFileSpec> stateToRawSpecMap = new HashMap<PendingUpdateState, IExtendedFileSpec>();
+            List<FilePath> needHaveMapping = new ArrayList<FilePath>();
             Iterator<PendingUpdateState> updatesIter = updateList.iterator();
             for (IExtendedFileSpec spec : fullSpecs) {
-
                 if (isStatusMessage(spec)) {
                     // no corresponding file, so don't increment the update
                     // however, it could mean that the file isn't on the server.
@@ -935,14 +943,72 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
                 // Valid response.  Advance iterators
                 final PendingUpdateState update = updatesIter.next();
+                final String filename = parameterName.getParameterValue(update);
+                final FilePath filePath = FilePathUtil.getFilePath(filename);
+
+                if (isNotInClientView(spec)) {
+                    LOG.debug(" -+- not in client view");
+                    alerts.addNotice(exec.getProject(),
+                            P4Bundle.message("error.client.not-in-view", spec.getClientPathString()), null,
+                            filePath);
+                    // don't handle
+                    continue;
+                } else if (isNotKnownToServer(spec)) {
+                    needHaveMapping.add(filePath);
+                } else {
+                    depotMapping.put(filePath, spec);
+                }
+                stateToRawSpecMap.put(update, spec);
+            }
+            final List<IFileSpec> whereMapping;
+            try {
+                whereMapping = exec.getWhere(FileSpecUtil.getFromFilePaths(needHaveMapping));
+            } catch (VcsException e) {
+                alerts.addWarning(exec.getProject(),
+                        P4Bundle.message("error.file-status.fetch.title"),
+                        P4Bundle.message("error.file-status.fetch", srcSpecs),
+                        e, srcSpecs);
+                status = ExecutionStatus.FAIL;
+                return;
+            }
+            final Iterator<FilePath> needHaveMappingIter = needHaveMapping.iterator();
+            for (IFileSpec spec : whereMapping) {
+                if (! isStatusMessage(spec)) {
+                    FilePath fp = needHaveMappingIter.next();
+                    depotMapping.put(fp, spec);
+                }
+            }
+
+            try {
+                updateFilesForSymlink(exec, depotMapping);
+            } catch (VcsException e) {
+                alerts.addWarning(exec.getProject(),
+                        P4Bundle.message("error.file-status.fetch.title"),
+                        P4Bundle.message("error.file-status.fetch", srcSpecs),
+                        e, srcSpecs);
+                status = ExecutionStatus.FAIL;
+                return;
+            } catch (IOException e) {
+                alerts.addWarning(exec.getProject(),
+                        P4Bundle.message("error.file-status.fetch.title"),
+                        P4Bundle.message("error.file-status.fetch", srcSpecs),
+                        e, srcSpecs);
+                status = ExecutionStatus.FAIL;
+                return;
+            }
+
+
+            for (Entry<PendingUpdateState, IExtendedFileSpec> entry : stateToRawSpecMap.entrySet()) {
+                final PendingUpdateState update = entry.getKey();
+                final IExtendedFileSpec spec = entry.getValue();
                 Integer changelist = UpdateParameterNames.CHANGELIST.getParameterValue(update);
                 if (changelist == null) {
                     changelist = -1;
                 }
                 String filename = parameterName.getParameterValue(update);
                 // is edit only mode is only valid for the EDIT_FILE action.
-                boolean isEditOnly = update.getUpdateAction() == UpdateAction.EDIT_FILE;
                 FilePath filePath = FilePathUtil.getFilePath(filename);
+                boolean isEditOnly = update.getUpdateAction() == UpdateAction.EDIT_FILE;
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(" - Checking category for " + filePath + " (from [" + spec
                             .getDepotPathString() + "];[" + spec.getOriginalPathString() + "])");
@@ -1239,11 +1305,12 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
 
             ExecutionStatus returnCode = ExecutionStatus.NO_OP;
             if (! split.notInPerforce.isEmpty()) {
+
                 for (Entry<Integer, Set<FilePath>> entry : split.notInPerforce.entrySet()) {
                     try {
                         LOG.debug("Opening files for add: " + entry.getValue());
-                        final List<P4StatusMessage> msgs =
-                                exec.addFiles(FileSpecUtil.getFromFilePaths(entry.getValue()), entry.getKey());
+                        List<IFileSpec> pathSpecs = mapPathsToSpecs(entry.getValue(), split.depotMapping);
+                        final List<P4StatusMessage> msgs = exec.addFiles(pathSpecs, entry.getKey());
                         alerts.addNotices(exec.getProject(),
                                 P4Bundle.message("warning.edit.file.add",
                                         FilePathUtil.toStringList(entry.getValue())),
@@ -1274,9 +1341,9 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             for (Entry<Integer, Set<FilePath>> entry: reopen.entrySet()) {
                 try {
                     LOG.debug("Reopening files for edit: " + entry.getValue());
+                    List<IFileSpec> pathSpecs = mapPathsToSpecs(entry.getValue(), split.depotMapping);
                     final List<P4StatusMessage> msgs =
-                            exec.reopenFiles(FileSpecUtil.getFromFilePaths(entry.getValue()),
-                                    entry.getKey(), null);
+                            exec.reopenFiles(pathSpecs, entry.getKey(), null);
                     markUpdated(entry.getValue(), msgs);
                     // Note: any errors here will be displayed to the
                     // user, but they do not indicate that the actual
@@ -1353,6 +1420,211 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         }
     }
 
+    @NotNull
+    private static List<IFileSpec> mapPathsToSpecs(@NotNull Set<FilePath> filePaths,
+            @NotNull Map<FilePath, IFileSpec> depotMapping)
+            throws P4Exception {
+        List<IFileSpec> ret = new ArrayList<IFileSpec>(filePaths.size());
+        for (FilePath fp : filePaths) {
+            IFileSpec spec = depotMapping.get(fp);
+            if (spec == null) {
+                spec = FileSpecUtil.getFromFilePath(fp);
+            }
+            ret.add(spec);
+        }
+        return ret;
+    }
+
+    /**
+     * Update the `notInPerforce` and `edited` collections to correctly work-around symlinked files.
+     *
+     * See bug #156
+     *  @param exec exec context
+     * @param depotMapping known file to file spec mappings
+     */
+    private static void updateFilesForSymlink(@NotNull P4Exec2 exec,
+            @NotNull Map<FilePath, IFileSpec> depotMapping)
+            throws VcsException, IOException {
+        List<FilePath> remainingFilesNeedingMaps = new ArrayList<FilePath>(depotMapping.keySet());
+        Map<FilePath, String> currentKnownDepotPaths = new HashMap<FilePath, String>();
+        Map<FilePath, String> symlinkedRealDepotPath = new HashMap<FilePath, String>();
+
+        for (Entry<FilePath, IFileSpec> entry : depotMapping.entrySet()) {
+            currentKnownDepotPaths.put(entry.getKey(), entry.getValue().getDepotPathString());
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Symlink 1: Mapped paths " + currentKnownDepotPaths);
+        }
+
+
+        // There may be multiple symlinks pointing to symlinks, so we need to loop until we've
+        // exhausted the list of files that have symlinks.
+        List<IExtendedFileSpec> linkParentFiles;
+        do {
+            // Find the complete list of parent directories for the requested files for add, up to but not including
+            // the depot.  So, a file like //depot/a/b/c.txt would have //depot/a, //depot/a/b as the returned list.
+            List<IFileSpec> splitParents = splitParentPathsFor(exec.getProject().getBaseDir(), remainingFilesNeedingMaps);
+
+            // Run p4 fstat "-F "headType = symlink" (split parents list)
+            // Returns only the paths that are symlinks.
+            linkParentFiles = exec.getSymlinkFileStatus(splitParents);
+
+            Map<FilePath, String> foundSymlinks = new HashMap<FilePath, String>();
+            for (IExtendedFileSpec parentSymlink: linkParentFiles) {
+                if (P4StatusMessage.isErrorStatus(parentSymlink) &&
+                        ! P4StatusMessage.isFileNotFoundError(parentSymlink) &&
+                        ! P4StatusMessage.isFileNotOnClientError(parentSymlink)) {
+                    LOG.warn("fstat error when run on " + splitParents);
+                    throw P4StatusMessage.messageAsError(new P4StatusMessage(parentSymlink));
+                }
+                if (P4StatusMessage.isValid(parentSymlink)) {
+                    // We need to download (!) the contents of the symlink to see where it points.
+                    byte[] linksToPathRaw = exec.loadFile(parentSymlink);
+                    if (linksToPathRaw != null) {
+                        String encoding = parentSymlink.getCharset();
+                        if (encoding == null) {
+                            LOG.debug("No known encoding for " + parentSymlink + "; using utf-8");
+                            encoding = "utf-8";
+                        }
+                        String linkedDepotPath =
+                                createLinkedDepotPath(parentSymlink, new String(linksToPathRaw, encoding));
+
+                        // The complicated logic: find the files in the remainingFilesNeedingMaps list
+                        // whose contents have the symlink as a parent.  Change the symlink to the
+                        // mapped-to link, put that mapping into the foundSymlinks,
+                        // and remove that file from the remainingFilesNeedingMaps list.
+                        // The currentKnownDepotPaths map probably needs to be updated, too.
+                        mapParentForRemaining(remainingFilesNeedingMaps, parentSymlink, linkedDepotPath,
+                                currentKnownDepotPaths, foundSymlinks);
+                    }
+                }
+            }
+            // Everything left in the remainingFilesNeedingMaps are files that don't have a symlink,
+            // so we can ignore those.
+            remainingFilesNeedingMaps.clear();
+            // However, those that *were* mapped may have further symlinks.
+            remainingFilesNeedingMaps.addAll(foundSymlinks.keySet());
+            // And update our list of files symlinked, possibly updating existing entries.
+            symlinkedRealDepotPath.putAll(foundSymlinks);
+
+            // Keep repeating until there aren't any more discovered symlinked parents.
+        } while (! linkParentFiles.isEmpty());
+
+        // Each file that was marked as being in a symlink path will need to be calculated for
+        // add or edit based on the resolved path.
+        updateAddEditLists(symlinkedRealDepotPath, depotMapping);
+    }
+
+    private static String createLinkedDepotPath(@NotNull IExtendedFileSpec parentSymlink, @NotNull String linkPath) {
+        StringBuilder parentPath = new StringBuilder(parentSymlink.getDepotPathString());
+        if (! parentPath.toString().endsWith("/")) {
+            parentPath.append('/');
+        }
+        if (linkPath.isEmpty()) {
+            return parentPath.toString();
+        }
+        if (linkPath.charAt(0) == '/') {
+            return linkPath;
+        }
+
+        // P4 doesn't take care of the '..' translation for us, so we need to do it.
+
+        // This could probably be done more efficiently by taking better advantage of StringBuilder.
+        int prevPos = 0;
+        int linkPos = linkPath.indexOf('/');
+        while (linkPos < linkPath.length()) {
+            if (linkPos < 0) {
+                linkPos = linkPath.length();
+            }
+
+            // does not include '/'
+            String part = linkPath.substring(prevPos, linkPos);
+            if (part.equals("..")) {
+                int lastSlashPos = parentPath.toString().lastIndexOf('/');
+                if (lastSlashPos >= 0) {
+                    // Keep the slash
+                    parentPath = new StringBuilder(parentPath.substring(0, lastSlashPos + 1));
+                }
+            } else if (! part.equals(".")) {
+                // "./" is a no-op, so ignore it.
+
+                parentPath.append(part);
+                if (linkPos < linkPath.length()) {
+                    parentPath.append('/');
+                }
+            }
+        }
+        return parentPath.toString();
+    }
+
+    /**
+     * Find the complete list of parent directories for the requested files for add, up to but not including
+     * the depot.  So, a file like //depot/a/b/c.txt would have //depot/a, //depot/a/b as the returned list.
+     *
+     *
+     * @param baseDir highest directory to search.
+     * @param paths files to split up the parent paths.
+     * @return list of parent directories
+     */
+    private static List<IFileSpec> splitParentPathsFor(VirtualFile baseDir, List<FilePath> paths)
+            throws P4Exception {
+        Set<FilePath> parents = new HashSet<FilePath>();
+        for (FilePath path : paths) {
+            if (path.getVirtualFile() != null) {
+                parents.addAll(FilePathUtil.getTreeTo(path.getVirtualFile(), baseDir));
+            }
+        }
+        List<IFileSpec> ret = new ArrayList<IFileSpec>(parents.size());
+        for (FilePath parent : parents) {
+            ret.add(FileSpecUtil.getFromFilePathSymlink(parent));
+        }
+        return ret;
+    }
+
+    /**
+     *
+     * @param remainingFilesNeedingMaps files that might need to be translated with the
+     *     symlinks.  If any of these match the parent symlink path, then they will need to
+     *     be added to the foundSymlinks mapping with the new depot path.  Use the
+     *     "currentKnownDepotPath" for reference.
+     * @param parentSymlink the spec of the parent directory that was symlinked to another location.
+     * @param linkedDepotPath the depot path to the symlinked directory.  Should always end with a '/'.
+     * @param currentKnownDepotPaths list of current known depot paths for files.  These may need to be
+     *     changed based on the new mapping.  However, we only need to update these for the files found
+     *     in the remainingFilesNeedingMaps.
+     * @param foundSymlinks any file in the remainingFilesNeedingMaps that had a depot path changed due to a
+     *     symlink will need to be added here.
+     */
+    private static void mapParentForRemaining(List<FilePath> remainingFilesNeedingMaps, IExtendedFileSpec parentSymlink,
+            String linkedDepotPath, Map<FilePath, String> currentKnownDepotPaths, Map<FilePath, String> foundSymlinks) {
+        String srcPath = parentSymlink.getDepotPathString();
+        if (srcPath == null || srcPath.isEmpty()) {
+            // can't do anything - not enough information.
+            return;
+        }
+        if (! srcPath.endsWith("/")) {
+            srcPath += '/';
+        }
+        for (FilePath fp : remainingFilesNeedingMaps) {
+            String path = currentKnownDepotPaths.get(fp);
+            if (path != null && path.startsWith(srcPath)) {
+                path = linkedDepotPath + path.substring(srcPath.length());
+                foundSymlinks.put(fp, path);
+                currentKnownDepotPaths.put(fp, path);
+            }
+        }
+    }
+
+    private static void updateAddEditLists(@NotNull Map<FilePath, String> symlinkedRealDepotPath,
+            @NotNull Map<FilePath, IFileSpec> depotMapping) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Symlink: final mapping with symlinks: " + symlinkedRealDepotPath);
+        }
+        for (Entry<FilePath, String> entry : symlinkedRealDepotPath.entrySet()) {
+            // Replace depot maps with a unrolled location
+            depotMapping.put(entry.getKey(), FileSpecUtil.getAlreadyEscapedSpec(entry.getValue()));
+        }
+    }
 
     // -----------------------------------------------------------------------
     // -----------------------------------------------------------------------

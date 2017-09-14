@@ -1,6 +1,30 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.9.7::
+
+### Overview
+
+* First step at proper symlink handling.
+* Testing improvements
+
+### Details
+
+* First step at proper symlink handling. (#156)
+    * Files marked with the *symlink* type must be handled carefully.
+      Perforce does not natively understand that if `//a/b/c` is a
+      symlink to `//a/e`, then the file `//a/b/c/d` should actually
+      be added as `//a/e/d`, but instead fails to add the file because
+      `//a/b/c` exists as a file (symlink), and not as a directory.
+    * This first step makes one extra call to the server when attempting
+      to add a file.  Now, the parent directories of the added file are
+      checked to see if any of them are symlinks.  If so, that triggers
+      the new symlink resolution logic.
+* Testing improvements
+    * Added gradle scripts to setup integration testing environments more
+      easily.
+
+
 ## ::v0.9.6::
 
 ### Overview

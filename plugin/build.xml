@@ -236,7 +236,7 @@
             </fileset>
         </copy>
         <copy tofile="${tmp.dir.p4ic4idea}/lib/p4java-license.txt"
-            file="${rootdir}/p4java/LICENSE"/>
+            file="${rootdir}/p4java/LICENSE.txt"/>
         <copy todir="${tmp.dir.p4ic4idea}/lib"
               file="${rootdir}/p4java/work/p4ic4idea.p4java.jar"/>
         <copy todir="${tmp.dir.p4ic4idea}/lib"

@@ -474,13 +474,18 @@ public class P4Exec2 {
         for (IFileSpec file: files) {
             String original = file.getOriginalPathString();
             if (original != null) {
-                File f = new File(FileSpecUtil.unescapeP4Path(original));
-                if (! f.exists()) {
-                    throw new P4Exception(P4Bundle.message("error.add.file-not-found", f));
+                // TODO TEST
+                // Allow for a file that came from a symlink path.
+                String unescaped = FileSpecUtil.unescapeP4Path(original);
+                if (! unescaped.startsWith("//")) {
+                    File f = new File(unescaped);
+                    if (! f.exists()) {
+                        throw new P4Exception(P4Bundle.message("error.add.file-not-found", f));
+                    }
+                    // We must set the original path the hard way, to avoid the FilePath
+                    // stripping off the stuff after the '#' or '@', if it was escaped originally.
+                    file.setPath(new FilePath(FilePath.PathType.ORIGINAL, f.getAbsolutePath(), true));
                 }
-                // We must set the original path the hard way, to avoid the FilePath
-                // stripping off the stuff after the '#' or '@', if it was escaped originally.
-                file.setPath(new FilePath(FilePath.PathType.ORIGINAL, f.getAbsolutePath(), true));
             } else if (file.getLocalPathString() == null) {
                 throw new IllegalStateException(P4Bundle.message("error.add.no-local-file", file));
             }
@@ -694,6 +699,37 @@ public class P4Exec2 {
 
                 count.invoke("fstat");
                 return server.getExtendedFiles(fspecs, efo);
+            }
+        });
+    }
+
+
+    /**
+     * Get the files that are symlinks.
+     *
+     * @param files files
+     * @return file status of only the files that are symlinks.
+     * @throws VcsException perforce error
+     * @throws CancellationException user canceled
+     */
+    @NotNull
+    public List<IExtendedFileSpec> getSymlinkFileStatus(@NotNull final List<IFileSpec> files)
+            throws VcsException, CancellationException {
+        if (files.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return exec.runWithClient(project, new ClientExec.WithClient<List<IExtendedFileSpec>>() {
+            @Override
+            public List<IExtendedFileSpec> run(@NotNull final IOptionsServer server,
+                    @NotNull final IClient client, @NotNull final ClientExec.ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                count.invoke("getFileStatus");
+                // Run p4 fstat "-F "headType = symlink"
+                GetExtendedFilesOptions opts = new GetExtendedFilesOptions(
+                        "-F", "headType = symlink", "-m", Integer.toString(files.size()));
+                return getExtendedFiles(files, server, opts);
             }
         });
     }
@@ -1166,6 +1202,24 @@ public class P4Exec2 {
                     throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
                     P4Exception {
                 return client.haveList(specs);
+            }
+        });
+    }
+
+
+    @NotNull
+    public List<IFileSpec> getWhere(@NotNull final List<IFileSpec> specs)
+            throws VcsException, CancellationException {
+        if (specs.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return exec.runWithClient(project, new WithClient<List<IFileSpec>>() {
+            @Override
+            public List<IFileSpec> run(@NotNull final IOptionsServer server, @NotNull final IClient client,
+                    @NotNull final ServerCount count)
+                    throws P4JavaException, IOException, InterruptedException, TimeoutException, URISyntaxException,
+                    P4Exception {
+                return client.where(specs);
             }
         });
     }

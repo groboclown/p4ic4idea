@@ -21,6 +21,7 @@ import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileOperationResult;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.MessageGenericCode;
+import com.perforce.p4java.exception.MessageSubsystemCode;
 import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
@@ -35,6 +36,7 @@ import java.util.List;
 public class P4StatusMessage {
     private static final Logger LOG = Logger.getInstance(P4StatusMessage.class);
     public static final String P4MSG_NO_SUCH_FILE = " - no such file(s).";
+    public static final String P4MSG_WRONG_CLIENT = " - must refer to client '";
 
     private final IFileOperationResult spec;
 
@@ -256,5 +258,22 @@ public class P4StatusMessage {
         // client may be localized and return a different message.
         return spec.getStatusMessage() != null &&
                 (spec.getStatusMessage().hasMessageFragment(P4MSG_NO_SUCH_FILE));
+    }
+
+    /**
+     * There are some status messages that are this, but really the error is just
+     * that the file doesn't exist.
+     *
+     * @param spec
+     * @return
+     */
+    public static boolean isFileNotOnClientError(@NotNull IFileOperationResult spec) {
+        if (spec.getGenericCode() == MessageGenericCode.EV_UNKNOWN &&
+                spec.getSubCode() == 100) {
+            return true;
+        }
+
+        return spec.getStatusMessage() != null &&
+                spec.getStatusMessage().hasMessageFragment(P4MSG_WRONG_CLIENT);
     }
 }

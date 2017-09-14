@@ -22,7 +22,6 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.ColumnInfo;
-import com.intellij.vcs.history.VcsHistoryProviderEx;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.compat.HistoryCompat;
 import net.groboclown.idea.p4ic.extension.P4Vcs;

@@ -18,9 +18,9 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
-import com.intellij.openapi.util.io.FileUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.config.part.FileDataPart;
+import net.groboclown.idea.p4ic.util.EqualUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -73,7 +73,7 @@ public class FileConfigPartPanel
 
     @Override
     public boolean isModified(@NotNull FileDataPart originalPart) {
-        return !FileUtil.filesEqual(originalPart.getConfigFile(), getSelectedFile());
+        return !EqualUtil.isSameFile(originalPart.getConfigFile(), getSelectedFile());
     }
 
     @Nls

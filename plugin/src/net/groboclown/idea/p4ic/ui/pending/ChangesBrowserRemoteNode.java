@@ -110,7 +110,9 @@ class ChangesBrowserRemoteNode
         return 6; // CHANGE_SORT_WEIGHT;
     }
 
-    public int compareUserObjects(final Object o2) {
+    // FIXME 2017.1
+    //public int compareUserObjects(final Object o2) {
+    public int compareUserObjects(final P4FileAction o2) {
         if (o2 instanceof P4FileAction) {
             P4FileAction that = (P4FileAction) o2;
             return getUserObject().compareTo(that);

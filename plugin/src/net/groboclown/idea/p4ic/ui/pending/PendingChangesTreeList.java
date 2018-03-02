@@ -57,7 +57,9 @@ public class PendingChangesTreeList
     }
 
     @Override
+    // FIXME 2017.1
     protected List<PendingChangelist> getSelectedObjects(ChangesBrowserNode<PendingChangelist> changesBrowserNode) {
+    //protected List<PendingChangelist> getSelectedObjects(ChangesBrowserNode<?> changesBrowserNode) {
         return changesBrowserNode.getAllObjectsUnder(PendingChangelist.class);
     }
 

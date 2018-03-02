@@ -198,59 +198,91 @@ public class PropertyConfigPanel
         portFieldLabel.setHorizontalAlignment(11);
         this.$$$loadLabelText$$$(portFieldLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.properties.port.label"));
+        portFieldLabel.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4port.tooltip"));
         CellConstraints cc = new CellConstraints();
         rootPanel.add(portFieldLabel, cc.xy(1, 1));
         portField = new JTextField();
+        portField.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4port.tooltip"));
         rootPanel.add(portField, cc.xy(3, 1, CellConstraints.FILL, CellConstraints.DEFAULT));
         userField = new JTextField();
+        userField.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4user.tooltip"));
         rootPanel.add(userField, cc.xy(3, 3, CellConstraints.FILL, CellConstraints.DEFAULT));
         userFieldLabel = new JLabel();
         userFieldLabel.setHorizontalAlignment(11);
         this.$$$loadLabelText$$$(userFieldLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.properties.username.label"));
+        userFieldLabel.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4user.tooltip"));
         rootPanel.add(userFieldLabel, cc.xy(1, 3));
         authTicketFileField = new TextFieldWithBrowseButton();
+        authTicketFileField.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4tickets.tooltip"));
         rootPanel.add(authTicketFileField, cc.xy(3, 5));
         authTicketFileFieldLabel = new JLabel();
         authTicketFileFieldLabel.setHorizontalAlignment(11);
         this.$$$loadLabelText$$$(authTicketFileFieldLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.properties.authticketfile.label"));
+        authTicketFileFieldLabel.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4tickets.tooltip"));
         rootPanel.add(authTicketFileFieldLabel, cc.xy(1, 5));
         trustTicketFileField = new TextFieldWithBrowseButton();
+        trustTicketFileField.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4trust.tooltip"));
         rootPanel.add(trustTicketFileField, cc.xy(3, 7));
         trustTicketFileFieldLabel = new JLabel();
         trustTicketFileFieldLabel.setHorizontalAlignment(11);
         this.$$$loadLabelText$$$(trustTicketFileFieldLabel,
                 ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                         .getString("configuration.properties.trustticketfile.label"));
+        trustTicketFileFieldLabel.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4trust.tooltip"));
         rootPanel.add(trustTicketFileFieldLabel, cc.xy(1, 7));
         hostnameField = new JTextField();
+        hostnameField.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4host.tooltip"));
         rootPanel.add(hostnameField, cc.xy(3, 9, CellConstraints.FILL, CellConstraints.DEFAULT));
         hostnameFieldLabel = new JLabel();
         hostnameFieldLabel.setHorizontalAlignment(11);
         this.$$$loadLabelText$$$(hostnameFieldLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.properties.hostname.label"));
+        hostnameFieldLabel.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4host.tooltip"));
         rootPanel.add(hostnameFieldLabel, cc.xy(1, 9));
         ignoreFileNameField = new JTextField();
+        ignoreFileNameField.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4ignore.tooltip"));
         rootPanel.add(ignoreFileNameField, cc.xy(3, 11, CellConstraints.FILL, CellConstraints.DEFAULT));
         ignoreFileNameFieldLabel = new JLabel();
         ignoreFileNameFieldLabel.setHorizontalAlignment(11);
         this.$$$loadLabelText$$$(ignoreFileNameFieldLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.properties.ignore.label"));
+        ignoreFileNameFieldLabel.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4ignore.tooltip"));
         rootPanel.add(ignoreFileNameFieldLabel, cc.xy(1, 11));
         charsetField = new JTextField();
+        charsetField.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4charset.tooltip"));
         rootPanel.add(charsetField, cc.xy(3, 13, CellConstraints.FILL, CellConstraints.DEFAULT));
         charsetFieldLabel = new JLabel();
         charsetFieldLabel.setHorizontalAlignment(11);
         this.$$$loadLabelText$$$(charsetFieldLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.properties.charset.label"));
+        charsetFieldLabel.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4charset.tooltip"));
         rootPanel.add(charsetFieldLabel, cc.xy(1, 13));
         loginSsoFieldLabel = new JLabel();
         loginSsoFieldLabel.setHorizontalAlignment(11);
         this.$$$loadLabelText$$$(loginSsoFieldLabel, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
                 .getString("configuration.properties.loginsso.label"));
+        loginSsoFieldLabel.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4loginsso.tooltip"));
         rootPanel.add(loginSsoFieldLabel, cc.xy(1, 15));
         loginSsoField = new TextFieldWithBrowseButton();
+        loginSsoField.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                .getString("configuration.properties.p4loginsso.tooltip"));
         rootPanel.add(loginSsoField, cc.xy(3, 15));
         portFieldLabel.setLabelFor(portField);
         userFieldLabel.setLabelFor(userField);

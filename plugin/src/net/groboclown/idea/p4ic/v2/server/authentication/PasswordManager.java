@@ -46,6 +46,7 @@ import java.util.*;
         reloadable = true,
         storages = {
                 @Storage(
+                        // FIXME 2017.1
                         id = "default",
                         file = StoragePathMacros.APP_CONFIG + "/perforce-servers.xml"
                 )

@@ -1,19 +1,22 @@
 <idea-plugin version="2">
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.9.6-beta1</version>
+    <version>0.9.6</version>
+    <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="IC-135.1286"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
       <li><em>0.9.6</em>
       <ul>
+        <li><b>Last version to support IDE versions before release 2017.1 (Builds before 171.0).</b></li>
         <li>First step at proper symlink handling when adding a file.  It now better handles the
         situation where a file's parent is actually a checked-in symlink.</li>
         <li>Implemented "Shelve files to Server" action.</li>
         <li>Cleaned up some error messages from the Perforce server (removes the
         <tt>%'</tt> and <tt>'%</tt> markings).</li>
         <li>Improved the configuration UI to show the full text of error messages.</li>
+        <li>Fixed color bug that prevented the plugin from loading for some users.</li>
       </ul>
       </li>
       <li><em>0.9.5</em>

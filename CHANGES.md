@@ -5,12 +5,21 @@
 
 ### Overview
 
+* **Last version to support IDE versions before 2017.1**
 * First step at proper symlink handling.
 * Implemented "Shelve files to Server" action.
 * Bug fixes.
 
 ### Details
 
+* **Last version to support IDE versions before release 2017.1
+  (Builds before 171.0).**
+    * As of IntelliJ 2018.1, the maintenance of backwards compatibility
+      with older IDE versions has become difficult without heroic
+      refactoring efforts.
+    * Newer Android Studio versions will continue to be supported.
+    * A branch will be made to allow bug fixes to happen in the older
+      version, or if future developers want to carry on support.
 * First step at proper symlink handling. (#156)
     * Files marked with the *symlink* type must be handled carefully.
       Perforce does not natively understand that if `//a/b/c` is a
@@ -30,6 +39,7 @@
       (#161)
     * Improved the properties UI elements to provide tool tips for each property.
       (#159)
+    * Fixed color bug (#168)
 * Testing improvements
     * Added gradle scripts to setup integration testing environments more
       easily.

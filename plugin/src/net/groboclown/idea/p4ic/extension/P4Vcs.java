@@ -48,7 +48,6 @@ import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
-import com.intellij.ui.JBColor;
 import com.intellij.util.ThreeState;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.P4Bundle;
@@ -59,6 +58,7 @@ import net.groboclown.idea.p4ic.config.ClientConfig;
 import net.groboclown.idea.p4ic.config.UserProjectPreferences;
 import net.groboclown.idea.p4ic.ui.P4MultipleConnectionWidget;
 import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
+import net.groboclown.idea.p4ic.util.ColorUtil;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeProvider;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangelistListener;
@@ -829,33 +829,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     @Nullable
     private static Color toShelvedColor(@Nullable Color color) {
-        if (color == null) {
-            return null;
-        }
-
-        return new JBColor(
-            new Color(
-                lighten(color.getRed(), true),
-                lighten(color.getGreen(), true),
-                lighten(color.getBlue(), true)
-            ), new Color(
-                lighten(color.getRed(), false),
-                lighten(color.getGreen(), false),
-                lighten(color.getBlue(), false)
-            )
-        );
-    }
-
-
-    private static int lighten(int base, boolean isLight) {
-        int newVal;
-        if (isLight) {
-            // light color scheme, so lighten it (to make it not stand out as much).
-            newVal = base + 32;
-        } else {
-            newVal = base - 32;
-        }
-        return Math.max(0, Math.min(256, newVal));
+        return ColorUtil.lightenColor(color);
     }
 
 }

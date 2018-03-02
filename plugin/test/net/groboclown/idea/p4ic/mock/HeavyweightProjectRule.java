@@ -110,7 +110,8 @@ public class HeavyweightProjectRule extends ExternalResource {
         super.before();
 
         System.setProperty(PlatformUtils.PLATFORM_PREFIX_KEY, PlatformUtils.IDEA_CE_PREFIX);
-        PlatformTestCase.initPlatformLangPrefix();
+        // FIXME 2017.1
+        //PlatformTestCase.initPlatformLangPrefix();
         IdeaTestApplication.getInstance(null);
 
         projectFixtureBuilder = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(name);

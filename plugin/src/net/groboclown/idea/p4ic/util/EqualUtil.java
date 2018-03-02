@@ -35,7 +35,7 @@ public class EqualUtil {
     }
 
 
-    public static boolean isEqual(@Nullable File a, @Nullable File b) {
+    public static boolean isSameFile(@Nullable File a, @Nullable File b) {
         return FileUtil.filesEqual(a, b);
     }
 }

@@ -65,6 +65,7 @@ public class ResolvedPropertiesPanel {
     private JPanel rootPanel;
 
     private JComboBox rootDirDropdownBox;
+    // FIXME 2017.1
     private DefaultComboBoxModel/*<ConfigPath>*/ rootDirDropdownBoxModel; // JDK 1.6 doesn't have generic models
 
     private JButton refreshResolvedPropertiesButton;
@@ -73,7 +74,8 @@ public class ResolvedPropertiesPanel {
     private AsyncProcessIcon refreshResolvedPropertiesSpinner;
     private JPanel myProblemsPanel;
     private JList/*<RootedConfigProblem>*/ selectedProblemsList;
-    private CollectionListModel/*<RootedConfigProblem>*/ selectedProblemsListModel; // JDK 1.6 doesn't have generic models
+    private CollectionListModel/*<RootedConfigProblem>*/ selectedProblemsListModel;
+            // JDK 1.6 doesn't have generic models
 
     private P4ProjectConfig lastConfig;
 

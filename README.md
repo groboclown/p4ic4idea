@@ -9,6 +9,7 @@ project with a Perforce repository through IDEA's built-in VCS support.
 For a full list of supported products, please see
 [the JetBrains plugin page](https://plugins.jetbrains.com/update/index?pr=&updateId=22898)
 
+This is the compatibility branch for version 135.  The master branch is for compatibility with newer IDEs.
 
 
 # Getting Started

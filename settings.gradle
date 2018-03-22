@@ -1,0 +1,10 @@
+rootProject.name = 'p4ic4idea'
+
+include (
+        'p4d-test-core',
+        'p4java',
+        'swarm',
+        'idea-compat/compat-api',
+        'idea-compat/v171',
+        'integration-test'
+)

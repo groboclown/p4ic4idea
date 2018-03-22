@@ -1,0 +1,12 @@
+group 'net.groboclown.p4ic4idea'
+version '0.10.0-SNAPSHOT'
+
+allprojects {
+    version '1.6'
+
+    // To generate gradle wrapper and its properties with a specific location of gradle
+    task wrapper(type: Wrapper) {
+        description 'Modifies the gradle binary distribution location used by gradle wrapper'
+        distributionUrl = uri('http://services.gradle.org/distributions/gradle-4.6-bin.zip')
+    }
+}

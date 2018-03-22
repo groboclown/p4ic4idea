@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module external.linked.project.id=":p4d-test-core:main" external.linked.project.path="$MODULE_DIR$/../../../p4d-test-core" external.root.project.path="$MODULE_DIR$/../../.." external.system.id="GRADLE" external.system.module.group="net.groboclown.p4ic4idea" external.system.module.type="sourceSet" external.system.module.version="1.0" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
+    <output url="file://$MODULE_DIR$/../../../p4d-test-core/out/production/classes" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../../../p4d-test-core/src/main">
+      <sourceFolder url="file://$MODULE_DIR$/../../../p4d-test-core/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../p4d-test-core/src/main/resources" type="java-resource" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>

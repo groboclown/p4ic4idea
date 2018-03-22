@@ -1,0 +1,41 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+</head>
+<body bgcolor="white">
+<H1>P4J -- Java Access to Perforce SCM Services</H1>
+The Perforce P4J Java API provides access to Perforce software configuration management
+services through a Java-natural API.
+<p>
+P4J is intended for use in standalone and embedded products such as Perforce's P4WSAD
+Eclipse plug-in or third-party products.
+P4J does not support all possible Perforce server commands.
+In particular, P4J does not support some of the more obscure Perforce admin or
+job-related commands, but the set of services
+available through P4J is intended to be useful and sufficient for day-to-day
+developer work and for most scripted applications.
+<p>
+P4J allows the user to select a protocol for communicating with Perforce servers (see the
+P4JServerFactory class in the com.perforce.p4j.server package); the details of these
+protocols are typically fairly opaque, but currently the two major protocol implementations
+use the Perforce C++ API or the Perforce p4 command-line interpreter respectively.
+<p>
+P4J assumes JDK 5 or later (it makes extensive use of parameterized types, for example),
+and -- depending on the protocol chosen -- your environment must include a working
+p4 command line interpreter (which comes with every Perforce installation) or the C++
+API (optionally available from Perforce's website). In most client configurations,
+one or both of these will already be installed in any case -- ask your IT staff.
+<p>
+The main P4J usage model is described in detail elsewhere, but in summary, the vast majority
+of uses start with the server factory, P4JServerFactory; this factory is used to obtain
+a P4JServer object that can be used to issue commands to the associated Perforce server.
+Other important interfaces and objects include the P4JClient (usually obtained through
+a P4JServer method call), which is used to issue Perforce client-specific commands (such
+as Perforce client workspace file edit, add, delete, and sync operations); the P4JChangeList
+interface for Perforce changelists; and the various Perforce file interfaces for interrogating
+and managing Perforce-managed files.
+<p>
+Note that P4J is thread-safe when each thread uses its own P4JServer object and subsidiary
+objects; other usage models do not guarantee thread-safety.
+</body>
+</html>

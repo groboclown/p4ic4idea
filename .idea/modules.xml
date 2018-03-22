@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/buildSrc.iml" filepath="$PROJECT_DIR$/.idea/modules/buildSrc.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/buildSrc_main.iml" filepath="$PROJECT_DIR$/.idea/modules/buildSrc_main.iml" group="buildSrc" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/buildSrc_test.iml" filepath="$PROJECT_DIR$/.idea/modules/buildSrc_test.iml" group="buildSrc" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api.iml" group="idea-compat/compat-api" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api_main.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api_main.iml" group="idea-compat/compat-api" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api_mainIdea172.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api_mainIdea172.iml" group="idea-compat/compat-api" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api_mainIdea173.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api_mainIdea173.iml" group="idea-compat/compat-api" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api_test.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api_test.iml" group="idea-compat/compat-api" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api_testIdea172.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api_testIdea172.iml" group="idea-compat/compat-api" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api_testIdea173.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/idea-compat_compat-api_testIdea173.iml" group="idea-compat/compat-api" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/v171/idea-compat_v171.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/v171/idea-compat_v171.iml" group="idea-compat/v171" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/v171/idea-compat_v171_main.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/v171/idea-compat_v171_main.iml" group="idea-compat/v171" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/v171/idea-compat_v171_test.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/v171/idea-compat_v171_test.iml" group="idea-compat/v171" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/integration-test/integration-test.iml" filepath="$PROJECT_DIR$/.idea/modules/integration-test/integration-test.iml" group="integration-test" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core.iml" filepath="$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core.iml" group="p4d-test-core" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core_main.iml" filepath="$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core_main.iml" group="p4d-test-core" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core_test.iml" filepath="$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core_test.iml" group="p4d-test-core" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4ic4idea.iml" filepath="$PROJECT_DIR$/.idea/modules/p4ic4idea.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4java/p4java.iml" filepath="$PROJECT_DIR$/.idea/modules/p4java/p4java.iml" group="p4java" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4java/p4java_main.iml" filepath="$PROJECT_DIR$/.idea/modules/p4java/p4java_main.iml" group="p4java" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4java/p4java_test.iml" filepath="$PROJECT_DIR$/.idea/modules/p4java/p4java_test.iml" group="p4java" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/swarm/swarm.iml" filepath="$PROJECT_DIR$/.idea/modules/swarm/swarm.iml" group="swarm" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/swarm/swarm_main.iml" filepath="$PROJECT_DIR$/.idea/modules/swarm/swarm_main.iml" group="swarm" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/swarm/swarm_test.iml" filepath="$PROJECT_DIR$/.idea/modules/swarm/swarm_test.iml" group="swarm" />
+    </modules>
+  </component>
+</project>

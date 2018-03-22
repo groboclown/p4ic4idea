@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: net.bytebuddy:byte-buddy:1.8.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/test/byte-buddy-1.8.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/lib/test/byte-buddy-1.8.0.jar!/" />
+    </SOURCES>
+  </library>
+</component>

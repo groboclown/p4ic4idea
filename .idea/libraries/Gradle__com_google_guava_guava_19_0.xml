@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.google.guava:guava:19.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/main/guava-19.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/lib/main/guava-19.0.jar!/" />
+    </SOURCES>
+  </library>
+</component>

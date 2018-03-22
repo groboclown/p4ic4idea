@@ -1,0 +1,27 @@
+-classpath
+'/var/tmp/78942692/depot/r17.2/p4-java/com.perforce.p4java/target/classes:/var/tmp/78942692/depot/r17.2/m2/repository/org/apache/commons/commons-compress/1.9/commons-compress-1.9.jar:/var/tmp/78942692/depot/r17.2/m2/repository/org/apache/commons/commons-lang3/3.4/commons-lang3-3.4.jar:/var/tmp/78942692/depot/r17.2/m2/repository/commons-io/commons-io/2.5/commons-io-2.5.jar:/var/tmp/78942692/depot/r17.2/m2/repository/com/jcraft/jzlib/1.1.3/jzlib-1.1.3.jar:/var/tmp/78942692/depot/r17.2/m2/repository/com/google/code/findbugs/jsr305/3.0.1/jsr305-3.0.1.jar:/var/tmp/78942692/depot/r17.2/m2/repository/org/slf4j/slf4j-api/1.7.24/slf4j-api-1.7.24.jar:/var/tmp/78942692/depot/r17.2/m2/repository/org/apache/commons/commons-exec/1.3/commons-exec-1.3.jar'
+-encoding
+'UTF-8'
+-overview
+'/var/tmp/78942692/depot/r17.2/p4-java/com.perforce.p4java/src/main/javadoc/overview.html'
+-protected
+-sourcepath
+'/var/tmp/78942692/depot/r17.2/p4-java/com.perforce.p4java/src/main/java:/var/tmp/78942692/depot/r17.2/p4-java/com.perforce.p4java/src/main/javadoc'
+-Xdoclint:none
+-author
+-bottom
+'Copyright &#169; 2017 <a href="http://www.perforce.com">Perforce Software</a>. All Rights Reserved.'
+-charset
+'UTF-8'
+-d
+'/var/tmp/78942692/depot/r17.2/p4-java/com.perforce.p4java/target/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'Perforce Java API 2017.2.1535715 API'
+-link
+'http://java.sun.com/javase/6/docs/api'
+-use
+-version
+-windowtitle
+'Perforce Java API 2017.2.1535715 API'

@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.objenesis:objenesis:2.6">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/test/objenesis-2.6.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/lib/test/objenesis-2.6.jar!/" />
+    </SOURCES>
+  </library>
+</component>

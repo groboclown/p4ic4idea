@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.reflections:reflections:0.9.11">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/test/reflections-0.9.11.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/lib/test/reflections-0.9.11.jar!/" />
+    </SOURCES>
+  </library>
+</component>

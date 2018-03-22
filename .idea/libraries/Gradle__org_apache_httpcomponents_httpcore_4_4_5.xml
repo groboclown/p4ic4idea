@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.httpcomponents:httpcore:4.4.5">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/main/httpcore-4.4.5.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/lib/main/httpcore-4.4.5.jar!/" />
+    </SOURCES>
+  </library>
+</component>

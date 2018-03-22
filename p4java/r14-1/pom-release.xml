@@ -1,0 +1,42 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.perforce</groupId>
+	<artifactId>p4java</artifactId>
+	<packaging>jar</packaging>
+	<version>2014.1.0</version>
+	<name>Perforce Java API</name>
+	<url>http://www.perforce.com</url>
+	<description>
+		P4Java, the Perforce Java API is a Java-native API for accessing Perforce SCM services from within Java applications, servlets, plug-ins, and other Java contexts.
+	</description>
+	<organization>
+		<name>Perforce Software</name>
+		<url>http://www.perforce.com</url>
+	</organization>
+	<scm>
+		<connection>scm:perforce:workshop.perforce.com:1666//guest/perforce_software/p4java</connection>
+		<developerConnection>scm:perforce:workshop.perforce.com:1666//guest/perforce_software/p4java</developerConnection>
+		<url>https://swarm.workshop.perforce.com/files/guest/perforce_software/p4java</url>
+	</scm>
+	<developers>
+		<developer>
+			<id>p4java</id>
+			<name>Perforce Software</name>
+			<email>support+java@perforce.com</email>
+		</developer>
+	</developers>
+	<licenses>
+		<license>
+			<name>Perforce Software</name>
+			<url>https://swarm.workshop.perforce.com/files/guest/perforce_software/p4java/license.txt</url>
+		</license>
+	</licenses>
+	<dependencies>
+		<dependency>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jzlib</artifactId>
+			<version>1.1.2</version>
+		</dependency>
+	</dependencies>
+</project>

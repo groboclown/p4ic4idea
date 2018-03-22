@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.commons:commons-compress:1.16.1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/main/commons-compress-1.16.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/lib/main/commons-compress-1.16.1.jar!/" />
+    </SOURCES>
+  </library>
+</component>

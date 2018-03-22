@@ -1,0 +1,26 @@
+*.class
+.gradle/
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# compiled output
+work/
+out/
+build/
+!/build/
+p4ic4idea.zip
+
+# p4java needs to be updated to use the build directory instead of these.
+/p4java/tmp/
+/p4java/p4root/
+
+# specific user properties
+local.properties
+local.properties.*
+.idea/workspace.xml
+.idea/out/
+!/local.properties.template

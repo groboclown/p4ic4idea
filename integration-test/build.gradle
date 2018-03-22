@@ -1,0 +1,202 @@
+group 'net.groboclown.p4ic4idea'
+version '1.0-SNAPSHOT'
+
+ext {
+    buildDir = "$projectDir/build"
+    testDir = "$buildDir/test"
+    p4dDir = "$testDir/p4d"
+    clientRootDir = "$testDir/client"
+    p4port = "9666"
+    p4user = "user1"
+    p4passwd = "password"
+    p4client = "user-client"
+    p4Exec = "p4"
+    p4dExec = "p4d"
+}
+
+
+task setupBaseClientDir {
+    group 'client-setup'
+    description 'Setup the base client directory.'
+
+    inputs.file getBuildFile()
+    outputs.file "$clientRootDir/.p4config"
+
+    doLast {
+        file(clientRootDir).mkdirs()
+        file("$clientRootDir/.p4config").withPrintWriter {
+            it.println("P4PORT=$p4port")
+            it.println("P4USER=$p4user")
+            it.println("P4PASSWD=$p4passwd")
+            it.println("P4CLIENT=$p4client")
+
+            // Ensure we don't pick up the user's existing settings.
+            it.println("P4CONFIG=/not/a/file")
+        }
+    }
+}
+
+
+task setupP4User(type: Exec) {
+    group 'client-setup'
+    description 'Create the Perforce user'
+    dependsOn 'setupBaseClientDir'
+    dependsOn 'startP4d'
+
+    workingDir clientRootDir
+    environment("P4ENVIRO", "$clientRootDir/.p4config")
+    commandLine p4Exec, "user", "-i"
+    standardInput = new ByteArrayInputStream((
+            "User: $p4user\n\n"
+            + "Email:  $p4user@site.example\n\n"
+            + "FullName: $p4user Name\n"
+    ).getBytes())
+
+    doFirst {
+        // Just a check to see our configuration
+        exec {
+            workingDir "$clientRootDir"
+            environment("P4ENVIRO", "$clientRootDir/.p4config")
+            commandLine p4Exec, "set", "-s"
+        }
+   }
+}
+
+
+task setupP4Client {
+    group 'client-setup'
+    description 'Create the Perforce client'
+    dependsOn 'setupP4User'
+    dependsOn 'startP4d'
+
+
+    doLast {
+        // Just in case it doesn't already exist...
+        runP4(['depot', '-i'],
+                "Depot: depot\n\n"
+                    + "Owner: $p4user\n\n"
+                    + "Description:\n\tBase Depot\n\n"
+                    + "Type: local\n\n"
+                    + "Map: depot/...")
+
+        runP4(['client', '-i'],
+                // Note: don't specify host
+                "Client: $p4client\n\n"
+                + "Owner: $p4user\n\n"
+                + "Description:\n\tClient for $p4user\n\n"
+                + "Root: $clientRootDir\n\n"
+                + "Options: noallwrite noclobber nocompress unlocked nomodtime rmdir\n\n"
+                + "SubmitOptions: submitunchanged\n\n"
+                + "LineEnd: local\n\n"
+                + "View:\n\t//depot/projectA/moduleA/... //$p4client/...\n"
+        )
+    }
+}
+
+
+task setupP4dDir {
+    group 'p4d-setup'
+    description 'Sets up the Perforce depot directory, only if the server is not already running'
+
+    doLast {
+        if (isP4dOff()) {
+            def p4dDir = file("$p4dDir")
+            delete fileTree(dir: p4dDir)
+            p4dDir.mkdirs()
+        }
+    }
+}
+
+
+task startP4d {
+    group 'p4d'
+    description 'Execute the Perforce Daemon'
+    dependsOn 'setupBaseClientDir'
+    dependsOn 'setupP4dDir'
+
+    doLast {
+        if (isP4dOff()) {
+            // could not connect to server
+            exec {
+                workingDir p4dDir
+
+                // Non-ssh daemon server
+                commandLine p4dExec, '--daemonsafe', '-q', '-p', p4port, '-r', p4dDir, '-J', 'off', '-L', "$p4dDir/p4d.log"
+            }
+        }
+        // Just a check to see our configuration
+        // exec {
+        //     workingDir "$clientRootDir"
+        //     environment("P4ENVIRO", "$clientRootDir/.p4config")
+        //     commandLine p4Exec, "set", "-s"
+        // }
+    }
+}
+
+
+task setupClientFilesLink {
+    group 'client-setup'
+
+    outputs.files fileTree(dir: "$clientRootDir/slink-real")
+    outputs.file "$clientRootDir/slink-sym"
+
+    doLast {
+        // Creates files and links for testing symlinks
+        delete fileTree(dir: "$clientRootDir/slink-real")
+        delete "$clientRootDir/slink-sym"
+
+        file("$clientRootDir/slink-real/b1").mkdirs()
+        file("$clientRootDir/slink-real/b1/about.md").withPrintWriter {
+            it.println("Some Text")
+        }
+
+        def target = java.nio.file.Paths.get("$clientRootDir/slink-real/b1")
+        def link = java.nio.file.Paths.get("$clientRootDir/slink-sym")
+        java.nio.file.Files.createSymbolicLink(link, target)
+    }
+}
+
+
+task addDepotLinks {
+    group 'populate-depot'
+    dependsOn 'setupClientFilesLink'
+    dependsOn 'setupP4Client'
+
+    doLast {
+        runP4(["add", "slink-real/b1/about.md"])
+        runP4(["add", "-t", "symlink", "slink-sym"])
+        runP4(["submit", "-d", "Symlink"])
+    }
+}
+
+
+
+def runP4(argArray, String stdin = null) {
+    def args = [p4Exec, '-d', clientRootDir ]
+    argArray.each {
+        args.add(it)
+    }
+    exec {
+        environment("P4ENVIRO", "$clientRootDir/.p4config")
+        commandLine args
+
+        if (stdin != null) {
+            standardInput = new ByteArrayInputStream(stdin.getBytes())
+        }
+    }
+}
+
+
+
+def isP4dOff() {
+    def r = exec {
+        workingDir "$clientRootDir"
+        environment("P4ENVIRO", "$clientRootDir/.p4config")
+        commandLine p4Exec, "info"
+        ignoreExitValue = true
+        standardOutput = new ByteArrayOutputStream()
+        errorOutput = new ByteArrayOutputStream()
+    }
+
+    return r.exitValue == 1
+}

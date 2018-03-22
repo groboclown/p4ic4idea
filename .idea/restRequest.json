@@ -1,0 +1,8 @@
+{
+  "uri": "http://swarm.zilliant.com/api/v5/activity",
+  "method": "GET",
+  "body": "",
+  "headers": {
+    "Authorization": "Basic YWxicmVjaHRtOkU3NzY4MDBBRjhFN0E2QkZDNzJBQUIxMkQ0MkVCMkUz"
+  }
+}

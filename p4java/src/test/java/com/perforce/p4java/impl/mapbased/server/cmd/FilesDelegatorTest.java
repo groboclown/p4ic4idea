@@ -1,8 +1,10 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
 import static com.perforce.p4java.server.CmdSpec.FILES;
+import static com.perforce.p4java.tests.ServerMessageMatcher.isText;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -248,8 +250,8 @@ public class FilesDelegatorTest extends AbstractP4JavaUnitTest {
         assertEquals(1, specs.size());
         IFileSpec fs = specs.get(0);
         assertNotNull(specs.get(0));
-        assertEquals("... - must create client 'testclient' to access local files.",
-                fs.getStatusMessage());
+        assertThat(fs.getStatusMessage(),
+                isText("... - must create client 'testclient' to access local files."));
         assertEquals(FileSpecOpStatus.ERROR, fs.getOpStatus());
     }
 

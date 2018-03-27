@@ -71,7 +71,7 @@ public class ResultListBuilder {
                 // p4ic4idea: use a server message
                 IServerMessage message = ResultMapParser.toServerMessage(map);
                 ResultMapParser.handleErrors(message);
-                if (nonNull(message) && !message.isInfoOrError()) {
+                if (isNull(message) || !message.isInfoOrError()) {
                     obj = construct.apply(map);
                 }
             }
@@ -153,10 +153,11 @@ public class ResultListBuilder {
                 return new FileSpec(FileSpecOpStatus.ERROR, message);
             } else if (message.isInfoOrError()) {
                 return new FileSpec(FileSpecOpStatus.INFO, message);
-            } else {
-                return new FileSpec(map, server, -1);
             }
         }
-        return null;
+        if (isNull(map)) {
+            return null;
+        }
+        return new FileSpec(map, server, -1);
     }
 }

@@ -69,7 +69,7 @@ public class LoginAsAnotherUserTest extends P4JavaTestCase {
 		String userName = "p4jtestuser2";
 		String password = "p4jtestuser2";
 
-		server = ServerFactory.getOptionsServer(this.serverUrlString, serverProps);
+		server = ServerFactory.getOptionsServer(getServerUrlString(), serverProps);
 		assertThat(server, notNullValue());
 
 		// Register callback
@@ -129,7 +129,7 @@ public class LoginAsAnotherUserTest extends P4JavaTestCase {
 		String userName = "p4jtestuser2";
 		String password = "p4jtestuser2";
 
-		server = ServerFactory.getOptionsServer(this.serverUrlString, serverProps);
+		server = ServerFactory.getOptionsServer(getServerUrlString(), serverProps);
 		assertThat(server, notNullValue());
 
 		// Register callback

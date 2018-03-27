@@ -11,7 +11,6 @@ hs_err_pid*
 work/
 out/
 build/
-!/build/
 p4ic4idea.zip
 
 # p4java needs to be updated to use the build directory instead of these.
@@ -21,6 +20,11 @@ p4ic4idea.zip
 # specific user properties
 local.properties
 local.properties.*
-.idea/workspace.xml
-.idea/out/
 !/local.properties.template
+
+# Stuff that idea puts in its folder that shouldn't be checked-in
+/.idea/workspace.xml
+/.idea/modules/
+!/.idea/modules/*.iml
+!/.idea/modules/*/*.iml
+!/.idea/modules/*/*/*.iml

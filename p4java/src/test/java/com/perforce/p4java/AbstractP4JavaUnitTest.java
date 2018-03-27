@@ -55,6 +55,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * @author Sean Shou
  * @since 25/08/2016
+ *
+ * @deprecated this is big, old, and nasty.  It shouldn't be used.  There are much better alternatives to
+ * 		the general usage that this is trying to solve, and the utility stuff should instead be put into a
+ * 	    utility class.
  */
 public abstract class AbstractP4JavaUnitTest {
 	protected static IOptionsServer server = null;
@@ -168,7 +172,7 @@ public abstract class AbstractP4JavaUnitTest {
 		String errors = "";
 		for (IFileSpec file : out) {
 			if (file.getOpStatus() == FileSpecOpStatus.ERROR) {
-				errors += file.getStatusMessage() + "\n";
+				errors += file.getStatusString() + "\n";
 			}
 		}
 		if (errors.length() > 0) {
@@ -186,7 +190,7 @@ public abstract class AbstractP4JavaUnitTest {
 		String errors = "";
 		for (IFileSpec file : out) {
 			if (file.getOpStatus() == FileSpecOpStatus.ERROR) {
-				errors += file.getStatusMessage() + "\n";
+				errors += file.getStatusString() + "\n";
 			}
 		}
 		if (errors.length() > 0) {

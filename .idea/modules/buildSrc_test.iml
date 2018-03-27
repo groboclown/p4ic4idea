@@ -94,6 +94,15 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
+          <root url="jar://$USER_HOME$/.gradle/wrapper/dists/gradle-4.6-bin/duhtpboxeoghujb3mpu8wvikb/gradle-4.6/lib/groovy-all-2.4.12.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
           <root url="jar://$USER_HOME$/.gradle/caches/4.6/generated-gradle-jars/gradle-test-kit-4.6.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -104,15 +113,6 @@
       <library>
         <CLASSES>
           <root url="jar://$USER_HOME$/.gradle/wrapper/dists/gradle-4.6-bin/duhtpboxeoghujb3mpu8wvikb/gradle-4.6/lib/gradle-installation-beacon-4.6.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/wrapper/dists/gradle-4.6-bin/duhtpboxeoghujb3mpu8wvikb/gradle-4.6/lib/groovy-all-2.4.12.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

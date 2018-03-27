@@ -41,7 +41,7 @@ public class SimpleUserTest extends P4JavaTestCase {
 		IServer server = null;
 		
 		try {
-			server = getServer(this.serverUrlString, null, testUserName, "");
+			server = getServer(getServerUrlString(), null, testUserName, "");
 			assertNotNull("Null server returned", server);
 			
 			List<IUserSummary> users = server.getUsers(null, 0);
@@ -71,7 +71,7 @@ public class SimpleUserTest extends P4JavaTestCase {
 		IServer server = null;
 		
 		try {
-			server = getServer(this.serverUrlString, null, testUserName, "");
+			server = getServer(getServerUrlString(), null, testUserName, "");
 			assertNotNull("Null server returned", server);
 			
 			IUser user = server.getUser(null);
@@ -92,7 +92,7 @@ public class SimpleUserTest extends P4JavaTestCase {
     @Test
     public void testLoginNotRequired() {
         try {
-            getServer(this.serverUrlString, null, testUserName, testUserPassword);
+            getServer(getServerUrlString(), null, testUserName, testUserPassword);
             fail("Expected exception!");
         } catch (Exception exc) {
             Assert.assertEquals("'login' not necessary, no password set for this user.",

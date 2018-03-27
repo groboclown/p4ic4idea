@@ -6,6 +6,7 @@ package com.perforce.p4java.core.file;
 import com.perforce.p4java.core.IServerResource;
 import com.perforce.p4java.server.IServerMessage;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -52,6 +53,10 @@ public interface IFileOperationResult extends IServerResource {
 	// p4ic4idea: use a nullable IServerMessage instead.
 	@Nullable
 	IServerMessage getStatusMessage();
+
+	// p4ic4idea: added for unit test
+	@Nonnull
+	String getStatusString();
 	
 	/**
 	 * Get the Perforce severity code associated with the operation result. Will only

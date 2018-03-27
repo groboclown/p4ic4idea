@@ -21,6 +21,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -41,7 +42,6 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @Jobs({ "job050447" })
 @TestId("Dev112_GetDirsTest")
 public class GetDirsTest extends P4JavaTestCase {
-
 	IOptionsServer server = null;
 	IClient client = null;
 
@@ -89,7 +89,7 @@ public class GetDirsTest extends P4JavaTestCase {
 	public void tearDown() {
 		// cleanup code (after each test).
 		if (server != null) {
-			this.endServerSession(server);
+			endServerSession(server);
 		}
 	}
 
@@ -101,8 +101,7 @@ public class GetDirsTest extends P4JavaTestCase {
 
 		try {
 			List<IFileSpec> directories = server.getDirectories(
-					FileSpecBuilder.makeFileSpecList(new String[] {
-							"//depot/101*", "//depot/112Dev/*" }),
+					FileSpecBuilder.makeFileSpecList("//depot/101*", "//depot/112Dev/*"),
 					new GetDirectoriesOptions());
 			assertNotNull(directories);
 
@@ -119,9 +118,8 @@ public class GetDirsTest extends P4JavaTestCase {
 
 		try {
 			List<IFileSpec> directories = server.getDirectories(
-					FileSpecBuilder.makeFileSpecList(new String[] {
-							"//depotadfa/adf", "//depot/101*", "//depot/abc",
-							"//adfadf/", "adsfasdf", "..." }),
+					FileSpecBuilder.makeFileSpecList("//depotadfa/adf", "//depot/101*", "//depot/abc",
+							"//adfadf/", "adsfasdf", "..."),
 					new GetDirectoriesOptions());
 			assertNotNull(directories);
 

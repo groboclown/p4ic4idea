@@ -8,6 +8,7 @@ import com.perforce.p4java.tests.GraphServerRule;
 import com.perforce.p4java.tests.SimpleTestServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import com.perforce.test.P4ExtFileUtils;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
@@ -43,7 +44,8 @@ import static org.junit.Assert.fail;
 @TestId("Dev171_GraphReceivePackTest")
 public class GraphReceivePackTest extends P4JavaRshTestCase {
 
-	private static final String PACK_FILE_PATH = SimpleTestServer.RESOURCES + "com/perforce/p4java/scm-api-plugin.git/";
+	// p4ic4idea: use correct resource access
+	private static final String PACK_FILE_PATH = "com/perforce/p4java/scm-api-plugin.git/";
 	@Rule
 	public ExpectedException exception = ExpectedException.none();
 
@@ -56,7 +58,10 @@ public class GraphReceivePackTest extends P4JavaRshTestCase {
 		properties.put(PropertyDefs.IGNORE_FILE_NAME_KEY_SHORT_FORM, ".p4ignore");
 		properties.put(PropertyDefs.ENABLE_GRAPH_SHORT_FORM, "true");
 		setupServer(p4d.getRSHURL(), "p4jtestsuper", "p4jtestsuper", true, properties);
-		extract(new File(PACK_FILE_PATH + "scm-api-plugin.git.tar.gz"), PACK_FILE_PATH + "unpacked");
+		P4ExtFileUtils.extractResource(GraphReceivePackTest.class,
+				PACK_FILE_PATH + "scm-api-plugin.git.tar.gz",
+				new File("unpacked"),
+				true);
 	}
 
 	@Before

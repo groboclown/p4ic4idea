@@ -70,7 +70,7 @@ public class QuietModeTest extends P4JavaTestCase {
 			props.put("quietMode", "true");
 
 			server = ServerFactory
-					.getOptionsServer(this.serverUrlString, props);
+					.getOptionsServer(getServerUrlString(), props);
 			assertNotNull(server);
 
 			// Register callback

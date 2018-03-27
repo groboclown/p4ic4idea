@@ -31,7 +31,7 @@ public class ServerConfigureTest102 {
         h = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline("p10.2");
-        ts.start();
+        ts.startAsync();
     }
 
     /*
@@ -42,7 +42,7 @@ public class ServerConfigureTest102 {
         try {
 
             IOptionsServer server = getOptionsServer(
-                    "p4java://localhost:" + ts.getPort(), null);
+                    ts.getLocalUrl(), null);
 
             server.connect();
             String status = server.setOrUnsetServerConfigurationValue(configName,
@@ -92,8 +92,9 @@ public class ServerConfigureTest102 {
 
         try {
 
-            IOptionsServer server = getOptionsServer(
-                    "p4java://localhost:" + ts.getPort(), null);
+            //IOptionsServer server = getOptionsServer(
+            //        "p4java://localhost:" + ts.getPort(), null);
+            IOptionsServer server = getOptionsServer(ts.getRSHURL(), null);
 
             server.connect();
             server.setOrUnsetServerConfigurationValue(configName, null);
@@ -138,7 +139,8 @@ public class ServerConfigureTest102 {
         try {
 
             boolean shown = false;
-            String serverName = "p4java://localhost:" + ts.getPort();
+            //String serverName = "p4java://localhost:" + ts.getPort();
+            String serverName = ts.getRSHURL();
             IOptionsServer server = getOptionsServer(serverName,
                     null);
 

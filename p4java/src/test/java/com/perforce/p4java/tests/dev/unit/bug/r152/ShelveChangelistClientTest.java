@@ -3,8 +3,10 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r152;
 
+import static com.perforce.p4java.tests.ServerMessageMatcher.isText;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -152,7 +154,9 @@ public class ShelveChangelistClientTest extends P4JavaRshTestCase {
 			assertTrue(files.size() > 0);
 			assertNotNull(files.get(0) != null);
 			assertTrue(files.get(0).getOpStatus() == FileSpecOpStatus.INFO);
-			assertEquals("Shelved change " + changelist.getId() + " deleted.", files.get(0).getStatusMessage());
+			assertThat(
+					files.get(0).getStatusMessage(),
+					isText("Shelved change " + changelist.getId() + " deleted."));
 
 		} catch (P4JavaException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());

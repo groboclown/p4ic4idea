@@ -48,7 +48,7 @@ public class SubmitShelvedChangelistTest extends P4JavaTestCase {
 
   @BeforeEach
   public void setUp() throws Exception {
-    server = getServer(this.serverUrlString, null, getUserName(), getPassword());
+    server = getServer(getServerUrlString(), null, getUserName(), getPassword());
     assertThat(server, notNullValue());
     client = server.getClient(getDefaultTestClientName());
     assertThat(client, notNullValue());

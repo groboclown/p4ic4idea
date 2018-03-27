@@ -41,8 +41,7 @@ import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import com.perforce.test.FileUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.perforce.test.P4ExtFileUtils;
 
 
 /**
@@ -1225,7 +1224,7 @@ public class ClientIntegrationE2ETest extends P4JavaTestCase {
         }
         String osName = getCurrentOsName();
         if (osName.toLowerCase().contains("windows")) {
-            FileUtils.createDirectory(toPath);
+            P4ExtFileUtils.createDirectory(toPath);
             cmd = "xcopy " + fromPathStr + " " + toPathStr + " /E /H";
         } else {
             cmd = "cp -R " + fromPathStr + " " + toPathStr;

@@ -20,11 +20,13 @@ import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+// TODO rewrite to use TestServer
+
 public class SimpleTestServer {
 
 	private static Logger logger = LoggerFactory.getLogger(SimpleTestServer.class);
 
-	public static final String RESOURCES = "src/test/resources/";
+	private static final String RESOURCES = "src/test/resources/";
 	private String p4d;
 	private File p4root;
 

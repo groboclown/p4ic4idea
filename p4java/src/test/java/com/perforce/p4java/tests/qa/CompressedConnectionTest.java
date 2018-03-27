@@ -33,7 +33,10 @@ public class CompressedConnectionTest {
         helper = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(helper.getServerVersion());
-        ts.start();
+
+        ts.initialize();
+        // just use RSH
+        //ts.start();
 
         IOptionsServer server = helper.getServer(ts);
         server.setUserName(ts.getUser());

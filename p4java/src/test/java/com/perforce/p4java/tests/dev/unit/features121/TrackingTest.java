@@ -85,7 +85,7 @@ public class TrackingTest extends P4JavaTestCase {
 			props.put("enableTracking", "true");
 
 			server = ServerFactory
-					.getOptionsServer(this.serverUrlString, props);
+					.getOptionsServer(getServerUrlString(), props);
 			assertNotNull(server);
 
 			// Register callback

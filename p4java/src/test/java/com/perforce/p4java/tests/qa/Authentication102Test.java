@@ -45,7 +45,10 @@ public class Authentication102Test {
         helper = new Helper();
         ts = new TestServer();
         ts.setMonitor(2);
-        ts.start();
+
+        ts.initialize();
+        // just use RSH
+        //ts.start();
 
         server = helper.getServer(ts);
         server.setUserName(ts.getUser());

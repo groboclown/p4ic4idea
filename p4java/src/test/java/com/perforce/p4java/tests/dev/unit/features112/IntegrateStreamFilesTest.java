@@ -3,9 +3,11 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
+import static com.perforce.p4java.tests.ServerMessageMatcher.isText;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -185,9 +187,9 @@ public class IntegrateStreamFilesTest extends P4JavaTestCase {
 			assertEquals(1, files.size());
 			assertNotNull(files.get(0));
 			assertEquals(FileSpecOpStatus.ERROR, files.get(0).getOpStatus());
-			assertEquals("Stream '" + mainStream
-					+ "' has no parent, therefore (command not allowed).", files
-					.get(0).getStatusMessage());
+			assertThat(
+					files.get(0).getStatusMessage(),
+					isText("Stream '" + mainStream + "' has no parent, therefore (command not allowed)."));
 
 			// Since the specification of a mainline stream is not allowed, we
 			// will need to add the "-r" flag along with the development stream

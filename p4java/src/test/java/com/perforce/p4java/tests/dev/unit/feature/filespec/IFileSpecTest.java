@@ -42,7 +42,7 @@ public class IFileSpecTest extends P4JavaTestCase {
 
     @Before
     public void before() throws Exception {
-        server = getServer(serverUrlString, null, userName, "");
+        server = getServer(getServerUrlString(), null, userName, "");
         client = getDefaultClient(server);
         assertNotNull("client should not be Null.", client);
         clientRoot = client.getRoot();

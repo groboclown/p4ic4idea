@@ -52,7 +52,7 @@ public class StreamingSyncPerformanceTest extends P4JavaTestCase {
         // props.put("enableProgress", "true");
         // props.put("defByteRecvBufSize", "40960");
 
-        server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+        server = ServerFactory.getOptionsServer(getServerUrlString(), null);
         assertThat(server, notNullValue());
 
         // Register callback

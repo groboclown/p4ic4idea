@@ -29,7 +29,10 @@ public class SocketPoolTest {
         h = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(h.getServerVersion());
-        ts.start();
+
+        ts.initialize();
+        // just use RSH
+        //ts.start();
     }
 
     public String getPid(String s) {
@@ -55,8 +58,9 @@ public class SocketPoolTest {
         Properties properties = new Properties();
         properties.setProperty("socketPoolSize", "5");
 
-        IOptionsServer server = getOptionsServer(
-                "p4java://localhost:" + ts.getPort(), properties);
+        //IOptionsServer server = getOptionsServer(
+        //        "p4java://localhost:" + ts.getPort(), properties);
+        IOptionsServer server = getOptionsServer(ts.getRSHURL(), properties);
 
         server.connect();
         IUser user = server.getUser("user");

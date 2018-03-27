@@ -84,7 +84,7 @@ public class ClientCompressSyncTest extends P4JavaTestCase {
 			props.put("sockSoTimeout", 0);
 
 			server = ServerFactory
-					.getOptionsServer(this.serverUrlString, props);
+					.getOptionsServer(getServerUrlString(), props);
 			assertNotNull(server);
 
 			// Register callback

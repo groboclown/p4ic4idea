@@ -66,7 +66,7 @@ public class ClientAddFilesE2ETest extends P4JavaTestCase {
 		
 		try {
 			IClient client = getDefaultClient(server);
-			debugPrint("serverUrlString: " + serverUrlString, "defaultTestClientName: " + defaultTestClientName);	
+			debugPrint("serverUrlString: " + getServerUrlString(), "defaultTestClientName: " + defaultTestClientName);
 			debugPrint(true, "ClientRoot: " + client.getRoot(), "HostName: " + client.getHostName(), "userName: " + userName);
 			
 		} catch (Exception exc){

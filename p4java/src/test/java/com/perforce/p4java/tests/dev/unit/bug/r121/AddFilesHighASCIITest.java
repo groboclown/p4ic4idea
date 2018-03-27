@@ -253,7 +253,7 @@ public class AddFilesHighASCIITest extends P4JavaTestCase {
 			for (IFileSpec f : files) {
 				if (f.getOpStatus() == FileSpecOpStatus.INFO) {
 					assertNotNull(f.getStatusMessage());
-					debugPrint(f.getStatusMessage().toString());
+					debugPrint(f.getStatusString());
 					if (doesMessageContainText(f.getStatusMessage(), "ignored file can't be added")
 						|| doesMessageContainText(f.getStatusMessage(), "using text instead of")) {
 						infoCount++;

@@ -52,7 +52,7 @@ public class PropertyALTest extends P4JavaTestCase {
 		    for(Entry<String, String> target : targets.entrySet() ) {
 		        
     			// Connect to a 2013.1 server for 1st phase
-    		    serverUrlString = target.getValue();
+    		    setServerUrlString(target.getValue());
     			
     			adminserver = getServerAsSuper();
                 assertNotNull(adminserver);

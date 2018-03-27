@@ -36,7 +36,8 @@ public class ReplicaAutoloadUserAuthTicketTest extends P4JavaTestCase {
    */
   @Test
   public void testReplicaAutoLoadUserAuthTicket() throws Exception{
-
+    throw new IllegalStateException("Need to setup a replica server");
+    /*
     try {
       server = ServerFactory.getOptionsServer(P4JTEST_REPLICA_SERVER_URL_DEFAULT, props);
       assertThat(server, notNullValue());
@@ -73,5 +74,6 @@ public class ReplicaAutoloadUserAuthTicketTest extends P4JavaTestCase {
         endServerSession(server);
       }
     }
+    */
   }
 }

@@ -3,8 +3,10 @@
  */
 package com.perforce.p4java.tests.dev.unit.features111;
 
+import static com.perforce.p4java.tests.ServerMessageMatcher.isText;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.util.List;
@@ -93,7 +95,9 @@ public class RequestExceptionCodesTest extends P4JavaTestCase {
 			assertNotNull("null map[0]", map);
 			IFileSpec fileSpec = dummyFileSpec(FileSpecOpStatus.ERROR, map);
 			msg01 = RpcMessage.interpolateArgs((String) map.get("fmt0"), map);
-			assertEquals("message mismatch", msg01, fileSpec.getStatusMessage());
+			assertThat("message mismatch",
+					fileSpec.getStatusMessage(),
+					isText(msg01));
 			assertEquals("raw code mismatch", errCode01, fileSpec.getRawCode());
 			assertEquals("severity mismatch", severity01, fileSpec.getSeverityCode());
 			assertEquals("generic mismatch", generic01, fileSpec.getGenericCode());
@@ -108,7 +112,9 @@ public class RequestExceptionCodesTest extends P4JavaTestCase {
 			IFileSpec fSpec = files.get(0);
 			assertNotNull("null file spec in returned files list", fSpec);
 			assertEquals("wrong op status", FileSpecOpStatus.ERROR, fSpec.getOpStatus());
-			assertEquals("mismatched error message", msg01, fSpec.getStatusMessage());
+			assertThat("mismatched error message",
+					fSpec.getStatusMessage(),
+					isText(msg01));
 			assertEquals("mismatched raw code", errCode01, fSpec.getRawCode());
 			assertEquals("mismatched generic code", generic01, fSpec.getGenericCode());
 			assertEquals("mismatched severity code", severity01, fSpec.getSeverityCode());

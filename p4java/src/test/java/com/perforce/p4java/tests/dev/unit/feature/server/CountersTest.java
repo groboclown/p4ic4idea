@@ -36,7 +36,7 @@ public class CountersTest extends P4JavaTestCase {
 
 		try {
 			server = this.getOptionsServer(
-							this.serverUrlString,
+							getServerUrlString(),
 							null,
 							this.superUserName,
 							this.superUserPassword);

@@ -138,7 +138,7 @@ public class GraphRevListTest extends P4JavaRshTestCase {
 
         graphRevListOptions = graphRevListOptions
                 .withDepot(depot)
-                .withCommitValue(null);
+                .withCommitValue();
         revListResult = server.getGraphRevList(graphRevListOptions);
         assertNotNull(revListResult);
         assertEquals(649, revListResult.size());

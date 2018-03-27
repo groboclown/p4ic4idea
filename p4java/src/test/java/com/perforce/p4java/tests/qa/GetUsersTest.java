@@ -40,7 +40,10 @@ public class GetUsersTest {
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(h.getServerVersion());
         ts.setMonitor(2);
-        ts.start();
+
+        ts.initialize();
+        // just use RSH
+        //ts.start();
 
         server = h.getServer(ts);
         server.setUserName(ts.getUser());

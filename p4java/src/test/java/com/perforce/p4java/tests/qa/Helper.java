@@ -39,12 +39,13 @@ import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.server.GetExtendedFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
+import com.perforce.test.P4ExtFileUtils;
 import com.perforce.test.TestServer;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -69,25 +70,32 @@ public class Helper {
     public String getServerVersion() {
         Properties p = new Properties();
         String version = null;
-        try (FileInputStream is = new FileInputStream("src/test/resources/qa/test.properties")) {
+        // p4ic4idea: use proper resource loading
+        try (InputStream is = P4ExtFileUtils.getStream(this, "/qa/test.properties")) {
             p.load(is);
             version = p.getProperty("serverVersion");
-        } catch (Throwable t) {
+        // p4ic4idea: never catch Throwable unless you're really careful
+        //} catch (Throwable t) {
+        } catch (IOException t) {
             error(t);
         }
         return version;
     }
 
     public IOptionsServer getServer(TestServer ts) throws Throwable {
-        return ServerFactory.getOptionsServer(SERVER_HOST + ts.getPort(), null);
+        // return ServerFactory.getOptionsServer(SERVER_HOST + ts.getPort(), null);
+        return ServerFactory.getOptionsServer(ts.getRSHURL(), null);
     }
 
     public IOptionsServer getServer(TestServer ts, Properties props) throws Throwable {
-        return ServerFactory.getOptionsServer(SERVER_HOST + ts.getPort(), props);
+        //return ServerFactory.getOptionsServer(SERVER_HOST + ts.getPort(), props);
+        return ServerFactory.getOptionsServer(ts.getRSHURL(), props);
     }
 
     public IOptionsServer getProxy(TestServer ts) throws Throwable {
-        return ServerFactory.getOptionsServer(SERVER_HOST + ts.getProxyPort(), null);
+        // TODO resolve this so it can use a proxy
+        //return ServerFactory.getOptionsServer(SERVER_HOST + ts.getProxyPort(), null);
+        return ServerFactory.getOptionsServer(ts.getRSHURL(), null);
     }
 
     public IUser createUser(IOptionsServer server, String loginName) throws Throwable {
@@ -145,7 +153,7 @@ public class Helper {
         } else {
             clientRoot = new File(clientRootPath);
         }
-        assertThat(clientRoot.mkdir(), is(true));
+        assertThat(clientRoot.exists() || clientRoot.mkdir(), is(true));
         client.setRoot(clientRoot.getAbsolutePath());
 
         ClientView clientView = new ClientView();
@@ -352,7 +360,7 @@ public class Helper {
         assertThat(fileSpecs, notNullValue());
         for (IFileSpec fileSpec : fileSpecs) {
             if (fileSpec.getOpStatus() != FileSpecOpStatus.INFO) {
-                assertThat(fileSpec.getStatusMessage().toString(), fileSpec.getOpStatus(),
+                assertThat(fileSpec.getStatusString(), fileSpec.getOpStatus(),
                         is(FileSpecOpStatus.VALID));
             }
         }
@@ -362,7 +370,7 @@ public class Helper {
         assertThat(fileSpecs, notNullValue());
         for (IFileSpec fileSpec : fileSpecs) {
             if (fileSpec.getOpStatus() == FileSpecOpStatus.ERROR) {
-                assertEquals(fileSpec.getStatusMessage().toString(), FileSpecOpStatus.ERROR, fileSpec.getOpStatus());
+                assertEquals(fileSpec.getStatusString(), FileSpecOpStatus.ERROR, fileSpec.getOpStatus());
             }
         }
     }
@@ -372,7 +380,7 @@ public class Helper {
         assertThat(fileSpecs, notNullValue());
         for (IFileSpec fileSpec : fileSpecs) {
             if (fileSpec.getOpStatus() != FileSpecOpStatus.INFO) {
-                assertThat(fileSpec.getStatusMessage().toString(), fileSpec.getOpStatus(),
+                assertThat(fileSpec.getStatusString(), fileSpec.getOpStatus(),
                         is(expectedOpStatus));
             }
         }

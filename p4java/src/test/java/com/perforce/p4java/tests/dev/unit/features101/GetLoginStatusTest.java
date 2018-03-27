@@ -61,7 +61,7 @@ public class GetLoginStatusTest extends P4JavaTestCase {
 		IServer server = null;
 
 		try {
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			server.connect();
 			server.setUserName(this.invalidUserName);
 			
@@ -92,7 +92,7 @@ public class GetLoginStatusTest extends P4JavaTestCase {
 		IServer server = null;
 
 		try {
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			server.connect();
 			server.setUserName(this.noLoginUser);
 			

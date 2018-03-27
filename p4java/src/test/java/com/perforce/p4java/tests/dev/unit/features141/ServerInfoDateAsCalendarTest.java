@@ -71,7 +71,7 @@ public class ServerInfoDateAsCalendarTest extends P4JavaTestCase {
 			Properties properties = new Properties();
 			properties.put("relaxCmdNameChecks", "true");
 			
-			server = ServerFactory.getOptionsServer(this.serverUrlString, properties);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), properties);
 			assertNotNull(server);
 
 			// Register callback

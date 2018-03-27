@@ -64,7 +64,7 @@ public class LoginPasswordNotSetTest extends P4JavaTestCase {
 		// initialization code (before each test).
 		try {
 			server = this.getServerAsSuper();
-			server2 = getServer(serverUrlString, null, null, null);
+			server2 = getServer(getServerUrlString(), null, null, null);
 		} catch (P4JavaException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} catch (URISyntaxException e) {
@@ -104,7 +104,7 @@ public class LoginPasswordNotSetTest extends P4JavaTestCase {
 			assertNotNull("null status string from createUser", createStr);
 			assertEquals("user not created on server: " + createStr, expectedStatus, createStr);
 			
-			server2 = getServer(serverUrlString, null, null, null);
+			server2 = getServer(getServerUrlString(), null, null, null);
 			assertNotNull(server2);
 			server2.setUserName(userName);
 			try {

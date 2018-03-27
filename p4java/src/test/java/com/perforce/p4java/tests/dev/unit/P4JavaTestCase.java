@@ -1,53 +1,7 @@
-/**
+/*
  *
  */
 package com.perforce.p4java.tests.dev.unit;
-
-import static com.perforce.p4java.common.base.StringHelper.format;
-import static com.perforce.p4java.exception.MessageSeverityCode.E_FAILED;
-import static java.util.Objects.nonNull;
-import static org.apache.commons.lang3.StringUtils.endsWithAny;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.Log;
@@ -73,7 +27,6 @@ import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.impl.mapbased.client.Client;
 import com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs;
-import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.LoginOptions;
@@ -81,12 +34,55 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
 import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.server.callback.ILogCallback;
 import com.perforce.p4java.tests.MockCommandCallback;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import org.hamcrest.MatcherAssert;
+
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import static com.perforce.p4java.common.base.StringHelper.format;
+import static java.util.Objects.nonNull;
+import static org.apache.commons.lang3.StringUtils.endsWithAny;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Superclass for all normal p4jtest junit tests; should be subclassed further
@@ -112,8 +108,11 @@ import org.hamcrest.MatcherAssert;
  * The logging level can be adjusted by providing
  * com.perforce.p4javatest.loglevel as a command line option corresponding to an
  * ILogCallback.LogTraceLevel value
+ *
+ * @deprecated Old and nasty.
  */
 
+@SuppressWarnings("WeakerAccess")
 public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 
     /**
@@ -138,7 +137,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
      * The default test server's URI, used if no URI property was available
      * using the P4JTEST_SERVER_URL_PROPNAME System property.
      */
-    protected static String P4JTEST_SERVER_URL_DEFAULT = "p4java://eng-p4java-vm.perforce.com:20132";
+    private static String P4JTEST_SERVER_URL_DEFAULT = "p4java://eng-p4java-vm.perforce.com:20132";
 
     /**
      * The property name used to retrieve a 10.1 test server's URI from the
@@ -150,9 +149,9 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
      * Default URI for a suitable 10.1 test server. See
      * P4JTEST_101_SERVER_URL_PROPNAME above for associated property name.
      */
-    protected static final String P4JTEST_101_SERVER_URL_DEFAULT = "p4java://eng-p4java-vm.perforce.com:20101";
+    private static final String P4JTEST_101_SERVER_URL_DEFAULT = "p4java://eng-p4java-vm.perforce.com:20101";
 
-    protected static final String P4JTEST_REPLICA_SERVER_URL_DEFAULT = "p4jrpcnts://eng-p4java-vm.perforce.com:20132";
+    private static final String P4JTEST_REPLICA_SERVER_URL_DEFAULT = "p4jrpcnts://eng-p4java-vm.perforce.com:20132";
 
     /**
      * The property name used to retrieve the URI of a suitable Unicode server.
@@ -436,7 +435,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
      * changed manually during testing with the relevant getter method or
      * directly by subclasses.
      */
-    protected static String serverUrlString = null;
+    private static String serverUrlString = null;
 
     /**
      * The current value of the Unicode server URI string; set on startup to the
@@ -710,8 +709,8 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 
         userName = props.getProperty(P4JTEST_USERNAME_PROPNAME, P4JTEST_USERNAME_DEFAULT);
         password = props.getProperty(P4JTEST_USERPASSWORD_PROPNAME, P4JTEST_USERPASSWORD_DEFAULT);
-        serverUrlString = props.getProperty(P4JTEST_SERVER_URL_PROPNAME,
-                P4JTEST_SERVER_URL_DEFAULT);
+        setServerUrlString(props.getProperty(P4JTEST_SERVER_URL_PROPNAME,
+                P4JTEST_SERVER_URL_DEFAULT));
         defaultTestClientName = props.getProperty(P4JTEST_TESTCLIENTNAME_PROPNAME,
                 P4JTEST_TESTCLIENTNAME_DEFAULT);
 
@@ -860,8 +859,8 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
         IOptionsServer server = this.getOptionsServer(uriString, props);
 
         if (server != null) {
-            server.setUserName(userName == null ? this.userName : userName);
-            server.login(password == null ? this.password : password, null);
+            server.setUserName(userName == null ? P4JavaTestCase.userName : userName);
+            server.login(password == null ? P4JavaTestCase.password : password, null);
         }
         return server;
     }
@@ -960,8 +959,10 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
         IOptionsServer server = null;
 
         if (uriString == null) {
+            System.err.println("Connecting to server " + serverUrlString);
             server = ServerFactory.getOptionsServer(serverUrlString, props);
         } else {
+            System.err.println("Connecting to server " + uriString);
             server = ServerFactory.getOptionsServer(uriString, props);
         }
         if (server != null) {
@@ -988,15 +989,6 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
         }
         return server;
     }
-
-    /**
-     * Get a new IServer object for test usage using the default or current
-     * server URI. Equivalent to getServer(null, Properties props).
-     * <p>
-     *
-     * See the caveats (etc.) for getServer(null, Properties props); this is
-     * probably not a very useful convenience method...
-     */
 
     /**
      * Get a new IServer object for test usage using the default or current
@@ -1326,7 +1318,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
         assertNotNull("null server passed to createChangelist", server);
         assertNotNull("null description passed to createChangelist", description);
 
-        return new Changelist(IChangelist.UNKNOWN, clientName, this.getUserName(),
+        return new Changelist(IChangelist.UNKNOWN, clientName, getUserName(),
                 ChangelistStatus.NEW, null, description, false, (Server) server);
     }
 
@@ -1336,8 +1328,8 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
     protected IChangelist createChangelist(IClient client) {
         assertNotNull("null client passed to createChangelist", client);
 
-        String desc = this.testId == null ? "Unknown test changelist" : "Changelist for " + testId;
-        return new Changelist(IChangelist.UNKNOWN, client.getName(), this.getUserName(),
+        String desc = testId == null ? "Unknown test changelist" : "Changelist for " + testId;
+        return new Changelist(IChangelist.UNKNOWN, client.getName(), getUserName(),
                 ChangelistStatus.NEW, null, desc, false, (Server) client.getServer());
     }
 
@@ -1430,15 +1422,6 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
         }
 
         return false;
-    }
-
-    /**
-     * Convert a string representing a local path that has local separators
-     * (usually either "/" or "\" into one with canonicalized Perforce
-     * separators ("/").
-     */
-    protected String canonicalize(String path) {
-        return null;
     }
 
     /**
@@ -1548,8 +1531,8 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
         BufferedReader errReader = null;
 
         assertNotNull("Passed null args array to doTaggedP4Cmd", args);
-        assertNotNull("Super user name not set in doTaggedP4Cmd", this.superUserName);
-        assertNotNull("Super user password not set in doTaggedP4Cmd", this.superUserPassword);
+        assertNotNull("Super user name not set in doTaggedP4Cmd", superUserName);
+        assertNotNull("Super user password not set in doTaggedP4Cmd", superUserPassword);
 
         // Ensure that the array here is just big enough to take all the
         // incoming
@@ -1560,11 +1543,11 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 
         int i = 0;
         cmdArgs[i++] = this.p4CmdLocation;
-        URI uri = new URI(this.serverUrlString);
+        URI uri = new URI(serverUrlString);
         assertNotNull("Bad server URI format in doTaggedP4Cmd", uri);
         cmdArgs[i++] = "-p" + uri.getHost() + ":" + uri.getPort();
-        cmdArgs[i++] = "-u" + (asSuper ? this.superUserName : this.userName);
-        cmdArgs[i++] = "-P" + (asSuper ? this.superUserPassword : this.password);
+        cmdArgs[i++] = "-u" + (asSuper ? superUserName : userName);
+        cmdArgs[i++] = "-P" + (asSuper ? superUserPassword : password);
         cmdArgs[i++] = "-ztag";
 
         for (String str : args) {
@@ -1688,7 +1671,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
      * Set a test property.
      */
     protected Object setProperty(String key, String value) {
-        return this.props.setProperty(key, value);
+        return props.setProperty(key, value);
     }
 
     /**
@@ -1704,7 +1687,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
      * @return suitable client name string
      */
     protected String getRandomClientName(String str) {
-        return this.testId + (str == null ? "" : str) + "Client"
+        return testId + (str == null ? "" : str) + "Client"
                 + Math.abs(this.rand.nextInt(99999));
     }
 
@@ -1739,7 +1722,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
     }
 
     protected String getRandomName(boolean useTestId, String str) {
-        return (useTestId ? this.testId : "") + (str == null ? "" : str)
+        return (useTestId ? testId : "") + (str == null ? "" : str)
                 + Math.abs(this.rand.nextInt(99999));
     }
 
@@ -1933,11 +1916,16 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
     }
 
     public static String getServerUrlString() {
-        return serverUrlString;
+        // should never be used.
+        // return serverUrlString;
+        if (serverUrlString != null && serverUrlString.startsWith("rsh:")) {
+            return serverUrlString;
+        }
+        throw new IllegalStateException("Don't use this");
     }
 
-    public void setServerUrlString(String serverUrlString) {
-        this.serverUrlString = serverUrlString;
+    public static void setServerUrlString(String serverUrlString) {
+        P4JavaTestCase.serverUrlString = serverUrlString;
     }
 
     public String getTestPrefix() {
@@ -1957,11 +1945,11 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
     }
 
     public String getDefaultTestClientName() {
-        return this.defaultTestClientName;
+        return defaultTestClientName;
     }
 
     public void setDefaultTestClientName(String defaultTestClientName) {
-        this.defaultTestClientName = defaultTestClientName;
+        P4JavaTestCase.defaultTestClientName = defaultTestClientName;
     }
 
     public static String getUserName() {
@@ -1969,7 +1957,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
     }
 
     public void setUserName(String userName) {
-        this.userName = userName;
+        P4JavaTestCase.userName = userName;
     }
 
     public static String getPassword() {
@@ -1977,7 +1965,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
     }
 
     public void setPassword(String password) {
-        this.password = password;
+        P4JavaTestCase.password = password;
     }
 
     public static String getSuperUserName() {
@@ -1985,7 +1973,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
     }
 
     public void setSuperUserName(String superUserName) {
-        this.superUserName = superUserName;
+        P4JavaTestCase.superUserName = superUserName;
     }
 
     public static String getSuperUserPassword() {
@@ -1993,7 +1981,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
     }
 
     public void setSuperUserPassword(String superUserPassword) {
-        this.superUserPassword = superUserPassword;
+        P4JavaTestCase.superUserPassword = superUserPassword;
     }
 
     public String getInvalidUserName() {
@@ -2013,11 +2001,11 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
     }
 
     public Properties getProps() {
-        return this.props;
+        return props;
     }
 
     public void setProps(Properties props) {
-        this.props = props;
+        P4JavaTestCase.props = props;
     }
 
     public PrintStream getErr() {

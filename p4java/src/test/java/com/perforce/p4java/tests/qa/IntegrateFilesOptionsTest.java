@@ -41,7 +41,10 @@ public class IntegrateFilesOptionsTest {
         h = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(h.getServerVersion());
-        ts.start();
+
+        ts.initialize();
+        // just use RSH
+        //ts.start();
 
         server = h.getServer(ts);
         server.setUserName(ts.getUser());

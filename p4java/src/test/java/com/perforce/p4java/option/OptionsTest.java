@@ -102,7 +102,7 @@ public class OptionsTest {
     assertThat(options.getOptions().get(0), is("-p"));
     assertThat(options.getOptions().get(1), is("-r"));
 
-    options.setOptions(null);
+    options.setOptions();
     assertNull(options.getOptions());
   }
 

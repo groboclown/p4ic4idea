@@ -29,6 +29,7 @@ import static com.perforce.p4java.common.base.StringHelper.format;
 import static com.perforce.p4java.core.IDepot.DepotType.STREAM;
 import static com.perforce.p4java.core.file.FileSpecBuilder.makeFileSpecList;
 import static com.perforce.p4java.impl.generic.core.Stream.newStream;
+import static com.perforce.p4java.tests.ServerMessageMatcher.isText;
 import static com.perforce.p4java.tests.qa.Helper.FILE_SEP;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -48,7 +49,10 @@ public class GetDirectoriesTest {
         helper = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(helper.getServerVersion());
-        ts.start();
+
+        ts.initialize();
+        // just use RSH
+        //ts.start();
 
         server = helper.getServer(ts);
         server.setUserName(ts.getUser());
@@ -139,7 +143,7 @@ public class GetDirectoriesTest {
         helper.validateFileSpecs(paths, FileSpecOpStatus.ERROR);
 
         assertThat("wrong number of paths", paths.size(), is(1));
-        assertThat(paths.get(0).getStatusMessage(), is(format("%s - no such file(s).", depotPath)));
+        assertThat(paths.get(0).getStatusMessage(), isText(format("%s - no such file(s).", depotPath)));
     }
 
     @DisplayName("verify the -S flag works, use a stream that should have no hits - validates job046696")
@@ -153,7 +157,7 @@ public class GetDirectoriesTest {
         helper.validateFileSpecs(paths, FileSpecOpStatus.ERROR);
 
         assertThat("wrong number of paths", paths.size(), is(1));
-        assertThat(paths.get(0).getStatusMessage(), is(format("%s - no such file(s).", depotPath)));
+        assertThat(paths.get(0).getStatusMessage(), isText(format("%s - no such file(s).", depotPath)));
     }
 
     @AfterAll

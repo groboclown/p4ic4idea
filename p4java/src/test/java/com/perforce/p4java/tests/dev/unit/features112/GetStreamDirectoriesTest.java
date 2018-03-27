@@ -3,8 +3,10 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
+import static com.perforce.p4java.tests.ServerMessageMatcher.isText;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -123,9 +125,9 @@ public class GetStreamDirectoriesTest extends P4JavaTestCase {
 			assertEquals(1, fileSpecs.size());
 			assertNotNull(fileSpecs.get(0));
 			assertEquals(FileSpecOpStatus.ERROR, fileSpecs.get(0).getOpStatus());
-			assertEquals("Path '" + dir + "/...' is not under client's root '"
-					+ devStreamClient.getRoot() + "'.", fileSpecs.get(0)
-					.getStatusMessage());
+			assertThat(
+					fileSpecs.get(0).getStatusMessage(),
+					isText("Path '" + dir + "/...' is not under client's root '" + devStreamClient.getRoot() + "'."));
 
 			// Use a regular depot directory
 			dir = "//depot/*";
@@ -140,8 +142,9 @@ public class GetStreamDirectoriesTest extends P4JavaTestCase {
 			assertEquals(1, fileSpecs.size());
 			assertNotNull(fileSpecs.get(0));
 			assertEquals(FileSpecOpStatus.ERROR, fileSpecs.get(0).getOpStatus());
-			assertEquals(dir + " - no such file(s).", fileSpecs.get(0)
-					.getStatusMessage());
+			assertThat(
+					fileSpecs.get(0).getStatusMessage(),
+					isText(dir + " - no such file(s)."));
 			
 			// Use a dev stream directory
 			dir = devStreamClient.getRoot() + "/newtestbranch/readonly/*";

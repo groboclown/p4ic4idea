@@ -4,6 +4,7 @@ import com.perforce.p4java.CharsetDefs;
 import com.perforce.p4java.exception.P4JavaError;
 import com.perforce.p4java.impl.generic.client.ClientLineEnding;
 import com.perforce.p4java.impl.mapbased.rpc.sys.RpcUnicodeInputStream;
+import com.perforce.test.P4ExtFileUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +17,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -235,10 +235,13 @@ public class MD5DigesterTest {
     @DisplayName("test digestStream() with normal file")
     @Test
     public void testDigestStream1() throws Exception {
-        InputStream in = new FileInputStream(getClass().getClassLoader()
-                .getResource(
-                        "com/perforce/p4java/impl/mapbased/rpc/func/helper/md5_digest_test.txt")
-                .getFile());
+        // p4ic4idea: use a better loader
+        //InputStream in = new FileInputStream(getClass().getClassLoader()
+        //        .getResource(
+        //                "com/perforce/p4java/impl/mapbased/rpc/func/helper/md5_digest_test.txt")
+        //        .getFile());
+        InputStream in = P4ExtFileUtils
+                .getStream(this, "com/perforce/p4java/impl/mapbased/rpc/func/helper/md5_digest_test.txt");
         ClientLineEnding clientLineEnding = ClientLineEnding.FST_L_CR;
         Method method = getPrivate_method_of_digestStream();
         method.setAccessible(true);

@@ -48,7 +48,11 @@ public class ReplicaAuthTicketsTest extends P4JavaTestCase {
     props.put("useAuthMemoryStore", "true");
 
     // Connect to a replica server
-    server = ServerFactory.getOptionsServer(P4JTEST_REPLICA_SERVER_URL_DEFAULT, props);
+    // FIXME setup a replica server
+    // P4JTEST_REPLICA_SERVER_URL_DEFAULT
+    throw new IllegalStateException("Need to setup a replica server");
+    /*
+    server = ServerFactory.getOptionsServer(getServerUrlString(), props);
 
     assertThat(server, notNullValue());
 
@@ -65,6 +69,7 @@ public class ReplicaAuthTicketsTest extends P4JavaTestCase {
     IClient client = getDefaultClient(server);
     assertThat(client, notNullValue());
     server.setCurrentClient(client);
+    */
   }
 
   @AfterEach

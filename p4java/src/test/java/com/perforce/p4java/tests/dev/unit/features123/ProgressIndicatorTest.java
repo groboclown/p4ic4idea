@@ -78,7 +78,7 @@ public class ProgressIndicatorTest extends P4JavaTestCase {
 			props.put("enableProgress", "true");
 
 			server = ServerFactory
-					.getOptionsServer(this.serverUrlString, props);
+					.getOptionsServer(getServerUrlString(), props);
 			assertNotNull(server);
 
 			// Register callback

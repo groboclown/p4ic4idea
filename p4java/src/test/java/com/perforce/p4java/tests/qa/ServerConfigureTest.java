@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.List;
 
+import com.perforce.p4java.core.IStreamSummary;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.AfterClass;
@@ -29,7 +30,7 @@ public class ServerConfigureTest {
         h = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(h.getServerVersion());
-        ts.start();
+        ts.startAsync();
     }
 
     /*
@@ -40,7 +41,8 @@ public class ServerConfigureTest {
         try {
 
             IOptionsServer server = getOptionsServer(
-                    "p4java://localhost:" + ts.getPort(), null);
+                    ts.getLocalUrl(), null);
+            //IOptionsServer server = getOptionsServer(ts.getRSHURL(), null);
 
             server.connect();
             String status = server.setOrUnsetServerConfigurationValue(configName,
@@ -90,8 +92,9 @@ public class ServerConfigureTest {
 
         try {
 
-            IOptionsServer server = getOptionsServer(
-                    "p4java://localhost:" + ts.getPort(), null);
+            //IOptionsServer server = getOptionsServer(
+            //        "p4java://localhost:" + ts.getPort(), null);
+            IOptionsServer server = getOptionsServer(ts.getRSHURL(), null);
 
             server.connect();
             server.setOrUnsetServerConfigurationValue(configName, null);
@@ -136,7 +139,8 @@ public class ServerConfigureTest {
         try {
 
             boolean shown = false;
-            String serverName = "p4java://localhost:" + ts.getPort();
+            //String serverName = "p4java://localhost:" + ts.getPort();
+            String serverName = ts.getRSHURL();
             IOptionsServer server = getOptionsServer(serverName,
                     null);
 

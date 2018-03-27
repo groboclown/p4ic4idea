@@ -1,6 +1,9 @@
 package com.perforce.p4java.tests;
 
-import java.io.File;
+import com.perforce.test.TestServer;
+
+import javax.annotation.Nonnull;
+import java.io.IOException;
 
 public class GraphServerRule extends SimpleServerRule {
 
@@ -8,10 +11,10 @@ public class GraphServerRule extends SimpleServerRule {
 		super(p4dVersion, dataExtractLoc);
 	}
 
-	@Override
-	public void prepareServer() throws Exception {
-		extract(new File(RESOURCES + "data/graph/depot.tar.gz"));
-		restore(new File(RESOURCES + "data/graph/checkpoint.gz"));
-		upgrade();
+	protected void initializeServer(@Nonnull TestServer server)
+			throws IOException {
+		server.initialize(this.getClass().getClassLoader(),
+				"data/graph/depot.tar.gz",
+				"data/graph/checkpoint.gz");
 	}
 }

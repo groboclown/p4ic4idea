@@ -177,7 +177,7 @@ public class AttributeDelegatorTest extends AbstractP4JavaUnitTest {
 
         // then
         assertThat(actualFileSpecs.size(), is(1));
-        assertThat(actualFileSpecs.get(0).getStatusMessage(), is(STREAM_NAME));
+        assertThat(actualFileSpecs.get(0).getStatusString(), is(STREAM_NAME));
     }
 
     private void givenInfoMessageCode() {
@@ -271,7 +271,7 @@ public class AttributeDelegatorTest extends AbstractP4JavaUnitTest {
                 mockInputStream, mockOpts);
         // then
         assertThat(actualFileSpecs.size(), is(1));
-        assertThat(actualFileSpecs.get(0).getStatusMessage(), is(STREAM_NAME));
+        assertThat(actualFileSpecs.get(0).getStatusString(), is(STREAM_NAME));
     }
 
     /**

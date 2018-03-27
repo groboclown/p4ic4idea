@@ -52,7 +52,10 @@ public class AuthenticationTest {
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(helper.getServerVersion());
         ts.setMonitor(2);
-        ts.start();
+
+        ts.initialize();
+        // just use RSH
+        //ts.start();
 
         server = helper.getServer(ts);
         server.setUserName(ts.getUser());

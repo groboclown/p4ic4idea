@@ -99,7 +99,7 @@ public class LoginAnotherUserTest extends P4JavaTestCase {
 		String password = "p4jtestsuper";
 
 		try {
-			server = ServerFactory.getOptionsServer(this.serverUrlString, serverProps);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), serverProps);
 			assertNotNull(server);
 
 			// Register callback

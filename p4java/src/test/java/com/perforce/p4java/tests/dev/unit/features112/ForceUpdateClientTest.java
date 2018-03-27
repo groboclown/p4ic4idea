@@ -86,7 +86,7 @@ public class ForceUpdateClientTest extends P4JavaTestCase {
 		int randNum = getRandomInt();
 
 		try {
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull(server);
 
 			// Register callback

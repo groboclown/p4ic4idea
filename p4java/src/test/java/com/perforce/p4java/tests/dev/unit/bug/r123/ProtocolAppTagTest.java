@@ -44,12 +44,10 @@ public class ProtocolAppTagTest extends P4JavaTestCase {
    */
   @Test
   public void testProtocolAppTag() throws Exception {
-    String serverUri = P4JTEST_REPLICA_SERVER_URL_DEFAULT;
-
     // Set the protocol 'app' tag value to 'commons-1.0'
     serverProps.put("applicationName", "commons-1.0");
 
-    server = ServerFactory.getOptionsServer(serverUri, serverProps);
+    server = ServerFactory.getOptionsServer(getServerUrlString(), serverProps);
     assertThat(server, notNullValue());
     // Register callback
     server.registerCallback(new MockCommandCallback());

@@ -59,7 +59,7 @@ public class GetProtectionsTest extends P4JavaTestCase {
 		// initialization code (before each test).
 		try {
 			// Requires super user
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull(server);
 
 			// Connect to the server.

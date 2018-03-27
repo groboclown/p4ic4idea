@@ -84,7 +84,7 @@ public class ObliterateFilesTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull(server);
 
 			// Register callback

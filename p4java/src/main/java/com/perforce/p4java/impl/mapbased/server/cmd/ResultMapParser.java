@@ -145,7 +145,7 @@ public abstract class ResultMapParser {
      */
 	public static void handleErrors(@Nullable IServerMessage message)
             throws RequestException, AccessException {
-	    if (nonNull(message)) {
+	    if (nonNull(message) && message.isError()) {
             AuthenticationFailedException.ErrorType type = getAuthFailType(message);
             if (nonNull(type)) {
                 throw new AccessException(message);

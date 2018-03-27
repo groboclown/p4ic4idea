@@ -36,7 +36,10 @@ public class ProxyTest {
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(helper.getServerVersion());
         ts.setProxy(true);
-        ts.start();
+
+        ts.initialize();
+        // just use RSH
+        //ts.start();
 
         server = helper.getProxy(ts);
         server.setUserName(ts.getUser());

@@ -3,8 +3,10 @@
  */
 package com.perforce.p4java.tests.dev.unit.features141;
 
+import static com.perforce.p4java.tests.ServerMessageMatcher.isText;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -74,7 +76,7 @@ public class GetShelvedFilesTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer(this.serverUrlString, null, "p4jtestuser",
+			server = getServer(getServerUrlString(), null, "p4jtestuser",
 					"p4jtestuser");
 			assertNotNull(server);
 			client = server.getClient("p4TestUserWS");
@@ -165,7 +167,8 @@ public class GetShelvedFilesTest extends P4JavaTestCase {
 			assertTrue(files.size() > 0);
 			assertNotNull(files.get(0) != null);
 			assertTrue(files.get(0).getOpStatus() == FileSpecOpStatus.INFO);
-			assertEquals("Shelved change " + changelist.getId() + " deleted.", files.get(0).getStatusMessage());
+			assertThat(files.get(0).getStatusMessage(),
+					isText("Shelved change " + changelist.getId() + " deleted."));
 
 		} catch (P4JavaException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());

@@ -31,17 +31,17 @@ public class OptionsServerFactoryTest extends P4JavaTestCase {
 	@Test
 	public void testServerFactoryBasics() {
 		try {
-			IServer server = ServerFactory.getServer(this.serverUrlString, null);
+			IServer server = ServerFactory.getServer(getServerUrlString(), null);
 			assertNotNull(server);
 			server.connect();
 			server.disconnect();
 			
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull(server);
 			server.connect();
 			server.disconnect();
 			
-			IOptionsServer optsServer = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			IOptionsServer optsServer = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull(optsServer);
 			optsServer.connect();
 			optsServer.disconnect();

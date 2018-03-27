@@ -33,7 +33,10 @@ public class ServerFactoryTest {
         h = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(h.getServerVersion());
-        ts.start();
+
+        ts.initialize();
+        // just use RSH
+        //ts.start();
     }
 
 
@@ -44,7 +47,8 @@ public class ServerFactoryTest {
         Properties properties = new Properties();
         properties.put(PROG_NAME_KEY, programName);
 
-        IServer server = getServer("p4java://localhost:" + ts.getPort(), properties);
+        //IServer server = getServer("p4java://localhost:" + ts.getPort(), properties);
+        IServer server = getServer(ts.getRSHURL(), properties);
 
         server.connect();
 

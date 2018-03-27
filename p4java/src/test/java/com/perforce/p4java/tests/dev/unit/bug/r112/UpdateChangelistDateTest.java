@@ -57,7 +57,7 @@ public class UpdateChangelistDateTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() throws Exception{
 		// initialization code (before each test).
-			server = ServerFactory.getOptionsServer(serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull(server);
 
 			// Register callback

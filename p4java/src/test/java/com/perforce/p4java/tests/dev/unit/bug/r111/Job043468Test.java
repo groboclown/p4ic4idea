@@ -45,7 +45,7 @@ public class Job043468Test extends P4JavaTestCase {
 			assertNotNull("null status string from createUser", createStr);
 			assertEquals("user not created on server: " + createStr, expectedStatus, createStr);
 			
-			server2 = getServer(serverUrlString, null, null, null);
+			server2 = getServer(getServerUrlString(), null, null, null);
 			assertNotNull(server2);
 			server2.setUserName(userName);
 			server2.login(userPassword, new LoginOptions());

@@ -62,7 +62,7 @@ public class NonTaggedOutputTest extends P4JavaTestCase {
 			//props.put("quietMode", "true");
 
 			server = ServerFactory
-					.getOptionsServer(serverUrlString, props);
+					.getOptionsServer(getServerUrlString(), props);
 			assertNotNull(server);
 
 			// Register callback

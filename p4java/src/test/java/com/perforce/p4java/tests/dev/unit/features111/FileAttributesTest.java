@@ -55,7 +55,7 @@ public class FileAttributesTest extends P4JavaTestCase {
 			server.setCurrentClient(client);
 			List<IFileSpec> syncFiles = this.forceSyncFiles(client, filePath + "/...");
 			assertTrue(syncFiles.size() > 0);
-			assertEquals(syncFiles.get(0).getStatusMessage().toString(), 0, FileSpecBuilder.getInvalidFileSpecs(syncFiles).size());
+			assertEquals(syncFiles.get(0).getStatusString(), 0, FileSpecBuilder.getInvalidFileSpecs(syncFiles).size());
 			FileStatAncilliaryOptions fsaOpts = new FileStatAncilliaryOptions();
 			fsaOpts.setShowAttributes(true);
 			GetExtendedFilesOptions gefOpts = new GetExtendedFilesOptions();
@@ -109,7 +109,7 @@ public class FileAttributesTest extends P4JavaTestCase {
 			server.setCurrentClient(client);
 			List<IFileSpec> syncFiles = this.forceSyncFiles(client, filePath + "/...");
 			assertTrue(syncFiles.size() > 0);
-			assertEquals(syncFiles.get(0).getStatusMessage().toString(), 0, FileSpecBuilder.getInvalidFileSpecs(syncFiles).size());
+			assertEquals(syncFiles.get(0).getStatusString(), 0, FileSpecBuilder.getInvalidFileSpecs(syncFiles).size());
 			Map<String, byte[]> expectedAttributes = new HashMap<String, byte[]>();
 			Map<String, String> attrMap = new HashMap<String, String>();
 			attrMap.put(attr1Name, attr1Value);
@@ -191,7 +191,7 @@ public class FileAttributesTest extends P4JavaTestCase {
 			server.setCurrentClient(client);
 			List<IFileSpec> syncFiles = this.forceSyncFiles(client, filePath + "/...");
 			assertTrue(syncFiles.size() > 0);
-			assertEquals(syncFiles.get(0).getStatusMessage().toString(), 0, FileSpecBuilder.getInvalidFileSpecs(syncFiles).size());
+			assertEquals(syncFiles.get(0).getStatusString(), 0, FileSpecBuilder.getInvalidFileSpecs(syncFiles).size());
 			Map<String, String> attributes = new HashMap<String, String>();
 			attributes.put(attr1Name, null);
 			List<IFileSpec> fileList = server.setFileAttributes(
@@ -275,7 +275,7 @@ public class FileAttributesTest extends P4JavaTestCase {
 			server.setCurrentClient(client);
 			List<IFileSpec> syncFiles = this.forceSyncFiles(client, filePath + "/...");
 			assertTrue(syncFiles.size() > 0);
-			assertEquals(syncFiles.get(0).getStatusMessage().toString(), 0, FileSpecBuilder.getInvalidFileSpecs(syncFiles).size());
+			assertEquals(syncFiles.get(0).getStatusString(), 0, FileSpecBuilder.getInvalidFileSpecs(syncFiles).size());
 			FileStatAncilliaryOptions fsaOpts = new FileStatAncilliaryOptions();
 			fsaOpts.setShowAttributes(true);
 			GetExtendedFilesOptions gefOpts = new GetExtendedFilesOptions();
@@ -313,7 +313,7 @@ public class FileAttributesTest extends P4JavaTestCase {
 						Map<String, byte[]> expectedAttributes, boolean strict) throws Exception {
 		assertNotNull("null file spec", fileSpec);
 		assertNotNull(fileSpec.getOpStatus());
-		assertEquals(fileSpec.getStatusMessage().toString(), FileSpecOpStatus.VALID, fileSpec.getOpStatus());
+		assertEquals(fileSpec.getStatusString(), FileSpecOpStatus.VALID, fileSpec.getOpStatus());
 		Map<String, byte[]> attributes = fileSpec.getAttributes();
 		assertNotNull(attributes);
 

@@ -99,7 +99,7 @@ public class SyncSafetyCheckTest extends P4JavaTestCase {
 			assertNotNull(client);
 			server.setCurrentClient(client);
 
-			server2 = getServer(this.serverUrlString, null, "p4jtestuser2",
+			server2 = getServer(getServerUrlString(), null, "p4jtestuser2",
 					"p4jtestuser2");
 			assertNotNull(server2);
 			client2 = server2.getClient("p4TestUserWS2");

@@ -2,6 +2,7 @@ package com.perforce.p4java.impl.mapbased.rpc.stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -452,10 +453,10 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 		try {
 			method.invoke(mockConnection);
 		} catch (InvocationTargetException ite) {
-			assertTrue(ite.getTargetException() != null);
-			assertTrue(ite.getTargetException().getClass().equals(ConnectionException.class));
-			assertTrue(ite.getTargetException().getCause() != null);
-			assertTrue(ite.getTargetException().getCause().getClass().equals(expectedException));
+			assertNotNull(ite.getTargetException());
+			assertEquals(ite.getTargetException().getClass(), ConnectionException.class);
+			assertNotNull(ite.getTargetException().getCause());
+			assertEquals(ite.getTargetException().getCause().getClass(), expectedException);
 		}
 	}
 

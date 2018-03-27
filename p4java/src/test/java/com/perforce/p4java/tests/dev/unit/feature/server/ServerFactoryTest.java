@@ -42,7 +42,7 @@ public class ServerFactoryTest extends P4JavaTestCase {
 	@Test
 	public void testGetServerDefaultProtocol() {
 		try {
-			IServer server = ServerFactory.getServer(serverUrlString, null);
+			IServer server = ServerFactory.getServer(getServerUrlString(), null);
 			assertNotNull("Null server returned", server);
 			// Not much else we can say at this point...
 		} catch (ConnectionException e) {

@@ -45,7 +45,7 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 		final String depotPath = "//depot/dev/...";
 		
 		try {
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
 			server.setUserName(this.getUserName());
@@ -82,7 +82,7 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 		final String depotPath = "//depot/dev/...";
 
 		try {
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
 			server.setUserName(this.getSuperUserName());
@@ -119,7 +119,7 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 		final String depotPath = "//depot/dev/...";
 		
 		try {
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
 			server.setUserName(this.getUserName());
@@ -156,7 +156,7 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 		final String depotPath = "//depot/dev/...";
 		
 		try {
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
 			server.setUserName(this.getUserName());
@@ -194,7 +194,7 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 		final String depotPath = "//depot/dev/...";
 		
 		try {
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
 			server.setUserName(this.getSuperUserName());

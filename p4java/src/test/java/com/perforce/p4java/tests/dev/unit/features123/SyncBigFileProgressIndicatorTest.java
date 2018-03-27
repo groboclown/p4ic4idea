@@ -167,7 +167,7 @@ public class SyncBigFileProgressIndicatorTest extends P4JavaTestCase {
 			props.put("enableProgress", "true");
 
 			server = ServerFactory
-					.getOptionsServer(this.serverUrlString, props);
+					.getOptionsServer(getServerUrlString(), props);
 			assertNotNull(server);
 
 			// Register callback

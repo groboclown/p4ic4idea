@@ -88,7 +88,7 @@ public class TicketsFileTest extends P4JavaTestCase {
 	public void testTicketsFile() {
 
 		try {
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull(server);
 
 			assertFalse(ticketFile.contentEquals(server.getTicketsFilePath()));

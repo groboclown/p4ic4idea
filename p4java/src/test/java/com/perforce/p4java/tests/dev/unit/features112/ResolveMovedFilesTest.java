@@ -273,8 +273,7 @@ public class ResolveMovedFilesTest extends P4JavaTestCase {
 			resolveFilesAutoOptions.setChangelistId(changelist.getId());
 			resolveFilesAutoOptions.setResolveMovedFiles(true);
 			List<IFileSpec> resolveFiles = client.resolveFilesAuto(
-					FileSpecBuilder.makeFileSpecList(new String[] {
-							releaseTargetDir, targetFile2 }),
+					FileSpecBuilder.makeFileSpecList(releaseTargetDir, targetFile2),
 					resolveFilesAutoOptions);
 			assertNotNull(resolveFiles);
 

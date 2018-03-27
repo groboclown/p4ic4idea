@@ -1,6 +1,9 @@
 package com.perforce.p4java.tests;
 
-import java.io.File;
+import com.perforce.test.TestServer;
+
+import javax.annotation.Nonnull;
+import java.io.IOException;
 
 public class UnicodeServerRule extends SimpleServerRule {
 
@@ -8,15 +11,11 @@ public class UnicodeServerRule extends SimpleServerRule {
 		super(p4dVersion, dataExtractLoc);
 	}
 
-	private void unicode() throws Exception {
-		exec(new String[]{"-xi"});
-	}
-
-	@Override
-	public void prepareServer() throws Exception {
-		extract(new File(RESOURCES + "data/unicode/depot.tar.gz"));
-		restore(new File(RESOURCES + "data/unicode/checkpoint.gz"));
-		upgrade();
-		unicode();
+	protected void initializeServer(@Nonnull TestServer server)
+			throws IOException {
+		server.setUnicode(true);
+		server.initialize(this.getClass().getClassLoader(),
+				"data/unicode/depot.tar.gz",
+				"data/unicode/checkpoint.gz");
 	}
 }

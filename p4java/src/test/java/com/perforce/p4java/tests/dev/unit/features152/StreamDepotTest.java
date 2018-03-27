@@ -63,7 +63,7 @@ public class StreamDepotTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			serverUrlString = P4JTEST_UNICODE_SERVER_URL_DEFAULT;
+			setServerUrlString(P4JTEST_UNICODE_SERVER_URL_DEFAULT);
 			server = getServer();
 			assertNotNull(server);
 			client = getDefaultClient(server);

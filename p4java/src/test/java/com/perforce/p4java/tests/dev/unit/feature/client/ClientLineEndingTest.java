@@ -73,7 +73,7 @@ public class ClientLineEndingTest extends P4JavaTestCase {
 
     @BeforeClass
     public static void beforeAll() throws Exception {
-        server = getServer(serverUrlString, null, userName, "");
+        server = getServer(getServerUrlString(), null, userName, "");
         client = server.getClient(getPlatformClientName(defaultTestClientName));
         clientRoot = client.getRoot();
         clientFilePath = clientRoot + File.separator + clientDir;
@@ -182,7 +182,7 @@ public class ClientLineEndingTest extends P4JavaTestCase {
 
         try {
 
-            IServer server = getServer(serverUrlString, null, userName, "");
+            IServer server = getServer(getServerUrlString(), null, userName, "");
             IClient client = server.getClient(getPlatformClientName(defaultTestClientName));
             server.setCurrentClient(client);
             String clientRoot = client.getRoot();
@@ -1217,7 +1217,7 @@ public class ClientLineEndingTest extends P4JavaTestCase {
         List<IFileSpec> syncFiles = null;
 
         try {
-            server = getServer(serverUrlString, null, userName, "");
+            server = getServer(getServerUrlString(), null, userName, "");
             assertNotNull("Null Server Returned!!", server);
 
             server.setUserName(userName);

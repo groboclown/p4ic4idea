@@ -80,7 +80,7 @@ public class LoginExceptionTest extends P4JavaTestCase {
 		String password = "badpassword123";
 
 		try {
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull(server);
 
 			// Connect to the server.

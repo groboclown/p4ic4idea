@@ -14,5 +14,17 @@
 
 package com.perforce.test;
 
+import javax.annotation.Nonnull;
+import java.io.File;
+
 public class CaseSensitiveTestServer extends TestServer {
+    public CaseSensitiveTestServer() {
+        super();
+        setCaseSensitive(true);
+    }
+
+    public CaseSensitiveTestServer(@Nonnull File file) {
+        super(file);
+        setCaseSensitive(true);
+    }
 }

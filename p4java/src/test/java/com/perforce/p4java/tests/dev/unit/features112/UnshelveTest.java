@@ -78,7 +78,7 @@ public class UnshelveTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer(this.serverUrlString, null, "p4jtestuser",
+			server = getServer(getServerUrlString(), null, "p4jtestuser",
 					"p4jtestuser");
 			assertNotNull(server);
 			client = server.getClient("p4TestUserWS");

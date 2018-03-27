@@ -14,10 +14,10 @@
 
 package com.perforce.test;
 
-public class ExecutableSpecification {
-    private String codeline;
-
-    public void setCodeline(String codeline) {
-        this.codeline = codeline;
-    }
+public interface ExecutableSpecification {
+    /**
+     *
+     * @param codeline the version of the server.
+     */
+    void setCodeline(String codeline);
 }

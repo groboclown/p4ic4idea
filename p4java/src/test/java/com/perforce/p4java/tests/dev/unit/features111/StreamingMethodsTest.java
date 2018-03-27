@@ -33,7 +33,7 @@ public class StreamingMethodsTest extends P4JavaTestCase {
     @BeforeClass
     public static void beforeEach() throws Exception {
         Properties rpcTimeOutProperties = configRpcTimeOut("StreamingMethodsTest", TIME_OUT_IN_SECONDS);
-        server = getServer(serverUrlString, rpcTimeOutProperties, null, null);
+        server = getServer(getServerUrlString(), rpcTimeOutProperties, null, null);
     }
 
     @AfterClass

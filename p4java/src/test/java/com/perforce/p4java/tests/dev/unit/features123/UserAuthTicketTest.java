@@ -86,7 +86,7 @@ public class UserAuthTicketTest extends P4JavaTestCase {
 	public void testUserAuthTicket() {
 
 		try {
-			server = ServerFactory.getOptionsServer(this.serverUrlString, null);
+			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull(server);
 			server.setTicketsFilePath(defaultTicketFile);
 

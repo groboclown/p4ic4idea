@@ -68,7 +68,7 @@ public class Job036721Test extends P4JavaTestCase {
 			assertNotNull("Null sync list returned from sync op", syncList);
 			for (IFileSpec fspec : syncList) {
 				assertNotNull("Null sync filespec in filespec list", fspec);
-				assertFalse(fspec.getStatusMessage().toString(), fspec.getOpStatus() == FileSpecOpStatus.ERROR);
+				assertFalse(fspec.getStatusString(), fspec.getOpStatus() == FileSpecOpStatus.ERROR);
 			}
 		} catch (Exception exc) {
 			exc.printStackTrace();

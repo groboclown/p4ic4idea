@@ -40,7 +40,7 @@ public class LoginLogoutTest extends P4JavaTestCase {
 			// First just test options setter chaining:
 			assertEquals(true, new LoginOptions().setAllHosts(true).isAllHosts());
 			IOptionsServer optsServer = ServerFactory.getOptionsServer(
-											this.serverUrlString, null);
+					getServerUrlString(), null);
 			assertNotNull(optsServer);
 			optsServer.connect();
 			optsServer.setUserName(invalidUserName);

@@ -44,7 +44,10 @@ public class CreateStreamTest {
         helper = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(helper.getServerVersion());
-        ts.start();
+
+        ts.initialize();
+        // just use RSH
+        //ts.start();
 
         server = helper.getServer(ts);
         server.setUserName(ts.getUser());

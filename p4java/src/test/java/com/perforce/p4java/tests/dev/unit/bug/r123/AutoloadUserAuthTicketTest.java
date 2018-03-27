@@ -65,7 +65,7 @@ public class AutoloadUserAuthTicketTest extends P4JavaTestCase {
 
       Properties props = new Properties();
       //props.put("com.perforce.p4java.rpc.socketPoolSize", 100);
-      server = ServerFactory.getOptionsServer(serverUrlString, props);
+      server = ServerFactory.getOptionsServer(getServerUrlString(), props);
       assertThat(server, notNullValue());
 
       // Register callback
@@ -92,7 +92,7 @@ public class AutoloadUserAuthTicketTest extends P4JavaTestCase {
    * user will be written to file
    */
   private void loginTestUser() throws Exception{
-      superserver = ServerFactory.getOptionsServer(serverUrlString, null);
+      superserver = ServerFactory.getOptionsServer(getServerUrlString(), null);
       assertThat(superserver, notNullValue());
 
       // Register callback

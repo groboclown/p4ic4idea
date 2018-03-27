@@ -40,7 +40,10 @@ public class AddFilesOptionsTest {
         ts = new TestServer();
         ExecutableSpecification serverExecutableSpecification = ts.getServerExecutableSpecification();
         serverExecutableSpecification.setCodeline(h.getServerVersion());
-        ts.start();
+
+        // just use RSH
+        //ts.start();
+        ts.initialize();
 
         IOptionsServer server = h.getServer(ts);
         server.setUserName(ts.getUser());

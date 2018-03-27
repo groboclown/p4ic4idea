@@ -46,7 +46,7 @@ public class SyncPerformanceTest extends P4JavaTestCase {
         // props.put("enableProgress", "true");
         // props.put("defByteRecvBufSize", "40960");
 
-        server = ServerFactory.getOptionsServer(this.serverUrlString, props);
+        server = ServerFactory.getOptionsServer(getServerUrlString(), props);
         assertThat(server, notNullValue());
 
         // Register callback

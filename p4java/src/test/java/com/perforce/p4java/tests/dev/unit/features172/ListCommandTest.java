@@ -19,6 +19,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Properties;
 
+import static com.perforce.p4java.tests.ServerMessageMatcher.isText;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -105,7 +106,10 @@ public class ListCommandTest extends P4JavaRshTestCase {
 
 		assertNotNull(result);
 		Assert.assertEquals(1, result.size());
-		Assert.assertEquals("//p4-perl/main/main/P4/...@test-label-limiting - no such file(s).", result.get(0).getStatusMessage());
+		Assert.assertThat(
+				result.get(0)
+						.getStatusMessage(),
+				isText("//p4-perl/main/main/P4/...@test-label-limiting - no such file(s)."));
 	}
 
 	@Test
@@ -134,6 +138,8 @@ public class ListCommandTest extends P4JavaRshTestCase {
 
 		assertNotNull(result);
 		Assert.assertEquals(1, result.size());
-		Assert.assertEquals("Invalid changelist/client/label/date '@test-label-limiting'.", result.get(0).getStatusMessage());
+		Assert.assertThat(
+				result.get(0).getStatusMessage(),
+				isText("Invalid changelist/client/label/date '@test-label-limiting'."));
 	}
 }

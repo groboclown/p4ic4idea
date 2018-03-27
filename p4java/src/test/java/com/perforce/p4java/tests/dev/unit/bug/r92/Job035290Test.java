@@ -55,7 +55,7 @@ public class Job035290Test extends P4JavaTestCase {
 			IFileSpec filespec = server.getDepotFiles(
 				   FileSpecBuilder.makeFileSpecList(new String[] {testFileName}), true).get(0);
 			assertNotNull("Null filespec returned", filespec);
-			assertEquals(filespec.getStatusMessage().toString(), FileSpecOpStatus.VALID, filespec.getOpStatus());
+			assertEquals(filespec.getStatusString(), FileSpecOpStatus.VALID, filespec.getOpStatus());
 			assertEquals(maxRevs, filespec.getEndRevision());
 			
 			Map<IFileSpec, List<IFileRevisionData>> revListMap =

@@ -600,6 +600,13 @@ public class FileSpec extends ServerResource implements IFileSpec {
 	}
 
 	@Override
+	// p4ic4idea: added for unit tests
+	@Nonnull
+	public String getStatusString() {
+		return statusMessage == null ? EMPTY : statusMessage.toString();
+	}
+
+	@Override
 	public int getSeverityCode() {
 		return severityCode;
 	}

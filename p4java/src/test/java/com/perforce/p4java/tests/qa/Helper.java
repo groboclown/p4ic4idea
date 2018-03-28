@@ -87,6 +87,11 @@ public class Helper {
         return ServerFactory.getOptionsServer(ts.getRSHURL(), null);
     }
 
+    public IOptionsServer getServerWithLocalUrl(TestServer ts) throws Throwable {
+        // return ServerFactory.getOptionsServer(SERVER_HOST + ts.getPort(), null);
+        return ServerFactory.getOptionsServer(ts.getLocalUrl(), null);
+    }
+
     public IOptionsServer getServer(TestServer ts, Properties props) throws Throwable {
         //return ServerFactory.getOptionsServer(SERVER_HOST + ts.getPort(), props);
         return ServerFactory.getOptionsServer(ts.getRSHURL(), props);

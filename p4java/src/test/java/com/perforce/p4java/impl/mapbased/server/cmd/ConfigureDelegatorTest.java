@@ -2,6 +2,8 @@ package com.perforce.p4java.impl.mapbased.server.cmd;
 
 import static com.perforce.p4java.admin.ServerConfigurationValue.ConfigType.OPTION;
 import static com.perforce.p4java.admin.ServerConfigurationValue.ConfigType.DEFAULT;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -204,8 +206,9 @@ public class ConfigureDelegatorTest extends AbstractP4JavaUnitTest {
                 .setOrUnsetServerConfigurationValue(SERVER_NAME + "#" + MONITOR, MONITOR_VALUE);
         verify(server).execMapCmdList(eq(CmdSpec.CONFIGURE.toString()), argThat(SET_NAME_MATCHER),
                 eq(null));
-        assertTrue(result.startsWith(
-                String.format("For server '%s', configuration variable '%s' set to '%s'",
+        assertThat(
+                result,
+                startsWith(String.format("For server '%s', configuration variable '%s' set to '%s'",
                         SERVER_NAME, MONITOR, MONITOR_VALUE)));
     }
 
@@ -224,8 +227,9 @@ public class ConfigureDelegatorTest extends AbstractP4JavaUnitTest {
                 MONITOR_VALUE);
         verify(server).execMapCmdList(eq(CmdSpec.CONFIGURE.toString()), argThat(SET_MATCHER),
                 eq(null));
-        assertTrue(result.startsWith(
-                String.format("For server '%s', configuration variable '%s' set to '%s'", null,
+        assertThat(
+                result,
+                startsWith(String.format("For server '%s', configuration variable '%s' set to '%s'", null,
                         MONITOR, MONITOR_VALUE)));
     }
 
@@ -244,7 +248,8 @@ public class ConfigureDelegatorTest extends AbstractP4JavaUnitTest {
                 .setOrUnsetServerConfigurationValue(SERVER_NAME + "#" + MONITOR, null);
         verify(server).execMapCmdList(eq(CmdSpec.CONFIGURE.toString()), argThat(UNSET_NAME_MATCHER),
                 eq(null));
-        assertTrue(result.startsWith(String.format(
+        assertThat(result,
+                startsWith(String.format(
                 "For server '%s', configuration variable '%s' removed", SERVER_NAME, MONITOR)));
     }
 
@@ -262,8 +267,8 @@ public class ConfigureDelegatorTest extends AbstractP4JavaUnitTest {
         String result = configureDelegator.setOrUnsetServerConfigurationValue(MONITOR, null);
         verify(server).execMapCmdList(eq(CmdSpec.CONFIGURE.toString()), argThat(UNSET_MATCHER),
                 eq(null));
-        assertTrue(result.startsWith(String
-                .format("For server '%s', configuration variable '%s' removed", null, MONITOR)));
+        assertThat(result,
+                startsWith(String.format("For server '%s', configuration variable '%s' removed", null, MONITOR)));
     }
 
     /**
@@ -277,8 +282,8 @@ public class ConfigureDelegatorTest extends AbstractP4JavaUnitTest {
         when(server.execMapCmdList(eq(CmdSpec.CONFIGURE.toString()), any(String[].class), eq(null)))
                 .thenReturn(getMockServerErrorResponse(MONITOR));
         String result = configureDelegator.setOrUnsetServerConfigurationValue(MONITOR, null);
-        assertTrue(result.startsWith(
-                String.format("Configuration variable '%s' did not have a value.", MONITOR)));
+        assertThat(result,
+                startsWith(String.format("Configuration variable '%s' did not have a value.", MONITOR)));
     }
 
     /**

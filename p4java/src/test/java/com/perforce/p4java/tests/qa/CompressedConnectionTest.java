@@ -19,6 +19,12 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.util.List;
 
+import static org.junit.Assert.fail;
+
+/**
+ * Tests using a compressed client connection to a server
+ * over the standard socket wire.
+ */
 @RunWith(JUnitPlatform.class)
 public class CompressedConnectionTest {
 
@@ -35,15 +41,17 @@ public class CompressedConnectionTest {
         ts.getServerExecutableSpecification().setCodeline(helper.getServerVersion());
 
         ts.initialize();
-        // just use RSH
-        //ts.start();
+        // For the RSH version, see CompressedRshConnectionTest
+        ts.startAsync();
 
-        IOptionsServer server = helper.getServer(ts);
+        IOptionsServer server = helper.getServerWithLocalUrl(ts);
         server.setUserName(ts.getUser());
         server.connect();
 
         IUser user = server.getUser(ts.getUser());
 
+        // FIXME test hangs here
+        //fail("This test hangs forever.");
         client = helper.createClient(server, "client1");
         IClientOptions opts = new ClientOptions();
         opts.setCompress(true);

@@ -41,6 +41,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
+import com.perforce.p4java.exception.SslException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
@@ -454,7 +455,7 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 			method.invoke(mockConnection);
 		} catch (InvocationTargetException ite) {
 			assertNotNull(ite.getTargetException());
-			assertEquals(ite.getTargetException().getClass(), ConnectionException.class);
+			assertEquals(ite.getTargetException().getClass(), SslException.class);
 			assertNotNull(ite.getTargetException().getCause());
 			assertEquals(ite.getTargetException().getCause().getClass(), expectedException);
 		}

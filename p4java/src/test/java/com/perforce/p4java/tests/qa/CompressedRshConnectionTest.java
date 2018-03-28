@@ -9,7 +9,6 @@ import com.perforce.p4java.impl.generic.client.ClientOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.test.TestServer;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -21,8 +20,12 @@ import java.util.List;
 
 import static org.junit.Assert.fail;
 
+/**
+ * Tests using a compressed client connection
+ * over an RSH connection direct to the p4d server.
+ */
 @RunWith(JUnitPlatform.class)
-public class CompressedConnectionTest {
+public class CompressedRshConnectionTest {
 
     private static TestServer ts = null;
     private static Helper helper = null;
@@ -37,18 +40,15 @@ public class CompressedConnectionTest {
         ts.getServerExecutableSpecification().setCodeline(helper.getServerVersion());
 
         ts.initialize();
-        // Try with non-rsh version...
-        ts.startAsync();
 
-        //IOptionsServer server = helper.getServer(ts);
-        IOptionsServer server = helper.getServerWithLocalUrl(ts);
+        IOptionsServer server = helper.getServer(ts);
         server.setUserName(ts.getUser());
         server.connect();
 
         IUser user = server.getUser(ts.getUser());
 
-        // FIXME test hangs here
-        //fail("This test hangs forever.");
+        // FIXME test hangs here.  See BUGS.md
+        fail("This test hangs forever.");
         client = helper.createClient(server, "client1");
         IClientOptions opts = new ClientOptions();
         opts.setCompress(true);

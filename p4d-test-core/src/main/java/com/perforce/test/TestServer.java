@@ -109,6 +109,7 @@ public class TestServer {
     public synchronized void initialize(ClassLoader cl, String initialDepotResource, String checkpointResource)
             throws IOException {
         ensureNotRunning();
+        delete();
 
         File p4d = extractP4d(outDir);
         if (initialDepotResource == null) {

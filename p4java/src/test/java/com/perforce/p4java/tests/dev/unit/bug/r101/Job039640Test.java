@@ -9,6 +9,7 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import com.perforce.p4java.exception.OptionsException;
 import org.junit.Test;
 
 import com.perforce.p4java.core.IChangelist;
@@ -31,21 +32,12 @@ public class Job039640Test extends P4JavaTestCase {
 	}
 
 	@Test
-	public void testJob039640DeleteOptionsProcessing() {
-		IServer server = null;
-
-		try {
-			DeleteFilesOptions opts = new DeleteFilesOptions();
-			opts.setChangelistId(IChangelist.DEFAULT);
-			List<String> optsList = opts.processOptions(server);
-			assertNotNull(optsList);
-			assertEquals(0, optsList.size());
-		} catch (Exception exc) {
-			fail("Unexpected exception: " + exc.getLocalizedMessage());
-		} finally {
-			if (server != null) {
-				this.endServerSession(server);
-			}
-		}
+	public void testJob039640DeleteOptionsProcessing()
+			throws OptionsException {
+		DeleteFilesOptions opts = new DeleteFilesOptions();
+		opts.setChangelistId(IChangelist.DEFAULT);
+		List<String> optsList = opts.processOptions(null);
+		assertNotNull(optsList);
+		assertEquals(0, optsList.size());
 	}
 }

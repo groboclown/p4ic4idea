@@ -312,8 +312,8 @@ public class RpcStreamConnection extends RpcConnection {
 
                 // p4ic4idea: isValid isn't what this thinks it is.  It's checking whether the
                 // session is resumeable or not, which isn't what we care about.
-		// Even if it is valid, it should be throwing the more precise
-		// exception SslException
+                // Even if it is valid, it should be throwing the more precise
+                // exception SslException
                 /*
                  * If an error occurs during the initial handshake, this method
                  * returns an invalid session object which reports an invalid

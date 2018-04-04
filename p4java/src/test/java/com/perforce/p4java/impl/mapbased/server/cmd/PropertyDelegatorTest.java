@@ -4,6 +4,7 @@ import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.server.CmdSpec.PROPERTY;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNoneBlank;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -151,7 +152,7 @@ public class PropertyDelegatorTest extends AbstractP4JavaUnitTest {
         // when
         String setProperty = propertyDelegator.setProperty(name, value, propertyOptions);
         // then
-        assertThat(isNoneBlank(setProperty), is(true));
+        assertThat(setProperty, nullValue());
     }
 
     /**
@@ -268,6 +269,6 @@ public class PropertyDelegatorTest extends AbstractP4JavaUnitTest {
         // when
         String deleteProperty = unitTestWhen.when();
         // then
-        assertThat(isNoneBlank(deleteProperty), is(true));
+        assertThat(deleteProperty, nullValue());
     }
 }

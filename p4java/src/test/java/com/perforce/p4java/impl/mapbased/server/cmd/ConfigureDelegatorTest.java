@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
@@ -37,7 +38,7 @@ import com.perforce.p4java.server.CmdSpec;
  * Tests the ConfigureDelegator.
  */
 @RunWith(JUnitPlatform.class)
-public class ConfigureDelegatorTest extends AbstractP4JavaUnitTest {
+public class ConfigureDelegatorTest {
 
     /** The configure delegator. */
     private ConfigureDelegator configureDelegator;
@@ -128,6 +129,8 @@ public class ConfigureDelegatorTest extends AbstractP4JavaUnitTest {
     private static final CommandLineArgumentMatcher UNSET_MATCHER =
             new CommandLineArgumentMatcher(
                     new String[] { RpcFunctionMapKey.UNSET, MONITOR });
+
+    private IOptionsServer server;
 
     /**
      * Before each.

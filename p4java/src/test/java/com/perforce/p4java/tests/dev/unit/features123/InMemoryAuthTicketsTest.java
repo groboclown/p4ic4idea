@@ -203,7 +203,7 @@ public class InMemoryAuthTicketsTest extends P4JavaTestCase {
             assertThat(callback.getMessage(), containsText("'login' not necessary, no password set for this user."));
 
             // Use the super user to change the password to something else
-            superServer = getServer(this.getServerUrlString(), serverProps,
+            superServer = getServer(getServerUrlString(), serverProps,
                     "p4jtestsuper", "p4jtestsuper");
             assertNotNull(superServer);
             superClient = superServer.getClient("p4TestSuperWS20112");

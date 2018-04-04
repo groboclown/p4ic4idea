@@ -198,8 +198,8 @@ public class MD5Digester {
 				ByteOrderMark.UTF_8, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_16BE,
 				ByteOrderMark.UTF_32LE, ByteOrderMark.UTF_32BE);
 
-		     InputStreamReader encodedStreamReader = new InputStreamReader(unicodeInputStream,
-				     charset)) {
+		    InputStreamReader encodedStreamReader = new InputStreamReader(unicodeInputStream,
+				    charset)) {
 			CharsetEncoder utf8CharsetEncoder = CharsetDefs.UTF8.newEncoder()
 					.onMalformedInput(CodingErrorAction.REPORT)
 					.onUnmappableCharacter(CodingErrorAction.REPORT);

@@ -42,6 +42,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
 import com.perforce.p4java.exception.SslException;
+import com.perforce.p4java.exception.SslHandshakeException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
@@ -392,7 +393,7 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
 		Method initRshModeServer = getPrivateMethod(RpcStreamConnection.class, "initRshModeServer");
 		mockConnection.rsh(null);
-		assertExceptionFromMethod(mockConnection, initRshModeServer, NullPointerException.class);
+		assertConnectionExceptionFromMethod(mockConnection, initRshModeServer, NullPointerException.class);
 	}
 
 	@Test
@@ -425,15 +426,16 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 
 		reset(rpcSocketPool);
 		doThrow(UnknownHostException.class).when(rpcSocketPool).acquire();
-		assertExceptionFromMethod(mockConnection, initSocketBasedServer, UnknownHostException.class);
+		assertConnectionExceptionFromMethod(mockConnection, initSocketBasedServer, UnknownHostException.class);
 
 		reset(rpcSocketPool);
 		doThrow(IOException.class).when(rpcSocketPool).acquire();
-		assertExceptionFromMethod(mockConnection, initSocketBasedServer, IOException.class);
+		assertConnectionExceptionFromMethod(mockConnection, initSocketBasedServer, IOException.class);
 
+		// Throwable is never explicitly caught.  Try a runtime instead
 		reset(rpcSocketPool);
-		doThrow(Throwable.class).when(rpcSocketPool).acquire();
-		assertExceptionFromMethod(mockConnection, initSocketBasedServer, Throwable.class);
+		doThrow(RuntimeException.class).when(rpcSocketPool).acquire();
+		assertConnectionExceptionFromMethod(mockConnection, initSocketBasedServer, RuntimeException.class);
 	}
 
 	/**
@@ -446,7 +448,7 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 	 * @throws IllegalAccessException the illegal access exception
 	 * @throws IllegalArgumentException the illegal argument exception
 	 */
-	private void assertExceptionFromMethod(
+	private void assertConnectionExceptionFromMethod(
 								RpcStreamConnection mockConnection,
 								Method method,
 								Class<? extends Throwable> expectedException)
@@ -455,7 +457,57 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 			method.invoke(mockConnection);
 		} catch (InvocationTargetException ite) {
 			assertNotNull(ite.getTargetException());
+			assertEquals(ite.getTargetException().getClass(), ConnectionException.class);
+			assertNotNull(ite.getTargetException().getCause());
+			assertEquals(ite.getTargetException().getCause().getClass(), expectedException);
+		}
+	}
+
+	/**
+	 * Assert exception from method. Tests that the target exception
+	 * and the cause for the target exception is as expected.
+	 *
+	 * @param mockConnection the mock connection
+	 * @param method the method
+	 * @param expectedException the expected exception
+	 * @throws IllegalAccessException the illegal access exception
+	 * @throws IllegalArgumentException the illegal argument exception
+	 */
+	private void assertSslExceptionFromMethod(
+			RpcStreamConnection mockConnection,
+			Method method,
+			Class<? extends Throwable> expectedException)
+			throws IllegalAccessException, IllegalArgumentException {
+		try {
+			method.invoke(mockConnection);
+		} catch (InvocationTargetException ite) {
+			assertNotNull(ite.getTargetException());
 			assertEquals(ite.getTargetException().getClass(), SslException.class);
+			assertNotNull(ite.getTargetException().getCause());
+			assertEquals(ite.getTargetException().getCause().getClass(), expectedException);
+		}
+	}
+
+	/**
+	 * Assert exception from method. Tests that the target exception
+	 * and the cause for the target exception is as expected.
+	 *
+	 * @param mockConnection the mock connection
+	 * @param method the method
+	 * @param expectedException the expected exception
+	 * @throws IllegalAccessException the illegal access exception
+	 * @throws IllegalArgumentException the illegal argument exception
+	 */
+	private void assertSslHandshakeExceptionFromMethod(
+			RpcStreamConnection mockConnection,
+			Method method,
+			Class<? extends Throwable> expectedException)
+			throws IllegalAccessException, IllegalArgumentException {
+		try {
+			method.invoke(mockConnection);
+		} catch (InvocationTargetException ite) {
+			assertNotNull(ite.getTargetException());
+			assertEquals(ite.getTargetException().getClass(), SslHandshakeException.class);
 			assertNotNull(ite.getTargetException().getCause());
 			assertEquals(ite.getTargetException().getCause().getClass(), expectedException);
 		}
@@ -544,19 +596,20 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 		SSLSocket sslSocket = mock(SSLSocket.class);
 		doThrow(CertificateExpiredException.class).when(sslSocket).getSession();
 		mockConnection.socket(sslSocket);
-		assertExceptionFromMethod(mockConnection, initSSL, CertificateExpiredException.class);
+		assertSslExceptionFromMethod(mockConnection, initSSL, CertificateExpiredException.class);
 
 		reset(sslSocket);
 		doThrow(CertificateNotYetValidException.class).when(sslSocket).getSession();
-		assertExceptionFromMethod(mockConnection, initSSL, CertificateNotYetValidException.class);
+		assertSslExceptionFromMethod(mockConnection, initSSL, CertificateNotYetValidException.class);
 
 		reset(sslSocket);
 		doThrow(NoSuchAlgorithmException.class).when(sslSocket).getSession();
-		assertExceptionFromMethod(mockConnection, initSSL, NoSuchAlgorithmException.class);
+		assertSslHandshakeExceptionFromMethod(mockConnection, initSSL, NoSuchAlgorithmException.class);
 
-		reset(sslSocket);
-		doThrow(IOException.class).when(sslSocket).getSession();
-		assertExceptionFromMethod(mockConnection, initSSL, IOException.class);
+		// getSession() cannot throw IOException
+		//reset(sslSocket);
+		//doThrow(IOException.class).when(sslSocket).getSession();
+		//assertConnectionExceptionFromMethod(mockConnection, initSSL, IOException.class);
 	}
 
 	@Test
@@ -676,8 +729,9 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 		doThrow(P4JavaError.class).when(topInputStream).read(any());
 		assertThrows(P4JavaError.class, () -> mockConnection.getRpcPacket(fieldRule, filterCallback));
 
+		// Throwable is never caught explicitly.  Try a runtime exception instead.
 		reset(topInputStream);
-		doThrow(Throwable.class).when(topInputStream).read(any());
+		doThrow(RuntimeException.class).when(topInputStream).read(any());
 		assertThrows(P4JavaError.class, () -> mockConnection.getRpcPacket(fieldRule, filterCallback));
 	}
 }

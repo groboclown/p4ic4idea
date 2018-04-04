@@ -66,7 +66,7 @@ public class GetBranchSpecTest extends P4JavaTestCase {
 		// initialization code (before each test).
 
 		try {
-			server = getServer(this.getServerUrlString(), props, getUserName(),
+			server = getServer(getServerUrlString(), props, getUserName(),
 					getPassword());
 			assertNotNull(server);
 			client = server.getClient("p4TestUserWS20112");

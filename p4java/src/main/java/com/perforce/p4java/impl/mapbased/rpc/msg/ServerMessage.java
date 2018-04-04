@@ -53,10 +53,10 @@ public class ServerMessage implements IServerMessage {
 
         ISingleServerMessage highest = this.messages[0];
         StringBuilder sb = new StringBuilder();
-        for (int i = 1; i < this.messages.length; i++) {
-            sb.append(this.messages[i].getLocalizedMessage()).append('\n');
-            if (highest.getSeverity() < this.messages[i].getSeverity()) {
-                highest = this.messages[i];
+        for (ISingleServerMessage message : this.messages) {
+            sb.append(message.getLocalizedMessage()).append('\n');
+            if (highest.getSeverity() < message.getSeverity()) {
+                highest = message;
             }
         }
         str = sb.toString().trim();

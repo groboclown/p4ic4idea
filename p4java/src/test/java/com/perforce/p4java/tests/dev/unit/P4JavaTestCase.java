@@ -960,7 +960,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 
         if (uriString == null) {
             System.err.println("Connecting to server " + serverUrlString);
-            server = ServerFactory.getOptionsServer(serverUrlString, props);
+            server = ServerFactory.getOptionsServer(getServerUrlString(), props);
         } else {
             System.err.println("Connecting to server " + uriString);
             server = ServerFactory.getOptionsServer(uriString, props);
@@ -998,7 +998,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
      * Equivalent to getServer(null, null, null, null).
      */
     protected static IOptionsServer getServer() throws P4JavaException, URISyntaxException {
-        IOptionsServer server = getServer(serverUrlString, null, null, null);
+        IOptionsServer server = getServer(getServerUrlString(), null, null, null);
         assertNotNull("Null server returned by server factory in P4JavaTestCase.getServer", server);
         return server;
     }
@@ -1012,7 +1012,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
      * getSuperUserPassword).
      */
     protected static IOptionsServer getServerAsSuper() throws P4JavaException, URISyntaxException {
-        return getServer(serverUrlString, null, getSuperUserName(),
+        return getServer(getServerUrlString(), null, getSuperUserName(),
                 getSuperUserPassword());
     }
 
@@ -1025,7 +1025,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
      * getSuperUserPassword).
      */
     protected static IOptionsServer getServerAsSuper(Properties properties) throws P4JavaException, URISyntaxException {
-        return getServer(serverUrlString, properties, getSuperUserName(),
+        return getServer(getServerUrlString(), properties, getSuperUserName(),
                 getSuperUserPassword());
     }
 
@@ -1038,7 +1038,8 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
             server.disconnect();
         } catch (Exception exc) {
             exc.printStackTrace();
-            fail("Unexpected exception: " + exc.getLocalizedMessage());
+            //fail("Unexpected exception: " + exc.getLocalizedMessage());
+            throw new AssertionError("Unexpected exception", exc);
         }
     }
 
@@ -1543,7 +1544,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 
         int i = 0;
         cmdArgs[i++] = this.p4CmdLocation;
-        URI uri = new URI(serverUrlString);
+        URI uri = new URI(getServerUrlString());
         assertNotNull("Bad server URI format in doTaggedP4Cmd", uri);
         cmdArgs[i++] = "-p" + uri.getHost() + ":" + uri.getPort();
         cmdArgs[i++] = "-u" + (asSuper ? superUserName : userName);

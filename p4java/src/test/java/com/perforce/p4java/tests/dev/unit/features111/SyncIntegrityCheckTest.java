@@ -158,6 +158,7 @@ public class SyncIntegrityCheckTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testUnicodeTransfer() {
+		fail("FIXME uses remote p4d server");
 		IOptionsServer server = null;
 		IClient client = null;
 		final String testServer = "p4java://win-qa7.perforce.com:8838";

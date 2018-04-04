@@ -11,6 +11,7 @@ import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.SET;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.UNSET;
 import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.toServerMessage;
 import static com.perforce.p4java.server.CmdSpec.CONFIGURE;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -67,16 +68,16 @@ public class ConfigureDelegator extends BaseDelegator implements IConfigureDeleg
         if (nonNull(resultMaps)) {
             for (Map<String, Object> map : resultMaps) {
                 // p4ic4idea: use IServerMessage
-                IServerMessage msg = toServerMessage(map);
-                if (nonNull(msg)) {
-                    if (msg.isInfoOrError()) {
+                if (nonNull(map)) {
+                    IServerMessage msg = toServerMessage(map);
+                    if (nonNull(msg) && msg.isInfoOrError()) {
                         return msg.toString();
                     }
                     // Handling the new message format for Perforce server
                     // version 2011.1; also maintain backward compatibility.
                     if (map.containsKey(NAME_KEY)) {
                         if (map.containsKey(ACTION_KEY) && nonNull(map.get(ACTION_KEY))) {
-                            String message = msg.toString();
+                            String message = nonNull(msg) ? msg.toString() : EMPTY;
                             String serverName = parseString(map, SERVER_NAME_KEY);
                             String configureName = parseString(map, NAME_KEY);
                             String configureValue = parseString(map, VALUE_KEY);

@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.fail;
 
 import java.nio.charset.Charset;
 import java.util.List;
@@ -43,6 +44,7 @@ public class SyncJapaneseFilesCharsetTest extends P4JavaTestCase {
 
   @BeforeEach
   public void setUp() throws Exception {
+    fail("FIXME Attempts a connection to a remote perforce server");
     server = ServerFactory.getOptionsServer(playUnicodeServerURL, null);
     assertThat(server, notNullValue());
 

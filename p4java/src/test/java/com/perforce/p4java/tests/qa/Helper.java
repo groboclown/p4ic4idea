@@ -396,9 +396,7 @@ public class Helper {
             try {
                 ts.delete();
             } catch (Exception e) {
-                System.err.println(e.getMessage());
-                e.printStackTrace();
-                fail();
+                throw new AssertionError(e.getMessage(), e);
             }
         }
     }

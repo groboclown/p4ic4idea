@@ -87,6 +87,7 @@ public class ServerPropertiesTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testServerProperties() {
+		fail("FIXME uses remote p4d server");
 
 		String[] serverUris = {
 				"p4java://eng-p4java-vm.perforce.com:20121?socketPoolSize=10&testKey1=testVal1",

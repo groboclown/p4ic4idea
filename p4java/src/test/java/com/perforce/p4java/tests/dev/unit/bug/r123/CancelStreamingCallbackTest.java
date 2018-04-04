@@ -34,6 +34,7 @@ import static java.util.Objects.nonNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.fail;
 
 /**
  * Test sync using IStreamingCallback.
@@ -51,6 +52,7 @@ public class CancelStreamingCallbackTest extends P4JavaTestCase {
 
     props.put("enableProgress", "true");
 
+    fail("FIXME Attempts a connection to a remote perforce server");
     server = ServerFactory.getOptionsServer("p4jrpcnts://eng-p4java-vm.perforce.com:20121", props);
     assertThat(server, notNullValue());
 

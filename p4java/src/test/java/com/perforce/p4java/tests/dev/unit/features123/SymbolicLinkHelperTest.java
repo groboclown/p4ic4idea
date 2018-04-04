@@ -3,6 +3,7 @@
  */
 package com.perforce.p4java.tests.dev.unit.features123;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -67,15 +68,15 @@ public class SymbolicLinkHelperTest extends P4JavaTestCase {
 			String link = "/tmp/user-bin-" + getRandomInt();
 
 			// Create symbolic link
-			Object path = SymbolicLinkHelper.createSymbolicLink(link, target);
+			String path = SymbolicLinkHelper.createSymbolicLink(link, target);
+			assertNotNull(path);
 
-			boolean isSymlink = SymbolicLinkHelper.isSymbolicLink(path
-					.toString());
+			boolean isSymlink = SymbolicLinkHelper.isSymbolicLink(path);
 			assertTrue(isSymlink);
 			
-			File file = new File(path.toString());
+			File file = new File(path);
 			if (file.exists()) {
-				file.delete();
+				assertTrue(file.delete());
 			}
 		}
 	}

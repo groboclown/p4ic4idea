@@ -57,7 +57,9 @@ public abstract class SymbolicLinkHelper implements ISystemFileCommandsHelper {
         if (nonNull(filePath)) {
           return Files.isSymbolicLink(filePath);
         }
-      } catch (Throwable thr) {
+      // p4ic4idea: Do not catch throwable unless you're really careful
+      //} catch (Throwable thr) {
+      } catch (Exception thr) {
         Log.exception(thr);
       }
     }
@@ -81,7 +83,9 @@ public abstract class SymbolicLinkHelper implements ISystemFileCommandsHelper {
             return pathObject.toString();
           }
         }
-      } catch (Throwable thr) {
+      // p4ic4idea: Do not catch throwable unless you're really careful
+      //} catch (Throwable thr) {
+      } catch (Exception thr) {
         Log.error("Unexpected exception invoking method: %s", thr.getLocalizedMessage());
         Log.exception(thr);
       }
@@ -108,7 +112,9 @@ public abstract class SymbolicLinkHelper implements ISystemFileCommandsHelper {
             return fileTimeObject.toMillis();
           }
         }
-      } catch (Throwable thr) {
+      // p4ic4idea: Do not catch throwable unless you're really careful
+      //} catch (Throwable thr) {
+      } catch (Exception thr) {
         Log.error("Unexpected exception invoking method: %s", thr.getLocalizedMessage());
         Log.exception(thr);
       }
@@ -132,7 +138,9 @@ public abstract class SymbolicLinkHelper implements ISystemFileCommandsHelper {
         if (nonNull(filePath)) {
           return Files.exists(filePath, LinkOption.NOFOLLOW_LINKS);
         }
-      } catch (Throwable thr) {
+      // p4ic4idea: Do not catch throwable unless you're really careful
+      //} catch (Throwable thr) {
+      } catch (Exception thr) {
         Log.error("Unexpected exception invoking method: %s", thr.getLocalizedMessage());
         Log.exception(thr);
       }
@@ -168,7 +176,9 @@ public abstract class SymbolicLinkHelper implements ISystemFileCommandsHelper {
           Path pathObject = Files.createSymbolicLink(linkPath, targetPath);
           return pathObject.toString();
         }
-      } catch (Throwable thr) {
+      // p4ic4idea: Do not catch throwable unless you're really careful
+      //} catch (Throwable thr) {
+      } catch (Exception thr) {
         thr.printStackTrace();
         Log.error("Unexpected exception invoking method: %s", thr.getLocalizedMessage());
         Log.exception(thr);

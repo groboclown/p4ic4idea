@@ -75,6 +75,7 @@ public class ReconcileWorkspaceFilesTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
+		fail("FIXME connects to external p4d server");
 		try {
 			server = ServerFactory.getOptionsServer(serverURL, null);
 			assertNotNull(server);

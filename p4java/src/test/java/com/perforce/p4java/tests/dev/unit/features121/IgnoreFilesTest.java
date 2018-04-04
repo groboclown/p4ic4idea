@@ -66,6 +66,7 @@ public class IgnoreFilesTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
+		fail("FIXME uses remote p4d server");
 		try {
 			Properties properties = new Properties();
 			properties.put(PropertyDefs.IGNORE_FILE_NAME_KEY_SHORT_FORM,

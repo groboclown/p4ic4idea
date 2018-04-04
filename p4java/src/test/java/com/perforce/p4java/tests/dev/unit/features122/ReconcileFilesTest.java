@@ -6,6 +6,7 @@ package com.perforce.p4java.tests.dev.unit.features122;
 import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.List;
@@ -54,6 +55,7 @@ public class ReconcileFilesTest extends P4JavaTestCase {
     @Before
     public void setUp() throws Exception {
         // initialization code (before each test).
+        fail("FIXME uses remote p4d server");
         Properties properties = new Properties();
         properties.put(PropertyDefs.IGNORE_FILE_NAME_KEY_SHORT_FORM,
                 ".p4ignore");

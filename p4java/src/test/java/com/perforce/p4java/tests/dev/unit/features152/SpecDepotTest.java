@@ -69,6 +69,7 @@ public class SpecDepotTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
+		fail("FIXME uses remote p4d server");
 		try {
 			server = ServerFactory.getOptionsServer(P4JTEST_UNICODE_SERVER_URL_DEFAULT, null);
 			assertNotNull(server);

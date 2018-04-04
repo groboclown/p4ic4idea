@@ -74,6 +74,7 @@ public class AutoCharsetUnicodeServerTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testAutoCharset() {
+		fail("FIXME uses remote p4d server");
 
 		// Unicode enabled Perforce server
 		String unicodeServerUrl = "p4java://eng-p4java-vm.perforce.com:30132";

@@ -89,8 +89,8 @@ public class GetDiffFilesUnchangedTest extends P4JavaRshTestCase {
 	 * diff -se (unopened file - no change)
 	 */
 	@Test
-	@Ignore("Tries to connect to p4java://eng-p4java-vm.perforce.com:40132 that does not exist")
 	public void testGetDiffFilesUnchangedFiles() {
+		fail("Tries to connect to p4java://eng-p4java-vm.perforce.com:40132 that does not exist");
 
 		// This file is type <unicode+C>
 		// ~ 13mb file size

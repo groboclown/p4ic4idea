@@ -76,7 +76,7 @@ public class ChangePasswordTest extends P4JavaTestCase {
 		// initialization code (before each test).
 
 		try {
-			server = getServer(this.getServerUrlString(), props, getUserName(),
+			server = getServer(getServerUrlString(), props, getUserName(),
 					getPassword());
 			assertNotNull(server);
 			client = server.getClient("p4TestUserWS20112");
@@ -85,7 +85,7 @@ public class ChangePasswordTest extends P4JavaTestCase {
 			// Register callback
 			server.registerCallback(callback);
 
-			superServer = getServer(this.getServerUrlString(), props,
+			superServer = getServer(getServerUrlString(), props,
 					getSuperUserName(), getSuperUserPassword());
 			assertNotNull(superServer);
 			superClient = superServer.getClient("p4TestSuperWS20112");
@@ -203,7 +203,7 @@ public class ChangePasswordTest extends P4JavaTestCase {
 			assertThat(callback.getMessage(), containsText("'login' not necessary, no password set for this user."));
 
 			// Use the super user to change the password to something else
-			superServer = getServer(this.getServerUrlString(), props,
+			superServer = getServer(getServerUrlString(), props,
 					"p4jtestsuper", "p4jtestsuper");
 			assertNotNull(superServer);
 			superClient = superServer.getClient("p4TestSuperWS20112");

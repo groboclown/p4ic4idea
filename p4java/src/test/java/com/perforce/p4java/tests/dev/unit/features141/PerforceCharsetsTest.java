@@ -76,6 +76,7 @@ public class PerforceCharsetsTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testPerforceCharsets() {
+		fail("FIXME uses remote p4d server");
 
 		// Printout the supported Perforce charsets
 		String[] knownCharsets = PerforceCharsets.getKnownCharsets();

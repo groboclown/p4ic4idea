@@ -90,8 +90,8 @@ public class ServerClusterAuthTicketsTest extends P4JavaTestCase {
 	 * Test auth tickets connecting to a Perforce server cluster.
 	 */
 	@Test
-	@Ignore("Tries to connect to llam-ds1.das.perforce.com that does not exist")
 	public void testAuthTickets() {
+		fail("Tries to connect to llam-ds1.das.perforce.com that does not exist");
 
 		try {
 			server = ServerFactory.getOptionsServer(p4duri, null);

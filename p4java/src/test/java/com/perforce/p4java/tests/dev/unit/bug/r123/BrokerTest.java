@@ -3,6 +3,7 @@ package com.perforce.p4java.tests.dev.unit.bug.r123;
 import static java.util.Objects.nonNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.fail;
 
 import java.util.Properties;
 
@@ -32,6 +33,7 @@ public class BrokerTest extends P4JavaTestCase {
   @BeforeEach
   public void setUp() throws Exception {
     // P4Broker URL
+    fail("FIXME Attempts a connection to a remote perforce server");
     String serverUrl = "p4jrpcnts://eng-p4java-vm.perforce.com:50121";
     Properties props = new Properties();
     props.put("useAuthMemoryStore", "1");

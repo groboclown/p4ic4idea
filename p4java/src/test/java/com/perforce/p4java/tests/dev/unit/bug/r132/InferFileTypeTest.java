@@ -113,7 +113,6 @@ public class InferFileTypeTest extends P4JavaRshTestCase {
      * Test the inferFileType() method.
      */
     @Test
-    @Ignore
     public void testInferFileType() throws Exception {
         String depotFilePath = "//depot/FileTypeTest/...";
         byte[] bytes = new byte[RpcPropertyDefs.RPC_DEFAULT_FILETYPE_PEEK_SIZE];

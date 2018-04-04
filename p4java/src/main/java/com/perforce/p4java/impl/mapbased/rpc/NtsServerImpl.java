@@ -192,9 +192,14 @@ public class NtsServerImpl extends RpcServer {
 											AccessException {
 		Log.info("Disconnected RPC connection to Perforce server "
 							+ this.serverHost + ":" + this.serverPort);
-		
-		this.dispatcher.shutdown(this.rpcConnection);
-		this.rpcConnection.disconnect(this.dispatcher);
+
+		// p4ic4idea: this can cause an NPE if the server was never setup right.
+		if (this.dispatcher != null) {
+			this.dispatcher.shutdown(this.rpcConnection);
+		}
+		if (this.rpcConnection != null) {
+			this.rpcConnection.disconnect(this.dispatcher);
+		}
 		this.haveSentProtocolSpecs = false;
 		this.protocolSpecs = null;
 		super.disconnect();

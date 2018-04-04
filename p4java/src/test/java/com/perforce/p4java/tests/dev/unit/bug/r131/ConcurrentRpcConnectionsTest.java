@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import com.perforce.p4java.tests.MockCommandCallback;
+import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -101,6 +102,7 @@ public class ConcurrentRpcConnectionsTest extends P4JavaTestCase {
     props.put(PropertyDefs.TICKET_PATH_KEY_SHORT_FORM, defaultTicketFile);
     props.put("com.perforce.p4java.rpc.socketPoolSize", 100);
 
+    Assert.fail("FIXME Attempts a connection to a remote perforce server");
     server = ServerFactory.getOptionsServer("p4jrpc://eng-p4java-vm.perforce.com:20131", props);
     assertThat(server, notNullValue());
 

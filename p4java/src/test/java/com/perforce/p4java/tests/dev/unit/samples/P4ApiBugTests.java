@@ -5,6 +5,7 @@ package com.perforce.p4java.tests.dev.unit.samples;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -135,6 +136,7 @@ public class P4ApiBugTests extends P4JavaTestCase {
 
 	private IServer login(String serverPort, boolean useTicketFile)
 			throws P4JavaException, URISyntaxException {
+		fail("FIXME uses remote p4d server");
 		IServer server = ServerFactory
 				.getServer("p4java://" + serverPort, serverProps);
 		assertFalse(ticketFile.exists());

@@ -96,6 +96,7 @@ public class FiletypesTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
+		fail("FIXE uses an external p4d server");
 		try {
 			server = ServerFactory.getOptionsServer(HIGH_SECURITY_SERVER_URL,
 					null);

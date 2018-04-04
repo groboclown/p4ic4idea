@@ -5,6 +5,7 @@ package com.perforce.p4java.tests.dev.unit.bug.r151;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.perforce.p4java.tests.MockCommandCallback;
 import org.junit.AfterClass;
@@ -28,6 +29,7 @@ public class ReplacementFingerprintTest extends P4JavaTestCase {
      */
     @Test
     public void testAddRemoveReplacementTrust() throws Exception {
+        fail("FIXME connects to external p4d server");
         String serverUri = "p4javassl://eng-p4java-vm.perforce.com:30121";
         server = ServerFactory.getOptionsServer(serverUri, props);
         assertNotNull(server);

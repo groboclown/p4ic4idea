@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.fail;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +40,7 @@ public class NewDepotTest extends P4JavaTestCase {
 
   @BeforeEach
   public void setUp() throws Exception {
+    fail("FIXME Attempts a connection to a remote perforce server");
     superserver = getServer(
         TEST_102_SERVER_URL,
         null,

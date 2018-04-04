@@ -8,6 +8,7 @@ import static com.perforce.p4java.exception.TrustException.Type.NEW_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 
@@ -46,6 +47,7 @@ public class FingerprintTest extends P4JavaTestCase {
      */
     @Test
     public void testAddTrust() throws Exception {
+        fail("FIXME uses remote p4d server");
         server = ServerFactory.getOptionsServer(SSL_ENABLED_P4D_SERVER, props);
         assertNotNull(server);
 
@@ -123,6 +125,7 @@ public class FingerprintTest extends P4JavaTestCase {
      */
     @Test
     public void testRemoveTrust() throws Exception {
+        fail("FIXME uses remote p4d server");
         server = ServerFactory.getOptionsServer(SSL_ENABLED_P4D_SERVER, props);
         assertNotNull(server);
         // Register callback
@@ -139,6 +142,7 @@ public class FingerprintTest extends P4JavaTestCase {
      */
     @Test
     public void testGetTrust() throws Exception {
+        fail("FIXME uses remote p4d server");
         server = ServerFactory.getOptionsServer(SSL_ENABLED_P4D_SERVER, props);
         assertNotNull(server);
 
@@ -155,6 +159,7 @@ public class FingerprintTest extends P4JavaTestCase {
      */
     @Test
     public void testGetTrusts() throws Exception {
+        fail("FIXME uses remote p4d server");
         server = ServerFactory.getOptionsServer(SSL_ENABLED_P4D_SERVER, props);
         assertNotNull(server);
 
@@ -203,6 +208,7 @@ public class FingerprintTest extends P4JavaTestCase {
      */
     @Test
     public void testTrustKey() throws Exception {
+        fail("FIXME uses remote p4d server");
         server = ServerFactory.getOptionsServer(SSL_ENABLED_P4D_SERVER, props);
         assertNotNull(server);
 
@@ -219,6 +225,7 @@ public class FingerprintTest extends P4JavaTestCase {
      */
     @Test
     public void testConnection() throws Exception {
+        fail("FIXME uses remote p4d server");
         String serverUri = SSL_ENABLED_P4D_SERVER + "?socketPoolSize=10&testKey1=testVal1";
         server = ServerFactory.getOptionsServer(serverUri, props);
         assertNotNull(server);

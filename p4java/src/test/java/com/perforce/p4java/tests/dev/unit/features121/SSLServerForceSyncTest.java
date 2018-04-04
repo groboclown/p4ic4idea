@@ -68,6 +68,7 @@ public class SSLServerForceSyncTest extends P4JavaTestCase {
 	 */
 	@Before
 	public void setUp() {
+		fail("FIXME uses remote p4d server");
 		// initialization code (before each test).
 		try {
 			server = ServerFactory.getOptionsServer(sslServerURL, null);

@@ -68,7 +68,7 @@ public class ChangelistTypeFieldTest extends P4JavaTestCase {
 		final String expectedDescription = "<description: restricted, no permission to view>\n";
 		
 		try {
-			server = getServer(this.getServerUrlString(), null, this.getSuperUserName(),
+			server = getServer(getServerUrlString(), null, this.getSuperUserName(),
 											this.getSuperUserPassword());
 			assertNotNull("null super-user server", server);
 			client = getDefaultClient(server);

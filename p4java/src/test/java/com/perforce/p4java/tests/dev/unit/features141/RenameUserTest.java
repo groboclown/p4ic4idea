@@ -60,6 +60,7 @@ public class RenameUserTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
+		fail("FIXME uses remote p4d server");
 		try {
 			server = getServer("p4java://eng-p4java-vm.perforce.com:20141", null);
 			assertNotNull(server);

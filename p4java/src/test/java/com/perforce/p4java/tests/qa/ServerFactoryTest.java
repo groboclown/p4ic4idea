@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.StringReader;
 import java.util.Properties;
 
 import org.junit.jupiter.api.AfterAll;
@@ -32,11 +33,14 @@ public class ServerFactoryTest {
     public static void beforeClass() throws Throwable {
         h = new Helper();
         ts = new TestServer();
+        ts.setMonitor(3);
         ts.getServerExecutableSpecification().setCodeline(h.getServerVersion());
 
         ts.initialize();
-        // just use RSH
-        //ts.start();
+
+        // We're looking for log values when the client connects,
+        // which means we need to use non-RSH connection method.
+        ts.startAsync();
     }
 
 
@@ -48,13 +52,13 @@ public class ServerFactoryTest {
         properties.put(PROG_NAME_KEY, programName);
 
         //IServer server = getServer("p4java://localhost:" + ts.getPort(), properties);
-        IServer server = getServer(ts.getRSHURL(), properties);
+        IServer server = getServer(ts.getLocalUrl(), properties);
 
         server.connect();
 
         boolean programNameFound = false;
 
-        BufferedReader reader = new BufferedReader(new FileReader(ts.getLog()));
+        BufferedReader reader = new BufferedReader(ts.getLogAsReader());
         String line = null;
 
         while ((line = reader.readLine()) != null) {

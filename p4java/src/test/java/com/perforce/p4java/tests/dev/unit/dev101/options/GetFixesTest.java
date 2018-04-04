@@ -42,6 +42,7 @@ public class GetFixesTest extends P4JavaTestCase {
 
 	@Test
 	public void testOldVsNew() {
+		fail("FIXME connects to remote p4d server");
 		IOptionsServer server = null;
 		
 		try {

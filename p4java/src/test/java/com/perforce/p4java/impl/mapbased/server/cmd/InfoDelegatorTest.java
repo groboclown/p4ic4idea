@@ -1,32 +1,32 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.perforce.p4java.server.CmdSpec.INFO;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.Test;
-import org.junit.Before;
-import static org.junit.Assert.assertEquals;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.mapbased.server.Server;
+import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerInfo;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.perforce.p4java.server.CmdSpec.INFO;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests the InfoDelegator.
  */
-public class InfoDelegatorTest extends AbstractP4JavaUnitTest {
+public class InfoDelegatorTest {
 
     /** The info delegator. */
     private InfoDelegator infoDelegator;
@@ -57,13 +57,15 @@ public class InfoDelegatorTest extends AbstractP4JavaUnitTest {
     private static final String CLIENT_NAME = "*unknown*";
 
     /** Example test value. */
-    private static final String SERVER_ADDR = "eng-p4java-vm.perforce.com:20132";
+    private static final String SERVER_ADDR = "not.a.server:1234";
 
     /** Example test value. */
     private static final String LICENSE = "License";
 
     /** Example test value. */
     private static final String SERVER_IP = "127.0.0.1";
+
+    private IOptionsServer server;
 
     /**
      * Before each.

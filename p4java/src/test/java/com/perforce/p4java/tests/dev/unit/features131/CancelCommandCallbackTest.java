@@ -168,6 +168,7 @@ public class CancelCommandCallbackTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 		// initialization code (before each test).
+		fail("FIXME uses remote p4d server");
 		try {
 			Properties props = new Properties();
 

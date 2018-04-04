@@ -5,6 +5,7 @@ package com.perforce.p4java.tests.dev.unit.bug.r121;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.perforce.p4java.tests.MockCommandCallback;
 import org.junit.After;
@@ -36,6 +37,7 @@ public class ServerInfoTest extends P4JavaTestCase {
      */
     @Test
     public void testServerInfo() throws Exception {
+        fail("FIXME uses an external p4d server");
         String serverUri =
                 "p4javassl://eng-p4java-vm.perforce.com:30121?socketPoolSize=10&testKey1=testVal1";
         server = ServerFactory.getOptionsServer(serverUri, props);

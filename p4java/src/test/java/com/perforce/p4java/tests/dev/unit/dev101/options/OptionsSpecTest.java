@@ -68,17 +68,17 @@ public class OptionsSpecTest extends P4JavaTestCase {
 			try {
 				optsList = testOpts.processFields("b:d", 89);
 				fail("expected options exception for boolean opt / arg type mismatch");
-			} catch (OptionsException exc) {	
+			} catch (OptionsException exc) {
 			}
 			try {
 				optsList = testOpts.processFields("i:d", "hello");
 				fail("expected options exception for integer opt / arg type mismatch");
-			} catch (OptionsException exc) {	
+			} catch (OptionsException exc) {
 			}
 			try {
 				optsList = testOpts.processFields("s:d", 56);
 				fail("expected options exception for string opt / arg type mismatch");
-			} catch (OptionsException exc) {	
+			} catch (OptionsException exc) {
 			}
 		} catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());

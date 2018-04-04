@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 
@@ -30,6 +31,7 @@ public class SimpleSyncTest extends P4JavaTestCase {
     private static IClient client;
     @BeforeClass
     public static void beforeAll() throws Exception {
+        fail("FIXME connects to remote p4d server");
         server = getServer("p4java://eng-p4java-vm.perforce.com:20121", null, null, null);
         assertNotNull(server);
         client = getDefaultClient(server);

@@ -35,7 +35,8 @@ public class LargeErrorsTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testLargeErrors() {
-		
+		fail("FIXME uses remote p4d server");
+
 		try {
 			// Connect to a unicode enabled server
 			server = getServer("p4java://eng-p4java-vm.perforce.com:20141", null);

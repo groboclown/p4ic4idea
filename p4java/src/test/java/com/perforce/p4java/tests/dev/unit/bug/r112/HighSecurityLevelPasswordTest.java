@@ -77,7 +77,7 @@ public class HighSecurityLevelPasswordTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
-
+		fail("FIXME uses an external p4d server");
 		try {
 			server = ServerFactory.getOptionsServer(highSecurityLevelServerURL,
 					null);

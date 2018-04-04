@@ -278,16 +278,18 @@ public abstract class ResultMapParser {
             throws AccessException, RequestException {
 	    if (nonNull(map)) {
 	        IServerMessage message = getErrorOrInfoStr(map);
-            Iterable<ISingleServerMessage> errors = message.getForSeverity(E_FAILED);
-            if (errors.iterator().hasNext()) {
-                IServerMessage errMsg = new ServerMessage(errors);
-                AuthenticationFailedException.ErrorType authFailType = getAuthFailType(errMsg);
-                if (nonNull(authFailType)) {
-                    throw new AccessException(errMsg);
-                } else {
-                    throw new RequestException(errMsg);
-                }
-            }
+	        if (nonNull(message)) {
+				Iterable<ISingleServerMessage> errors = message.getForSeverity(E_FAILED);
+				if (errors.iterator().hasNext()) {
+					IServerMessage errMsg = new ServerMessage(errors);
+					AuthenticationFailedException.ErrorType authFailType = getAuthFailType(errMsg);
+					if (nonNull(authFailType)) {
+						throw new AccessException(errMsg);
+					} else {
+						throw new RequestException(errMsg);
+					}
+				}
+			}
             return message;
         }
         return null;

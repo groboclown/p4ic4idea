@@ -36,6 +36,7 @@ public class Job036721Test extends P4JavaTestCase {
 
 	@Test
 	public void testSync() throws Exception {
+		fail("FIXME connects to remote p4d server");
 		final String clientName = getRandomClientName(null);
 		final String testCharsetName = "shiftjis";
 		final String testMapping00 = "//depot/viv/test/ã?¯ã?ã?µtest/... "

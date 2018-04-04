@@ -6,6 +6,7 @@ package com.perforce.p4java.tests.qa;
 import static com.perforce.p4java.core.file.FileSpecBuilder.makeFileSpecList;
 import static com.perforce.p4java.tests.qa.Helper.FILE_SEP;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -96,7 +97,7 @@ public class ResolveFileTest {
         InputStream is = new ByteArrayInputStream(resolvedText.getBytes());
         IFileSpec resolvedFile = client.resolveFile(target.get(0), is);
         is.close();
-
+        assertNotNull(resolvedFile);
         assertEquals(resolvedFile.getHowResolved(), "edit from");
     }
 

@@ -3,6 +3,7 @@
  */
 package com.perforce.p4java.tests.dev.unit.features111;
 
+import static com.perforce.p4java.tests.dev.unit.P4JavaTestCase.getPassword;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -48,8 +49,8 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
-			server.setUserName(this.getUserName());
-			server.login(this.getPassword(), null);
+			server.setUserName(getUserName());
+			server.login(getPassword(), null);
 			Map<String, String> counters = server.getCounters();
 			assertNotNull(counters);
 			List<IFileSpec> files = server.getDepotFiles(
@@ -85,8 +86,8 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
-			server.setUserName(this.getSuperUserName());
-			server.login(this.getSuperUserPassword(), null);
+			server.setUserName(getSuperUserName());
+			server.login(getSuperUserPassword(), null);
 			Map<String, String> counters = server.getCounters();
 			assertNotNull(counters);
 			List<IFileSpec> files = server.getDepotFiles(
@@ -122,8 +123,8 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
-			server.setUserName(this.getUserName());
-			server.login(this.getPassword(), new LoginOptions());
+			server.setUserName(getUserName());
+			server.login(getPassword(), new LoginOptions());
 			Map<String, String> counters = server.getCounters();
 			assertNotNull(counters);
 			List<IFileSpec> files = server.getDepotFiles(
@@ -159,8 +160,8 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
-			server.setUserName(this.getUserName());
-			server.login(this.getPassword(), new LoginOptions().setAllHosts(true));
+			server.setUserName(getUserName());
+			server.login(getPassword(), new LoginOptions().setAllHosts(true));
 			Map<String, String> counters = server.getCounters();
 			assertNotNull(counters);
 			List<IFileSpec> files = server.getDepotFiles(
@@ -197,8 +198,8 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
-			server.setUserName(this.getSuperUserName());
-			server.login(this.getSuperUserPassword(), new LoginOptions());
+			server.setUserName(getSuperUserName());
+			server.login(getSuperUserPassword(), new LoginOptions());
 			Map<String, String> counters = server.getCounters();
 			assertNotNull(counters);
 			List<IFileSpec> files = server.getDepotFiles(

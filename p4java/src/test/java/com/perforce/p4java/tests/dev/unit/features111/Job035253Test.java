@@ -47,8 +47,8 @@ public class Job035253Test extends P4JavaTestCase {
 		
 		try {
 			Properties props = new Properties();
-			server = getServer(this.getServerUrlString(), props,
-								this.getUserName(), this.getPassword());
+			server = getServer(getServerUrlString(), props,
+								getUserName(), getPassword());
 			
 			try {
 				Map<String, Object>[] results = server.execMapCmd(FAKE_CMD, new String[] {}, null);
@@ -60,8 +60,8 @@ public class Job035253Test extends P4JavaTestCase {
 			}
 			
 			props.put(RpcPropertyDefs.RPC_RELAX_CMD_NAME_CHECKS_NICK, "true");
-			server2 = getServer(this.getServerUrlString(), props,
-					this.getUserName(), this.getPassword());
+			server2 = getServer(getServerUrlString(), props,
+					getUserName(), getPassword());
 			try {
 				Map<String, Object>[] results = server2.execMapCmd(FAKE_CMD, new String[] {}, null);
 				assertNotNull(results);

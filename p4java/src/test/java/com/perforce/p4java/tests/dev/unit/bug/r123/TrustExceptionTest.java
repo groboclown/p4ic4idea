@@ -59,6 +59,7 @@ public class TrustExceptionTest extends P4JavaTestCase {
      */
     @Test
     public void testAddTrust() throws Exception {
+        fail("FIXME uses an external p4d server");
 
         String result;
         String serverUri = "p4javassl://eng-p4java-vm.perforce.com:30121";

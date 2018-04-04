@@ -85,10 +85,10 @@ public class ServerInfoDateAsCalendarTest extends P4JavaTestCase {
 			}
 
 			// Set the server user
-			server.setUserName(this.getSuperUserName());
+			server.setUserName(getSuperUserName());
 
 			// Login using the normal method
-			server.login(this.getSuperUserPassword(), new LoginOptions());
+			server.login(getSuperUserPassword(), new LoginOptions());
 
 			client = getDefaultClient(server);
 			assertNotNull(client);

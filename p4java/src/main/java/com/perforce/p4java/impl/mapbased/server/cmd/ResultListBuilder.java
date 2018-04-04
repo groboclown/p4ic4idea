@@ -69,10 +69,12 @@ public class ResultListBuilder {
         if (resultMaps != null) {
             for (Map<String, Object> map : resultMaps) {
                 // p4ic4idea: use a server message
-                IServerMessage message = ResultMapParser.toServerMessage(map);
-                ResultMapParser.handleErrors(message);
-                if (isNull(message) || !message.isInfoOrError()) {
-                    obj = construct.apply(map);
+                if (nonNull(map)) {
+                    IServerMessage message = ResultMapParser.toServerMessage(map);
+                    ResultMapParser.handleErrors(message);
+                    if (isNull(message) || !message.isInfoOrError()) {
+                        obj = construct.apply(map);
+                    }
                 }
             }
         }
@@ -84,6 +86,9 @@ public class ResultListBuilder {
             throws RequestException, AccessException, ConnectionException {
         List<IExtendedFileSpec> specList = new ArrayList<>();
         // p4ic4idea: use server messages
+        if (isNull(resultMaps)) {
+            return specList;
+        }
         for (Map<String, Object> map: resultMaps) {
             // We do this by hand for the statFiles case; this may be
             // included in the generic handler later -- HR.

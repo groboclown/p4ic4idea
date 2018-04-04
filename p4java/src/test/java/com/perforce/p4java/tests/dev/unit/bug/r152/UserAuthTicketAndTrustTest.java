@@ -10,6 +10,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 import java.util.Properties;
@@ -43,6 +44,7 @@ public class UserAuthTicketAndTrustTest extends P4JavaTestCase {
      */
     @Test
     public void testUserAuthTicketAndTrust() throws Exception {
+        fail("FIXME connects to a remote p4d server");
         Properties props = new Properties();
         //props.put(PropertyDefs.AUTH_FILE_LOCK_TRY_KEY_SHORT_FORM, 200);
         //props.put(PropertyDefs.AUTH_FILE_LOCK_DELAY_KEY_SHORT_FORM, 200000);

@@ -45,7 +45,7 @@ public class HighASCIIPasswordTest extends P4JavaTestCase {
 
   @BeforeEach
   public void setUp() throws Exception {
-    server = getServer(this.getServerUrlString(), props, getUserName(),
+    server = getServer(getServerUrlString(), props, getUserName(),
         getPassword());
     assertThat(server,notNullValue());
     IClient client = server.getClient("p4TestUserWS20112");
@@ -55,7 +55,7 @@ public class HighASCIIPasswordTest extends P4JavaTestCase {
     callback = new MockCommandCallback();
     server.registerCallback(callback);
 
-    superServer = getServer(this.getServerUrlString(), props,
+    superServer = getServer(getServerUrlString(), props,
         getSuperUserName(), getSuperUserPassword());
     assertThat(superServer,notNullValue());
     superClient = superServer.getClient("p4TestSuperWS20112");
@@ -169,7 +169,7 @@ public class HighASCIIPasswordTest extends P4JavaTestCase {
       assertThat(callback.getMessage(), containsText("'login' not necessary, no password set for this user."));
 
       // Use the super user to change the password to something else
-      superServer = getServer(this.getServerUrlString(), props,
+      superServer = getServer(getServerUrlString(), props,
           "p4jtestsuper", "p4jtestsuper");
       assertThat(superServer, notNullValue());
       superClient = superServer.getClient("p4TestSuperWS20112");

@@ -39,6 +39,7 @@ public class PropertyALTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testPropertyAL() {
+	    fail("References external Perforce server");
 	
         String pname = "PropertyALTest";
         String pval = "PropertyALTest";

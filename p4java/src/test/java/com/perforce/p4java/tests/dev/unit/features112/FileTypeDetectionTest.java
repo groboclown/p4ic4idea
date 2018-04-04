@@ -74,6 +74,7 @@ public class FileTypeDetectionTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
+		fail("FIXME uses remote p4d server");
 		try {
 			// Requires super user
 			server = ServerFactory.getOptionsServer("p4java://eng-p4java-vm.perforce.com:30111",

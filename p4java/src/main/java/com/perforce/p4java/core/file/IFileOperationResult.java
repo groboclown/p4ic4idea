@@ -4,6 +4,8 @@
 package com.perforce.p4java.core.file;
 
 import com.perforce.p4java.core.IServerResource;
+
+// p4ic4idea: add IServerMessage and null annotations
 import com.perforce.p4java.server.IServerMessage;
 
 import javax.annotation.Nonnull;

@@ -94,6 +94,7 @@ public class Client extends ClientSummary implements IClient {
 
 	private Server serverImpl = null;
 	private ClientView clientView = null;
+	private ArrayList<String> changeView = null;
 	private ViewDepotType viewDepotType;
 
 	/**
@@ -176,6 +177,7 @@ public class Client extends ClientSummary implements IClient {
 		client.setOwnerName(userName);
 		client.setRoot(rootDir);
 		ClientView clientView = new ClientView();
+
 		clientView.setClient(client);
 		List<IClientViewMapping> viewMappings = new ArrayList<IClientViewMapping>();
 		int i = 0;
@@ -312,6 +314,24 @@ public class Client extends ClientSummary implements IClient {
 
 				mappingList.add(new ClientView.ClientViewMapping(i, parts[0], parts[1]));
 			}
+
+			// Add change view entries to list if found.
+
+			ArrayList<String> changeViewImpl = new ArrayList<>();
+			pfx = "ChangeView";
+
+			for (int i = 0; map.containsKey(pfx + i); i++) {
+				String key = pfx + i;
+
+				String changeEntry = (String) map.get(key);
+
+				if (changeEntry == null || changeEntry.isEmpty()) {
+					throw new P4JavaError("null or empty change view mapping string in Client constructor.");
+				}
+
+				changeViewImpl.add(changeEntry);
+			}
+			this.changeView = changeViewImpl;
 
 			// Description strings *sometimes* come back with a trailing newline (that wasn't
 			// there when we created the client description), which
@@ -470,6 +490,7 @@ public class Client extends ClientSummary implements IClient {
 				setUpdated(refreshedClient.getUpdated());
 				setAlternateRoots(refreshedClient.getAlternateRoots());
 				setClientView(refreshedClient.getClientView());
+				setChangeView(refreshedClient.getChangeView());
 				setDescription(refreshedClient.getDescription());
 				setHostName(refreshedClient.getHostName());
 				setLineEnd(refreshedClient.getLineEnd());
@@ -525,6 +546,16 @@ public class Client extends ClientSummary implements IClient {
 	@Override
 	public void setClientView(ClientView clientView) {
 		this.clientView = clientView;
+	}
+
+	@Override
+	public ArrayList<String> getChangeView() {
+		return this.changeView;
+	}
+
+	@Override
+	public void setChangeView(ArrayList<String> changeView) {
+		this.changeView = changeView;
 	}
 
 	/**
@@ -1803,9 +1834,8 @@ public class Client extends ClientSummary implements IClient {
 	}
 
 	/**
-	 *
 	 * @param fileSpecs List of File specs
-	 * @param options List options
+	 * @param options   List options
 	 * @return
 	 * @throws P4JavaException
 	 */

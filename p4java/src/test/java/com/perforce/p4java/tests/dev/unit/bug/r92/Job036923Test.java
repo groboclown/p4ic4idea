@@ -44,6 +44,8 @@ public class Job036923Test extends P4JavaTestCase {
 
     @Test
     public void testResolve() throws Exception {
+        fail("FIXME connects to remote p4d server");
+
         IServer server = null;
 
         IChangelist changelist = null;

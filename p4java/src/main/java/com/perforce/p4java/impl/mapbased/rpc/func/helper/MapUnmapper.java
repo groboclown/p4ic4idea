@@ -194,6 +194,25 @@ public class MapUnmapper {
 			if (inMap.containsKey(MapKeys.TYPE_KEY)) {
 				strBuf.append(MapKeys.TYPE_KEY + MapKeys.COLON_SPACE + inMap.get(MapKeys.TYPE_KEY) + MapKeys.DOUBLE_LF);
 			}
+
+			for (int i = 0; ; i++) {
+				String fileStr = (String) inMap.get(MapKeys.CHANGE_VIEW_KEY + i);
+
+				if (fileStr != null) {
+					if (i == 0 ) {
+						strBuf.append(MapKeys.CHANGE_VIEW_KEY + MapKeys.COLON_LF);
+					}
+					strBuf.append(MapKeys.TAB + inMap.get(MapKeys.CHANGE_VIEW_KEY + i) + MapKeys.LF);
+				} else {
+					break;
+				}
+			}
+
+			strBuf.append(MapKeys.LF);
+
+			if (inMap.containsKey(MapKeys.CLIENT_BACKUP_KEY)) {
+				strBuf.append(MapKeys.CLIENT_BACKUP_KEY + MapKeys.COLON_SPACE + inMap.get(MapKeys.CLIENT_BACKUP_KEY) + MapKeys.DOUBLE_LF);
+			}
 		}
 	}
 	
@@ -456,13 +475,11 @@ public class MapUnmapper {
 	public static void unmapProtectionEntriesMap(Map<String, Object> inMap,
 														StringBuffer strBuf) {
 		if ((inMap != null) && (strBuf != null)) {
+			strBuf.append(MapKeys.PROTECTIONS_KEY + MapKeys.COLON_LF);
 			for (int i = 0; ; i++) {
 				String mapStr = (String) inMap.get(MapKeys.PROTECTIONS_KEY + i);
 				
 				if (mapStr != null) {
-					if (i == 0) {
-						strBuf.append(MapKeys.PROTECTIONS_KEY + MapKeys.COLON_LF);
-					}
 					strBuf.append(MapKeys.TAB + mapStr + MapKeys.LF);
 				} else {
 					break;
@@ -556,13 +573,11 @@ public class MapUnmapper {
 	public static void unmapTriggerEntriesMap(Map<String, Object> inMap,
 														StringBuffer strBuf) {
 		if ((inMap != null) && (strBuf != null)) {
+			strBuf.append(MapKeys.TRIGGERS_KEY + MapKeys.COLON_LF);
 			for (int i = 0; ; i++) {
 				String mapStr = (String) inMap.get(MapKeys.TRIGGERS_KEY + i);
 				
 				if (mapStr != null) {
-					if (i == 0) {
-						strBuf.append(MapKeys.TRIGGERS_KEY + MapKeys.COLON_LF);
-					}
 					strBuf.append(MapKeys.TAB + mapStr + MapKeys.LF);
 				} else {
 					break;

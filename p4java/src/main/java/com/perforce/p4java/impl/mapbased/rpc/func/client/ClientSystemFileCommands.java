@@ -1376,7 +1376,9 @@ public class ClientSystemFileCommands {
 		String fileTypeStr = (String) resultsMap.get(RpcFunctionMapKey.TYPE);
 
 		RpcPerforceFileType fileType = RpcPerforceFileType.decodeFromServerString(fileTypeStr);
-		boolean fstSymlink = (fileType == RpcPerforceFileType.FST_SYMLINK);
+
+		// If fileType is null, then test for symlink in fileExists()
+		boolean fstSymlink = (fileType == null || fileType == RpcPerforceFileType.FST_SYMLINK);
 
 		File file = new File(clientPath);
 
@@ -1582,43 +1584,10 @@ public class ClientSystemFileCommands {
 			if (!fileExists(file, fstSymlink)) {
 				status = "missing";
 			} else if (digest != null) {
-				// Calculate actual file digest; if same, we assume the file's
-				// the same as on the server.
-
-				MD5Digester digester = new MD5Digester();
-
-				if (digester != null) {
-					Charset digestCharset = null;
-					boolean convertLineEndings = false;
-					//Only worry about encoding if unicode
-					switch (fileType) {
-						case FST_UTF16:
-							digestCharset = CharsetDefs.UTF16;
-							// p4ic4idea: fallthrough
-						case FST_UNICODE:
-							if (digestCharset == null) {
-								digestCharset = rpcConnection.getClientCharset();
-							}
-							// p4ic4idea: fallthrough
-						case FST_XTEXT:
-							// p4ic4idea: fallthrough
-						case FST_TEXT:
-							// Convert line endings
-							convertLineEndings = true;
-							break;
-						default:
-							break;
-					}
-
-					// Digest the file using the configured local file content
-					// charset. A null digestCharset specified will cause the
-					// file to be read as raw byte stream directly off disk.
-					String digestStr = digester.digestFileAs32ByteHex(file,
-							digestCharset, convertLineEndings, file.getLineEnding());
-
-					if ((digestStr != null) && digestStr.equals(digest)) {
-						status = "same";
-					}
+				// Calculate actual file digest; if same, we assume the file's the same as on the server.
+				String digestStr = getDigest(rpcConnection, fileType, file);
+				if ((digestStr != null) && digestStr.equals(digest)) {
+					status = "same";
 				}
 			}
 		} else {
@@ -1790,38 +1759,21 @@ public class ClientSystemFileCommands {
 			// Calculate actual file digest; if same, we assume the file's
 			// the same as on the server.
 
-			MD5Digester digester = new MD5Digester();
+			// If file size is known and differs, skip digest.
+			// If file size is known and the same, compute digest.
+			// If file size is unknown, compute digest.
+			long checkSize = (fileSize != null) ? Long.parseLong(fileSize) : 0;
+			if ((checkSize == 0) || (file.length() == checkSize)) {
 
-			if (digester != null) {
-				Charset digestCharset = null;
-				boolean convertLineEndings = false;
-				//Only worry about encoding if unicode
-				switch (fileType) {
-					case FST_UTF16:
-						digestCharset = CharsetDefs.UTF16;
-						// p4ic4idea: fallthrough
-					case FST_UNICODE:
-						if (digestCharset == null) {
-							digestCharset = rpcConnection.getClientCharset();
-						}
-						// p4ic4idea: fallthrough
-					case FST_XTEXT:
-						// p4ic4idea: fallthrough
-					case FST_TEXT:
-						// Convert line endings
-						convertLineEndings = true;
-						break;
-					default:
-						break;
-				}
-
-				// Digest the file using the configured local file content
-				// charset. A null digestCharset specified will cause the
-				// file to be read as raw byte stream directly off disk.
-				String digestStr = digester.digestFileAs32ByteHex(file,
-						digestCharset, convertLineEndings);
-
-				if ((digestStr != null) && digestStr.equals(digest)) {
+				// If the submit time is provided (i.e. with -m option), then
+				// compare the file mtime and possibly bypass the digest.
+				long fileModTime = file.lastModified() / 1000;
+				if ((submitTime == null) || (Long.parseLong(submitTime) != fileModTime)) {
+					String digestStr = getDigest(rpcConnection, fileType, file);
+					if ((digestStr != null) && digestStr.equals(digest)) {
+						status = "same";
+					}
+				} else if (submitTime != null) {
 					status = "same";
 				}
 			}
@@ -1857,6 +1809,39 @@ public class ClientSystemFileCommands {
 		rpcConnection.putRpcPacket(respPacket);
 
 		return RpcPacketDispatcherResult.CONTINUE_LOOP;
+	}
+
+	private String getDigest(RpcConnection rpcConnection, RpcPerforceFileType fileType, File file) {
+		Charset digestCharset = null;
+		boolean convertLineEndings = false;
+
+		switch (fileType) {
+			case FST_UTF16:
+				digestCharset = CharsetDefs.UTF16;
+				break;
+			case FST_UTF8:
+				digestCharset = CharsetDefs.UTF8;
+				convertLineEndings = true;
+				break;
+			case FST_UNICODE:
+				digestCharset = rpcConnection.getClientCharset();
+				break;
+			case FST_XTEXT:
+			case FST_TEXT:
+				// Convert line endings
+				convertLineEndings = true;
+				break;
+			default:
+				break;
+		}
+
+		// Digest the file using the configured local file content
+		// charset. A null digestCharset specified will cause the
+		// file to be read as raw byte stream directly off disk.
+		MD5Digester digester = new MD5Digester();
+		String digestStr = digester.digestFileAs32ByteHex(file, digestCharset, convertLineEndings);
+
+		return digestStr;
 	}
 
 	/**

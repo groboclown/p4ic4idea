@@ -51,6 +51,7 @@ import com.perforce.p4java.server.callback.IParallelCallback;
 import com.perforce.p4java.server.callback.IStreamingCallback;
 
 import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.handleErrors;
+import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.handleWarnings;
 import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.toServerMessage;
 
 /**
@@ -549,10 +550,10 @@ public class OneShotServerImpl extends RpcServer {
 
 			if ((retMapList != null) && (retMapList.size() != 0)) {
 				for (Map<String, Object> map : retMapList) {
-					if (map != null) {
-						// p4ic4idea: use IServerMessage
-						handleErrors(toServerMessage(map));
-					}
+					// p4ic4idea: use IServerMessage
+					IServerMessage msg = toServerMessage(map);
+					handleErrors(msg);
+					handleWarnings(msg);
 				}
 			}
 

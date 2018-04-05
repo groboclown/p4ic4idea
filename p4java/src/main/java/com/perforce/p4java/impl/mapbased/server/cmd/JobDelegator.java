@@ -1,16 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
-import static com.perforce.p4java.server.CmdSpec.JOB;
-import static org.apache.commons.lang3.StringUtils.SPACE;
-import static org.apache.commons.lang3.StringUtils.contains;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.StringUtils.split;
-
-import java.util.List;
-import java.util.Map;
-import javax.annotation.Nonnull;
-
 import com.perforce.p4java.common.function.Function;
 import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.exception.AccessException;
@@ -20,6 +9,17 @@ import com.perforce.p4java.impl.generic.core.Job;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.delegator.IJobDelegator;
 import org.apache.commons.lang3.Validate;
+
+import javax.annotation.Nonnull;
+import java.util.List;
+import java.util.Map;
+
+import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
+import static com.perforce.p4java.server.CmdSpec.JOB;
+import static org.apache.commons.lang3.StringUtils.SPACE;
+import static org.apache.commons.lang3.StringUtils.contains;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.split;
 
 /**
  * Implementation for 'p4 job'..
@@ -85,7 +85,7 @@ public class JobDelegator extends BaseDelegator implements IJobDelegator {
     @Override
     public String deleteJob(final String jobId)
             throws ConnectionException, RequestException, AccessException {
-        Validate.notBlank(jobId, "JobId shouldn't null or empty");
+        Validate.notBlank(jobId, "JobId should not be null or empty");
 
         List<Map<String, Object>> resultMaps = execMapCmdList(JOB, new String[] { "-d", jobId },
                 null);
@@ -103,7 +103,8 @@ public class JobDelegator extends BaseDelegator implements IJobDelegator {
     @Override
     public IJob getJob(final String jobId)
             throws ConnectionException, RequestException, AccessException {
-        Validate.notBlank(jobId, "JobId shouldn't null or empty");
+
+        Validate.notNull(jobId, "JobId should not be null");
 
         List<Map<String, Object>> resultMaps = execMapCmdList(JOB, new String[] { "-o", jobId },
                 null);

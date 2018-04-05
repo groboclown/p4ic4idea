@@ -3,9 +3,6 @@
  */
 package com.perforce.p4java.server.delegator;
 
-import java.io.InputStream;
-import java.util.List;
-
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -13,6 +10,9 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.option.server.DescribeOptions;
 import com.perforce.p4java.option.server.GetChangelistDiffsOptions;
+
+import java.io.InputStream;
+import java.util.List;
 
 /**
  *
@@ -87,6 +87,58 @@ public interface IDescribeDelegator {
             throws ConnectionException, RequestException, AccessException;
 
     /**
+     * Get a list of the Perforce depot files associated with a Perforce
+     * changelist.
+     * <p>
+     * <p>
+     * The IFileSpec objects returned are not guaranteed to have any fields
+     * except depot path, version, and action valid.
+     * <p>
+     * <p>
+     * Changelists that are pending will not have files visible through this
+     * method; you should use the client openedFiles method for retrieving files
+     * in that situation.
+     *
+     * @param id numeric changelist identifier
+     * @return non-null (but possibly empty) list of files associated with the
+     * changelist.
+     * @throws ConnectionException if the Perforce server is unreachable or is not connected.
+     * @throws RequestException    if the Perforce server encounters an error during its
+     *                             processing of the request
+     * @throws AccessException     if the Perforce server denies access to the caller
+     */
+
+    List<IFileSpec> getChangelistFiles(int id)
+            throws ConnectionException, RequestException, AccessException;
+
+    /**
+     * Get a list of the Perforce depot files associated with a Perforce
+     * changelist.
+     * <p>
+     * <p>
+     * The IFileSpec objects returned are not guaranteed to have any fields
+     * except depot path, version, and action valid.
+     * <p>
+     * <p>
+     * Changelists that are pending will not have files visible through this
+     * method; you should use the client openedFiles method for retrieving files
+     * in that situation.
+     *
+     * @param id numeric changelist identifier
+     * @param max limit the number of files returned
+     * @return non-null (but possibly empty) list of files associated with the
+     * changelist.
+     * @throws ConnectionException if the Perforce server is unreachable or is not connected.
+     * @throws RequestException    if the Perforce server encounters an error during its
+     *                             processing of the request
+     * @throws AccessException     if the Perforce server denies access to the caller
+     * @since 2017.2
+     */
+
+    List<IFileSpec> getChangelistFiles(int id, int max)
+            throws ConnectionException, RequestException, AccessException;
+
+    /**
      * Get a list of shelved files associated with a Perforce pending
      * changelist.
      * <p>
@@ -100,4 +152,21 @@ public interface IDescribeDelegator {
      * @since 2014.1
      */
     List<IFileSpec> getShelvedFiles(final int changelistId) throws P4JavaException;
+
+    /**
+     * Get a list of shelved files associated with a Perforce pending
+     * changelist.
+     * <p>
+     *
+     * @param changelistId
+     *            numeric pending changelist identifier
+     *@param max
+     *            limit the number of files returned
+     * @return non-null (but possibly empty) list of shelved files associated
+     *         with the pending changelist.
+     * @throws P4JavaException
+     *             if an error occurs processing this method and its parameters.
+     * @since 2017.2
+     */
+    List<IFileSpec> getShelvedFiles(final int changelistId, final int max) throws P4JavaException;
 }

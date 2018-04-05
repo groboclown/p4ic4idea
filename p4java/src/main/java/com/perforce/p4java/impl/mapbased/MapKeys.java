@@ -130,4 +130,7 @@ public class MapKeys {
 	public static final String DEFAULT_BRANCH_KEY = "DefaultBranch";
 	public static final String MIRRORED_FROM_KEY = "MirroredFrom";
 	public static final String VIEW_DEPOT_TYPE = "ViewDepotType";
+
+	public static final String CHANGE_VIEW_KEY = "ChangeView";
+	public static final String CLIENT_BACKUP_KEY = "Backup";
 }

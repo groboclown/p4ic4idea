@@ -250,6 +250,8 @@ public class RpcFunctionMapKey {
 	public static final String COMMITTER_EMAIL = "committerEmail";
 	public static final String COMMITTER_DATE = "committerDate";
 
+	public static final String ID = "id";
+
 	/**
 	 * RPC keys map
 	 */

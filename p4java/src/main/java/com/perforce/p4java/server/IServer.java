@@ -61,7 +61,7 @@ public interface IServer extends IHelixCommandExecutor, IAttributeDelegator, IBr
 		IStreamDelegator, IStreamsDelegator, ITagDelegator, ITriggersDelegator, IUnloadDelegator,
 		IUserDelegator, IUsersDelegator, IVerifyDelegator, IGraphListTreeDelegator, ICommitDelegator,
 		IGraphRevListDelegator, IGraphCommitLogDelegator, IGraphReceivePackDelegator, IListDelegator,
-		IGraphShowRefDelegator {
+		IGraphShowRefDelegator, ILogin2Delegator {
 
 	String ATTRIBUTE_STREAM_MAP_KEY = "attributeInstream";
 	/**
@@ -497,30 +497,7 @@ public interface IServer extends IHelixCommandExecutor, IAttributeDelegator, IBr
 	InputStream getChangelistDiffs(int id, DiffType diffType)
 			throws ConnectionException, RequestException, AccessException;
 
-	/**
-	 * Get a list of the Perforce depot files associated with a Perforce
-	 * changelist.
-	 * <p>
-	 * <p>
-	 * The IFileSpec objects returned are not guaranteed to have any fields
-	 * except depot path, version, and action valid.
-	 * <p>
-	 * <p>
-	 * Changelists that are pending will not have files visible through this
-	 * method; you should use the client openedFiles method for retrieving files
-	 * in that situation.
-	 *
-	 * @param id numeric changelist identifier
-	 * @return non-null (but possibly empty) list of files associated with the
-	 * changelist.
-	 * @throws ConnectionException if the Perforce server is unreachable or is not connected.
-	 * @throws RequestException    if the Perforce server encounters an error during its
-	 *                             processing of the request
-	 * @throws AccessException     if the Perforce server denies access to the caller
-	 */
 
-	List<IFileSpec> getChangelistFiles(int id)
-			throws ConnectionException, RequestException, AccessException;
 
 	/**
 	 * @param repo   the graph repo

@@ -76,6 +76,14 @@ public class DescribeDelegator extends BaseDelegator implements IDescribeDelegat
 		return ResultMapParser.parseCommandResultMapAsFileSpecs(changelistId, server, resultMaps);
 	}
 
+	@Override
+	public List<IFileSpec> getShelvedFiles(final int changelistId, final int max) throws P4JavaException {
+		List<Map<String, Object>> resultMaps = execMapCmdList(DESCRIBE,
+				new String[]{"-s", "-m" + max, "-S", String.valueOf(changelistId)}, null);
+
+		return ResultMapParser.parseCommandResultMapAsFileSpecs(changelistId, server, resultMaps);
+	}
+
 	/*
 	 * implemented on behalf of Iserver
 	 */
@@ -85,9 +93,7 @@ public class DescribeDelegator extends BaseDelegator implements IDescribeDelegat
 		return getChangelistDiffsStream(id, new DescribeOptions(diffType));
 	}
 
-	/*
-	 * implemented on behalf of Iserver
-	 */
+	@Override
 	public List<IFileSpec> getChangelistFiles(final int id)
 			throws ConnectionException, RequestException, AccessException {
 		// NOTE: do NOT change the location or order of the "-s" flag below, as
@@ -100,6 +106,19 @@ public class DescribeDelegator extends BaseDelegator implements IDescribeDelegat
 		try {
 			List<Map<String, Object>> resultMaps = execMapCmdList(DESCRIBE,
 					new String[]{"-s", String.valueOf(id)}, null);
+
+			return ResultMapParser.parseCommandResultMapAsFileSpecs(id, server, resultMaps);
+		} catch (P4JavaException p4je) {
+			throw new RequestException(p4je);
+		}
+	}
+
+	@Override
+	public List<IFileSpec> getChangelistFiles(final int id, final int max)
+			throws ConnectionException, RequestException, AccessException {
+		try {
+			List<Map<String, Object>> resultMaps = execMapCmdList(DESCRIBE,
+					new String[]{"-s", "-m" + max, String.valueOf(id)}, null);
 
 			return ResultMapParser.parseCommandResultMapAsFileSpecs(id, server, resultMaps);
 		} catch (P4JavaException p4je) {

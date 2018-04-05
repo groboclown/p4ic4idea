@@ -40,6 +40,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * Utility to parse a result map and test for info/error messages etc.
+ * p4ic4idea: will eventually replace this with an object that will be
+ * passed around instead of the Map<String, Object> and the
+ * List<Map<String, Object>>.
  */
 public abstract class ResultMapParser {
 
@@ -50,15 +53,15 @@ public abstract class ResultMapParser {
 	/**
 	 * Signals access (login) needed.
 	 */
-	static final String CORE_AUTH_FAIL_STRING_1 = "Perforce password (P4PASSWD)";
+	protected static final String CORE_AUTH_FAIL_STRING_1 = "Perforce password (P4PASSWD)";
 	/**
 	 * Signals access (login) needed.
 	 */
-	private static final String CORE_AUTH_FAIL_STRING_2 = "Access for user";
+	protected static final String CORE_AUTH_FAIL_STRING_2 = "Access for user";
 	/**
 	 * Signals ticket has expired.
 	 */
-	private static final String CORE_AUTH_FAIL_STRING_3 = "Your session has expired";
+	protected static final String CORE_AUTH_FAIL_STRING_3 = "Your session has expired";
 	/**
 	 * SSO failure.
 	 */
@@ -70,7 +73,7 @@ public abstract class ResultMapParser {
 	/**
 	 * Signals ticket has expired.
 	 */
-	private static final String CORE_AUTH_FAIL_STRING_4 = "Your session was logged out";
+	protected static final String CORE_AUTH_FAIL_STRING_4 = "Your session was logged out";
     /**
      * p4ic4idea: additional error message
      * Signals access (login) needed
@@ -117,8 +120,8 @@ public abstract class ResultMapParser {
 	public static String parseCommandResultMapIfIsInfoMessageAsString(
 			@Nonnull final List<Map<String, Object>> resultMaps)
 			throws AccessException, RequestException {
-	    IServerMessage msg = toServerMessage(resultMaps);
-	    handleErrors(msg);
+		IServerMessage msg = toServerMessage(resultMaps);
+		handleErrors(msg);
 		if (nonNull(msg)) {
 		    return msg.getAllInfoStrings();
 		}
@@ -126,15 +129,25 @@ public abstract class ResultMapParser {
 	}
 
 	/**
-	 * Checks if is info message.
+	 * Checks for a info message.
 	 *
 	 * @param map the map
-	 * @return true, if is info message
+	 * @return true, if info message
      * @deprecated p4ic4idea {@link IServerMessage#isInfo()}
 	 */
 	// p4ic4idea: deprecated
 	public static boolean isInfoMessage(final Map<String, Object> map) {
 		return nonNull(map) && (getSeverity(parseCode0ErrorString(map)) == E_INFO);
+	}
+
+	/**
+	 * Checks for a warning message.
+	 *
+	 * @param map the map
+	 * @return true, if warning message
+	 */
+	public static boolean isWarningMessage(final Map<String, Object> map) {
+		return nonNull(map) && (getSeverity(parseCode0ErrorString(map)) == E_WARN);
 	}
 
     /**
@@ -154,6 +167,24 @@ public abstract class ResultMapParser {
             }
         }
     }
+
+	/**
+	 * Tests the map for warnings and throws an exception if found.
+	 *
+	 * @param map the map
+	 * @return true, if successful
+	 * @throws RequestException the request exception
+	 * @throws AccessException  the access exception
+	 */
+	public static boolean handleWarningStr(final Map<String, Object> map)
+			throws RequestException, AccessException {
+		String warnStr = getWarningStr(map);
+
+		if (isNotBlank(warnStr)) {
+			throw new RequestException(warnStr, parseCode0ErrorString(map));
+		}
+		return false;
+	}
 
 	/**
 	 * Tests the map for errors and throws an exception if found.
@@ -192,6 +223,10 @@ public abstract class ResultMapParser {
 	// p4ic4idea: return IServerMessage
 	public static IServerMessage getErrorStr(final Map<String, Object> map) {
 		return getServerMessage(map, E_FAILED);
+	}
+
+	public static String getWarningStr(final Map<String, Object> map) {
+		return getString(map, E_WARN);
 	}
 
 	/**
@@ -528,6 +563,7 @@ public abstract class ResultMapParser {
 		return !isExistClientOrLabelOrUser(map);
 	}
 
+	// p4ic4idea: new method
 	@Nullable
 	public static IServerMessage toServerMessage(final @Nullable Map<String, Object> map) {
         if (nonNull(map)) {
@@ -547,6 +583,7 @@ public abstract class ResultMapParser {
         return null;
     }
 
+	// p4ic4idea: new method
     public static List<IServerMessage> toServerMessageList(@Nullable List<Map<String, Object>> maps)
             throws AccessException, RequestException {
 	    if (isNull(maps)) {
@@ -562,6 +599,7 @@ public abstract class ResultMapParser {
         return ret;
     }
 
+	// p4ic4idea: new method
     @Nullable
     public static IServerMessage toServerMessage(@Nullable List<Map<String, Object>> maps) {
 	    if (isNull(maps)) {

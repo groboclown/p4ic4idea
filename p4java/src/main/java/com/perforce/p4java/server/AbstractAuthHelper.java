@@ -282,6 +282,10 @@ public abstract class AbstractAuthHelper {
 			if (!FilesHelper.copy(tempAuth, authFile)) {
 				throwIOException("P4 auth file: %s could not be overwritten.", authFile.getAbsolutePath());
 			}
+		} finally {
+			if (tempAuth.exists()) {
+				tempAuth.delete();
+			}
 		}
 	}
 

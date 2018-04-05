@@ -76,6 +76,7 @@ public class RpcFunction {
 		new RpcFunctionMetadata(RpcFunctionSpec.USER_JOBS, RpcFunctionType.USER, "user-jobs"),
 		new RpcFunctionMetadata(RpcFunctionSpec.USER_CHANGES, RpcFunctionType.USER, "user-changes"),
 		new RpcFunctionMetadata(RpcFunctionSpec.USER_LOGIN, RpcFunctionType.USER, "user-login"),
+		new RpcFunctionMetadata(RpcFunctionSpec.USER_LOGIN2, RpcFunctionType.USER, "user-login2"),
 		new RpcFunctionMetadata(RpcFunctionSpec.USER_LOGOUT, RpcFunctionType.USER, "user-logout"),
 		new RpcFunctionMetadata(RpcFunctionSpec.USER_CLIENT, RpcFunctionType.USER, "user-client"),
 		new RpcFunctionMetadata(RpcFunctionSpec.USER_FSTAT, RpcFunctionType.USER, "user-fstat"),
@@ -202,6 +203,7 @@ public class RpcFunction {
 		new RpcFunctionMetadata(RpcFunctionSpec.CLIENT_DM_MOVEFILE, RpcFunctionType.CLIENT_DM, "dm-MoveFile"),
 		
 		new RpcFunctionMetadata(RpcFunctionSpec.SERVER_DM_LOGIN, RpcFunctionType.SERVER, "dm-Login"),
+		new RpcFunctionMetadata(RpcFunctionSpec.SERVER_DM_LOGIN2, RpcFunctionType.SERVER, "dm-Login2"),
 		new RpcFunctionMetadata(RpcFunctionSpec.SERVER_DM_PASSWD, RpcFunctionType.SERVER, "dm-Passwd"),
 		new RpcFunctionMetadata(RpcFunctionSpec.SERVER_DM_SUBMITCHANGE, RpcFunctionType.SERVER, "dm-SubmitChange"),
 		new RpcFunctionMetadata(RpcFunctionSpec.SERVER_LBR_OPEN, RpcFunctionType.SERVER, "lbr-Open"),

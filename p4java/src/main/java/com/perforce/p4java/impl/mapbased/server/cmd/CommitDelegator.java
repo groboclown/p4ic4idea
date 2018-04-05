@@ -62,6 +62,25 @@ public class CommitDelegator extends BaseDelegator implements ICommitDelegator {
 	}
 
 	@Override
+	public ICommit getCommitObject(String sha, String repo) throws P4JavaException {
+
+		List<Map<String, Object>> resultMaps = execMapCmdList(
+				GRAPH,
+				Parameters.processParameters(
+						null, null, new String[]{"cat-file", "-n", repo, "commit", sha}, server),
+				null);
+
+		List<ICommit> commits = parseCommitList(resultMaps);
+
+		// should only return a single result
+		if(commits != null && !commits.isEmpty()) {
+			return commits.get(0);
+		}
+
+		return null;
+	}
+
+	@Override
 	public InputStream getBlobObject(String repo, String sha) throws P4JavaException {
 
 		InputStream inputStream = execStreamCmd(

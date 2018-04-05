@@ -46,6 +46,7 @@ public enum RpcFunctionSpec {
 	USER_JOBS,
 	USER_CHANGES,
 	USER_LOGIN,
+	USER_LOGIN2,
 	USER_LOGOUT,
 	USER_CLIENT,
 	USER_FSTAT,
@@ -202,6 +203,7 @@ public enum RpcFunctionSpec {
 	// server to process
 	
 	SERVER_DM_LOGIN,
+	SERVER_DM_LOGIN2,
 	SERVER_DM_PASSWD,
 	SERVER_DM_SUBMITCHANGE,
 	SERVER_LBR_OPEN,

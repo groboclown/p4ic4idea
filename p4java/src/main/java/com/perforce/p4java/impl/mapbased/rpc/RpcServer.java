@@ -433,7 +433,6 @@ public abstract class RpcServer extends Server {
         return ResultMapParser.getInfoStr(map);
     }
 
-
     /**
      * @deprecated use {@link com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser#isInfoMessage(Map)}
      */
@@ -1357,7 +1356,7 @@ public abstract class RpcServer extends Server {
 
         CmdSpec cmdSpec = getValidP4JCmdSpec(cmdName);
         if (nonNull(cmdSpec)) {
-            if (cmdSpec == LOGIN) {
+	    if (cmdSpec == LOGIN || cmdSpec == LOGIN2) {
                 return false;
             }
             if (isStreamCmd) {

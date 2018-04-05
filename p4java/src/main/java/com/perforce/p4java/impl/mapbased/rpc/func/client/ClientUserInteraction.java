@@ -39,7 +39,7 @@ import java.util.Properties;
  * Class for Perforce client end-user interaction commands like
  * prompting or password-setting ("end-user interaction" is being
  * rather broadly-defined here...).
- *
+ * <p>
  * Note that in general we don't actually do any end-user interaction
  * in P4Java -- it's all done before a call by the app that P4Java's
  * been embedded in.
@@ -67,7 +67,7 @@ public class ClientUserInteraction {
 	 * server request. The various parameters in resultsMap determine things like
 	 * whether the prompt uses echoing, what digest to use (if any), what prompt
 	 * string to use, etc., many of which aren't relevant in our context.<p>
-	 * 
+	 * <p>
 	 * In the most common usage -- password extraction from the user -- we
 	 * follow a fairly simple scheme where we first hash the password with
 	 * an MD5 digest, then pass the results of that operation through a new
@@ -75,12 +75,12 @@ public class ClientUserInteraction {
 	 * the server. Everything else that's sent to us from the server is
 	 * simply echoed for the server's own purposes (i.e. I still don't know
 	 * what some of this stuff does...).<p>
-	 * 
+	 * <p>
 	 * Note that we have to do what the C++ API does in the same circumstances;
 	 * this means converting the hash hex string results into upper-case, etc.,
 	 * and several other mild quirks whose use or motivation aren't always
 	 * obvious.<p>
-	 * 
+	 * <p>
 	 * Note also that we're not currently implementing the full panoply of
 	 * possible processing here, just the subset that's useful to us for P4WSAD
 	 * and that presumes a 2003.2 or later server in not-too-strict mode.
@@ -253,7 +253,6 @@ public class ClientUserInteraction {
 								null);
 			
 			rpcConnection.putRpcPacket(respPacket);
-			
 		} catch (Exception exc) {
 			Log.exception(exc);
 			throw new P4JavaError(
@@ -269,7 +268,7 @@ public class ClientUserInteraction {
 	 * Set the client-side password in response to a Perforce server command
 	 * telling us to do just that, usually as a result of an earlier
 	 * successful login attempt in the same session.<p>
-	 * 
+	 * <p>
 	 * In this context setting the password really just means performing a few
 	 * sanity and consistency checks, then returning a suitable ticket for use
 	 * with the -P option in future commands. This can be an arbitrarily
@@ -545,7 +544,7 @@ public class ClientUserInteraction {
 	 * Process the client-Crypto command from the Perforce server. This is typically
 	 * called in response to an earlier login using the ticket feature (which is how
 	 * we normally do logins in P4Java).<p>
-	 * 
+	 * <p>
 	 * In the P4Java context, this really means first MD5-hashing the incoming token, then
 	 * hashing the previously-returned ticket, then returning the results to the server for
 	 * inspection.
@@ -657,7 +656,6 @@ public class ClientUserInteraction {
 					null);
 
 			rpcConnection.putRpcPacket(respPacket);
-
 		} catch (Exception exc) {
 			Log.exception(exc);
 			throw new P4JavaError(

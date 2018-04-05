@@ -3,11 +3,11 @@
  */
 package com.perforce.p4java.option.server;
 
-import java.util.List;
-
 import com.perforce.p4java.exception.OptionsException;
 import com.perforce.p4java.option.Options;
 import com.perforce.p4java.server.IServer;
+
+import java.util.List;
 
 /**
  * Options subclass for IOptionsServer.login.
@@ -18,7 +18,7 @@ public class LoginOptions extends Options {
 	/**
 	 * Options: -a, -p, -h[host]
 	 */
-	public static final String OPTIONS_SPECS = "b:a b:p s:h";
+	public static final String OPTIONS_SPECS = "b:a b:p s:h b:2";
 	
 	/**
 	 * If true, the ticket is valid on all hosts; corresponds to -a flag.
@@ -36,6 +36,8 @@ public class LoginOptions extends Options {
 	 * request is for another user. Corresponds to -h flag.
 	 */
 	protected String host = null;
+
+	protected boolean twoFactor = false;
 	
 	/**
 	 * Default constructor.
@@ -109,7 +111,8 @@ public class LoginOptions extends Options {
 		this.optionList = this.processFields(OPTIONS_SPECS,
 											this.allHosts,
 											this.dontWriteTicket,
-											this.host);
+											this.host,
+					this.twoFactor);
 		return this.optionList;
 	}
 
@@ -137,6 +140,15 @@ public class LoginOptions extends Options {
 
 	public LoginOptions setHost(String host) {
 		this.host = host;
+		return this;
+	}
+
+	public boolean isTwoFactor() {
+		return twoFactor;
+	}
+
+	public LoginOptions setTwoFactor(boolean twoFactor) {
+		this.twoFactor = twoFactor;
 		return this;
 	}
 }

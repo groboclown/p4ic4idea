@@ -15,6 +15,7 @@ public enum CmdSpec {
 	INFO,
 	DEPOTS,
 	LOGIN,
+	LOGIN2,
 	LOGOUT,
 	CLIENTS,
 	CLIENT,

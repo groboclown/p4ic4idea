@@ -13,9 +13,18 @@ public interface ICommitDelegator {
 	/**
 	 * Usage: cat-file commit {object-sha}
 	 *
+	 * (requires 'super' permission)
+	 *
 	 * @return
 	 */
 	ICommit getCommitObject(String sha) throws P4JavaException;
+
+	/**
+	 * Usage: cat-file -n {repo} commit {object-sha}
+	 *
+	 * @return
+	 */
+	ICommit getCommitObject(String sha, String repo) throws P4JavaException;
 
 	/**
 	 * Usage: cat-file -n {repo} blob {object-sha}

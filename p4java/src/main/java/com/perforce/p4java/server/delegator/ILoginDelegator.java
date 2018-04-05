@@ -1,7 +1,5 @@
 package com.perforce.p4java.server.delegator;
 
-import javax.annotation.Nonnull;
-
 import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConfigException;
@@ -9,6 +7,8 @@ import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.option.server.LoginOptions;
+
+import javax.annotation.Nonnull;
 
 /**
  * Interface for 'p4 login'.

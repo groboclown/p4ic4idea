@@ -282,6 +282,7 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	private IStatDelegator statDelegator = null;
 	private IJournalWaitDelegator journalWaitDelegator = null;
 	private ILoginDelegator loginDelegator;
+	private ILogin2Delegator login2Delegator;
 	private ILogoutDelegator logoutDelegator;
 	private ILogTailDelegator logTailDelegator;
 	private IObliterateDelegator obliterateDelegator;
@@ -740,7 +741,7 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 		// "auto" (Guess a P4CHARSET based on client OS params)
 		// "none" (same as unsetting P4CHARSET)
 		if (isNotBlank(charsetName)
-				&& (!"none".equals(charsetName) || !"auto".equals(charsetName))) {
+				&& !("none".equals(charsetName) || "auto".equals(charsetName))) {
 			// Check if it is a supported Perforce charset
 			if (!isSupported(charsetName)) {
 				throw new UnsupportedCharsetException(charsetName);
@@ -760,7 +761,7 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 					charset = p4CharsetProvider.charsetForName(javaCharsetName);
 
 					// Throw the unsupported charset exception that was catched.
-					if (nonNull(charset)) {
+					if (isNull(charset)) {
 						throw uce;
 					}
 				} catch (IllegalCharsetNameException icne) {
@@ -886,6 +887,7 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 		statDelegator = new StatDelegator(this);
 		journalWaitDelegator = new JournalWaitDelegator(this);
 		loginDelegator = new LoginDelegator(this);
+		login2Delegator = new Login2Delegator(this);
 		logoutDelegator = new LogoutDelegator(this);
 		logTailDelegator = new LogTailDelegator(this);
 		obliterateDelegator = new ObliterateDelegator(this);
@@ -1314,6 +1316,18 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	/*
 	 * (non-Javadoc)
 	 *
+	 * @see
+	 * com.perforce.p4java.server.delegator.IDescribeDelegator#getShelvedFiles(
+	 * int, int)
+	 */
+	@Override
+	public List<IFileSpec> getShelvedFiles(int changelistId, int max) throws P4JavaException {
+		return describeDelegator.getChangelistFiles(changelistId, max);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
 	 * @see com.perforce.p4java.server.IServer#getChangelistDiffs(int,
 	 * com.perforce.p4java.core.file.DiffType)
 	 */
@@ -1332,6 +1346,17 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	public List<IFileSpec> getChangelistFiles(int id)
 			throws ConnectionException, RequestException, AccessException {
 		return describeDelegator.getChangelistFiles(id);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see com.perforce.p4java.server.IServer#getChangelistFiles(int, int)
+	 */
+	@Override
+	public List<IFileSpec> getChangelistFiles(int id, int max)
+			throws ConnectionException, RequestException, AccessException {
+		return describeDelegator.getChangelistFiles(id, max);
 	}
 
 	/*
@@ -2136,6 +2161,41 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	}
 
 	@Override
+	public List<Map<String, Object>> login2(Login2Options opts, String user) throws P4JavaException {
+		return login2Delegator.login2(opts, user);
+	}
+
+	@Override
+	public String getLogin2Status() throws P4JavaException {
+		return login2Delegator.getLogin2Status();
+	}
+
+	@Override
+	public String getLogin2Status(IUser user) throws P4JavaException {
+		return login2Delegator.getLogin2Status(user);
+	}
+
+	@Override
+	public Map<String, String> login2ListMethods() throws P4JavaException {
+		return login2Delegator.login2ListMethods();
+	}
+
+	@Override
+	public String login2InitAuth(String method) throws P4JavaException {
+		return login2Delegator.login2InitAuth(method);
+	}
+
+	@Override
+	public String login2CheckAuth(String auth, boolean persist) throws P4JavaException {
+		return login2Delegator.login2CheckAuth(auth, persist);
+	}
+
+	@Override
+	public String login2(IUser user, Login2Options opts) throws P4JavaException {
+		return login2Delegator.login2(user, opts);
+	}
+
+	@Override
 	public void logout()
 			throws ConnectionException, RequestException, AccessException, ConfigException {
 		logoutDelegator.logout();
@@ -2565,6 +2625,17 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	@Override
 	public ICommit getCommitObject(String sha) throws P4JavaException {
 		return graphCommitDelegator.getCommitObject(sha);
+	}
+
+	/**
+	 * Usage: cat-file -n {repo} commit {object-sha}
+	 *
+	 * @param sha
+	 * @return
+	 */
+	@Override
+	public ICommit getCommitObject(String sha, String repo) throws P4JavaException {
+		return graphCommitDelegator.getCommitObject(sha, repo);
 	}
 
 	/**

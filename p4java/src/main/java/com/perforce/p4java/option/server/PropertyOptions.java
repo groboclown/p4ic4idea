@@ -3,11 +3,11 @@
  */
 package com.perforce.p4java.option.server;
 
-import java.util.List;
-
 import com.perforce.p4java.exception.OptionsException;
 import com.perforce.p4java.option.Options;
 import com.perforce.p4java.server.IServer;
+
+import java.util.List;
 
 /**
  * Options class for IOptionsServer's setProperty and deleteProperty methods.
@@ -17,7 +17,7 @@ public class PropertyOptions extends Options {
 	/**
 	 * Options: -n name -v value [-s sequence] [-u user | -g group]
 	 */
-	public static final String OPTIONS_SPECS = "s:n s:v i:s:gtz s:u s:g";
+	public static final String OPTIONS_SPECS = "s:n s:v s:s s:u s:g";
 	
 	/**
 	 * If not null, use this as the name of this property.
@@ -36,7 +36,7 @@ public class PropertyOptions extends Options {
 	 * If the sequence is not specified, it defaults to 1.
 	 * Corresponds to the -s flag.
 	 */
-	protected int sequence = 0;
+	protected String sequence = null;
 
 	/**
 	 * If not null, use this as the user to whom this property applies.
@@ -82,7 +82,7 @@ public class PropertyOptions extends Options {
 	/**
 	 * Explicit value constructor.
 	 */
-	public PropertyOptions(String name, String value, int sequence,
+	public PropertyOptions(String name, String value, String sequence,
 			String user, String group) {
 		super();
 		this.name = name;
@@ -124,11 +124,11 @@ public class PropertyOptions extends Options {
 		return this;
 	}
 
-	public int getSequence() {
+	public String getSequence() {
 		return this.sequence;
 	}
 
-	public PropertyOptions setSequence(int sequence) {
+	public PropertyOptions setSequence(String sequence) {
 		this.sequence = sequence;
 		return this;
 	}

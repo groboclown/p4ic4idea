@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.handleErrors;
+import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.handleWarnings;
 import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.toServerMessage;
 
 /**
@@ -556,10 +557,10 @@ public class NtsServerImpl extends RpcServer {
 			
 			if ((resultMaps != null) && (resultMaps.size() != 0)) {
 				for (Map<String, Object> map : resultMaps) {
-					if (map != null) {
-						// p4ic4idea: use IServerMessage
-						handleErrors(toServerMessage(map));
-					}
+					// p4ic4idea: use IServerMessage
+					IServerMessage msg = toServerMessage(map);
+					handleErrors(msg);
+					handleWarnings(msg);
 				}
 			}
 

@@ -1,38 +1,6 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.perforce.p4java.exception.MessageSeverityCode.E_FAILED;
-import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.CODE0;
-import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.FMT0;
-import static com.perforce.p4java.server.CmdSpec.CLIENT;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.function.Executable;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
 import com.google.common.collect.Lists;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.common.function.BiPredicate;
@@ -48,14 +16,37 @@ import com.perforce.p4java.option.server.GetClientTemplateOptions;
 import com.perforce.p4java.option.server.SwitchClientViewOptions;
 import com.perforce.p4java.option.server.UpdateClientOptions;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.tests.UnitTestGivenThatWillThrowException;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static com.perforce.p4java.exception.MessageSeverityCode.E_FAILED;
+import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.CODE0;
+import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.FMT0;
+import static com.perforce.p4java.server.CmdSpec.CLIENT;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Sean Shou
  * @since 15/09/2016
  */
-@RunWith(JUnitPlatform.class)
-public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
+@SuppressWarnings("unchecked")
+public class ClientDelegatorTest {
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
     private String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
     private String MESSAGE_CODE_NOT_IN_INFO_RANGE = "168435456";
     private ClientDelegator clientDelegator;
@@ -64,18 +55,11 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
     private IClientSummary clientSummary;
     private Map<String, Object> resultMap;
     private List<Map<String, Object>> resultMaps;
-    private Method getClientOrNullFromHelixResultMap = getPrivateMethod(ClientDelegator.class,
-            "getClientOrNullFromHelixResultMap",
-            List.class,
-            GetClientTemplateOptions.class,
-            IOptionsServer.class,
-            BiPredicate.class,
-            Function.class
-    );
     private Function<Map<String, Object>, Boolean> handle = mock(Function.class);
     private SwitchClientViewOptions mockSwitchClientViewOptions;
+    private IOptionsServer server;
 
-    @BeforeEach
+    @Before
     public void beforeEach() {
         server = mock(Server.class);
         clientDelegator = spy(new ClientDelegator(server));
@@ -94,7 +78,8 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
         //given
         clientName = null;
         //then
-        assertThrows(NullPointerException.class, () -> clientDelegator.getClient(clientName));
+        thrown.expect(NullPointerException.class);
+        clientDelegator.getClient(clientName);
     }
 
     @Test
@@ -103,21 +88,14 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
     }
 
     private void getClient_Exceptions(Class<? extends P4JavaException> thrownException, Class<? extends P4JavaException> expectedThrows) throws P4JavaException {
-        Executable executable = () -> clientDelegator.getClient(clientName);
-        UnitTestGivenThatWillThrowException unitTestGiven = (originalException) -> {
-            doThrow(originalException)
-                    .when(server)
-                    .execMapCmdList(
-                            eq(CLIENT.toString()),
-                            eq(new String[]{"-o", clientName}),
-                            eq(null));
-        };
-
-        testIfGivenExceptionWasThrown(
-                thrownException,
-                expectedThrows,
-                executable,
-                unitTestGiven);
+        thrown.expect(expectedThrows);
+        doThrow(thrownException)
+                .when(server)
+                .execMapCmdList(
+                        eq(CLIENT.toString()),
+                        eq(new String[]{"-o", clientName}),
+                        eq(null));
+        clientDelegator.getClient(clientName);
     }
 
     @Test
@@ -142,8 +120,7 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
     @Test
     public void getClientOrNullFromHelixResultMap_shouldReturnNullWhenResultMapsIsNull() throws Exception {
         //when
-        IClient client = (IClient) getClientOrNullFromHelixResultMap.invoke(
-                clientDelegator,
+        IClient client = ClientDelegator.getClientOrNullFromHelixResultMap(
                 null,
                 mock(GetClientTemplateOptions.class),
                 server,
@@ -160,8 +137,7 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
         resultMaps = Collections.EMPTY_LIST;
 
         //when
-        IClient client = (IClient) getClientOrNullFromHelixResultMap.invoke(
-                clientDelegator,
+        IClient client = ClientDelegator.getClientOrNullFromHelixResultMap(
                 resultMaps,
                 mock(GetClientTemplateOptions.class),
                 server,
@@ -178,8 +154,7 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
         when(handle.apply(any())).thenReturn(true);
 
         //when
-        Object client = getClientOrNullFromHelixResultMap.invoke(
-                clientDelegator,
+        IClient client = ClientDelegator.getClientOrNullFromHelixResultMap(
                 resultMaps,
                 mock(GetClientTemplateOptions.class),
                 server,
@@ -194,12 +169,11 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
     public void getClientOrNullFromHelixResultMap_shouldReturnNullBecauseAllResultMapPredicateTestFailed() throws Exception {
         //given
         when(resultMap.get(E_FAILED)).thenReturn(EMPTY);
-        BiPredicate conditions = mock(BiPredicate.class);
+        BiPredicate<Map<String, Object>, GetClientTemplateOptions> conditions = mock(BiPredicate.class);
         when(conditions.test(any(), any())).thenReturn(false);
         when(handle.apply(any())).thenReturn(true);
         //when
-        IClient client = (IClient) getClientOrNullFromHelixResultMap.invoke(
-                clientDelegator,
+        IClient client = ClientDelegator.getClientOrNullFromHelixResultMap(
                 resultMaps,
                 mock(GetClientTemplateOptions.class),
                 server,
@@ -216,14 +190,13 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
         when(resultMap.get(E_FAILED)).thenReturn(EMPTY);
 
         //then
-        assertThrows(InvocationTargetException.class, () ->
-                getClientOrNullFromHelixResultMap.invoke(
-                        clientDelegator,
-                        resultMaps,
-                        mock(GetClientTemplateOptions.class),
-                        server,
-                        mock(BiPredicate.class),
-                        mock(Function.class)));
+        thrown.expect(RequestException.class);
+        ClientDelegator.getClientOrNullFromHelixResultMap(
+                resultMaps,
+                mock(GetClientTemplateOptions.class),
+                server,
+                mock(BiPredicate.class),
+                mock(Function.class));
     }
 
     @Test
@@ -235,8 +208,7 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
         when(handle.apply(any())).thenReturn(true);
 
         //when
-        IClient client = (IClient) getClientOrNullFromHelixResultMap.invoke(
-                clientDelegator,
+        IClient client = ClientDelegator.getClientOrNullFromHelixResultMap(
                 resultMaps,
                 mock(GetClientTemplateOptions.class),
                 server,
@@ -253,7 +225,8 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
         clientSummary = null;
 
         //then
-        assertThrows(NullPointerException.class, () -> clientDelegator.getClient(clientSummary));
+        thrown.expect(NullPointerException.class);
+        clientDelegator.getClient(clientSummary);
     }
 
     @Test
@@ -276,8 +249,8 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
                 .getClientTemplate(eq(clientName), eq(false));
 
         //then
-        assertThrows(ConnectionException.class,
-                () -> clientDelegator.getClientTemplate(clientName));
+        thrown.expect(ConnectionException.class);
+        clientDelegator.getClientTemplate(clientName);
     }
 
     @Test
@@ -319,14 +292,11 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
     }
 
     private void getClientTemplate_ByNameAndAllowExistent_Exceptions(Class<? extends P4JavaException> thrownException, Class<? extends P4JavaException> expectedThrows) throws P4JavaException {
-        Executable executable = () -> clientDelegator.getClientTemplate(clientName, false);
-        UnitTestGivenThatWillThrowException unitTestGiven = (originalException) -> {
-            doThrow(originalException)
-                    .when(clientDelegator)
-                    .getClientTemplate(any(String.class), any(GetClientTemplateOptions.class));
-        };
-
-        testIfGivenExceptionWasThrown(thrownException, expectedThrows, executable, unitTestGiven);
+        thrown.expect(expectedThrows);
+        doThrow(thrownException)
+                .when(clientDelegator)
+                .getClientTemplate(any(String.class), any(GetClientTemplateOptions.class));
+        clientDelegator.getClientTemplate(clientName, false);
     }
 
     @Test
@@ -345,9 +315,9 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
     @Test
     public void getClientTemplate_byNameAndGetClientTemplateOptions_shouldThrowIllegalArgumentExceptionWhenClientNameIsBlank() throws P4JavaException {
         //then
-        assertThrows(IllegalArgumentException.class,
-                () -> clientDelegator.getClientTemplate(EMPTY,
-                        mock(GetClientTemplateOptions.class)));
+        thrown.expect(IllegalArgumentException.class);
+        clientDelegator.getClientTemplate(EMPTY,
+                        mock(GetClientTemplateOptions.class));
     }
 
     @Test
@@ -373,7 +343,8 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
     @Test
     public void createClient_shouldThrowNullPointExceptionWhenClientIsNull() throws Exception {
         //then
-        assertThrows(NullPointerException.class, () -> clientDelegator.createClient(null));
+        thrown.expect(NullPointerException.class);
+        clientDelegator.createClient(null);
     }
 
     @Test
@@ -384,7 +355,8 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
                 .execMapCmdList(eq(CLIENT.toString()), eq(new String[]{"-i"}), any(Map.class));
 
         //then
-        assertThrows(ConnectionException.class, () -> clientDelegator.createClient(mockClient));
+        thrown.expect(ConnectionException.class);
+        clientDelegator.createClient(mockClient);
     }
 
     @Test
@@ -409,7 +381,8 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
     @Test
     public void updateClient_shouldThrownNullPointerExceptionWhenClientIsNull() throws Exception {
         //then
-        assertThrows(NullPointerException.class, () -> clientDelegator.updateClient(null));
+        thrown.expect(NullPointerException.class);
+        clientDelegator.updateClient(null);
     }
 
     @Test
@@ -420,7 +393,8 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
                 .execMapCmdList(eq(CLIENT.toString()), eq(new String[]{"-i"}), any(Map.class));
 
         //then
-        assertThrows(ConnectionException.class, () -> clientDelegator.updateClient(mockClient));
+        thrown.expect(ConnectionException.class);
+        clientDelegator.updateClient(mockClient);
     }
 
     @Test
@@ -460,14 +434,11 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
     }
 
     private void updateClient_byClientAndBoolean_Exceptions(Class<? extends P4JavaException> thrownException, Class<? extends P4JavaException> expectedThrows) throws P4JavaException {
-        Executable executable = () -> clientDelegator.updateClient(mockClient, false);
-        UnitTestGivenThatWillThrowException unitTestGiven = (originalException) -> {
-            doThrow(originalException)
-                    .when(clientDelegator)
-                    .updateClient(any(IClient.class), any(UpdateClientOptions.class));
-        };
-
-        testIfGivenExceptionWasThrown(thrownException, expectedThrows, executable, unitTestGiven);
+        thrown.expect(expectedThrows);
+        doThrow(thrownException)
+                .when(clientDelegator)
+                .updateClient(any(IClient.class), any(UpdateClientOptions.class));
+        clientDelegator.updateClient(mockClient, false);
     }
 
     @Test
@@ -485,8 +456,8 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
     @Test
     public void updateClient_byClientAndUpdateClientOptions_shouldThrownNullPointerExceptionWhenClientIsNull() throws P4JavaException {
         //then
-        assertThrows(NullPointerException.class,
-                () -> clientDelegator.updateClient(null, mock(UpdateClientOptions.class)));
+        thrown.expect(NullPointerException.class);
+        clientDelegator.updateClient(null, mock(UpdateClientOptions.class));
     }
 
     @Test
@@ -495,8 +466,8 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
         when(mockClient.getName()).thenReturn(EMPTY);
 
         //then
-        assertThrows(IllegalArgumentException.class,
-                () -> clientDelegator.updateClient(mockClient, mock(UpdateClientOptions.class)));
+        thrown.expect(IllegalArgumentException.class);
+        clientDelegator.updateClient(mockClient, mock(UpdateClientOptions.class));
     }
 
     @Test
@@ -549,20 +520,17 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
     }
 
     private void deleteClient_byClientNameAndForce_Exceptions(Class<? extends P4JavaException> thrownException, Class<? extends P4JavaException> expectedThrows) throws P4JavaException {
-        Executable executable = () -> clientDelegator.deleteClient(clientName, false);
-        UnitTestGivenThatWillThrowException unitTestGiven = (originalException) -> {
-            doThrow(originalException).when(clientDelegator)
-                    .deleteClient(any(String.class), any(DeleteClientOptions.class));
-        };
-
-        testIfGivenExceptionWasThrown(thrownException, expectedThrows, executable, unitTestGiven);
+        thrown.expect(expectedThrows);
+        doThrow(thrownException).when(clientDelegator)
+                .deleteClient(any(String.class), any(DeleteClientOptions.class));
+        clientDelegator.deleteClient(clientName, false);
     }
 
     @Test
     public void deleteClient_byClientNameAndDeleteClientOptions_shouldThrownIllegalArgumentExceptionWhenClientNameIsBlank() throws Exception {
         //then
-        assertThrows(IllegalArgumentException.class,
-                () -> clientDelegator.deleteClient(EMPTY, mock(DeleteClientOptions.class)));
+        thrown.expect(IllegalArgumentException.class);
+        clientDelegator.deleteClient(EMPTY, mock(DeleteClientOptions.class));
     }
 
     @Test
@@ -587,17 +555,13 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
     @Test
     public void replaceWithUnderscoreIfClientNameContainsWhitespacesOrTabs() throws Exception {
         //given
-        Method method = getPrivateMethod(ClientDelegator.class,
-                "replaceWithUnderscoreIfClientNameContainsWhitespacesOrTabs",
-                IClient.class);
-
         String clientNameWithWhitespace = "my client\t\tname";
         String expectNewClientName = "my_client__name";
         mockClient = mock(IClient.class);
         when(mockClient.getName()).thenReturn(clientNameWithWhitespace);
 
         //when
-        method.invoke(clientDelegator, mockClient);
+        ClientDelegator.replaceWithUnderscoreIfClientNameContainsWhitespacesOrTabs(mockClient);
         //then
         verify(mockClient).setName(expectNewClientName);
     }
@@ -605,10 +569,10 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
     @Test
     public void switchClientView_byTemplateNameTargetNameAndSwitchClientViewOptions_shouldThrownIllegalArgumentExceptionWhenTemplateClientNameIsBlank() throws Exception {
         //then
-        assertThrows(IllegalArgumentException.class,
-                () -> clientDelegator.switchClientView(EMPTY,
+        thrown.expect(IllegalArgumentException.class);
+        clientDelegator.switchClientView(EMPTY,
                         "myTargetClient",
-                        mockSwitchClientViewOptions));
+                        mockSwitchClientViewOptions);
     }
 
     @Test
@@ -628,10 +592,10 @@ public class ClientDelegatorTest extends AbstractP4JavaUnitTest {
 
     @Test
     public void switchStreamView_byStreamPathTargetNameAndSwitchClientViewOptions_shouldThrownIllegalArgumentExceptionWhenStreamPathIsBlank() throws Exception {
-        assertThrows(IllegalArgumentException.class,
-                () -> clientDelegator.switchStreamView(EMPTY,
+        thrown.expect(IllegalArgumentException.class);
+        clientDelegator.switchStreamView(EMPTY,
                         "myTargetClient",
-                        mockSwitchClientViewOptions));
+                        mockSwitchClientViewOptions);
     }
 
     @Test

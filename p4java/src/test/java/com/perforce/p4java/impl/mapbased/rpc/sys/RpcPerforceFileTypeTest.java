@@ -1,16 +1,22 @@
 package com.perforce.p4java.impl.mapbased.rpc.sys;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 
+import com.perforce.test.P4ExtFileUtils;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.server.PerforceCharsets;
+import org.junit.rules.TemporaryFolder;
 
 
-public class RpcPerforceFileTypeTest extends AbstractP4JavaUnitTest {
+public class RpcPerforceFileTypeTest {
+  @Rule
+  public TemporaryFolder tmpDir = new TemporaryFolder();
+
   @Test
   public void testInferFileTypeFromContents_hasUtf8Bom_but_its_a_text() {
     File file = loadFileFromClassPath("com/perforce/p4java/impl/mapbased/rpc/sys/has_utf8_bom_but_its_text.txt");
@@ -153,5 +159,15 @@ public class RpcPerforceFileTypeTest extends AbstractP4JavaUnitTest {
     Charset matchCharset = PerforceCharsets.getP4Charset("cp936");
     RpcPerforceFileType fileType = RpcPerforceFileType.inferFileType(file, -1, true, matchCharset);
     Assert.assertEquals(RpcPerforceFileType.FST_UNICODE, fileType);
+  }
+
+  private File loadFileFromClassPath(String s) {
+    try {
+      File file = tmpDir.newFile();
+      P4ExtFileUtils.extractResource(this, s, file, false);
+      return file;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

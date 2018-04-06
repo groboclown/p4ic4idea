@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -26,7 +27,6 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.Lists;
 import com.nitorcreations.junit.runners.NestedRunner;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -42,7 +42,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * @since 16/09/2016
  */
 @RunWith(NestedRunner.class)
-public class UserDelegatorTest extends AbstractP4JavaUnitTest {
+public class UserDelegatorTest {
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
     private static final String MESSAGE_CODE_NOT_IN_INFO_RANGE = "168435456";
 
@@ -54,6 +54,7 @@ public class UserDelegatorTest extends AbstractP4JavaUnitTest {
     private IUser user;
     private UpdateUserOptions opts;
     private boolean force = true;
+    private IOptionsServer server;
 
     private static void givenInfoMessageCode(
             final Map<String, Object> map, String mapKey,

@@ -12,11 +12,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -28,7 +28,7 @@ import com.perforce.p4java.option.server.JournalWaitOptions;
 /**
  * Tests the JournalWaitDelegator.
  */
-public class JournalWaitDelegatorTest extends AbstractP4JavaUnitTest {
+public class JournalWaitDelegatorTest {
     
     /** The journal wait delegator. */
     private JournalWaitDelegator journalWaitDelegator;
@@ -42,6 +42,8 @@ public class JournalWaitDelegatorTest extends AbstractP4JavaUnitTest {
     
     /** Test error. */
     private static final String ERROR = "Simulated error";
+
+    private IOptionsServer server;
 
     /**
      * Before each.

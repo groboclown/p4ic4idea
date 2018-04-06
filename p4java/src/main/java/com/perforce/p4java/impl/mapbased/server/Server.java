@@ -2166,12 +2166,14 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	}
 
 	@Override
-	public String getLogin2Status() throws P4JavaException {
+	// p4ic4idea: use iServerMessage
+	public IServerMessage getLogin2Status() throws P4JavaException {
 		return login2Delegator.getLogin2Status();
 	}
 
 	@Override
-	public String getLogin2Status(IUser user) throws P4JavaException {
+	// p4ic4idea: use iServerMessage
+	public IServerMessage getLogin2Status(IUser user) throws P4JavaException {
 		return login2Delegator.getLogin2Status(user);
 	}
 

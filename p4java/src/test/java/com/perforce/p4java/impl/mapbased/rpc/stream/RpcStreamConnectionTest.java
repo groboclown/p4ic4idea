@@ -4,9 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -41,6 +39,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
+import com.perforce.p4java.exception.NullPointerError;
 import com.perforce.p4java.exception.SslException;
 import com.perforce.p4java.exception.SslHandshakeException;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +48,6 @@ import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableMap;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaError;
 import com.perforce.p4java.impl.mapbased.rpc.ExternalEnv;
@@ -65,7 +63,7 @@ import com.perforce.p4java.server.callback.IFilterCallback;
  * @since 1/09/2016
  */
 @RunWith(JUnitPlatform.class)
-public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
+public class RpcStreamConnectionTest {
 	private RpcStreamConnection mockConnection;
 	private int serverPort = 1666;
 	private Socket socket;
@@ -230,9 +228,7 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 		ImmutableMap<String, Object> nameArgs = ImmutableMap.of("key1", "value1");
 		RpcPacket packet = RpcPacket.constructRpcPacket(RpcFunctionSpec.CLIENT_ACK, nameArgs, null);
 		RpcStreamConnection.RpcPacketSupplier supplier = createMockRpcPacketSupplier();
-		Method processNameArgs = getPrivateMethod(RpcStreamConnection.class, "processNameArgs", RpcPacket.class,
-				RpcStreamConnection.RpcPacketSupplier.class);
-		processNameArgs.invoke(mockConnection, packet, supplier);
+		mockConnection.processNameArgs(packet, supplier);
 
 		verifyMockRpcPacketSupplier(supplier, nameArgs.size());
 	}
@@ -242,9 +238,7 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 		String[] args = { "value1", "value2" };
 		RpcPacket packet = RpcPacket.constructRpcPacket(RpcFunctionSpec.CLIENT_ACK, "test", args, null);
 		RpcStreamConnection.RpcPacketSupplier supplier = createMockRpcPacketSupplier();
-		Method processStringArgs = getPrivateMethod(RpcStreamConnection.class, "processStringArgs", RpcPacket.class,
-				RpcStreamConnection.RpcPacketSupplier.class);
-		processStringArgs.invoke(mockConnection, packet, supplier);
+		mockConnection.processStringArgs(packet, supplier);
 
 		verifyMockRpcPacketSupplier(supplier, args.length);
 	}
@@ -256,9 +250,7 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 		when(externalEnv.marshal()).thenReturn(sendBytes);
 		RpcPacket packet = RpcPacket.constructRpcPacket("test", null, externalEnv);
 		RpcStreamConnection.RpcPacketSupplier supplier = createMockRpcPacketSupplier();
-		Method processStringArgs = getPrivateMethod(RpcStreamConnection.class, "processExternalEnv", RpcPacket.class,
-				RpcStreamConnection.RpcPacketSupplier.class);
-		processStringArgs.invoke(mockConnection, packet, supplier);
+		mockConnection.processExternalEnv(packet, supplier);
 
 		verifyMockRpcPacketSupplier(supplier, 1);
 	}
@@ -268,9 +260,7 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 		String[] args = { "value1" };
 		RpcPacket packet = RpcPacket.constructRpcPacket(RpcFunctionSpec.CLIENT_ACK, "test", args, null);
 		RpcStreamConnection.RpcPacketSupplier supplier = createMockRpcPacketSupplier();
-		Method processFuncName = getPrivateMethod(RpcStreamConnection.class, "processFuncName", RpcPacket.class,
-				RpcStreamConnection.RpcPacketSupplier.class);
-		processFuncName.invoke(mockConnection, packet, supplier);
+		mockConnection.processFuncName(packet, supplier);
 
 		verifyMockRpcPacketSupplier(supplier, 1);
 	}
@@ -300,23 +290,16 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 		RpcStreamConnection.RpcPacketSupplier supplier = createMockRpcPacketSupplier();
 		byte[] fieldBytes = new byte[] { 'a', 'b', 'c' };
 
-		Method reallocateSendBufferInPutPacketIfRunOut = getPrivateMethod(RpcStreamConnection.class,
-				"reallocateSendBufferInPutPacketIfRunOut", RpcStreamConnection.RpcPacketSupplier.class, byte[].class,
-				int.class);
-
-		reallocateSendBufferInPutPacketIfRunOut.invoke(mockConnection, supplier, fieldBytes, 1);
+		mockConnection.reallocateSendBufferInPutPacketIfRunOut(supplier, fieldBytes, 1);
 		verifyMockRpcPacketSupplier(supplier, 1);
 	}
 
 	@Test
 	public void calculatePreambleBytesAndSendtoDownstream()
-			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, IOException {
-		Method calculatePreambleBytesAndSendtoDownstream = getPrivateMethod(RpcStreamConnection.class,
-				"calculatePreambleBytesAndSendtoDownstream", RpcStreamConnection.RpcPacketSupplier.class);
-
+			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, IOException,
+			ConnectionException {
 		RpcStreamConnection.RpcPacketSupplier supplier = createMockRpcPacketSupplier();
-
-		calculatePreambleBytesAndSendtoDownstream.invoke(mockConnection, supplier);
+		mockConnection.calculatePreambleBytesAndSendtoDownstream(supplier);
 		verify(topOutputStream).flush();
 		verify(topOutputStream).write(any(), eq(0), anyInt());
 	}
@@ -324,13 +307,10 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 	@Test
 	public void calculatePreambleBytesAndSendtoDownstream_with_SocketTimeoutException()
 			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, IOException {
-		Method calculatePreambleBytesAndSendtoDownstream = getPrivateMethod(RpcStreamConnection.class,
-				"calculatePreambleBytesAndSendtoDownstream", RpcStreamConnection.RpcPacketSupplier.class);
-
 		RpcStreamConnection.RpcPacketSupplier supplier = createMockRpcPacketSupplier();
 		doThrow(SocketTimeoutException.class).when(topOutputStream).write(any(), eq(0), anyInt());
-		assertThrows(InvocationTargetException.class,
-				() -> calculatePreambleBytesAndSendtoDownstream.invoke(mockConnection, supplier));
+		assertThrows(ConnectionException.class,
+				() -> mockConnection.calculatePreambleBytesAndSendtoDownstream(supplier));
 	}
 
 	@Test
@@ -389,104 +369,46 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 	}
 
 	@Test
-	public void initRshModeServer_withException()
-			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-		Method initRshModeServer = getPrivateMethod(RpcStreamConnection.class, "initRshModeServer");
+	public void initRshModeServer_withException() {
 		mockConnection.rsh(null);
-		assertConnectionExceptionFromMethod(mockConnection, initRshModeServer, NullPointerException.class);
+		assertThrows(NullPointerException.class, () -> mockConnection.initRshModeServer());
 	}
 
 	@Test
-	public void initRshModeServer() throws NoSuchMethodException {
-		Method initRshModeServer = getPrivateMethod(RpcStreamConnection.class, "initRshModeServer");
+	public void initRshModeServer()
+			throws ConnectionException {
 		mockConnection.rsh("dir");
 
-		try {
-			initRshModeServer.invoke(mockConnection);
-		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			fail("should not given here");
-		}
+		mockConnection.initRshModeServer();
 	}
 
 	@Test
 	public void initSocketBasedServer_orignal_socket_isNull()
-			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, IOException {
-		Method initSocketBasedServer = getPrivateMethod(RpcStreamConnection.class, "initSocketBasedServer");
-
+			throws IOException, ConnectionException {
 		mockConnection.socket(null);
-		initSocketBasedServer.invoke(mockConnection);
+		mockConnection.initSocketBasedServer();
 		verify(rpcSocketPool).acquire();
 	}
 
 	@Test
 	public void initSocketBasedServer_with_exceptions()
-			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, IOException {
-		Method initSocketBasedServer = getPrivateMethod(RpcStreamConnection.class, "initSocketBasedServer");
+			throws Throwable {
 		mockConnection.socket(null);
 
 		reset(rpcSocketPool);
 		doThrow(UnknownHostException.class).when(rpcSocketPool).acquire();
-		assertConnectionExceptionFromMethod(mockConnection, initSocketBasedServer, UnknownHostException.class);
+		assertThrows(UnknownHostException.class, () -> mockConnection.initSocketBasedServer());
 
 		reset(rpcSocketPool);
 		doThrow(IOException.class).when(rpcSocketPool).acquire();
-		assertConnectionExceptionFromMethod(mockConnection, initSocketBasedServer, IOException.class);
+		assertThrows(IOException.class, () -> mockConnection.initSocketBasedServer());
 
 		// Throwable is never explicitly caught.  Try a runtime instead
 		reset(rpcSocketPool);
 		doThrow(RuntimeException.class).when(rpcSocketPool).acquire();
-		assertConnectionExceptionFromMethod(mockConnection, initSocketBasedServer, RuntimeException.class);
+		assertThrows(RuntimeException.class, () -> mockConnection.initSocketBasedServer());
 	}
 
-	/**
-	 * Assert exception from method. Tests that the target exception
-	 * and the cause for the target exception is as expected.
-	 *
-	 * @param mockConnection the mock connection
-	 * @param method the method
-	 * @param expectedException the expected exception
-	 * @throws IllegalAccessException the illegal access exception
-	 * @throws IllegalArgumentException the illegal argument exception
-	 */
-	private void assertConnectionExceptionFromMethod(
-								RpcStreamConnection mockConnection,
-								Method method,
-								Class<? extends Throwable> expectedException)
-									throws IllegalAccessException, IllegalArgumentException {
-		try {
-			method.invoke(mockConnection);
-		} catch (InvocationTargetException ite) {
-			assertNotNull(ite.getTargetException());
-			assertEquals(ite.getTargetException().getClass(), ConnectionException.class);
-			assertNotNull(ite.getTargetException().getCause());
-			assertEquals(ite.getTargetException().getCause().getClass(), expectedException);
-		}
-	}
-
-	/**
-	 * Assert exception from method. Tests that the target exception
-	 * and the cause for the target exception is as expected.
-	 *
-	 * @param mockConnection the mock connection
-	 * @param method the method
-	 * @param expectedException the expected exception
-	 * @throws IllegalAccessException the illegal access exception
-	 * @throws IllegalArgumentException the illegal argument exception
-	 */
-	private void assertSslExceptionFromMethod(
-			RpcStreamConnection mockConnection,
-			Method method,
-			Class<? extends Throwable> expectedException)
-			throws IllegalAccessException, IllegalArgumentException {
-		try {
-			method.invoke(mockConnection);
-		} catch (InvocationTargetException ite) {
-			assertNotNull(ite.getTargetException());
-			assertEquals(ite.getTargetException().getClass(), SslException.class);
-			assertNotNull(ite.getTargetException().getCause());
-			assertEquals(ite.getTargetException().getCause().getClass(), expectedException);
-		}
-	}
 
 	/**
 	 * Assert exception from method. Tests that the target exception
@@ -514,40 +436,29 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 	}
 
 	@Test
-	public void initSocketBasedServer() throws NoSuchMethodException {
-		Method initSocketBasedServer = getPrivateMethod(RpcStreamConnection.class, "initSocketBasedServer");
-
-		try {
-			initSocketBasedServer.invoke(mockConnection);
-		} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			fail(e.getMessage());
-		}
+	public void initSocketBasedServer()
+			throws ConnectionException {
+		mockConnection.initSocketBasedServer();
 	}
 
 	@Test
-	public void initRpcSocketInputAndOutputStreamIfSocketBasedServer() throws NoSuchMethodException {
-		Method initRpcSocketInputAndOutputStreamIfSocketBasedServer = getPrivateMethod(RpcStreamConnection.class,
-				"initRpcSocketInputAndOutputStreamIfSocketBasedServer");
-		try {
-			initRpcSocketInputAndOutputStreamIfSocketBasedServer.invoke(mockConnection);
-		} catch (IllegalAccessException | InvocationTargetException e) {
-			fail("should not happen");
-		}
+	public void initRpcSocketInputAndOutputStreamIfSocketBasedServer()
+			throws ConnectionException {
+		mockConnection.initRpcSocketInputAndOutputStreamIfSocketBasedServer();
 	}
 
 	@Test
-	public void initRpcSocketInputAndOutputStreamIfSocketBasedServer_with_exception() throws NoSuchMethodException {
-		Method initRpcSocketInputAndOutputStreamIfSocketBasedServer = getPrivateMethod(RpcStreamConnection.class,
-				"initRpcSocketInputAndOutputStreamIfSocketBasedServer");
+	public void initRpcSocketInputAndOutputStreamIfSocketBasedServer_with_exception() {
 		mockConnection.socket(null);
-		assertThrows(InvocationTargetException.class,
-				() -> initRpcSocketInputAndOutputStreamIfSocketBasedServer.invoke(mockConnection));
+		assertThrows(NullPointerError.class,
+				() -> mockConnection.initRpcSocketInputAndOutputStreamIfSocketBasedServer());
 	}
 
 	@Test
-	public void initSSL() throws InvocationTargetException, IllegalAccessException, SSLPeerUnverifiedException,
-			CertificateNotYetValidException, CertificateExpiredException {
-		Method initSSL = getPrivateMethod(RpcStreamConnection.class, "initSSL");
+	public void initSSL()
+			throws SSLPeerUnverifiedException,
+			CertificateNotYetValidException, CertificateExpiredException, ConnectionException {
+		//Method initSSL = getPrivateMethod(RpcStreamConnection.class, "initSSL");
 		PublicKey serverPubKey = mock(PublicKey.class);
 		when(serverPubKey.getEncoded()).thenReturn(new byte[] { 'a', 'b', 'c' });
 
@@ -563,16 +474,16 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 		SSLSocket sslSocket = mock(SSLSocket.class);
 		when(sslSocket.getSession()).thenReturn(sslSession);
 		mockConnection.socket(sslSocket);
-		initSSL.invoke(mockConnection);
+		mockConnection.initSSL();
 
 		reset(sslSession);
 		when(sslSession.isValid()).thenReturn(true);
-		assertThrows(InvocationTargetException.class, () -> initSSL.invoke(mockConnection));
+		assertThrows(SslException.class, () -> mockConnection.initSSL());
 
 		reset(sslSession);
 		when(sslSession.isValid()).thenReturn(true);
 		when(sslSession.getPeerCertificates()).thenReturn(null);
-		assertThrows(InvocationTargetException.class, () -> initSSL.invoke(mockConnection));
+		assertThrows(SslException.class, () -> mockConnection.initSSL());
 
 		reset(sslSession);
 		when(sslSession.isValid()).thenReturn(true);
@@ -580,47 +491,44 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 		reset(certificate);
 		doNothing().when(certificate).checkValidity();
 		when(certificate.getPublicKey()).thenReturn(null);
-		assertThrows(InvocationTargetException.class, () -> initSSL.invoke(mockConnection));
+		assertThrows(SslException.class, () -> mockConnection.initSSL());
 
 		reset(sslSession);
 		when(sslSession.isValid()).thenReturn(true);
 		when(sslSession.getPeerCertificates()).thenReturn(serverCerts);
 		reset(certificate);
 		doThrow(CertificateExpiredException.class).when(certificate).checkValidity();
-		assertThrows(InvocationTargetException.class, () -> initSSL.invoke(mockConnection));
+		assertThrows(SslException.class, () -> mockConnection.initSSL());
 	}
 
 	@Test
 	public void initSSL_with_exceptions() throws IllegalAccessException, IllegalArgumentException {
-		Method initSSL = getPrivateMethod(RpcStreamConnection.class, "initSSL");
 		SSLSocket sslSocket = mock(SSLSocket.class);
 		doThrow(CertificateExpiredException.class).when(sslSocket).getSession();
 		mockConnection.socket(sslSocket);
-		assertSslExceptionFromMethod(mockConnection, initSSL, CertificateExpiredException.class);
+		assertThrows(SslException.class, () -> mockConnection.initSSL());
 
 		reset(sslSocket);
 		doThrow(CertificateNotYetValidException.class).when(sslSocket).getSession();
-		assertSslExceptionFromMethod(mockConnection, initSSL, CertificateNotYetValidException.class);
+		assertThrows(SslException.class, () -> mockConnection.initSSL());
 
 		reset(sslSocket);
 		doThrow(NoSuchAlgorithmException.class).when(sslSocket).getSession();
-		assertSslHandshakeExceptionFromMethod(mockConnection, initSSL, NoSuchAlgorithmException.class);
+		assertThrows(SslException.class, () -> mockConnection.initSSL());
 
 		// getSession() cannot throw IOException
 		//reset(sslSocket);
 		//doThrow(IOException.class).when(sslSocket).getSession();
-		//assertConnectionExceptionFromMethod(mockConnection, initSSL, IOException.class);
+		//assertConnectionException(mockConnection, initSSL, IOException.class);
 	}
 
 	@Test
-	public void continueReadIfGetPartialRead() throws InvocationTargetException, IllegalAccessException, IOException {
-		Method continueReadIfGetPartialRead = getPrivateMethod(RpcStreamConnection.class,
-				"continueReadIfGetPartialRead", byte[].class, int.class, AtomicLong.class);
-
+	public void continueReadIfGetPartialRead()
+			throws IOException, ConnectionException {
 		byte[] preambleBytes = { 'a', 'b', 0, 0, 0 };
 		AtomicLong atomicLong = mock(AtomicLong.class);
 		when(topInputStream.read(any(), anyInt(), anyInt())).thenReturn(3);
-		int bytesRead = (int) continueReadIfGetPartialRead.invoke(mockConnection, preambleBytes, 2, atomicLong);
+		int bytesRead = mockConnection.continueReadIfGetPartialRead(preambleBytes, 2, atomicLong);
 		assertThat(bytesRead, is(5));
 		verify(topInputStream).read(any(), anyInt(), anyInt());
 	}
@@ -628,36 +536,28 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 	@Test
 	public void continueReadIfGetPartialRead_expecte_exception()
 			throws InvocationTargetException, IllegalAccessException, IOException {
-		Method continueReadIfGetPartialRead = getPrivateMethod(RpcStreamConnection.class,
-				"continueReadIfGetPartialRead", byte[].class, int.class, AtomicLong.class);
-
 		byte[] preambleBytes = { 'a', 'b', 0, 0, 0 };
 		AtomicLong atomicLong = mock(AtomicLong.class);
 		when(topInputStream.read(any(), anyInt(), anyInt())).thenReturn(-1);
-		assertThrows(InvocationTargetException.class,
-				() -> continueReadIfGetPartialRead.invoke(mockConnection, preambleBytes, 2, atomicLong));
+		assertThrows(ConnectionException.class,
+				() -> mockConnection.continueReadIfGetPartialRead(preambleBytes, 2, atomicLong));
 	}
 
 	@Test
 	public void continueReadIfGetPartialRead_dont_have_left_bytes_to_read()
-			throws InvocationTargetException, IllegalAccessException {
-		Method continueReadIfGetPartialRead = getPrivateMethod(RpcStreamConnection.class,
-				"continueReadIfGetPartialRead", byte[].class, int.class, AtomicLong.class);
-
-		int bytesRead = (int) continueReadIfGetPartialRead.invoke(mockConnection, new byte[] { 'a', 'b' }, -1,
+			throws IOException, ConnectionException {
+		int bytesRead = mockConnection.continueReadIfGetPartialRead(new byte[] { 'a', 'b' }, -1,
 				new AtomicLong(0));
 		assertThat(bytesRead, is(-1));
 	}
 
 	@Test
-	public void continueReadIfIncompleteRead() throws InvocationTargetException, IllegalAccessException, IOException {
-		Method continueReadIfIncompleteRead = getPrivateMethod(RpcStreamConnection.class,
-				"continueReadIfIncompleteRead", AtomicLong.class, int.class, byte[].class, int.class);
-
+	public void continueReadIfIncompleteRead()
+			throws IOException, ConnectionException {
 		int packetBytesRead = 2;
 		int payloadLength = 5;
 		when(topInputStream.read(any(), anyInt(), anyInt())).thenReturn(3);
-		int bytesRead = (int) continueReadIfIncompleteRead.invoke(mockConnection, new AtomicLong(0), payloadLength,
+		int bytesRead = mockConnection.continueReadIfIncompleteRead(new AtomicLong(0), payloadLength,
 				new byte[] { 'a', 'b', 0, 0, 0 }, packetBytesRead);
 		assertThat(bytesRead, is(5));
 		verify(topInputStream).read(any(), anyInt(), anyInt());
@@ -665,27 +565,21 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 
 	@Test
 	public void continueReadIfIncompleteRead_dont_have_left_bytes_to_read()
-			throws InvocationTargetException, IllegalAccessException {
-		Method continueReadIfIncompleteRead = getPrivateMethod(RpcStreamConnection.class,
-				"continueReadIfIncompleteRead", AtomicLong.class, int.class, byte[].class, int.class);
-
+			throws IOException, ConnectionException {
 		int payloadLength = 2;
 		int packetBytesRead = payloadLength + 1;
-		int bytesRead = (int) continueReadIfIncompleteRead.invoke(mockConnection, new AtomicLong(0), payloadLength,
+		int bytesRead = mockConnection.continueReadIfIncompleteRead(new AtomicLong(0), payloadLength,
 				new byte[] { 'a', 'b' }, packetBytesRead);
 		assertThat(bytesRead, is(packetBytesRead));
 	}
 
 	@Test
 	public void continueReadIfIncompleteRead_expecte_exception()
-			throws InvocationTargetException, IllegalAccessException, IOException {
-		Method continueReadIfIncompleteRead = getPrivateMethod(RpcStreamConnection.class,
-				"continueReadIfIncompleteRead", AtomicLong.class, int.class, byte[].class, int.class);
-
+			throws IOException {
 		int packetBytesRead = 2;
 		int payloadLength = packetBytesRead + 2;
 		when(topInputStream.read(any(), anyInt(), anyInt())).thenReturn(-1);
-		assertThrows(InvocationTargetException.class, () -> continueReadIfIncompleteRead.invoke(mockConnection,
+		assertThrows(ConnectionException.class, () -> mockConnection.continueReadIfIncompleteRead(
 				new AtomicLong(0), payloadLength, new byte[] { 'a', 'b' }, packetBytesRead));
 	}
 

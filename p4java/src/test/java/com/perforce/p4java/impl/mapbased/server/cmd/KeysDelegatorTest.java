@@ -17,12 +17,12 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.nitorcreations.junit.runners.NestedRunner;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.server.GetKeysOptions;
@@ -32,7 +32,7 @@ import com.perforce.p4java.option.server.GetKeysOptions;
  * @since 27/09/2016
  */
 @RunWith(NestedRunner.class)
-public class KeysDelegatorTest extends AbstractP4JavaUnitTest {
+public class KeysDelegatorTest {
     private static final String KEY_NAME = "testKey";
     private static final String KEY_VALUE = "testValue";
     private static final String[] KEYS_ARGUMENTS = {"-emykey-*", "-m10"};
@@ -41,6 +41,7 @@ public class KeysDelegatorTest extends AbstractP4JavaUnitTest {
     private Map<String, Object> resultMap;
     private List<Map<String, Object>> resultMaps;
     private GetKeysOptions opts;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

@@ -12,10 +12,10 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSize;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -30,7 +30,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * @author Sean Shou
  * @since 5/10/2016
  */
-public class SizesDelegatorTest extends AbstractP4JavaUnitTest {
+public class SizesDelegatorTest {
   private static final String[] CMD_OPTIONS = {"-a", "-m 20"};
   private static final String TEST_FILE_DEPOT_PATH = "//depot/dev/test.txt";
   private static final String[] CMD_ARGUMENTS = ArrayUtils.add(CMD_OPTIONS, TEST_FILE_DEPOT_PATH);
@@ -49,7 +49,7 @@ public class SizesDelegatorTest extends AbstractP4JavaUnitTest {
   @SuppressWarnings("unchecked")
   @Before
   public void beforeEach() throws ConnectionException, AccessException, RequestException {
-    server = mock(Server.class);
+    IOptionsServer server = mock(Server.class);
     sizesDelegator = new SizesDelegator(server);
 
     resultMap = mock(Map.class);

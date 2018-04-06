@@ -148,7 +148,8 @@ public class AttributeDelegator extends BaseDelegator implements IAttributeDeleg
      * Inner utility class to convert a resultmaps list into attribute filespec objects.
      * TODO: this doesn't belong in here, maybe filespecbuilder?
      */
-    private List<IFileSpec> buildSetFileAttributesFileSpecsFromCommandResultMaps(
+    // p4ic4idea: remove private protections for unit tests
+    List<IFileSpec> buildSetFileAttributesFileSpecsFromCommandResultMaps(
             @Nullable final List<Map<String, Object>> resultMaps,
             @Nonnull final Function<Map<String, Object>, IFileSpec> handle)
             throws AccessException, ConnectionException {

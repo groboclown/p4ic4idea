@@ -1,5 +1,26 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
+import com.google.common.collect.Lists;
+import com.perforce.p4java.CommandLineArgumentMatcher;
+import com.perforce.p4java.core.IBranchSpec;
+import com.perforce.p4java.exception.AccessException;
+import com.perforce.p4java.exception.ConnectionException;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.exception.RequestException;
+import com.perforce.p4java.impl.mapbased.rpc.OneShotServerImpl;
+import com.perforce.p4java.option.server.DeleteBranchSpecOptions;
+import com.perforce.p4java.option.server.GetBranchSpecOptions;
+import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.server.delegator.IBranchDelegator;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.CODE0;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.FMT0;
 import static com.perforce.p4java.server.CmdSpec.BRANCH;
@@ -17,43 +38,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.function.Executable;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
-import com.google.common.collect.Lists;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
-import com.perforce.p4java.CommandLineArgumentMatcher;
-import com.perforce.p4java.core.IBranchSpec;
-import com.perforce.p4java.exception.AccessException;
-import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.RequestException;
-import com.perforce.p4java.impl.mapbased.rpc.OneShotServerImpl;
-import com.perforce.p4java.option.server.DeleteBranchSpecOptions;
-import com.perforce.p4java.option.server.GetBranchSpecOptions;
-import com.perforce.p4java.server.delegator.IBranchDelegator;
-import com.perforce.p4java.tests.UnitTestGivenThatWillThrowException;
-
 /**
  * @author Sean Shou
  * @since 21/09/2016
  */
-@RunWith(JUnitPlatform.class)
-public class BranchDelegatorTest extends AbstractP4JavaUnitTest {
+public class BranchDelegatorTest {
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
     private IBranchDelegator branchSpecDelegator;
     private Map<String, Object> resultMap;
     private List<Map<String, Object>> resultMaps;
     private String mockBranchSpecName = "myBranch";
     private IBranchSpec mockBranchSpec;
+    private IOptionsServer server;
 
-    @BeforeEach
+    @Before
     public void beforeEach() {
         server = mock(OneShotServerImpl.class);
         branchSpecDelegator = new BranchDelegator(server);
@@ -387,15 +387,12 @@ public class BranchDelegatorTest extends AbstractP4JavaUnitTest {
      */
     private void checkGetExceptionPropagation(Class<? extends P4JavaException> thrownException,
             Class<? extends P4JavaException> expectedThrows) throws P4JavaException {
-        Executable executable = () -> branchSpecDelegator.getBranchSpec(mockBranchSpecName);
-        UnitTestGivenThatWillThrowException unitTestGiven = (originalException) -> {
-            when(server.execMapCmdList(eq(BRANCH.toString()),
-                    argThat(new CommandLineArgumentMatcher(
-                            new String[] { "-o", mockBranchSpecName })),
-                    eq(null))).thenThrow(originalException);
-        };
-
-        testIfGivenExceptionWasThrown(thrownException, expectedThrows, executable, unitTestGiven);
+        thrown.expect(expectedThrows);
+        when(server.execMapCmdList(eq(BRANCH.toString()),
+                argThat(new CommandLineArgumentMatcher(
+                        new String[] { "-o", mockBranchSpecName })),
+                eq(null))).thenThrow(thrownException);
+        branchSpecDelegator.getBranchSpec(mockBranchSpecName);
     }
 
     /**
@@ -412,13 +409,10 @@ public class BranchDelegatorTest extends AbstractP4JavaUnitTest {
      */
     private void checkDeleteExceptionPropagation(Class<? extends P4JavaException> thrownException,
             Class<? extends P4JavaException> expectedThrows) throws P4JavaException {
-        Executable executable = () -> branchSpecDelegator.deleteBranchSpec(mockBranchSpecName,
-                false);
-        UnitTestGivenThatWillThrowException unitTestGiven = (originalException) -> {
-            when(server.execMapCmdList(eq(BRANCH.toString()),
+        thrown.expect(expectedThrows);
+        when(server.execMapCmdList(eq(BRANCH.toString()),
                 argThat(new CommandLineArgumentMatcher(new String[] { "-d", mockBranchSpecName })),
-                eq(null))).thenThrow(originalException);
-        };
-        testIfGivenExceptionWasThrown(thrownException, expectedThrows, executable, unitTestGiven);
+                eq(null))).thenThrow(thrownException);
+        branchSpecDelegator.deleteBranchSpec(mockBranchSpecName, false);
     }
 }

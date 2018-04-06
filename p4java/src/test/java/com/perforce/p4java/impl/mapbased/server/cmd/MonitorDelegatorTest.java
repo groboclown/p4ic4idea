@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -23,7 +24,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import com.nitorcreations.junit.runners.NestedRunner;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.IServerProcess;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
@@ -38,12 +38,13 @@ import org.apache.commons.lang3.ArrayUtils;
  * @since 4/10/2016
  */
 @RunWith(NestedRunner.class)
-public class MonitorDelegatorTest extends AbstractP4JavaUnitTest {
+public class MonitorDelegatorTest {
     private static final String PROCESS_USER_NAME = "Tim";
     private static final String DEFAULT_GET_PROCESS_ARGUMENT = "show";
     private MonitorDelegator monitorDelegator;
     private Map<String, Object> resultMap;
     private List<Map<String, Object>> resultMaps;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

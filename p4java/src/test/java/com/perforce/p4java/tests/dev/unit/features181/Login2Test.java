@@ -2,6 +2,7 @@ package com.perforce.p4java.tests.dev.unit.features181;
 
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.server.LoginOptions;
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.tests.MFAServerRule;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
@@ -15,8 +16,10 @@ import org.junit.rules.ExpectedException;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.perforce.p4java.tests.ServerMessageMatcher.isText;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class Login2Test extends P4JavaRshTestCase {
@@ -45,9 +48,9 @@ public class Login2Test extends P4JavaRshTestCase {
 
 		server.login("Password", new LoginOptions());
 
-		String msg1 = server.getLogin2Status();
+		IServerMessage msg1 = server.getLogin2Status();
 		assertNotNull(msg1);
-		assertEquals("User joe on host unknown: required\n", msg1);
+		assertThat(msg1, isText("User joe on host unknown: required\n"));
 
 		// p4 login2 -S list-methods
 		Map<String, String> list = server.login2ListMethods();
@@ -65,9 +68,9 @@ public class Login2Test extends P4JavaRshTestCase {
 		assertNotNull(msg3);
 		assertEquals("GAuth says yes!\nSecond factor authentication approved.", msg3);
 
-		String msg4 = server.getLogin2Status();
+		IServerMessage msg4 = server.getLogin2Status();
 		assertNotNull(msg4);
-		assertEquals("User joe on host unknown: validated\n", msg4);
+		assertThat(msg4, isText("User joe on host unknown: validated\n"));
 	}
 
 	@Test
@@ -78,9 +81,9 @@ public class Login2Test extends P4JavaRshTestCase {
 
 		server.login("Password", new LoginOptions());
 
-		String msg1 = server.getLogin2Status();
+		IServerMessage msg1 = server.getLogin2Status();
 		assertNotNull(msg1);
-		assertEquals("User joe on host unknown: required\n", msg1);
+		assertThat(msg1, isText("User joe on host unknown: required\n"));
 
 		// p4 login2 -S list-methods
 		Map<String, String> list = server.login2ListMethods();
@@ -98,8 +101,8 @@ public class Login2Test extends P4JavaRshTestCase {
 		assertNotNull(msg3);
 		assertEquals("GAuth says yes!\nSecond factor authentication approved.", msg3);
 
-		String msg4 = server.getLogin2Status();
+		IServerMessage msg4 = server.getLogin2Status();
 		assertNotNull(msg4);
-		assertEquals("User joe on host unknown: validated persistent\n", msg4);
+		assertThat(msg4, isText("User joe on host unknown: validated persistent\n"));
 	}
 }

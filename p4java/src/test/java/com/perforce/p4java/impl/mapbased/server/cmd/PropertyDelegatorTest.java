@@ -17,12 +17,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.UnitTestWhen;
 import com.perforce.p4java.admin.IProperty;
 import com.perforce.p4java.exception.P4JavaException;
@@ -34,7 +34,7 @@ import com.perforce.p4java.option.server.PropertyOptions;
  * @author Sean Shou
  * @since 5/10/2016
  */
-public class PropertyDelegatorTest extends AbstractP4JavaUnitTest {
+public class PropertyDelegatorTest {
     /**
      * Rule for expected exception verification
      */
@@ -47,6 +47,7 @@ public class PropertyDelegatorTest extends AbstractP4JavaUnitTest {
     private PropertyOptions propertyOptions;
     private String name;
     private String value;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

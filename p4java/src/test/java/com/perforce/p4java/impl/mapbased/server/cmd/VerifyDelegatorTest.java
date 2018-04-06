@@ -17,10 +17,11 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.P4JavaUtil;
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
@@ -35,7 +36,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * @author Sean Shou
  * @since 23/09/2016
  */
-public class VerifyDelegatorTest extends AbstractP4JavaUnitTest {
+public class VerifyDelegatorTest {
     private static final String MESSAGE_CODE_IN_ERROR_RANGE = "968435456";
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
 
@@ -48,6 +49,7 @@ public class VerifyDelegatorTest extends AbstractP4JavaUnitTest {
 
     private List<IFileSpec> fileSpecs = FileSpecBuilder.makeFileSpecList(TEST_FILE_DEPOT_PATH);
     private VerifyFilesOptions opts;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.
@@ -161,7 +163,7 @@ public class VerifyDelegatorTest extends AbstractP4JavaUnitTest {
     @Test
     public void shouldReturnNonEmptyListWhenErrorMessageIsRealErrorMessage() throws Exception {
         givenErrorMessageCode();
-        when(server.handleFileErrorStr(eq(resultMap))).thenReturn(dummyServerErrorMessage("not blank"));
+        when(server.handleFileErrorStr(eq(resultMap))).thenReturn(P4JavaUtil.dummyServerErrorMessage("not blank"));
 
         List<IExtendedFileSpec> extendedFileSpecs = verifyDelegator.verifyFiles(fileSpecs, opts);
         assertThat(extendedFileSpecs.size(), is(1));
@@ -182,7 +184,7 @@ public class VerifyDelegatorTest extends AbstractP4JavaUnitTest {
     @Test
     public void shouldReturnNonEmptyListWhenErrorMessageIsInfoMessage() throws Exception {
         givenInfoMessageCode();
-        when(server.handleFileErrorStr(eq(resultMap))).thenReturn(dummyServerErrorMessage("not blank"));
+        when(server.handleFileErrorStr(eq(resultMap))).thenReturn(P4JavaUtil.dummyServerErrorMessage("not blank"));
 
         List<IExtendedFileSpec> extendedFileSpecs = verifyDelegator.verifyFiles(fileSpecs, opts);
         assertThat(extendedFileSpecs.size(), is(1));

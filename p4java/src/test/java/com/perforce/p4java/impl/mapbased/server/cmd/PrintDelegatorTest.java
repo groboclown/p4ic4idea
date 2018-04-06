@@ -11,12 +11,12 @@ import static org.mockito.Mockito.when;
 import java.io.InputStream;
 import java.util.List;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
@@ -31,7 +31,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * @author Sean Shou
  * @since 5/10/2016
  */
-public class PrintDelegatorTest extends AbstractP4JavaUnitTest {
+public class PrintDelegatorTest {
     private static final boolean ALL_REVS = true;
     private static final boolean NO_HEADER_LINE = true;
     private static final String[] CMD_OPTIONS = {"-a", "-q"};
@@ -45,6 +45,7 @@ public class PrintDelegatorTest extends AbstractP4JavaUnitTest {
     private PrintDelegator printDelegator;
     private List<IFileSpec> mockFileSpecs;
     private InputStream mockInputStream;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

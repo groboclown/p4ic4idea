@@ -14,10 +14,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Test;
 import org.junit.Before;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.core.file.FileSpecBuilder;
@@ -32,7 +32,7 @@ import com.perforce.p4java.option.server.GetJobsOptions;
 /**
  * Tests the JobsDelegator.
  */
-public class JobsDelegatorTest extends AbstractP4JavaUnitTest {
+public class JobsDelegatorTest {
     
     /** The jobs delegator. */
     private JobsDelegator jobsDelegator;
@@ -54,6 +54,8 @@ public class JobsDelegatorTest extends AbstractP4JavaUnitTest {
 
     /** Example value. */
     private static final String TEST_DESC = "test description";
+
+    private IOptionsServer server;
 
     /**
      * Before each.

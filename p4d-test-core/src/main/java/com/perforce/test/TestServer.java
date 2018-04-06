@@ -24,10 +24,14 @@ import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.exec.ShutdownHookProcessDestroyer;
 
 import javax.annotation.Nonnull;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -38,19 +42,17 @@ import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 public class TestServer {
+    public static final String DEFAULT_P4_PORT = "11666";
     private static final Charset P4D_ENCODING = Charset.forName("UTF-8");
-
-
 
     private static final String CASE_INSENSITIVE_ARG = "-C0";
     private static final String CASE_SENSITIVE_ARG = "-C1";
-
 
     private final File outDir;
     private final ProcessDestroyer processDestroyer = new ShutdownHookProcessDestroyer();
     private String version = "r17.1";
     private String user;
-    private String port = "1666";
+    private String port = DEFAULT_P4_PORT;
     private int monitor = 3;
     private boolean proxy;
     private boolean unicode = false;
@@ -86,6 +88,7 @@ public class TestServer {
         this.unicode = unicode;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public void setCaseSensitive(boolean set) {
         this.caseSensitive = set;
     }
@@ -125,13 +128,17 @@ public class TestServer {
         }
         if (checkpointResource != null) {
             File outfile = new File(p4d.getParentFile(), "checkpoint.gz");
-            P4ExtFileUtils.extractResource(cl, initialDepotResource, outfile, false);
+            P4ExtFileUtils.extractResource(cl, checkpointResource, outfile, false);
             execNoError("-z", "-jr", outfile.getAbsolutePath());
         }
         if (initialDepotResource != null && checkpointResource != null) {
             // upgrade the server files.
             execNoError("-xu");
         }
+    }
+
+    public boolean isAlive() {
+        return status.isRunning();
     }
 
     @Nonnull
@@ -204,7 +211,8 @@ public class TestServer {
                         return processDestroyer.size();
                     }
                 });
-                PumpStreamHandler streamHandler = new PumpStreamHandler(status.log);
+                // default - log is pumped to stderr.
+                PumpStreamHandler streamHandler = new PumpStreamHandler(status.out, status.log);
                 executor.setStreamHandler(streamHandler);
                 executor.execute(cmdLine, newStatus);
                 status = newStatus;
@@ -252,10 +260,11 @@ public class TestServer {
         return user;
     }
 
-    /*
     public String getPort() {
         return port;
     }
+
+    /*
 
     public void setPort(String port) {
         ensureNotRunning();
@@ -292,14 +301,30 @@ public class TestServer {
         return new String(status.log.toByteArray(), P4D_ENCODING);
     }
 
+    @SuppressWarnings("WeakerAccess")
+    public InputStream getLogAsInputStream() {
+        return new ByteArrayInputStream(status.log.toByteArray());
+    }
+
+    public Reader getLogAsReader() {
+        try {
+            status.log.flush();
+        } catch (IOException e) {
+            // ignore
+        }
+        return new InputStreamReader(getLogAsInputStream(), P4D_ENCODING);
+    }
+
     public void setProxy(boolean proxy) {
         this.proxy = proxy;
     }
 
     public synchronized void stopServer() {
         try {
+            System.err.println("Stopping server");
             status.with(() -> {
                 if (status.isRunning()) {
+                    System.err.println("Stopping server for realsies.");
                     if (status.process != null) {
                         status.process.destroy();
                     }
@@ -397,6 +422,9 @@ public class TestServer {
             cmdLine.addArgument(arg);
         }
         DefaultExecutor executor = new DefaultExecutor();
+        // default - log is pumped to stderr.
+        PumpStreamHandler streamHandler = new PumpStreamHandler(status.out, status.log);
+        executor.setStreamHandler(streamHandler);
         executor.setProcessDestroyer(processDestroyer);
         return executor.execute(cmdLine);
     }
@@ -417,12 +445,21 @@ public class TestServer {
         return cmdLine;
     }
 
+    public boolean hasProcessError() {
+        return status.hasProcessError();
+    }
+
+    public Throwable getProcessError() {
+        return status.getProcessError();
+    }
+
     private static class ExecuteStatus implements ExecuteResultHandler {
         private final Object sync = new Object();
         private boolean running = true;
         private int exitCode = 0;
         private ExecuteException error;
         private Process process;
+        public ByteArrayOutputStream out = new ByteArrayOutputStream();
         public ByteArrayOutputStream log = new ByteArrayOutputStream();
 
 
@@ -475,11 +512,23 @@ public class TestServer {
 
         void waitFor(long timeoutMs)
                 throws InterruptedException {
+            long end = System.currentTimeMillis() + timeoutMs;
             synchronized (sync) {
-                while (running) {
+                while (running && System.currentTimeMillis() < end) {
                     sync.wait(timeoutMs);
                 }
+                if (running) {
+                    throw new IllegalStateException("Could not stop server after " + timeoutMs + "ms");
+                }
             }
+        }
+
+        boolean hasProcessError() {
+            return error != null;
+        }
+
+        ExecuteException getProcessError() {
+            return error;
         }
     }
 }

@@ -14,14 +14,9 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
+import com.perforce.p4java.server.IOptionsServer;
 
 import com.google.common.collect.Lists;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.IBranchSpec;
 import com.perforce.p4java.core.IBranchSpecSummary;
 import com.perforce.p4java.exception.AccessException;
@@ -31,21 +26,27 @@ import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.mapbased.MapKeys;
 import com.perforce.p4java.impl.mapbased.rpc.OneShotServerImpl;
 import com.perforce.p4java.option.server.GetBranchSpecsOptions;
-import com.perforce.p4java.tests.UnitTestGivenThatWillThrowException;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 /**
  * @author Sean Shou
  * @since 21/09/2016
  */
-@RunWith(JUnitPlatform.class)
-public class BranchesDelegatorTest extends AbstractP4JavaUnitTest {
+public class BranchesDelegatorTest {
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
     private static BranchesDelegator branchesDelegator;
     private Map<String, Object> resultMap;
     private List<Map<String, Object>> resultMaps;
     private IBranchSpec mockBranchSpec;
     private IBranchSpecSummary mockBranchSpecSummary;
+    private IOptionsServer server;
 
-    @BeforeEach
+    @Before
     public void beforeEach() {
         server = mock(OneShotServerImpl.class);
         branchesDelegator = new BranchesDelegator(server);
@@ -239,13 +240,10 @@ public class BranchesDelegatorTest extends AbstractP4JavaUnitTest {
     private void checkExceptionFilter(
             Class<? extends P4JavaException> thrownException,
             Class<? extends P4JavaException> expectedThrows) throws P4JavaException {
-        Executable executable = () -> branchesDelegator.getBranchSpecs("seans", "myFilter", 10);
-        UnitTestGivenThatWillThrowException unitTestGiven = (originalException) -> {
-            when(server.getServerVersion()).thenReturn(20161);
-            when(server.execMapCmdList(eq(BRANCHES.toString()), any(String[].class), eq(null)))
-                .thenThrow(originalException);
-        };
-
-        testIfGivenExceptionWasThrown(thrownException, expectedThrows, executable, unitTestGiven);
+        thrown.expect(expectedThrows);
+        when(server.getServerVersion()).thenReturn(20161);
+        when(server.execMapCmdList(eq(BRANCHES.toString()), any(String[].class), eq(null)))
+            .thenThrow(thrownException);
+        branchesDelegator.getBranchSpecs("seans", "myFilter", 10);
     }
 }

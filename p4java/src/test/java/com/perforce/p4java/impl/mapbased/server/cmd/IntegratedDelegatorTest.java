@@ -14,10 +14,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -44,7 +44,7 @@ import com.perforce.p4java.option.server.GetSubmittedIntegrationsOptions;
  * ... change 12345
  * </pre>
  */
-public class IntegratedDelegatorTest extends AbstractP4JavaUnitTest {
+public class IntegratedDelegatorTest {
     
     /** The integrated delegator. */
     private IntegratedDelegator integratedDelegator;
@@ -63,6 +63,8 @@ public class IntegratedDelegatorTest extends AbstractP4JavaUnitTest {
     /** Simple matcher. */
     private static final CommandLineArgumentMatcher SIMPLE_MATCHER = new CommandLineArgumentMatcher(
             new String[] { FILE_SPEC });
+
+    private IOptionsServer server;
 
     /**
      * Before each.

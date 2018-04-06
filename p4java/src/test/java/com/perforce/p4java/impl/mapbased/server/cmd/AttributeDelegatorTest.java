@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,7 +44,7 @@ import com.perforce.p4java.tests.UnitTestGiven;
  * @author Sean Shou
  * @since 22/09/2016
  */
-public class AttributeDelegatorTest extends AbstractP4JavaUnitTest {
+public class AttributeDelegatorTest {
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
     private static final String STREAM_NAME = "testStream";
 
@@ -60,11 +61,13 @@ public class AttributeDelegatorTest extends AbstractP4JavaUnitTest {
     private SetFileAttributesOptions mockOpts;
     private InputStream mockInputStream;
     //private AttributeDelegator.AttributeDelegatorHidden attributeDelegatorHidden = new AttributeDelegator.AttributeDelegatorHidden();
-    private Method method = getPrivateMethod(
-            AttributeDelegator.class,
-            "buildSetFileAttributesFileSpecsFromCommandResultMaps", List.class, Function.class);
+    //private Method method = getPrivateMethod(
+    //        AttributeDelegator.class,
+    //        "buildSetFileAttributesFileSpecsFromCommandResultMaps", List.class, Function.class);
 
     private Function<Map<String, Object>, IFileSpec> mockHandle;
+
+    private IOptionsServer server;
 
     /**
      * Runs before every test.
@@ -117,46 +120,47 @@ public class AttributeDelegatorTest extends AbstractP4JavaUnitTest {
     @SuppressWarnings("unchecked")
     private void buildSetFileAttributesFileSpecsFromCommandResultMaps_shouldReturnEmptyList(
             UnitTestGiven unitTestGiven)
-            throws P4JavaException, InvocationTargetException, IllegalAccessException {
+            throws P4JavaException {
         unitTestGiven.given();
-        List<IFileSpec> resultList = (List<IFileSpec>) method.invoke(attributeDelegator,
-                resultMaps, mockHandle);
+        List<IFileSpec> resultList = attributeDelegator.
+                buildSetFileAttributesFileSpecsFromCommandResultMaps(resultMaps, mockHandle);
         assertThat(resultList.size(), is(0));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void buildSetFileAttributesFileSpecsFromCommandResultMaps_shouldReturnNonEmptyListWhenStatusIsNotValid()
-            throws InvocationTargetException, IllegalAccessException {
+            throws ConnectionException, AccessException {
         when(mockHandle.apply(resultMap)).thenReturn(mockFileSpec);
         when(mockFileSpec.getOpStatus()).thenReturn(ERROR);
 
-        List<IFileSpec> resultList = (List<IFileSpec>) method.invoke(attributeDelegator,
-                resultMaps, mockHandle);
+        List<IFileSpec> resultList = attributeDelegator.
+                buildSetFileAttributesFileSpecsFromCommandResultMaps(resultMaps, mockHandle);
         assertThat(resultList.size(), is(1));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void buildSetFileAttributesFileSpecsFromCommandResultMaps_shouldReturnNonEmptyListWhenStatusIsValid()
-            throws InvocationTargetException, IllegalAccessException {
+            throws ConnectionException, AccessException {
         when(mockHandle.apply(resultMap)).thenReturn(mockFileSpec);
         when(mockFileSpec.getOpStatus()).thenReturn(VALID);
         when(mockFileSpec.getAnnotatedPathString(DEPOT)).thenReturn("not blank");
 
-        List<IFileSpec> resultList = (List<IFileSpec>) method.invoke(attributeDelegator,
-                resultMaps, mockHandle);
+        List<IFileSpec> resultList = attributeDelegator.
+                buildSetFileAttributesFileSpecsFromCommandResultMaps(resultMaps, mockHandle);
         assertThat(resultList.size(), is(1));
     }
 
     @Test
     public void buildSetFileAttributesFileSpecsFromCommandResultMaps_shouldThrownExceptionWhenInnerCallThrown()
-            throws InvocationTargetException, IllegalAccessException {
+            throws ConnectionException, AccessException {
         //then
-        thrown.expect(InvocationTargetException.class);
+        thrown.expect(ConnectionException.class);
         // given
         doThrow(ConnectionException.class).when(mockHandle).apply(any());
-        method.invoke(attributeDelegator, resultMaps, mockHandle);
+        attributeDelegator.
+                buildSetFileAttributesFileSpecsFromCommandResultMaps(resultMaps, mockHandle);
     }
 
     /**

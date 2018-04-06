@@ -24,9 +24,11 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Properties;
 
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
 import static com.perforce.p4java.tests.qa.Helper.FILE_SEP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -99,6 +101,6 @@ public class Jenkins49955 extends P4JavaRshTestCase {
 		ReconcileFilesOptions recOpts = new ReconcileFilesOptions();
 		List<IFileSpec> rec = client.reconcileFiles(clientSpecs, recOpts);
 		assertNotNull(rec);
-		assertTrue(rec.get(0).getStatusMessage().contains(" - no file(s) to reconcile."));
+		assertThat(rec.get(0).getStatusMessage(), containsText(" - no file(s) to reconcile."));
 	}
 }

@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -24,7 +25,6 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.Lists;
 import com.nitorcreations.junit.runners.NestedRunner;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.IUserSummary;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -42,7 +42,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * @since 16/09/2016
  */
 @RunWith(NestedRunner.class)
-public class ReviewsDelegatorTest extends AbstractP4JavaUnitTest {
+public class ReviewsDelegatorTest {
     private static final String MESSAGE_CODE_IN_ERROR_RANGE = "968435456";
     private static final int CHANGELIST_ID = 10;
     private static final String TEST_FILE_DEPOT_PATH = "//depot/dev/test.txt";
@@ -52,6 +52,7 @@ public class ReviewsDelegatorTest extends AbstractP4JavaUnitTest {
     private List<Map<String, Object>> resultMaps;
     private GetReviewsOptions opts;
     private List<IFileSpec> fileSpecs = FileSpecBuilder.makeFileSpecList(TEST_FILE_DEPOT_PATH);
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

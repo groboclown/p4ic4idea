@@ -12,6 +12,11 @@ For a full list of supported products, please see
 Compatibility with earlier IDE versions is supported up to the 0.9.6 release.  It is maintained
 in the 135-compat branch.
 
+* [Getting Started](#getting-started)
+* [Setting Up The Plugin](#setting-up-the-plugin)
+* [Workflow](#workflow)
+* [Known Issues](#known-issues)
+* [License](#license)
 
 
 # Getting Started
@@ -182,3 +187,37 @@ revisions against each other.
 When submitting a changelist, you may associate Perforce jobs with the
 changelist, and set the job status.  This association will only be used
 when the changelist is actually submitted.
+
+
+
+# Known Issues
+
+## Manually Entering your Password
+
+If you manually enter your password, rather than using a ticket file or the
+`P4PASSWD` value or a number of other authentication methods, then you may
+find the UI repeatedly asking for your password, even though you entered the
+correct password.  Sometimes, [it doesn't ask for the password](https://github.com/groboclown/p4ic4idea/issues/166).
+
+Try restarting your IDE, or reopening the project, after entering a valid
+password.  That causes the various systems in the plugin to pick up the new
+password.
+
+
+## Symlinks on Windows
+
+Perforce supports creating a "symlink" file.  If you're running your client on
+Windows, you can does support the creation of symlinks, but you need to enable
+special permissions to allow your user to create symlinks.
+See [this article on superuser.com](https://superuser.com/questions/104845/permission-to-make-symbolic-links-in-windows-7)
+for details on how to do this.
+
+
+
+# License
+
+The plugin is released under the [Apache 2.0 license](LICENSE).  It
+includes modifications to code from:
+
+* [p4java](p4java/LICENSE.txt), released under a 2-clause BSD
+  license by Perforce Software, Inc.

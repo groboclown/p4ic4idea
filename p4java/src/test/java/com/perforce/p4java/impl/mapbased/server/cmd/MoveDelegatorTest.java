@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,7 +26,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import com.nitorcreations.junit.runners.NestedRunner;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
@@ -39,7 +39,7 @@ import com.perforce.p4java.option.server.MoveFileOptions;
  * @since 22/09/2016
  */
 @RunWith(NestedRunner.class)
-public class MoveDelegatorTest extends AbstractP4JavaUnitTest {
+public class MoveDelegatorTest {
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
     private static final String FROM_FILE_PATH_STRING = "//depot/from/test1.txt";
     private static final String TO_FILE_PATH_STRING = "//depot/to/test1.txt";
@@ -61,6 +61,7 @@ public class MoveDelegatorTest extends AbstractP4JavaUnitTest {
     private IFileSpec fromFileSpec;
     private IFileSpec toFileSpec;
     private int serverVersion;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

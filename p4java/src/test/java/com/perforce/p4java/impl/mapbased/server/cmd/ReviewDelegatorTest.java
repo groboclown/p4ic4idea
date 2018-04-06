@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -18,7 +19,6 @@ import org.junit.rules.ExpectedException;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.IReviewChangelist;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.impl.mapbased.server.Server;
@@ -28,7 +28,7 @@ import com.perforce.p4java.option.server.GetReviewChangelistsOptions;
  * @author Sean Shou
  * @since 20/09/2016
  */
-public class ReviewDelegatorTest extends AbstractP4JavaUnitTest {
+public class ReviewDelegatorTest {
     private static final int CHANGELIST_ID = 10;
     private static final String[] CMD_ARGUMENTS = {"-c" + CHANGELIST_ID, "-t20"};
     /**
@@ -40,6 +40,7 @@ public class ReviewDelegatorTest extends AbstractP4JavaUnitTest {
     private Map<String, Object> resultMap;
     private List<Map<String, Object>> resultMaps;
     private GetReviewChangelistsOptions opts;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

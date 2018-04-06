@@ -18,20 +18,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import com.google.common.collect.ImmutableMap;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.impl.mapbased.server.Server;
 
 /**
  * @author Sean Shou
  * @since 5/10/2016
  */
-public class PasswdDelegatorTest extends AbstractP4JavaUnitTest {
+public class PasswdDelegatorTest {
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
 
     /**
@@ -43,6 +43,7 @@ public class PasswdDelegatorTest extends AbstractP4JavaUnitTest {
     private String oldPassword;
     private String newPassword;
     private String userName;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

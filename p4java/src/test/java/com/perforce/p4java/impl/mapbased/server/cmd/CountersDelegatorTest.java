@@ -5,23 +5,21 @@ import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.VALUE
 import static com.perforce.p4java.server.CmdSpec.COUNTERS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.UnitTestWhen;
 import com.perforce.p4java.common.function.Function;
@@ -34,14 +32,13 @@ import com.perforce.p4java.option.server.CounterOptions;
 import com.perforce.p4java.option.server.GetCountersOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.UnitTestGiven;
-import com.perforce.p4java.tests.UnitTestGivenThatWillThrowException;
 
 /**
  * @author Sean Shou
  * @since 27/09/2016
  */
 @RunWith(JUnitPlatform.class)
-public class CountersDelegatorTest extends AbstractP4JavaUnitTest {
+public class CountersDelegatorTest {
     private CountersDelegator countersDelegator;
     private Map<String, Object> resultMap;
     private List<Map<String, Object>> resultMaps;
@@ -50,10 +47,8 @@ public class CountersDelegatorTest extends AbstractP4JavaUnitTest {
     private IFileSpec mockFileSpec;
     private GetCountersOptions mockGetCountersOptions;
     private CounterOptions mockCounterOptions;
-    private Method parseCounterCommandResultMaps = getPrivateMethod(
-            CountersDelegator.class, "parseCounterCommandResultMaps",
-            List.class, Function.class);
-    private Function<Map, Boolean> errorOrInfoStringCheckFunc;
+    private Function<Map<String, Object>, Boolean> errorOrInfoStringCheckFunc;
+    private IOptionsServer server;
 
     @BeforeEach
     public void beforeEach() {
@@ -141,14 +136,10 @@ public class CountersDelegatorTest extends AbstractP4JavaUnitTest {
     private void propagateGetCountersExceptionWithOptions(
             Class<? extends P4JavaException> thrownException,
             Class<? extends P4JavaException> expectedThrows) throws P4JavaException {
-        Executable executable = () -> countersDelegator.getCounters(new GetCountersOptions());
-        UnitTestGivenThatWillThrowException unitTestGiven = (originalException) -> {
-            when(server.execMapCmdList(eq(COUNTERS.toString()),
-                    argThat(new CommandLineArgumentMatcher(new String[] {})), eq(null)))
-                            .thenThrow(originalException);
-        };
-
-        testIfGivenExceptionWasThrown(thrownException, expectedThrows, executable, unitTestGiven);
+        when(server.execMapCmdList(eq(COUNTERS.toString()),
+                argThat(new CommandLineArgumentMatcher(new String[] {})), eq(null)))
+                .thenThrow(thrownException);
+        assertThrows(expectedThrows, () -> countersDelegator.getCounters(new GetCountersOptions()));
     }
 
     /**
@@ -166,14 +157,10 @@ public class CountersDelegatorTest extends AbstractP4JavaUnitTest {
      */
     private void propagateGetCountersException(Class<? extends P4JavaException> thrownException,
             Class<? extends P4JavaException> expectedThrows) throws P4JavaException {
-        Executable executable = () -> countersDelegator.getCounters();
-        UnitTestGivenThatWillThrowException unitTestGiven = (originalException) -> {
-            when(server.execMapCmdList(eq(COUNTERS.toString()),
-                    argThat(new CommandLineArgumentMatcher(new String[] {})), eq(null)))
-                            .thenThrow(originalException);
-        };
-
-        testIfGivenExceptionWasThrown(thrownException, expectedThrows, executable, unitTestGiven);
+        when(server.execMapCmdList(eq(COUNTERS.toString()),
+                argThat(new CommandLineArgumentMatcher(new String[] {})), eq(null)))
+                .thenThrow(thrownException);
+        assertThrows(expectedThrows, () -> countersDelegator.getCounters());
     }
 
     /**
@@ -236,13 +223,12 @@ public class CountersDelegatorTest extends AbstractP4JavaUnitTest {
     public void testNullResultMaps() throws P4JavaException, IllegalAccessException,
             IllegalArgumentException, InvocationTargetException {
         // given
-        Map<String, String> actual = (Map<String, String>) parseCounterCommandResultMaps
-                .invoke(countersDelegator, null, errorOrInfoStringCheckFunc);
+        Map<String, String> actual = countersDelegator.parseCounterCommandResultMaps(null, errorOrInfoStringCheckFunc);
         // then
         assertThat(actual.size(), is(0));
 
         checkEmptyCounters(() -> {
-        }, () -> (Map<String, String>) parseCounterCommandResultMaps.invoke(countersDelegator,
+        }, () -> countersDelegator.parseCounterCommandResultMaps(
                 null, errorOrInfoStringCheckFunc));
     }
 
@@ -258,8 +244,7 @@ public class CountersDelegatorTest extends AbstractP4JavaUnitTest {
     public void testEmptyResultMaps()
             throws P4JavaException, InvocationTargetException, IllegalAccessException {
         checkEmptyCounters(() -> resultMaps = newArrayList(),
-                () -> (Map<String, String>) parseCounterCommandResultMaps
-                        .invoke(countersDelegator, resultMaps, errorOrInfoStringCheckFunc));
+                () -> countersDelegator.parseCounterCommandResultMaps(resultMaps, errorOrInfoStringCheckFunc));
     }
 
     /**

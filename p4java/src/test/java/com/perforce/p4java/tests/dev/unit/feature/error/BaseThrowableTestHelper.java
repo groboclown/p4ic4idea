@@ -13,7 +13,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 /**
  * @author Kevin Sawicki (ksawicki@perforce.com)
  */
-public abstract class BaseThrowableTestHelper extends P4JavaTestCase {
+public abstract class BaseThrowableTestHelper {
 
     /**
      * Test message

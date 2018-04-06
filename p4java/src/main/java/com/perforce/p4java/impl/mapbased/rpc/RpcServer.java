@@ -44,6 +44,7 @@ import static com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage.getGeneric;
 import static com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage.getSeverity;
 import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.toServerMessage;
 import static com.perforce.p4java.server.CmdSpec.LOGIN;
+import static com.perforce.p4java.server.CmdSpec.LOGIN2;
 import static com.perforce.p4java.server.CmdSpec.getValidP4JCmdSpec;
 import static com.perforce.p4java.util.PropertiesHelper.getPropertyAsInt;
 import static com.perforce.p4java.util.PropertiesHelper.getPropertyAsLong;

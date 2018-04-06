@@ -1,5 +1,24 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
+import com.nitorcreations.junit.runners.NestedRunner;
+import com.perforce.p4java.core.IFileDiff;
+import com.perforce.p4java.core.file.DiffType;
+import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.exception.ConnectionException;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.exception.RequestException;
+import com.perforce.p4java.impl.generic.core.file.FileSpec;
+import com.perforce.p4java.impl.mapbased.server.Server;
+import com.perforce.p4java.option.server.GetFileDiffsOptions;
+import com.perforce.p4java.server.IOptionsServer;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+
 import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.core.file.DiffType.SUMMARY_DIFF;
 import static com.perforce.p4java.server.CmdSpec.DIFF2;
@@ -10,32 +29,12 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import com.nitorcreations.junit.runners.NestedRunner;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
-import com.perforce.p4java.core.IFileDiff;
-import com.perforce.p4java.core.file.DiffType;
-import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.RequestException;
-import com.perforce.p4java.impl.generic.core.file.FileSpec;
-import com.perforce.p4java.impl.mapbased.server.Server;
-import com.perforce.p4java.option.server.GetFileDiffsOptions;
-
 /**
  * @author Sean Shou
  * @since 27/09/2016
  */
 @RunWith(NestedRunner.class)
-public class Diff2DelegatorTest extends AbstractP4JavaUnitTest {
+public class Diff2DelegatorTest {
     private Diff2Delegator diff2Delegator;
     private Map<String, Object> resultMap1;
     private Map<String, Object> resultMap2;
@@ -51,6 +50,8 @@ public class Diff2DelegatorTest extends AbstractP4JavaUnitTest {
     private GetFileDiffsOptions fileDiffsOptions;
     private String[] cmdArguments = {"-b", branchName, file1, file2};
     private String[] summaryDiffCmdArguments = {"-ds", "-b", branchName, file1, file2};
+
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

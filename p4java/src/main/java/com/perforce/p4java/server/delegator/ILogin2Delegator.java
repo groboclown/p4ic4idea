@@ -3,7 +3,9 @@ package com.perforce.p4java.server.delegator;
 import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.server.Login2Options;
+import com.perforce.p4java.server.IServerMessage;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -32,12 +34,14 @@ public interface ILogin2Delegator {
 	 *
 	 *             User bob1 on host 127.0.0.1: validated
 	 *
-	 * @return     non-null, but possibly-empty.  Interpretation of this string is up to the caller.
+	 * @return     nullable.  Interpretation of this string is up to the caller.
 	 *
 	 * @throws P4JavaException
 	 *             if any errors occur during the processing of this command.
 	 */
-	String getLogin2Status() throws P4JavaException;
+	// p4ic4idea: use iServerMessage
+	@Nullable
+	IServerMessage getLogin2Status() throws P4JavaException;
 
 	/**
 	 * Return a string indicating the current 2fa login status; corresponds to the
@@ -49,12 +53,14 @@ public interface ILogin2Delegator {
 	 * @param user
 	 *             Specifying a username requires 'super' access, which is granted by 'p4 protect'.
 	 *
-	 * @return     non-null, but possibly-empty.  Interpretation of this string is up to the caller.
+	 * @return     nullable.  Interpretation of this string is up to the caller.
 	 *
 	 * @throws P4JavaException
 	 *             if any errors occur during the processing of this command.
 	 */
-	String getLogin2Status(IUser user) throws P4JavaException;
+	// p4ic4idea: use iServerMessage
+	@Nullable
+	IServerMessage getLogin2Status(IUser user) throws P4JavaException;
 
 	/**
 	 * For non-interactive clients.

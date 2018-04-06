@@ -9,7 +9,6 @@ import com.perforce.p4java.Log;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.core.IMapEntry;
 import com.perforce.p4java.core.ViewMap;
-import com.perforce.p4java.exception.ClientFileAccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.FileDecoderException;
 import com.perforce.p4java.exception.FileEncoderException;
@@ -133,7 +132,7 @@ public class ClientSystemFileCommands {
 	 */
 
 	protected RpcPacketDispatcherResult chmodFile(RpcConnection rpcConnection,
-	                                              CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
+			CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
 		if (rpcConnection == null) {
 			throw new NullPointerError("Null rpcConnection in chmodFile().");
@@ -201,12 +200,11 @@ public class ClientSystemFileCommands {
 			throw new ProtocolError(
 					"Unexpected conversion error in ClientSystemFileCommands.chmodFile: "
 							+ nfe.getLocalizedMessage());
-		// p4ic4idea: allow real exception to be naturally handled
-		//} catch (Exception exc) {
-		//	// FIXME: better error handling here -- HR.
-		//
-		//	Log.exception(exc);
-		//	throw new ConnectionException(exc.getLocalizedMessage(), exc);
+		} catch (Exception exc) {
+			// FIXME: better error handling here -- HR.
+
+			Log.exception(exc);
+			throw new ConnectionException(exc.getLocalizedMessage(), exc);
 		}
 
 		return RpcPacketDispatcherResult.CONTINUE_LOOP;
@@ -233,7 +231,7 @@ public class ClientSystemFileCommands {
 	 */
 
 	protected RpcPacketDispatcherResult openFile(RpcConnection rpcConnection,
-	                                             CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
+			CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
 		if (rpcConnection == null) {
 			throw new NullPointerError("Null rpcConnection in openFile().");
@@ -485,7 +483,7 @@ public class ClientSystemFileCommands {
 
 	@SuppressWarnings("unchecked")
 	protected RpcPacketDispatcherResult writeFile(RpcConnection rpcConnection,
-	                                              CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
+			CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
 		if (rpcConnection == null) {
 			throw new NullPointerError("Null rpcConnection in writeFile().");
@@ -627,7 +625,7 @@ public class ClientSystemFileCommands {
 	}
 
 	private void writeToStream(byte[] sourceBytes, int start, int length,
-	                           OutputStream stream) throws IOException {
+			OutputStream stream) throws IOException {
 		if (ClientLineEnding.CONVERT_TEXT) {
 			for (int i = start; i < length; i++) {
 				if (sourceBytes[i] == ClientLineEnding.FST_L_LF_BYTES[0]) {
@@ -642,7 +640,7 @@ public class ClientSystemFileCommands {
 	}
 
 	private void translate(byte[] sourceBytes, CharsetConverter converter,
-	                       int length, OutputStream stream) throws IOException, FileDecoderException, FileEncoderException {
+			int length, OutputStream stream) throws IOException, FileDecoderException, FileEncoderException {
 		int start = 0;
 
 		if (ClientLineEnding.CONVERT_TEXT) {
@@ -679,7 +677,7 @@ public class ClientSystemFileCommands {
 	 * just throw what's coming at us straight back to whoever's catching it...
 	 */
 	protected RpcPacketDispatcherResult writeText(RpcConnection rpcConnection,
-	                                              CommandEnv cmdEnv, Map<String, Object> resultsMap)
+			CommandEnv cmdEnv, Map<String, Object> resultsMap)
 			throws ConnectionException {
 
 		if (rpcConnection == null) {
@@ -818,7 +816,7 @@ public class ClientSystemFileCommands {
 	 * the cmdEnv state map.
 	 */
 	protected RpcPacketDispatcherResult writeBinary(RpcConnection rpcConnection,
-	                                                CommandEnv cmdEnv, Map<String, Object> resultsMap)
+			CommandEnv cmdEnv, Map<String, Object> resultsMap)
 			throws ConnectionException {
 
 		if (rpcConnection == null) {
@@ -909,7 +907,7 @@ public class ClientSystemFileCommands {
 
 	@SuppressWarnings("unchecked")
 	protected RpcPacketDispatcherResult closeFile(RpcConnection rpcConnection,
-	                                              CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
+			CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
 		//FIXME(S): permissions, cleanup -- HR.
 
@@ -1003,7 +1001,6 @@ public class ClientSystemFileCommands {
 					} catch (IOException e) {
 						Log.error("Flushing or closing stream failed in closeFile(); tmp file: "
 								+ tmpFile.getName());
-						// p4ic4idea: TODO add exception trace
 					}
 
 					try {
@@ -1213,7 +1210,7 @@ public class ClientSystemFileCommands {
 	 * move command.
 	 */
 	protected RpcPacketDispatcherResult moveFile(RpcConnection rpcConnection,
-	                                             CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
+			CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
 		if (rpcConnection == null) {
 			throw new NullPointerError("Null rpcConnection in moveFile().");
@@ -1339,11 +1336,11 @@ public class ClientSystemFileCommands {
 			File dir = fromFile.getParentFile();
 
 			if (dir != null) {
-		        /*
-                 *  Don't delete parent directories that are symbolic links. This mimics the
-                 *  server behaviour that prevents a subsequent sync filling a disc when there
-                 *  were symbolic links.
-                 */
+				/*
+				 *  Don't delete parent directories that are symbolic links. This mimics the
+				 *  server behaviour that prevents a subsequent sync filling a disc when there
+				 *  were symbolic links.
+				 */
 				if (!SymbolicLinkHelper.isSymbolicLink(dir.getAbsolutePath()) && !dir.delete()) {
 					Log.stats("Unable to delete parent directory for delete for file '"
 							+ clientPath + "'; (unknown cause)");
@@ -1358,7 +1355,7 @@ public class ClientSystemFileCommands {
 	}
 
 	protected RpcPacketDispatcherResult deleteFile(RpcConnection rpcConnection,
-	                                               CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
+			CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
 		if (rpcConnection == null) {
 			throw new NullPointerError("Null rpcConnection in deleteFile().");
@@ -1411,7 +1408,7 @@ public class ClientSystemFileCommands {
 
 			if (!file.canWrite() && fileCommands.setWritable(clientPath, true)) {
 				deleteFailed = !file.delete();
-				// We don't reset permissions here because the file is already 
+				// We don't reset permissions here because the file is already
 				// tampered with and we don't know the exact permissions in any case...
 				// (this may be revisited later).
 			}
@@ -1444,11 +1441,11 @@ public class ClientSystemFileCommands {
 			do {
 				dir = dir.getParentFile();
 				if (dir != null) {
-				    /*
-				     *  Don't delete parent directories that are symbolic links. This mimics the
-				     *  server behaviour that prevents a subsequent sync filling a disc when there
-				     *  were symbolic links.
-				     */
+					/*
+					 *  Don't delete parent directories that are symbolic links. This mimics the
+					 *  server behaviour that prevents a subsequent sync filling a disc when there
+					 *  were symbolic links.
+					 */
 					if (!SymbolicLinkHelper.isSymbolicLink(dir.getAbsolutePath()) && !dir.delete()) {
 						Log.stats("Unable to delete parent directory for delete for file '"
 								+ clientPath + "'; (unknown cause)");
@@ -1508,7 +1505,7 @@ public class ClientSystemFileCommands {
 	 */
 
 	protected RpcPacketDispatcherResult checkFile(RpcConnection rpcConnection,
-	                                              CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
+			CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
 		if (rpcConnection == null) {
 			throw new NullPointerError("Null rpcConnection in checkFile().");
@@ -1574,12 +1571,12 @@ public class ClientSystemFileCommands {
 			RpcPerforceFile file = new RpcPerforceFile(clientPath, clientType);
 			fileType = RpcPerforceFileType.decodeFromServerString(clientType);
 			fstSymlink = (fileType == RpcPerforceFileType.FST_SYMLINK);
-			
+
 			/*
-		     * If we do know the type, we want to know if it's missing.
-		     * If it isn't missing and a digest is given, we want to know if
-		     * it is the same.
-		     */
+			 * If we do know the type, we want to know if it's missing.
+			 * If it isn't missing and a digest is given, we want to know if
+			 * it is the same.
+			 */
 
 			if (!fileExists(file, fstSymlink)) {
 				status = "missing";
@@ -1721,6 +1718,8 @@ public class ClientSystemFileCommands {
 		String digest = (String) resultsMap.get(RpcFunctionMapKey.DIGEST);
 		String confirm = (String) resultsMap.get(RpcFunctionMapKey.CONFIRM);
 		String handle = (String) resultsMap.get(RpcFunctionMapKey.HANDLE);
+		String fileSize = (String) resultsMap.get(RpcFunctionMapKey.FILESIZE);
+		String submitTime = (String) resultsMap.get(RpcFunctionMapKey.TIME);
 
 		this.reconcileHandle = handle;
 
@@ -1744,10 +1743,10 @@ public class ClientSystemFileCommands {
 		boolean fstSymlink = (fileType == RpcPerforceFileType.FST_SYMLINK);
 
 		/*
-	     * If we do know the type, we want to know if it's missing.
-	     * If it isn't missing and a digest is given, we want to know if
-	     * it is the same.
-	     */
+		 * If we do know the type, we want to know if it's missing.
+		 * If it isn't missing and a digest is given, we want to know if
+		 * it is the same.
+		 */
 
 		File file = new File(clientPath);
 
@@ -1977,8 +1976,8 @@ public class ClientSystemFileCommands {
 	 * server side MapApi validation.
 	 */
 	private void traverseDirs(File file, boolean traverse, boolean skipIgnore,
-	                          Map<String, File> addFilesMap, ViewMap<IMapEntry> viewMap,
-	                          boolean unicode, Charset charset, CommandEnv cmdEnv) {
+			Map<String, File> addFilesMap, ViewMap<IMapEntry> viewMap,
+			boolean unicode, Charset charset, CommandEnv cmdEnv) {
 		if (addFilesMap == null) {
 			throw new IllegalArgumentException("Must pass in a non-null 'files' list as a parameter.");
 		}
@@ -2105,11 +2104,8 @@ public class ClientSystemFileCommands {
 		if (outStream == null) {
 			if (cmdEnv.isStreamCmd() || cmdEnv.getProtocolSpecs().isEnableTracking()) {
 				try {
-					// p4ic4idea: this could, in some cases, return null.  That
-					// would end up causing the RpcPerforceFile creation to throw
-					// an exception which would end up swallowing the root cause.
 					String tmpFileName = RpcPerforceFile
-							.createNotNullTempFileName(RpcPropertyDefs.getProperty(
+							.createTempFileName(RpcPropertyDefs.getProperty(
 									this.server.getProperties(),
 									PropertyDefs.P4JAVA_TMP_DIR_KEY,
 									System.getProperty("java.io.tmpdir")));
@@ -2120,8 +2116,7 @@ public class ClientSystemFileCommands {
 				} catch (IOException ioexc) {
 					Log.error("tmp file creation error: " + ioexc.getLocalizedMessage());
 					Log.exception(ioexc);
-					// p4ic4idea: altered exception to be more precise
-					throw new ClientFileAccessException("Unable to create temporary file for Perforce file retrieval; " +
+					throw new ConnectionException("Unable to create temporary file for Perforce file retrieval; " +
 							"reason: " + ioexc.getLocalizedMessage(),
 							ioexc);
 				}

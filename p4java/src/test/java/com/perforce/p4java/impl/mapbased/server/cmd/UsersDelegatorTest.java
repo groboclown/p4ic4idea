@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,7 +21,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import com.nitorcreations.junit.runners.NestedRunner;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.IUserSummary;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -35,7 +35,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * @since 16/09/2016
  */
 @RunWith(NestedRunner.class)
-public class UsersDelegatorTest extends AbstractP4JavaUnitTest {
+public class UsersDelegatorTest {
     private static final int MAX_USERS = 20;
     private static final String[] CMD_OPTIONS = {"-m" + MAX_USERS};
     private static final String[] TEST_USERS = {"p4javaTest_win", "p4javaTest_unix"};
@@ -43,6 +43,7 @@ public class UsersDelegatorTest extends AbstractP4JavaUnitTest {
     private static final String[] CMD_ARGUMENTS = ArrayUtils.addAll(CMD_OPTIONS, TEST_USERS);
 
     private UsersDelegator usersDelegator;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

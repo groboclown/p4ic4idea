@@ -1,7 +1,6 @@
 <component name="libraryTable">
   <library name="Gradle: org.apache.httpcomponents:httpclient:4.5.5">
     <CLASSES>
-      <root url="file://$PROJECT_DIR$/Could not find org.apache.httpcomponents:httpclient:4.5.5." />
       <root url="jar://$PROJECT_DIR$/lib/main/httpclient-4.5.5.jar!/" />
     </CLASSES>
     <JAVADOC />

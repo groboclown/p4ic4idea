@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
@@ -31,13 +32,15 @@ import com.perforce.p4java.server.delegator.IDBSchemaDelegator;
  * Tests the DBSchemaDelegator.
  */
 @RunWith(JUnitPlatform.class)
-public class DBSchemaDelegatorTest extends AbstractP4JavaUnitTest {
+public class DBSchemaDelegatorTest {
 
     /** Example table name. */
     private static final String DB_CONFIG = "db.config";
 
     /** The dbschemadelegator. */
     private IDBSchemaDelegator dBSchemaDelegator;
+
+    private IOptionsServer server;
 
     /**
      * Before each.

@@ -16,12 +16,12 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.nitorcreations.junit.runners.NestedRunner;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.ILabelSummary;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -37,12 +37,13 @@ import com.perforce.p4java.option.server.GetLabelsOptions;
  * @since 16/09/2016
  */
 @RunWith(NestedRunner.class)
-public class LabelsDelegatorTest extends AbstractP4JavaUnitTest {
+public class LabelsDelegatorTest {
     private static final String LABEL_SUMMARY_OWNER = "sshou";
     private static final String FILE_DEPOT_PATH = "//depot/dev/test.txt";
     private LabelsDelegator labelsDelegator;
     private List<Map<String, Object>> resultMaps;
     private List<IFileSpec> fileSpecs;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

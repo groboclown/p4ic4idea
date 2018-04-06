@@ -18,13 +18,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -33,14 +33,13 @@ import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.server.ExportRecordsOptions;
 import com.perforce.p4java.server.callback.IStreamingCallback;
-import com.perforce.p4java.tests.UnitTestGivenThatWillThrowException;
 
 /**
  * @author Sean Shou
  * @since 27/09/2016
  */
 @RunWith(JUnitPlatform.class)
-public class ExportDelegatorTest extends AbstractP4JavaUnitTest {
+public class ExportDelegatorTest {
     private ExportDelegator exportDelegator;
     private Map<String, Object> resultMap;
     private List<Map<String, Object>> resultMaps;
@@ -49,6 +48,8 @@ public class ExportDelegatorTest extends AbstractP4JavaUnitTest {
     private IFileSpec mockFileSpec;
     private ExportRecordsOptions mockOpts;
     private IStreamingCallback mockCallback;
+
+    private IOptionsServer server;
 
     /**
      * Runs before every test.
@@ -118,14 +119,10 @@ public class ExportDelegatorTest extends AbstractP4JavaUnitTest {
         final int maxRecs = 10;
         final int sourceNum = 2;
         final int offset = 3;
-        Executable executable = () -> {
+        doThrow(thrownException).when(server).execMapCmdList(eq(EXPORT.toString()), any(String[].class), any(Map.class));
+        assertThrows(expectedThrows, () -> {
             exportDelegator.getExportRecords(true, maxRecs, sourceNum, offset, true, "prefix", "add");
-        };
-        UnitTestGivenThatWillThrowException unitTestGiven = (originalException) -> {
-            doThrow(originalException).when(server).execMapCmdList(eq(EXPORT.toString()), any(String[].class), any(Map.class));
-        };
-
-        testIfGivenExceptionWasThrown(thrownException, expectedThrows, executable, unitTestGiven);
+        });
     }
 
     /**

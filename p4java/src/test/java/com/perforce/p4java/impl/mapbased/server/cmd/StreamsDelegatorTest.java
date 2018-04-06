@@ -13,10 +13,10 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.IStreamSummary;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.mapbased.MapKeys;
@@ -29,7 +29,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * @author Sean Shou
  * @since 6/10/2016
  */
-public class StreamsDelegatorTest extends AbstractP4JavaUnitTest {
+public class StreamsDelegatorTest {
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
     private static final String[] CMD_OPTIONS = {"-U", "-m20"};
     private static final String[] STREAM_PATHS = {"//depot/streams/dev", "//depot/streams/p16.1"};
@@ -40,6 +40,7 @@ public class StreamsDelegatorTest extends AbstractP4JavaUnitTest {
     private List<Map<String, Object>> resultMaps;
     private GetStreamsOptions opts;
     private List<String> streamPaths;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

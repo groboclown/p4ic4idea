@@ -89,7 +89,8 @@ public class CountersDelegator extends BaseDelegator implements ICountersDelegat
      * representing the key values to look for & an object that looks for errors/info messages
      * and throws an exception if appropriate.
      */
-    private Map<String, String> parseCounterCommandResultMaps(
+    // p4ic4idea: make package protected for unit tests.
+    Map<String, String> parseCounterCommandResultMaps(
             final List<Map<String, Object>> resultMaps,
             @Nonnull final Function<Map<String, Object>, Boolean> errorOrInfoStringCheckFunc)
             throws AccessException, RequestException {

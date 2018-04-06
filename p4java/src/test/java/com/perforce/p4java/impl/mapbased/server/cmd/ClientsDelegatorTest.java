@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,11 +40,12 @@ import com.perforce.p4java.option.server.GetClientsOptions;
  * @since 15/09/2016
  */
 @RunWith(NestedRunner.class)
-public class ClientsDelegatorTest extends AbstractP4JavaUnitTest {
+public class ClientsDelegatorTest {
     private static final String MESSAGE_CODE_IN_ERROR_RANGE = "968435456";
     private ClientsDelegator clientsDelegator;
     private Map<String, Object> resultMap;
     private List<Map<String, Object>> resultMaps;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

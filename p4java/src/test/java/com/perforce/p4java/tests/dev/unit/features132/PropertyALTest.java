@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2014 Perforce Software.  All rights reserved.
  */
 package com.perforce.p4java.tests.dev.unit.features132;
@@ -43,7 +43,7 @@ public class PropertyALTest extends P4JavaTestCase {
 	
         String pname = "PropertyALTest";
         String pval = "PropertyALTest";
-        int pseq = 4;
+        String pseq = "4";
         
         HashMap<String, String> targets = new HashMap<String, String>();
         targets.put("2013.1", "p4java://eng-p4java-vm.perforce.com:20131");

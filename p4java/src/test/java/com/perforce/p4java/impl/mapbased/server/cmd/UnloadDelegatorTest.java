@@ -15,12 +15,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.server.UnloadOptions;
@@ -29,7 +29,7 @@ import com.perforce.p4java.option.server.UnloadOptions;
  * @author Sean Shou
  * @since 5/10/2016
  */
-public class UnloadDelegatorTest extends AbstractP4JavaUnitTest {
+public class UnloadDelegatorTest {
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
     private static final String[] CMD_OPTIONS = {"-f", "-a", "-lp4_java_test"};
     private static final String INFO_MESSAGE = "Unload success!!";
@@ -40,6 +40,7 @@ public class UnloadDelegatorTest extends AbstractP4JavaUnitTest {
     public ExpectedException thrown = ExpectedException.none();
     private UnloadDelegator unloadDelegator;
     private UnloadOptions opts;
+    private IOptionsServer server;
 
     @Before
     public void beforeEach() throws Exception {

@@ -3,6 +3,9 @@
  */
 package com.perforce.p4java.server.callback;
 
+// p4ic4idea: use IServerMessage
+import com.perforce.p4java.server.IServerMessage;
+
 /**
  * Provides a simple server command and command results notification callback
  * interface for P4Java consumers.<p>

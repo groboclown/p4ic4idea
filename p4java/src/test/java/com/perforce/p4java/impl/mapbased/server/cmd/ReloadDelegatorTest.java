@@ -15,12 +15,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.server.ReloadOptions;
@@ -29,7 +29,7 @@ import com.perforce.p4java.option.server.ReloadOptions;
  * @author Sean Shou
  * @since 5/10/2016
  */
-public class ReloadDelegatorTest extends AbstractP4JavaUnitTest {
+public class ReloadDelegatorTest {
     /**
      * Rule for expected exception verification
      */
@@ -43,6 +43,8 @@ public class ReloadDelegatorTest extends AbstractP4JavaUnitTest {
     private List<Map<String, Object>> resultMaps;
 
     private ReloadOptions opts = new ReloadOptions(CMD_OPTIONS);
+
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

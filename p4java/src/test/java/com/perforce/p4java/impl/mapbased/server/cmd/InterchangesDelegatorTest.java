@@ -14,18 +14,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.P4JavaUtil;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.Lists;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -37,7 +35,6 @@ import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.option.server.GetInterchangesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.UnitTestGiven;
-import com.perforce.p4java.tests.UnitTestGivenThatWillThrowException;
 
 /**
  * Exercise the p4java support for p4 interchanges commands and their associated
@@ -45,7 +42,7 @@ import com.perforce.p4java.tests.UnitTestGivenThatWillThrowException;
  * does not look at any actual differences.
  */
 @RunWith(JUnitPlatform.class)
-public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
+public class InterchangesDelegatorTest {
     private InterchangesDelegator interchangesDelegator;
     private Map<String, Object> resultMap;
     private List<Map<String, Object>> resultMaps;
@@ -53,8 +50,8 @@ public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
     private IFileSpec mockToFile;
     private List<IChangelist> mockInterchanges;
     private GetInterchangesOptions mockOpts;
-    private Method isListIndividualFilesThatRequireIntegration;
     private InterchangesDelegator.InterchangesDelegatorHidden interchangesDelegatorHidden;
+    private IOptionsServer server;
 
     @BeforeEach
     public void beforeEach() {
@@ -68,9 +65,6 @@ public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
         mockInterchanges = mock(List.class);
         mockOpts = mock(GetInterchangesOptions.class);
 
-        isListIndividualFilesThatRequireIntegration = getPrivateMethod(
-                InterchangesDelegator.InterchangesDelegatorHidden.class,
-                "isListIndividualFilesThatRequireIntegration", GetInterchangesOptions.class);
         interchangesDelegatorHidden = new InterchangesDelegator.InterchangesDelegatorHidden();
     }
 
@@ -310,7 +304,7 @@ public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
             throws P4JavaException {
         checkEmptyChangelistResult(() -> {
             // given
-            when(server.handleFileErrorStr(resultMap)).thenReturn(dummyServerErrorMessage("error was occurred"));
+            when(server.handleFileErrorStr(resultMap)).thenReturn(P4JavaUtil.dummyServerErrorMessage("error was occurred"));
             when(server.getGenericCode(resultMap)).thenReturn(17);
         });
     }
@@ -327,7 +321,7 @@ public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
             throws P4JavaException {
         checkEmptyChangelistResult(() -> {
             // given
-            when(server.handleFileErrorStr(resultMap)).thenReturn(dummyServerErrorMessage("error was occurred"));
+            when(server.handleFileErrorStr(resultMap)).thenReturn(P4JavaUtil.dummyServerErrorMessage("error was occurred"));
             when(server.getSeverityCode(resultMap)).thenReturn(2);
         });
     }
@@ -345,7 +339,7 @@ public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
             when(server.getGenericCode(resultMap)).thenReturn(17);
             when(server.getSeverityCode(resultMap)).thenReturn(2);
             when(server.handleFileErrorStr(resultMap))
-                    .thenReturn(dummyServerErrorMessage("all revision(s) already integrated"));
+                    .thenReturn(P4JavaUtil.dummyServerErrorMessage("all revision(s) already integrated"));
         });
     }
 
@@ -359,7 +353,7 @@ public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
     public void testServerErrorMessage()
             throws P4JavaException {
         // given
-        when(server.handleFileErrorStr(resultMap)).thenReturn(dummyServerErrorMessage("error was occurred"));
+        when(server.handleFileErrorStr(resultMap)).thenReturn(P4JavaUtil.dummyServerErrorMessage("error was occurred"));
         int isNot17 = 19;
         int isNot2 = 3;
         when(server.getGenericCode(resultMap)).thenReturn(isNot17);
@@ -380,7 +374,7 @@ public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
     public void testEmptyErrorsResult()
             throws P4JavaException {
         // given
-        when(server.handleFileErrorStr(resultMap)).thenReturn(dummyServerErrorMessage(EMPTY));
+        when(server.handleFileErrorStr(resultMap)).thenReturn(P4JavaUtil.dummyServerErrorMessage(EMPTY));
 
         // when
         List<IChangelist> changelists = interchangesDelegator.processInterchangeMaps(resultMaps,
@@ -401,7 +395,7 @@ public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
     public void testDepotFiles()
             throws P4JavaException {
         // given
-        when(server.handleFileErrorStr(resultMap)).thenReturn(dummyServerErrorMessage(EMPTY));
+        when(server.handleFileErrorStr(resultMap)).thenReturn(P4JavaUtil.dummyServerErrorMessage(EMPTY));
         Object nonNullObj = new Object();
         when(resultMap.get("depotFile0")).thenReturn(nonNullObj);
         when(resultMap.get("depotFile1")).thenReturn(nonNullObj);
@@ -425,8 +419,8 @@ public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
             throws InvocationTargetException, IllegalAccessException {
         // when
         GetInterchangesOptions options = null;
-        boolean actual = (boolean) isListIndividualFilesThatRequireIntegration
-                .invoke(interchangesDelegatorHidden, options);
+        boolean actual = InterchangesDelegator.InterchangesDelegatorHidden.
+                isListIndividualFilesThatRequireIntegration(options);
 
         // then
         assertFalse(actual);
@@ -441,8 +435,8 @@ public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
     public void testShowFilesWithFalse()
             throws InvocationTargetException, IllegalAccessException {
         // when
-        boolean actual = (boolean) isListIndividualFilesThatRequireIntegration
-                .invoke(interchangesDelegatorHidden, new  GetInterchangesOptions().setShowFiles(false));
+        boolean actual = InterchangesDelegator.InterchangesDelegatorHidden.
+                isListIndividualFilesThatRequireIntegration(new GetInterchangesOptions().setShowFiles(false));
 
         // then
         assertFalse(actual);
@@ -457,8 +451,8 @@ public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
     public void testShowFilesWithTrue()
             throws InvocationTargetException, IllegalAccessException {
         // when
-        boolean actual = (boolean) isListIndividualFilesThatRequireIntegration
-                .invoke(interchangesDelegatorHidden, new  GetInterchangesOptions().setShowFiles(true));
+        boolean actual = InterchangesDelegator.InterchangesDelegatorHidden.
+                isListIndividualFilesThatRequireIntegration(new GetInterchangesOptions().setShowFiles(true));
 
         // then
         assertTrue(actual);
@@ -496,14 +490,10 @@ public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
      */
     private void propagateExceptionsWithoutABranch(Class<? extends P4JavaException> thrownException,
             Class<? extends P4JavaException> expectedThrows) throws P4JavaException {
-        Executable executable = () -> interchangesDelegator.getInterchanges(mockFromFile,
-                mockToFile, true, true, 100);
-        UnitTestGivenThatWillThrowException unitTestGiven = (originalException) -> {
-            when(server.execMapCmdList(eq(INTERCHANGES.toString()), any(String[].class), eq(null)))
-                    .thenThrow(originalException);
-        };
-
-        testIfGivenExceptionWasThrown(thrownException, expectedThrows, executable, unitTestGiven);
+        when(server.execMapCmdList(eq(INTERCHANGES.toString()), any(String[].class), eq(null)))
+                .thenThrow(thrownException);
+        assertThrows(expectedThrows, () -> interchangesDelegator.getInterchanges(mockFromFile,
+                mockToFile, true, true, 100));
     }
 
     /**
@@ -519,14 +509,10 @@ public class InterchangesDelegatorTest extends AbstractP4JavaUnitTest {
      */
     private void propagateExceptionsWithBranch(Class<? extends P4JavaException> thrownException,
             Class<? extends P4JavaException> expectedThrows) throws P4JavaException {
-        Executable executable = () -> interchangesDelegator.getInterchanges("myBranch",
+        when(server.execMapCmdList(eq(INTERCHANGES.toString()), any(String[].class), eq(null)))
+                .thenThrow(thrownException);
+        assertThrows(expectedThrows, () -> interchangesDelegator.getInterchanges("myBranch",
                 Lists.newArrayList(mockFromFile), Lists.newArrayList(mockToFile), true, true, 100,
-                true, true);
-        UnitTestGivenThatWillThrowException unitTestGiven = (originalException) -> {
-            when(server.execMapCmdList(eq(INTERCHANGES.toString()), any(String[].class), eq(null)))
-                    .thenThrow(originalException);
-        };
-
-        testIfGivenExceptionWasThrown(thrownException, expectedThrows, executable, unitTestGiven);
+                true, true));
     }
 }

@@ -1,7 +1,6 @@
 <component name="libraryTable">
   <library name="Gradle: commons-io:commons-io:2.5">
     <CLASSES>
-      <root url="file://$PROJECT_DIR$/Could not find commons-io:commons-io:2.5." />
       <root url="jar://$PROJECT_DIR$/lib/main/commons-io-2.5.jar!/" />
     </CLASSES>
     <JAVADOC />

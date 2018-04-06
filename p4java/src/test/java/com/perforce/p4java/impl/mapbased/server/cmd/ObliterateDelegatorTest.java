@@ -26,12 +26,12 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.core.file.IObliterateResult;
 import com.perforce.p4java.exception.P4JavaException;
@@ -44,7 +44,7 @@ import com.perforce.p4java.tests.UnitTestThen;
  * @author Sean Shou
  * @since 4/10/2016
  */
-public class ObliterateDelegatorTest extends AbstractP4JavaUnitTest {
+public class ObliterateDelegatorTest {
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
     private static final String EXECUTE_OBLITERATE = "-y";
     private static final String FILE_DEPOT_PATH = "//depot/dev/test.txt";
@@ -60,6 +60,7 @@ public class ObliterateDelegatorTest extends AbstractP4JavaUnitTest {
     private List<Map<String, Object>> resultMaps;
     private List<IFileSpec> fileSpecs;
     private ObliterateFilesOptions opts;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

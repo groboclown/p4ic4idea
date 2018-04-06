@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.platform.runner.JUnitPlatform;
@@ -33,7 +34,7 @@ import com.perforce.p4java.impl.mapbased.server.Server;
  * Tests the DepotsDelegator.
  */
 @RunWith(JUnitPlatform.class)
-public class DepotsDelegatorTest extends AbstractP4JavaUnitTest {
+public class DepotsDelegatorTest {
     /** Name. */
     private static final String TEST_DEPOT = "TestDepot";
 
@@ -49,6 +50,8 @@ public class DepotsDelegatorTest extends AbstractP4JavaUnitTest {
     /** Matcher with no params. */
     private static final CommandLineArgumentMatcher EMPTY_MATCHER = new CommandLineArgumentMatcher(
             new String[] {});
+
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

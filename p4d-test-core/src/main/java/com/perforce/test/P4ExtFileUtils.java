@@ -34,12 +34,15 @@ import java.io.OutputStream;
 // Renamed from "FileUtils" so that it can easily be used with Apache commons-io FileUtils
 public class P4ExtFileUtils {
     public static void createDirectory(String toPath) {
-        File f = new File(toPath);
-        if (f.exists()) {
-            if (! f.isDirectory()) {
+        createDirectory(new File(toPath));
+    }
+
+    public static void createDirectory(File toPath) {
+        if (toPath.exists()) {
+            if (! toPath.isDirectory()) {
                 throw new IllegalStateException("Exists but is not a directory: " + toPath);
             }
-        } else if (!f.mkdirs()) {
+        } else if (!toPath.mkdirs()) {
             throw new IllegalStateException("Could not create directory " + toPath);
         }
     }
@@ -63,7 +66,7 @@ public class P4ExtFileUtils {
         //     throw new IOException("Cannot overwrite existing file: " + outputFile);
         // }
         File parent = outputFile.getParentFile();
-        if (!parent.exists()) {
+        if (parent != null && !parent.exists()) {
             if (!parent.mkdirs()) {
                 throw new IOException("Could not create directory " + parent);
             }
@@ -97,9 +100,7 @@ public class P4ExtFileUtils {
 
     private static void extractArchive(ArchiveInputStream archiveInputStream, File outputDir)
             throws IOException {
-        if (!outputDir.mkdir()) {
-            throw new IOException("Could not create directory " + outputDir);
-        }
+        createDirectory(outputDir);
         try {
             ArchiveEntry entry = archiveInputStream.getNextEntry();
             while (entry != null) {

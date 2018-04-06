@@ -25,9 +25,12 @@ import com.perforce.p4java.exception.NoSuchObjectException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.exception.ResourceException;
+import com.perforce.p4java.impl.generic.core.file.FileSpec;
+import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.tests.dev.unit.PlatformType;
 
@@ -37,9 +40,15 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
+import static com.perforce.p4java.exception.MessageSeverityCode.E_FAILED;
+import static com.perforce.p4java.exception.MessageSeverityCode.E_INFO;
+import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.toServerMessage;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.junit.Assert.assertEquals;
@@ -352,5 +361,51 @@ public class P4JavaUtil {
                 && server.supportsUnicode()) {
             server.setCharsetName(clientCharset);
         }
+    }
+
+    public static IServerMessage dummyServerErrorMessage(String message) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("fmt0", message);
+        return new ServerMessage(Collections.singletonList(
+                new ServerMessage.SingleServerMessage(
+                        Integer.toString((E_FAILED << 28)),
+                        0, map)));
+    }
+
+    public static IServerMessage dummyServerInfoMessage(String message) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("fmt0", message);
+        return new ServerMessage(Collections.singletonList(
+                new ServerMessage.SingleServerMessage(
+                        Integer.toString((E_INFO << 28)),
+                        0, map)));
+    }
+
+    public static IServerMessage dummyServerMessage(String message, String code) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("fmt0", message);
+        return new ServerMessage(Collections.singletonList(
+                new ServerMessage.SingleServerMessage(code,0, map)));
+    }
+
+    public static FileSpec dummyFileSpec(FileSpecOpStatus status, IServerMessage err, Map<String, Object> results) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("fmt0", err.toString());
+        IServerMessage msg = new ServerMessage(Collections.singletonList(
+                new ServerMessage.SingleServerMessage(
+                        results.get("code0").toString(),
+                        0, map)));
+        return new FileSpec(status, msg);
+    }
+
+    public static FileSpec dummyFileSpec(FileSpecOpStatus status, Map<String, Object> results) {
+        IServerMessage srcMsg = toServerMessage(results);
+        Map<String, Object> map = new HashMap<>();
+        map.put("fmt0", srcMsg.toString());
+        IServerMessage msg = new ServerMessage(Collections.singletonList(
+                new ServerMessage.SingleServerMessage(
+                        results.get("code0").toString(),
+                        0, map)));
+        return new FileSpec(status, msg);
     }
 }

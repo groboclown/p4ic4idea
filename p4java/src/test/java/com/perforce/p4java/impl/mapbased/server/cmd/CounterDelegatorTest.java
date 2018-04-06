@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
@@ -36,7 +37,7 @@ import com.perforce.p4java.server.delegator.ICounterDelegator;
  * @since 26/09/2016
  */
 @RunWith(JUnitPlatform.class)
-public class CounterDelegatorTest extends AbstractP4JavaUnitTest {
+public class CounterDelegatorTest {
   private ICounterDelegator counterDelegator;
   private Map<String, Object> resultMap;
   private List<Map<String, Object>> resultMaps;
@@ -46,6 +47,7 @@ public class CounterDelegatorTest extends AbstractP4JavaUnitTest {
   private String mockCounterName = "myCounter";
   private String mockCounterValue = "42";
   private CounterOptions mockCounterOptions;
+  private IOptionsServer server;
   
     @BeforeEach
     public void beforeEach() {

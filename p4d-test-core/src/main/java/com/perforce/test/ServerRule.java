@@ -133,6 +133,15 @@ public class ServerRule implements TestRule {
 		return testServer.getRSHURL();
 	}
 
+	public boolean isServerRunning() {
+	    return testServer.isAlive();
+    }
+
+    @Nonnull
+    public String getPort() {
+	    return testServer.getPort();
+    }
+
 	@Override
 	public Statement apply(Statement statement, Description description) {
 		return new ServerStatement(statement);
@@ -161,6 +170,9 @@ public class ServerRule implements TestRule {
 			testServer.delete();
             for (Initializer initializer : initializers) {
                 initializer.initialize(testServer);
+            }
+            if (testServer.hasProcessError()) {
+                throw testServer.getProcessError();
             }
 			statement.evaluate();
 			testServer.stopServer();

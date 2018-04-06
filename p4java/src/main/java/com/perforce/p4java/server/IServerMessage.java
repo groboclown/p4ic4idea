@@ -55,6 +55,8 @@ public interface IServerMessage extends ISingleServerMessage {
 
     boolean isInfo();
 
+    boolean isWarning();
+
     boolean isError();
 
     @Nonnull

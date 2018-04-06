@@ -28,6 +28,7 @@ import static com.perforce.p4java.common.base.P4ResultMapUtils.parseCode0ErrorSt
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseString;
 import static com.perforce.p4java.exception.MessageSeverityCode.E_FAILED;
 import static com.perforce.p4java.exception.MessageSeverityCode.E_INFO;
+import static com.perforce.p4java.exception.MessageSeverityCode.E_WARN;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.COMMIT;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.DEPOT_FILE;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.REV;
@@ -171,19 +172,16 @@ public abstract class ResultMapParser {
 	/**
 	 * Tests the map for warnings and throws an exception if found.
 	 *
-	 * @param map the map
+	 * @param message the map
 	 * @return true, if successful
 	 * @throws RequestException the request exception
 	 * @throws AccessException  the access exception
 	 */
-	public static boolean handleWarningStr(final Map<String, Object> map)
-			throws RequestException, AccessException {
-		String warnStr = getWarningStr(map);
-
-		if (isNotBlank(warnStr)) {
-			throw new RequestException(warnStr, parseCode0ErrorString(map));
+	public static void handleWarnings(@Nullable final IServerMessage message)
+			throws RequestException {
+		if (nonNull(message) && message.isWarning()) {
+			throw new RequestException(message);
 		}
-		return false;
 	}
 
 	/**
@@ -225,8 +223,9 @@ public abstract class ResultMapParser {
 		return getServerMessage(map, E_FAILED);
 	}
 
-	public static String getWarningStr(final Map<String, Object> map) {
-		return getString(map, E_WARN);
+	// p4ic4idea: return IServerMessage
+	public static IServerMessage getWarningStr(final Map<String, Object> map) {
+		return getServerMessage(map, E_WARN);
 	}
 
 	/**

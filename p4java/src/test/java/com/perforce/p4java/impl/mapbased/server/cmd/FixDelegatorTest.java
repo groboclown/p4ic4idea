@@ -12,12 +12,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.IFix;
 import com.perforce.p4java.exception.AccessException;
@@ -30,7 +30,7 @@ import com.perforce.p4java.option.server.FixJobsOptions;
 /**
  * Tests FixDelegator.
  */
-public class FixDelegatorTest extends AbstractP4JavaUnitTest {
+public class FixDelegatorTest {
     
     /** The fix delegator. */
     private FixDelegator fixDelegator;
@@ -55,6 +55,8 @@ public class FixDelegatorTest extends AbstractP4JavaUnitTest {
     private static final CommandLineArgumentMatcher FIX_DELETE_MATCHER =
             new CommandLineArgumentMatcher(
                     new String[] { "-d", "-c" + TEST_CHANGELIST, TEST_JOB_123, TEST_JOB_456 });
+
+    private IOptionsServer server;
 
     /**
      * Runs before each test.

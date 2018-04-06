@@ -144,6 +144,9 @@ public class ResultListBuilder {
                 return new FileSpec(map, server, -1);
             }
         }
+        if (nonNull(map)) {
+            return new FileSpec(map, server, -1);
+        }
         return null;
     }
 

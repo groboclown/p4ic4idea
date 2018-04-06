@@ -10,10 +10,10 @@ import static org.mockito.Mockito.when;
 
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -25,13 +25,15 @@ import com.perforce.p4java.option.server.LoginOptions;
 /**
  * Tests the LogoutDelegator.
  */
-public class LogoutDelegatorTest extends AbstractP4JavaUnitTest {
+public class LogoutDelegatorTest {
 
     /** The logout delegator. */
     private LogoutDelegator logoutDelegator;
     /** Empty matcher. */
     private static final CommandLineArgumentMatcher EMPTY_MATCHER = new CommandLineArgumentMatcher(
             new String[] {});
+
+    private IOptionsServer server;
 
     /**
      * Before each.

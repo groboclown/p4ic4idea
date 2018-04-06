@@ -8,10 +8,10 @@ import static org.mockito.Mockito.when;
 
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -25,7 +25,7 @@ import com.perforce.p4java.option.server.LoginOptions;
  * execMapCmdList.
  * @see LoginDelegatorTest
  */
-public class LoginDelegatorExceptionsTest extends AbstractP4JavaUnitTest {
+public class LoginDelegatorExceptionsTest {
 
     /** The login delegator. */
     private LoginDelegator loginDelegator;
@@ -38,6 +38,8 @@ public class LoginDelegatorExceptionsTest extends AbstractP4JavaUnitTest {
 
     /** The user. */
     private IUser user;
+
+    private IOptionsServer server;
 
     /**
      * Before each.

@@ -5,6 +5,8 @@ import com.perforce.p4java.exception.P4JavaException;
 /**
  * @author Sean Shou
  * @since 15/09/2016
+ *
+ * @deprecated use ExpectedException
  */
 @FunctionalInterface
 public interface UnitTestGivenThatWillThrowException {

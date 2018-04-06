@@ -13,12 +13,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.IJobSpec;
 import com.perforce.p4java.core.IJobSpec.IJobSpecField;
@@ -31,7 +31,7 @@ import com.perforce.p4java.impl.mapbased.server.Server;
 /**
  * Tests JobSpecDelegator.
  */
-public class JobSpecDelegatorTest extends AbstractP4JavaUnitTest {
+public class JobSpecDelegatorTest {
 
     /** The job spec delegator. */
     private JobSpecDelegator jobSpecDelegator;
@@ -50,6 +50,8 @@ public class JobSpecDelegatorTest extends AbstractP4JavaUnitTest {
     private static final String FIELDS0 = "101 Job word 32 required";
     /** Example value from p4 -p <P4PORT> -ztag jobspec -o. */
     private static final String FIELDS1 = "102 Status select 10 required";
+
+    private IOptionsServer server;
 
     /**
      * Before each.

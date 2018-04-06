@@ -13,12 +13,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.exception.AccessException;
@@ -31,7 +31,7 @@ import com.perforce.p4java.impl.mapbased.server.Server;
 /**
  * Tests the JobDelegator.
  */
-public class JobDelegatorTest extends AbstractP4JavaUnitTest {
+public class JobDelegatorTest {
     
     /** The job delegator. */
     private JobDelegator jobDelegator;
@@ -68,6 +68,8 @@ public class JobDelegatorTest extends AbstractP4JavaUnitTest {
     
     /** The update job. */
     private IJob updateJob;
+
+    private IOptionsServer server;
 
     static {
         CREATE_FIELD_MAP.put("Status", "open");

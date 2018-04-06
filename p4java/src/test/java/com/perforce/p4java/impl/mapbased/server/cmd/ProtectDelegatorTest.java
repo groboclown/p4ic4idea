@@ -17,12 +17,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.admin.IProtectionEntry;
 import com.perforce.p4java.impl.mapbased.server.Server;
 
@@ -30,7 +30,7 @@ import com.perforce.p4java.impl.mapbased.server.Server;
  * @author Sean Shou
  * @since 5/10/2016
  */
-public class ProtectDelegatorTest extends AbstractP4JavaUnitTest {
+public class ProtectDelegatorTest {
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
     private static final String[] CREATE_CMD_ARGUMENTS = {"-i"};
     private static final String[] GET_CMD_ARGUMENTS = {"-o"};
@@ -44,6 +44,7 @@ public class ProtectDelegatorTest extends AbstractP4JavaUnitTest {
     private List<Map<String, Object>> resultMaps;
 
     private List<IProtectionEntry> entryList;
+    private IOptionsServer server;
 
     @Before
     public void beforeEach() {

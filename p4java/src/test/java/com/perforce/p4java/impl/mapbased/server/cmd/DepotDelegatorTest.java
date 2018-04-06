@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,7 +34,7 @@ import com.perforce.p4java.impl.mapbased.server.Server;
  * Test for DepotDelegator.
  *
  */
-public class DepotDelegatorTest extends AbstractP4JavaUnitTest {
+public class DepotDelegatorTest {
 
     /** The depot delegator. */
     private DepotDelegator depotDelegator;
@@ -61,6 +62,9 @@ public class DepotDelegatorTest extends AbstractP4JavaUnitTest {
     /** Matcher for get. */
     private static final CommandLineArgumentMatcher GET_MATCHER = new CommandLineArgumentMatcher(
             new String[] { "-o", TEST_DEPOT });
+
+
+    private IOptionsServer server;
 
     /**
      * Before each.

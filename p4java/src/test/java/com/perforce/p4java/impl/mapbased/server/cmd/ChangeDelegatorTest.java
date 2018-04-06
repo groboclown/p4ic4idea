@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
@@ -37,7 +38,7 @@ import com.perforce.p4java.server.delegator.IChangeDelegator;
  * Tests the ChangeDelegator.
  */
 @RunWith(JUnitPlatform.class)
-public class ChangeDelegatorTest extends AbstractP4JavaUnitTest {
+public class ChangeDelegatorTest {
     private static final String MESSAGE_CODE_NOT_IN_INFO_RANGE = "168435456";
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "285219021";
 
@@ -72,6 +73,8 @@ public class ChangeDelegatorTest extends AbstractP4JavaUnitTest {
     /** Matcher for calls to get by default id. */
     private static final CommandLineArgumentMatcher DEFAULT_ID_PARAMS_MATCHER =
             new CommandLineArgumentMatcher(DEFAULT_PARAMS);
+
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

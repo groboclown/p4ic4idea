@@ -12,10 +12,10 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.server.DuplicateRevisionsOptions;
@@ -24,13 +24,15 @@ import com.perforce.p4java.option.server.DuplicateRevisionsOptions;
  * @author Sean Shou
  * @since 27/09/2016
  */
-public class DuplicateDelegatorTest extends AbstractP4JavaUnitTest {
+public class DuplicateDelegatorTest {
   private DuplicateDelegator duplicateDelegator;
   private Map<String, Object> resultMap;
   private List<Map<String, Object>> resultMaps;
 
   private List<IFileSpec> mockFileSpecs;
   private IFileSpec mockFileSpec;
+
+  private IOptionsServer server;
 
   /**
    * Runs before every test.

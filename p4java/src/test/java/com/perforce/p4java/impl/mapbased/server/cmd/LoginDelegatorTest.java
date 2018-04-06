@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -21,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import org.junit.Test;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.exception.P4JavaException;
@@ -33,7 +33,7 @@ import com.perforce.p4java.option.server.LoginOptions;
  *
  * @see LoginDelegatorExceptionsTest
  */
-public class LoginDelegatorTest extends AbstractP4JavaUnitTest {
+public class LoginDelegatorTest {
 
     /** The login delegator. */
     private LoginDelegator loginDelegator;
@@ -75,6 +75,8 @@ public class LoginDelegatorTest extends AbstractP4JavaUnitTest {
 
     /** Example value. */
     private static final String LOGGED_IN = "User %user% logged in.";
+
+    private IOptionsServer server;
 
     /**
      * Before each.

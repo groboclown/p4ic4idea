@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.common.base.OSUtils;
 
 /**
@@ -27,7 +26,7 @@ import com.perforce.p4java.common.base.OSUtils;
  */
 @FixMethodOrder
 @RunWith(JUnitPlatform.class)
-public class RpcSystemFileCommandsHelperTest extends AbstractP4JavaUnitTest {
+public class RpcSystemFileCommandsHelperTest {
     private static SymbolicLinkHelper rpcSystemFileCommandsHelper;
     private static Path mockFile;
     private static Path symlinkFile;

@@ -4,6 +4,7 @@ import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.server.Login2Options;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.delegator.ILogin2Delegator;
 import org.apache.commons.lang3.Validate;
 
@@ -47,24 +48,26 @@ public class Login2Delegator extends BaseDelegator implements ILogin2Delegator {
 		return resultMaps;
 	}
 
+	// p4ic4idea: use iServerMessage
 	@Override
-	public String getLogin2Status() throws P4JavaException {
+	public IServerMessage getLogin2Status() throws P4JavaException {
 
 		Login2Options opts = new Login2Options();
 		opts.setStatus(true);
 
 		List<Map<String, Object>> resultMaps = login2(opts, null);
 
-		String statusStr = EMPTY;
+		IServerMessage statusStr = null;
 		if (nonNull(resultMaps) && !resultMaps.isEmpty()) {
 			Map<String, Object> firstResultMap = resultMaps.get(0);
 			statusStr = ResultMapParser.getErrorOrInfoStr(firstResultMap);
 		}
-		return isBlank(statusStr) ? EMPTY : statusStr; // guaranteed non-null return
+		return statusStr;
 	}
 
+	// p4ic4idea: use iServerMessage
 	@Override
-	public String getLogin2Status(IUser user) throws P4JavaException {
+	public IServerMessage getLogin2Status(IUser user) throws P4JavaException {
 
 		Validate.notNull(user);
 		Validate.notBlank(user.getLoginName(), "Login name shouldn't null or empty");
@@ -74,12 +77,12 @@ public class Login2Delegator extends BaseDelegator implements ILogin2Delegator {
 
 		List<Map<String, Object>> resultMaps = login2(opts, user.getLoginName());
 
-		String statusStr = EMPTY;
+		IServerMessage statusStr = null;
 		if (nonNull(resultMaps) && !resultMaps.isEmpty()) {
 			Map<String, Object> firstResultMap = resultMaps.get(0);
 			statusStr = ResultMapParser.getErrorOrInfoStr(firstResultMap);
 		}
-		return isBlank(statusStr) ? EMPTY : statusStr; // guaranteed non-null return
+		return statusStr;
 	}
 
 	@Override

@@ -12,12 +12,12 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.admin.IProtectionEntry;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -33,7 +33,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * @author Sean Shou
  * @since 5/10/2016
  */
-public class ProtectsDelegatorTest extends AbstractP4JavaUnitTest {
+public class ProtectsDelegatorTest {
     private static final String TEST_FILE_DEPOT_PATH = "//depot/dev/test.txt";
     /**
      * Rule for expected exception verification
@@ -51,6 +51,8 @@ public class ProtectsDelegatorTest extends AbstractP4JavaUnitTest {
     private String hostName;
     private String userName;
     private String groupName;
+
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

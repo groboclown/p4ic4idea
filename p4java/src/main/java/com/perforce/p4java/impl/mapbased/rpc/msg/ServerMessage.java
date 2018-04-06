@@ -34,6 +34,7 @@ import java.util.NoSuchElementException;
 import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
 import static com.perforce.p4java.exception.MessageSeverityCode.E_FAILED;
 import static com.perforce.p4java.exception.MessageSeverityCode.E_INFO;
+import static com.perforce.p4java.exception.MessageSeverityCode.E_WARN;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 public class ServerMessage implements IServerMessage {
@@ -133,6 +134,11 @@ public class ServerMessage implements IServerMessage {
     @Override
     public boolean isInfo() {
         return isExactSeverity(E_INFO);
+    }
+
+    @Override
+    public boolean isWarning() {
+        return isExactSeverity(E_WARN);
     }
 
     @Override

@@ -6,6 +6,8 @@ package com.perforce.p4java.tests.dev.unit.feature.error;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 
+import static com.perforce.p4java.P4JavaUtil.dummyServerErrorMessage;
+
 /**
  * @author Kevin Sawicki (ksawicki@perforce.com)
  */

@@ -18,13 +18,13 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.Lists;
 import com.nitorcreations.junit.runners.NestedRunner;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.file.DiffType;
 import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -39,11 +39,13 @@ import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
  * @since 21/09/2016
  */
 @RunWith(NestedRunner.class)
-public class FileAnnotateDelegatorTest extends AbstractP4JavaUnitTest {
+public class FileAnnotateDelegatorTest {
     private FileAnnotateDelegator fileAnnotateDelegator;
     private Map<String, Object> resultMap;
     private List<Map<String, Object>> resultMaps;
     private List<IFileSpec> fileSpecs;
+
+    private IOptionsServer server;
 
     private static final String DEPOT_FILE_KEY = "depotFile";
 

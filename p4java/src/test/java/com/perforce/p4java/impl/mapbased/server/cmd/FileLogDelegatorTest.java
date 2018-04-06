@@ -13,6 +13,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -25,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.Test;
@@ -45,7 +47,7 @@ import com.perforce.p4java.tests.UnitTestGivenThatWillThrowException;
  * @since 23/09/2016
  */
 @RunWith(JUnitPlatform.class)
-public class FileLogDelegatorTest extends AbstractP4JavaUnitTest {
+public class FileLogDelegatorTest {
     private static final String MESSAGE_CODE_IN_ERROR_RANGE = "968435456";
     private FileLogDelegator fileLogDelegator;
     private Map<String, Object> resultMap;
@@ -58,6 +60,9 @@ public class FileLogDelegatorTest extends AbstractP4JavaUnitTest {
     private List<IFileRevisionData> mockFileRevisionData;
     /* max revs number */
     private static final int MOCK_MAX_REVS = 11;
+
+    private IOptionsServer server;
+
     /**
      * Runs before every test.
      */
@@ -108,19 +113,15 @@ public class FileLogDelegatorTest extends AbstractP4JavaUnitTest {
     }
 
     private void testGetRevisionHistoryByFileSpecsMaxRevsContentHistoryIncludeInheritedLongOutputAndTruncatedLongOutputExpectExceptions(Class<? extends P4JavaException> thrownException, Class<? extends P4JavaException> expectedThrows) throws P4JavaException {
-        Executable executable = () -> fileLogDelegator.getRevisionHistory(mockFileSpecs,
+        doThrow(thrownException)
+                .when(server)
+                .execMapCmdList(eq(FILELOG.toString()), any(String[].class), eq(null));
+        assertThrows(expectedThrows, () -> fileLogDelegator.getRevisionHistory(mockFileSpecs,
                 MOCK_MAX_REVS,
                 false,
                 false,
                 false,
-                false);
-        UnitTestGivenThatWillThrowException unitTestGiven = (originalException) -> {
-            doThrow(originalException)
-                    .when(server)
-                    .execMapCmdList(eq(FILELOG.toString()), any(String[].class), eq(null));
-        };
-
-        testIfGivenExceptionWasThrown(thrownException, expectedThrows, executable, unitTestGiven);
+                false));
     }
 
     /**

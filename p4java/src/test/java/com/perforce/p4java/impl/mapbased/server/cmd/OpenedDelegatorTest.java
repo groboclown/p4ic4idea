@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.FileSpecBuilder;
@@ -12,6 +11,7 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.server.OpenedFilesOptions;
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 /**
  * Test the OpenedDelegator.
  */
-public class OpenedDelegatorTest extends AbstractP4JavaUnitTest {
+public class OpenedDelegatorTest {
     /** The opened delegator. */
     private OpenedDelegator openedDelegator;
     /** Example value. */
@@ -55,6 +55,8 @@ public class OpenedDelegatorTest extends AbstractP4JavaUnitTest {
     private static final CommandLineArgumentMatcher OPTION_MATCHER = new CommandLineArgumentMatcher(
             new String[] { "-a", "-c" + CHANGE, "-C" + CLIENT, "-m1",
                     DEPOT_FILE });
+
+    private IOptionsServer server;
 
     /**
      * Before each.

@@ -58,17 +58,17 @@ public class PropertyTest extends P4JavaTestCase {
 			// Set property values
 			for (int i = 0; i < 3; i++) {
 				result = server.setProperty("XpropName_" + i, "propVal_" + i,
-						new PropertyOptions().setSequence(i+1));
+						new PropertyOptions().setSequence(Integer.toString(i+1)));
 				assertTrue(result.contains("Property XpropName_" + i));
 			}
 			for (int i = 0; i < 3; i++) {
 				result = server.setProperty("YpropName_" + i, "propVal_" + i,
-						new PropertyOptions().setSequence(i+1));
+						new PropertyOptions().setSequence(Integer.toString(i+1)));
 				assertTrue(result.contains("Property YpropName_" + i));
 			}
 			for (int i = 0; i < 3; i++) {
 				result = server.setProperty("ZpropName_" + i, "propVal_" + i,
-						new PropertyOptions().setSequence(i+1));
+						new PropertyOptions().setSequence(Integer.toString(i+1)));
 				assertTrue(result.contains("Property ZpropName_" + i));
 			}
 
@@ -103,17 +103,17 @@ public class PropertyTest extends P4JavaTestCase {
 			// Delete property values
 			for (int i = 0; i < 3; i++) {
 				result = server.deleteProperty("XpropName_" + i,
-						new PropertyOptions().setSequence(i+1));
+						new PropertyOptions().setSequence(Integer.toString(i+1)));
 				assertEquals("Property XpropName_" + i + " deleted.", result);
 			}
 			for (int i = 0; i < 3; i++) {
 				result = server.deleteProperty("YpropName_" + i,
-						new PropertyOptions().setSequence(i+1));
+						new PropertyOptions().setSequence(Integer.toString(i+1)));
 				assertEquals("Property YpropName_" + i + " deleted.", result);
 			}
 			for (int i = 0; i < 3; i++) {
 				result = server.deleteProperty("ZpropName_" + i,
-						new PropertyOptions().setSequence(i+1));
+						new PropertyOptions().setSequence(Integer.toString(i+1)));
 				assertEquals("Property ZpropName_" + i + " deleted.", result);
 			}
 			
@@ -133,11 +133,11 @@ public class PropertyTest extends P4JavaTestCase {
 		try {
 			// Set property values
 			result = server.setProperty("proptest_" + "job059605",
-					"tester's test", new PropertyOptions().setSequence(8));
+					"tester's test", new PropertyOptions().setSequence("8"));
 			assertTrue(result.contains("proptest_" + "job059605"));
 
 			result = server.setProperty("proptest2_" + "job059605",
-					"tester\"s test", new PropertyOptions().setSequence(9));
+					"tester\"s test", new PropertyOptions().setSequence("9"));
 			assertTrue(result.contains("proptest2_" + "job059605"));
 
 			// Get property values
@@ -149,10 +149,10 @@ public class PropertyTest extends P4JavaTestCase {
 			assertEquals(2, props.size());
 
 			// Delete property values
-			result = server.deleteProperty("proptest_" + "job059605", new PropertyOptions().setSequence(8));
+			result = server.deleteProperty("proptest_" + "job059605", new PropertyOptions().setSequence("8"));
 			assertTrue(result.contains("proptest_" + "job059605" + " deleted."));
 
-			result = server.deleteProperty("proptest2_" + "job059605", new PropertyOptions().setSequence(9));
+			result = server.deleteProperty("proptest2_" + "job059605", new PropertyOptions().setSequence("9"));
 			assertTrue(result.contains("proptest2_" + "job059605" + " deleted."));
 
 		} catch (Exception exc) {
@@ -171,7 +171,7 @@ public class PropertyTest extends P4JavaTestCase {
         // Set property value error - null name
         try {
                 result = server.setProperty(null,
-                                "tester's test", new PropertyOptions().setSequence(8));
+                                "tester's test", new PropertyOptions().setSequence("8"));
         } catch (IllegalArgumentException iae) {
                 assertTrue(iae.getLocalizedMessage().contains("Property/option name shouldn't null or empty"));
         } catch (Exception exc) {
@@ -179,7 +179,7 @@ public class PropertyTest extends P4JavaTestCase {
         }
         try {
                 result = server.setProperty(null,
-                                "tester's test", new PropertyOptions().setName("proptest_" + "job059605").setSequence(8));
+                                "tester's test", new PropertyOptions().setName("proptest_" + "job059605").setSequence("8"));
                 assertTrue(result.contains("proptest_" + "job059605"));
         } catch (Exception exc) {
                 fail("Unexpected exception: " + exc.getLocalizedMessage());
@@ -188,7 +188,7 @@ public class PropertyTest extends P4JavaTestCase {
         // Set property value error - null value
         try {
                 result = server.setProperty("proptest2_" + "job059605",
-                                null, new PropertyOptions().setSequence(9));
+                                null, new PropertyOptions().setSequence("9"));
         } catch (IllegalArgumentException iae) {
                 assertTrue(iae.getLocalizedMessage().contains("Property/option value shouldn't null or empty"));
         } catch (Exception exc) {
@@ -196,7 +196,7 @@ public class PropertyTest extends P4JavaTestCase {
         }
         try {
                 result = server.setProperty("proptest2_" + "job059605",
-                                null, new PropertyOptions().setValue("tester\"s test").setSequence(9));
+                                null, new PropertyOptions().setValue("tester\"s test").setSequence("9"));
                 assertTrue(result.contains("proptest2_" + "job059605"));
         } catch (Exception exc) {
                 fail("Unexpected exception: " + exc.getLocalizedMessage());

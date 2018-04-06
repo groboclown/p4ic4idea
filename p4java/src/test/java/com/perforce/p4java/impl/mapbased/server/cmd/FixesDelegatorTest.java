@@ -12,12 +12,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.IFix;
 import com.perforce.p4java.core.file.FileSpecBuilder;
@@ -33,7 +33,7 @@ import com.perforce.p4java.option.server.GetFixesOptions;
 /**
  * Tests the FixesDelegator.
  */
-public class FixesDelegatorTest extends AbstractP4JavaUnitTest {
+public class FixesDelegatorTest {
 
     /** The fixes delegator. */
     private FixesDelegator fixesDelegator;
@@ -62,6 +62,8 @@ public class FixesDelegatorTest extends AbstractP4JavaUnitTest {
     private static final CommandLineArgumentMatcher FIX_FS_PARAMS_UNKNOWN_MATCHER =
             new CommandLineArgumentMatcher(
                     new String[] { "-j" + TEST_JOB_123, "-i", DEPOT_DEV_PATH });
+
+    private IOptionsServer server;
 
     /**
      * Runs before each test.

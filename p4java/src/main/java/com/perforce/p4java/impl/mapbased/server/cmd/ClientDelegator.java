@@ -319,7 +319,8 @@ public class ClientDelegator extends BaseDelegator implements IClientDelegator {
         return parseCommandResultMapIfIsInfoMessageAsString(resultMaps);
     }
 
-    private static void replaceWithUnderscoreIfClientNameContainsWhitespacesOrTabs(IClient newClient) {
+    // p4ic4idea: made package-protected for unit tests
+    static void replaceWithUnderscoreIfClientNameContainsWhitespacesOrTabs(IClient newClient) {
         final String TABS = "\t";
         String name = newClient.getName();
         if (containsAny(name, SPACE, TABS)) {
@@ -328,7 +329,8 @@ public class ClientDelegator extends BaseDelegator implements IClientDelegator {
         }
     }
 
-    private static IClient getClientOrNullFromHelixResultMap(
+    // p4ic4idea: made package-protected for unit tests
+    static IClient getClientOrNullFromHelixResultMap(
             @Nullable final List<Map<String, Object>> resultMaps,
             @Nullable final GetClientTemplateOptions opts,
             @Nonnull final IOptionsServer server,

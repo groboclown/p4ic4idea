@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -23,7 +24,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import com.nitorcreations.junit.runners.NestedRunner;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.IStream;
 import com.perforce.p4java.impl.mapbased.MapKeys;
 import com.perforce.p4java.impl.mapbased.server.Server;
@@ -36,7 +36,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * @since 6/10/2016
  */
 @RunWith(NestedRunner.class)
-public class StreamDelegatorTest extends AbstractP4JavaUnitTest {
+public class StreamDelegatorTest {
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
     private String streamName = "my Stream";
 
@@ -46,6 +46,7 @@ public class StreamDelegatorTest extends AbstractP4JavaUnitTest {
 
     private StreamOptions streamOptions;
     private IStream stream;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

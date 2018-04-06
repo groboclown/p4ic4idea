@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -23,7 +24,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import com.nitorcreations.junit.runners.NestedRunner;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.impl.mapbased.server.Server;
 
 /**
@@ -31,10 +31,11 @@ import com.perforce.p4java.impl.mapbased.server.Server;
  * @since 16/09/2016
  */
 @RunWith(NestedRunner.class)
-public class RenameUserDelegatorTest extends AbstractP4JavaUnitTest {
+public class RenameUserDelegatorTest {
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
     private RenameUserDelegator renameUserDelegator;
     private List<Map<String, Object>> resultMaps;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

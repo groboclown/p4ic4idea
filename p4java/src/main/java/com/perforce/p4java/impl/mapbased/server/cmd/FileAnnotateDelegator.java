@@ -58,11 +58,10 @@ public class FileAnnotateDelegator extends BaseDelegator implements IFileAnnotat
             final boolean followBranches)
             throws ConnectionException, RequestException, AccessException {
 
-	// p4ic4idea: TODO check if this is still right, or
-	// if it should instead be a throwRequestExceptionIfConditionFails
-        assertInvocation(
-                isNull(diffType) || diffType.isWsOption(),
-                "Bad whitespace option in getFileAnnotations");
+	    // p4ic4idea: TODO explicit RequestException thrown, but should be a more specific exception.
+        if (! isNull(diffType) && ! diffType.isWsOption()) {
+                throw new RequestException("Bad whitespace option in getFileAnnotations");
+        }
 
         // p4ic4idea: better exception handling
         return asRequestException(() -> {

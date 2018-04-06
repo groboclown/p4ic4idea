@@ -15,10 +15,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
@@ -33,7 +33,7 @@ import com.perforce.p4java.option.server.GetDepotFilesOptions;
 /**
  * Tests the FilesDelegator.
  */
-public class FilesDelegatorTest extends AbstractP4JavaUnitTest {
+public class FilesDelegatorTest {
     /** The files delegator. */
     private FilesDelegator filesDelegator;
     /** Test path. */
@@ -47,6 +47,8 @@ public class FilesDelegatorTest extends AbstractP4JavaUnitTest {
     private static final CommandLineArgumentMatcher DEV_ALL_FS_MATCHER =
             new CommandLineArgumentMatcher(
                     new String[] { "-a", DEPOT_DEV_PATH });
+
+    private IOptionsServer server;
 
     /**
      * Runs before each test.

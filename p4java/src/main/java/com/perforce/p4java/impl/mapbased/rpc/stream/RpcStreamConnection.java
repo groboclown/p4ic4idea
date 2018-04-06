@@ -213,7 +213,8 @@ public class RpcStreamConnection extends RpcConnection {
         topOutputStream = outputStream;
     }
 
-    private void initRshModeServer() throws ConnectionException {
+    // p4ic4idea: package protected for unit testing
+    void initRshModeServer() throws ConnectionException {
         try {
             String[] command = new String[] { Server.isRunningOnWindows() ? "cmd.exe" : "/bin/sh",
                     Server.isRunningOnWindows() ? "/c" : "-c", rsh };
@@ -238,7 +239,8 @@ public class RpcStreamConnection extends RpcConnection {
         }
     }
 
-    private void initSocketBasedServer() throws ConnectionException {
+    // p4ic4idea: package protected for unit tests
+    void initSocketBasedServer() throws ConnectionException {
         try {
             if (isNull(socket)) {
                 if (nonNull(pool)) {
@@ -301,7 +303,8 @@ public class RpcStreamConnection extends RpcConnection {
         }
     }
 
-    private void initSSL() throws ConnectionException {
+    // p4ic4idea: package protected for unit tests
+    void initSSL() throws ConnectionException {
         // Start SSL handshake
         if (nonNull(socket)) {
             try {
@@ -371,13 +374,14 @@ public class RpcStreamConnection extends RpcConnection {
         }
     }
 
-    private void initRpcSocketInputAndOutputStreamIfSocketBasedServer() throws ConnectionException {
+    // p4ic4idea: package protected for unit tests
+    void initRpcSocketInputAndOutputStreamIfSocketBasedServer() throws ConnectionException {
         try {
             inputStream = new RpcSocketInputStream(socket, stats);
             outputStream = new RpcSocketOutputStream(socket, stats);
         // p4ic4idea: never catch Throwable unless you're really careful
-	// } catch (Throwable thr) {
-	} catch (Exception thr) {
+        // } catch (Throwable thr) {
+        } catch (Exception thr) {
             Log.error("Unexpected exception: %s", thr.getLocalizedMessage());
             Log.exception(thr);
             throwConnectionException(thr);
@@ -542,7 +546,8 @@ public class RpcStreamConnection extends RpcConnection {
     /**
      * If we get a partial read, try again until something goes wrong...
      */
-    private int continueReadIfGetPartialRead(@Nonnull final byte[] preambleBytes,
+    // p4ic4idea: package protected for unit tests
+    int continueReadIfGetPartialRead(@Nonnull final byte[] preambleBytes,
             final int bytesRead, @Nonnull final AtomicLong streamRecvs)
             throws IOException, ConnectionException {
         int totalBytesRead = bytesRead;
@@ -562,7 +567,8 @@ public class RpcStreamConnection extends RpcConnection {
      * Incomplete read; just try until we get a complete or something goes
      * wrong...
      */
-    private int continueReadIfIncompleteRead(@Nonnull final AtomicLong streamRecvs,
+    // p4ic4idea: make package private for unit tests
+    int continueReadIfIncompleteRead(@Nonnull final AtomicLong streamRecvs,
             final int payloadLength, @Nonnull final byte[] packetBytes, final int packetBytesRead)
             throws IOException, ConnectionException {
         int totalPacketBytesRead = packetBytesRead;
@@ -654,7 +660,8 @@ public class RpcStreamConnection extends RpcConnection {
         return 0;
     }
 
-    private void processNameArgs(@Nonnull RpcPacket packet,
+    // p4ic4idea: make package protected for unit tests
+    void processNameArgs(@Nonnull RpcPacket packet,
             @Nonnull final RpcPacketSupplier argsSupplier) {
         Map<String, Object> mapArgs = packet.getMapArgs();
         if (nonNull(mapArgs)) {
@@ -665,7 +672,8 @@ public class RpcStreamConnection extends RpcConnection {
         }
     }
 
-    private void reallocateSendBufferInPutPacketIfRunOut(@Nonnull final RpcPacketSupplier supplier,
+    // p4ic4idea: make package protected for unit tests
+    void reallocateSendBufferInPutPacketIfRunOut(@Nonnull final RpcPacketSupplier supplier,
             @Nonnull final byte[] fieldBytes, final int reallocateIncrement) {
         byte[] sendBytes = supplier.sendBytes();
         int sendPos = supplier.sendPos();
@@ -683,7 +691,8 @@ public class RpcStreamConnection extends RpcConnection {
         supplier.sendBytes(newSendBytes).sendPos(sendPos + fieldBytes.length);
     }
 
-    private void processStringArgs(@Nonnull RpcPacket packet,
+    // p4ic4idea: make package protected for unit tests
+    void processStringArgs(@Nonnull RpcPacket packet,
             @Nonnull final RpcPacketSupplier argsSupplier) {
         String[] strArgs = packet.getStrArgs();
         if (nonNull(strArgs)) {
@@ -696,7 +705,8 @@ public class RpcStreamConnection extends RpcConnection {
         }
     }
 
-    private void processExternalEnv(@Nonnull RpcPacket packet,
+    // p4ic4idea: make package protected for unit tests
+    void processExternalEnv(@Nonnull RpcPacket packet,
             @Nonnull final RpcPacketSupplier argsSupplier) {
         ExternalEnv externalEnv = packet.getEnv();
         if (nonNull(externalEnv)) {
@@ -705,7 +715,8 @@ public class RpcStreamConnection extends RpcConnection {
         }
     }
 
-    private void processFuncName(@Nonnull RpcPacket packet, @Nonnull RpcPacketSupplier supplier) {
+    // p4ic4idea: make package protected for unit tests
+    void processFuncName(@Nonnull RpcPacket packet, @Nonnull RpcPacketSupplier supplier) {
         byte[] nameBytes = marshalPacketField(RpcFunctionMapKey.FUNCTION,
                 packet.getFuncNameString());
         reallocateSendBufferInPutPacketIfRunOut(supplier, nameBytes, nameBytes.length);
@@ -714,7 +725,8 @@ public class RpcStreamConnection extends RpcConnection {
     /**
      * Now go back and calculate the preamble bytes and sending it to downstream
      */
-    private void calculatePreambleBytesAndSendtoDownstream(
+    // p4ic4idea: make package protected
+    void calculatePreambleBytesAndSendtoDownstream(
             @Nonnull final RpcPacketSupplier argsSupplier) throws ConnectionException {
         byte[] sendBytes = argsSupplier.sendBytes();
         int sendPos = argsSupplier.sendPos();

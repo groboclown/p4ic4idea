@@ -20,13 +20,13 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.Lists;
 import com.nitorcreations.junit.runners.NestedRunner;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.ILabel;
 import com.perforce.p4java.core.ILabelMapping;
 import com.perforce.p4java.core.ViewMap;
@@ -42,7 +42,7 @@ import com.perforce.p4java.option.server.DeleteLabelOptions;
  * @since 16/09/2016
  */
 @RunWith(NestedRunner.class)
-public class LabelDelegatorTest extends AbstractP4JavaUnitTest {
+public class LabelDelegatorTest {
     private static final String MESSAGE_CODE_NOT_IN_INFO_RANGE = "168435456";
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
 
@@ -51,6 +51,7 @@ public class LabelDelegatorTest extends AbstractP4JavaUnitTest {
     private List<Map<String, Object>> resultMaps;
     private static final String LABEL_NAME = "testLabel";
     private ILabel label;
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

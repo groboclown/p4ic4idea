@@ -12,14 +12,14 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
+import com.perforce.test.P4ExtFileUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Spy;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.exception.FileEncoderException;
 import com.perforce.p4java.exception.NullPointerError;
 import com.perforce.p4java.exception.P4JavaError;
@@ -33,26 +33,31 @@ import com.perforce.p4java.impl.generic.client.ClientLineEnding;
  * @version 1.0
  * @since <pre>Jul 21, 2016</pre>
  */
-@RunWith(JUnitPlatform.class)
-public class RpcInputStreamTest extends AbstractP4JavaUnitTest {
+public class RpcInputStreamTest {
   /*
       od -c utf8_win_line_endings.txt
       ﻿
        0000000   a  \r  \n   b  \r  \n
        0000006
     */
-  private String mockFileName = loadFileFromClassPath("com/perforce/p4java/impl/mapbased/rpc/sys/utf8_win_line_endings.txt").getPath();
+  @Rule
+  public TemporaryFolder tmpDir = new TemporaryFolder();
+  private String mockFileName;
   private RpcPerforceFile file;
   @Spy
   private RpcInputStream rpcInputStream;
 
-  @BeforeEach
+  @Before
   public void beforeEach() throws IOException, FileEncoderException {
+    File mockFile = tmpDir.newFile("utf8_win_line_endings.txt");
+    mockFileName = mockFile.getAbsolutePath();
+    P4ExtFileUtils.extractResource(this, "com/perforce/p4java/impl/mapbased/rpc/sys/utf8_win_line_endings.txt",
+            mockFile, false);
     file = new RpcPerforceFile(mockFileName, RpcPerforceFileType.FST_UTF8, ClientLineEnding.FST_L_CRLF);
     rpcInputStream = new RpcInputStream(file, null);
   }
 
-  @AfterEach
+  @After
   public void afterEach() throws Exception {
   }
 
@@ -192,7 +197,10 @@ public class RpcInputStreamTest extends AbstractP4JavaUnitTest {
 
   @Test
   public void testReadUtf16LEWithBomAndUnixLineEnding() throws IOException, FileEncoderException {
-    mockFileName = loadFileFromClassPath("com/perforce/p4java/common/io/utf-16le_with_bom_unix_line_ending_ko.txt").getPath();
+    File mockFile = tmpDir.newFile("utf-16le_with_bom_unix_line_ending_ko.txt");
+    P4ExtFileUtils.extractResource(this,
+            "com/perforce/p4java/common/io/utf-16le_with_bom_unix_line_ending_ko.txt", mockFile, false);
+    mockFileName = mockFile.getAbsolutePath();
     file = new RpcPerforceFile(mockFileName, RpcPerforceFileType.FST_UTF16);
     rpcInputStream = new RpcInputStream(file, StandardCharsets.UTF_16LE);
 
@@ -204,7 +212,10 @@ public class RpcInputStreamTest extends AbstractP4JavaUnitTest {
 
   @Test
   public void testReadUtf16LEWithBomAndWinLineEnding() throws IOException, FileEncoderException {
-    mockFileName = loadFileFromClassPath("com/perforce/p4java/common/io/utf_16LE_win_line_ending.txt").getPath();
+    File mockFile = tmpDir.newFile("utf_16LE_win_line_ending.txt");
+    P4ExtFileUtils.extractResource(this,
+            "com/perforce/p4java/common/io/utf_16LE_win_line_ending.txt", mockFile, true);
+    mockFileName = mockFile.getAbsolutePath();
     file = new RpcPerforceFile(mockFileName, RpcPerforceFileType.FST_UTF16, ClientLineEnding.FST_L_CRLF);
     rpcInputStream = new RpcInputStream(file, StandardCharsets.UTF_16LE);
 
@@ -221,7 +232,10 @@ public class RpcInputStreamTest extends AbstractP4JavaUnitTest {
 
   @Test
   public void testReadHasUtf16LEBomButItaAudioFile() throws IOException, FileEncoderException {
-    File file = loadFileFromClassPath("com/perforce/p4java/common/io/file_has_utf_16LE_bom_but_its_actually_a_audio_file.mp1");
+    File file = tmpDir.newFile("file_has_utf_16LE_bom_but_its_actually_a_audio_file.mp1");
+    P4ExtFileUtils.extractResource(this,
+            "com/perforce/p4java/common/io/file_has_utf_16LE_bom_but_its_actually_a_audio_file.mp1",
+            file, false);
     mockFileName = file.getPath();
     this.file = new RpcPerforceFile(mockFileName, RpcPerforceFileType.FST_BINARY);
     rpcInputStream = new RpcInputStream(this.file, null);

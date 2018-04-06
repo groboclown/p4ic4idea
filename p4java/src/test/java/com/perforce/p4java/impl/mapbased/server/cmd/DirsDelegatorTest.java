@@ -11,12 +11,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
@@ -32,10 +32,12 @@ import com.perforce.p4java.server.IServer;
 /**
  * Tests the DirsDelegator.
  */
-public class DirsDelegatorTest extends AbstractP4JavaUnitTest {
+public class DirsDelegatorTest {
 
     /** The dirs delegator. */
     private DirsDelegator dirsDelegator;
+
+    private IOptionsServer server;
 
     /** Test path. */
     private static final String DEPOT_DEV_PATH = "//depot/dev/...";

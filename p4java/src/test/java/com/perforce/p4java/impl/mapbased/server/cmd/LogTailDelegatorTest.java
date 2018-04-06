@@ -13,13 +13,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.admin.ILogTail;
 import com.perforce.p4java.exception.AccessException;
@@ -32,7 +32,7 @@ import com.perforce.p4java.option.server.LogTailOptions;
 /**
  * Tests the LogTailDelegator.
  */
-public class LogTailDelegatorTest extends AbstractP4JavaUnitTest {
+public class LogTailDelegatorTest {
     
     /** The log tail delegator. */
     private LogTailDelegator logTailDelegator;
@@ -57,6 +57,8 @@ public class LogTailDelegatorTest extends AbstractP4JavaUnitTest {
     
     /** Example value. */
     private static final String LOW_OFFSET = "-1";
+
+    private IOptionsServer server;
 
     /**
      * Before each.

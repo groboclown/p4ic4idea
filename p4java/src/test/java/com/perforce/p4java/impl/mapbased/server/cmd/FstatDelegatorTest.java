@@ -12,12 +12,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.FileSpecBuilder;
@@ -34,7 +34,7 @@ import com.perforce.p4java.option.server.GetExtendedFilesOptions;
 /**
  * Tests for FstatDelegator.
  */
-public class FstatDelegatorTest extends AbstractP4JavaUnitTest {
+public class FstatDelegatorTest {
 
     /** The fstat delegator. */
     private FstatDelegator fstatDelegator;
@@ -58,6 +58,8 @@ public class FstatDelegatorTest extends AbstractP4JavaUnitTest {
     private static final CommandLineArgumentMatcher FIX_FS_OPT_SPEC_MATCHER =
             new CommandLineArgumentMatcher(
                     new String[] { "-m1", "-c1", CLIENT_FILE });
+
+    private IOptionsServer server;
 
     /**
      * Runs before every test.

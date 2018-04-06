@@ -170,7 +170,8 @@ public class InterchangesDelegator extends BaseDelegator implements IInterchange
     }
 
     public static class InterchangesDelegatorHidden {
-        private static boolean isListIndividualFilesThatRequireIntegration(
+        // p4ic4idea: make package private for unit tests
+        static boolean isListIndividualFilesThatRequireIntegration(
                 GetInterchangesOptions opts) {
             return nonNull(opts) && opts.isShowFiles();
         }

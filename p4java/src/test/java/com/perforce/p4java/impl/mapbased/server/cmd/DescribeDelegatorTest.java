@@ -30,7 +30,7 @@ import com.perforce.p4java.server.IOptionsServer;
  * and -S does not look at any actual differences.
  */
 @RunWith(JUnitPlatform.class)
-public class DescribeDelegatorTest extends AbstractP4JavaUnitTest {
+public class DescribeDelegatorTest {
     private DescribeDelegator describeDelegator;
     private Map<String, Object> resultMap;
     private List<Map<String, Object>> resultMaps;
@@ -38,6 +38,8 @@ public class DescribeDelegatorTest extends AbstractP4JavaUnitTest {
     private List<IFileSpec> mockFileSpecs;
     private IFileSpec mockFileSpec;
     private int mockChangelistId = 10;
+
+    private IOptionsServer server;
 
     @BeforeEach
     public void beforeEach() {

@@ -13,15 +13,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.IFileLineMatch;
 import com.perforce.p4java.core.file.FileSpecBuilder;
@@ -36,7 +35,7 @@ import com.perforce.p4java.option.server.MatchingLinesOptions;
 /**
  * Tests the GrepDelegator.
  */
-public class GrepDelegatorTest extends AbstractP4JavaUnitTest {
+public class GrepDelegatorTest {
 
     /** The grep delegator. */
     private GrepDelegator grepDelegator;
@@ -51,6 +50,8 @@ public class GrepDelegatorTest extends AbstractP4JavaUnitTest {
     private static final CommandLineArgumentMatcher GREP_FS_MATCHER =
             new CommandLineArgumentMatcher(
                     new String[] { "-e" + PATTERN, CLIENT_FILE });
+
+    private IOptionsServer server;
 
     /**
      * Runs before each test.

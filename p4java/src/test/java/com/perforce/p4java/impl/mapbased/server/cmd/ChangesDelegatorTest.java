@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
@@ -40,7 +41,7 @@ import com.perforce.p4java.option.server.GetChangelistsOptions;
  * Tests ChangesDelegator.
  */
 @RunWith(JUnitPlatform.class)
-public class ChangesDelegatorTest extends AbstractP4JavaUnitTest {
+public class ChangesDelegatorTest {
 
     /** The changes delegator. */
     private ChangesDelegator changesDelegator;
@@ -101,6 +102,8 @@ public class ChangesDelegatorTest extends AbstractP4JavaUnitTest {
     /** Matcher for server not integrated/description. */
     private static final CommandLineArgumentMatcher NON_INT_DESC_ARGS_PARAMS_MATCHER =
             new CommandLineArgumentMatcher(SERVER_ARGS_NON_INT_DESC);
+
+    private IOptionsServer server;
 
     /**
      * Before each.

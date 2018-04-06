@@ -15,13 +15,13 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import com.google.common.collect.Lists;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.RequestException;
@@ -33,7 +33,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * @author Sean Shou
  * @since 14/09/2016
  */
-public class SearchDelegatorTest extends AbstractP4JavaUnitTest {
+public class SearchDelegatorTest {
     private static final int MAX = 10;
     private static final String[] CMD_OPTIONS = {"-m" + MAX};
     private static final String MESSAGE_CODE_IN_ERROR_RANGE = "968435456";
@@ -51,6 +51,7 @@ public class SearchDelegatorTest extends AbstractP4JavaUnitTest {
     private String words;
     private SearchJobsOptions opts;
     private String[] cmdArgument;
+    private IOptionsServer server;
 
 
     /**

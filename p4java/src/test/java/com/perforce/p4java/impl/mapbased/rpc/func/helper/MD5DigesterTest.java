@@ -1,6 +1,7 @@
 package com.perforce.p4java.impl.mapbased.rpc.func.helper;
 
 import com.perforce.p4java.CharsetDefs;
+import com.perforce.p4java.common.base.OSUtils;
 import com.perforce.p4java.exception.P4JavaError;
 import com.perforce.p4java.impl.generic.client.ClientLineEnding;
 import com.perforce.p4java.impl.mapbased.rpc.sys.RpcUnicodeInputStream;
@@ -154,8 +155,13 @@ public class MD5DigesterTest {
         assertThat(actual, is(expectedTestFileMd5));
 
         // FIXME This fails on non-Windows OS
-        actual = md5Digester.digestFileAs32ByteHex(windowsTestFile, Charset.forName("UTF-8"), true);
-        assertThat(actual, is(expectedTestFileMd5));
+        // Because: isRequireConvertClientOrLocalLineEndingToServerFormat
+        // sees that the native line ending ("\n") is the same as the server line ending
+        // (which the ClientLineEnding assumes is \n).
+        if (OSUtils.isWindows()) {
+            actual = md5Digester.digestFileAs32ByteHex(windowsTestFile, Charset.forName("UTF-8"), true);
+            assertThat(actual, is(expectedTestFileMd5));
+        }
     }
 
     /**

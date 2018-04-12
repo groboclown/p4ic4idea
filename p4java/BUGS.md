@@ -61,22 +61,14 @@ convert line endings.
 Need to investigate if this code works correctly when the p4d server is on
 Windows, and the client is on Linux.
 
-## com.perforce.p4java.impl.mapbased.server.cmd.InterchangesDelegatorTest
-
-???
+This is because isRequireConvertClientOrLocalLineEndingToServerFormat
+sees that the native line ending ("\n") is the same as the server line ending
+(which the ClientLineEnding assumes is \n).
 
 ## com.perforce.p4java.option.OptionsTest
 
-???
-
-## The validated character sequence is blank
-
-???
-
-* com.perforce.p4java.tests.qa.Authentication102Test
-* com.perforce.p4java.tests.qa.AuthenticationTest
-* com.perforce.p4java.tests.qa.GetLoginStatusTest
-* com.perforce.p4java.tests.qa.GetUsersTest
+Looks like more Idea compiler injecting IAE rather than the code itself checking.
+Try running without IntelliJ
 
 ## Could not delete a db file from the temp p4d server dir
 

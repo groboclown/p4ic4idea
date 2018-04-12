@@ -364,11 +364,15 @@ public class P4JavaUtil {
     }
 
     public static IServerMessage dummyServerErrorMessage(String message) {
+        return dummyServerMessage(message, E_FAILED, 0);
+    }
+
+    public static IServerMessage dummyServerMessage(String message, int severityCode, int genericCode) {
         Map<String, Object> map = new HashMap<>();
         map.put("fmt0", message);
         return new ServerMessage(Collections.singletonList(
                 new ServerMessage.SingleServerMessage(
-                        Integer.toString((E_FAILED << 28)),
+                        Integer.toString(((severityCode << 28) | (genericCode << 16))),
                         0, map)));
     }
 

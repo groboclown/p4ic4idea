@@ -1,5 +1,6 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
+import static com.perforce.p4java.exception.MessageSeverityCode.E_FAILED;
 import static com.perforce.p4java.server.CmdSpec.INTERCHANGES;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.junit.Assert.assertEquals;
@@ -304,8 +305,8 @@ public class InterchangesDelegatorTest {
             throws P4JavaException {
         checkEmptyChangelistResult(() -> {
             // given
-            when(server.handleFileErrorStr(resultMap)).thenReturn(P4JavaUtil.dummyServerErrorMessage("error was occurred"));
-            when(server.getGenericCode(resultMap)).thenReturn(17);
+            when(server.handleFileErrorStr(resultMap)).thenReturn(
+                    P4JavaUtil.dummyServerMessage("error was occurred", E_FAILED, 17));
         });
     }
 
@@ -321,8 +322,8 @@ public class InterchangesDelegatorTest {
             throws P4JavaException {
         checkEmptyChangelistResult(() -> {
             // given
-            when(server.handleFileErrorStr(resultMap)).thenReturn(P4JavaUtil.dummyServerErrorMessage("error was occurred"));
-            when(server.getSeverityCode(resultMap)).thenReturn(2);
+            when(server.handleFileErrorStr(resultMap)).thenReturn(
+                    P4JavaUtil.dummyServerMessage("error was occurred", 2, 0));
         });
     }
 
@@ -374,7 +375,7 @@ public class InterchangesDelegatorTest {
     public void testEmptyErrorsResult()
             throws P4JavaException {
         // given
-        when(server.handleFileErrorStr(resultMap)).thenReturn(P4JavaUtil.dummyServerErrorMessage(EMPTY));
+        when(server.handleFileErrorStr(resultMap)).thenReturn(null);
 
         // when
         List<IChangelist> changelists = interchangesDelegator.processInterchangeMaps(resultMaps,
@@ -395,7 +396,7 @@ public class InterchangesDelegatorTest {
     public void testDepotFiles()
             throws P4JavaException {
         // given
-        when(server.handleFileErrorStr(resultMap)).thenReturn(P4JavaUtil.dummyServerErrorMessage(EMPTY));
+        when(server.handleFileErrorStr(resultMap)).thenReturn(null);
         Object nonNullObj = new Object();
         when(resultMap.get("depotFile0")).thenReturn(nonNullObj);
         when(resultMap.get("depotFile1")).thenReturn(nonNullObj);

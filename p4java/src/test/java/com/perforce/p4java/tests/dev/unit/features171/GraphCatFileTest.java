@@ -67,6 +67,35 @@ public class GraphCatFileTest extends P4JavaRshTestCase {
 	}
 
 	@Test
+	public void graphCatFileCommitRepo() {
+		String sha = "15b25972edfc52d0a0b1e80249bd8efdc914af92";
+		String repo = "//graph/p4-plugin";
+
+		try {
+			ICommit commit = server.getCommitObject(sha, repo);
+			assertNotNull(commit);
+
+			assertEquals(sha, commit.getCommit());
+			assertEquals("b92b234a6c05049fdc8fe123449386756c7a08fd", commit.getTree());
+			assertEquals(CommitAction.MERGE, commit.getAction());
+			assertEquals("Paul Allen", commit.getAuthor());
+			assertEquals("pallen@perforce.com", commit.getAuthorEmail());
+			assertTrue(1400000000000L < commit.getDate().getTime());
+			assertEquals("GitHub", commit.getCommitter());
+			assertTrue(commit.getCommitter().startsWith("GitHub"));
+			assertEquals("noreply@github.com", commit.getCommitterEmail());
+			assertTrue(1400000000000L < commit.getCommitterDate().getTime());
+			assertTrue(commit.getDescription().startsWith("\nMerge pull request #40 from"));
+
+			assertEquals(2, commit.getParents().size());
+			assertEquals("406a5a06e0b73426a6e67000c0285f5be617306b", commit.getParents().get(0));
+			assertEquals("aa2a8bd219b8675e0279b09494a740edf646fb95", commit.getParents().get(1));
+		} catch (P4JavaException e) {
+			fail("Unexpected exception: " + e.getLocalizedMessage());
+		}
+	}
+
+	@Test
 	public void graphCatFileInvalidCommit() {
 		String sha = "0000000000000000000000000000000000000000";
 

@@ -1,24 +1,6 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.perforce.p4java.server.CmdSpec.JOB;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.perforce.p4java.server.IOptionsServer;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.exception.AccessException;
@@ -27,6 +9,23 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.generic.core.Job;
 import com.perforce.p4java.impl.mapbased.server.Server;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.perforce.p4java.server.CmdSpec.JOB;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the JobDelegator.
@@ -55,7 +54,11 @@ public class JobDelegatorTest {
     /** Get matcher. */
     private static final CommandLineArgumentMatcher GET_MATCHER = new CommandLineArgumentMatcher(
             new String[] { "-o", TEST_JOB });
-    
+
+    /** Get matcher. */
+    private static final CommandLineArgumentMatcher EMPTY_MATCHER = new CommandLineArgumentMatcher(
+            new String[] { "-o", "" });
+
     /** Update matcher. */
     private static final CommandLineArgumentMatcher UPDATE_MATCHER = new CommandLineArgumentMatcher(
             new String[] { "-i" });
@@ -130,7 +133,13 @@ public class JobDelegatorTest {
      */
     @Test(expected = IllegalArgumentException.class)
     public void testJobGetEmpty() throws P4JavaException {
-        jobDelegator.getJob("");
+        when(server.execMapCmdList(eq(JOB.toString()), argThat(EMPTY_MATCHER), eq(null)))
+                .thenReturn(buildEmptyGetResultMap());
+        IJob job = jobDelegator.getJob("");
+        verify(server).execMapCmdList(eq(JOB.toString()), argThat(EMPTY_MATCHER), eq(null));
+        assertEquals("new", job.getId());
+        assertEquals(TEST_DESC, job.getDescription());
+        assertEquals("open", job.getRawFields().get("Status"));
     }
     
     /**
@@ -494,6 +503,22 @@ public class JobDelegatorTest {
         result.put("Status", "open");
         result.put("Description", TEST_DESC);
         result.put("Job", TEST_JOB);
+        result.put("User", TEST_USER);
+        results.add(result);
+        return results;
+    }
+
+    /**
+     * Builds the valid result map for empty get.
+     *
+     * @return the list
+     */
+    private List<Map<String, Object>> buildEmptyGetResultMap() {
+        List<Map<String, Object>> results = new ArrayList<>();
+        Map<String, Object> result = new HashMap<>();
+        result.put("Status", "open");
+        result.put("Description", TEST_DESC);
+        result.put("Job", "new");
         result.put("User", TEST_USER);
         results.add(result);
         return results;

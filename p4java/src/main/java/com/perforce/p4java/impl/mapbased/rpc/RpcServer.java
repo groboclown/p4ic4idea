@@ -3,6 +3,62 @@
  */
 package com.perforce.p4java.impl.mapbased.rpc;
 
+import com.perforce.p4java.Log;
+import com.perforce.p4java.PropertyDefs;
+import com.perforce.p4java.env.PerforceEnvironment;
+import com.perforce.p4java.exception.AccessException;
+import com.perforce.p4java.exception.AuthenticationFailedException;
+import com.perforce.p4java.exception.ConfigException;
+import com.perforce.p4java.exception.ConnectionException;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.exception.RequestException;
+
+// p4ic4idea: include SSL extended exceptions
+import com.perforce.p4java.exception.SslException;
+
+import com.perforce.p4java.exception.TrustException;
+import com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection;
+import com.perforce.p4java.impl.mapbased.rpc.func.client.ClientTrust;
+import com.perforce.p4java.impl.mapbased.rpc.func.proto.PerformanceMonitor;
+import com.perforce.p4java.impl.mapbased.rpc.func.proto.ProtocolCommand;
+import com.perforce.p4java.impl.mapbased.rpc.helper.RpcUserAuthCounter;
+import com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage;
+import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
+import com.perforce.p4java.impl.mapbased.rpc.packet.helper.RpcPacketFieldRule;
+import com.perforce.p4java.impl.mapbased.rpc.stream.RpcStreamConnection;
+import com.perforce.p4java.impl.mapbased.server.Server;
+import com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser;
+import com.perforce.p4java.messages.PerforceMessages;
+import com.perforce.p4java.option.UsageOptions;
+import com.perforce.p4java.option.server.TrustOptions;
+import com.perforce.p4java.server.AbstractAuthHelper;
+import com.perforce.p4java.server.AuthTicketsHelper;
+import com.perforce.p4java.server.CmdSpec;
+import com.perforce.p4java.server.Fingerprint;
+import com.perforce.p4java.server.FingerprintsHelper;
+import com.perforce.p4java.server.IServerAddress;
+import com.perforce.p4java.server.IServerImplMetadata;
+import com.perforce.p4java.server.IServerInfo;
+
+// p4ic4idea: use IServerMessage
+import com.perforce.p4java.server.IServerMessage;
+
+import com.perforce.p4java.server.ServerStatus;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.Validate;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+
 import static com.perforce.p4java.PropertyDefs.AUTH_FILE_LOCK_DELAY_KEY;
 import static com.perforce.p4java.PropertyDefs.AUTH_FILE_LOCK_DELAY_KEY_SHORT_FORM;
 import static com.perforce.p4java.PropertyDefs.AUTH_FILE_LOCK_TRY_KEY;
@@ -54,62 +110,6 @@ import static org.apache.commons.lang3.StringUtils.contains;
 import static org.apache.commons.lang3.StringUtils.indexOf;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import javax.annotation.Nullable;
-
-import com.perforce.p4java.Log;
-import com.perforce.p4java.PropertyDefs;
-import com.perforce.p4java.env.PerforceEnvironment;
-import com.perforce.p4java.exception.AccessException;
-import com.perforce.p4java.exception.AuthenticationFailedException;
-import com.perforce.p4java.exception.ConfigException;
-import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.RequestException;
-
-// p4ic4idea: include SSL extended exceptions
-import com.perforce.p4java.exception.SslException;
-
-import com.perforce.p4java.exception.TrustException;
-import com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection;
-import com.perforce.p4java.impl.mapbased.rpc.func.client.ClientTrust;
-import com.perforce.p4java.impl.mapbased.rpc.func.proto.PerformanceMonitor;
-import com.perforce.p4java.impl.mapbased.rpc.func.proto.ProtocolCommand;
-import com.perforce.p4java.impl.mapbased.rpc.helper.RpcUserAuthCounter;
-import com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage;
-import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
-import com.perforce.p4java.impl.mapbased.rpc.packet.helper.RpcPacketFieldRule;
-import com.perforce.p4java.impl.mapbased.rpc.stream.RpcStreamConnection;
-import com.perforce.p4java.impl.mapbased.server.Server;
-import com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser;
-import com.perforce.p4java.messages.PerforceMessages;
-import com.perforce.p4java.option.UsageOptions;
-import com.perforce.p4java.option.server.TrustOptions;
-import com.perforce.p4java.server.AbstractAuthHelper;
-import com.perforce.p4java.server.AuthTicketsHelper;
-import com.perforce.p4java.server.CmdSpec;
-import com.perforce.p4java.server.Fingerprint;
-import com.perforce.p4java.server.FingerprintsHelper;
-import com.perforce.p4java.server.IServerAddress;
-import com.perforce.p4java.server.IServerImplMetadata;
-import com.perforce.p4java.server.IServerInfo;
-
-// p4ic4idea: use IServerMessage
-import com.perforce.p4java.server.IServerMessage;
-
-import com.perforce.p4java.server.ServerStatus;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.Validate;
 
 /**
  * RPC-based Perforce server implementation superclass.

@@ -72,25 +72,16 @@ Try running without IntelliJ
 
 ## Could not delete a db file from the temp p4d server dir
 
-* com.perforce.p4java.tests.qa.CompressedRshConnectionTest
-* com.perforce.p4java.tests.qa.CreateUserTest
-* com.perforce.p4java.tests.qa.DeleteDepotTest
-* com.perforce.p4java.tests.qa.GetLabelsTest
-* com.perforce.p4java.tests.qa.GetRevisionHistoryTest
-* com.perforce.p4java.tests.qa.IntegrateFilesTest
-* com.perforce.p4java.tests.qa.ObliterateTest
-* com.perforce.p4java.tests.qa.OpenedFilesOptionsTest
-* com.perforce.p4java.tests.qa.ReopenFilesOptionsTest
-* com.perforce.p4java.tests.qa.ReopenFilesTest
-* com.perforce.p4java.tests.qa.RevertFilesOptionsTest
-* com.perforce.p4java.tests.qa.ShelveFilesOptionsTest
+Fixed by having each test server run in its own directory.  There's probably a test somewhere that uses
+BeforeClass or Before with a TestServer, but doesn't clean it up right.
 
-Looks like a timing issue.  Could not delete a db file from the temp server.
-Maybe a server was left running?
+(SetClientOptionsTest was one of them.)
 
 ## com.perforce.p4java.tests.qa.CopyFilesTest
 
 Looks like a formatting problem + unexpected error message.
+
+failure() - expects an ERROR, but is getting an INFO (actually, error code 2, which is a warning).
 
 ## com.perforce.p4java.tests.qa.CoreFactoryTest
 
@@ -108,9 +99,9 @@ Looks like incorrect null message returned.
 
 ???
 
-## com.perforce.p4java.tests.qa.ExecMapCmdTest
+## com.perforce.p4java.tests.qa.EditFilesOptionsTest
 
-Looks like incorrectly returning an empty string instead of null.
+Fails on Linux with a Windows connected drive (read/write state is not correctly handled by OS).
 
 ## com.perforce.p4java.tests.qa.ExecStreamingMapCommandTest
 

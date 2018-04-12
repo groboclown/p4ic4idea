@@ -3,16 +3,6 @@
  */
 package com.perforce.p4java.impl.mapbased.rpc;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.Socket;
-import java.nio.BufferOverflowException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-
 import com.perforce.p4java.Log;
 import com.perforce.p4java.common.base.P4JavaExceptions;
 import com.perforce.p4java.exception.AccessException;
@@ -35,20 +25,29 @@ import com.perforce.p4java.impl.mapbased.rpc.stream.RpcSocketPool;
 import com.perforce.p4java.impl.mapbased.rpc.stream.RpcSocketPool.ShutdownHandler;
 import com.perforce.p4java.impl.mapbased.rpc.stream.RpcStreamConnection;
 import com.perforce.p4java.impl.mapbased.rpc.sys.RpcOutputStream;
-import com.perforce.p4java.impl.mapbased.server.ServerAddress;
 import com.perforce.p4java.impl.mapbased.server.ServerAddressBuilder;
 import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IServerAddress;
 import com.perforce.p4java.server.IServerAddress.Protocol;
-
-// p4ic4idea: use robust error messaes
-import com.perforce.p4java.server.IServerMessage;
-
 import com.perforce.p4java.server.ServerStatus;
 import com.perforce.p4java.server.callback.IFilterCallback;
 import com.perforce.p4java.server.callback.IParallelCallback;
 import com.perforce.p4java.server.callback.IStreamingCallback;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.Socket;
+import java.nio.BufferOverflowException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+
+
+// p4ic4idea: use robust error messaes
+import com.perforce.p4java.server.IServerMessage;
 
 import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.handleErrors;
 import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.handleWarnings;

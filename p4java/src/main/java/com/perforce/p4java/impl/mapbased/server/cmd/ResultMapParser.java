@@ -294,7 +294,10 @@ public abstract class ResultMapParser {
 		if (nonNull(map)) {
 		    IServerMessage msg = toServerMessage(map);
 		    if (nonNull(msg)) {
-                return msg.getAllInfoStrings();
+                String ret = msg.getAllInfoStrings();
+                if (! ret.isEmpty()) {
+                	return ret;
+				}
             }
 		}
 

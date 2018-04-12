@@ -51,10 +51,13 @@ public class SimpleServerRule implements TestRule {
 		@Override
 		public void evaluate() throws Throwable {
 			testServer.delete();
-			initializeServer(testServer);
-			statement.evaluate();
-			testServer.stopServer();
-			testServer.delete();
+			try {
+				initializeServer(testServer);
+				statement.evaluate();
+				testServer.stopServer();
+			} finally {
+				testServer.delete();
+			}
 		}
 	}
 }

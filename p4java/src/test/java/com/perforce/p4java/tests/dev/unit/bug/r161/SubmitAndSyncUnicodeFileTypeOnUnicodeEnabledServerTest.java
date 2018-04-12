@@ -1,23 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.bug.r161;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-
 import com.perforce.p4java.CharsetConverter;
 import com.perforce.p4java.CharsetDefs;
 import com.perforce.p4java.core.IChangelist;
@@ -28,6 +10,24 @@ import com.perforce.p4java.server.PerforceCharsets;
 import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.UnicodeServerRule;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.apache.commons.io.IOUtils;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class SubmitAndSyncUnicodeFileTypeOnUnicodeEnabledServerTest extends P4JavaRshTestCase {
     private static final String CLASS_PATH_PREFIX = "com/perforce/p4java/impl/mapbased/rpc/sys";
@@ -196,7 +196,7 @@ public class SubmitAndSyncUnicodeFileTypeOnUnicodeEnabledServerTest extends P4Ja
         );
     }
 
-    /*  ---- unnormalized scenario --*/
+    @Ignore("A unicode server must have a charset, might reuse test when 'auto' is supported")
     @Test
     public void testEncodedByeEncJpWithUnixLineEndingFileExpectedDetectAsTextWhenClientCharsetIsNullUnderServerUnicodeEnabled_UnixClientLineEnding() throws Exception {
         File testResourceFile = loadFileFromClassPath(CLASS_PATH_PREFIX + "/euc-jp.txt");

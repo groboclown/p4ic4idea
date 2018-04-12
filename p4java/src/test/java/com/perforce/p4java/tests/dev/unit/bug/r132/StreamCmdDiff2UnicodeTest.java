@@ -2,30 +2,24 @@ package com.perforce.p4java.tests.dev.unit.bug.r132;
 
 
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.CmdSpec;
-import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.PerforceCharsets;
 import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.UnicodeServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import com.perforce.p4java.tests.dev.unit.bug.r161.SubmitAndSyncUtf8FileTypeTest;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 
 
 /**
@@ -66,7 +60,7 @@ public class StreamCmdDiff2UnicodeTest extends P4JavaRshTestCase {
 	server.setCurrentClient(client);
     try (InputStream is = server.execQuietStreamCmd(
         CmdSpec.DIFF2.toString(),
-        new String[]{"//depot/FileTypeTest/0000034002-汉字-漢字-ü-test_utf16.txt#1", "//depot/FileTypeTest/0000034002-汉字-漢字-ü-test_utf16.txt#2"})) {
+        new String[]{"//depot/152Bugs/job085433/1478837509864/euc-jp.txt#5", "//depot/152Bugs/job085433/1478837509864/euc-jp.txt#6"})) {
 
       Assert.assertNotNull(is);
       String line;

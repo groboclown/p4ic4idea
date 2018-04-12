@@ -3,146 +3,133 @@
  */
 package com.perforce.p4java.tests.dev.unit.features151;
 
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.core.ChangelistStatus;
+import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.core.file.FileAction;
+import com.perforce.p4java.core.file.FileSpecBuilder;
+import com.perforce.p4java.core.file.FileSpecOpStatus;
+import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.impl.mapbased.client.Client;
+import com.perforce.p4java.option.client.AddFilesOptions;
+import com.perforce.p4java.option.client.ReconcileFilesOptions;
+import com.perforce.p4java.option.client.RevertFilesOptions;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Properties;
+import java.util.zip.ZipException;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.zip.ZipException;
-
 import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.ChangelistStatus;
-import com.perforce.p4java.core.IChangelist;
-import com.perforce.p4java.core.file.FileSpecBuilder;
-import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.option.client.ReconcileFilesOptions;
-import com.perforce.p4java.option.client.RevertFilesOptions;
-import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Test 'p4 reconcile -m', checking file modtime instead of digests.
  */
 @Jobs({ "job077547" })
 @TestId("Dev151_ReconcileUseModTimeTest")
-public class ReconcileUseModTimeTest extends P4JavaTestCase {
+public class ReconcileUseModTimeTest extends P4JavaRshTestCase {
 
-	final static String serverURL = "p4java://eng-p4java-vm.perforce.com:20141";
+	private static final String clientName = "reconcile-client";
 
-	IOptionsServer server = null;
-	IClient client = null;
+	@ClassRule
+	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ReconcileUseModTimeTest.class.getSimpleName());
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
 	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
+	public static void beforeAll() throws Exception {
+		Properties properties = new Properties();
+		setupServer(p4d.getRSHURL(), P4JTEST_SUPERUSERNAME_DEFAULT,
+				P4JTEST_SUPERPASSWORD_DEFAULT, false, properties);
 
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
-
-	/**
-	 * @Before annotation to a method to be run before each test in a class.
-	 */
-	@Before
-	public void setUp() {
-		// initialization code (before each test).
-		fail("FIXME uses remote p4d server");
 		try {
-			server = ServerFactory.getOptionsServer(serverURL, null);
-			assertNotNull(server);
-
-			// Register callback
-			server.registerCallback(new MockCommandCallback());
-			server.connect();
-			if (server.isConnected()) {
-				if (server.supportsUnicode()) {
-					server.setCharsetName("utf8");
-				}
-			}
-			server.setUserName("p4jtestuser");
-			server.login("p4jtestuser");
-			client = server.getClient("p4TestUserWS20112");
+			// Create new client
+			String clientRoot = p4d.getPathToRoot() + "/client";
+			String[] paths = {"//depot/rec/... //" + clientName + "/..."};
+			IClient testClient = Client.newClient(server, clientName, "reconcile -m test", clientRoot, paths);
+			// use super for everything just for simplicity...
+			testClient.setOwnerName(P4JTEST_SUPERUSERNAME_DEFAULT);
+			server.createClient(testClient);
+			IClient client = server.getClient(clientName);
 			assertNotNull(client);
 			server.setCurrentClient(client);
+
+			// Clean up workspace
+			FileUtils.deleteDirectory(new File(clientRoot));
+			FileUtils.forceMkdir(new File(clientRoot));
 		} catch (P4JavaException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+		} catch (IOException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
+
 	}
 
-	/**
-	 * @After annotation to a method to be run after each test in a class.
-	 */
 	@After
-	public void tearDown() {
-		// cleanup code (after each test).
-		if (server != null) {
-			this.endServerSession(server);
-		}
+	public void cleanup() throws Exception {
+		server.deleteClient(clientName, true);
 	}
 
-	/**
-	 * Test 'p4 reconcile -m', checking file modtime instead of digests.
-	 */
 	@Test
-	public void testReconcileUseModTime() {
+	public void testReconcileUseModTime() throws Exception {
+		IClient client = server.getClient(clientName);
+		String sourceFile = client.getRoot() + File.separator + textBaseFile;
+		createTestSourceFile(sourceFile, false);
+		IChangelist change = getNewChangelist(server, client, "add test file");
+		change.setUsername(P4JTEST_SUPERUSERNAME_DEFAULT);
+		change = client.createChangelist(change);
 
-		IChangelist changelist = null;
-		List<IFileSpec> files = null;
+		// ... add to pending change
+		List<IFileSpec> fileSpecs = FileSpecBuilder.makeFileSpecList(sourceFile);
+		AddFilesOptions addOpts = new AddFilesOptions();
+		addOpts.setChangelistId(change.getId());
+		List<IFileSpec> msg = client.addFiles(fileSpecs, addOpts);
+		assertNotNull(msg);
+		assertEquals(FileSpecOpStatus.VALID, msg.get(0).getOpStatus());
+		assertEquals("text", msg.get(0).getFileType());
 
-		String depotFile = "//depot/Dev/rteam/ESPN723/src/lProj.java";
-		String clientFile = client.getRoot() + "/Dev/rteam/ESPN723/src/lProj.java";
+		// ... submit file and validate
+		msg = change.submit(false);
+		assertNotNull(msg);
+		assertEquals(FileSpecOpStatus.VALID, msg.get(0).getOpStatus());
+		assertEquals(FileAction.ADD, msg.get(0).getAction());
 
 		try {
-			files = client.sync(FileSpecBuilder.makeFileSpecList(new String[] {depotFile}), new SyncOptions().setForceUpdate(true));
-			assertNotNull(files);
-
 			// Write something to the file outside of Perforce.
-			File testFile = new File(clientFile);
-			if(testFile.exists()) {
-				testFile.setWritable(true);
-				writeFileBytes(clientFile, "// Make change #1 to test file." + LINE_SEPARATOR, true);
-			}
+			File testFile = new File(sourceFile);
+			testFile.setWritable(true);
+			writeFileBytes(sourceFile, "changed file contents", false);
 
-			changelist = getNewChangelist(server, client, "Dev151_ReconcileUseModTimeTest files");
-			assertNotNull(changelist);
-			changelist = client.createChangelist(changelist);
-			assertNotNull(changelist);
+			change = getNewChangelist(server, client, "edit test file");
+			change.setUsername(P4JTEST_SUPERUSERNAME_DEFAULT);
+			assertNotNull(change);
+			change = client.createChangelist(change);
+			assertNotNull(change);
 
 			// Reconcile files
-			files = client.reconcileFiles(FileSpecBuilder.makeFileSpecList(new String[]{clientFile}),
-					new ReconcileFilesOptions().setChangelistId(changelist.getId()).setOutsideEdit(true)
-					.setCheckModTime(true));
+			ReconcileFilesOptions options = new ReconcileFilesOptions()
+					.setChangelistId(change.getId())
+					.setOutsideEdit(true)
+					.setCheckModTime(true);
+			List<IFileSpec> filespec = FileSpecBuilder.makeFileSpecList(new String[]{sourceFile});
+			List<IFileSpec> files = client.reconcileFiles(filespec, options);
 			assertNotNull(files);
 			assertTrue(files.size() > 0);
-			
+
 		} catch (P4JavaException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} catch (ZipException e) {
@@ -150,19 +137,15 @@ public class ReconcileUseModTimeTest extends P4JavaTestCase {
 		} catch (IOException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} finally {
-			if (client != null) {
-				if (changelist != null) {
-					if (changelist.getStatus() == ChangelistStatus.PENDING) {
-						try {
-							// Revert files in pending changelist
-							client.revertFiles(
-									changelist.getFiles(true),
-									new RevertFilesOptions()
-											.setChangelistId(changelist.getId()));
-						} catch (P4JavaException e) {
-							// Can't do much here...
-						}
-					}
+			if ((client != null) && (change != null) && (change.getStatus() == ChangelistStatus.PENDING)) {
+				try {
+					// Revert files in pending change
+					client.revertFiles(
+							change.getFiles(true),
+							new RevertFilesOptions()
+									.setChangelistId(change.getId()));
+				} catch (P4JavaException e) {
+					// Can't do much here...
 				}
 			}
 		}

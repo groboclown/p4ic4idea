@@ -46,22 +46,22 @@ import java.util.Properties;
  */
 
 public class ClientUserInteraction {
-	
+
 	public static final String TRACE_PREFIX = "ClientUserInteraction";
-	
-	protected static final int RESP_LENGTH = 32;	// Response to server needs to be exactly this long,
-													// in bytes
-	protected static final int TRUNCATE_LENGTH = 16;	// Server-commanded candidate password truncation
-														// length in bytes
+
+	protected static final int RESP_LENGTH = 32;    // Response to server needs to be exactly this long,
+	// in bytes
+	protected static final int TRUNCATE_LENGTH = 16;    // Server-commanded candidate password truncation
+	// length in bytes
 
 	private Properties props = null;
 	private RpcServer server = null;
-	
+
 	protected ClientUserInteraction(Properties props, RpcServer server) {
 		this.props = props;
 		this.server = server;
 	}
-	
+
 	/**
 	 * Prompt the end-user (i.e. the upper-levels of P4Java...) in response to a
 	 * server request. The various parameters in resultsMap determine things like
@@ -85,7 +85,7 @@ public class ClientUserInteraction {
 	 * possible processing here, just the subset that's useful to us for P4WSAD
 	 * and that presumes a 2003.2 or later server in not-too-strict mode.
 	 */
-	
+
 	protected RpcPacketDispatcherResult clientPrompt(RpcConnection rpcConnection,
 			CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
@@ -98,11 +98,11 @@ public class ClientUserInteraction {
 		if (resultsMap == null) {
 			throw new NullPointerError("Null resultsMap in clientPrompt().");
 		}
-		
+
 		// Much of what follows is just a fairly straight transliteration from
 		// the original C++ (as best as I've been able to follow it). Not all
 		// of it is implemented yet (either correctly or at all)...
-		
+
 		String data2 = null;
 
 		String digest = null;
@@ -114,12 +114,12 @@ public class ClientUserInteraction {
 		String mangle = null;
 		boolean truncate = false;
 		boolean noecho = false;
-		
+
 		MD5Digester digester = null;
-		
+
 		String passwd = null;
 		String resp = null;
-				
+
 		try {
 			data2 = (String) resultsMap.get(RpcFunctionMapKey.DATA2);
 
@@ -128,11 +128,11 @@ public class ClientUserInteraction {
 			func2 = (String) resultsMap.get(RpcFunctionMapKey.FUNC2);
 			userName = (String) resultsMap.get(RpcFunctionMapKey.USER);
 			host = (String) resultsMap.get(RpcFunctionMapKey.HOST);
-			state =  (String) resultsMap.get(RpcFunctionMapKey.STATE);
+			state = (String) resultsMap.get(RpcFunctionMapKey.STATE);
 			confirm = (String) resultsMap.get(RpcFunctionMapKey.CONFIRM);
 			noecho = resultsMap.containsKey(RpcFunctionMapKey.NOECHO);
 			mangle = (String) resultsMap.get(RpcFunctionMapKey.MANGLE);
-			
+
 			if (confirm == null) {
 				throw new ProtocolError("No confirm server function in clientPrompt.");
 			}
@@ -141,11 +141,11 @@ public class ClientUserInteraction {
 				throw new ProtocolError("Unable to decode confirm server function '"
 						+ confirm + "' in clientPrompt.");
 			}
-			
+
 			// Due to a quirk in the sibling p4 cmd server implementation,
 			// we get the password in the inMap here rather than in the cmdArgs.
 			// C'est la vie, I guess.
-			
+
 			Map<String, Object> inMap = cmdEnv.getCmdSpec().getInMap();
 			if (inMap == null) {
 				throw new NullPointerError("No input map passed to client prompt.");
@@ -153,42 +153,43 @@ public class ClientUserInteraction {
 
 			// Handle confirmation to server functions dm-Login and dm-Password
 			switch (funcSpec) {
-			case SERVER_DM_LOGIN: // login password confirmation
-				if (inMap.get(RpcFunctionMapKey.PASSWORD) != null) {
-					passwd = ((String)inMap.get(RpcFunctionMapKey.PASSWORD)).replace(MapKeys.LF, MapKeys.EMPTY).replace(MapKeys.CR, MapKeys.EMPTY);
-				}
-				break;
-			case SERVER_DM_PASSWD: // change password confirmation
-				if (inMap.get(RpcFunctionMapKey.OLD_PASSWORD) != null) {
-					passwd = ((String)inMap.remove(RpcFunctionMapKey.OLD_PASSWORD)).replace(MapKeys.LF, MapKeys.EMPTY).replace(MapKeys.CR, MapKeys.EMPTY);
-				}
-				if (passwd == null) {
-					if (inMap.get(RpcFunctionMapKey.NEW_PASSWORD) != null) {
-						passwd = ((String)inMap.remove(RpcFunctionMapKey.NEW_PASSWORD)).replace(MapKeys.LF, MapKeys.EMPTY).replace(MapKeys.CR, MapKeys.EMPTY);
+				case SERVER_DM_LOGIN: // login password confirmation
+				case SERVER_DM_LOGIN2: // login2 auth confirmation
+					if (inMap.get(RpcFunctionMapKey.PASSWORD) != null) {
+						passwd = ((String) inMap.get(RpcFunctionMapKey.PASSWORD)).replace(MapKeys.LF, MapKeys.EMPTY).replace(MapKeys.CR, MapKeys.EMPTY);
 					}
-				}
-				if (passwd == null) {
-					if (inMap.get(RpcFunctionMapKey.NEW_PASSWORD2) != null) {
-						passwd = ((String)inMap.remove(RpcFunctionMapKey.NEW_PASSWORD2)).replace(MapKeys.LF, MapKeys.EMPTY).replace(MapKeys.CR, MapKeys.EMPTY);
+					break;
+				case SERVER_DM_PASSWD: // change password confirmation
+					if (inMap.get(RpcFunctionMapKey.OLD_PASSWORD) != null) {
+						passwd = ((String) inMap.remove(RpcFunctionMapKey.OLD_PASSWORD)).replace(MapKeys.LF, MapKeys.EMPTY).replace(MapKeys.CR, MapKeys.EMPTY);
 					}
-				}
-				break;
-			default:
-				throw new UnimplementedError("Unimplemented confirmation to server function '"
-						+ funcSpec.getEncoding() + "' in clientPrompt.");
+					if (passwd == null) {
+						if (inMap.get(RpcFunctionMapKey.NEW_PASSWORD) != null) {
+							passwd = ((String) inMap.remove(RpcFunctionMapKey.NEW_PASSWORD)).replace(MapKeys.LF, MapKeys.EMPTY).replace(MapKeys.CR, MapKeys.EMPTY);
+						}
+					}
+					if (passwd == null) {
+						if (inMap.get(RpcFunctionMapKey.NEW_PASSWORD2) != null) {
+							passwd = ((String) inMap.remove(RpcFunctionMapKey.NEW_PASSWORD2)).replace(MapKeys.LF, MapKeys.EMPTY).replace(MapKeys.CR, MapKeys.EMPTY);
+						}
+					}
+					break;
+				default:
+					throw new UnimplementedError("Unimplemented confirmation to server function '"
+							+ funcSpec.getEncoding() + "' in clientPrompt.");
 			}
 
 			if (passwd == null) {
 				throw new NullPointerError("No password passed to clientPrompt.");
 			}
-			
+
 			if (truncate && (passwd.length() > TRUNCATE_LENGTH)) {
 				passwd = passwd.substring(0, TRUNCATE_LENGTH);
 			}
-			
+
 			if (digest != null) {
 				digester = new MD5Digester();
-				
+
 				digester.update(passwd.getBytes(CharsetDefs.UTF8.name()));
 				resp = digester.digestAs32ByteHex();
 				// Salt this away for the incoming clientSetPassword call later
@@ -199,20 +200,20 @@ public class ClientUserInteraction {
 				digester.reset();
 				digester.update(resp.getBytes(CharsetDefs.UTF8.name()));
 				digester.update(digest.getBytes(CharsetDefs.UTF8.name()));
-				
+
 				resp = digester.digestAs32ByteHex();
 			}
-			
+
 			// Now construct a response back to the server:
-			
+
 			Map<String, Object> respMap = new HashMap<String, Object>();
 			if (digest != null) {
 				respMap.put(RpcFunctionMapKey.DIGEST, digest);
 			}
-			
-			if( mangle != null) {
+
+			if (mangle != null) {
 				respMap.put(RpcFunctionMapKey.MANGLE, mangle);
-				
+
 				// Hash mangle and username
 				MD5Digester mangleDigester = new MD5Digester();
 				mangleDigester.update(mangle);
@@ -223,7 +224,7 @@ public class ClientUserInteraction {
 				}
 				Mangle jMangle = new Mangle();
 				String toMangle = resp;
-				if( toMangle == null) {
+				if (toMangle == null) {
 					toMangle = passwd;
 				}
 				String digestedMangle = mangleDigester.digestAs32ByteHex();
@@ -246,24 +247,24 @@ public class ClientUserInteraction {
 				respMap.put(RpcFunctionMapKey.HOST, host);
 			}
 			respMap.put(RpcFunctionMapKey.CONFIRM, confirm);
-			
+
 			RpcPacket respPacket = RpcPacket.constructRpcPacket(
-								confirm,
-								respMap,
-								null);
-			
+					confirm,
+					respMap,
+					null);
+
 			rpcConnection.putRpcPacket(respPacket);
 		} catch (Exception exc) {
 			Log.exception(exc);
 			throw new P4JavaError(
 					"Unexpected exception in ClientUserInteraction.clientPrompt:"
-					+ exc.getLocalizedMessage(),
+							+ exc.getLocalizedMessage(),
 					exc);
 		}
-		
+
 		return RpcPacketDispatcherResult.CONTINUE;
 	}
-	
+
 	/**
 	 * Set the client-side password in response to a Perforce server command
 	 * telling us to do just that, usually as a result of an earlier
@@ -274,7 +275,7 @@ public class ClientUserInteraction {
 	 * with the -P option in future commands. This can be an arbitrarily
 	 * complex process...<p>
 	 */
-	
+
 	protected RpcPacketDispatcherResult clientSetPassword(RpcConnection rpcConnection,
 			CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
@@ -287,13 +288,13 @@ public class ClientUserInteraction {
 		if (resultsMap == null) {
 			throw new NullPointerError("Null resultsMap in clientSetPassword().");
 		}
-		
+
 		if (this.server != null) {
 			String data2 = (String) resultsMap.get(RpcFunctionMapKey.DATA2);
 			String userName = (String) resultsMap.get(RpcFunctionMapKey.USER);
 			String serverId = (String) resultsMap.get(RpcFunctionMapKey.SERVERADDRESS);
 			String ticket = null;
-			
+
 			if (serverId != null) {
 				this.server.setServerId(serverId);
 			}
@@ -302,7 +303,7 @@ public class ClientUserInteraction {
 			}
 			String serverAddress = (serverId != null ? serverId : this.server.getServerAddress());
 			String key = serverAddress + "=" + userName;
-			
+
 			if (CmdSpec.LOGOUT.toString().equals(data2)) {
 				cmdEnv.getCmdSpec().setCmdTicket(null);
 				// Decrement the user's login counter
@@ -317,14 +318,14 @@ public class ClientUserInteraction {
 				}
 			} else if (CmdSpec.LOGIN.toString().equals(data2)) {
 				byte[] data = (byte[]) resultsMap.get(RpcFunctionMapKey.DATA);
-				
+
 				String digest = (String) resultsMap.get(RpcFunctionMapKey.DIGEST); // aka "token" in C++ API
-				
+
 				if (digest != null) {
 					if (digest.length() != 32) {
 						throw new P4JavaError("bad digest size");
 					}
-					
+
 					String secretKey = null;
 					secretKey = this.server.getSecretKey(userName); // from the earlier clientGetPrompt() call...
 					if (secretKey == null) {
@@ -334,28 +335,26 @@ public class ClientUserInteraction {
 						secretKey = this.server.getAuthTicket();
 					}
 
-					// p4ic4idea: FIXME use correct charset
 					ticket = new String(data);
 					Mangle mangler = new Mangle();
 					String token2 = mangler.mangle(digest, secretKey, true);
 					ticket = mangler.xor32(ticket, token2);
 				}
-				
+
 				if (data != null) {
 					if (ticket == null) {
-						// p4ic4idea: FIXME use correct charset
 						ticket = new String(data);
 					}
 					this.server.setAuthTicket(userName, ticket);
 					if (!cmdEnv.isDontWriteTicket() ||
-						!resultsMap.containsKey(RpcFunctionMapKey.OUTPUT)) { // skip if "login -p"
+							!resultsMap.containsKey(RpcFunctionMapKey.OUTPUT)) { // skip if "login -p"
 						try {
 							this.server.saveTicket(userName, ticket);
 						} catch (ConfigException e) {
 							throw new ConnectionException(e);
 						}
 					} else {
-						Map<String, Object> respMap = new HashMap<String,Object>();
+						Map<String, Object> respMap = new HashMap<String, Object>();
 						respMap.put(RpcFunctionMapKey.TICKET, ticket);
 						cmdEnv.handleResult(respMap);
 					}
@@ -371,15 +370,15 @@ public class ClientUserInteraction {
 		}
 		return RpcPacketDispatcherResult.CONTINUE_LOOP;
 	}
-	
+
 	/**
 	 * Implements the client-side of the Perforce single sign on (SSO) protocol.
 	 * Basically defers to the registered SSO callback (if it exists) and simply
 	 * responds back to the server appropriately.
 	 */
-	
+
 	protected RpcPacketDispatcherResult clientSingleSignon(RpcConnection rpcConnection,
-			CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
+			                                               CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
 		if (rpcConnection == null) {
 			throw new NullPointerError("Null rpcConnection in clientSingleSignon().");
@@ -390,30 +389,30 @@ public class ClientUserInteraction {
 		if (resultsMap == null) {
 			throw new NullPointerError("Null resultsMap in clientSingleSignon().");
 		}
-		
+
 		String confirm = (String) resultsMap.get(RpcFunctionMapKey.CONFIRM);
 		ISSOCallback.Status status = null;
 		StringBuffer credBuf = new StringBuffer();
-		
+
 		if (this.server != null) {
 			ISSOCallback ssoCallback = this.server.getSSOCallback();
 			if (ssoCallback != null) {
 				status = ssoCallback.getSSOCredentials(credBuf,
-								this.server.getSSOKey(), this.server.getUserName());
+						this.server.getSSOKey(), this.server.getUserName());
 			}
 		} else {
 			// How did this happen?!
 			Log.error(
 					"null server object in ClientUserInteraction.clientSingleSignon method");
 		}
-		
-		if( status == null) {
+
+		if (status == null) {
 			status = Status.UNSET;
 		}
-		
+
 		resultsMap.put(RpcFunctionMapKey.STATUS, status.toString()
 				.toLowerCase());
-		
+
 		String sso = null;
 		// If not unset then set the SSO key based on the buffered passed to
 		// the sso callback
@@ -428,80 +427,80 @@ public class ClientUserInteraction {
 		}
 		resultsMap.put(RpcFunctionMapKey.SSO, sso);
 
-        rpcConnection.clientConfirm(confirm, resultsMap);
-		
+		rpcConnection.clientConfirm(confirm, resultsMap);
+
 		return RpcPacketDispatcherResult.CONTINUE_LOOP;
 	}
-	
+
 	protected RpcPacketDispatcherResult clientReceiveFiles(RpcConnection rpcConnection,
-            CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
+			                                               CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
-        if (rpcConnection == null) {
-            throw new NullPointerError("Null rpcConnection in clientReceiveFiles().");
-        }
-        if (cmdEnv == null) {
-            throw new NullPointerError("Null cmdEnv in clientReceiveFiles().");
-        }
-        if (resultsMap == null) {
-            throw new NullPointerError("Null resultsMap in clientReceiveFiles().");
-        }
+		if (rpcConnection == null) {
+			throw new NullPointerError("Null rpcConnection in clientReceiveFiles().");
+		}
+		if (cmdEnv == null) {
+			throw new NullPointerError("Null cmdEnv in clientReceiveFiles().");
+		}
+		if (resultsMap == null) {
+			throw new NullPointerError("Null resultsMap in clientReceiveFiles().");
+		}
 
-        String token = (String) resultsMap.get(RpcFunctionMapKey.TOKEN);
-        String threads = (String) resultsMap.get(RpcFunctionMapKey.PEER);
-        String blockCount = (String) resultsMap.get(RpcFunctionMapKey.BLOCKCOUNT);
-        String blockSize = (String) resultsMap.get(RpcFunctionMapKey.SCANSIZE);
-        String proxyload = (String) resultsMap.get(RpcFunctionMapKey.PROXYLOAD);
-        String proxyverbose = (String) resultsMap.get(RpcFunctionMapKey.PROXYVERBOSE);
-        String applicense = (String) resultsMap.get(RpcFunctionMapKey.APP);
-        String clientSend = (String) resultsMap.get(RpcFunctionMapKey.CLIENTSEND);
-        String confirm = (String) resultsMap.get(RpcFunctionMapKey.CONFIRM);
+		String token = (String) resultsMap.get(RpcFunctionMapKey.TOKEN);
+		String threads = (String) resultsMap.get(RpcFunctionMapKey.PEER);
+		String blockCount = (String) resultsMap.get(RpcFunctionMapKey.BLOCKCOUNT);
+		String blockSize = (String) resultsMap.get(RpcFunctionMapKey.SCANSIZE);
+		String proxyload = (String) resultsMap.get(RpcFunctionMapKey.PROXYLOAD);
+		String proxyverbose = (String) resultsMap.get(RpcFunctionMapKey.PROXYVERBOSE);
+		String applicense = (String) resultsMap.get(RpcFunctionMapKey.APP);
+		String clientSend = (String) resultsMap.get(RpcFunctionMapKey.CLIENTSEND);
+		String confirm = (String) resultsMap.get(RpcFunctionMapKey.CONFIRM);
 
-        if (token == null || threads == null) {
-            throw new NullPointerError("Null token or threads in clientReceiveFiles().");
-        }
+		if (token == null || threads == null) {
+			throw new NullPointerError("Null token or threads in clientReceiveFiles().");
+		}
 
-        int nThreads = 0;
-        try {
-            nThreads = Integer.parseInt(threads);
-        } catch (NumberFormatException nfe) {
-            throw new RuntimeException(nfe);
-        }
-        
-        IParallelCallback callback = cmdEnv.getParallelCallback();
-        if (callback == null) {
-        	callback = new DefaultParallelSync();
-        }
+		int nThreads = 0;
+		try {
+			nThreads = Integer.parseInt(threads);
+		} catch (NumberFormatException nfe) {
+			throw new RuntimeException(nfe);
+		}
 
-        HashMap<String,String> flags = new HashMap<String,String>();
-        if (proxyload != null) {
-        	flags.put(RpcFunctionMapKey.PROXYLOAD, "");
-        }
-        if (proxyverbose != null) {
-        	flags.put(RpcFunctionMapKey.PROXYVERBOSE, "");
-        }
-        if (applicense != null) {
-        	flags.put(RpcFunctionMapKey.APP, applicense);
-        }
-        
-        ArrayList<String> args = new ArrayList<String>();
-        args.add("-t" + token);
-        if (blockCount != null) {
-            args.add("-b" + blockCount );
-        }
-        if (blockSize != null) {
-        	args.add("-s" +blockSize );
-        }
-        if (clientSend != null) {
-        	 args.add("-r" );
-        }
+		IParallelCallback callback = cmdEnv.getParallelCallback();
+		if (callback == null) {
+			callback = new DefaultParallelSync();
+		}
+
+		HashMap<String, String> flags = new HashMap<String, String>();
+		if (proxyload != null) {
+			flags.put(RpcFunctionMapKey.PROXYLOAD, "");
+		}
+		if (proxyverbose != null) {
+			flags.put(RpcFunctionMapKey.PROXYVERBOSE, "");
+		}
+		if (applicense != null) {
+			flags.put(RpcFunctionMapKey.APP, applicense);
+		}
+
+		ArrayList<String> args = new ArrayList<String>();
+		args.add("-t" + token);
+		if (blockCount != null) {
+			args.add("-b" + blockCount);
+		}
+		if (blockSize != null) {
+			args.add("-s" + blockSize);
+		}
+		if (clientSend != null) {
+			args.add("-r");
+		}
 
 		if (!callback.transmit(cmdEnv, nThreads, flags, args)) {
 			rpcConnection.clientConfirm(confirm, resultsMap);
 		}
-        
-        return RpcPacketDispatcherResult.CONTINUE_LOOP;
-    }
-	
+
+		return RpcPacketDispatcherResult.CONTINUE_LOOP;
+	}
+
 	/**
 	 * Respond back to the server with what amounts to a yes / no response
 	 * in the face of errors or success. Intended for interactive clients,
@@ -509,7 +508,7 @@ public class ClientUserInteraction {
 	 * and say yes ("dm-OpenFile") if things went fine... in effect, we
 	 * just do a pass-through. This may change as we gain experience.
 	 */
-	
+
 	protected RpcPacketDispatcherResult clientAck(RpcConnection rpcConnection,
 			CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
@@ -522,24 +521,24 @@ public class ClientUserInteraction {
 		if (resultsMap == null) {
 			throw new NullPointerError("Null resultsMap in clientAck().");
 		}
-		
+
 		String confirm = (String) resultsMap.get(RpcFunctionMapKey.CONFIRM);
 		String decline = (String) resultsMap.get(RpcFunctionMapKey.DECLINE);
 		String handle = (String) resultsMap.get(RpcFunctionMapKey.HANDLE);
-		
+
 		RpcHandler handler = cmdEnv.getHandler(handle);
-		
+
 		if (handler != null) {
 			if (handler.isError()) {
 				confirm = decline;
 			}
 		}
-		
+
 		rpcConnection.clientConfirm(confirm, resultsMap);
-		
+
 		return RpcPacketDispatcherResult.CONTINUE_LOOP;
 	}
-	
+
 	/**
 	 * Process the client-Crypto command from the Perforce server. This is typically
 	 * called in response to an earlier login using the ticket feature (which is how
@@ -549,9 +548,9 @@ public class ClientUserInteraction {
 	 * hashing the previously-returned ticket, then returning the results to the server for
 	 * inspection.
 	 */
-	
+
 	protected RpcPacketDispatcherResult clientCrypto(RpcConnection rpcConnection,
-			CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
+			                                         CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
 		if (rpcConnection == null) {
 			throw new NullPointerError("Null rpcConnection in clientCrypto().");
@@ -562,23 +561,23 @@ public class ClientUserInteraction {
 		if (resultsMap == null) {
 			throw new NullPointerError("Null resultsMap in clientCrypto().");
 		}
-		
+
 		String ticketStr = cmdEnv.getCmdSpec().getCmdTicket();
 		String svcTicketStr = null;
 		MD5Digester digester = null;
-		
+
 		// We actually get token, serverAddress, confirm, truncate fields incoming,
 		// but only use the token here.
-		
+
 		String token = null;
 		String resp = null;
 		String confirm = (String) resultsMap.get(RpcFunctionMapKey.CONFIRM);
 		Map<String, Object> respMap = null;
 
 		boolean proxy = props.containsKey(RpcFunctionMapKey.IPADDR) &&
-	                    props.containsKey(RpcFunctionMapKey.SVRNAME) &&
-	                    props.containsKey(RpcFunctionMapKey.PORT);
-		
+				props.containsKey(RpcFunctionMapKey.SVRNAME) &&
+				props.containsKey(RpcFunctionMapKey.PORT);
+
 		String svcUser = props.getProperty(RpcFunctionMapKey.SVRNAME);
 
 		try {
@@ -589,11 +588,11 @@ public class ClientUserInteraction {
 			}
 
 			if (proxy) {
-			    svcTicketStr = getTicketStr(svcUser, serverId);
+				svcTicketStr = getTicketStr(svcUser, serverId);
 			} else {
-                ticketStr = getTicketStr(this.server.getUserName(), serverId);
+				ticketStr = getTicketStr(this.server.getUserName(), serverId);
 			}
-			
+
 			if (ticketStr == null) {
 				ticketStr = MapKeys.EMPTY; // which should fail on the server...
 			}
@@ -601,8 +600,8 @@ public class ClientUserInteraction {
 			String daddr = rpcConnection.getServerIpPort();
 			String daddr0 = null;
 			if (proxy) {
-			    daddr0 = daddr;
-			    daddr = props.getProperty(RpcFunctionMapKey.PORT);
+				daddr0 = daddr;
+				daddr = props.getProperty(RpcFunctionMapKey.PORT);
 			}
 
 			token = (String) resultsMap.get(RpcFunctionMapKey.TOKEN);
@@ -611,7 +610,6 @@ public class ClientUserInteraction {
 			digester.reset();
 
 			digester.update(token.getBytes(CharsetDefs.UTF8.name()));
-			// p4ic4idea: FIXME use correct charset
 			digester.update(ticketStr.getBytes());
 			resp = digester.digestAs32ByteHex();
 
@@ -621,9 +619,7 @@ public class ClientUserInteraction {
 			// See job081080
 			if (daddr != null) {
 				digester.reset();
-				// p4ic4idea: FIXME use correct charset
 				digester.update(resp.getBytes());
-				// p4ic4idea: FIXME use correct charset
 				digester.update(daddr.getBytes());
 				resp = digester.digestAs32ByteHex();
 
@@ -633,10 +629,10 @@ public class ClientUserInteraction {
 			respMap.put(RpcFunctionMapKey.TOKEN, resp);
 
 			if (proxy) {
-			    respMap.put(RpcFunctionMapKey.CADDR,
-			            props.getProperty(RpcFunctionMapKey.IPADDR));
+				respMap.put(RpcFunctionMapKey.CADDR,
+						props.getProperty(RpcFunctionMapKey.IPADDR));
 			}
-			
+
 			if (daddr0 != null) {
 				digester.reset();
 				digester.update(svcUser.getBytes());
@@ -660,45 +656,45 @@ public class ClientUserInteraction {
 			Log.exception(exc);
 			throw new P4JavaError(
 					"Unexpected exception in ClientUserInteraction.clientCrypto:"
-					+ exc.getLocalizedMessage(),
+							+ exc.getLocalizedMessage(),
 					exc);
 		}
-		
+
 		return RpcPacketDispatcherResult.CONTINUE_LOOP;
 	}
-	
+
 	private String getTicketStr(String user, String serverId) {
-	    String ticketStr = null;
-	    
-	    // Get the auth ticket from cache (if it exists)
-        // Might be asking for another server address's auth ticket
-        // (in the case of a replica sitting in front of the server) 
-        if (this.server.getAuthTicket(user) != null) {
-            ticketStr = this.server.getAuthTicket(user);
-        }
+		String ticketStr = null;
 
-        // Load the auth ticket from file/memory storage
-        if (ticketStr == null) {
-            ticketStr = this.server.loadTicket(serverId, user);
-            // Cache the auth ticket if found
-            if (ticketStr != null) {
-                this.server.setAuthTicket(user, ticketStr);
-            }
-        }
+		// Get the auth ticket from cache (if it exists)
+		// Might be asking for another server address's auth ticket
+		// (in the case of a replica sitting in front of the server)
+		if (this.server.getAuthTicket(user) != null) {
+			ticketStr = this.server.getAuthTicket(user);
+		}
 
-        if( ticketStr == null) {
-            ticketStr = MapKeys.EMPTY;  // which should fail on the server...
-        }
-        
-        return ticketStr;
+		// Load the auth ticket from file/memory storage
+		if (ticketStr == null) {
+			ticketStr = this.server.loadTicket(serverId, user);
+			// Cache the auth ticket if found
+			if (ticketStr != null) {
+				this.server.setAuthTicket(user, ticketStr);
+			}
+		}
+
+		if (ticketStr == null) {
+			ticketStr = MapKeys.EMPTY;  // which should fail on the server...
+		}
+
+		return ticketStr;
 	}
-	
+
 	/**
 	 * Get some requested data (typically something like a submit form) from
 	 * somewhere (typically a map passed in from the upper levels of the API) and
 	 * pass it back to the server, properly munged.
 	 */
-	
+
 	protected RpcPacketDispatcherResult clientInputData(RpcConnection rpcConnection,
 			CommandEnv cmdEnv, Map<String, Object> resultsMap) throws ConnectionException {
 
@@ -711,77 +707,77 @@ public class ClientUserInteraction {
 		if (resultsMap == null) {
 			throw new NullPointerError("Null resultsMap in clientInputData().");
 		}
-		
+
 		cmdEnv.newHandler();
 		String confirm = (String) resultsMap.get(RpcFunctionMapKey.CONFIRM);
-		
+
 		Map<String, Object> inMap = cmdEnv.getCmdSpec().getInMap();
 		String inString = cmdEnv.getCmdSpec().getInString();
-		
+
 		if (inString == null) {
-			
+
 			// We have to convert the inMap back to a suitable form as a single
 			// data argument, which is irritating but doable...
-			
+
 			StringBuffer strBuf = new StringBuffer();
 			byte[] bytes = null;
 			String cmdName = cmdEnv.getCmdSpec().getCmdName();
 			if (cmdName == null) {
 				throw new NullPointerError("null command name");
 			}
-    		CmdSpec cmdSpec = CmdSpec.getValidP4JCmdSpec(cmdName);
-    		if (cmdSpec != null) {
+			CmdSpec cmdSpec = CmdSpec.getValidP4JCmdSpec(cmdName);
+			if (cmdSpec != null) {
 				switch (cmdSpec) {
-				case JOB:
-					MapUnmapper.unmapJobMap(inMap, strBuf);
-					break;
-				case CHANGE:
-				case SUBMIT:
-				case SHELVE:
-					MapUnmapper.unmapChangelistMap(inMap, strBuf);
-					break;
-				case LABEL:
-					MapUnmapper.unmapLabelMap(inMap, strBuf);
-					break;
-				case CLIENT:
-					MapUnmapper.unmapClientMap(inMap, strBuf);
-					break;
-				case BRANCH:
-					MapUnmapper.unmapBranchMap(inMap, strBuf);
-					break;
-				case USER:
-					MapUnmapper.unmapUserMap(inMap, strBuf);
-					break;
-				case GROUP:
-					MapUnmapper.unmapUserGroupMap(inMap, strBuf);
-					break;
-				case DEPOT:
-					MapUnmapper.unmapDepotMap(inMap, strBuf);
-					break;
-				case PROTECT:
-					MapUnmapper.unmapProtectionEntriesMap(inMap, strBuf);
-					break;
-				case STREAM:
-					MapUnmapper.unmapStreamMap(inMap, strBuf);
-					break;
-				case ATTRIBUTE:
-					// Have to treat this rather differently, as we're reading a byte stream in
-					// and not a string. We may need to factor this out elsewhere in the long term -- HR.
+					case JOB:
+						MapUnmapper.unmapJobMap(inMap, strBuf);
+						break;
+					case CHANGE:
+					case SUBMIT:
+					case SHELVE:
+						MapUnmapper.unmapChangelistMap(inMap, strBuf);
+						break;
+					case LABEL:
+						MapUnmapper.unmapLabelMap(inMap, strBuf);
+						break;
+					case CLIENT:
+						MapUnmapper.unmapClientMap(inMap, strBuf);
+						break;
+					case BRANCH:
+						MapUnmapper.unmapBranchMap(inMap, strBuf);
+						break;
+					case USER:
+						MapUnmapper.unmapUserMap(inMap, strBuf);
+						break;
+					case GROUP:
+						MapUnmapper.unmapUserGroupMap(inMap, strBuf);
+						break;
+					case DEPOT:
+						MapUnmapper.unmapDepotMap(inMap, strBuf);
+						break;
+					case PROTECT:
+						MapUnmapper.unmapProtectionEntriesMap(inMap, strBuf);
+						break;
+					case STREAM:
+						MapUnmapper.unmapStreamMap(inMap, strBuf);
+						break;
+					case ATTRIBUTE:
+						// Have to treat this rather differently, as we're reading a byte stream in
+						// and not a string. We may need to factor this out elsewhere in the long term -- HR.
 
-					InputStream inStream = (InputStream) inMap.get(Server.ATTRIBUTE_STREAM_MAP_KEY);
-					if (inStream == null) {
-						throw new NullPointerError("null input stream in getStreamBytes.inMap");
-					}
-					bytes = getStreamBytes(cmdName, inStream);
-					break;
-				case TRIGGERS:
-					MapUnmapper.unmapTriggerEntriesMap(inMap, strBuf);
-					break;
-				default:
-					break;
+						InputStream inStream = (InputStream) inMap.get(Server.ATTRIBUTE_STREAM_MAP_KEY);
+						if (inStream == null) {
+							throw new NullPointerError("null input stream in getStreamBytes.inMap");
+						}
+						bytes = getStreamBytes(cmdName, inStream);
+						break;
+					case TRIGGERS:
+						MapUnmapper.unmapTriggerEntriesMap(inMap, strBuf);
+						break;
+					default:
+						break;
 				}
-    		}
-			
+			}
+
 			if (bytes != null) {
 				resultsMap.put(RpcFunctionMapKey.DATA, bytes);
 			} else {
@@ -791,10 +787,10 @@ public class ClientUserInteraction {
 			resultsMap.put(RpcFunctionMapKey.DATA, inString);
 		}
 		rpcConnection.clientConfirm(confirm, resultsMap);
-		
+
 		return RpcPacketDispatcherResult.CONTINUE_LOOP;
 	}
-	
+
 	/**
 	 * Get bytes from the stream passed in.
 	 */
@@ -802,11 +798,11 @@ public class ClientUserInteraction {
 
 		if (inStream != null) {
 			try {
-				byte[] bytes = new byte[8192];	// deliberately fairly small to start with -- most uses are
-												// probably for small thumbnail files, etc.
+				byte[] bytes = new byte[8192];    // deliberately fairly small to start with -- most uses are
+				// probably for small thumbnail files, etc.
 				int bytesRead = 0;
 				int bytePos = 0;
-				
+
 				while ((bytesRead = inStream.read(bytes, bytePos, bytes.length - bytePos)) > 0) {
 					bytePos += bytesRead;
 					if (bytePos >= bytes.length) {

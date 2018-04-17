@@ -16,6 +16,7 @@ import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -39,6 +40,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({"job046086"})
 @TestId("Dev112_DeleteFilesOptionsTest")
+@Disabled("Uses external p4d server")
 public class DeleteFilesOptionsTest extends P4JavaTestCase {
     private IClient client = null;
 

@@ -15,6 +15,7 @@ import java.util.concurrent.Executors;
 
 import com.perforce.p4java.tests.MockCommandCallback;
 import org.junit.Assert;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -37,6 +38,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({"job064015"})
 @TestId("Dev131_ConcurrentRpcConnectionsTest")
+@Disabled("Uses external p4d server")
 public class ConcurrentRpcConnectionsTest extends P4JavaTestCase {
   private class GetChangelistsRunner implements Runnable {
     private final IOptionsServer server;

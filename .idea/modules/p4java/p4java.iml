@@ -7,7 +7,7 @@
       <excludeFolder url="file://$MODULE_DIR$/../../../p4java/build" />
       <excludeFolder url="file://$MODULE_DIR$/../../../p4java/out" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="1.8 - No JetBrains Annotations" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

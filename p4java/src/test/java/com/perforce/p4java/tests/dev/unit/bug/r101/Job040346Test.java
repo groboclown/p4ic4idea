@@ -27,11 +27,13 @@ import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  *
  */
 @TestId("Bugs101_Job040346Test")
+@Disabled("Uses external p4d server")
 public class Job040346Test extends P4JavaTestCase {
 
 	public Job040346Test() {

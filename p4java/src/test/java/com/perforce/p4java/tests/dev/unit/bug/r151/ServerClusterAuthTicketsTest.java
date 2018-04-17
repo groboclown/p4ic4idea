@@ -31,12 +31,14 @@ import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test auth tickets in a Perforce server cluster environment.
  */
 @Jobs({ "job078145" })
 @TestId("Dev151_ServerClusterAuthTicketsTest")
+@Disabled("Uses external p4d server")
 public class ServerClusterAuthTicketsTest extends P4JavaTestCase {
 
 	static final String faketicket = "88888888888ZZZZZZZZZZ88888888888";

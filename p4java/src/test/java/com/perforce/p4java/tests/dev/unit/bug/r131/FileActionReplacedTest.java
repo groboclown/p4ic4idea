@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -44,6 +45,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({"job060376"})
 @TestId("Dev131_FileActionReplacedTest")
+@Disabled("Uses external p4d server")
 public class FileActionReplacedTest extends P4JavaTestCase {
 
   private IOptionsServer server = null;

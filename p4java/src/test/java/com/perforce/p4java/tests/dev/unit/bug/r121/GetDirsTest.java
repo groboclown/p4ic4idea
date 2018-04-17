@@ -35,12 +35,14 @@ import com.perforce.p4java.server.callback.IStreamingCallback;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test 'p4 dirs' command.
  */
 @Jobs({ "job050447" })
 @TestId("Dev112_GetDirsTest")
+@Disabled("Uses external p4d server")
 public class GetDirsTest extends P4JavaTestCase {
 	IOptionsServer server = null;
 	IClient client = null;

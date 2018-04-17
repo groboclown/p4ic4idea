@@ -35,6 +35,7 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test "p4 edit -t auto" functionality which causes file type to be determined
@@ -42,6 +43,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job042443" })
 @TestId("Dev112_ChangelistSubmitTest")
+@Disabled("Uses external p4d server")
 public class ChangelistSubmitTest extends P4JavaTestCase {
 
 	/** The server. */

@@ -31,12 +31,14 @@ import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 import com.perforce.p4java.tests.dev.unit.bug.r152.ShelveChangelistClientTest;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test the label "locked/unlocked" statuses.
  */
 @Jobs({ "job074971" })
 @TestId("Dev141_LabelLockedAutoReloadTest")
+@Disabled("Uses external p4d server")
 public class LabelLockedAutoReloadTest extends P4JavaRshTestCase {
 
 	

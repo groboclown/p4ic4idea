@@ -11,6 +11,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -39,6 +40,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({ "job060527" })
 @TestId("Dev131_HighASCIIClientNameTest")
+@Disabled("Uses external p4d server")
 public class HighASCIIClientNameTest extends P4JavaTestCase {
 
     /** The server. */

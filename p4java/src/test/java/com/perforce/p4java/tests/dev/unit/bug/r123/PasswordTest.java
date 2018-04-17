@@ -15,6 +15,7 @@ import java.util.List;
 import com.perforce.p4java.tests.MockCommandCallback;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -37,6 +38,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({"job059485"})
 @TestId("Dev123_PasswordTest")
+@Disabled("Uses external p4d server")
 public class PasswordTest extends P4JavaTestCase {
 
   private static IOptionsServer superServer = null;

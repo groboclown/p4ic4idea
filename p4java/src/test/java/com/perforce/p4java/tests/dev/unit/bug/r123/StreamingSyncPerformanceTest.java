@@ -13,6 +13,7 @@ import java.util.Properties;
 import com.perforce.p4java.tests.MockCommandCallback;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -39,6 +40,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({ "job038737" })
 @TestId("Dev123_DescribeChangelistTest")
+@Disabled("Uses external p4d server")
 public class StreamingSyncPerformanceTest extends P4JavaTestCase {
     private IOptionsServer server = null;
     private IClient client = null;

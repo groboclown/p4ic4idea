@@ -94,7 +94,7 @@ public class GetChangelistDiffsStreamTest {
                 "Shelved files ...\n" +
                 "\n" +
                 "... //depot/foo.txt#1 edit\n" +
-                "\n\n" +
+                "\n" +
                 "Differences ...\n" +
                 "\n" +
                 "==== //depot/foo.txt#1 (text) ====\n" +

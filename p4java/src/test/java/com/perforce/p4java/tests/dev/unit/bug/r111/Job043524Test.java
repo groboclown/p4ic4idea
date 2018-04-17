@@ -34,6 +34,7 @@ import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test the server- (etc.) message handling underpinning job 043524. Test
@@ -41,6 +42,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  * server handling below. 
  */
 @TestId("Bugs111_Job043524Test")
+@Disabled("Uses external p4d server")
 public class Job043524Test extends P4JavaTestCase {
 
 	public Job043524Test() {

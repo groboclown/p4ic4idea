@@ -37,12 +37,14 @@ import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test 'p4 reconcile -w' (p4 clean)
  */
 @Jobs({ "job077476" })
 @TestId("Dev151_ReconcileWorkspaceFilesTest")
+@Disabled("Uses external p4d server")
 public class ReconcileWorkspaceFilesTest extends P4JavaTestCase {
 
 	final static String serverURL = "p4java://eng-p4java-vm.perforce.com:20141";

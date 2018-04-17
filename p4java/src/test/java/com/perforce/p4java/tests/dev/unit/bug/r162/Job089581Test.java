@@ -11,6 +11,7 @@ import java.util.List;
 import com.perforce.p4java.tests.MockCommandCallback;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -26,6 +27,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  * @since 20/01/2017
  */
 @RunWith(JUnitPlatform.class)
+@Disabled("Uses external p4d server")
 public class Job089581Test extends P4JavaTestCase {
     /*
     * group      | max results | max scan rows | max lock time | login time out   | password time out|

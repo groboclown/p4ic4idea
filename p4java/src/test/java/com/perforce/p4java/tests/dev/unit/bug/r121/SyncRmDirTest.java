@@ -27,6 +27,7 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test the sync testdir/...#0 with client option "rmdir". This should remove
@@ -34,6 +35,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job052977" })
 @TestId("Dev112_SyncSafetyCheckTest")
+@Disabled("Uses external p4d server")
 public class SyncRmDirTest extends P4JavaTestCase {
 
 	IOptionsServer server = null;

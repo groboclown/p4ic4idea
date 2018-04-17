@@ -9,6 +9,7 @@ import static org.junit.Assert.fail;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -33,6 +34,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({"job057913"})
 @TestId("Dev123_NewDepotTest")
+@Disabled("Uses external p4d server")
 public class NewDepotTest extends P4JavaTestCase {
   private static final String TEST_102_SERVER_URL = "p4jrpcnts://eng-p4java-vm.perforce.com:20152";
   private static final String TEST_102_CLIENT_NAME = "p4TestUserWS";

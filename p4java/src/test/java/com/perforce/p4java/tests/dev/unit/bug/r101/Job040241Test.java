@@ -19,12 +19,14 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.callback.ILogCallback;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Tests sync issues with job040241. Uses the log callback to detect
  * the problem, which may not always be reliable if the message changes.
  */
 @TestId("Bugs101_Job040241Test")
+@Disabled("Uses external p4d server")
 public class Job040241Test extends P4JavaTestCase {
 	
 	private ILogCallback logCallback = new ILogCallback() {

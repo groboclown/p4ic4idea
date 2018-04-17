@@ -29,11 +29,13 @@ import com.perforce.p4java.option.client.CopyFilesOptions;
 import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Tests Job043500's issue with branch specs.
  */
 @TestId("Bugs111_Job043500Test")
+@Disabled("Uses external p4d server")
 public class Job043500Test extends P4JavaTestCase {
     @AfterClass
     public static void tearDownAll() throws Exception {

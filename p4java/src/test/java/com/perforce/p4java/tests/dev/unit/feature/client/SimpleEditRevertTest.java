@@ -10,6 +10,7 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -19,12 +20,15 @@ import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Simple test of a sync / edit / revert cycle.
  */
 
 @TestId("Client_SimpleEditRevertTest")
+@Disabled("Uses external p4d server")
+@Ignore("Uses external p4d server")
 public class SimpleEditRevertTest extends P4JavaTestCase {
 
 	public SimpleEditRevertTest() {
@@ -79,7 +83,9 @@ public class SimpleEditRevertTest extends P4JavaTestCase {
 		} catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());
 		} finally {
-			endServerSession(server);
+			if (server != null) {
+				endServerSession(server);
+			}
 		}
 	}
 }

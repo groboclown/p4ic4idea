@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -16,12 +17,15 @@ import com.perforce.p4java.impl.mapbased.client.Client;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Basic tests for the P4Java commons Factory class. Transitively tests
  * underlying class-specific factory methods as well.
  */
 @TestId("Commons_FactoryCreateClientTest")
+@Disabled("Uses external p4d server")
+@Ignore("Uses external p4d server")
 public class FactoryCreateClientTest extends P4JavaTestCase {
 
 	public FactoryCreateClientTest() {
@@ -54,12 +58,14 @@ public class FactoryCreateClientTest extends P4JavaTestCase {
 		} catch (Exception exc) {
 			fail("unexpected exception: " + exc.getLocalizedMessage());
 		} finally {
-			try {
-				server.deleteClient(clientName, null);
-			} catch (Exception exc) {
-				
+			if (server != null) {
+				try {
+					server.deleteClient(clientName, null);
+				} catch (Exception exc) {
+					exc.printStackTrace();
+				}
+				this.endServerSession(server);
 			}
-			this.endServerSession(server);
 		}
 	}
 	
@@ -99,12 +105,14 @@ public class FactoryCreateClientTest extends P4JavaTestCase {
 		} catch (Exception exc) {
 			fail("unexpected exception: " + exc.getLocalizedMessage());
 		} finally {
-			try {
-				server.deleteClient(clientName, null);
-			} catch (Exception exc) {
-				
+			if (server != null) {
+				try {
+					server.deleteClient(clientName, null);
+				} catch (Exception exc) {
+					exc.printStackTrace();
+				}
+				this.endServerSession(server);
 			}
-			this.endServerSession(server);
 		}
 	}
 }

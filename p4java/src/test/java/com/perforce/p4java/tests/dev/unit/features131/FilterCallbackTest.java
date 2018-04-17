@@ -19,6 +19,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -34,12 +35,15 @@ import com.perforce.p4java.server.callback.IFilterCallback;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test describe changelist with many files using IStreamingCallback
  */
 @Jobs({ "job065303" })
 @TestId("Dev131_FilterCallbackTest")
+@Disabled("Uses external p4d server")
+@Ignore("Uses external p4d server")
 public class FilterCallbackTest extends P4JavaTestCase {
 
 	IOptionsServer server = null;

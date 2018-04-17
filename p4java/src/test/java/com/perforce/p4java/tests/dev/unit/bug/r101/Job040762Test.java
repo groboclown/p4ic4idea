@@ -23,6 +23,7 @@ import com.perforce.p4java.option.server.GetChangelistDiffsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Note that this test is somewhat brittle; for example,
@@ -30,6 +31,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  * slightly different in the next release, things will fail...
  */
 @TestId("Bugs101_Job040762Test")
+@Disabled("Uses external p4d server")
 public class Job040762Test extends P4JavaTestCase {
 
 	public Job040762Test() {

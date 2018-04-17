@@ -17,12 +17,14 @@ import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test getting changelists from a date range.
  */
 @Jobs({"job053580"})
 @TestId("Dev121_GetChangelistsDateRangeTest")
+@Disabled("Uses external p4d server")
 public class GetChangelistsDateRangeTest extends P4JavaTestCase {
     /**
      * @Before annotation to a method to be run before each test in a class.

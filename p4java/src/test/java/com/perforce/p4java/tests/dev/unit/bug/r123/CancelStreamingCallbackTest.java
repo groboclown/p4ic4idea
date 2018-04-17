@@ -21,6 +21,7 @@ import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -42,6 +43,7 @@ import static org.junit.Assert.fail;
 @RunWith(JUnitPlatform.class)
 @Jobs({"job059658"})
 @TestId("Dev123_CancelStreamingCallbackTest")
+@Disabled("Uses external p4d server")
 public class CancelStreamingCallbackTest extends P4JavaTestCase {
   private IOptionsServer server = null;
   private IClient client = null;

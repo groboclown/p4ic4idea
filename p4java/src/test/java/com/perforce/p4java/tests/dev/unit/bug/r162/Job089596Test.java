@@ -10,6 +10,7 @@ import java.util.Map;
 import com.perforce.p4java.tests.MockCommandCallback;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -19,6 +20,7 @@ import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 @RunWith(JUnitPlatform.class)
+@Disabled("Uses external p4d server")
 public class Job089596Test extends P4JavaTestCase {
     private static String jobName = "job" + System.currentTimeMillis();
     private static final String INITIAL_JOB_DESCRIPTION = "Temporary test job(" + jobName + ") for 'Job089596Test";

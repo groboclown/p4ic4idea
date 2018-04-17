@@ -7,7 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/../../../p4java/src/test/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../../../p4java/src/test/resources" type="java-test-resource" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="1.8 - No JetBrains Annotations" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="p4java_main" />
     <orderEntry type="library" name="Gradle: com.google.code.findbugs:jsr305:3.0.1" level="project" />

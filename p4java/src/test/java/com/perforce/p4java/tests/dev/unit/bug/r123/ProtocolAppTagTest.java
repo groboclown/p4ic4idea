@@ -9,6 +9,7 @@ import java.util.Properties;
 
 import com.perforce.p4java.tests.MockCommandCallback;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -27,6 +28,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({"job060798", "job061402"})
 @TestId("Dev123_ProtocolAppTagTest")
+@Disabled("Uses external p4d server")
 public class ProtocolAppTagTest extends P4JavaTestCase {
   private final Properties serverProps = new Properties();
 

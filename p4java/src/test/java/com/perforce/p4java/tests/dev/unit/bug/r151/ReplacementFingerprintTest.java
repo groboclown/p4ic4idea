@@ -17,12 +17,14 @@ import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test replacement fingerprint ('p4 trust -r')
  */
 @Jobs({"job076501"})
 @TestId("Dev151_ReplacementFingerprintTest")
+@Disabled("Uses external p4d server")
 public class ReplacementFingerprintTest extends P4JavaTestCase {
     /**
      * Test replacement fingerprint.

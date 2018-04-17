@@ -186,7 +186,7 @@ public static final String TRACE_PREFIX = "ClientFunctionDispatcher";
 				
 				result = this.fileCommands.chmodFile(rpcConnection, cmdEnv, resultsMap);
 				break;
-				
+
 			case CLIENT_OPENFILE:
 				
 				result = this.fileCommands.openFile(rpcConnection, cmdEnv, resultsMap);

@@ -25,12 +25,14 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test the GetChangelistsOptions constructor
  */
 @Jobs({ "job053580" })
 @TestId("Dev121_GetChangelistsOptionsTest")
+@Disabled("Uses external p4d server")
 public class GetChangelistsOptionsTest extends P4JavaTestCase {
 
 	IOptionsServer server = null;

@@ -11,7 +11,9 @@ testing to verify.
 
 # List of known current bugs with the tests
 
-## Referencing Internal Perforce Test Servers
+## Known Problems That Are Worked Around
+
+### Referencing Internal Perforce Test Servers
 
 Many tests attempt to connect to Perforce test servers located within their
 firewall.  The tests fail when a connection attempt is made.  Work has been
@@ -20,7 +22,10 @@ done to fail early when one of these tests run.
 The fix is to instead use a TestServer instance to start up the correct server
 configuration, so no pre-configured server is necessary.
 
-## IllegalArgumentException thrown instead of NullPointerException
+A list of these tests is below.  They have been disabled until the server stuff
+is set up.
+
+### IllegalArgumentException thrown instead of NullPointerException
 
 If you run the tests from Idea, then its compiler instruments the classes marked
 with `@Nonnull` to throw an IAE when a null argument is passed in.  Some of the
@@ -28,9 +33,11 @@ unit tests check that an NPE (what should be the correct exception) is thrown, a
 they fail because of the instrumentation.
 
 This is only an issue when running tests inside the IDE.  The gradle scripts do not
-run the Idea instrumentation, and do not fail for these tests.
+run the Idea instrumentation, and do not fail for these tests.  To work around this, you need
+to globally remove the
+[runtime assertions for annotated methods and parameters](https://www.jetbrains.com/help/idea/compiler.html).
 
-## Symbolic link issues with Windows
+### Symbolic link issues with Windows
 
 * com.perforce.p4java.impl.mapbased.rpc.sys.helper.SymbolicLinkHelperTest
 * com.perforce.p4java.impl.mapbased.rpc.sys.helper.RpcSystemFileCommandsHelperTest
@@ -42,7 +49,14 @@ You need the permission to create symbolic links.  A full detail on the solution
 [in this discussion](https://superuser.com/questions/104845/permission-to-make-symbolic-links-in-windows-7).
 I've noticed on Windows 10, even that doesn't always work.
 
-## fail() when an exception happens
+### Problems when running tests in Docker on shared Windows drive
+
+Some tests rely upon testing the file mode (read/write/etc), and with a connected Windows drive
+in a Docker image, the files do not correctly set the writable flag.  These tests end up failing.
+
+* com.perforce.p4java.tests.qa.EditFilesOptionsTest
+
+### fail() when an exception happens
 
 This is an anti-pattern that happens frequently in the tests.  Instead, it should use
 `throw new AssertionError(message, exc)`.  This should be encased in a helper function.
@@ -50,8 +64,17 @@ This is an anti-pattern that happens frequently in the tests.  Instead, it shoul
 Normally, the exceptions should just be thrown.  If the code isn't directly in a test, though,
 then we can't make certain that the outer caller isn't trapping and hiding those failures.
 Thus, we need an assertion error.
+n).
 
-## com.perforce.p4java.impl.mapbased.rpc.func.helper.MD5DigesterTest
+### Tests with unsupported API
+
+These tests were written to try to run server commands that aren't implemented yet.
+
+* com.perforce.p4java.tests.qa.GetDiffFilesOptionsTest
+    * "No metadata defined for RPC function encoding: client-OpenDiff"
+    * client-OpenDiff is not implemented in the API, so this test just won't ever run.  Failing tests disabled.
+
+### com.perforce.p4java.impl.mapbased.rpc.func.helper.MD5DigesterTest
 
 Two methods here fail on non-Windows OS (or any system where the line.separator
 property is not `\n`).  It appears that the underlying logic will check if the
@@ -65,242 +88,214 @@ This is because isRequireConvertClientOrLocalLineEndingToServerFormat
 sees that the native line ending ("\n") is the same as the server line ending
 (which the ClientLineEnding assumes is \n).
 
-## com.perforce.p4java.option.OptionsTest
 
-Looks like more Idea compiler injecting IAE rather than the code itself checking.
-Try running without IntelliJ
+## Observed Failures That Need Fixing
 
-## Could not delete a db file from the temp p4d server dir
+### com.perforce.p4java.tests.qa.CopyFilesTest
 
-Fixed by having each test server run in its own directory.  There's probably a test somewhere that uses
-BeforeClass or Before with a TestServer, but doesn't clean it up right.
+* usingSpecifiedParent() - Looks like the view isn't setup right to support the test.
+* failure() - expects an ERROR, but is getting an INFO (actually, error code 2, which is a warning).  Probably
+  due to another underlying setup issue.
 
-(SetClientOptionsTest was one of them.)
+### com.perforce.p4java.tests.qa.CoreFactoryTest
 
-## com.perforce.p4java.tests.qa.CopyFilesTest
+Looks like unexpected error message.  Could be that the error messages are now more specific.
 
-Looks like a formatting problem + unexpected error message.
+### com.perforce.p4java.tests.qa.ExecStreamingMapCommandTest
 
-failure() - expects an ERROR, but is getting an INFO (actually, error code 2, which is a warning).
+null vs. empty list, while running the 'export' command.  The returned map does not have the expected value.
+The issue shows regardless of RSH vs. port connection.
 
-## com.perforce.p4java.tests.qa.CoreFactoryTest
+### com.perforce.p4java.tests.qa.GetDirectoriesTest
 
-Looks like unexpected error message.
+Wrong number of paths from getDirectories on the root directory.
 
-## com.perforce.p4java.tests.qa.CreateDepotTest
+### com.perforce.p4java.tests.qa.GetExportRecordTest
 
-Looks like incorrect null message returned.
+Expected a path, but returned null.  Another case of `HAdfile` issue, just like `ExecStreamingMapCommandTest`.
 
-## com.perforce.p4java.tests.qa.CreateUserGroupTest
+### com.perforce.p4java.impl.mapbased.server.cmd.DirsDelegatorTest
 
-???
+getDirectories returns 0 paths instead of 1.
 
-## com.perforce.p4java.tests.qa.EditFilesTest
+### com.perforce.p4java.impl.mapbased.server.cmd.KeysDelegatorTest
 
-???
+RequestException for handleError on getKeys()
 
-## com.perforce.p4java.tests.qa.EditFilesOptionsTest
-
-Fails on Linux with a Windows connected drive (read/write state is not correctly handled by OS).
-
-## com.perforce.p4java.tests.qa.ExecStreamingMapCommandTest
-
-null vs. empty list.
-
-## com.perforce.p4java.tests.qa.FileSpecTest
-
-null vs. real string
-
-## com.perforce.p4java.tests.qa.GetChangelistDiffsStreamTest
-
-Extra new line expected?
-
-## com.perforce.p4java.tests.qa.GetChangelistsTest
-
-Same null vs. nouser issue
-
-## com.perforce.p4java.tests.qa.GetDiffFilesOptionsTest
-
-NPE in test
-
-## com.perforce.p4java.tests.qa.GetDirectoriesTest
-
-NPE in test
-
-## com.perforce.p4java.tests.qa.GetExportRecordTest
+### com.perforce.p4java.impl.mapbased.server.cmd.MoveDelegatorTest
 
 null vs. text
 
-## com.perforce.p4java.tests.qa.GetFileAnnotationsTest
-
-NPE in test
-
-## com.perforce.p4java.impl.mapbased.server.cmd.Diff2DelegatorTest
-
-NPE in test
-
-## com.perforce.p4java.impl.mapbased.server.cmd.DirsDelegatorTest
-
-???
-
-## com.perforce.p4java.impl.mapbased.server.cmd.IntegratedDelegatorTest
-
-???
-
-## com.perforce.p4java.impl.mapbased.server.cmd.KeysDelegatorTest
-
-???
-
-## com.perforce.p4java.impl.mapbased.server.cmd.MoveDelegatorTest
+### com.perforce.p4java.tests.qa.GetExportRecordTest
 
 null vs. text
 
-## com.perforce.p4java.impl.mapbased.server.cmd.ObliterateDelegatorTest
+### com.perforce.p4java.impl.mapbased.server.cmd.PropertyDelegatorTest
 
-null vs. text
+Null vs. empty string.
 
-## com.perforce.p4java.impl.mapbased.server.cmd.PropertyDelegatorTest
+### com.perforce.p4java.impl.mapbased.server.cmd.TagDelegatorTest
 
-??? - bad test, needs something better than "true/false"
+The underlying implementation returns the standard INFO message without looking at the
+`depotFile` field.  This is either an incorrect test, or the implementation isn't returning
+what the test expects.
 
-## com.perforce.p4java.impl.mapbased.server.cmd.TagDelegatorTest
-
-null vs. text
-
-## com.perforce.p4java.impl.mapbased.server.cmd.VerifyDelegatorTest
-
-NPE in test
-
-## com.perforce.p4java.option.client.OptionsDefaultConstructorsTest
-
-Incompatible version of com.google.common.collect and org.reflections.Reflections.
-
-## com.perforce.p4java.tests.dev.unit.bug.r152.RshTest
+### com.perforce.p4java.tests.dev.unit.bug.r152.RshTest
 
 Pipe closed error.
 
-## Could not create file/directory
+### com.perforce.p4java.impl.mapbased.rpc.stream.RpcStreamConnectionTest
 
-* com.perforce.p4java.tests.dev.unit.bug.r132.GetDiffFilesWindowsLineEndingsTest
-* com.perforce.p4java.tests.dev.unit.bug.r132.InferFileTypeTest
-* com.perforce.p4java.tests.dev.unit.bug.r132.RequestTicketForHostTest
-* com.perforce.p4java.tests.dev.unit.bug.r132.StreamCmdDiff2UnicodeTest
-* com.perforce.p4java.tests.dev.unit.bug.r132.SymbolicLink2DirectoryTest
-* com.perforce.p4java.tests.dev.unit.bug.r132.SymbolicLinksWithConnectionPoolTest
-* com.perforce.p4java.tests.dev.unit.bug.r132.SymbolicLinkWithNonExistingTargetTest
-* com.perforce.p4java.tests.dev.unit.bug.r132.SyncBinaryFilesTest
-* com.perforce.p4java.tests.dev.unit.bug.r132.SyncTextRevWithNoTargetSymlinkHeadTest
-* com.perforce.p4java.tests.dev.unit.bug.r141.CreateClientWithWhitespaceTest
-* com.perforce.p4java.tests.dev.unit.bug.r141.GetFileContentNonExistingFileTest
-* com.perforce.p4java.tests.dev.unit.bug.r141.GetJobRawFieldsTest
-* com.perforce.p4java.tests.dev.unit.bug.r141.LabelLockedAutoReloadTest
-* com.perforce.p4java.tests.dev.unit.bug.r141.ProtectionsQuotedExcludePathTest
-* com.perforce.p4java.tests.dev.unit.bug.r141.ReconcileFilesOutputLocalFileSyntaxTest
-* com.perforce.p4java.tests.dev.unit.bug.r141.ReconcileFilesWhitespacePathTest
-* com.perforce.p4java.tests.dev.unit.bug.r141.SyncDeletedFilesTest
-* com.perforce.p4java.tests.dev.unit.bug.r151.SyncFilesWithExecBitTest
-* com.perforce.p4java.tests.dev.unit.bug.r152.IntegrateNoServerClientTest
-* com.perforce.p4java.tests.dev.unit.bug.r152.ProtectionsCreateUpdateOrderingTest
-* com.perforce.p4java.tests.dev.unit.bug.r152.ServerConnectionMimCheckTest
-* com.perforce.p4java.tests.dev.unit.bug.r152.ShelveUnshelveUtf6leWindowsTest
-* com.perforce.p4java.tests.dev.unit.bug.r152.SyncUnicodeXFilesTest
-* com.perforce.p4java.tests.dev.unit.bug.r152.SyncUtf16beFilesWinLocalTest
-* com.perforce.p4java.tests.dev.unit.bug.r152.SyncUtf16leFilesTest
-* com.perforce.p4java.tests.dev.unit.bug.r152.UnshelveUtf6leWindowsTest
-* com.perforce.p4java.tests.dev.unit.bug.r161.SubmitAndSyncUnicodeFileTypeOnNonUnicodeEnabledServerTest
-* com.perforce.p4java.tests.dev.unit.bug.r161.SubmitAndSyncUnicodeFileTypeOnUnicodeEnabledServerTest
-* com.perforce.p4java.tests.dev.unit.bug.r161.SubmitAndSyncUtf16BETest
-* com.perforce.p4java.tests.dev.unit.bug.r161.SubmitAndSyncUtf16FileTypeTest
-* com.perforce.p4java.tests.dev.unit.bug.r161.SubmitAndSyncUtf8FileTypeTest
-* com.perforce.p4java.tests.dev.unit.bug.r161.SubmitAndSyncUtf8FileTypeUnderServer20161Test
-* com.perforce.p4java.tests.dev.unit.bug.r161.SyncExecutableFileTest
-* com.perforce.p4java.tests.dev.unit.features111.IntegrationsAnnotationsTest
-* com.perforce.p4java.tests.dev.unit.features171.GraphCatFileTest
-* com.perforce.p4java.tests.dev.unit.features171.GraphClientDepotTypeTest
-* com.perforce.p4java.tests.dev.unit.features171.GraphCommitLogTest
-* com.perforce.p4java.tests.dev.unit.features171.GraphDepotsTest
-* com.perforce.p4java.tests.dev.unit.features171.GraphDescribeCommitTest
-* com.perforce.p4java.tests.dev.unit.features171.GraphFilesTest
-* com.perforce.p4java.tests.dev.unit.features171.GraphHaveTest
-* com.perforce.p4java.tests.dev.unit.features171.GraphLsTree
-* com.perforce.p4java.tests.dev.unit.features171.GraphReceivePackTest
-* com.perforce.p4java.tests.dev.unit.features171.GraphRevListTest
-* com.perforce.p4java.tests.dev.unit.features171.ParallelCallbackTest
-* com.perforce.p4java.tests.dev.unit.features172.FilesysUTF8bomTest
-* com.perforce.p4java.tests.dev.unit.features172.IntegrationOutputTest
-* com.perforce.p4java.tests.dev.unit.features172.ListCommandTest
-* com.perforce.p4java.tests.dev.unit.features173.GraphShowRefTest
-* com.perforce.p4java.tests.dev.unit.features173.UnicodeBufferTest
+* initRshModeServer_withException: Expected an NPE, found a ConnectionException.
+* initSocketBasedServer_with_exceptions: Expected UnknownHostException, found a ConnectionException.
 
+### Throwable tests
 
-Failure to create a temp file.  Problem in `com.perforce.test.P4ExtFileUtils`.
+* com.perforce.p4java.tests.dev.unit.feature.error.ThrowableSuite
+* com.perforce.p4java.tests.dev.unit.feature.error.AccessExceptionTest
+* com.perforce.p4java.tests.dev.unit.feature.error.RequestExceptionTest
 
-## com.perforce.p4java.tests.dev.unit.dev101.options.OptionsSpecTest
+This is a bad test suite in general, now that the exceptions have become more explicit in terms of when they can be used.
 
-null argument to test
+### com.perforce.p4java.tests.qa.GetLogtailTest
 
-## null server object passed to endServerSession
+log text incorrect.
 
-* com.perforce.p4java.tests.dev.unit.feature.client.SimpleEditRevertTest
-* com.perforce.p4java.tests.dev.unit.helper.FactoryCreateClientTest
-
-
-## com.perforce.p4java.tests.dev.unit.feature.error.AccessExceptionTest
-
-AccessException rather than Exception
-
-## com.perforce.p4java.tests.dev.unit.feature.error.RequestExceptionTest
-
-expected null, found error
-
-## com.perforce.p4java.tests.dev.unit.feature.error.ThrowableSuite
-
-expected Exception, found AccessException
-
-## com.perforce.p4java.tests.dev.unit.features123.InMemoryFingerprintsTest
-
-assertion failure (bad test - don't use true/false)
-
-## NtsServerImpl.disconnect NPE
-
-* com.perforce.p4java.tests.dev.unit.features131.FilterCallbackTest
-* com.perforce.p4java.tests.dev.unit.features131.QuietModeTest
-* com.perforce.p4java.tests.dev.unit.features132.JournalWaitTest
-* com.perforce.p4java.tests.dev.unit.features132.ClientCompressSyncTest
-
-NPE when disconnecting Nts, but never connected.  Should be fixed now.
-
-## NPE in validateFileSpecs test code.
-
-* com.perforce.p4java.tests.qa.GetFileDiffsTest
-* com.perforce.p4java.tests.qa.GetInterchangesTest
-* com.perforce.p4java.tests.qa.IntegrateFilesOptionsTest
-* com.perforce.p4java.tests.qa.ResolvedFilesOptionsTest
-* com.perforce.p4java.tests.qa.ResolveFilesAutoOptionsTest
-
-## com.perforce.p4java.tests.qa.GetLogtailTest
-
-log text missing
-
-## com.perforce.p4java.tests.qa.GetProtectionEntriesTest
-
-RequestException: Can't delete last valid 'super' entry from protections table.
-
-## com.perforce.p4java.tests.qa.GetStreamsTest
-
-NPE when matching strings
-
-## com.perforce.p4java.tests.qa.ResolveFileTest
+### com.perforce.p4java.tests.qa.ResolveFileTest
 
 resolvedFile file spec is returned null.
 
-## getLog but file exists
+### Program name property not found in log file
 
 * com.perforce.p4java.tests.qa.ServerFactoryTest
 * com.perforce.p4java.tests.qa.SocketPoolTest
 
-Fails due to the new file already exists.  Looks like it was using the wrong API here.
-It should be fixed now.
+Looks like possibly a bad test.
 
-However, there are issues with the server actually producing stuff to the log...
+### com.perforce.p4java.tests.qa.Authentication102Test
 
+Session logged out; need to log in again.
+
+### com.perforce.p4java.impl.mapbased.server.cmd.ClientDelegatorTest
+
+NPE thrown instead of RequestException.  Need to understand why.
+
+### com.perforce.p4java.impl.mapbased.server.cmd.JobDelegatorTest
+
+Expected IAE.
+
+### com.perforce.p4java.tests.dev.unit.bug.r101.Job038602Test
+
+No such file on server.  It probably wasn't setup right.
+
+### Could not find resource /data/server-20101/depot.tar.gz
+
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040601Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040680Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040829Test
+
+### com.perforce.p4java.tests.dev.unit.bug.r132.InferFileTypeTest
+
+Could not find the Linux.jpg file.
+
+### Could not create a unicode character directory
+
+* com.perforce.p4java.tests.dev.unit.bug.r132.StreamCmdDiff2UnicodeTest
+* com.perforce.p4java.tests.dev.unit.bug.r141.GetDiffFilesUnicodeBOMTest
+
+Could be an issue only on Windows.
+
+### References External p4d Host
+
+`''(java)
+@Disabled("Uses external p4d server")
+@Ignore("Uses external p4d server")
+`''
+
+* com.perforce.p4java.tests.dev.unit.bug.r123.AutoloadUserAuthTicketTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.BrokerTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.CancelStreamingCallbackTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.ClientViewMapTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.GetFileDiffsTypesTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.NewDepotTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.PasswordSecretKeyTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.PasswordTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.ProtocolAppTagTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.ReplicaAuthTicketsTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.ReplicaAutoloadUserAuthTicketTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.StreamingSyncPerformanceTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.SyncJapaneseFilesCharsetTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.SyncPerformanceTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.UpdateLabelTest
+* com.perforce.p4java.tests.dev.unit.bug.r131.AddFilesCheckSymlinkTest
+* com.perforce.p4java.tests.dev.unit.bug.r131.ConcurrentRpcConnectionsTest
+* com.perforce.p4java.tests.dev.unit.bug.r131.FileActionReplacedTest
+* com.perforce.p4java.tests.dev.unit.bug.r131.FstatResolveTypeTest
+* com.perforce.p4java.tests.dev.unit.bug.r131.GetStreamBaseParentFieldTest
+* com.perforce.p4java.tests.dev.unit.bug.r131.GetStreamsBaseParentFilterTest
+* com.perforce.p4java.tests.dev.unit.bug.r131.HighASCIIClientNameTest
+* com.perforce.p4java.tests.dev.unit.bug.r131.HighASCIIPasswordTest
+* com.perforce.p4java.tests.dev.unit.bug.r131.LoginAsAnotherUserTest
+* com.perforce.p4java.tests.dev.unit.bug.r131.SyncAppleFileTypeTest
+* com.perforce.p4java.tests.dev.unit.bug.r162.Job089581Test
+* com.perforce.p4java.tests.dev.unit.bug.r162.Job089596Test
+* com.perforce.p4java.tests.dev.unit.features112.DeleteFilesOptionsTest
+* com.perforce.p4java.tests.dev.unit.features112.GetExportRecordsTest
+* com.perforce.p4java.tests.dev.unit.features131.FilterCallbackTest
+* com.perforce.p4java.tests.dev.unit.features131.QuietModeTest
+* com.perforce.p4java.tests.dev.unit.features132.GetFileAnnotationsTest
+* com.perforce.p4java.tests.dev.unit.features132.GetFileSizesTest
+* com.perforce.p4java.tests.dev.unit.features132.GetOpenedFilesShortOutputTest
+* com.perforce.p4java.tests.dev.unit.features132.GetProtectionsTableTest
+* com.perforce.p4java.tests.dev.unit.features132.GetUserGroupTest
+* com.perforce.p4java.tests.dev.unit.features132.SubmitShelvedChangelistTest
+* com.perforce.p4java.tests.dev.unit.features132.UnloadReloadTaskStreamTest
+* com.perforce.p4java.tests.dev.unit.features132.ClientCompressSyncTest
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job039015Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job039304Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job039331Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job039525Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job039641Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job039953Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040205Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040241Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040299Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040316Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040346Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040562Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040649Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040656Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040703Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040762Test
+* com.perforce.p4java.tests.dev.unit.bug.r101.Job040877Test
+* com.perforce.p4java.tests.dev.unit.bug.r111.Job042258Test
+* com.perforce.p4java.tests.dev.unit.bug.r111.Job043468Test
+* com.perforce.p4java.tests.dev.unit.bug.r111.Job043500Test
+* com.perforce.p4java.tests.dev.unit.bug.r111.Job043524Test
+* com.perforce.p4java.tests.dev.unit.bug.r112.ChangelistSubmitTest
+* com.perforce.p4java.tests.dev.unit.bug.r112.ChangePasswordTest
+* com.perforce.p4java.tests.dev.unit.bug.r112.CreateStreamsTest
+* com.perforce.p4java.tests.dev.unit.bug.r112.FiletypesTest
+* com.perforce.p4java.tests.dev.unit.bug.r112.GetChangelistsTest
+* com.perforce.p4java.tests.dev.unit.bug.r112.GetFileContentsTest
+* com.perforce.p4java.tests.dev.unit.bug.r112.GetProtectionsTest
+* com.perforce.p4java.tests.dev.unit.bug.r112.HighSecurityLevelPasswordTest
+* com.perforce.p4java.tests.dev.unit.bug.r112.LoginExceptionTest
+* com.perforce.p4java.tests.dev.unit.bug.r112.ServerConfigurationTest
+* com.perforce.p4java.tests.dev.unit.bug.r112.StreamingMethodsTest
+* com.perforce.p4java.tests.dev.unit.bug.r112.UpdateChangelistDateTest
+* com.perforce.p4java.tests.dev.unit.bug.r121.AddFilesHighASCIITest
+* com.perforce.p4java.tests.dev.unit.bug.r121.GetChangelistsDateRangeTest
+* com.perforce.p4java.tests.dev.unit.bug.r121.GetChangelistsOptionsTest
+* com.perforce.p4java.tests.dev.unit.bug.r121.GetDirsTest
+* com.perforce.p4java.tests.dev.unit.bug.r121.ServerInfoTest
+* com.perforce.p4java.tests.dev.unit.bug.r121.SyncRmDirTest
+* com.perforce.p4java.tests.dev.unit.bug.r123.TrustExceptionTest
+* com.perforce.p4java.tests.dev.unit.bug.r141.GetDiffFilesUnchangedTest
+* com.perforce.p4java.tests.dev.unit.bug.r141.LabelLockedAutoReloadTest
+* com.perforce.p4java.tests.dev.unit.bug.r151.ReconcileWorkspaceFilesTest
+* com.perforce.p4java.tests.dev.unit.bug.r151.ReplacementFingerprintTest
+* com.perforce.p4java.tests.dev.unit.bug.r151.ServerClusterAuthTicketsTest
+* com.perforce.p4java.tests.dev.unit.feature.client.SimpleEditRevertTest
+* com.perforce.p4java.tests.dev.unit.helper.FactoryCreateClientTest
+* com.perforce.p4java.tests.dev.unit.features123.InMemoryFingerprintsTest

@@ -40,6 +40,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestServer {
     public static final String DEFAULT_P4_PORT = "11666";
@@ -48,10 +49,12 @@ public class TestServer {
     private static final String CASE_INSENSITIVE_ARG = "-C0";
     private static final String CASE_SENSITIVE_ARG = "-C1";
 
+    private static AtomicInteger serverCount = new AtomicInteger(0);
+
     private final File outDir;
     private final ProcessDestroyer processDestroyer = new ShutdownHookProcessDestroyer();
     private String version = "r17.1";
-    private String user;
+    private String user = "luser";
     private String port = DEFAULT_P4_PORT;
     private int monitor = 3;
     private boolean proxy;
@@ -62,11 +65,16 @@ public class TestServer {
     private ExecuteStatus status = ExecuteStatus.createDummy();
 
     public TestServer() {
-        this(new File("p4d.d"));
+        this(new File("p4d.d-" + serverCount.incrementAndGet()));
     }
 
     public TestServer(@Nonnull File outDir) {
         this.outDir = outDir;
+    }
+
+    protected void finalize() throws Throwable {
+        delete();
+        super.finalize();
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -238,7 +246,19 @@ public class TestServer {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                         throws IOException {
-                    if (!file.toFile().delete()) {
+                    boolean removed = file.toFile().delete();
+                    int attemptCount = 0;
+                    while (! removed && attemptCount < 4) {
+                        try {
+                            Thread.sleep(1000L);
+                        } catch (InterruptedException e) {
+                            throw new IOException("interrupted by another thread", e);
+                        }
+                        attemptCount++;
+                        removed = file.toFile().delete();
+                    }
+
+                    if (!removed) {
                         throw new IOException("could not delete " + file);
                     }
                     return FileVisitResult.CONTINUE;
@@ -253,6 +273,9 @@ public class TestServer {
                     return FileVisitResult.CONTINUE;
                 }
             });
+            if (outDir.exists() && !outDir.delete()) {
+                throw new IOException("Could not delete " + outDir);
+            }
         }
     }
 

@@ -37,12 +37,15 @@ import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test P4Java sync using JZlib with client compression mode.
  */
 @Jobs({ "job066779" })
 @TestId("Dev132_ClientCompressSyncTest")
+@Disabled("Uses external p4d server")
+@Ignore("Uses external p4d server")
 public class ClientCompressSyncTest extends P4JavaTestCase {
 
 	IOptionsServer server = null;

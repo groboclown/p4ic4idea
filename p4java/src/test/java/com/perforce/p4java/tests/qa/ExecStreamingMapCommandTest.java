@@ -88,10 +88,10 @@ public class ExecStreamingMapCommandTest {
         ts.getServerExecutableSpecification().setCodeline(helper.getServerVersion());
 
         ts.initialize();
-        // just use RSH
-        //ts.start();
+        // Because of some of the tests, we can't use RSH for them all.
+        ts.startAsync();
 
-        server = helper.getServer(ts);
+        server = helper.getServerWithLocalUrl(ts);
         server.setUserName(ts.getUser());
         server.connect();
 
@@ -200,7 +200,7 @@ public class ExecStreamingMapCommandTest {
         assertThat(results, notNullValue());
     }
 
-    @DisplayName("verify we cna turn off string translation")
+    @DisplayName("verify we can turn off string translation")
     @Test
     public void exportWithoutTranslation() throws Throwable {
         HashMap<String, Object> inMap = newHashMap();

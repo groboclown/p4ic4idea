@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -32,6 +33,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({"job061935"})
 @TestId("Bug131_AddFilesCheckSymlinkTest")
+@Disabled("Uses external p4d server")
 public class AddFilesCheckSymlinkTest extends P4JavaTestCase {
 
   private IOptionsServer superServer = null;

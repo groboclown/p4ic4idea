@@ -21,12 +21,14 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.callback.IStreamingCallback;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Basic sanity tests for the new Streaming interface. Not related
  * at all to 'streams'.
  */
 @TestId("Features102_StreamingMethodsTest")
+@Disabled("Uses external p4d server")
 public class StreamingMethodsTest extends P4JavaTestCase {
     private static final int TIME_OUT_IN_SECONDS = 60;
 

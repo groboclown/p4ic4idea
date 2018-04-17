@@ -27,11 +27,13 @@ import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Tests locking issue with job040562.
  */
 @TestId("Bugs101_Job040562Test")
+@Disabled("Uses external p4d server")
 public class Job040562Test extends P4JavaTestCase {
 
 	public Job040562Test() {

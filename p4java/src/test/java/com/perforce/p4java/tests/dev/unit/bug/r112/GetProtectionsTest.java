@@ -23,12 +23,14 @@ import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test for Perforce protections functionality. Requires super user login.
  */
 @Jobs({ "job049974" })
 @TestId("Dev112_GetProtectionsTest")
+@Disabled("Uses external p4d server")
 public class GetProtectionsTest extends P4JavaTestCase {
 
 	IOptionsServer server = null;

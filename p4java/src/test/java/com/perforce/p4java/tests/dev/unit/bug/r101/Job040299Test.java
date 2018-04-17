@@ -18,11 +18,13 @@ import com.perforce.p4java.option.server.OpenedFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test for job040299. Not terribly interesting, but here it is...
  */
 @TestId("Job040299Test")
+@Disabled("Uses external p4d server")
 public class Job040299Test extends P4JavaTestCase {
 
 	public Job040299Test() {

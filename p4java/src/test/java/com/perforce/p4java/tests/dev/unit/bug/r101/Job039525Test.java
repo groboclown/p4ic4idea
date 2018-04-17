@@ -30,11 +30,13 @@ import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test job039525 -- missing error messages for non-existent file checkouts.
  */
 @TestId("Bugs101_Job039525Test")
+@Disabled("Uses external p4d server")
 public class Job039525Test extends P4JavaTestCase {
 
 	public Job039525Test() {

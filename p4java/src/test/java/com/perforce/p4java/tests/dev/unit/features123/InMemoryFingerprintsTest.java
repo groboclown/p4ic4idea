@@ -5,16 +5,20 @@ package com.perforce.p4java.tests.dev.unit.features123;
 
 import static com.perforce.p4java.exception.TrustException.Type.NEW_CONNECTION;
 import static com.perforce.p4java.exception.TrustException.Type.NEW_KEY;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.Properties;
 
 import com.perforce.p4java.tests.MockCommandCallback;
+import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -28,12 +32,15 @@ import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test in-memory fingerprints.
  */
 @Jobs({"job059814"})
 @TestId("Dev123_InMemoryFingerprintsTest")
+@Disabled("Uses external p4d server")
+@Ignore("Uses external p4d server")
 public class InMemoryFingerprintsTest extends P4JavaTestCase {
     private static final String SSL_ENABLED_P4D_SERVER = "p4javassl://eng-p4java-vm.perforce.com:30121";
 
@@ -242,7 +249,7 @@ public class InMemoryFingerprintsTest extends P4JavaTestCase {
             server.connect();
         } catch (P4JavaException e) {
             assertNotNull(e);
-            assertTrue(e.getCause() instanceof TrustException);
+            assertThat(e.getCause(), instanceOf(TrustException.class));
             TrustException cause = (TrustException) e.getCause();
             if (cause.getType() == NEW_CONNECTION
                     || cause.getType() == NEW_KEY) {

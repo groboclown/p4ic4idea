@@ -11,6 +11,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -63,7 +64,7 @@ public class TagDelegatorTest {
         server = mock(Server.class);
         tagDelegator = new TagDelegator(server);
 
-        resultMap = mock(Map.class);
+        resultMap = new HashMap<>();
         List<Map<String, Object>> resultMaps = newArrayList(resultMap);
 
         opts = new TagFilesOptions(CMD_OPTIONS);
@@ -202,8 +203,8 @@ public class TagDelegatorTest {
     }
 
     private void givenInfoMessageCode() {
-        when(resultMap.get(CODE0)).thenReturn(MESSAGE_CODE_IN_INFO_RANGE);
-        when(resultMap.containsKey(DEPOT_FILE)).thenReturn(true);
-        when(resultMap.get(DEPOT_FILE)).thenReturn(TEST_FILE_DEPOT_PATH);
+        resultMap.clear();
+        resultMap.put(CODE0, MESSAGE_CODE_IN_INFO_RANGE);
+        resultMap.put(DEPOT_FILE, TEST_FILE_DEPOT_PATH);
     }
 }

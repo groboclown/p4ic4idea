@@ -22,12 +22,14 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test 'p4 configure' command for Perforce server 2011.2.
  */
 @Jobs({ "job050801" })
 @TestId("Dev112_GetServerConfigurationTest")
+@Disabled("Uses external p4d server")
 public class ServerConfigurationTest extends P4JavaTestCase {
 
 	IOptionsServer server = null;

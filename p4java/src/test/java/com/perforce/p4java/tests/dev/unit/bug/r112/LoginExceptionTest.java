@@ -23,12 +23,14 @@ import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test 'p4 login' with bad password; expects an AccessException.
  */
 @Jobs({ "job049985" })
 @TestId("LoginDev112_ExceptionTest")
+@Disabled("Uses external p4d server")
 public class LoginExceptionTest extends P4JavaTestCase {
 
 	IOptionsServer server = null;

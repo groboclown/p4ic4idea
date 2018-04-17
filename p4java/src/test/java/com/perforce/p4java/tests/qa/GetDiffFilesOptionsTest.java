@@ -27,6 +27,7 @@ import com.perforce.test.TestServer;
 import org.junit.Ignore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
@@ -139,6 +140,7 @@ public class GetDiffFilesOptionsTest {
     }
 
 
+    @Disabled("client-OpenDiff is not implemented")
     @DisplayName("CONSTRUCTORS")
     @Test
     public void defaultConstructor() throws Throwable {
@@ -148,6 +150,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void explicitConstructorDefaults() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions(0, false, false, false, false, false, false, false);
@@ -168,6 +171,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setOpenedDifferentMissingFalse() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -188,6 +192,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorOpenedDifferentMissing() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions("-sa");
@@ -198,6 +203,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseOpenedDifferentMissing() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -211,6 +217,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueOpenedDifferentMissing() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -237,6 +244,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setOpenedForIntegrateFalse() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -257,6 +265,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorOpenedForIntegrate() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions("-sb");
@@ -267,6 +276,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseOpenedForIntegrate() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -280,6 +290,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueOpenedForIntegrate() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -306,6 +317,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setOpenedSameFalse() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -326,6 +338,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorOpenedSame() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions("-sr");
@@ -336,6 +349,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseOpenedSame() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -349,6 +363,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueOpenedSame() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -374,6 +389,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setUnopenedDifferentFalse() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -394,6 +410,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorUnopenedDifferent() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions("-se");
@@ -404,6 +421,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseUnopenedDifferent() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -417,6 +435,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueUnopenedDifferent() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -443,6 +462,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setUnopenedMissingFalse() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -463,6 +483,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorUnopenedMissing() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions("-sd");
@@ -473,6 +494,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseUnopenedMissing() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -486,6 +508,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueUnopenedMissing() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -512,6 +535,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setUnopenedWithStatusFalse() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -532,6 +556,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorUnopenedWithStatus() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions("-sl");
@@ -542,6 +567,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseUnopenedWithStatus() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -555,6 +581,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueUnopenedWithStatus() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -609,6 +636,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorMaxOne() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions("-m 1", "-sa");
@@ -620,6 +648,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseMax() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -633,6 +662,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueMax() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -687,6 +717,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorDiffNonText() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions("-t", "-sa");
@@ -698,6 +729,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseDiffNonText() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();
@@ -711,6 +743,7 @@ public class GetDiffFilesOptionsTest {
         testMethod(false);
     }
 
+    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueDiffNonText() throws Throwable {
         getDiffFilesOptions = new GetDiffFilesOptions();

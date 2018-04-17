@@ -21,6 +21,7 @@ import com.perforce.p4java.tests.MockCommandCallback;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
 
@@ -48,6 +49,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({"job056729"})
 @TestId("Dev121_TrustExceptionTest")
+@Disabled("Uses external p4d server")
 public class TrustExceptionTest extends P4JavaTestCase {
 
     @Before

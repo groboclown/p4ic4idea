@@ -32,12 +32,14 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test 'p4 stream' command.
  */
 @Jobs({ "job050690" })
 @TestId("Dev112_CreateStreamsTest")
+@Disabled("Uses external p4d server")
 public class CreateStreamsTest extends P4JavaTestCase {
 
 	IOptionsServer server = null;

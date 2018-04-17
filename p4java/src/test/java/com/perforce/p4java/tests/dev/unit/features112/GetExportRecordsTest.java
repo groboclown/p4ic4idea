@@ -14,6 +14,7 @@ import java.util.Properties;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -28,6 +29,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job037798" })
 @TestId("Dev112_GetExportRecordsTest")
+@Disabled("Uses external p4d server")
 public class GetExportRecordsTest extends P4JavaTestCase {
     private static final int TIME_OUT_IN_SECONDS = 90;
 

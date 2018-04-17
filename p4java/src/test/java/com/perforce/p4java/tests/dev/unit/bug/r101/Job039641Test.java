@@ -20,6 +20,7 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Simple test for job039641.
@@ -27,6 +28,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({"job039641"})
 @TestId("Bugs101_Job039641Test")
+@Disabled("Uses external p4d server")
 public class Job039641Test extends P4JavaTestCase {
 	
 	public static final String TEST_ROOT = "//depot/101Bugs/Bugs101_Job039641Test/...";

@@ -50,12 +50,14 @@ import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test 'p4 add' ignore files
  */
 @Jobs({ "job052619" })
 @TestId("Dev121_IgnoreFilesTest")
+@Disabled("Uses external p4d server")
 public class AddFilesHighASCIITest extends P4JavaTestCase {
 
 	final static String serverURL = "p4java://eng-p4java-vm.perforce.com:20121";

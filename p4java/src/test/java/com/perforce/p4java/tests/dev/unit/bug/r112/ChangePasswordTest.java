@@ -31,6 +31,7 @@ import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test 'p4 passwd'. Specifying a username as an argument to 'p4 passwd'
@@ -38,6 +39,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job044472", "job044417" })
 @TestId("Dev112_ChangePasswordTest")
+@Disabled("Uses external p4d server")
 public class ChangePasswordTest extends P4JavaTestCase {
 
 	IOptionsServer server = null;

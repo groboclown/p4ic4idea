@@ -28,12 +28,14 @@ import com.perforce.p4java.option.server.SetFileAttributesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Tests for file attribute visibility when a file is open
  * for edit (Job042258).
  */
 @TestId("Bugs111_Job042258Test")
+@Disabled("Uses external p4d server")
 public class Job042258Test extends P4JavaTestCase {
 
 	public Job042258Test() {

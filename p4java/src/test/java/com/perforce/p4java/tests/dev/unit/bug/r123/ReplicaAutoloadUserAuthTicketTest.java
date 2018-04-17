@@ -8,6 +8,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import java.util.List;
 
 import com.perforce.p4java.tests.MockCommandCallback;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -28,6 +29,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({"job064875"})
 @TestId("Dev123_ReplicaAutoloadUserAuthTicketTest")
+@Disabled("Uses external p4d server")
 public class ReplicaAutoloadUserAuthTicketTest extends P4JavaTestCase {
   private IOptionsServer server = null;
 

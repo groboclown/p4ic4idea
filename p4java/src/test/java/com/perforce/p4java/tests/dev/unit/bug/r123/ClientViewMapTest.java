@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -37,6 +38,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({ "job059253" })
 @TestId("Dev123_ClientViewMapTest")
+@Disabled("Uses external p4d server")
 public class ClientViewMapTest extends P4JavaTestCase {
 	/**
 	 * Split a string by whitespace, except inside double quotes.

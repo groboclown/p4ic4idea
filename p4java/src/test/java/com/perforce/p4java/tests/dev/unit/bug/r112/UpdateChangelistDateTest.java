@@ -31,12 +31,14 @@ import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test force update of the "Date" field for submitted changelists.
  */
 @Jobs({ "job045050" })
 @TestId("Dev112_UpdateChangelistDateTest")
+@Disabled("Uses external p4d server")
 public class UpdateChangelistDateTest extends P4JavaTestCase {
 	private static IClient client = null;
 	private static MockCommandCallback callback = new MockCommandCallback();

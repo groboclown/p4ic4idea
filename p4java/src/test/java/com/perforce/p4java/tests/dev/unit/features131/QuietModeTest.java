@@ -16,6 +16,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -28,6 +29,7 @@ import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test protocol level quiet mode (p4 -q <command>). Global -q (-quiet) option,
@@ -35,6 +37,8 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job059638" })
 @TestId("Dev131_QuietModeTest")
+@Disabled("Uses external p4d server")
+@Ignore("Uses external p4d server")
 public class QuietModeTest extends P4JavaTestCase {
 
 	IOptionsServer server = null;

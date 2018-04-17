@@ -38,6 +38,7 @@ import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 import com.perforce.p4java.tests.dev.unit.bug.r152.ShelveChangelistClientTest;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test IClient.getDiffFiles() with unchanged files (unicode, unicode+C) under
@@ -45,6 +46,7 @@ import com.perforce.p4java.tests.dev.unit.bug.r152.ShelveChangelistClientTest;
  */
 @Jobs({ "job071340" })
 @TestId("Dev141_GetDiffFilesUnchangedTest")
+@Disabled("Uses external p4d server")
 public class GetDiffFilesUnchangedTest extends P4JavaRshTestCase {
 
 	

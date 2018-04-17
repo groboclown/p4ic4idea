@@ -48,7 +48,6 @@ public class GetJobRawFieldsTest extends P4JavaRshTestCase {
     
     }
 
-	
 	/**
 	 * Test getting raw fields from a job. The "specFormatted" raw field is in
 	 * the Job's "rawFields" when calling IServer.getJob().

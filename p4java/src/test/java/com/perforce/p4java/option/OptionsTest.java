@@ -102,7 +102,12 @@ public class OptionsTest {
     assertThat(options.getOptions().get(0), is("-p"));
     assertThat(options.getOptions().get(1), is("-r"));
 
+    // p4ic4idea: the switch to String... options means that this will never be null unless you really
+    // try hard.
     options.setOptions();
+    assertThat(options.getOptions().size(), is(0));
+
+    options.setOptions((String[]) null);
     assertNull(options.getOptions());
   }
 

@@ -32,12 +32,14 @@ import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test 'p4 passwd' against an unicode enabled server with security level 2 or 3
  */
 @Jobs({ "job044472", "job044417" })
 @TestId("Dev112_ChangePasswordTest")
+@Disabled("Uses external p4d server")
 public class HighSecurityLevelPasswordTest extends P4JavaTestCase {
 
 	final static String highSecurityLevelServerURL = "p4java://eng-p4java-vm.perforce.com:30111";

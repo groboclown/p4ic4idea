@@ -20,12 +20,14 @@ import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.Disabled;
 
 /**
  * Test server info.
  */
 @Jobs({"job049708", "job051803", "job053530"})
 @TestId("Dev121_ServerInfoTest")
+@Disabled("Uses external p4d server")
 public class ServerInfoTest extends P4JavaTestCase {
     /**
      * The client.

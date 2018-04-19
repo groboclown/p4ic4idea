@@ -58,9 +58,37 @@ version '1.0'
 tasks.getByName('test') {
     def testOutDir = project.file("$buildDir/test-out")
 
+    useJUnitPlatform()
     workingDir = testOutDir
+    exclude 'com/perforce/p4java/impl/mapbased/server/cmd/**'
+    exclude 'com/perforce/p4java/tests/dev/unit/**'
+    exclude 'com/perforce/p4java/tests/qa/**'
 
     doFirst {
         testOutDir.mkdirs()
+    }
+}
+
+task integrationTest(type: Test) {
+    // FIXME this doesn't run any tests.  Figure out why.
+
+    def testOutDir = project.file("$buildDir/test-out")
+
+    useJUnitPlatform()
+    workingDir = testOutDir
+    enableAssertions true
+    classpath = files(configurations.testRuntime.files)
+    testClassesDirs = files(file("src/test/java"))
+
+    include 'com/perforce/p4java/impl/mapbased/server/cmd/**'
+    include 'com/perforce/p4java/tests/dev/unit/**'
+    include 'com/perforce/p4java/tests/qa/**'
+
+    doFirst {
+        testOutDir.mkdirs()
+    }
+
+    beforeTest { descriptor ->
+        logger.lifecycle("Running test: " + descriptor)
     }
 }

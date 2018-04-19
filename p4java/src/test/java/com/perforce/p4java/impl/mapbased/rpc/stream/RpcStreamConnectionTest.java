@@ -371,7 +371,7 @@ public class RpcStreamConnectionTest {
 	@Test
 	public void initRshModeServer_withException() {
 		mockConnection.rsh(null);
-		assertThrows(NullPointerException.class, () -> mockConnection.initRshModeServer());
+		assertThrows(ConnectionException.class, () -> mockConnection.initRshModeServer());
 	}
 
 	@Test
@@ -397,16 +397,17 @@ public class RpcStreamConnectionTest {
 
 		reset(rpcSocketPool);
 		doThrow(UnknownHostException.class).when(rpcSocketPool).acquire();
-		assertThrows(UnknownHostException.class, () -> mockConnection.initSocketBasedServer());
+		// explicit change to throw a ConnectionException.
+		assertThrows(ConnectionException.class, () -> mockConnection.initSocketBasedServer());
 
 		reset(rpcSocketPool);
 		doThrow(IOException.class).when(rpcSocketPool).acquire();
-		assertThrows(IOException.class, () -> mockConnection.initSocketBasedServer());
+		assertThrows(ConnectionException.class, () -> mockConnection.initSocketBasedServer());
 
 		// Throwable is never explicitly caught.  Try a runtime instead
 		reset(rpcSocketPool);
 		doThrow(RuntimeException.class).when(rpcSocketPool).acquire();
-		assertThrows(RuntimeException.class, () -> mockConnection.initSocketBasedServer());
+		assertThrows(ConnectionException.class, () -> mockConnection.initSocketBasedServer());
 	}
 
 

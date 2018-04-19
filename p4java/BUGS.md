@@ -144,11 +144,6 @@ what the test expects.
 
 Pipe closed error.
 
-### com.perforce.p4java.impl.mapbased.rpc.stream.RpcStreamConnectionTest
-
-* initRshModeServer_withException: Expected an NPE, found a ConnectionException.
-* initSocketBasedServer_with_exceptions: Expected UnknownHostException, found a ConnectionException.
-
 ### Throwable tests
 
 * com.perforce.p4java.tests.dev.unit.feature.error.ThrowableSuite

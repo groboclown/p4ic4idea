@@ -23,6 +23,13 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4java/p4java.iml" filepath="$PROJECT_DIR$/.idea/modules/p4java/p4java.iml" group="p4java" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4java/p4java_main.iml" filepath="$PROJECT_DIR$/.idea/modules/p4java/p4java_main.iml" group="p4java" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4java/p4java_test.iml" filepath="$PROJECT_DIR$/.idea/modules/p4java/p4java_test.iml" group="p4java" />
+      <module fileurl="file://$PROJECT_DIR$/plugin/plugin.iml" filepath="$PROJECT_DIR$/plugin/plugin.iml" group="plugin" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/plugin/plugin_main.iml" filepath="$PROJECT_DIR$/.idea/modules/plugin/plugin_main.iml" group="plugin" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/plugin/plugin_mainIdea172.iml" filepath="$PROJECT_DIR$/.idea/modules/plugin/plugin_mainIdea172.iml" group="plugin" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/plugin/plugin_mainIdea173.iml" filepath="$PROJECT_DIR$/.idea/modules/plugin/plugin_mainIdea173.iml" group="plugin" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/plugin/plugin_test.iml" filepath="$PROJECT_DIR$/.idea/modules/plugin/plugin_test.iml" group="plugin" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/plugin/plugin_testIdea172.iml" filepath="$PROJECT_DIR$/.idea/modules/plugin/plugin_testIdea172.iml" group="plugin" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/plugin/plugin_testIdea173.iml" filepath="$PROJECT_DIR$/.idea/modules/plugin/plugin_testIdea173.iml" group="plugin" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/swarm/swarm.iml" filepath="$PROJECT_DIR$/.idea/modules/swarm/swarm.iml" group="swarm" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/swarm/swarm_main.iml" filepath="$PROJECT_DIR$/.idea/modules/swarm/swarm_main.iml" group="swarm" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/swarm/swarm_test.iml" filepath="$PROJECT_DIR$/.idea/modules/swarm/swarm_test.iml" group="swarm" />

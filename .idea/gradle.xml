@@ -15,6 +15,7 @@
             <option value="$PROJECT_DIR$/integration-test" />
             <option value="$PROJECT_DIR$/p4d-test-core" />
             <option value="$PROJECT_DIR$/p4java" />
+            <option value="$PROJECT_DIR$/plugin" />
             <option value="$PROJECT_DIR$/swarm" />
           </set>
         </option>

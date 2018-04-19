@@ -72,12 +72,14 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
         copyOriginalClasses(outputDir)
 
         def classpath = IdeaVersionUtil.lowestCompatible(project).jars(
+                // jars required by the instrumentation
                 "javac2",
                 "jdom",
                 "asm-all",
                 "jgoodies-forms",
                 "instrumentation-util",
-                "forms-compiler"
+                "forms-compiler",
+                "forms_rt"
         )
 
         ant.taskdef(name: 'instrumentIdeaExtensions',

@@ -6,5 +6,6 @@ include (
         'swarm',
         'idea-compat/compat-api',
         'idea-compat/v171',
-        'integration-test'
+        'integration-test',
+        'plugin'
 )

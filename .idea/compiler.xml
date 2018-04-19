@@ -17,6 +17,12 @@
       <module name="p4d-test-core_test" target="1.8" />
       <module name="p4java_main" target="1.8" />
       <module name="p4java_test" target="1.8" />
+      <module name="plugin_main" target="1.8" />
+      <module name="plugin_mainIdea172" target="1.8" />
+      <module name="plugin_mainIdea173" target="1.8" />
+      <module name="plugin_test" target="1.8" />
+      <module name="plugin_testIdea172" target="1.8" />
+      <module name="plugin_testIdea173" target="1.8" />
       <module name="swarm_main" target="1.8" />
       <module name="swarm_test" target="1.8" />
     </bytecodeTargetLevel>

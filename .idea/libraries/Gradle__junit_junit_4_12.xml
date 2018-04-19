@@ -6,7 +6,6 @@
     <JAVADOC />
     <SOURCES>
       <root url="jar://$PROJECT_DIR$/lib/test/junit-4.12.jar!/" />
-      <root url="jar://$PROJECT_DIR$/lib/test/junit-4.12-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

@@ -26,6 +26,11 @@ ideaImplementation.uses(
         'core-impl'
 )
 
+ideaTest.uses(
+        'testFramework',
+        'java-psi-impl'
+)
+
 configurations {
     zip
 }
@@ -77,7 +82,7 @@ dependencies {
 
 task packageVersion {
     dependsOn processResources
-    inputs.file("resources/META-INF/plugin.xml")
+    inputs.file("src/main/resources/META-INF/plugin.xml")
     outputs.file("$buildDir/resources/main/p4ic-version.txt")
     outputs.file("$buildDir/resources/main/META-INF/plugin.xml")
 
@@ -105,8 +110,6 @@ task assembleZip(type: Zip) {
     dependsOn 'jar'
 
     doFirst {
-        logger.lifecycle("Using local jar " + jar.archivePath)
-        logger.lifecycle("Exists? " + (file(jar.archivePath)).exists())
         copy {
             // For some reason, the jar file just isn't added in, even when
             // explicitly listed by name, or copied to another place.  It

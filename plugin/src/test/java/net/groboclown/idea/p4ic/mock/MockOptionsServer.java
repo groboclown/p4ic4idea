@@ -17,8 +17,10 @@ package net.groboclown.idea.p4ic.mock;
 import com.perforce.p4java.exception.*;
 import com.perforce.p4java.impl.mapbased.rpc.RpcServer;
 import com.perforce.p4java.option.UsageOptions;
+import com.perforce.p4java.server.IServerAddress;
 import com.perforce.p4java.server.ServerStatus;
 import com.perforce.p4java.server.callback.IFilterCallback;
+import com.perforce.p4java.server.callback.IParallelCallback;
 import com.perforce.p4java.server.callback.IStreamingCallback;
 import net.groboclown.idea.p4ic.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
@@ -91,8 +93,7 @@ public class MockOptionsServer extends RpcServer {
 
     @Override
     public List<Map<String, Object>> execMapCmdList(final String cmdName, final String[] cmdArgs,
-            final Map<String, Object> inMap)
-            throws P4JavaException {
+            final Map<String, Object> inMap) {
         return responses.pull(new P4Request(cmdName, cmdArgs, inMap, null)).getList();
     }
 
@@ -122,6 +123,13 @@ public class MockOptionsServer extends RpcServer {
             final String inString,
             final IFilterCallback filterCallback) throws P4JavaException {
         return responses.pull(new P4Request(cmdName, cmdArgs, null, inString)).getList(filterCallback);
+    }
+
+    @Override
+    public List<Map<String, Object>> execMapCmdList(String cmdName, String[] cmdArgs, IFilterCallback filterCallback,
+            IParallelCallback parallelCallback)
+            throws P4JavaException {
+        return null;
     }
 
     @Override
@@ -199,6 +207,13 @@ public class MockOptionsServer extends RpcServer {
     }
 
     @Override
+    public void execStreamingMapCommand(String cmdName, String[] cmdArgs, Map<String, Object> inMap,
+            IStreamingCallback callback, int key, IParallelCallback parallelCallback)
+            throws P4JavaException {
+
+    }
+
+    @Override
     public void execInputStringStreamingMapComd(final String cmdName, final String[] cmdArgs, final String inString,
             final IStreamingCallback callback, final int key) throws P4JavaException {
         throw new IllegalStateException("not implemented");
@@ -214,6 +229,11 @@ public class MockOptionsServer extends RpcServer {
     public ServerStatus init(final String host, final int port, final Properties props, final UsageOptions opts,
             final boolean secure, final String rsh)
             throws ConfigException, ConnectionException {
+        return null;
+    }
+
+    @Override
+    public IServerAddress getServerAddressDetails() {
         return null;
     }
 }

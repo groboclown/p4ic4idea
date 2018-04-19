@@ -116,10 +116,10 @@ public class P4Response {
 
 
     @NotNull
-    public List<Map<String, Object>> getList() throws P4JavaException {
-        if (exception != null) {
-            throw exception;
-        }
+    public List<Map<String, Object>> getList() {
+        //if (exception != null) {
+        //    throw exception;
+        //}
         assertThat(values, not(nullValue()));
         return new ArrayList<Map<String, Object>>(values);
     }

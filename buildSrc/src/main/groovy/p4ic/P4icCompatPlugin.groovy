@@ -35,6 +35,7 @@ class P4icCompatPlugin implements Plugin<Project> {
 
     public static final String API_JAR_EXTENSION_NAME = "ideaApi"
     public static final String IMPL_JAR_EXTENSION_NAME = "ideaImplementation"
+    public static final String TEST_JAR_EXTENSION_NAME = "ideaTest"
 
     public static final String BASE_API_CONFIGURATION = "compatApi"
     public static final String BASE_IMPL_CONFIGURATION = "compatImplementation"
@@ -54,6 +55,7 @@ class P4icCompatPlugin implements Plugin<Project> {
         LOG.info("Configuring extensions")
         project.extensions.create(API_JAR_EXTENSION_NAME, IdeaJarsExtension)
         project.extensions.create(IMPL_JAR_EXTENSION_NAME, IdeaJarsExtension)
+        project.extensions.create(TEST_JAR_EXTENSION_NAME, IdeaJarsExtension)
     }
 
     private static void configureVersions(@Nonnull Project project) {
@@ -87,6 +89,7 @@ class P4icCompatPlugin implements Plugin<Project> {
 
         Configuration apiConfig = configurations.create(getApiConfigName(version))
         Configuration implConfig = configurations.create(getImplementationConfigName(version))
+        Configuration testConfig = configurations.create(getTestConfigName(version))
 
         configurations.getByName(JavaPlugin.API_CONFIGURATION_NAME).extendsFrom(
                 configurations.getByName(BASE_API_CONFIGURATION),
@@ -97,7 +100,8 @@ class P4icCompatPlugin implements Plugin<Project> {
                 implConfig
         )
         configurations.getByName(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).extendsFrom(
-                configurations.getByName(BASE_TEST_CONFIGURATION)
+                configurations.getByName(BASE_TEST_CONFIGURATION),
+                testConfig
         )
     }
 
@@ -152,7 +156,9 @@ class P4icCompatPlugin implements Plugin<Project> {
 
         Configuration apiConfig = configurations.create(getApiConfigName(version))
         Configuration implConfig = configurations.create(getImplementationConfigName(version))
+        Configuration ideaTestConfig = configurations.create(getTestConfigName(version))
         implConfig.extendsFrom apiConfig
+        ideaTestConfig.extendsFrom implConfig
 
         Configuration mainConfig = configurations.maybeCreate(
                 javaConvention.sourceSets.getByName("main" + suffix).compileClasspathConfigurationName
@@ -162,17 +168,19 @@ class P4icCompatPlugin implements Plugin<Project> {
         Configuration testConfig = configurations.maybeCreate(
                 javaConvention.sourceSets.getByName("test" + suffix).compileClasspathConfigurationName
         )
-        testConfig.extendsFrom configurations.getByName(BASE_TEST_CONFIGURATION), mainConfig
+        testConfig.extendsFrom configurations.getByName(BASE_TEST_CONFIGURATION), ideaTestConfig
     }
 
     private static void configureDependencies(Project project, IdeaVersion version) {
         project.afterEvaluate {
             IdeaJarsExtension apiExt = project.extensions.getByName(API_JAR_EXTENSION_NAME) as IdeaJarsExtension
             IdeaJarsExtension implExt = project.extensions.getByName(IMPL_JAR_EXTENSION_NAME) as IdeaJarsExtension
+            IdeaJarsExtension testExt = project.extensions.getByName(TEST_JAR_EXTENSION_NAME) as IdeaJarsExtension
             LOG.info("Adding dependency jars for " + version.version + ": " +
                     (apiExt.getJarsFor(version) + implExt.getJarsFor(version)).files.toString())
             project.dependencies.add(getApiConfigName(version), apiExt.getJarsFor(version))
             project.dependencies.add(getImplementationConfigName(version), implExt.getJarsFor(version))
+            project.dependencies.add(getTestConfigName(version), testExt.getJarsFor(version))
         }
     }
 
@@ -194,5 +202,9 @@ class P4icCompatPlugin implements Plugin<Project> {
 
     static String getImplementationConfigName(@Nonnull IdeaVersion version) {
         return "implementation" + getId(version)
+    }
+
+    static String getTestConfigName(@Nonnull IdeaVersion version) {
+        return "testImplementation" + getId(version)
     }
 }

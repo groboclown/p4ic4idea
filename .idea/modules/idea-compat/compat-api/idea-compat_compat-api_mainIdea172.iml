@@ -65,7 +65,9 @@
           <root url="jar://$MODULE_DIR$/../../../../lib/172/core-api.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../../../../../intellij-community.git/intellij-community/platform/core-api/src" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">

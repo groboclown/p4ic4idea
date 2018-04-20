@@ -14,7 +14,6 @@
 
 package net.groboclown.idea.p4ic.server.exceptions;
 
-import com.intellij.ide.passwordSafe.PasswordSafeException;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage;
 import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
@@ -28,11 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class PasswordStoreException extends AccessException {
-    public PasswordStoreException(@NotNull final PasswordSafeException t) {
-        super(getServiceMessage(t));
-        initCause(t);
-    }
-
     public PasswordStoreException(AuthenticationException e) {
         super(getServiceMessage(e));
         initCause(e);

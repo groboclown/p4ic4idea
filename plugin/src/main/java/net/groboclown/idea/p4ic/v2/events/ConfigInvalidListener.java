@@ -16,7 +16,6 @@ package net.groboclown.idea.p4ic.v2.events;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.util.messages.Topic;
-import net.groboclown.idea.p4ic.config.P4Config;
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import org.jetbrains.annotations.NotNull;
 

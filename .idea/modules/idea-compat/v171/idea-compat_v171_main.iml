@@ -12,7 +12,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../lib/171/vcs-log-api.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../lib/171/editor-ui-api.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -21,7 +21,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../lib/171/editor-ui-api.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../lib/171/vcs-log-api.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -130,7 +130,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../lib/171/credential-store.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../lib/171/extensions.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -139,7 +139,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../lib/171/extensions.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../lib/171/credential-store.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

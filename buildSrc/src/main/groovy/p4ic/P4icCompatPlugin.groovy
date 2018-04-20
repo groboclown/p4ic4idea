@@ -30,6 +30,9 @@ import p4ic.util.IdeaVersionUtil
 
 import javax.annotation.Nonnull
 
+/**
+ * Sets up new tasks to compile each specified version.
+ */
 class P4icCompatPlugin implements Plugin<Project> {
     public static final LOG = Logging.getLogger(P4icCompatPlugin)
 
@@ -77,6 +80,10 @@ class P4icCompatPlugin implements Plugin<Project> {
     private static void configureBaseConfigurations(Project project) {
         ConfigurationContainer configurations = project.getConfigurations()
 
+        // Setup the base compatibility hierarchy.  These will be further
+        // used to extend the java-library compile / test tasks, and to
+        // extend the per-IDEA versions.
+
         Configuration api = configurations.create(BASE_API_CONFIGURATION)
         Configuration main = configurations.create(BASE_IMPL_CONFIGURATION)
         main.extendsFrom api
@@ -91,6 +98,10 @@ class P4icCompatPlugin implements Plugin<Project> {
         Configuration implConfig = configurations.create(getImplementationConfigName(version))
         Configuration testConfig = configurations.create(getTestConfigName(version))
 
+        // Set the default configurations to be based on the given IDEA version.
+        // The intention here is to have a "default" (lowest) version of IDEA that
+        // the official bundled product is compiled against, while we also compile
+        // and test against the higher versions.
         configurations.getByName(JavaPlugin.API_CONFIGURATION_NAME).extendsFrom(
                 configurations.getByName(BASE_API_CONFIGURATION),
                 apiConfig
@@ -102,6 +113,36 @@ class P4icCompatPlugin implements Plugin<Project> {
         configurations.getByName(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).extendsFrom(
                 configurations.getByName(BASE_TEST_CONFIGURATION),
                 testConfig
+        )
+    }
+
+    private static void configureConfigurations(@Nonnull Project project, @Nonnull IdeaVersion version) {
+        String suffix = getId(version)
+        JavaPluginConvention javaConvention = project.getConvention().getPlugin(JavaPluginConvention.class)
+        ConfigurationContainer configurations = project.getConfigurations()
+
+        Configuration apiConfig = configurations.create(getApiConfigName(version))
+        Configuration implConfig = configurations.create(getImplementationConfigName(version))
+        implConfig.extendsFrom apiConfig
+        Configuration ideaTestConfig = configurations.create(getTestConfigName(version))
+        ideaTestConfig.extendsFrom implConfig
+
+        // For each IDEA version that isn't the "default", we create configurations that pull from the
+        //
+        Configuration mainConfig = configurations.maybeCreate(
+                javaConvention.sourceSets.getByName("main" + suffix).compileClasspathConfigurationName
+        )
+        mainConfig.extendsFrom(
+                configurations.getByName(BASE_IMPL_CONFIGURATION),
+                implConfig
+        )
+
+        Configuration testConfig = configurations.maybeCreate(
+                javaConvention.sourceSets.getByName("test" + suffix).compileClasspathConfigurationName
+        )
+        testConfig.extendsFrom(
+                configurations.getByName(BASE_TEST_CONFIGURATION),
+                ideaTestConfig
         )
     }
 
@@ -127,6 +168,14 @@ class P4icCompatPlugin implements Plugin<Project> {
             srcDirs = [child(project.projectDir, "src", "main", "resources")]
             outputDir = project.file(child(project.buildDir, "resources", "test" + suffix))
         }
+
+        project.afterEvaluate {
+            // Make sure that the tests include the compiled main output.
+            test.compileClasspath = project.files(
+                    test.compileClasspath,
+                    main.java.outputDir
+            )
+        }
     }
 
     private static void configureTasks(Project project, IdeaVersion version) {
@@ -137,38 +186,31 @@ class P4icCompatPlugin implements Plugin<Project> {
         test.testClassesDirs = project.files(javaConvention.sourceSets.getByName("test" + suffix).java.outputDir)
         test.binResultsDir = project.file(child(project.buildDir, "reports", "tests" + suffix, "binary"))
         test.workingDir = project.file(child(project.buildDir, "test-out", "tests" + suffix))
+        test.doFirst {
+            if (! test.workingDir.exists()) {
+                test.workingDir.mkdirs()
+            }
+            Test t = it as Test
+            project.logger.info("Running test " + t.name + " with classpath " + t.classpath.files)
+        }
 
         project.afterEvaluate {
             project.tasks.getByName("compileJava").dependsOn "compileMain" + suffix + "Java"
             project.tasks.getByName("processResources").dependsOn "processMain" + suffix + "Resources"
             project.tasks.getByName("compileTestJava").dependsOn "compileTest" + suffix + "Java"
             project.tasks.getByName("processTestResources").dependsOn "processTest" + suffix + "Resources"
-            project.tasks.getByName("test").dependsOn "test" + suffix
-            (project.tasks.getByName("test" + suffix) as Test).classpath =
-                    javaConvention.sourceSets.getByName("test" + suffix).runtimeClasspath
+            Test testTask = project.tasks.getByName("test") as Test
+            testTask.dependsOn "test" + suffix
+
+            // Need to heavily update the test classpath, because just updating the runtimeClasspath
+            // isn't enough.
+            testTask.classpath = project.files(
+                    javaConvention.sourceSets.getByName("test" + suffix).compileClasspath,
+                    javaConvention.sourceSets.getByName("test" + suffix).runtimeClasspath,
+                    javaConvention.sourceSets.getByName("main" + suffix).java.outputDir,
+                    javaConvention.sourceSets.getByName("main" + suffix).resources.outputDir
+            )
         }
-    }
-
-    private static void configureConfigurations(@Nonnull Project project, @Nonnull IdeaVersion version) {
-        String suffix = getId(version)
-        JavaPluginConvention javaConvention = project.getConvention().getPlugin(JavaPluginConvention.class)
-        ConfigurationContainer configurations = project.getConfigurations()
-
-        Configuration apiConfig = configurations.create(getApiConfigName(version))
-        Configuration implConfig = configurations.create(getImplementationConfigName(version))
-        Configuration ideaTestConfig = configurations.create(getTestConfigName(version))
-        implConfig.extendsFrom apiConfig
-        ideaTestConfig.extendsFrom implConfig
-
-        Configuration mainConfig = configurations.maybeCreate(
-                javaConvention.sourceSets.getByName("main" + suffix).compileClasspathConfigurationName
-        )
-        mainConfig.extendsFrom configurations.getByName(BASE_IMPL_CONFIGURATION), implConfig
-
-        Configuration testConfig = configurations.maybeCreate(
-                javaConvention.sourceSets.getByName("test" + suffix).compileClasspathConfigurationName
-        )
-        testConfig.extendsFrom configurations.getByName(BASE_TEST_CONFIGURATION), ideaTestConfig
     }
 
     private static void configureDependencies(Project project, IdeaVersion version) {

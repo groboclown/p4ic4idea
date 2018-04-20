@@ -73,6 +73,7 @@ public class DepotFilePath implements FilePath {
         return clientServerRef.getServerDisplayId() + "/" + clientServerRef.getClientName() + depotPath;
     }
 
+    @Deprecated
     @Nullable
     @Override
     public Document getDocument() {
@@ -94,11 +95,13 @@ public class DepotFilePath implements FilePath {
         return null;
     }
 
+    @Deprecated
     @Override
     public void refresh() {
 
     }
 
+    @Deprecated
     @Override
     public void hardRefresh() {
 

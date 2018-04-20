@@ -28,7 +28,12 @@ ideaImplementation.uses(
 
 ideaTest.uses(
         'testFramework',
-        'java-psi-impl'
+        'java-psi-impl',
+        'java-runtime',
+        'lang-api',
+        // FIXME 171 is missing lang-impl
+        //'lang-impl',
+        'trove4j'
 )
 
 configurations {
@@ -87,7 +92,7 @@ task packageVersion {
     outputs.file("$buildDir/resources/main/META-INF/plugin.xml")
 
     doFirst {
-        def pluginFile = file("resources/META-INF/plugin.xml")
+        def pluginFile = file("src/main/resources/META-INF/plugin.xml")
         def pluginXml = new XmlSlurper().parse(pluginFile)
         // logger.lifecycle("Plugin file: id [" + pluginXml.name + ']')
         def version = pluginXml.version
@@ -95,7 +100,7 @@ task packageVersion {
 
         copy {
             from pluginFile
-            into "src/main/resources/META-INF"
+            into "$buildDir/resources/main/META-INF"
         }
     }
 }

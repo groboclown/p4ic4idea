@@ -8,6 +8,7 @@
 * No longer compatible with versions before 2017.1.
 * Updated code to work with 2017.1 features.
 * Updated build.
+* Upgraded p4java dependency to r18-1
 
 ### Details
 
@@ -15,11 +16,14 @@
 * Updated code to work with 2017.1 features.
     * Included major release libraries from IDEA, built from source.
     * These are broken up into small libraries to reduce their size,
-        so we don't need to include the normal gigabyte sized jar.
+      so we don't need to include the normal gigabyte sized jar.
     * Removed dependency upon the external lib project.
 * Updated build.
     * Builds now use Gradle.
     * The `swarm-java-simplified` module renamed to `swarm`
+* Upgraded p4java dependency to r18-1
+    * Requires additional dependent jars.
+    * Will allow for more thorough unit testing.
 
 
 ## ::v0.9.6::

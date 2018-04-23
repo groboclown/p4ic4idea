@@ -34,7 +34,6 @@ class ServerConfigTest {
                 .withServerFingerprint("1234asdf1234asdf");
         assertEquals("localhost:1234" + SEP +
                 "luser" + SEP +
-                "<password>" + SEP +
                 "auth-ticket-file" + SEP +
                 "trust-ticket-file" + SEP +
                 "1234asdf1234asdf", ServerConfig.getServerIdForDataPart(data));
@@ -46,7 +45,6 @@ class ServerConfigTest {
                 .withNoPassword();
         assertEquals("null" + SEP +
                 "null" + SEP +
-                "<>" + SEP +
                 "null" + SEP +
                 "null" + SEP +
                 "null", ServerConfig.getServerIdForDataPart(data));
@@ -57,7 +55,6 @@ class ServerConfigTest {
         MockDataPart data = new MockDataPart()
                 .withPassword(null);
         assertEquals("null" + SEP +
-                "null" + SEP +
                 "null" + SEP +
                 "null" + SEP +
                 "null" + SEP +

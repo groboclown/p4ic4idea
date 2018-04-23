@@ -15,7 +15,7 @@ package net.groboclown.p4.server.api.exceptions;
 
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import net.groboclown.p4.server.api.ClientServerRef;
-import net.groboclown.p4.server.api.messagebus.ReconnectMessage;
+import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -39,7 +39,7 @@ public class P4VcsConnectionException extends VcsConnectionProblem {
 
     @Override
     public boolean attemptQuickFix(boolean mayDisplayDialogs) {
-        ReconnectMessage.requestReconnectToClient(ref, mayDisplayDialogs);
+        ReconnectRequestMessage.requestReconnectToClient(ref, mayDisplayDialogs);
         return false;
     }
 }

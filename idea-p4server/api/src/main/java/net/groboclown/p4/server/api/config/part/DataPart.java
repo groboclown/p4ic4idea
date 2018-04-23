@@ -44,6 +44,8 @@ public interface DataPart extends ConfigPart {
     @Nullable
     String getPlaintextPassword();
 
+    boolean requiresUserEnteredPassword();
+
     boolean hasAuthTicketFileSet();
 
     @Nullable

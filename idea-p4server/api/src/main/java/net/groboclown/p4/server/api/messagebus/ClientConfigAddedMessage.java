@@ -20,8 +20,8 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
 
 public class ClientConfigAddedMessage extends ProjectMessage<ClientConfigAddedMessage.Listener> {
-    public static final String DISPLAY_NAME = "p4ic4idea:client configuration registration added";
-    public static final Topic<Listener> TOPIC = new Topic<Listener>(
+    private static final String DISPLAY_NAME = "p4ic4idea:client configuration registration added";
+    private static final Topic<Listener> TOPIC = new Topic<Listener>(
             DISPLAY_NAME, Listener.class, Topic.BroadcastDirection.TO_CHILDREN
     );
 
@@ -33,6 +33,10 @@ public class ClientConfigAddedMessage extends ProjectMessage<ClientConfigAddedMe
         if (canSendMessage(project)) {
             getListener(project, TOPIC).clientConfigurationAdded(clientConfig);
         }
+    }
+
+    public static void addListener(@NotNull MessageBusClient client, @NotNull Listener listener) {
+        addListener(client, TOPIC, listener);
     }
 
 }

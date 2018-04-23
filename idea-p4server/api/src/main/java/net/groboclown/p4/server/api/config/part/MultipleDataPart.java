@@ -205,6 +205,16 @@ public class MultipleDataPart implements DataPart {
     }
 
     @Override
+    public boolean requiresUserEnteredPassword() {
+        for (DataPart part : parts) {
+            if (part.requiresUserEnteredPassword()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public boolean hasAuthTicketFileSet() {
         for (DataPart part : parts) {
             if (part.hasAuthTicketFileSet()) {

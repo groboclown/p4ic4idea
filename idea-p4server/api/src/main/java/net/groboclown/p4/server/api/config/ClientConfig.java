@@ -31,6 +31,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Stores information regarding a server configuration and the specific client/workspace in that
  * server.
  * <p>
+ * TODO should this require a Project?  Only because of the assignment of the root directories.
+ * Note that this could be swapped out with just the root directories of the DataPart, but that
+ * would require some interesting changes to correctly handle the Relative Root.  Alternatively,
+ * the Relative Root can just be removed, and the user would need to explicitly add different
+ * root directories.  That actually makes more sense.
+ * <p>
+ * TODO
+ * <p>
  * This class MUST be immutable.
  */
 @Immutable
@@ -75,7 +83,7 @@ public final class ClientConfig {
         this.configVersion = COUNT.incrementAndGet();
 
         this.project = project;
-        this.rootDirs = Collections.unmodifiableSet(new HashSet<VirtualFile>(clientProjectBaseDirectories));
+        this.rootDirs = Collections.unmodifiableSet(new HashSet<>(clientProjectBaseDirectories));
         this.serverConfig = serverConfig;
         this.clientName =
                 data.hasClientnameSet()

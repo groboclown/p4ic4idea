@@ -14,13 +14,9 @@
 
 package net.groboclown.p4.server.api.config.part;
 
-import net.groboclown.p4.server.api.config.ConfigProblem;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.Collections;
 
 /**
  * All the values that are used by default, even if no environment variable
@@ -33,12 +29,6 @@ public class DefaultDataPart extends DataPartAdapter {
     public boolean reload() {
         // Do nothing
         return true;
-    }
-
-    @NotNull
-    @Override
-    public Collection<ConfigProblem> getConfigProblems() {
-        return Collections.emptyList();
     }
 
     @Override

@@ -15,7 +15,6 @@
 package net.groboclown.p4.server.api.exceptions.message;
 
 import net.groboclown.p4.server.api.exceptions.P4ApiException;
-import net.groboclown.p4.server.api.exceptions.ProjectDisposedException;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,9 +25,6 @@ public interface UserExceptionMessageHandler {
 
     @NotNull
     Message internalError(@NotNull P4ApiException ex);
-
-    @NotNull
-    Message internalError(@NotNull ProjectDisposedException ex);
 
     @NotNull
     Message taskInterrupted(@NotNull VcsInterruptedException ex);

@@ -17,11 +17,19 @@ package net.groboclown.p4.server.api.config.part;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ConfigProblem;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
 
-public abstract class DataPartAdapter implements DataPart {
+/**
+ * Basic adapter to implement all the of the {@link DataPart} methods.  {@link #hasError()} is
+ * fully implemented to examine the reported {@link #getConfigProblems()}.  {@link #toString()}
+ * is implemented, but only reports the class name.
+ */
+public class DataPartAdapter implements DataPart {
     @Nullable
     @Override
     public VirtualFile getRootPath() {
@@ -155,12 +163,28 @@ public abstract class DataPartAdapter implements DataPart {
     }
 
     @Override
+    public boolean reload() {
+        return false;
+    }
+
+    @NotNull
+    @Override
+    public Collection<ConfigProblem> getConfigProblems() {
+        return Collections.emptyList();
+    }
+
+    @Override
     public boolean hasError() {
         for (ConfigProblem configProblem : getConfigProblems()) {
             if (configProblem.isError()) {
                 return true;
             }
         }
+        return false;
+    }
+
+    @Override
+    public boolean requiresUserEnteredPassword() {
         return false;
     }
 }

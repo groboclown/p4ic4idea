@@ -20,8 +20,8 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
 
 public class ClientConfigRemovedMessage extends ProjectMessage<ClientConfigRemovedMessage.Listener> {
-    public static final String DISPLAY_NAME = "p4ic4idea:client configuration registration removed";
-    public static final Topic<Listener> TOPIC = new Topic<>(
+    private static final String DISPLAY_NAME = "p4ic4idea:client configuration registration removed";
+    private static final Topic<Listener> TOPIC = new Topic<>(
             DISPLAY_NAME, Listener.class, Topic.BroadcastDirection.TO_CHILDREN
     );
 
@@ -33,5 +33,9 @@ public class ClientConfigRemovedMessage extends ProjectMessage<ClientConfigRemov
         if (canSendMessage(project)) {
             getListener(project, TOPIC).clientConfigurationRemoved(config);
         }
+    }
+
+    public static void addListener(@NotNull MessageBusClient client, @NotNull Listener listener) {
+        addListener(client, TOPIC, listener);
     }
 }

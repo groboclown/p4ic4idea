@@ -23,23 +23,37 @@ import com.intellij.util.messages.Topic;
 import org.jetbrains.annotations.NotNull;
 
 public class MessageBusClient {
+    private enum Source {
+        PROJECT,
+        APPLICATION
+    }
     private final MessageBusConnection connection;
+    private final Source source;
 
     @NotNull
     public static MessageBusClient forProject(@NotNull Project project, @NotNull Disposable owner) {
-        return new MessageBusClient(owner, project.getMessageBus());
+        return new MessageBusClient(owner, project.getMessageBus(), Source.PROJECT);
     }
 
     @NotNull
     public static MessageBusClient forApplication(@NotNull Disposable owner) {
-        return new MessageBusClient(owner, ApplicationManager.getApplication().getMessageBus());
+        return new MessageBusClient(owner, ApplicationManager.getApplication().getMessageBus(), Source.APPLICATION);
     }
 
-    private MessageBusClient(@NotNull Disposable owner, @NotNull MessageBus bus) {
+    private MessageBusClient(@NotNull Disposable owner, @NotNull MessageBus bus, @NotNull Source source) {
         connection = bus.connect(owner);
+        this.source = source;
     }
 
     public <L> void add(@NotNull Topic<L> topic, @NotNull L listener) {
         connection.subscribe(topic, listener);
+    }
+
+    boolean isProjectBus() {
+        return source == Source.PROJECT;
+    }
+
+    boolean isApplicationBus() {
+        return source == Source.APPLICATION;
     }
 }

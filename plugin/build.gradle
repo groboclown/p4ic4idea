@@ -31,8 +31,7 @@ ideaTest.uses(
         'java-psi-impl',
         'java-runtime',
         'lang-api',
-        // FIXME 171 is missing lang-impl
-        //'lang-impl',
+        'lang-impl',
         'trove4j'
 )
 

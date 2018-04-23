@@ -74,7 +74,7 @@ its own module.  The cache was made overly complex, and is at the heart of a lot
 
 ### Component Get
 
-Something like this pattern:
+Something like this pattern for application components:
 
 ```
   private static class LocalHistoryHolder {
@@ -86,7 +86,9 @@ Something like this pattern:
   }
 ```
 
-It avoids the synchronization issues.
+It avoids the synchronization issues.  However, it has the unfortunate side effect of
+making unit tests really difficult - the application needs to be configured before the
+classloader can run.
 
 
 ### Exceptions

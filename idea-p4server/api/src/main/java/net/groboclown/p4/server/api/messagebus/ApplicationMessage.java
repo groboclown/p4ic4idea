@@ -26,12 +26,17 @@ import org.jetbrains.annotations.NotNull;
  */
 abstract class ApplicationMessage<L> {
     @NotNull
-    static <L> L getListener(@NotNull Topic<L> topic) {
+    protected static <L> L getListener(@NotNull Topic<L> topic) {
         return ApplicationManager.getApplication().getMessageBus().syncPublisher(topic);
     }
 
-    static boolean canSendMessage() {
+    protected static boolean canSendMessage() {
         // Eventually, this might find a situation in which the message bus is unavailable.
         return true;
+    }
+
+    protected static <L> void addListener(@NotNull MessageBusClient client, @NotNull Topic<L> topic, @NotNull L listener) {
+        assert client.isApplicationBus();
+        client.add(topic, listener);
     }
 }

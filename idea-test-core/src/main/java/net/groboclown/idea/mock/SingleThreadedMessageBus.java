@@ -74,6 +74,7 @@ public class SingleThreadedMessageBus
         return publisher;
     }
 
+    @Deprecated
     @NotNull
     @Override
     public <L> L asyncPublisher(@NotNull Topic<L> topic) {

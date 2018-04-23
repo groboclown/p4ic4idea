@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.api;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -34,7 +35,7 @@ import java.util.Map;
  * the correct counters can be preserved.
  */
 public abstract class ProjectConfigRegistry
-        implements ProjectComponent {
+        implements ProjectComponent, Disposable {
     public static final String COMPONENT_NAME = ProjectConfigRegistry.class.getName();
 
     private static final Logger LOG = Logger.getInstance(ProjectConfigRegistry.class);
@@ -127,7 +128,7 @@ public abstract class ProjectConfigRegistry
     }
 
     @Override
-    public void disposeComponent() {
+    public void dispose() {
         disposed = true;
         final Collection<ClientConfig> configs;
         synchronized (registeredConfigs) {
@@ -140,6 +141,11 @@ public abstract class ProjectConfigRegistry
             ClientConfigRemovedMessage.reportClientConfigRemoved(project, clientConfig);
             removeConfigFromApplication(project, clientConfig);
         }
+    }
+
+    @Override
+    public void disposeComponent() {
+        dispose();
     }
 
     protected abstract void addConfigToApplication(@NotNull Project project, @NotNull ClientConfig clientConfig);

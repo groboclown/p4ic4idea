@@ -14,8 +14,11 @@
 package net.groboclown.p4.server.api.config;
 
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
+import net.groboclown.p4.server.api.MockDataPart;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,6 +28,13 @@ class ClientConfigTest {
 
     @Test
     void createFrom() {
+        MockDataPart data = new MockDataPart()
+                .withUsername("luser")
+                .withServerName("mine:1234")
+                .withClientname("lclient")
+                ;
+        ServerConfig sc = ServerConfig.createFrom(data);
+        ClientConfig cc = ClientConfig.createFrom(idea.getMockProject(), sc, data, Collections.emptyList());
         fail("write");
 
         // all the getters are tested in here.

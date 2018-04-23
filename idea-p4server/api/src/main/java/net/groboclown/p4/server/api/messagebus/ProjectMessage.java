@@ -27,18 +27,17 @@ import org.jetbrains.annotations.NotNull;
  * @param <L> listener type.
  */
 public abstract class ProjectMessage<L> {
-    static <L> void registerListener(@NotNull Project project, @NotNull Disposable owner,
-            @NotNull Topic<L> topic, @NotNull L listener) {
-        MessageBusConnection connection = project.getMessageBus().connect(owner);
-        connection.subscribe(topic, listener);
-    }
-
     @NotNull
-    static <L> L getListener(@NotNull Project project, @NotNull Topic<L> topic) {
+    protected static <L> L getListener(@NotNull Project project, @NotNull Topic<L> topic) {
         return project.getMessageBus().syncPublisher(topic);
     }
 
-    static boolean canSendMessage(@NotNull Project project) {
+    protected static boolean canSendMessage(@NotNull Project project) {
         return project.isInitialized() && !project.isDisposed();
+    }
+
+    protected static <L> void addListener(@NotNull MessageBusClient client, @NotNull Topic<L> topic, @NotNull L listener) {
+        assert client.isProjectBus();
+        client.add(topic, listener);
     }
 }

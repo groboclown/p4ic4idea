@@ -40,6 +40,7 @@ public class MockDataPart implements DataPart {
     private String defaultCharset;
     private String loginSso;
     private boolean reloadValue = false;
+    private boolean requiresUserEnteredPassword;
 
     @NotNull
     public Collection<ConfigProblem> configProblems = new ArrayList<>();
@@ -124,6 +125,16 @@ public class MockDataPart implements DataPart {
     public MockDataPart withPassword(String s) {
         hasPasswordSet = true;
         password = s;
+        return this;
+    }
+
+    @Override
+    public boolean requiresUserEnteredPassword() {
+        return requiresUserEnteredPassword;
+    }
+
+    public MockDataPart withRequiresUserEnteredPassword(boolean b) {
+        requiresUserEnteredPassword = b;
         return this;
     }
 

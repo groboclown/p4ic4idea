@@ -1,6 +1,7 @@
 plugins {
     id 'java-library'
     id 'p4ic.compat'
+    id 'jacoco'
 }
 
 
@@ -12,11 +13,17 @@ ideaApi.uses(
         'vcs-api-core',
         'vcs-api',
         'platform-api',
+        'projectModel-api'
 )
 ideaImplementation.uses(
+        // Look at how to pull in dependent libraries...
         'extensions',
         'util',
-        'util-rt'
+        'util-rt',
+
+        'jdom',
+        'picocontainer',
+        'trove4j',
 )
 
 dependencies {
@@ -29,8 +36,11 @@ dependencies {
     compatTest(
             project(':idea-test-core'),
 
+            // TODO by pulling in idea-test-core, that should
+            // automatically pull in its compat* libraries.
+            project(':idea-compat/compat-api'),
+
             'junit:junit:4.12',
-            'org.hamcrest:hamcrest-core:1.3',
             'org.junit.jupiter:junit-jupiter-engine:5.1.0',
             'org.junit.platform:junit-platform-runner:1.1.0',
             'org.junit.platform:junit-platform-commons:1.1.0',
@@ -40,8 +50,35 @@ dependencies {
             'org.junit.vintage:junit-vintage-engine:5.1.0',
             'org.opentest4j:opentest4j:1.0.0',
             'net.bytebuddy:byte-buddy:1.8.0',
+            'org.apiguardian:apiguardian-api:1.0.0',
+            'org.objenesis:objenesis:2.6',
+
+            // For code coverage
+            //'org.jacoco:org.jacoco.agent:0.8.1',
+            //'org.jacoco:org.jacoco.ant:0.8.1',
     )
 }
+
+jacoco {
+    toolVersion = '0.8.1'
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        csv.enabled = true
+        html.enabled = true
+    }
+}
+
+test {
+    jacoco {
+        append = false
+    }
+    useJUnitPlatform()
+}
+
+project.tasks.check.dependsOn 'jacocoTestReport'
 
 
 repositories {

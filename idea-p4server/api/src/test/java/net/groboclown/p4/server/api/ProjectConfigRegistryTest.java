@@ -19,6 +19,7 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
+import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -52,10 +53,9 @@ class ProjectConfigRegistryTest {
         ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
-        idea.getMockProject().getMessageBus().connect().subscribe(ClientConfigAddedMessage.TOPIC,
-                added::add);
-        idea.getMockProject().getMessageBus().connect().subscribe(ClientConfigRemovedMessage.TOPIC,
-                removed::add);
+        MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
+        ClientConfigAddedMessage.addListener(client, added::add);
+        ClientConfigRemovedMessage.addListener(client, removed::add);
         ClientConfig config = createClientConfig();
 
         registry.addClientConfig(config);
@@ -78,10 +78,9 @@ class ProjectConfigRegistryTest {
     void addClientConfig_new() {
         ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
-        idea.getMockProject().getMessageBus().connect().subscribe(ClientConfigAddedMessage.TOPIC,
-                added::add);
-        idea.getMockProject().getMessageBus().connect().subscribe(ClientConfigRemovedMessage.TOPIC,
-                clientConfig -> fail("incorrectly called remove"));
+        MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
+        ClientConfigAddedMessage.addListener(client, added::add);
+        ClientConfigRemovedMessage.addListener(client, clientConfig -> fail("incorrectly called remove"));
         ClientConfig config = createClientConfig();
 
         registry.addClientConfig(config);
@@ -95,10 +94,9 @@ class ProjectConfigRegistryTest {
     void removeClientConfig_notRegistered() {
         ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
         final List<ClientConfig> removed = new ArrayList<>();
-        idea.getMockProject().getMessageBus().connect().subscribe(ClientConfigAddedMessage.TOPIC,
-                clientConfig -> fail("should not have added anything"));
-        idea.getMockProject().getMessageBus().connect().subscribe(ClientConfigRemovedMessage.TOPIC,
-                removed::add);
+        MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
+        ClientConfigAddedMessage.addListener(client, clientConfig -> fail("should not have added anything"));
+        ClientConfigRemovedMessage.addListener(client, removed::add);
         ClientConfig config = createClientConfig();
 
         registry.removeClientConfig(config.getClientServerRef());
@@ -112,10 +110,9 @@ class ProjectConfigRegistryTest {
         ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
-        idea.getMockProject().getMessageBus().connect().subscribe(ClientConfigAddedMessage.TOPIC,
-                added::add);
-        idea.getMockProject().getMessageBus().connect().subscribe(ClientConfigRemovedMessage.TOPIC,
-                removed::add);
+        MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
+        ClientConfigAddedMessage.addListener(client, added::add);
+        ClientConfigRemovedMessage.addListener(client, removed::add);
         ClientConfig config = createClientConfig();
         registry.addClientConfig(config);
         assertEquals(1, added.size());
@@ -137,10 +134,9 @@ class ProjectConfigRegistryTest {
         ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
-        idea.getMockProject().getMessageBus().connect().subscribe(ClientConfigAddedMessage.TOPIC,
-                added::add);
-        idea.getMockProject().getMessageBus().connect().subscribe(ClientConfigRemovedMessage.TOPIC,
-                removed::add);
+        MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
+        ClientConfigAddedMessage.addListener(client, added::add);
+        ClientConfigRemovedMessage.addListener(client, removed::add);
         ClientConfig config = createClientConfig();
         registry.addClientConfig(config);
         assertEquals(1, added.size());
@@ -167,10 +163,9 @@ class ProjectConfigRegistryTest {
         ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
-        idea.getMockProject().getMessageBus().connect().subscribe(ClientConfigAddedMessage.TOPIC,
-                added::add);
-        idea.getMockProject().getMessageBus().connect().subscribe(ClientConfigRemovedMessage.TOPIC,
-                removed::add);
+        MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
+        ClientConfigAddedMessage.addListener(client, added::add);
+        ClientConfigRemovedMessage.addListener(client, removed::add);
         ClientConfig config = createClientConfig();
         registry.addClientConfig(config);
         assertEquals(1, added.size());

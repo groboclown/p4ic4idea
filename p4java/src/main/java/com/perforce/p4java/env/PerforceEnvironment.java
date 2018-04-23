@@ -13,7 +13,8 @@ public class PerforceEnvironment {
 	public static final String P4USER = "P4USER";
 	public static final String P4PASSWD = "P4PASSWD";
 	public static final String P4CLIENT = "P4CLIENT";
-	
+
+	// p4ic4idea: P4HOST is not explicitly used by the connection.
 	public static final String P4HOST = "P4HOST";
 	public static final String P4CHARSET = "P4CHARSET";
 	public static final String P4TICKETS = "P4TICKETS";
@@ -24,7 +25,11 @@ public class PerforceEnvironment {
 	public static final String P4ENVIRO = "P4ENVIRO";
 
 	// p4ic4idea: custom setting for an explicit fingerprint key.
+	// Not used by the connection.
 	public static String P4SERVER_FINGERPRINT = "P4FINGERPRINT";
+
+	// p4ic4idea: SSO login script.  Not used by the connection.
+	public static String P4LOGINSSO = "P4LOGINSSO";
 
 
 	// Default P4ENVIRO file path

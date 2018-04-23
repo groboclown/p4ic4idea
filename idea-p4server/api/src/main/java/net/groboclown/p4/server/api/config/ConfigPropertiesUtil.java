@@ -68,16 +68,16 @@ public class ConfigPropertiesUtil {
                 ! dataPart.hasClientHostnameSet() || dataPart.getClientHostname() == null
                         ? valueIfUnset
                         : dataPart.getClientHostname());
-        ret.put("P4LOGINSSO",
+        ret.put(PerforceEnvironment.P4LOGINSSO,
                 ! dataPart.hasLoginSsoSet() || dataPart.getLoginSso() == null
                         ? valueIfUnset
-                        : dataPart.getLoginSso().toString());
+                        : dataPart.getLoginSso());
         return ret;
     }
 
     @NotNull
     public static Map<String, String> toProperties(@NotNull ServerConfig config, @Nullable String valueIfUnset,
-            @Nullable String valueIfPasswordEmpty, @Nullable String valueIfPasswordSet) {
+            @Nullable String valueIfPasswordRequired, @Nullable String valueIfPasswordNotRequired) {
         Map<String, String> ret = new HashMap<String, String>();
         ret.put(PerforceEnvironment.P4PORT, config.getServerName().getDisplayName());
         ret.put(PerforceEnvironment.P4TRUST,
@@ -94,11 +94,11 @@ public class ConfigPropertiesUtil {
                         ? valueIfUnset
                         : config.getServerFingerprint());
         ret.put(PerforceEnvironment.P4PASSWD,
-                getPasswordValue(
-                        config.getPlaintextPassword() == null,
-                        config.getPlaintextPassword(),
-                        valueIfUnset, valueIfPasswordEmpty, valueIfPasswordSet
-                ));
+                config.usesStoredPassword() ? valueIfPasswordRequired : valueIfPasswordNotRequired);
+        ret.put(PerforceEnvironment.P4LOGINSSO,
+                ! config.hasLoginSso() || config.getLoginSso() == null
+                        ? valueIfUnset
+                        : config.getLoginSso());
         return ret;
     }
 

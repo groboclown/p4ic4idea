@@ -15,6 +15,7 @@ package net.groboclown.p4.server.api.config;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.io.FileUtil;
+import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.part.DataPart;
 import org.jetbrains.annotations.NotNull;
@@ -37,6 +38,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@link #hashCode()}, to indicate whether the server connection
  * properties are the same; it should not match on online mode.
  * <p>
+ * If the configuration specified a password, then it is stored externally
+ * in the {@link ApplicationPasswordRegistry}.  This also allows for keeping
+ * in one place the password in case the user enters it manually, which would
+ * break immutability.
+ * <p>
  * This class MUST be immutable.
  */
 @Immutable
@@ -57,12 +63,9 @@ public final class ServerConfig {
     private final String serverFingerprint;
     private final String loginSso;
 
-    // This really shouldn't just be here in plaintext, however
-    // the source of the value is stored in plaintext on the user's
-    // computer anyway.
-    private final String password;
-
     private final String serverId;
+
+    private final boolean usesPassword;
 
     @NotNull
     static String getServerIdForDataPart(@NotNull DataPart part) {
@@ -72,14 +75,9 @@ public final class ServerConfig {
         } else {
             sb.append((String) null);
         }
+        // Note: does not include password information.
         sb.append(SEP)
             .append(part.hasUsernameSet() ? part.getUsername() : null)
-            .append(SEP)
-            .append(part.hasPasswordSet()
-                ? (part.getPlaintextPassword() == null
-                    ? null
-                    : "<password>")
-                : "<>")
             .append(SEP)
             .append(part.hasAuthTicketFileSet() ? part.getAuthTicketFile() : null)
             .append(SEP)
@@ -135,15 +133,14 @@ public final class ServerConfig {
                 part.hasLoginSsoSet()
                         ? part.getLoginSso()
                         : null;
-        this.password =
-                part.hasPasswordSet()
-                        ? (part.getPlaintextPassword() == null
-                            ? ""
-                            : part.getPlaintextPassword())
-                        : null;
+        this.usesPassword = part.requiresUserEnteredPassword() || part.hasPasswordSet();
 
+        this.serverId = getServerIdForDataPart(part);
 
-        serverId = getServerIdForDataPart(part);
+        // Must be done at the very end.
+        if (!part.requiresUserEnteredPassword() && part.hasPasswordSet() && part.getPlaintextPassword() != null) {
+            ApplicationPasswordRegistry.getInstance().store(this, part.getPlaintextPassword().toCharArray(), false);
+        }
     }
 
 
@@ -151,6 +148,9 @@ public final class ServerConfig {
         return this.configVersion;
     }
 
+    public boolean usesStoredPassword() {
+        return usesPassword;
+    }
 
     @NotNull
     public P4ServerName getServerName() {
@@ -160,17 +160,6 @@ public final class ServerConfig {
     @NotNull
     public String getUsername() {
         return username;
-    }
-
-    /**
-     *
-     * @return the password the user stored in plaintext, if they stored it themselves.
-     *      Should only return non-null when the user has a P4CONFIG file with this value
-     *      set, or a P4PASSWD env set.
-     */
-    @Nullable
-    public String getPlaintextPassword() {
-        return password;
     }
 
     @Nullable

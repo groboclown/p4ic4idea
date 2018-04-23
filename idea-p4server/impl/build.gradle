@@ -1,0 +1,57 @@
+plugins {
+    id 'java-library'
+    id 'p4ic.compat'
+}
+
+
+ideaImplementation.uses(
+        'openapi',
+        'core-api',
+        'annotations-common',
+        'annotations',
+        'vcs-api-core',
+        'vcs-api',
+        'platform-api',
+        'util',
+        'util-rt',
+        'extensions',
+
+        // TODO look at removing this
+        // this os only used by P4FileAction
+        'editor-ui-api',
+
+        'jdom'
+)
+
+dependencies {
+    compatApi (
+            project(":idea-p4server/api")
+    )
+    compatImplementation (
+            project(':p4java'),
+            project(':idea-compat/compat-api'),
+            project(':idea-cache'),
+            project(':messages')
+    )
+    compatTest(
+            'junit:junit:4.12',
+            'org.hamcrest:hamcrest-core:1.3',
+            'org.mockito:mockito-core:2.0.86-beta',
+    )
+}
+
+
+repositories {
+    ivy {
+        url "$rootDir/lib"
+        layout "pattern", {
+            artifact "main/[artifact]-[revision].[ext]"
+            artifact "test/[artifact]-[revision].[ext]"
+        }
+    }
+}
+
+
+
+group 'net.groboclown.p4ic4idea'
+version '1.0'

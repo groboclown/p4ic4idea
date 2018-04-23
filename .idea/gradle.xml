@@ -13,7 +13,8 @@
             <option value="$PROJECT_DIR$/idea-cache" />
             <option value="$PROJECT_DIR$/idea-compat/compat-api" />
             <option value="$PROJECT_DIR$/idea-compat/v171" />
-            <option value="$PROJECT_DIR$/idea-p4server" />
+            <option value="$PROJECT_DIR$/idea-p4server/api" />
+            <option value="$PROJECT_DIR$/idea-p4server/impl" />
             <option value="$PROJECT_DIR$/idea-test-core" />
             <option value="$PROJECT_DIR$/integration-test" />
             <option value="$PROJECT_DIR$/messages" />

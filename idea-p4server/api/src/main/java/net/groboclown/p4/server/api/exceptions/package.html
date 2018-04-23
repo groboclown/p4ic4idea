@@ -1,0 +1,16 @@
+<p>
+    All the exceptions used by the plugin.
+</p>
+<p>
+    These should be precise enough to indicate the source of the error.
+</p>
+<p>
+    They should not be directly printed to the user; instead, they should be passed through the
+    UserExceptionMessageHandler.
+</p>
+<p>
+    In general exception throwing should be avoided wherever possible.  Instead, error handling
+    should be dealt with in actions.  They should be limited to reporting up issues to the
+    Idea calling interface, or should be dealt with as early as possible when encountered from
+    the Perforce server.
+</p>

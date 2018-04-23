@@ -23,6 +23,10 @@ public class PerforceEnvironment {
 	public static final String P4CONFIG = "P4CONFIG";
 	public static final String P4ENVIRO = "P4ENVIRO";
 
+	// p4ic4idea: custom setting for an explicit fingerprint key.
+	public static String P4SERVER_FINGERPRINT = "P4FINGERPRINT";
+
+
 	// Default P4ENVIRO file path
 	public static final String DEFAULT_P4ENVIRO_FILE = System.getProperty("user.home") + "/.p4enviro";
 	
@@ -64,6 +68,10 @@ public class PerforceEnvironment {
 
 	public static String getP4Config() {
 		return System.getenv(P4CONFIG);
+	}
+
+	public static String getP4serverFingerprint() {
+		return System.getenv(P4SERVER_FINGERPRINT);
 	}
 
 	/**

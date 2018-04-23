@@ -45,7 +45,7 @@ warning managers.  From the API standpoint, this works as a user-level logging f
 messages from the low-level code, and exceptions are for when the error happens.
 
 
-### ExceptionUtil
+### ExceptionUtil (renamed to TodoMoveMeExceptionUtil)
 
 The code here is trying to figure out how to categorize the exception and messages that come out of the
 `p4java` library.  Instead, this should be put into the `p4java` library itself.  Indeed, any code that
@@ -58,6 +58,12 @@ The way we connect to the server is overly complicated.  It was made as layers o
 to better detect issues, then layers were made on top of that.  The biggest problem is the grab the password
 when necessary.  This should probably be changed to "Ask Password" configuration option (rather than the
 confusing "Require Password" option that we have now).  This is at the heart of the majority of issues.
+
+
+#### P4RetryAuthenticationException
+
+If this is only used for noting that we need to retry authentication, then it should
+be renamed.  If it has some other purpose, add it back to UserExceptionMessageHandler.
 
 
 ### Cache
@@ -81,6 +87,17 @@ Something like this pattern:
 ```
 
 It avoids the synchronization issues.
+
+
+### Exceptions
+
+The exceptions are a mess, and a good deal of code is spent trying to figure out
+what they mean.  The p4java exceptions should be straightened out to be more
+clear when they know what their differences are.  The plugin exceptions should
+separate out exceptions into groups - plugin problems and server problems.
+
+The exceptions must not have any messages in them.  This should instead be handled by the
+`UserExceptionMessageHandler` class.
 
 
 ### More...

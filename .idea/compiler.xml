@@ -19,6 +19,18 @@
       <module name="idea-compat_compat-api_testIdea173" target="1.8" />
       <module name="idea-compat_v171_main" target="1.8" />
       <module name="idea-compat_v171_test" target="1.8" />
+      <module name="idea-p4server_api_main" target="1.8" />
+      <module name="idea-p4server_api_mainIdea172" target="1.8" />
+      <module name="idea-p4server_api_mainIdea173" target="1.8" />
+      <module name="idea-p4server_api_test" target="1.8" />
+      <module name="idea-p4server_api_testIdea172" target="1.8" />
+      <module name="idea-p4server_api_testIdea173" target="1.8" />
+      <module name="idea-p4server_impl_main" target="1.8" />
+      <module name="idea-p4server_impl_mainIdea172" target="1.8" />
+      <module name="idea-p4server_impl_mainIdea173" target="1.8" />
+      <module name="idea-p4server_impl_test" target="1.8" />
+      <module name="idea-p4server_impl_testIdea172" target="1.8" />
+      <module name="idea-p4server_impl_testIdea173" target="1.8" />
       <module name="idea-p4server_main" target="1.8" />
       <module name="idea-p4server_mainIdea172" target="1.8" />
       <module name="idea-p4server_mainIdea173" target="1.8" />

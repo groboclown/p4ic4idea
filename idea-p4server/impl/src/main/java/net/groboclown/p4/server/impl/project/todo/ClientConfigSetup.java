@@ -16,7 +16,7 @@ package net.groboclown.p4.server.impl.project.todo;
 
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ConfigProblem;
-import net.groboclown.p4.server.api.config.part.DataPart;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,10 +28,10 @@ import java.util.Set;
 public final class ClientConfigSetup {
     private final ClientConfig config;
     private final Collection<ConfigProblem> configProblems;
-    private final DataPart source;
+    private final ConfigPart source;
 
     ClientConfigSetup(@Nullable ClientConfig config, @Nullable Collection<ConfigProblem> configProblems,
-            @NotNull DataPart source) {
+            @NotNull ConfigPart source) {
         this.config = config;
         this.source = source;
         Set<ConfigProblem> problems = new HashSet<ConfigProblem>(source.getConfigProblems());
@@ -56,7 +56,7 @@ public final class ClientConfigSetup {
     }
 
     @NotNull
-    public DataPart getSource() {
+    public ConfigPart getSource() {
         return source;
     }
 

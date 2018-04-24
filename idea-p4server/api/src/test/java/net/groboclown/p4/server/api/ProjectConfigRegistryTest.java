@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -194,12 +193,12 @@ class ProjectConfigRegistryTest {
     }
 
     private ClientConfig createClientConfig() {
-        MockDataPart data = new MockDataPart()
+        MockConfigPart data = new MockConfigPart()
                 .withServerName("1666")
                 .withUsername("user")
                 .withClientname("my-client");
         ServerConfig serverConfig = ServerConfig.createFrom(data);
-        return ClientConfig.createFrom(idea.getMockProject(), serverConfig, data, Collections.emptyList());
+        return ClientConfig.createFrom(serverConfig, data);
     }
 
 

@@ -12,26 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.config.part;
-
-import net.groboclown.p4.server.api.config.ConfigProblem;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
-
 /**
- * A
+ * Ubiquitous utilities.  These should be restricted to simple, common operations.
  */
-public abstract class CompositePart implements ConfigPart {
-    @NotNull
-    public abstract List<ConfigPart> getConfigParts();
-
-    public boolean hasError() {
-        for (ConfigProblem configProblem : getConfigProblems()) {
-            if (configProblem.isError()) {
-                return true;
-            }
-        }
-        return false;
-    }
-}
+package net.groboclown.p4.server.api.util;

@@ -13,7 +13,7 @@
  */
 package net.groboclown.p4.server.api.config;
 
-import net.groboclown.p4.server.api.MockDataPart;
+import net.groboclown.p4.server.api.MockConfigPart;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -25,7 +25,7 @@ class ServerConfigTest {
 
     @Test
     void getServerIdForDataPart_full() {
-        MockDataPart data = new MockDataPart()
+        MockConfigPart data = new MockConfigPart()
                 .withServerName("1234")
                 .withUsername("luser")
                 .withPassword("my password")
@@ -41,7 +41,7 @@ class ServerConfigTest {
 
     @Test
     void getServerIdForDataPart_empty() {
-        MockDataPart data = new MockDataPart()
+        MockConfigPart data = new MockConfigPart()
                 .withNoPassword();
         assertEquals("null" + SEP +
                 "null" + SEP +
@@ -52,7 +52,7 @@ class ServerConfigTest {
 
     @Test
     void getServerIdForDataPart_nullPassword() {
-        MockDataPart data = new MockDataPart()
+        MockConfigPart data = new MockConfigPart()
                 .withPassword(null);
         assertEquals("null" + SEP +
                 "null" + SEP +

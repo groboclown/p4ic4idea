@@ -16,211 +16,215 @@ package net.groboclown.p4.server.api.config.part;
 import net.groboclown.p4.server.api.config.ConfigProblem;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 import static net.groboclown.idea.ExtAsserts.assertEmpty;
-import static net.groboclown.p4.server.api.config.part.TestableConfigProblem.*;
+import static net.groboclown.p4.server.api.config.part.ConfigProblemUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class DataPartAdapterTest {
+class ConfigPartAdapterTest {
 
     @Test
     void hasError_default() {
-        assertFalse(new DataPartAdapter().hasError());
+        assertFalse(new ConfigPartAdapter("Blah").hasError());
     }
 
     @Test
     void hasError_noProblems() {
-        assertFalse(new ProblemDataPartAdapter().hasError());
+        assertFalse(new ProblemConfigPartAdapter().hasError());
     }
 
     @Test
     void hasError_oneProblem_NotError() {
-        assertFalse(new ProblemDataPartAdapter(
+        assertFalse(new ProblemConfigPartAdapter(
                 createWarning()
         ).hasError());
     }
 
     @Test
     void hasError_oneProblem_Error() {
-        assertTrue(new ProblemDataPartAdapter(
+        assertTrue(new ProblemConfigPartAdapter(
                 createError()
         ).hasError());
     }
 
     @Test
     void hasError_multipleProblems_NotError() {
-        assertFalse(new ProblemDataPartAdapter(
+        assertFalse(new ProblemConfigPartAdapter(
                 createWarning(), createWarning(),createWarning(), createWarning()
         ).hasError());
     }
 
     @Test
     void hasError_multipleProblems_FirstError() {
-        assertTrue(new ProblemDataPartAdapter(
+        assertTrue(new ProblemConfigPartAdapter(
                 createError(), createWarning(),createWarning(), createWarning(), createWarning()
         ).hasError());
     }
 
     @Test
     void hasError_multipleProblems_LastError() {
-        assertTrue(new ProblemDataPartAdapter(
+        assertTrue(new ProblemConfigPartAdapter(
                 createWarning(), createWarning(),createWarning(), createWarning(), createError()
         ).hasError());
     }
 
     @Test
     void hasError_multipleProblems_AllErrors() {
-        assertTrue(new ProblemDataPartAdapter(
+        assertTrue(new ProblemConfigPartAdapter(
                 createError(), createError(),createError(), createError()
         ).hasError());
     }
 
 
     @Test
-    void getRootPath() {
-        assertNull(new DataPartAdapter().getRootPath());
+    void getSourceName() {
+        assertEquals("Blah", new ConfigPartAdapter("Blah").getSourceName());
     }
 
     @Test
     void hasServerNameSet() {
-        assertFalse(new DataPartAdapter().hasServerNameSet());
+        assertFalse(new ConfigPartAdapter("Blah").hasServerNameSet());
     }
 
     @Test
     void getServerName() {
-        assertNull(new DataPartAdapter().getServerName());
+        assertNull(new ConfigPartAdapter("Blah").getServerName());
     }
 
     @Test
     void hasClientnameSet() {
-        assertFalse(new DataPartAdapter().hasClientnameSet());
+        assertFalse(new ConfigPartAdapter("Blah").hasClientnameSet());
     }
 
     @Test
     void getClientname() {
-        assertNull(new DataPartAdapter().getClientname());
+        assertNull(new ConfigPartAdapter("Blah").getClientname());
     }
 
     @Test
     void hasUsernameSet() {
-        assertFalse(new DataPartAdapter().hasUsernameSet());
+        assertFalse(new ConfigPartAdapter("Blah").hasUsernameSet());
     }
 
     @Test
     void getUsername() {
-        assertNull(new DataPartAdapter().getUsername());
+        assertNull(new ConfigPartAdapter("Blah").getUsername());
     }
 
     @Test
     void hasPasswordSet() {
-        assertFalse(new DataPartAdapter().hasPasswordSet());
+        assertFalse(new ConfigPartAdapter("Blah").hasPasswordSet());
     }
 
     @Test
     void getPlaintextPassword() {
-        assertNull(new DataPartAdapter().getPlaintextPassword());
+        assertNull(new ConfigPartAdapter("Blah").getPlaintextPassword());
     }
 
     @Test
     void hasAuthTicketFileSet() {
-        assertFalse(new DataPartAdapter().hasAuthTicketFileSet());
+        assertFalse(new ConfigPartAdapter("Blah").hasAuthTicketFileSet());
     }
 
     @Test
     void getAuthTicketFile() {
-        assertNull(new DataPartAdapter().getAuthTicketFile());
+        assertNull(new ConfigPartAdapter("Blah").getAuthTicketFile());
     }
 
     @Test
     void hasTrustTicketFileSet() {
-        assertFalse(new DataPartAdapter().hasTrustTicketFileSet());
+        assertFalse(new ConfigPartAdapter("Blah").hasTrustTicketFileSet());
     }
 
     @Test
     void getTrustTicketFile() {
-        assertNull(new DataPartAdapter().getTrustTicketFile());
+        assertNull(new ConfigPartAdapter("Blah").getTrustTicketFile());
     }
 
     @Test
     void hasServerFingerprintSet() {
-        assertFalse(new DataPartAdapter().hasServerFingerprintSet());
+        assertFalse(new ConfigPartAdapter("Blah").hasServerFingerprintSet());
     }
 
     @Test
     void getServerFingerprint() {
-        assertNull(new DataPartAdapter().getServerFingerprint());
+        assertNull(new ConfigPartAdapter("Blah").getServerFingerprint());
     }
 
     @Test
     void hasClientHostnameSet() {
-        assertFalse(new DataPartAdapter().hasClientHostnameSet());
+        assertFalse(new ConfigPartAdapter("Blah").hasClientHostnameSet());
     }
 
     @Test
     void getClientHostname() {
-        assertNull(new DataPartAdapter().getClientHostname());
+        assertNull(new ConfigPartAdapter("Blah").getClientHostname());
     }
 
     @Test
     void hasIgnoreFileNameSet() {
-        assertFalse(new DataPartAdapter().hasIgnoreFileNameSet());
+        assertFalse(new ConfigPartAdapter("Blah").hasIgnoreFileNameSet());
     }
 
     @Test
     void getIgnoreFileName() {
-        assertNull(new DataPartAdapter().getIgnoreFileName());
+        assertNull(new ConfigPartAdapter("Blah").getIgnoreFileName());
     }
 
     @Test
     void hasDefaultCharsetSet() {
-        assertFalse(new DataPartAdapter().hasDefaultCharsetSet());
+        assertFalse(new ConfigPartAdapter("Blah").hasDefaultCharsetSet());
     }
 
     @Test
     void getDefaultCharset() {
-        assertNull(new DataPartAdapter().getDefaultCharset());
+        assertNull(new ConfigPartAdapter("Blah").getDefaultCharset());
     }
 
     @Test
     void hasLoginSsoSet() {
-        assertFalse(new DataPartAdapter().hasLoginSsoSet());
+        assertFalse(new ConfigPartAdapter("Blah").hasLoginSsoSet());
     }
 
     @Test
     void getLoginSso() {
-        assertNull(new DataPartAdapter().getLoginSso());
+        assertNull(new ConfigPartAdapter("Blah").getLoginSso());
     }
 
     @Test
     void testToString() {
-        assertEquals("DataPartAdapter", new DataPartAdapter().toString());
+        assertEquals("ConfigPartAdapter", new ConfigPartAdapter("Blah").toString());
     }
 
     @Test
     void reload() {
-        assertFalse(new DataPartAdapter().reload());
+        assertTrue(new ConfigPartAdapter("Blah").reload());
     }
 
     @Test
     void getConfigProblems() {
-        assertEmpty(new DataPartAdapter().getConfigProblems());
+        assertEmpty(new ConfigPartAdapter("Blah").getConfigProblems());
     }
 
     @Test
     void requiresUserEnteredPassword() {
-        assertFalse(new DataPartAdapter().requiresUserEnteredPassword());
+        assertFalse(new ConfigPartAdapter("Blah").requiresUserEnteredPassword());
     }
 
-    private static class ProblemDataPartAdapter extends DataPartAdapter {
+    private static class ProblemConfigPartAdapter
+            extends ConfigPartAdapter {
         private final List<ConfigProblem> problems;
 
-        private ProblemDataPartAdapter(ConfigProblem... problems) {
+        private ProblemConfigPartAdapter(ConfigProblem... problems) {
+            super("Blah");
             this.problems = Arrays.asList(problems);
         }
 
+        @Nonnull
         @Override
         public Collection<ConfigProblem> getConfigProblems() {
             return problems;

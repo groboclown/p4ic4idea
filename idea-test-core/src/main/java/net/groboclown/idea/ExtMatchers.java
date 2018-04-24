@@ -14,7 +14,11 @@
 
 package net.groboclown.idea;
 
+import com.intellij.openapi.util.Pair;
 import net.groboclown.idea.matchers.CollectionsMatchers;
+import net.groboclown.idea.matchers.NumberMatchers;
+
+import java.util.Collection;
 
 public class ExtMatchers {
     public static <T> CollectionsMatchers.EmptyCollectionMatcher<T> isEmpty() {
@@ -31,5 +35,25 @@ public class ExtMatchers {
 
     public static <K,V> CollectionsMatchers.SizedMapMatcher<K,V> hasMapSize(int size) {
         return new CollectionsMatchers.SizedMapMatcher<>(size);
+    }
+
+    public static <T> CollectionsMatchers.ContainsAllMatcher<T> containsAll(T... items) {
+        return new CollectionsMatchers.ContainsAllMatcher<>(items);
+    }
+
+    public static <T> CollectionsMatchers.ContainsAllMatcher<T> containsAll(Collection<T> items) {
+        return new CollectionsMatchers.ContainsAllMatcher<>(items);
+    }
+
+    public static <K,V> CollectionsMatchers.MapContainsAllMatcher<K,V> mapContainsAll(Pair<K,V>... pairs) {
+        return new CollectionsMatchers.MapContainsAllMatcher<>(pairs);
+    }
+
+    public static NumberMatchers.GreaterThan greaterThan(Number n) {
+        return new NumberMatchers.GreaterThan(n);
+    }
+
+    public static NumberMatchers.LessThan lessThan(Number n) {
+        return new NumberMatchers.LessThan(n);
     }
 }

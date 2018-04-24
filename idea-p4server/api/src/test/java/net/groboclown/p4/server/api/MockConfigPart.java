@@ -14,9 +14,9 @@
 
 package net.groboclown.p4.server.api;
 
-import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.config.ConfigProblem;
-import net.groboclown.p4.server.api.config.part.DataPart;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,8 +25,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
-public class MockDataPart implements DataPart {
-    private VirtualFile rootPath;
+public class MockConfigPart
+        implements ConfigPart {
+    private String sourceName = "blah";
     private P4ServerName serverName;
     private String clientname;
     private String username;
@@ -41,18 +42,17 @@ public class MockDataPart implements DataPart {
     private String loginSso;
     private boolean reloadValue = false;
     private boolean requiresUserEnteredPassword;
+    private Collection<ConfigProblem> configProblems = new ArrayList<>();
 
+    @Nls
     @NotNull
-    public Collection<ConfigProblem> configProblems = new ArrayList<>();
-
-    @Nullable
     @Override
-    public VirtualFile getRootPath() {
-        return rootPath;
+    public String getSourceName() {
+        return sourceName;
     }
 
-    public MockDataPart withRootPath(VirtualFile vf) {
-        rootPath = vf;
+    public MockConfigPart withSourceName(@NotNull String s) {
+        sourceName = s;
         return this;
     }
 
@@ -67,7 +67,7 @@ public class MockDataPart implements DataPart {
         return serverName;
     }
 
-    public MockDataPart withServerName(String s) {
+    public MockConfigPart withServerName(String s) {
         serverName = P4ServerName.forPort(s);
         return this;
     }
@@ -84,7 +84,7 @@ public class MockDataPart implements DataPart {
         return clientname;
     }
 
-    public MockDataPart withClientname(String s) {
+    public MockConfigPart withClientname(String s) {
         clientname = s;
         return this;
     }
@@ -100,7 +100,7 @@ public class MockDataPart implements DataPart {
         return username;
     }
 
-    public MockDataPart withUsername(String s) {
+    public MockConfigPart withUsername(String s) {
         username = s;
         return this;
     }
@@ -116,13 +116,13 @@ public class MockDataPart implements DataPart {
         return password;
     }
 
-    public MockDataPart withNoPassword() {
+    public MockConfigPart withNoPassword() {
         hasPasswordSet = false;
         password = null;
         return this;
     }
 
-    public MockDataPart withPassword(String s) {
+    public MockConfigPart withPassword(String s) {
         hasPasswordSet = true;
         password = s;
         return this;
@@ -133,7 +133,7 @@ public class MockDataPart implements DataPart {
         return requiresUserEnteredPassword;
     }
 
-    public MockDataPart withRequiresUserEnteredPassword(boolean b) {
+    public MockConfigPart withRequiresUserEnteredPassword(boolean b) {
         requiresUserEnteredPassword = b;
         return this;
     }
@@ -149,7 +149,7 @@ public class MockDataPart implements DataPart {
         return authTicketFile;
     }
 
-    public MockDataPart withAuthTicketFile(File f) {
+    public MockConfigPart withAuthTicketFile(File f) {
         authTicketFile = f;
         return this;
     }
@@ -165,7 +165,7 @@ public class MockDataPart implements DataPart {
         return trustTicketFile;
     }
 
-    public MockDataPart withTrustTicketFile(File f) {
+    public MockConfigPart withTrustTicketFile(File f) {
         trustTicketFile = f;
         return this;
     }
@@ -181,7 +181,7 @@ public class MockDataPart implements DataPart {
         return serverFingerprint;
     }
 
-    public MockDataPart withServerFingerprint(String s) {
+    public MockConfigPart withServerFingerprint(String s) {
         serverFingerprint = s;
         return this;
     }
@@ -197,7 +197,7 @@ public class MockDataPart implements DataPart {
         return clientHostname;
     }
 
-    public MockDataPart withClientHostname(String s) {
+    public MockConfigPart withClientHostname(String s) {
         clientHostname = s;
         return this;
     }
@@ -213,7 +213,7 @@ public class MockDataPart implements DataPart {
         return ignoreFileName;
     }
 
-    public MockDataPart withIgnoreFileName(String s) {
+    public MockConfigPart withIgnoreFileName(String s) {
         ignoreFileName = s;
         return this;
     }
@@ -229,7 +229,7 @@ public class MockDataPart implements DataPart {
         return defaultCharset;
     }
 
-    public MockDataPart withDefaultCharset(String s) {
+    public MockConfigPart withDefaultCharset(String s) {
         defaultCharset = s;
         return this;
     }
@@ -245,7 +245,7 @@ public class MockDataPart implements DataPart {
         return loginSso;
     }
 
-    public MockDataPart withLoginSso(String s) {
+    public MockConfigPart withLoginSso(String s) {
         loginSso = s;
         return this;
     }
@@ -255,7 +255,7 @@ public class MockDataPart implements DataPart {
         return reloadValue;
     }
 
-    public MockDataPart withReloadValue(boolean b) {
+    public MockConfigPart withReloadValue(boolean b) {
         reloadValue = b;
         return this;
     }
@@ -276,7 +276,7 @@ public class MockDataPart implements DataPart {
         return false;
     }
 
-    public MockDataPart withConfigProblems(ConfigProblem... problems) {
+    public MockConfigPart withConfigProblems(ConfigProblem... problems) {
         configProblems = Arrays.asList(problems);
         return this;
     }

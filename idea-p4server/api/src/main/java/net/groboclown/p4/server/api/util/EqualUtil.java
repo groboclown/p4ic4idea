@@ -12,12 +12,10 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.util;
+package net.groboclown.p4.server.api.util;
 
-import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.util.Arrays;
 
 public class EqualUtil {
@@ -32,10 +30,5 @@ public class EqualUtil {
 
     public static boolean isArrayEqual(@Nullable Object[] a, @Nullable Object[] b) {
         return Arrays.deepEquals(a, b);
-    }
-
-
-    public static boolean isSameFile(@Nullable File a, @Nullable File b) {
-        return FileUtil.filesEqual(a, b);
     }
 }

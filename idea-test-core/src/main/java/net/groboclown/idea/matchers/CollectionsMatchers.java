@@ -14,11 +14,18 @@
 
 package net.groboclown.idea.matchers;
 
+import com.intellij.openapi.util.Pair;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class CollectionsMatchers {
     public static class EmptyCollectionMatcher<T> extends BaseMatcher<Collection<T>> {
@@ -82,4 +89,66 @@ public class CollectionsMatchers {
     }
 
 
+    public static class ContainsAllMatcher<T> extends BaseMatcher<Collection<T>> {
+        private final List<T> items;
+
+        public ContainsAllMatcher(T... items) {
+            this.items = Arrays.asList(items);
+        }
+
+        public ContainsAllMatcher(Collection<T> items) {
+            this.items = new ArrayList<>(items);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public boolean matches(Object o) {
+            Set<T> remaining = new HashSet<>(items);
+            Collection<T> that = (Collection<T>) o;
+            for (T t : that) {
+                if (!remaining.remove(t)) {
+                    return false;
+                }
+            }
+            return remaining.isEmpty();
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendValueList("a collection which contains ", ", ", ", and ", items);
+        }
+    }
+
+    public static class MapContainsAllMatcher<K,V> extends BaseMatcher<Map<K,V>> {
+        Map<K,V> values = new HashMap<>();
+
+        public MapContainsAllMatcher(Pair<K,V>... pairs) {
+            for (Pair<K, V> pair : pairs) {
+                values.put(pair.first, pair.second);
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public boolean matches(Object o) {
+            Map<K,V> remaining = new HashMap<>(values);
+            for (Map.Entry<K, V> entry : ((Map<K, V>) o).entrySet()) {
+                if (!remaining.containsKey(entry.getKey())) {
+                    return false;
+                }
+                V v = remaining.remove(entry.getKey());
+                if ((v == null && entry.getValue() != null) ||
+                        (v != null && entry.getValue() == null) ||
+                        (v != null && !v.equals(entry.getValue()))) {
+                    return false;
+                }
+            }
+            return remaining.isEmpty();
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendValue(values);
+        }
+    }
 }

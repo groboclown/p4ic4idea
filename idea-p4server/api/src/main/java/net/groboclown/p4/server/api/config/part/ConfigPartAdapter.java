@@ -14,9 +14,9 @@
 
 package net.groboclown.p4.server.api.config.part;
 
-import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ConfigProblem;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,15 +25,23 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Basic adapter to implement all the of the {@link DataPart} methods.  {@link #hasError()} is
+ * Basic adapter to implement all the of the {@link ConfigPart} methods.  {@link #hasError()} is
  * fully implemented to examine the reported {@link #getConfigProblems()}.  {@link #toString()}
  * is implemented, but only reports the class name.
  */
-public class DataPartAdapter implements DataPart {
-    @Nullable
+public class ConfigPartAdapter
+        implements ConfigPart {
+    private final String sourceName;
+
+    public ConfigPartAdapter(@NotNull @Nls(capitalization = Nls.Capitalization.Title) String sourceName) {
+        this.sourceName = sourceName;
+    }
+
+    @Nls
+    @NotNull
     @Override
-    public VirtualFile getRootPath() {
-        return null;
+    public String getSourceName() {
+        return sourceName;
     }
 
     @Override
@@ -164,7 +172,7 @@ public class DataPartAdapter implements DataPart {
 
     @Override
     public boolean reload() {
-        return false;
+        return true;
     }
 
     @NotNull

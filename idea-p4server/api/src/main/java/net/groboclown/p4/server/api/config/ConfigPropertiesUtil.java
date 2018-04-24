@@ -15,70 +15,73 @@
 package net.groboclown.p4.server.api.config;
 
 import com.perforce.p4java.env.PerforceEnvironment;
-import net.groboclown.p4.server.api.config.part.DataPart;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Helper utility to generate P4CONFIG like properties based on the configurations.
+ */
 public class ConfigPropertiesUtil {
     @NotNull
-    public static Map<String, String> toProperties(@NotNull DataPart dataPart, @Nullable String valueIfUnset,
+    public static Map<String, String> toProperties(@NotNull ConfigPart configPart, @Nullable String valueIfUnset,
             @Nullable String valueIfPasswordEmpty, @Nullable String valueIfPasswordSet) {
-        Map<String, String> ret = new HashMap<String, String>();
+        Map<String, String> ret = new HashMap<>();
         ret.put(PerforceEnvironment.P4PORT,
-                ! dataPart.hasServerNameSet() || dataPart.getServerName() == null
+                ! configPart.hasServerNameSet() || configPart.getServerName() == null
                         ? valueIfUnset
-                        : dataPart.getServerName().getDisplayName());
+                        : configPart.getServerName().getDisplayName());
         ret.put(PerforceEnvironment.P4TRUST,
-                ! dataPart.hasTrustTicketFileSet() || dataPart.getTrustTicketFile() == null
+                ! configPart.hasTrustTicketFileSet() || configPart.getTrustTicketFile() == null
                         ? valueIfUnset
-                        : dataPart.getTrustTicketFile().toString());
+                        : configPart.getTrustTicketFile().toString());
         ret.put(PerforceEnvironment.P4USER,
-                ! dataPart.hasUsernameSet() || dataPart.getUsername() == null
+                ! configPart.hasUsernameSet() || configPart.getUsername() == null
                         ? valueIfUnset
-                        : dataPart.getUsername());
+                        : configPart.getUsername());
         ret.put(PerforceEnvironment.P4TICKETS,
-                ! dataPart.hasAuthTicketFileSet() || dataPart.getAuthTicketFile() == null
+                ! configPart.hasAuthTicketFileSet() || configPart.getAuthTicketFile() == null
                         ? valueIfUnset
-                        : dataPart.getAuthTicketFile().toString());
+                        : configPart.getAuthTicketFile().toString());
         ret.put(PerforceEnvironment.P4SERVER_FINGERPRINT,
-                ! dataPart.hasServerFingerprintSet() || dataPart.getServerFingerprint() == null
+                ! configPart.hasServerFingerprintSet() || configPart.getServerFingerprint() == null
                         ? valueIfUnset
-                        : dataPart.getServerFingerprint());
+                        : configPart.getServerFingerprint());
         ret.put(PerforceEnvironment.P4PASSWD,
                 getPasswordValue(
-                        dataPart.hasPasswordSet(),
-                        dataPart.getPlaintextPassword(),
+                        configPart.hasPasswordSet(),
+                        configPart.getPlaintextPassword(),
                         valueIfUnset, valueIfPasswordEmpty, valueIfPasswordSet));
         ret.put(PerforceEnvironment.P4CHARSET,
-                ! dataPart.hasDefaultCharsetSet() || dataPart.getDefaultCharset() == null
+                ! configPart.hasDefaultCharsetSet() || configPart.getDefaultCharset() == null
                         ? valueIfUnset
-                        : dataPart.getDefaultCharset());
+                        : configPart.getDefaultCharset());
         ret.put(PerforceEnvironment.P4IGNORE,
-                ! dataPart.hasIgnoreFileNameSet() || dataPart.getIgnoreFileName() == null
+                ! configPart.hasIgnoreFileNameSet() || configPart.getIgnoreFileName() == null
                         ? valueIfUnset
-                        : dataPart.getIgnoreFileName());
+                        : configPart.getIgnoreFileName());
         ret.put(PerforceEnvironment.P4CLIENT,
-                ! dataPart.hasClientnameSet() || dataPart.getClientname() == null
+                ! configPart.hasClientnameSet() || configPart.getClientname() == null
                         ? valueIfUnset
-                        : dataPart.getClientname());
+                        : configPart.getClientname());
         ret.put(PerforceEnvironment.P4HOST,
-                ! dataPart.hasClientHostnameSet() || dataPart.getClientHostname() == null
+                ! configPart.hasClientHostnameSet() || configPart.getClientHostname() == null
                         ? valueIfUnset
-                        : dataPart.getClientHostname());
+                        : configPart.getClientHostname());
         ret.put(PerforceEnvironment.P4LOGINSSO,
-                ! dataPart.hasLoginSsoSet() || dataPart.getLoginSso() == null
+                ! configPart.hasLoginSsoSet() || configPart.getLoginSso() == null
                         ? valueIfUnset
-                        : dataPart.getLoginSso());
+                        : configPart.getLoginSso());
         return ret;
     }
 
     @NotNull
     public static Map<String, String> toProperties(@NotNull ServerConfig config, @Nullable String valueIfUnset,
             @Nullable String valueIfPasswordRequired, @Nullable String valueIfPasswordNotRequired) {
-        Map<String, String> ret = new HashMap<String, String>();
+        Map<String, String> ret = new HashMap<>();
         ret.put(PerforceEnvironment.P4PORT, config.getServerName().getDisplayName());
         ret.put(PerforceEnvironment.P4TRUST,
                 ! config.hasTrustTicket() || config.getTrustTicket() == null
@@ -115,9 +118,9 @@ public class ConfigPropertiesUtil {
                         ? valueIfUnset
                         : config.getIgnoreFileName());
         props.put(PerforceEnvironment.P4CLIENT,
-                config.getClientName() == null
+                config.getClientname() == null
                         ? valueIfUnset
-                        : config.getClientName());
+                        : config.getClientname());
         props.put(PerforceEnvironment.P4HOST,
                 config.getClientHostName() == null
                         ? valueIfUnset

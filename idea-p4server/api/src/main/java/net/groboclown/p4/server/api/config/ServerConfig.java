@@ -17,7 +17,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.io.FileUtil;
 import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
 import net.groboclown.p4.server.api.P4ServerName;
-import net.groboclown.p4.server.api.config.part.DataPart;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -26,6 +26,8 @@ import javax.annotation.concurrent.Immutable;
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 
 /**
@@ -43,6 +45,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * in one place the password in case the user enters it manually, which would
  * break immutability.
  * <p>
+ * This is used for running server commands that do not require a client,
+ * but do require a username.  There are limited commands that no not require a
+ * username, and for those, the {@link P4ServerName} is sufficient for connectivity.
+ * <p>
  * This class MUST be immutable.
  */
 @Immutable
@@ -51,7 +57,7 @@ public final class ServerConfig {
 
     // Just some character that won't appear in any real text, but
     // is still viewable in a debugger.
-    static final char SEP = (char) 0x2202;
+    static final char SEP = (char) 0x263b;
 
     private static final AtomicInteger COUNT = new AtomicInteger(0);
 
@@ -68,7 +74,7 @@ public final class ServerConfig {
     private final boolean usesPassword;
 
     @NotNull
-    static String getServerIdForDataPart(@NotNull DataPart part) {
+    static String getServerIdForDataPart(@NotNull ConfigPart part) {
         StringBuilder sb = new StringBuilder();
         if (part.hasServerNameSet() && part.getServerName() != null) {
             sb.append(part.getServerName().getFullPort());
@@ -91,24 +97,29 @@ public final class ServerConfig {
 
 
     @NotNull
-    public static ServerConfig createFrom(@NotNull DataPart part) {
+    public static ServerConfig createFrom(@NotNull ConfigPart part) {
         return new ServerConfig(part);
     }
 
-    public static boolean isValid(@Nullable DataPart part) {
-        if (part == null) {
+    public static boolean isValidServerConfig(@Nullable ConfigPart part) {
+        if (part == null || part.hasError()) {
             return false;
         }
-        for (ConfigProblem configProblem : part.getConfigProblems()) {
-            if (configProblem.isError()) {
-                return false;
-            }
+
+        // This should be included with the above config problems.
+        if (part.getServerName() == null || isBlank(part.getServerName().getFullPort())) {
+            return false;
         }
+
+        if (isBlank(part.getUsername())) {
+            return false;
+        }
+
         return true;
     }
 
-    private ServerConfig(@NotNull DataPart part) {
-        if (! isValid(part)) {
+    private ServerConfig(@NotNull ConfigPart part) {
+        if (! isValidServerConfig(part)) {
             throw new IllegalStateException("Did not check validity before creating");
         }
         this.configVersion = COUNT.incrementAndGet();
@@ -207,7 +218,7 @@ public final class ServerConfig {
         return serverId;
     }
 
-    boolean isSameServer(@Nullable DataPart part) {
+    boolean isSameServer(@Nullable ConfigPart part) {
         if (part == null) {
             LOG.debug("isSameServer: input is null");
             return false;

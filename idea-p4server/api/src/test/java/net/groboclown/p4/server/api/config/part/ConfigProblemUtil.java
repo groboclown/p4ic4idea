@@ -15,33 +15,19 @@
 package net.groboclown.p4.server.api.config.part;
 
 import net.groboclown.p4.server.api.config.ConfigProblem;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+public class ConfigProblemUtil {
 
-public class SingleCompositePart extends CompositePart {
-    private final ConfigPart config;
+    public static ConfigProblem createError() {
 
-    public SingleCompositePart(@NotNull ConfigPart part) {
-        this.config = part;
+        return new ConfigProblem(mkConfig(), "Error blah", true);
     }
 
-    @Override
-    public boolean reload() {
-        return config.reload();
+    public static ConfigProblem createWarning() {
+        return new ConfigProblem(mkConfig(), "Warning: blah", false);
     }
 
-    @NotNull
-    @Override
-    public Collection<ConfigProblem> getConfigProblems() {
-        return config.getConfigProblems();
-    }
-
-    @NotNull
-    @Override
-    public List<ConfigPart> getConfigParts() {
-        return Collections.singletonList(config);
+    private static ConfigPart mkConfig() {
+        return new ConfigPartAdapter("Blah");
     }
 }

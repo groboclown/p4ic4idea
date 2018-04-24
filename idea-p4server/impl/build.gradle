@@ -34,7 +34,8 @@ dependencies {
             project(':messages')
     )
     compatTest(
-            project(':idea-test-core')
+            project(':idea-test-core'),
+            project(':idea-p4server/impl')
     )
 }
 

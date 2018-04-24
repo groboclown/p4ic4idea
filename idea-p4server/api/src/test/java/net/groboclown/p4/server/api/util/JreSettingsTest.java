@@ -1,3 +1,9 @@
+package net.groboclown.p4.server.api.util;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 /*
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -11,17 +17,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+class JreSettingsTest {
 
-package net.groboclown.p4.server.api.config;
+    @Test
+    void getEnv() {
+        fail("write it");
+    }
 
-import com.intellij.openapi.Disposable;
-import org.jetbrains.annotations.NotNull;
+    @Test
+    void getEnv1() {
+        fail("write it");
+    }
 
-/**
- * A layer on top of a {@link ServerConfigState} to include the client connection
- * details.
- */
-public interface ClientConfigState extends Disposable, ServerConfigState {
-    @NotNull
-    ClientConfig getClientConfig();
+    @Test
+    void getProperty() {
+        fail("write it");
+    }
+
+    @Test
+    void getProperty1() {
+        fail("write it");
+    }
+
+    @Test
+    void setOverrides() {
+        fail("write it");
+    }
 }

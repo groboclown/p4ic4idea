@@ -18,7 +18,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ConfigProblem;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
-import net.groboclown.p4.server.api.config.part.DataPart;
 import net.groboclown.p4.server.impl.config.ConfigProblemImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +32,7 @@ public class PartValidation {
 
     private final Set<ConfigProblem> problems = new HashSet<ConfigProblem>();
 
-    public static Collection<ConfigProblem> findAllProblems(@NotNull DataPart part) {
+    public static Collection<ConfigProblem> findAllProblems(@NotNull ConfigPart part) {
         final PartValidation validation = new PartValidation();
         validation.problems.addAll(part.getConfigProblems());
         if (! part.hasServerNameSet() || part.getServerName() == null) {
@@ -63,7 +62,7 @@ public class PartValidation {
         return true;
     }
 
-    boolean checkPort(@NotNull DataPart part, @Nullable String rawPort) {
+    boolean checkPort(@NotNull ConfigPart part, @Nullable String rawPort) {
         return checkPort(part, rawPort, part.getServerName());
     }
 
@@ -76,7 +75,7 @@ public class PartValidation {
         return true;
     }
 
-    boolean checkAuthTicketFile(@NotNull DataPart part) {
+    boolean checkAuthTicketFile(@NotNull ConfigPart part) {
         return checkAuthTicketFile(part, part.getAuthTicketFile());
     }
 
@@ -89,7 +88,7 @@ public class PartValidation {
         return true;
     }
 
-    boolean checkTrustTicketFile(@NotNull DataPart part) {
+    boolean checkTrustTicketFile(@NotNull ConfigPart part) {
         return checkTrustTicketFile(part, part.getTrustTicketFile());
     }
 
@@ -101,7 +100,7 @@ public class PartValidation {
         return true;
     }
 
-    boolean checkLoginSsoFile(@NotNull DataPart part) {
+    boolean checkLoginSsoFile(@NotNull ConfigPart part) {
         return checkLoginSsoFile(part, part.getLoginSso());
     }
 
@@ -113,15 +112,15 @@ public class PartValidation {
         return true;
     }
 
-    boolean checkUsername(@NotNull DataPart part) {
+    boolean checkUsername(@NotNull ConfigPart part) {
         return checkUsername(part, part.getUsername());
     }
 
-    boolean checkClientName(@NotNull DataPart part, boolean ensureNotNull) {
+    boolean checkClientName(@NotNull ConfigPart part, boolean ensureNotNull) {
         return checkClientName(part, part.getClientname(), ensureNotNull);
     }
 
-    private boolean checkClientName(@NotNull DataPart part, @Nullable String clientName, boolean ensureNotNull) {
+    private boolean checkClientName(@NotNull ConfigPart part, @Nullable String clientName, boolean ensureNotNull) {
         if (clientName != null) {
             try {
                 Integer.parseInt(clientName);

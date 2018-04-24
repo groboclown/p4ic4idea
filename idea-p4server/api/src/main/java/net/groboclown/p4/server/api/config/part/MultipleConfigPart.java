@@ -15,11 +15,12 @@
 package net.groboclown.p4.server.api.config.part;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ConfigProblem;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 import java.io.File;
 import java.util.Collection;
@@ -28,18 +29,32 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class MultipleDataPart implements DataPart {
-    private static final Logger LOG = Logger.getInstance(MultipleDataPart.class);
+public class MultipleConfigPart
+        implements ConfigPart {
+    private static final Logger LOG = Logger.getInstance(MultipleConfigPart.class);
 
     private static final AtomicInteger COUNT = new AtomicInteger(0);
 
-    private final VirtualFile root;
-    private final List<DataPart> parts;
+    private final String sourceName;
+    private final List<ConfigPart> parts;
     private final int index = COUNT.incrementAndGet();
 
-    public MultipleDataPart(@Nullable VirtualFile root, @NotNull List<DataPart> parts) {
-        this.root = root;
+    public MultipleConfigPart(@NotNull @Nls(capitalization = Nls.Capitalization.Title) String sourceName,
+            @NotNull List<ConfigPart> parts) {
+        this.sourceName = sourceName;
         this.parts = parts;
+    }
+
+    @TestOnly
+    int getInstanceIndex() {
+        return index;
+    }
+
+    @Nls
+    @NotNull
+    @Override
+    public String getSourceName() {
+        return sourceName;
     }
 
     @Override
@@ -55,20 +70,19 @@ public class MultipleDataPart implements DataPart {
         if (o == null || ! getClass().equals(o.getClass())) {
             return false;
         }
-        MultipleDataPart that = (MultipleDataPart) o;
-        return ((root == null && that.root == null)
-                || (root != null && root.equals(that.root))) &&
+        MultipleConfigPart that = (MultipleConfigPart) o;
+        return getSourceName().equals(that.getSourceName()) &&
                 (parts.equals(that.parts));
     }
 
     @Override
     public int hashCode() {
-        return (root == null ? 0 : root.hashCode()) + parts.hashCode();
+        return (sourceName.hashCode()) + parts.hashCode();
     }
 
     @Override
     public String toString() {
-        return "MultipleDataPart(" + root + "):" + index;
+        return "MultipleConfigPart(" + sourceName + "):" + index;
     }
 
     @NotNull
@@ -77,9 +91,9 @@ public class MultipleDataPart implements DataPart {
         if (LOG.isDebugEnabled()) {
             LOG.debug(this + ": finding config problems");
         }
-        Set<ConfigProblem> problems = new HashSet<ConfigProblem>();
+        Set<ConfigProblem> problems = new HashSet<>();
 
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(part + " P4USER: " + part.hasUsernameSet() + " - " + part.getUsername());
                 LOG.debug(part + " P4PORT: " + part.hasServerNameSet() + " - " + part.getServerName());
@@ -102,15 +116,9 @@ public class MultipleDataPart implements DataPart {
         return false;
     }
 
-    @Nullable
-    @Override
-    public VirtualFile getRootPath() {
-        return root;
-    }
-
     @Override
     public boolean hasServerNameSet() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasServerNameSet()) {
                 return true;
             }
@@ -121,7 +129,7 @@ public class MultipleDataPart implements DataPart {
     @Nullable
     @Override
     public P4ServerName getServerName() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasServerNameSet()) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(this + ": using server name from " + part);
@@ -134,7 +142,7 @@ public class MultipleDataPart implements DataPart {
 
     @Override
     public boolean hasClientnameSet() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasClientnameSet()) {
                 return true;
             }
@@ -145,7 +153,7 @@ public class MultipleDataPart implements DataPart {
     @Nullable
     @Override
     public String getClientname() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasClientnameSet()) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(this + ": using client name from " + part);
@@ -158,7 +166,7 @@ public class MultipleDataPart implements DataPart {
 
     @Override
     public boolean hasUsernameSet() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasUsernameSet()) {
                 return true;
             }
@@ -169,7 +177,7 @@ public class MultipleDataPart implements DataPart {
     @Nullable
     @Override
     public String getUsername() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasUsernameSet()) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(this + ": using user name from " + part);
@@ -182,7 +190,7 @@ public class MultipleDataPart implements DataPart {
 
     @Override
     public boolean hasPasswordSet() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasPasswordSet()) {
                 return true;
             }
@@ -193,7 +201,7 @@ public class MultipleDataPart implements DataPart {
     @Nullable
     @Override
     public String getPlaintextPassword() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasPasswordSet()) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(this + ": using plaintext password from " + part);
@@ -206,7 +214,7 @@ public class MultipleDataPart implements DataPart {
 
     @Override
     public boolean requiresUserEnteredPassword() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.requiresUserEnteredPassword()) {
                 return true;
             }
@@ -216,7 +224,7 @@ public class MultipleDataPart implements DataPart {
 
     @Override
     public boolean hasAuthTicketFileSet() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasAuthTicketFileSet()) {
                 return true;
             }
@@ -227,7 +235,7 @@ public class MultipleDataPart implements DataPart {
     @Nullable
     @Override
     public File getAuthTicketFile() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasAuthTicketFileSet()) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(this + ": using auth ticket file from " + part);
@@ -240,7 +248,7 @@ public class MultipleDataPart implements DataPart {
 
     @Override
     public boolean hasTrustTicketFileSet() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasTrustTicketFileSet()) {
                 return true;
             }
@@ -251,7 +259,7 @@ public class MultipleDataPart implements DataPart {
     @Nullable
     @Override
     public File getTrustTicketFile() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasTrustTicketFileSet()) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(this + ": using trust ticket file from " + part);
@@ -264,7 +272,7 @@ public class MultipleDataPart implements DataPart {
 
     @Override
     public boolean hasServerFingerprintSet() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasServerFingerprintSet()) {
                 return true;
             }
@@ -275,7 +283,7 @@ public class MultipleDataPart implements DataPart {
     @Nullable
     @Override
     public String getServerFingerprint() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasServerFingerprintSet()) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(this + ": using server fingerprint from " + part);
@@ -288,7 +296,7 @@ public class MultipleDataPart implements DataPart {
 
     @Override
     public boolean hasClientHostnameSet() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasClientHostnameSet()) {
                 return true;
             }
@@ -299,7 +307,7 @@ public class MultipleDataPart implements DataPart {
     @Nullable
     @Override
     public String getClientHostname() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasClientHostnameSet()) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(this + ": using client hostname from " + part);
@@ -312,7 +320,7 @@ public class MultipleDataPart implements DataPart {
 
     @Override
     public boolean hasIgnoreFileNameSet() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasIgnoreFileNameSet()) {
                 return true;
             }
@@ -323,7 +331,7 @@ public class MultipleDataPart implements DataPart {
     @Nullable
     @Override
     public String getIgnoreFileName() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasIgnoreFileNameSet()) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(this + ": using ignore file name from " + part);
@@ -336,7 +344,7 @@ public class MultipleDataPart implements DataPart {
 
     @Override
     public boolean hasDefaultCharsetSet() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasDefaultCharsetSet()) {
                 return true;
             }
@@ -347,7 +355,7 @@ public class MultipleDataPart implements DataPart {
     @Nullable
     @Override
     public String getDefaultCharset() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasDefaultCharsetSet()) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(this + ": using default charset from " + part);
@@ -360,7 +368,7 @@ public class MultipleDataPart implements DataPart {
 
     @Override
     public boolean hasLoginSsoSet() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasLoginSsoSet()) {
                 return true;
             }
@@ -371,7 +379,7 @@ public class MultipleDataPart implements DataPart {
     @Nullable
     @Override
     public String getLoginSso() {
-        for (DataPart part : parts) {
+        for (ConfigPart part : parts) {
             if (part.hasLoginSsoSet()) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(this + ": using login sso from " + part);

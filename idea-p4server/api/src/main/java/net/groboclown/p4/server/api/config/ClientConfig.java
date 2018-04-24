@@ -13,31 +13,21 @@
  */
 package net.groboclown.p4.server.api.config;
 
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.p4.server.api.config.part.DataPart;
 import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.concurrent.Immutable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
  * Stores information regarding a server configuration and the specific client/workspace in that
  * server.
  * <p>
- * TODO should this require a Project?  Only because of the assignment of the root directories.
- * Note that this could be swapped out with just the root directories of the DataPart, but that
- * would require some interesting changes to correctly handle the Relative Root.  Alternatively,
- * the Relative Root can just be removed, and the user would need to explicitly add different
- * root directories.  That actually makes more sense.
- * <p>
- * TODO
+ * This is used for server commands that require a valid client workspace.
  * <p>
  * This class MUST be immutable.
  */
@@ -45,13 +35,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class ClientConfig {
     // Just some character that won't appear in any real text, but
     // is still viewable in a debugger.
-    private static final char SEP = (char) 0x2202;
+    static final char SEP = (char) 0x263a;
 
     private static final AtomicInteger COUNT = new AtomicInteger(0);
 
     private final int configVersion;
-    private final Project project;
-    private final Set<VirtualFile> rootDirs;
     private final ServerConfig serverConfig;
     private final String clientName;
     private final String clientHostName;
@@ -62,16 +50,29 @@ public final class ClientConfig {
     private final String clientServerUniqueId;
 
     @NotNull
-    public static ClientConfig createFrom(@NotNull Project project, @NotNull ServerConfig serverConfig,
-            @NotNull DataPart data, @NotNull Collection<VirtualFile> clientProjectBaseDirectories) {
-        if (data.hasError()) {
+    public static ClientConfig createFrom(@NotNull ServerConfig serverConfig, @NotNull ConfigPart data) {
+        if (!isValidClientConfig(serverConfig, data)) {
             throw new IllegalArgumentException("did not validate data");
         }
-        return new ClientConfig(project, serverConfig, data, clientProjectBaseDirectories);
+        return new ClientConfig(serverConfig, data);
     }
 
-    private ClientConfig(@NotNull Project project, @NotNull ServerConfig serverConfig, @NotNull DataPart data,
-            @NotNull Collection<VirtualFile> clientProjectBaseDirectories) {
+
+    public static boolean isValidClientConfig(@Nullable ServerConfig serverConfig, @Nullable ConfigPart part) {
+        if (serverConfig == null || part == null || part.hasError()) {
+            return false;
+        }
+        if (isBlank(part.getClientname())) {
+            return false;
+        }
+        if (isBlank(serverConfig.getUsername())) {
+            return false;
+        }
+        return true;
+    }
+
+
+    private ClientConfig(@NotNull ServerConfig serverConfig, @NotNull ConfigPart data) {
         // Not needed anymore, because the calling class (P4ProjectConfigStack) does this check, and we don't
         // want a misleading double exception in the logs.
         /*
@@ -82,8 +83,6 @@ public final class ClientConfig {
         */
         this.configVersion = COUNT.incrementAndGet();
 
-        this.project = project;
-        this.rootDirs = Collections.unmodifiableSet(new HashSet<>(clientProjectBaseDirectories));
         this.serverConfig = serverConfig;
         this.clientName =
                 data.hasClientnameSet()
@@ -131,18 +130,8 @@ public final class ClientConfig {
         return serverConfig;
     }
 
-    /**
-     * Checks if this client setup is able to run commands that require
-     * a workspace / client.
-     *
-     * @return true if able to run workspace commands.
-     */
-    public boolean isWorkspaceCapable() {
-        return clientName != null && ! clientName.isEmpty();
-    }
-
     @Nullable
-    public String getClientName() {
+    public String getClientname() {
         return clientName;
     }
 
@@ -161,39 +150,9 @@ public final class ClientConfig {
         return defaultCharSet;
     }
 
-    /**
-     * Returns all the lowest project source directories that
-     * share this client.  This is a bit troublesome in its implications
-     * in the implementation.  It means that if you have two directories,
-     * each with their own p4 config file, referencing the same client
-     * on the same server, but with different configuration
-     * (say, a different p4ignore setting), then this one instance
-     * will reference just one version of that setting.
-     * <p>
-     * This is a big assumption.  Other sections of the code should
-     * alert the user when this scenario happens.  However, for the
-     * moment, this is considered an acceptable shortcoming, as the
-     * listed scenario should be rare.
-     *
-     * @return all root directories in the project that share
-     *      this client config.  Note that some of the directories
-     *      might be a subdirectory of another, which is fine, because
-     *      there may be some level in a tree that is covered by another
-     *      client.
-     */
-    @NotNull
-    public Collection<VirtualFile> getProjectSourceDirs() {
-        return rootDirs;
-    }
-
     @NotNull
     public ClientServerRef getClientServerRef() {
         return clientServerRef;
-    }
-
-    @NotNull
-    public Project getProject() {
-        return project;
     }
 
     @Override
@@ -216,9 +175,7 @@ public final class ClientConfig {
             return false;
         }
         ClientConfig that = (ClientConfig) obj;
-        return
-                getProject().equals(that.getProject())
-                && getClientServerUniqueId().equals(that.getClientServerUniqueId());
+        return getClientServerUniqueId().equals(that.getClientServerUniqueId());
     }
 
     @Override

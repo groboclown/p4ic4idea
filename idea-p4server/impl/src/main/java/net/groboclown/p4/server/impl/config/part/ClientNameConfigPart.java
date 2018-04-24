@@ -14,17 +14,16 @@
 
 package net.groboclown.p4.server.impl.config.part;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ConfigProblem;
-import net.groboclown.p4.server.api.config.part.DataPartAdapter;
+import net.groboclown.p4.server.api.config.part.ConfigPartAdapter;
 import net.groboclown.p4.server.connection.ConnectionUIConfiguration;
 import net.groboclown.p4.server.connection.ServerConnectionManager;
-import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -35,10 +34,15 @@ import java.util.Map;
  * from the SimpleDataPart in that the UI component checks the current
  * configuration for a server to load the list of client names.
  */
-public class ClientNameDataPart extends DataPartAdapter {
+public class ClientNameConfigPart
+        extends ConfigPartAdapter {
     private static final String CLIENT_NAME_ATTRIBUTE_KEY = "client-name";
     private String clientName;
     private final transient List<ConfigProblem> additionalProblems = new ArrayList<ConfigProblem>();
+
+    public ClientNameConfigPart() {
+        super(sourceName);
+    }
 
     @Override
     public boolean reload() {
@@ -47,6 +51,7 @@ public class ClientNameDataPart extends DataPartAdapter {
     }
 
 
+    @Nonnull
     @NotNull
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
@@ -102,7 +107,7 @@ public class ClientNameDataPart extends DataPartAdapter {
         if (o == null || ! getClass().equals(o.getClass())) {
             return false;
         }
-        ClientNameDataPart that = (ClientNameDataPart) o;
+        ClientNameConfigPart that = (ClientNameConfigPart) o;
         return StringUtil.equals(getClientname(), that.getClientname());
     }
 

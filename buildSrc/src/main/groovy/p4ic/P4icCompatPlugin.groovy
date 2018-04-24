@@ -16,8 +16,10 @@ package p4ic
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
+import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
@@ -136,6 +138,7 @@ class P4icCompatPlugin implements Plugin<Project> {
                 configurations.getByName(BASE_IMPL_CONFIGURATION),
                 implConfig
         )
+        connectToProjectDependencies(mainConfig)
 
         Configuration testConfig = configurations.maybeCreate(
                 javaConvention.sourceSets.getByName("test" + suffix).compileClasspathConfigurationName
@@ -144,6 +147,7 @@ class P4icCompatPlugin implements Plugin<Project> {
                 configurations.getByName(BASE_TEST_CONFIGURATION),
                 ideaTestConfig
         )
+        connectToProjectDependencies(testConfig)
     }
 
     private static void configureSourceSets(Project project, IdeaVersion version) {
@@ -181,8 +185,14 @@ class P4icCompatPlugin implements Plugin<Project> {
     private static void configureTasks(Project project, IdeaVersion version) {
         String suffix = getId(version)
         JavaPluginConvention javaConvention = project.getConvention().getPlugin(JavaPluginConvention.class)
+
+        project.tasks.getByName("compileTest" + suffix + "Java").dependsOn "compileMain" + suffix + "Java"
+        project.tasks.getByName("processTest" + suffix + "Resources").dependsOn "processMain" + suffix + "Resources"
+
         Test test = project.tasks.create("test" + suffix, Test)
-        test.dependsOn "compileTest" + suffix + "Java", "processTest" + suffix + "Resources"
+        test.description = 'Run unit tests against IntelliJ\'s version ' + version.version + ' libraries.'
+        test.group = 'verification'
+        test.dependsOn "main${suffix}Classes", "test${suffix}Classes"
         test.testClassesDirs = project.files(javaConvention.sourceSets.getByName("test" + suffix).java.outputDir)
         test.binResultsDir = project.file(child(project.buildDir, "reports", "tests" + suffix, "binary"))
         test.workingDir = project.file(child(project.buildDir, "test-out", "tests" + suffix))
@@ -195,21 +205,24 @@ class P4icCompatPlugin implements Plugin<Project> {
         }
 
         project.afterEvaluate {
-            project.tasks.getByName("compileJava").dependsOn "compileMain" + suffix + "Java"
-            project.tasks.getByName("processResources").dependsOn "processMain" + suffix + "Resources"
-            project.tasks.getByName("compileTestJava").dependsOn "compileTest" + suffix + "Java"
-            project.tasks.getByName("processTestResources").dependsOn "processTest" + suffix + "Resources"
-            Test testTask = project.tasks.getByName("test") as Test
-            testTask.dependsOn "test" + suffix
+            project.tasks.getByName('check').dependsOn("test" + suffix)
+
 
             // Need to heavily update the test classpath, because just updating the runtimeClasspath
             // isn't enough.
-            testTask.classpath = project.files(
+            Test ideaTest = project.tasks.getByName("test" + suffix) as Test
+            ideaTest.classpath = project.files(
                     javaConvention.sourceSets.getByName("test" + suffix).compileClasspath,
                     javaConvention.sourceSets.getByName("test" + suffix).runtimeClasspath,
                     javaConvention.sourceSets.getByName("main" + suffix).java.outputDir,
                     javaConvention.sourceSets.getByName("main" + suffix).resources.outputDir
             )
+
+            // the jacoco test report task can only run against the primary "test" task.
+            // Anything else causes it to generate bad results, even if they are run after the "test" task.
+            if (project.tasks.findByName("jacocoTestReport") != null) {
+                ideaTest.mustRunAfter "jacocoTestReport"
+            }
         }
     }
 
@@ -224,6 +237,21 @@ class P4icCompatPlugin implements Plugin<Project> {
             project.dependencies.add(getImplementationConfigName(version), implExt.getJarsFor(version))
             project.dependencies.add(getTestConfigName(version), testExt.getJarsFor(version))
         }
+    }
+
+    // Make sure that the low-level Idea dependencies for the configuration correctly
+    // depend upon the dependent project dependencies from its configuration with the same name.
+    private static void connectToProjectDependencies(Configuration config) {
+        String dependencyName = config.name
+        config.dependencies
+            .findAll { it instanceof ProjectDependency }
+            .collect { ((ProjectDependency) it).dependencyProject.configurations }
+            .findAll { it.findByName(dependencyName) != null }
+            .forEach {
+                it.getByName(dependencyName) { dep ->
+                    config.extendsFrom(dep)
+                }
+            }
     }
 
     private static File child(File parent, String... sub) {

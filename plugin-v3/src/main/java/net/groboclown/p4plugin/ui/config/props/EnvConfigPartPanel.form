@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="net.groboclown.idea.p4ic.ui.config.props.EnvConfigPartPanel">
+  <grid id="c0a71" binding="rootPanel" layout-manager="BorderLayout" hgap="0" vgap="0">
+    <constraints>
+      <xy x="20" y="20" width="387" height="86"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <component id="928c7" class="javax.swing.JTextPane" binding="descriptionLabel">
+        <constraints border-constraint="Center"/>
+        <properties>
+          <font swing-font="Label.font"/>
+          <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="connection.env.description"/>
+        </properties>
+      </component>
+    </children>
+  </grid>
+</form>

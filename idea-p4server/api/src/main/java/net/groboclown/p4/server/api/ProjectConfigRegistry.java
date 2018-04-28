@@ -19,38 +19,26 @@ import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
-import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
+import net.groboclown.p4.server.api.config.ClientConfigState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Stores the registered configurations for a specific project.  The registry must
  * also inform the application server connection registry about the configurations, so that
  * the correct counters can be preserved.
  */
-public abstract class ProjectConfigRegistry
+public abstract class AbstractProjectConfigRegistry
         implements ProjectComponent, Disposable {
-    public static final String COMPONENT_NAME = ProjectConfigRegistry.class.getName();
+    public static final String COMPONENT_NAME = AbstractProjectConfigRegistry.class.getName();
 
-    private static final Logger LOG = Logger.getInstance(ProjectConfigRegistry.class);
+    private static final Logger LOG = Logger.getInstance(AbstractProjectConfigRegistry.class);
 
-    private final Project project;
-    private final Map<ClientServerRef, ClientConfig> registeredConfigs = new HashMap<>();
     private boolean disposed = false;
 
     @NotNull
-    public static ProjectConfigRegistry getInstance(@NotNull Project project) {
-        return (ProjectConfigRegistry) project.getComponent(COMPONENT_NAME);
-    }
-
-    protected ProjectConfigRegistry(Project project) {
-        this.project = project;
+    public static AbstractProjectConfigRegistry getInstance(@NotNull Project project) {
+        return (AbstractProjectConfigRegistry) project.getComponent(COMPONENT_NAME);
     }
 
 
@@ -59,14 +47,10 @@ public abstract class ProjectConfigRegistry
      * connections are registered application-wide, individual projects must register themselves
      *
      * @param ref client reference
-     * @return
+     * @return the client config state, or null if it isn't registered.
      */
     @Nullable
-    public ClientConfig getRegisteredClientConfig(@NotNull ClientServerRef ref) {
-        synchronized (registeredConfigs) {
-            return registeredConfigs.get(ref);
-        }
-    }
+    public abstract ClientConfigState getRegisteredClientConfigState(@NotNull ClientServerRef ref);
 
     /**
      * Registers the client configuration to the project and the application.  If a configuration with the same
@@ -75,21 +59,7 @@ public abstract class ProjectConfigRegistry
      *
      * @param config configuration to register
      */
-    public void addClientConfig(@NotNull ClientConfig config) {
-        checkDisposed();
-        ClientServerRef ref = config.getClientServerRef();
-        ClientConfig existing;
-        synchronized (registeredConfigs) {
-            existing = registeredConfigs.get(ref);
-            registeredConfigs.put(ref, config);
-        }
-        if (existing != null) {
-            ClientConfigRemovedMessage.reportClientConfigRemoved(project, existing);
-            removeConfigFromApplication(project, config);
-        }
-        ClientConfigAddedMessage.reportClientConfigAdded(project, config);
-        addConfigToApplication(project, config);
-    }
+    public abstract void addClientConfig(@NotNull ClientConfig config);
 
     /**
      * Removes the client configuration registration with the given reference.  If it is registered, then
@@ -98,19 +68,7 @@ public abstract class ProjectConfigRegistry
      * @param ref the reference to de-register
      * @return true if it was registered, false if not.
      */
-    public boolean removeClientConfig(@NotNull ClientServerRef ref) {
-        checkDisposed();
-        ClientConfig removed;
-        synchronized (registeredConfigs) {
-            removed = registeredConfigs.remove(ref);
-        }
-        boolean registered = removed != null;
-        if (registered) {
-            ClientConfigRemovedMessage.reportClientConfigRemoved(project, removed);
-            removeConfigFromApplication(project, removed);
-        }
-        return registered;
-    }
+    public abstract boolean removeClientConfig(@NotNull ClientServerRef ref);
 
     @Override
     public void projectOpened() {
@@ -130,27 +88,12 @@ public abstract class ProjectConfigRegistry
     @Override
     public void dispose() {
         disposed = true;
-        final Collection<ClientConfig> configs;
-        synchronized (registeredConfigs) {
-            // need a copy of the values, otherwise they'll be cleared when we
-            // clear the registered configs.
-            configs = new ArrayList<>(registeredConfigs.values());
-            registeredConfigs.clear();
-        }
-        for (ClientConfig clientConfig : configs) {
-            ClientConfigRemovedMessage.reportClientConfigRemoved(project, clientConfig);
-            removeConfigFromApplication(project, clientConfig);
-        }
     }
 
     @Override
     public void disposeComponent() {
         dispose();
     }
-
-    protected abstract void addConfigToApplication(@NotNull Project project, @NotNull ClientConfig clientConfig);
-
-    protected abstract void removeConfigFromApplication(@NotNull Project project, @NotNull ClientConfig clientConfig);
 
     @NotNull
     @Override

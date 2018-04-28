@@ -35,21 +35,21 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class ProjectConfigRegistryTest {
+class AbstractProjectConfigRegistryTest {
     @RegisterExtension
     IdeaLightweightExtension idea = new IdeaLightweightExtension();
 
     @Test
     void getRegisteredClientConfig() {
-        ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
-        idea.registerProjectComponent(ProjectConfigRegistry.COMPONENT_NAME, registry);
+        AbstractProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
+        idea.registerProjectComponent(AbstractProjectConfigRegistry.COMPONENT_NAME, registry);
 
-        assertSame(ProjectConfigRegistry.getInstance(idea.getMockProject()), registry);
+        assertSame(AbstractProjectConfigRegistry.getInstance(idea.getMockProject()), registry);
     }
 
     @Test
     void addClientConfig_existing() {
-        ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
+        AbstractProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
@@ -75,7 +75,7 @@ class ProjectConfigRegistryTest {
 
     @Test
     void addClientConfig_new() {
-        ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
+        AbstractProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
         ClientConfigAddedMessage.addListener(client, added::add);
@@ -91,7 +91,7 @@ class ProjectConfigRegistryTest {
 
     @Test
     void removeClientConfig_notRegistered() {
-        ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
+        AbstractProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
         ClientConfigAddedMessage.addListener(client, clientConfig -> fail("should not have added anything"));
@@ -106,7 +106,7 @@ class ProjectConfigRegistryTest {
 
     @Test
     void removeClientConfig_registered() {
-        ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
+        AbstractProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
@@ -130,7 +130,7 @@ class ProjectConfigRegistryTest {
 
     @Test
     void projectClosed() {
-        ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
+        AbstractProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
@@ -159,7 +159,7 @@ class ProjectConfigRegistryTest {
 
     @Test
     void disposeComponent() {
-        ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
+        AbstractProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
@@ -188,8 +188,8 @@ class ProjectConfigRegistryTest {
 
     @Test
     void getComponentName() {
-        ProjectConfigRegistry registry = new TestableProjectConfigRegistry(idea.getMockProject());
-        assertSame(ProjectConfigRegistry.COMPONENT_NAME, registry.getComponentName());
+        AbstractProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
+        assertSame(AbstractProjectConfigRegistry.COMPONENT_NAME, registry.getComponentName());
     }
 
     private ClientConfig createClientConfig() {
@@ -202,11 +202,12 @@ class ProjectConfigRegistryTest {
     }
 
 
-    class TestableProjectConfigRegistry extends ProjectConfigRegistry {
+    class TestableAbstractProjectConfigRegistry
+            extends AbstractProjectConfigRegistry {
         Map<Project, ClientConfig> added = new HashMap<>();
         Map<Project, ClientConfig> removed = new HashMap<>();
 
-        TestableProjectConfigRegistry(Project project) {
+        TestableAbstractProjectConfigRegistry(Project project) {
             super(project);
         }
 

@@ -13,33 +13,40 @@
  */
 package net.groboclown.p4.server.api.exceptions;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsConnectionProblem;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A problem occurred because the user was disconnected from the server.
  * This is not related to the connection request being wrong.
  */
 public class P4VcsConnectionException extends VcsConnectionProblem {
+    @Nullable
+    private final Project project;
+
     @NotNull
     private final ClientServerRef ref;
 
-    public P4VcsConnectionException(@NotNull ClientServerRef ref) {
+    public P4VcsConnectionException(@Nullable Project project, @NotNull ClientServerRef ref) {
         super("Connection to server " + ref.getServerDisplayId() + " failed");
+        this.project = project;
         this.ref = ref;
     }
 
-    public P4VcsConnectionException(@NotNull ClientServerRef ref, @NotNull Throwable cause) {
-        super("Connection to server " + ref.getServerDisplayId() + " failed");
+    public P4VcsConnectionException(@Nullable Project project, @NotNull ClientServerRef ref, @NotNull Throwable cause) {
+        this(project, ref);
         initCause(cause);
-        this.ref = ref;
     }
 
     @Override
     public boolean attemptQuickFix(boolean mayDisplayDialogs) {
-        ReconnectRequestMessage.requestReconnectToClient(ref, mayDisplayDialogs);
+        if (project != null) {
+            ReconnectRequestMessage.requestReconnectToClient(project, ref, mayDisplayDialogs);
+        }
         return false;
     }
 }

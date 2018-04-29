@@ -16,6 +16,7 @@ package net.groboclown.p4.server.api.cache.messagebus;
 
 import com.intellij.util.messages.Topic;
 import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ApplicationMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import org.jetbrains.annotations.NotNull;
@@ -37,11 +38,17 @@ public class ServerConnectedMessage
 
 
     public interface Listener {
-        void serverConnected(@NotNull P4ServerName serverName);
+        /**
+         *
+         * @param serverConfig the configuration that connected correctly.
+         *                     More than just a server name, because the successful connection
+         *                     also depends on the login and connection method.
+         */
+        void serverConnected(@NotNull ServerConfig serverConfig);
     }
 
 
-    public static void requestReconnectToClient(@NotNull P4ServerName serverName) {
+    public static void requestReconnectToClient(@NotNull ServerConfig serverName) {
         if (canSendMessage()) {
             getListener(TOPIC).serverConnected(serverName);
         }

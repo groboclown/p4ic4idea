@@ -19,6 +19,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.cache.ServerConfigState;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A layer on top of a {@link ServerConfigState} to include the client connection
@@ -42,6 +43,15 @@ public interface ClientConfigState extends Disposable, ServerConfigState {
      * @return the root of the client work directory, or null if the
      *      client hasn't been loaded yet.
      */
-    @NotNull
+    @Nullable
     VirtualFile getClientRootDir();
+
+    /**
+     *
+     * @return the project VCS root directory.
+     */
+    @NotNull
+    VirtualFile getProjectVcsRootDir();
+
+    boolean isDisposed();
 }

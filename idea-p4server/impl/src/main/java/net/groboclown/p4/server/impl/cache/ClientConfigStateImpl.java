@@ -26,6 +26,7 @@ public class ClientConfigStateImpl
     private static final Logger LOG = Logger.getInstance(ClientConfigStateImpl.class);
     private final ClientConfig config;
     private final ServerConfigStateImpl serverConfigState;
+    private final VirtualFile vcsRoot;
     private boolean loaded = false;
     private Boolean caseSensitive = null;
     private VirtualFile clientRoot = null;
@@ -34,10 +35,12 @@ public class ClientConfigStateImpl
     private boolean disposed;
 
     public ClientConfigStateImpl(@NotNull final ClientConfig config,
-            @NotNull ServerConfigStateImpl serverConfigState) {
+            @NotNull ServerConfigStateImpl serverConfigState,
+            @NotNull VirtualFile vcsRootDir) {
         this.config = config;
         this.serverConfigState = serverConfigState;
         this.disposed = false;
+        this.vcsRoot = vcsRootDir;
     }
 
     @Override
@@ -100,5 +103,11 @@ public class ClientConfigStateImpl
     @Override
     public VirtualFile getClientRootDir() {
         return clientRoot;
+    }
+
+    @NotNull
+    @Override
+    public VirtualFile getProjectVcsRootDir() {
+        return vcsRoot;
     }
 }

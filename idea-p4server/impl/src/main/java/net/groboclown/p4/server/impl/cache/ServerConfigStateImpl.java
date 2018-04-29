@@ -15,12 +15,10 @@
 package net.groboclown.p4.server.impl.cache;
 
 import com.intellij.openapi.diagnostic.Logger;
-import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.cache.ServerConfigState;
-import net.groboclown.p4.server.api.cache.messagebus.ClientConfigConnectionFailedMessage;
-import net.groboclown.p4.server.api.messagebus.MessageBusClient;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ServerConfigStateImpl
         implements ServerConfigState {
@@ -29,23 +27,19 @@ public class ServerConfigStateImpl
     private final ServerConfig config;
     private boolean disposed;
 
-    // must monitor for server connection problems.
-    private boolean serverConnectionProblem;
+    private boolean serverHostProblem;
+
+    private boolean serverLoginProblem;
 
     // for user explicitly wanting to not try to connect.
     private boolean userWorkingOffline;
 
+    private Boolean serverCaseSensitive = null;
+
+    private boolean loaded = false;
+
     public ServerConfigStateImpl(@NotNull ServerConfig config) {
         this.config = config;
-
-        MessageBusClient busClient = MessageBusClient.forApplication(this);
-        ClientConfigConnectionFailedMessage.addListener(busClient,
-                new ClientConfigConnectionFailedMessage.AnyErrorListener() {
-                    @Override
-                    public void onError(@NotNull ClientConfig config) {
-                        serverConnectionProblem = true;
-                    }
-                });
     }
 
     @Override
@@ -56,17 +50,17 @@ public class ServerConfigStateImpl
 
     @Override
     public boolean isOffline() {
-        return serverConnectionProblem || userWorkingOffline;
+        return serverHostProblem || serverLoginProblem || userWorkingOffline;
     }
 
     @Override
     public boolean isOnline() {
-        return !serverConnectionProblem && !userWorkingOffline;
+        return !serverHostProblem && !serverLoginProblem && !userWorkingOffline;
     }
 
     @Override
     public boolean isServerConnectionProblem() {
-        return serverConnectionProblem;
+        return serverHostProblem || serverLoginProblem;
     }
 
     @Override
@@ -84,7 +78,30 @@ public class ServerConfigStateImpl
         return disposed;
     }
 
+    @Override
+    public boolean isLoadedFromServer() {
+        return loaded;
+    }
+
+    @Nullable
+    @Override
+    public Boolean isCaseSensitive() {
+        return serverCaseSensitive;
+    }
+
     private void checkDisposed() {
         LOG.assertTrue(!disposed, "Already disposed");
+    }
+
+    public void setServerHostProblem(boolean hasProblem) {
+        serverHostProblem = hasProblem;
+    }
+
+    public void setServerLoginProblem(boolean hasProblem) {
+        serverLoginProblem = hasProblem;
+    }
+
+    public void setUserOffline(boolean isOffline) {
+        userWorkingOffline = isOffline;
     }
 }

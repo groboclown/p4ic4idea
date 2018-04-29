@@ -15,9 +15,11 @@
 package net.groboclown.p4.server.api.messagebus;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.Topic;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ClientConfigRemovedMessage extends ProjectMessage<ClientConfigRemovedMessage.Listener> {
     private static final String DISPLAY_NAME = "p4ic4idea:client configuration registration removed";
@@ -25,13 +27,43 @@ public class ClientConfigRemovedMessage extends ProjectMessage<ClientConfigRemov
             DISPLAY_NAME, Listener.class, Topic.BroadcastDirection.TO_CHILDREN
     );
 
-    public interface Listener {
-        void clientConfigurationRemoved(@NotNull ClientConfig config);
+    public static class Event {
+        // event source is here so that an object that sends this event can tell if
+        // it receives the event it just sent out.
+        private final Object eventSource;
+        private final ClientConfig config;
+        private final VirtualFile vcsRootDir;
+
+        public Event(Object eventSource, ClientConfig config, VirtualFile vcsRootDir) {
+            this.eventSource = eventSource;
+            this.config = config;
+            this.vcsRootDir = vcsRootDir;
+        }
+
+        public Object getEventSource() {
+            return eventSource;
+        }
+
+        public ClientConfig getClientConfig() {
+            return config;
+        }
+
+        public VirtualFile getVcsRootDir() {
+            return vcsRootDir;
+        }
     }
 
-    public static void reportClientConfigRemoved(@NotNull Project project, @NotNull ClientConfig config) {
+    public interface Listener {
+        /**
+         * @param event the details about the removed configuration.
+         */
+        void clientConfigurationRemoved(@NotNull Event event);
+    }
+
+    public static void reportClientConfigRemoved(@NotNull Project project, @NotNull Object src,
+            @NotNull ClientConfig config, @Nullable VirtualFile vcsRootDir) {
         if (canSendMessage(project)) {
-            getListener(project, TOPIC).clientConfigurationRemoved(config);
+            getListener(project, TOPIC).clientConfigurationRemoved(new Event(src, config, vcsRootDir));
         }
     }
 

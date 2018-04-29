@@ -14,17 +14,16 @@
 
 package net.groboclown.p4.server.impl;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.ClientServerRef;
-import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.cache.ClientConfigState;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
-import net.groboclown.p4.server.api.cache.messagebus.ClientConfigConnectionFailedMessage;
-import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
-import net.groboclown.p4.server.api.messagebus.MessageBusClient;
+import net.groboclown.p4.server.impl.cache.ClientConfigStateImpl;
 import net.groboclown.p4.server.impl.cache.ServerConfigStateImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +33,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 /**
  * Stores the registered configurations for a specific project.  The registry must
@@ -42,12 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ProjectConfigRegistryImpl
        extends ProjectConfigRegistry {
-    public static final String COMPONENT_NAME = ProjectConfigRegistryImpl.class.getName();
-
-    private static final Logger LOG = Logger.getInstance(ProjectConfigRegistryImpl.class);
-
-    private final Project project;
-    private final Map<ClientServerRef, ClientConfigState> registeredConfigs = new HashMap<>();
+    private final Map<ClientServerRef, ClientConfigStateImpl> registeredClients = new HashMap<>();
 
     // the servers are stored based on the shared config.  This means that the connection
     // approach (e.g. password vs. auth ticket) is taken into account.  It has a potential
@@ -55,28 +50,9 @@ public class ProjectConfigRegistryImpl
     // we take care about checking messages.
     private final Map<String, ServerRef> registeredServers = new HashMap<>();
 
-    private boolean disposed = false;
-
 
     public ProjectConfigRegistryImpl(Project project) {
-        this.project = project;
-
-        MessageBusClient mbClient = MessageBusClient.forProject(project, this);
-        ClientConfigConnectionFailedMessage.addListener(mbClient, new ClientConfigConnectionFailedMessage.HostErrorListener() {
-            @Override
-            public void onLoginError(@NotNull ClientConfig config) {
-                markServerConfigProblem(config.getServerConfig());
-            }
-
-            @Override
-            public void onHostConnectionError(@NotNull ClientConfig config) {
-                markServerConfigProblem(config.getServerConfig().getServerName());
-            }
-        });
-
-        ClientConfigRemovedMessage.addListener(mbClient, config -> {
-            removeClientWithoutMessage(config);
-        });
+        super(project);
     }
 
 
@@ -87,46 +63,38 @@ public class ProjectConfigRegistryImpl
      * @param ref client reference
      * @return the client config, or null if it isn't registered.
      */
+    @Override
     @Nullable
-    public ClientConfig getRegisteredClientConfig(@NotNull ClientServerRef ref) {
-        ClientConfigState state;
-        synchronized (registeredConfigs) {
-            state = registeredConfigs.get(ref);
-        }
-        if (state == null) {
+    public ClientConfigState getRegisteredClientConfigState(@NotNull ClientServerRef ref) {
+        if (isDisposed()) {
+            // do not throw an error.
             return null;
         }
-        return state.getClientConfig();
+
+        ClientConfigState state;
+        synchronized (registeredClients) {
+            state = registeredClients.get(ref);
+        }
+        if (state == null || state.isDisposed()) {
+            return null;
+        }
+        return state;
     }
 
-    @Nullable
     @Override
-    public ClientConfigState getRegisteredClientConfigState(@NotNull ClientServerRef ref) {
-        // FIXME
-        return null;
-    }
-
-    /**
-     * Registers the client configuration to the project and the application.  If a configuration with the same
-     * client-server reference is already registered, then it will be removed.  If that configuration is the exact
-     * same as the requested added configuration, then it will still be removed then re-added.
-     *
-     * @param config configuration to register
-     */
-    public void addClientConfig(@NotNull ClientConfig config) {
+    public void addClientConfig(@NotNull ClientConfig config, @NotNull VirtualFile vcsRootDir) {
         checkDisposed();
         ClientServerRef ref = config.getClientServerRef();
+        ClientConfigStateImpl updated = createClientConfigState(config, vcsRootDir);
         ClientConfigState existing;
-        synchronized (registeredConfigs) {
-            existing = registeredConfigs.get(ref);
-            registeredConfigs.put(ref, config);
+        synchronized (registeredClients) {
+            existing = registeredClients.get(ref);
+            registeredClients.put(ref, updated);
         }
         if (existing != null) {
-            ClientConfigRemovedMessage.reportClientConfigRemoved(project, existing.getClientConfig());
-            removeConfigFromApplication(project, config);
+            sendClientRemoved(existing);
         }
-        ClientConfigAddedMessage.reportClientConfigAdded(project, config);
-        addConfigToApplication(project, config);
+        sendClientAdded(updated);
     }
 
     /**
@@ -136,78 +104,127 @@ public class ProjectConfigRegistryImpl
      * @param ref the reference to de-register
      * @return true if it was registered, false if not.
      */
+    @Override
     public boolean removeClientConfig(@NotNull ClientServerRef ref) {
         checkDisposed();
         ClientConfigState removed;
-        synchronized (registeredConfigs) {
-            removed = registeredConfigs.remove(ref);
+        synchronized (registeredClients) {
+            removed = registeredClients.remove(ref);
         }
         boolean registered = removed != null;
         if (registered) {
-            ClientConfigRemovedMessage.reportClientConfigRemoved(project, removed.getClientConfig());
-            removeConfigFromApplication(project, removed);
+            sendClientRemoved(removed);
+            cleanupClientState(removed);
         }
         // FIXME dispose the removed client config.
         return registered;
     }
 
     @Override
-    public void projectOpened() {
-        // do nothing
-    }
-
-    @Override
-    public void projectClosed() {
-        disposeComponent();
-    }
-
-    @Override
-    public void initComponent() {
-        // do nothing
-    }
-
-    @Override
     public void dispose() {
-        disposed = true;
-        final Collection<ClientConfig> configs;
-        synchronized (registeredConfigs) {
+        super.dispose();
+        final Collection<ClientConfigState> configs;
+        synchronized (registeredClients) {
             // need a copy of the values, otherwise they'll be cleared when we
             // clear the registered configs.
-            configs = new ArrayList<>(registeredConfigs.values());
-            registeredConfigs.clear();
+            configs = new ArrayList<>(registeredClients.values());
+            registeredClients.clear();
         }
-        for (ClientConfig clientConfig : configs) {
-            ClientConfigRemovedMessage.reportClientConfigRemoved(project, clientConfig);
-            removeConfigFromApplication(project, clientConfig);
+        for (ClientConfigState clientConfig : configs) {
+            sendClientRemoved(clientConfig);
         }
     }
 
     @Override
-    public void disposeComponent() {
-        dispose();
+    protected void onLoginError(@NotNull ClientConfig config) {
+        // Note: does not check disposed state.
+
+        ServerConfigStateImpl state = getServerConfigState(config);
+        if (state != null) {
+            state.setServerLoginProblem(true);
+        }
     }
 
-    @NotNull
     @Override
-    public String getComponentName() {
-        return COMPONENT_NAME;
+    protected void onHostConnectionError(@NotNull P4ServerName server) {
+        // Note: does not check disposed state.
+
+        getServersFor(server).forEach((state) -> state.setServerHostProblem(true));
+   }
+
+    @Override
+    protected void onServerConnected(@NotNull ServerConfig server) {
+        // Note: does not check disposed state.
+
+        getServersFor(server.getServerName()).forEach((state) -> {
+            state.setServerHostProblem(false);
+            // If the connectivity and login all lines up, then the login works.
+            if (server.getServerId().equals(state.getServerConfig().getServerId())) {
+                state.setServerLoginProblem(false);
+            }
+        });
     }
 
-    /** Throws an error if disposed */
-    protected void checkDisposed() {
-        LOG.assertTrue(!disposed, "Already disposed");
+    @Override
+    protected void onClientRemoved(@NotNull ClientConfig config, @Nullable VirtualFile vcsRootDir) {
+        // Note: does not check disposed state.
+
+        ClientConfigState removedState;
+        synchronized (registeredClients) {
+            removedState = registeredClients.remove(config.getClientServerRef());
+        }
+
+        // If we have it, then clean it up
+        if (removedState != null) {
+            cleanupClientState(removedState);
+        }
     }
 
-    private void registerServerForConfig(ClientConfig config) {
+    @Override
+    protected void onUserSelectedOffline(@NotNull P4ServerName serverName) {
+        // Note: does not check disposed state.
+
+        getServersFor(serverName)
+                .forEach((sc) -> sc.setUserOffline(true));
+
+    }
+
+    protected void onUserSelectedOnline(@NotNull ClientServerRef clientRef) {
+        getServersFor(clientRef.getServerName())
+                .forEach((sc) -> sc.setUserOffline(false));
+    }
+
+    protected void onUserSelectedAllOnline() {
+        getAllServers()
+                .forEach((sc) -> sc.setUserOffline(false));
+    }
+
+
+    private void cleanupClientState(@NotNull ClientConfigState removed) {
+        // Note: does not check disposed state.
+
+        deregisterServerForConfig(removed.getClientConfig());
+        removed.dispose();
+    }
+
+    private ClientConfigStateImpl createClientConfigState(@NotNull ClientConfig config, @NotNull VirtualFile vcsRootDir) {
+        ServerConfigStateImpl serverState;
         synchronized (registeredServers) {
             ServerRef ref = registeredServers.get(config.getServerConfig().getServerId());
-            if (ref == null) {
+            if (ref == null || ref.state.isDisposed()) {
                 ref = new ServerRef(createServerConfigState(config.getServerConfig()));
                 registeredServers.put(config.getServerConfig().getServerId(), ref);
-                // FIXME add message bus listeners
             }
             ref.addClientConfigRef();
+            serverState = ref.state;
         }
+        return new ClientConfigStateImpl(config, serverState, vcsRootDir);
+    }
+
+    private ServerConfigStateImpl createServerConfigState(ServerConfig serverConfig) {
+        ServerConfigStateImpl state = new ServerConfigStateImpl(serverConfig);
+        Disposer.register(this, state);
+        return state;
     }
 
     private void deregisterServerForConfig(ClientConfig config) {
@@ -215,20 +232,45 @@ public class ProjectConfigRegistryImpl
             ServerRef ref = registeredServers.get(config.getServerConfig().getServerId());
             if (ref != null) {
                 if (ref.removeClientConfig()) {
-                    // FIXME dispose server ref
                     registeredServers.remove(config.getServerConfig().getServerId());
+                    ref.state.dispose();
                 }
             }
         }
     }
 
+    private ServerConfigStateImpl getServerConfigState(@NotNull ClientConfig config) {
+        ServerRef ref;
+        synchronized (registeredServers) {
+            ref = registeredServers.get(config.getServerConfig().getServerId());
+        }
+        if (ref != null && !ref.state.isDisposed()) {
+            return ref.state;
+        }
+        return null;
+    }
+
+    private Stream<ServerConfigStateImpl> getServersFor(@NotNull P4ServerName name) {
+        return getAllServers()
+                .filter((sc) -> name.equals(sc.getServerConfig().getServerName()));
+    }
+
+    private Stream<ServerConfigStateImpl> getAllServers() {
+        Collection<ServerRef> servers;
+        synchronized (registeredServers) {
+            servers = new ArrayList<>(registeredServers.values());
+        }
+        return servers.stream()
+                .filter((sr) -> !sr.state.isDisposed())
+                .map((sr) -> sr.state);
+    }
 
     private static class ServerRef {
         private final AtomicInteger refCount = new AtomicInteger(0);
         final ServerConfigStateImpl state;
 
-        private ServerRef(@NotNull ServerConfig config) {
-            this.state = new ServerConfigStateImpl(config);
+        private ServerRef(@NotNull ServerConfigStateImpl state) {
+            this.state = state;
         }
 
         void addClientConfigRef() {

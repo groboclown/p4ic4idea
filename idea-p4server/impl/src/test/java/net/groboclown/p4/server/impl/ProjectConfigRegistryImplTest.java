@@ -13,25 +13,25 @@
  */
 package net.groboclown.p4.server.impl;
 
-import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
+import net.groboclown.idea.mock.MockVirtualFileSystem;
 import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.cache.ClientConfigState;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -43,7 +43,7 @@ class ProjectConfigRegistryImplTest {
 
     @Test
     void getRegisteredClientConfig() {
-        ProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
+        ProjectConfigRegistry registry = new ProjectConfigRegistryImpl(idea.getMockProject());
         idea.registerProjectComponent(ProjectConfigRegistry.COMPONENT_NAME, registry);
 
         assertSame(ProjectConfigRegistry.getInstance(idea.getMockProject()), registry);
@@ -51,23 +51,27 @@ class ProjectConfigRegistryImplTest {
 
     @Test
     void addClientConfig_existing() {
-        ProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
+        ProjectConfigRegistry registry = new ProjectConfigRegistryImpl(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
         ClientConfigAddedMessage.addListener(client, added::add);
-        ClientConfigRemovedMessage.addListener(client, removed::add);
+        ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
+        VirtualFile root = MockVirtualFileSystem.createRoot();
 
-        registry.addClientConfig(config);
+        registry.addClientConfig(config, root);
 
         assertEquals(1, added.size());
         assertSame(config, added.get(0));
         assertEquals(0, removed.size());
-        assertSame(config, registry.getRegisteredClientConfig(config.getClientServerRef()));
+        ClientConfigState fetchedState =
+                registry.getRegisteredClientConfigState(config.getClientServerRef());
+        assertNotNull(fetchedState);
+        assertSame(config, fetchedState.getClientConfig());
 
         added.clear();
-        registry.addClientConfig(config);
+        registry.addClientConfig(config, root);
 
         assertEquals(1, added.size());
         assertSame(config, added.get(0));
@@ -77,45 +81,52 @@ class ProjectConfigRegistryImplTest {
 
     @Test
     void addClientConfig_new() {
-        ProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
+        ProjectConfigRegistry registry = new ProjectConfigRegistryImpl(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
         ClientConfigAddedMessage.addListener(client, added::add);
-        ClientConfigRemovedMessage.addListener(client, clientConfig -> fail("incorrectly called remove"));
+        ClientConfigRemovedMessage.addListener(client, (event) -> fail("incorrectly called remove"));
         ClientConfig config = createClientConfig();
+        VirtualFile root = MockVirtualFileSystem.createRoot();
 
-        registry.addClientConfig(config);
+        registry.addClientConfig(config, root);
 
         assertEquals(1, added.size());
         assertSame(config, added.get(0));
-        assertSame(config, registry.getRegisteredClientConfig(config.getClientServerRef()));
+        ClientConfigState fetchedState =
+                registry.getRegisteredClientConfigState(config.getClientServerRef());
+        assertNotNull(fetchedState);
+        assertSame(config, fetchedState.getClientConfig());
     }
 
     @Test
     void removeClientConfig_notRegistered() {
-        ProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
+        ProjectConfigRegistry registry = new ProjectConfigRegistryImpl(idea.getMockProject());
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
         ClientConfigAddedMessage.addListener(client, clientConfig -> fail("should not have added anything"));
-        ClientConfigRemovedMessage.addListener(client, removed::add);
+        ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
 
         registry.removeClientConfig(config.getClientServerRef());
 
         assertEquals(0, removed.size());
-        assertNull(registry.getRegisteredClientConfig(config.getClientServerRef()));
+        ClientConfigState fetchedState =
+                registry.getRegisteredClientConfigState(config.getClientServerRef());
+        assertNull(fetchedState);
     }
 
     @Test
     void removeClientConfig_registered() {
-        ProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
+        ProjectConfigRegistry registry = new ProjectConfigRegistryImpl(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
         ClientConfigAddedMessage.addListener(client, added::add);
-        ClientConfigRemovedMessage.addListener(client, removed::add);
+        ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
-        registry.addClientConfig(config);
+        VirtualFile root = MockVirtualFileSystem.createRoot();
+        registry.addClientConfig(config, root);
         assertEquals(1, added.size());
         added.clear();
 
@@ -124,7 +135,9 @@ class ProjectConfigRegistryImplTest {
         assertEquals(0, added.size());
         assertEquals(1, removed.size());
         assertSame(config, removed.get(0));
-        assertNull(registry.getRegisteredClientConfig(config.getClientServerRef()));
+        ClientConfigState fetchedState =
+                registry.getRegisteredClientConfigState(config.getClientServerRef());
+        assertNull(fetchedState);
     }
 
     // projectOpened - nothing to do
@@ -132,14 +145,15 @@ class ProjectConfigRegistryImplTest {
 
     @Test
     void projectClosed() {
-        ProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
+        ProjectConfigRegistry registry = new ProjectConfigRegistryImpl(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
         ClientConfigAddedMessage.addListener(client, added::add);
-        ClientConfigRemovedMessage.addListener(client, removed::add);
+        ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
-        registry.addClientConfig(config);
+        VirtualFile root = MockVirtualFileSystem.createRoot();
+        registry.addClientConfig(config, root);
         assertEquals(1, added.size());
         added.clear();
 
@@ -148,11 +162,13 @@ class ProjectConfigRegistryImplTest {
         assertEquals(0, added.size());
         assertEquals(1, removed.size());
         assertSame(config, removed.get(0));
-        assertNull(registry.getRegisteredClientConfig(config.getClientServerRef()));
+        ClientConfigState fetchedState =
+                registry.getRegisteredClientConfigState(config.getClientServerRef());
+        assertNull(fetchedState);
 
         // closing the project should turn off further registration
         removed.clear();
-        assertThrows(Throwable.class, () -> registry.addClientConfig(config));
+        assertThrows(Throwable.class, () -> registry.addClientConfig(config, root));
         assertEquals(0, added.size());
 
         assertThrows(Throwable.class, () -> registry.removeClientConfig(config.getClientServerRef()));
@@ -161,14 +177,15 @@ class ProjectConfigRegistryImplTest {
 
     @Test
     void disposeComponent() {
-        ProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
+        ProjectConfigRegistry registry = new ProjectConfigRegistryImpl(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
         ClientConfigAddedMessage.addListener(client, added::add);
-        ClientConfigRemovedMessage.addListener(client, removed::add);
+        ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
-        registry.addClientConfig(config);
+        VirtualFile root = MockVirtualFileSystem.createRoot();
+        registry.addClientConfig(config, root);
         assertEquals(1, added.size());
         added.clear();
 
@@ -177,11 +194,13 @@ class ProjectConfigRegistryImplTest {
         assertEquals(0, added.size());
         assertEquals(1, removed.size());
         assertSame(config, removed.get(0));
-        assertNull(registry.getRegisteredClientConfig(config.getClientServerRef()));
+        ClientConfigState fetchedState =
+                registry.getRegisteredClientConfigState(config.getClientServerRef());
+        assertNull(fetchedState);
 
         // closing the project should turn off further registration
         removed.clear();
-        assertThrows(Throwable.class, () -> registry.addClientConfig(config));
+        assertThrows(Throwable.class, () -> registry.addClientConfig(config, root));
         assertEquals(0, added.size());
 
         assertThrows(Throwable.class, () -> registry.removeClientConfig(config.getClientServerRef()));
@@ -190,7 +209,7 @@ class ProjectConfigRegistryImplTest {
 
     @Test
     void getComponentName() {
-        ProjectConfigRegistry registry = new TestableAbstractProjectConfigRegistry(idea.getMockProject());
+        ProjectConfigRegistry registry = new ProjectConfigRegistryImpl(idea.getMockProject());
         assertSame(ProjectConfigRegistry.COMPONENT_NAME, registry.getComponentName());
     }
 
@@ -201,26 +220,5 @@ class ProjectConfigRegistryImplTest {
                 .withClientname("my-client");
         ServerConfig serverConfig = ServerConfig.createFrom(data);
         return ClientConfig.createFrom(serverConfig, data);
-    }
-
-
-    class TestableAbstractProjectConfigRegistry
-            extends ProjectConfigRegistry {
-        Map<Project, ClientConfig> added = new HashMap<>();
-        Map<Project, ClientConfig> removed = new HashMap<>();
-
-        TestableAbstractProjectConfigRegistry(Project project) {
-            super(project);
-        }
-
-        @Override
-        protected void addConfigToApplication(@NotNull Project project, @NotNull ClientConfig clientConfig) {
-            added.put(project, clientConfig);
-        }
-
-        @Override
-        protected void removeConfigFromApplication(@NotNull Project project, @NotNull ClientConfig clientConfig) {
-            removed.put(project, clientConfig);
-        }
     }
 }

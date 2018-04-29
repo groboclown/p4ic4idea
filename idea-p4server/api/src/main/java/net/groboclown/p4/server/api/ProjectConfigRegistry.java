@@ -18,8 +18,17 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.p4.server.api.cache.messagebus.ClientConfigConnectionFailedMessage;
+import net.groboclown.p4.server.api.cache.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.cache.ClientConfigState;
+import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
+import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
+import net.groboclown.p4.server.api.messagebus.MessageBusClient;
+import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
+import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,11 +43,21 @@ public abstract class ProjectConfigRegistry
 
     private static final Logger LOG = Logger.getInstance(ProjectConfigRegistry.class);
 
+    private final Project project;
+    private final MessageBusClient projectBusClient;
+    private final MessageBusClient applicationBusClient;
     private boolean disposed = false;
 
     @NotNull
     public static ProjectConfigRegistry getInstance(@NotNull Project project) {
         return (ProjectConfigRegistry) project.getComponent(COMPONENT_NAME);
+    }
+
+
+    protected ProjectConfigRegistry(@NotNull Project project) {
+        this.project = project;
+        this.projectBusClient = MessageBusClient.forProject(project, this);
+        this.applicationBusClient = MessageBusClient.forApplication(this);
     }
 
 
@@ -58,8 +77,9 @@ public abstract class ProjectConfigRegistry
      * same as the requested added configuration, then it will still be removed then re-added.
      *
      * @param config configuration to register
+     * @param vcsRootDir root directory for the configuration.
      */
-    public abstract void addClientConfig(@NotNull ClientConfig config);
+    public abstract void addClientConfig(@NotNull ClientConfig config, @NotNull VirtualFile vcsRootDir);
 
     /**
      * Removes the client configuration registration with the given reference.  If it is registered, then
@@ -76,13 +96,46 @@ public abstract class ProjectConfigRegistry
     }
 
     @Override
-    public void projectClosed() {
+    public final void projectClosed() {
         disposeComponent();
     }
 
     @Override
     public void initComponent() {
-        // do nothing
+        ClientConfigConnectionFailedMessage.addListener(projectBusClient,
+                new ClientConfigConnectionFailedMessage.HostErrorListener() {
+                    @Override
+                    public void onLoginError(@NotNull ClientConfig config) {
+                        ProjectConfigRegistry.this.onLoginError(config);
+                    }
+
+                    @Override
+                    public void onHostConnectionError(@NotNull ClientConfig config) {
+                        ProjectConfigRegistry.this.onHostConnectionError(config.getClientServerRef().getServerName());
+                    }
+                });
+        ServerConnectedMessage.addListener(applicationBusClient, this::onServerConnected);
+        ClientConfigRemovedMessage.addListener(projectBusClient, event -> {
+            if (! ProjectConfigRegistry.this.equals(event.getEventSource())) {
+                onClientRemoved(event.getClientConfig(), event.getVcsRootDir());
+            }
+        });
+        UserSelectedOfflineMessage.addListener(projectBusClient, this::onUserSelectedOffline);
+        ReconnectRequestMessage.addListener(projectBusClient, new ReconnectRequestMessage.Listener() {
+            @Override
+            public void reconnectToAllClients(boolean mayDisplayDialogs) {
+                onUserSelectedAllOnline();
+            }
+
+            @Override
+            public void reconnectToClient(@NotNull ClientServerRef ref, boolean mayDisplayDialogs) {
+                onUserSelectedOnline(ref);
+            }
+        });
+    }
+
+    public boolean isDisposed() {
+        return disposed;
     }
 
     @Override
@@ -91,18 +144,50 @@ public abstract class ProjectConfigRegistry
     }
 
     @Override
-    public void disposeComponent() {
+    public final void disposeComponent() {
         dispose();
     }
 
     @NotNull
     @Override
-    public String getComponentName() {
+    public final String getComponentName() {
         return COMPONENT_NAME;
     }
 
+    @NotNull
+    protected final Project getProject() {
+        return project;
+    }
+
     /** Throws an error if disposed */
-    protected void checkDisposed() {
+    protected final void checkDisposed() {
         LOG.assertTrue(!disposed, "Already disposed");
     }
+
+    protected final void sendClientRemoved(@Nullable ClientConfigState state) {
+        if (state != null) {
+            ClientConfigRemovedMessage.reportClientConfigRemoved(getProject(), this,
+                    state.getClientConfig(), state.getProjectVcsRootDir());
+        }
+    }
+
+    protected final void sendClientAdded(@Nullable ClientConfigState state) {
+        if (state != null) {
+            ClientConfigAddedMessage.reportClientConfigAdded(getProject(), state.getClientConfig());
+        }
+    }
+
+    protected abstract void onLoginError(@NotNull ClientConfig config);
+
+    protected abstract void onHostConnectionError(@NotNull P4ServerName server);
+
+    protected abstract void onServerConnected(@NotNull ServerConfig server);
+
+    protected abstract void onClientRemoved(@NotNull ClientConfig config, @Nullable VirtualFile vcsRootDir);
+
+    protected abstract void onUserSelectedOffline(@NotNull P4ServerName serverName);
+
+    protected abstract void onUserSelectedOnline(@NotNull ClientServerRef clientServerRef);
+
+    protected abstract void onUserSelectedAllOnline();
 }

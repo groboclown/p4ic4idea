@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.extension;
+package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.diff.RevisionSelector;

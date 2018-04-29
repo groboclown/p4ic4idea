@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.ui.sync;
+package net.groboclown.p4plugin.ui.sync;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.Messages;

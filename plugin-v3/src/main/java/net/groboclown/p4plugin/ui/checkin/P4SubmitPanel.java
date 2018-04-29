@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.ui.checkin;
+package net.groboclown.p4plugin.ui.checkin;
 
 import com.intellij.icons.AllIcons.Actions;
 import com.intellij.notification.NotificationType;

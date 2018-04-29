@@ -12,11 +12,13 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.messagebus;
+package net.groboclown.p4.server.api.cache.messagebus;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.Topic;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.messagebus.MessageBusClient;
+import net.groboclown.p4.server.api.messagebus.ProjectMessage;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.actions;
+package net.groboclown.p4plugin.actions;
 
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -108,7 +108,7 @@ public abstract class BasicAction extends DumbAwareAction {
 
     /**
      * recursively adds all the children of file to the files list, for which
-     * this action makes sense ({@link #appliesTo(com.intellij.openapi.project.Project, com.intellij.openapi.vfs.VirtualFile)}
+     * this action makes sense ({@link #appliesTo(Project, VirtualFile)}
      * returns true)
      *
      * @param project the project subject of the action

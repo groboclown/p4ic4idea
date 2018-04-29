@@ -14,5 +14,7 @@
 
 package net.groboclown.p4plugin.extension;
 
-public class P4MergeProvider {
+import com.intellij.openapi.vcs.merge.MergeProvider2;
+
+public class P4MergeProvider extends MergeProvider2 {
 }

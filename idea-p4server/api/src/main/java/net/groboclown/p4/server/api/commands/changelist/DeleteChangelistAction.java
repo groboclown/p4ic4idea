@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class DeleteChangelistAction {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class DeleteChangelistAction implements P4CommandRunner.ClientAction<DeleteChangelistResult> {
+    @NotNull
+    @Override
+    public Class<? extends DeleteChangelistResult> getResultType() {
+        return DeleteChangelistResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ClientActionCmd getCmd() {
+        return P4CommandRunner.ClientActionCmd.DELETE_CHANGELIST;
+    }
 }

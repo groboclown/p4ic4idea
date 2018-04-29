@@ -1,4 +1,4 @@
-package net.groboclown.idea.p4ic.ui.swarm;
+package net.groboclown.p4plugin.ui.swarm;
 
 import com.intellij.ide.browsers.BrowserLauncher;
 import com.intellij.notification.Notification;

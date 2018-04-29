@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class ListSubmittedChangelistsQuery {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class ListSubmittedChangelistsQuery implements P4CommandRunner.ServerQuery<ListSubmittedChangelistsResult> {
+    @NotNull
+    @Override
+    public Class<? extends ListSubmittedChangelistsResult> getResultType() {
+        return ListSubmittedChangelistsResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ServerQueryCmd getCmd() {
+        return P4CommandRunner.ServerQueryCmd.LIST_SUBMITTED_CHANGELISTS;
+    }
 }

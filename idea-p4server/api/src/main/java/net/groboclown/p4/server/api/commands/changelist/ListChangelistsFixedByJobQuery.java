@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class ListChangelistsFixedByJobQuery {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class ListChangelistsFixedByJobQuery implements P4CommandRunner.ServerQuery<ListChangelistsFixedByJobResult> {
+    @NotNull
+    @Override
+    public Class<? extends ListChangelistsFixedByJobResult> getResultType() {
+        return ListChangelistsFixedByJobResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ServerQueryCmd getCmd() {
+        return P4CommandRunner.ServerQueryCmd.LIST_CHANGELISTS_FIXED_BY_JOB;
+    }
 }

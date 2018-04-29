@@ -24,9 +24,12 @@ import com.intellij.openapi.fileTypes.FileTypeRegistry;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.pico.DefaultPicoContainer;
+import net.groboclown.idea.mock.MockPasswordSafe;
 import net.groboclown.idea.mock.SingleThreadedMessageBus;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.picocontainer.ComponentAdapter;
@@ -49,7 +52,7 @@ import static org.mockito.Mockito.when;
  * This manages the state used by static calls into manager objects.
  */
 public class IdeaLightweightExtension
-        implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
+        implements BeforeEachCallback, AfterEachCallback {
 
     private final List<ExtensionContext> contextStack = new LinkedList<>();
 
@@ -73,13 +76,17 @@ public class IdeaLightweightExtension
         when(getMockApplication().getComponent(name)).thenReturn(component);
     }
 
+    public <I> void registerApplicationService(@NotNull Class<? super I> interfaceClass, @NotNull I service) {
+        ((DefaultPicoContainer) getMockApplication().getPicoContainer()).
+                registerComponent(service(interfaceClass, service));
+    }
+
     public void registerProjectComponent(@NotNull String name, @NotNull ProjectComponent component) {
         when(getMockProject().getComponent(name)).thenReturn(component);
     }
 
     @Override
-    public void beforeTestExecution(ExtensionContext extensionContext)
-            throws Exception {
+    public void beforeEach(ExtensionContext extensionContext) {
         contextStack.add(0, extensionContext);
 
         DisposableRegistry parent = new DisposableRegistry();
@@ -111,7 +118,7 @@ public class IdeaLightweightExtension
         when(application.getMessageBus()).thenReturn(bus);
 
         // Service setup.  See ServiceManager
-        pico.registerComponent(mockService(PasswordSafe.class));
+        pico.registerComponent(service(PasswordSafe.class, new MockPasswordSafe()));
     }
 
     private void initializeProject(Project project) {
@@ -120,8 +127,7 @@ public class IdeaLightweightExtension
     }
 
     @Override
-    public void afterTestExecution(ExtensionContext extensionContext)
-            throws Exception {
+    public void afterEach(ExtensionContext extensionContext) {
         Application app = (Application) getStore(extensionContext).get("original-application");
         if (app != null) {
             ApplicationManager.setApplication(
@@ -202,7 +208,7 @@ public class IdeaLightweightExtension
 
         @Override
         public Object getComponentKey() {
-            return serviceType;
+            return serviceType.getName();
         }
 
         @Override

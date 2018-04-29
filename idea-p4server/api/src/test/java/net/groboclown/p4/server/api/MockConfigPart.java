@@ -44,6 +44,29 @@ public class MockConfigPart
     private boolean requiresUserEnteredPassword;
     private Collection<ConfigProblem> configProblems = new ArrayList<>();
 
+    public MockConfigPart copy() {
+        MockConfigPart ret = new MockConfigPart()
+                .withSourceName(sourceName)
+                .withP4ServerName(serverName)
+                .withClientname(clientname)
+                .withUsername(username)
+                .withAuthTicketFile(authTicketFile)
+                .withTrustTicketFile(trustTicketFile)
+                .withServerFingerprint(serverFingerprint)
+                .withClientHostname(clientHostname)
+                .withIgnoreFileName(ignoreFileName)
+                .withDefaultCharset(defaultCharset)
+                .withLoginSso(loginSso)
+                .withReloadValue(reloadValue)
+                .withRequiresUserEnteredPassword(requiresUserEnteredPassword);
+        if (hasPasswordSet) {
+            ret.withPassword(password);
+        } else {
+            ret.withNoPassword();
+        }
+        return ret;
+    }
+
     @Nls
     @NotNull
     @Override
@@ -72,6 +95,10 @@ public class MockConfigPart
         return this;
     }
 
+    public MockConfigPart withP4ServerName(@Nullable P4ServerName name) {
+        this.serverName = name;
+        return this;
+    }
 
     @Override
     public boolean hasClientnameSet() {

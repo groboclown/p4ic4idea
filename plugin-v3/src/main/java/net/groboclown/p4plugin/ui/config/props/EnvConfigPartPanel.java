@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.ui.config.props;
+package net.groboclown.p4plugin.ui.config.props;
 
 import com.intellij.openapi.project.Project;
 import net.groboclown.idea.p4ic.P4Bundle;

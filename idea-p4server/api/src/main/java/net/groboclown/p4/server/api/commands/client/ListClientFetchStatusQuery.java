@@ -17,15 +17,16 @@ package net.groboclown.p4.server.api.commands.client;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 
-public class ListClientSyncStatusQuery implements P4CommandRunner.ClientQuery<ListClientSyncStatusResult> {
+public class ListClientFetchStatusQuery
+        implements P4CommandRunner.ClientQuery<ListClientFetchStatusResult> {
     @NotNull
     @Override
-    public Class<? extends ListClientSyncStatusResult> getResultType() {
-        return null;
+    public Class<? extends ListClientFetchStatusResult> getResultType() {
+        return ListClientFetchStatusResult.class;
     }
 
     @Override
     public P4CommandRunner.ClientQueryCmd getCmd() {
-        return null;
+        return P4CommandRunner.ClientQueryCmd.LIST_CLIENT_FETCH_STATUS;
     }
 }

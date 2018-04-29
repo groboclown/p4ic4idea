@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
-public class AddEditAction {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class AddEditAction implements P4CommandRunner.ClientAction<AddEditResult> {
+    @NotNull
+    @Override
+    public Class<? extends AddEditResult> getResultType() {
+        return AddEditResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ClientActionCmd getCmd() {
+        return P4CommandRunner.ClientActionCmd.ADD_EDIT_FILE;
+    }
 }

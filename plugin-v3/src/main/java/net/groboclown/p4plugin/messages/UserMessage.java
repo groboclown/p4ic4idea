@@ -14,5 +14,49 @@
 
 package net.groboclown.p4plugin.messages;
 
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationListener;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
+import com.intellij.openapi.project.Project;
+import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.extension.P4Vcs;
+import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 public class UserMessage {
+    /**
+     * Shows a notification.  Can be invoked from any thread.
+     *
+     * @param project source project
+     * @param message message to display to the user
+     * @param title
+     * @param icon
+     */
+    public static void showNotification(@Nullable Project project,
+            @NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String message,
+            @NotNull @Nls(capitalization = Nls.Capitalization.Title) String title,
+            @NotNull NotificationType icon) {
+        Notification notification = createNotification(P4Vcs.VCS_NAME, title, message, icon, null, null);
+        Notifications.Bus.notify(notification, project);
+    }
+
+    @NotNull
+    private static Notification createNotification(@NotNull final String dialogKey, @NotNull String title,
+            @NotNull String message, @NotNull NotificationType icon, @Nullable NotificationListener question,
+            @Nullable Runnable onMessageExpired) {
+        final String groupId = P4Bundle.getString("notification.groupid");
+        Notification ret;
+        if (question != null) {
+            ret = new Notification(groupId, title, message, icon, question);
+        } else {
+            ret = new Notification(groupId, title, message, icon);
+        }
+        if (onMessageExpired != null) {
+            ret.whenExpired(onMessageExpired);
+        }
+
+        return ret;
+    }
 }

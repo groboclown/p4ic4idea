@@ -18,7 +18,8 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
 
-public class ListClientSyncStatusResult implements P4CommandRunner.ClientResult {
+public class ListClientFetchStatusResult
+        implements P4CommandRunner.ClientResult {
     @NotNull
     @Override
     public ClientConfig getClientConfig() {

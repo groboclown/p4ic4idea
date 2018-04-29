@@ -15,15 +15,25 @@
 package net.groboclown.p4.server.api.values;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
+import java.util.Date;
 import java.util.List;
 
+/**
+ * Represents a changelist on the server.
+ * <p>
+ * Even though this doesn't implement P4ChangelistSummary, it contains those
+ * methods.
+ */
 @Immutable
-public interface P4Changelist {
+public interface P4RemoteChangelist {
     @NotNull
     P4ChangelistId getChangelistId();
+
+    @NotNull
+    P4ChangelistSummary getSummary();
 
     @NotNull
     String getComment();
@@ -31,6 +41,20 @@ public interface P4Changelist {
     boolean isDeleted();
 
     boolean isOnServer();
+
+    boolean isSubmitted();
+
+    /**
+     *
+     * @return can return false if the information wasn't fetched.
+     */
+    boolean hasShelvedFiles();
+
+    @Nullable
+    Date getSubmittedDate();
+
+    @NotNull
+    P4ChangelistType getChangelistType();
 
     /**
      *
@@ -50,5 +74,8 @@ public interface P4Changelist {
     List<P4Job> getAttachedJobs();
 
     @Nullable
-    String getJobStatus(@NotNull P4Job job);
+    JobStatus getJobStatus(@NotNull P4Job job);
+
+    @NotNull
+    List<P4RemoteFile> getFiles();
 }

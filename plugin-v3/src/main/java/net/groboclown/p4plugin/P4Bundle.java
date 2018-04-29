@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic;
+package net.groboclown.p4plugin;
 
 import com.intellij.CommonBundle;
 import com.intellij.openapi.application.ApplicationNamesInfo;
@@ -29,7 +29,7 @@ public class P4Bundle {
     @NonNls
     public static final String BUNDLE =
             //P4Bundle.class.getName();
-            "net.groboclown.idea.p4ic.P4Bundle";
+            "net.groboclown.p4plugin.P4Bundle";
 
     private P4Bundle() {
     }

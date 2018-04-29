@@ -11,13 +11,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.extension;
+package net.groboclown.p4plugin.extension;
 
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.options.UnnamedConfigurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.SystemInfo;
@@ -28,9 +29,11 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusFactory;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.vcs.VcsDirectoryMapping;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.VcsListener;
+import com.intellij.openapi.vcs.VcsRootSettings;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
@@ -48,48 +51,27 @@ import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.util.ThreeState;
 import com.intellij.util.messages.MessageBusConnection;
-import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.background.TempFileWatchDog;
 import net.groboclown.idea.p4ic.compat.CompatFactoryLoader;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
-import net.groboclown.idea.p4ic.config.ClientConfig;
-import net.groboclown.idea.p4ic.config.UserProjectPreferences;
-import net.groboclown.idea.p4ic.ui.P4MultipleConnectionWidget;
-import net.groboclown.idea.p4ic.ui.config.P4ProjectConfigurable;
-import net.groboclown.idea.p4ic.util.ColorUtil;
-import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
-import net.groboclown.idea.p4ic.v2.changes.P4ChangeProvider;
-import net.groboclown.idea.p4ic.v2.changes.P4ChangelistListener;
-import net.groboclown.idea.p4ic.v2.changes.P4CommittedChangeList;
-import net.groboclown.idea.p4ic.v2.extension.P4StatusUpdateEnvironment;
-import net.groboclown.idea.p4ic.v2.extension.P4SyncUpdateEnvironment;
-import net.groboclown.idea.p4ic.v2.file.FileExtensions;
-import net.groboclown.idea.p4ic.v2.file.P4CheckinEnvironment;
-import net.groboclown.idea.p4ic.v2.file.P4EditFileProvider;
-import net.groboclown.idea.p4ic.v2.file.P4VFSListener;
-import net.groboclown.idea.p4ic.v2.history.P4AnnotationProvider;
-import net.groboclown.idea.p4ic.v2.history.P4DiffProvider;
-import net.groboclown.idea.p4ic.v2.history.P4HistoryProvider;
-import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.P4ServerManager;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
-import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.connection.ConnectionUIConfiguration;
-import net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager;
-import net.groboclown.idea.p4ic.v2.ui.alerts.DistinctDialog;
+import net.groboclown.p4.server.api.values.P4CommittedChangelist;
+import net.groboclown.p4.server.impl.tasks.TempFileWatchDog;
+import net.groboclown.p4.server.impl.util.ChangeListUtil;
+import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.messages.UserMessage;
+import net.groboclown.p4plugin.preferences.UserProjectPreferences;
+import net.groboclown.p4plugin.ui.ColorUtil;
+import net.groboclown.p4plugin.ui.P4MultipleConnectionWidget;
+import net.groboclown.p4plugin.ui.config.P4ProjectConfigurable;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
-public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
+public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     public static final FileStatus ADDED_OFFLINE =
             FileStatusFactory.getInstance().createFileStatus(
                     "ADDED_OFFLINE",
@@ -165,9 +147,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     private static final VcsKey VCS_KEY = createKey(VCS_NAME);
 
     @NotNull
-    private final Configurable myConfigurable;
-
-    @NotNull
     private final P4HistoryProvider historyProvider;
 
     private final P4StatusUpdateEnvironment statusUpdateEnvironment;
@@ -187,6 +166,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
     private P4EditFileProvider editProvider;
 
+    private P4ProjectConfigurable myConfigurable;
+
     // Not used
     //private final CommitExecutor commitExecutor;
 
@@ -199,10 +180,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     private final DiffProvider diffProvider;
 
     private final P4AnnotationProvider annotationProvider;
-
-    private final FileExtensions fileExtensions;
-
-    private final P4ServerManager serverManager;
 
     private final P4RevisionSelector revisionSelector;
 
@@ -255,7 +232,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
 
 
         this.userPreferences = preferences;
-        this.myConfigurable = new P4ProjectConfigurable(project);
         this.changelistListener = new P4ChangelistListener(project, this);
         this.changeProvider = new P4ChangeProvider(this);
         this.historyProvider = new P4HistoryProvider(project, this);
@@ -263,13 +239,11 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         this.statusUpdateEnvironment = new P4StatusUpdateEnvironment(project);
         this.annotationProvider = new P4AnnotationProvider(this);
         this.committedChangesProvider = new P4CommittedChangesProvider(this);
-
-        this.serverManager = P4ServerManager.getInstance(project);
+        this.myConfigurable = new P4ProjectConfigurable(project);
 
         this.revisionSelector = new P4RevisionSelector(this);
         this.tempFileWatchDog = new TempFileWatchDog();
-        this.fileExtensions = new FileExtensions(this, AlertManager.getInstance());
-        this.vcsRootsCache = new ArrayList<VirtualFile>();
+        this.vcsRootsCache = new ArrayList<>();
     }
 
     public static VcsKey getKey() {
@@ -281,28 +255,34 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         return P4Bundle.message("p4ic.name");
     }
 
-    /* TODO look at switching the configurable to be:
-        1. Configurable is for Perforce top-level stuff.
-        2. Root configurable is for connection settings.
 
-  public UnnamedConfigurable getRootConfigurable(VcsDirectoryMapping mapping) {
-    return null;
-  }
-
-  @Nullable
-  public VcsRootSettings createEmptyVcsRootSettings() {
-    return null;
-  }
-
-        This could also allow for using a VirtualFile to represent a depot path.
-  @Nullable
-  public RootsConvertor getCustomConvertor() {
-    return null;
-  }
-
+    /**
+     * Returns the configurable to be shown in the VCS directory mapping dialog which should be displayed
+     * for configuring VCS-specific settings for the specified root, or null if no such configuration is required.
+     * The VCS-specific settings are stored in {@link VcsDirectoryMapping#getRootSettings()}.
+     *
+     * @param mapping the mapping being configured
+     * @return the configurable instance, or null if no configuration is required.
      */
+    public UnnamedConfigurable getRootConfigurable(VcsDirectoryMapping mapping) {
+        // FIXME implement
+        return null;
+    }
+
+    @Nullable
+    public VcsRootSettings createEmptyVcsRootSettings() {
+        // FIXME implement
+        return null;
+    }
+
+    @Nullable
+    public RootsConvertor getCustomConvertor() {
+        // FIXME implement
+        return null;
+    }
 
 
+    // TODO this should only be for the user settings.
     @Override
     public Configurable getConfigurable() {
         return myConfigurable;
@@ -314,7 +294,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
             ApplicationManager.getApplication().invokeLater(new Runnable() {
                 @Override
                 public void run() {
-                    DistinctDialog.showMessageDialog(myProject,
+                    UserMessage.showNotification(myProject,
                             P4Bundle.message("ide.not.supported.message",
                                     ApplicationInfo.getInstance().getApiVersion(),
                                     P4Bundle.getString("p4ic.name"),
@@ -323,6 +303,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
                             NotificationType.ERROR);
                 }
             });
+            // Exception Ok: Tell the IDE that the plugin isn't supported with this version of the IDE>
             throw new VcsException(P4Bundle.message("ide.not.supported.title"));
         }
     }
@@ -343,7 +324,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
         }
 
         if (myVFSListener == null) {
-            myVFSListener = fileExtensions.createVcsVFSListener();
+            myVFSListener = new P4VFSListener(this);
         }
 
         VcsCompat.getInstance().setupPlugin(myProject);
@@ -488,7 +469,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @NotNull
     public synchronized EditFileProvider getEditFileProvider() {
         if (editProvider == null) {
-            editProvider = fileExtensions.createEditFileProvider();
+            editProvider = new P4EditFileProvider(this);
         }
         return editProvider;
     }
@@ -532,7 +513,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @Override
     @Nullable
     protected RollbackEnvironment createRollbackEnvironment() {
-        return fileExtensions.createRollbackEnvironment();
+        return new P4RollbackEnvironment(this);
     }
 
     @Override
@@ -650,7 +631,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     // @CalledInAwt
     @NotNull
     public ThreeState mayRemoveChangeList(@NotNull LocalChangeList list, boolean explicitly) {
-        if (!explicitly || P4ChangeListMapping.isDefaultChangelist(list)) {
+        if (!explicitly || ChangeListUtil.isDefaultChangelist(list)) {
             return ThreeState.NO;
         }
         return ThreeState.YES;
@@ -689,6 +670,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     }
 
 
+    // TODO IMPLEMENT THIS
     /**
      * Can be temporarily forbidden, for instance, when authorization credentials are wrong - to
      * don't repeat wrong credentials passing (in some cases it can produce user's account blocking)
@@ -699,6 +681,10 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     }
 
 
+    public boolean allowsNestedRoots() {
+        return true;
+    }
+
     // ---------------------------------------------------------------------------
     // Specialized P4Vcs methods
 
@@ -706,125 +692,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangeList> {
     @NotNull
     public UserProjectPreferences getUserPreferences() {
         return userPreferences;
-    }
-
-
-    @NotNull
-    public File getTempDir() {
-        return tempFileWatchDog.getTempDir();
-    }
-
-
-    /**
-     * A thread-safe way to get the VCS roots for this VCS.  The standard call
-     * will perform an IDE-wide read lock, which can lead to massive thread
-     * deadlocking.
-     *
-     * @return the vcs roots.
-     */
-    @NotNull
-    public List<VirtualFile> getVcsRoots() {
-        synchronized (vcsRootsCache) {
-            return new ArrayList<VirtualFile>(vcsRootsCache);
-        }
-    }
-
-
-    /**
-     *
-     * @param files files
-     * @return the matched mapping of files to the servers.  There might be a "null" server entry, which
-     *      contains a list of file paths that didn't map to a client.
-     */
-    @NotNull
-    public Map<P4Server, List<FilePath>> mapFilePathsToP4Server(Collection<FilePath> files)
-            throws InterruptedException {
-        return serverManager.mapFilePathsToP4Server(files);
-    }
-
-
-    /**
-     * @param files files
-     * @return the matched mapping of files to the servers.  There might be a "null" server entry, which
-     * contains a list of file paths that didn't map to a client.
-     */
-    @NotNull
-    public Map<P4Server, List<VirtualFile>> mapVirtualFilesToP4Server(Collection<VirtualFile> files)
-            throws InterruptedException {
-        return serverManager.mapVirtualFilesToP4Server(files);
-    }
-
-
-    /**
-     * Quick look at the servers, so that it doesn't hang up the UI.
-     *
-     * @param files files
-     * @return the matched mapping of files to the servers.  There might be a "null" server entry, which
-     * contains a list of file paths that didn't map to a client.
-     */
-    @NotNull
-    public Map<P4Server, List<VirtualFile>> mapVirtualFilesToOnlineP4Server(Collection<VirtualFile> files)
-            throws InterruptedException {
-        return serverManager.mapVirtualFilesToOnlineP4Server(files);
-    }
-
-
-    public List<P4Server> getP4Servers() {
-        return serverManager.getServers();
-    }
-
-
-    public List<ClientServerRef> getClientServerRefs() {
-        return serverManager.getClientServerRefs();
-    }
-
-    public List<P4Server> getOnlineP4Servers() {
-        return serverManager.getOnlineServers();
-    }
-
-
-    @Nullable
-    public P4Server getP4ServerFor(@NotNull FilePath fp) throws InterruptedException {
-        return serverManager.getForFilePath(fp);
-    }
-
-    @Nullable
-    public P4Server getP4ServerFor(@NotNull VirtualFile vf) throws InterruptedException {
-        return serverManager.getForVirtualFile(vf);
-    }
-
-    private void refreshServerConnectivity() {
-        // Perform the connectivity in an explicit check outside the manager
-        // API, so that password queries can be run (they can only be done outside
-        // the read-lock, which the manager API runs commands in).
-        // See bug #81.
-        List<ClientConfig> configSources = new ArrayList<ClientConfig>();
-        for (P4Server server: getP4Servers()) {
-            if (server.isConnectionValid()) {
-                configSources.add(server.getClientConfig());
-            }
-        }
-        ConnectionUIConfiguration.getClients(
-                configSources, ServerConnectionManager.getInstance());
-
-        // Now that the servers are connected, or at least the connection
-        // status is known, we can refresh the workspace view.
-        // See bug #84.
-
-        for (P4Server server : getP4Servers()) {
-            if (server.isValid()) {
-                server.workOnline();
-            }
-            if (server.isConnectionValid()) {
-                try {
-                    server.forceWorkspaceRefresh();
-                } catch (InterruptedException e) {
-                    AlertManager.getInstance().addNotice(myProject,
-                            P4Bundle.message("exception.refresh.workspace", server.getClientServerDisplayId()),
-                            e);
-                }
-            }
-        }
     }
 
     @Nullable

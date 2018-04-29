@@ -112,20 +112,20 @@
     ]]></description>
     <depends>com.intellij.modules.vcs</depends>
     <vendor url="https://github.com/groboclown/p4ic4idea" email="groboclown@gmail.com">Groboclown</vendor>
-    <resource-bundle>net.groboclown.idea.p4ic.P4Bundle</resource-bundle>
+    <resource-bundle>net.groboclown.p4plugin.P4Bundle</resource-bundle>
 
     <actions>
         <group id="P4Connection">
-            <action id="P4.WorkOnline" class="net.groboclown.idea.p4ic.actions.P4WorkOnlineAction"
+            <action id="P4.WorkOnline" class="net.groboclown.p4plugin.actions.P4WorkOnlineAction"
                     text="Work online"/>
-            <action id="P4.WorkOffline" class="net.groboclown.idea.p4ic.actions.P4WorkOfflineAction"
+            <action id="P4.WorkOffline" class="net.groboclown.p4plugin.actions.P4WorkOfflineAction"
                     text="Work offline"/>
-            <action id="P4.ReloadConfiguration" class="net.groboclown.idea.p4ic.actions.ReloadP4ConfigAction"
+            <action id="P4.ReloadConfiguration" class="net.groboclown.p4plugin.actions.ReloadP4ConfigAction"
                     text="Reload configuration"/>
         </group>
 
         <group id="P4ExtendedActions">
-            <action id="P4.RevertUnchanged" class="net.groboclown.idea.p4ic.actions.P4RevertUnchanged"
+            <action id="P4.RevertUnchanged" class="net.groboclown.p4plugin.actions.P4RevertUnchanged"
                     text="Revert unchanged"
                     description="Revert files that are checked out but not different from the server version."
                     />
@@ -133,12 +133,12 @@
 
             <!--
             We want to change the shelve behavior, but we can't replace an action id.
-            <action id="ChangesView.Shelve" class="net.groboclown.idea.p4ic.v2.actions.P4ShelveChangesAction"/>
+            <action id="ChangesView.Shelve" class="net.groboclown.p4plugin.actions.P4ShelveChangesAction"/>
             -->
-            <action id="P4.Shelve" class="net.groboclown.idea.p4ic.v2.actions.P4ShelveChangesAction"
+            <action id="P4.Shelve" class="net.groboclown.p4plugin.actions.P4ShelveChangesAction"
                     description="Preserve work to the Perforce server without committing them"/>
 
-            <action id="P4.CreateSwarmReview" class="net.groboclown.idea.p4ic.actions.CreateSwarmReviewAction"
+            <action id="P4.CreateSwarmReview" class="net.groboclown.p4plugin.actions.CreateSwarmReviewAction"
                     text=""
                     description="Send a review request from the selected changelist"/>
 
@@ -148,15 +148,13 @@
 
         </group>
 
-        <!-- Uncomment when ready
         <group id="P4RollbackHistory">
-            <action id="P4.RollbackHistory" class="net.groboclown.idea.p4ic.actions.P4RollbackHistoryAction"
+            <action id="P4.RollbackHistory" class="net.groboclown.p4plugin.actions.P4RollbackHistoryAction"
                     text="Revert to version..." icon="AllIcons.Actions.Rollback"/>
 
             <add-to-group group-id="CommittedChangesToolbar"/>
             <add-to-group group-id="VcsHistoryActionsGroup"/>
         </group>
-        -->
 
         <!-- Need to add to the welcome screen.
         To add ourself to the welcome screen ("checkout from project"), need to add an extension
@@ -166,7 +164,7 @@
 
         <group id="P4FileActions">
             <reference ref="CheckinFiles"/>
-            <action id="P4.Edit" class="net.groboclown.idea.p4ic.v2.file.P4Edit"
+            <action id="P4.Edit" class="net.groboclown.p4plugin.file.P4Edit"
                     text="Add or edit" icon="AllIcons.Actions.Edit"
                     use-shortcut-of="ChangesView.AddUnversioned"/>
             <reference ref="ChangesView.Revert"/>
@@ -187,7 +185,7 @@
             <reference ref="Vcs.ShowHistoryForBlock"/>
             <!--
             <separator/>
-            <action id="P4.ResolveConflicts" class="net.groboclown.idea.p4ic.actions.P4ResolveConflictsAction"
+            <action id="P4.ResolveConflicts" class="net.groboclown.p4plugin.actions.P4ResolveConflictsAction"
                     text="Resolve Conflicts..."/>
             <separator/>
             -->
@@ -196,7 +194,7 @@
         </group>
 
 
-        <group id="P4.Menu" class="net.groboclown.idea.p4ic.actions.P4Menu" popup="true" text="_P4">
+        <group id="P4.Menu" class="net.groboclown.p4plugin.actions.P4Menu" popup="true" text="_P4">
             <reference ref="P4FileActions"/>
 
             <!--
@@ -207,7 +205,7 @@
             <add-to-group group-id="VcsGlobalGroup" anchor="after" relative-to-action="Vcs.Specific"/>
         </group>
 
-        <group id="P4.ContextMenu" class="net.groboclown.idea.p4ic.actions.P4Menu" popup="true" text="_P4">
+        <group id="P4.ContextMenu" class="net.groboclown.p4plugin.actions.P4Menu" popup="true" text="_P4">
             <reference ref="P4FileActions"/>
 
             <add-to-group group-id="VcsGroup" anchor="last"/>
@@ -215,11 +213,11 @@
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <vcs name="p4ic" vcsClass="net.groboclown.idea.p4ic.extension.P4Vcs" displayName="Perforce"/>
+        <vcs name="p4ic" vcsClass="net.groboclown.p4plugin.extension.P4Vcs" displayName="Perforce"/>
         <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
-        <vcsPopupProvider implementation="net.groboclown.idea.p4ic.extension.P4QuickListContentProvider"/>
+        <vcsPopupProvider implementation="net.groboclown.p4plugin.extension.P4QuickListContentProvider"/>
 
-        <vcsChangesViewRefresher implementation="net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher" />
+        <vcsChangesViewRefresher implementation="net.groboclown.p4plugin.changes.P4ChangesViewRefresher" />
 
         <vcs.fileStatusProvider
                 implementation="com.intellij.openapi.vcs.impl.VcsFileStatusProvider"/>
@@ -227,76 +225,76 @@
 
         <!-- user configuration settings -->
         <projectService
-                serviceInterface="net.groboclown.idea.p4ic.config.P4ConfigProject"
-                serviceImplementation="net.groboclown.idea.p4ic.config.P4ConfigProject"/>
+                serviceInterface="net.groboclown.p4plugin.config.P4ConfigProject"
+                serviceImplementation="net.groboclown.p4plugin.config.P4ConfigProject"/>
 
         <!-- Perforce changelist to IDEA changelist mapping -->
         <projectService
-                serviceInterface="net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping"
-                serviceImplementation="net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping"/>
+                serviceInterface="net.groboclown.p4plugin.changes.P4ChangeListMapping"
+                serviceImplementation="net.groboclown.p4plugin.changes.P4ChangeListMapping"/>
 
         <!-- User preferences -->
         <projectService
-                serviceInterface="net.groboclown.idea.p4ic.config.UserProjectPreferences"
-                serviceImplementation="net.groboclown.idea.p4ic.config.UserProjectPreferences"/>
+                serviceInterface="net.groboclown.p4plugin.config.UserProjectPreferences"
+                serviceImplementation="net.groboclown.p4plugin.config.UserProjectPreferences"/>
 
     </extensions>
 
     <project-components>
         <component>
             <interface-class>com.intellij.openapi.vcs.changes.ChangeListDecorator</interface-class>
-            <implementation-class>net.groboclown.idea.p4ic.ui.P4ChangeListDecorator</implementation-class>
+            <implementation-class>net.groboclown.p4plugin.ui.P4ChangeListDecorator</implementation-class>
         </component>
-
 
         <!--
         <component>
             <implementation-class>net.groboclown.idea.p4ci.extension.P4FileUrlMappingImpl</implementation-class>
             <option name="workspace" value="true"/>
         </component>
+        <component>
+            <implementation-class>net.groboclown.p4plugin.server.P4ServerManager</implementation-class>
+        </component>
+        <component>
+            <implementation-class>net.groboclown.p4plugin.changes.P4ChangeListMapping</implementation-class>
+            <interface-class>net.groboclown.p4plugin.changes.P4ChangeListMapping</interface-class>
+        </component>
+        <component>
+            <implementation-class>net.groboclown.p4plugin.config.P4ProjectConfigComponent</implementation-class>
+            <interface-class>net.groboclown.p4plugin.config.P4ProjectConfigComponent</interface-class>
+        </component>
         -->
         <component>
-            <implementation-class>net.groboclown.idea.p4ic.v2.server.P4ServerManager</implementation-class>
+            <implementation-class>net.groboclown.p4plugin.ui.VcsDockedComponent</implementation-class>
+            <interface-class>net.groboclown.p4plugin.ui.VcsDockedComponent</interface-class>
         </component>
         <component>
-            <implementation-class>net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping</implementation-class>
-            <interface-class>net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping</interface-class>
-        </component>
-        <component>
-            <implementation-class>net.groboclown.idea.p4ic.config.P4ProjectConfigComponent</implementation-class>
-            <interface-class>net.groboclown.idea.p4ic.config.P4ProjectConfigComponent</interface-class>
-        </component>
-        <component>
-            <implementation-class>net.groboclown.idea.p4ic.ui.VcsDockedComponent</implementation-class>
-            <interface-class>net.groboclown.idea.p4ic.ui.VcsDockedComponent</interface-class>
-        </component>
-        <component>
-            <implementation-class>net.groboclown.idea.p4ic.ui.pending.PendingChangesView</implementation-class>
+            <implementation-class>net.groboclown.p4plugin.ui.pending.PendingChangesView</implementation-class>
         </component>
     </project-components>
 
     <module-components>
-
     </module-components>
 
     <application-components>
+        <!--
         <component>
-            <implementation-class>net.groboclown.idea.p4ic.v2.server.connection.AlertManager</implementation-class>
+            <implementation-class>net.groboclown.p4plugin.server.connection.AlertManager</implementation-class>
         </component>
         <component>
-            <implementation-class>net.groboclown.idea.p4ic.v2.server.connection.ServerConnectionManager</implementation-class>
+            <implementation-class>net.groboclown.p4plugin.server.connection.ServerConnectionManager</implementation-class>
         </component>
         <component>
-            <implementation-class>net.groboclown.idea.p4ic.v2.server.cache.state.AllClientsState</implementation-class>
+            <implementation-class>net.groboclown.p4plugin.server.cache.state.AllClientsState</implementation-class>
         </component>
         <component>
-            <implementation-class>net.groboclown.idea.p4ic.v2.historic_compat.ClearPasswordStoreService</implementation-class>
+            <implementation-class>net.groboclown.p4plugin.historic_compat.ClearPasswordStoreService</implementation-class>
         </component>
         <component>
-            <implementation-class>net.groboclown.idea.p4ic.v2.server.authentication.PasswordManager</implementation-class>
+            <implementation-class>net.groboclown.p4plugin.server.authentication.PasswordManager</implementation-class>
         </component>
         <component>
-            <implementation-class>net.groboclown.idea.p4ic.swarm.SwarmConnectionComponent</implementation-class>
+            <implementation-class>net.groboclown.p4plugin.swarm.SwarmConnectionComponent</implementation-class>
         </component>
+        -->
     </application-components>
 </idea-plugin>

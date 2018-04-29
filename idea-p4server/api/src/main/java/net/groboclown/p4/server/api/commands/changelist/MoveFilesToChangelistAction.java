@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class MoveFilesToChangelistAction {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class MoveFilesToChangelistAction implements P4CommandRunner.ClientAction<MoveFilesToChangelistResult> {
+    @NotNull
+    @Override
+    public Class<? extends MoveFilesToChangelistResult> getResultType() {
+        return MoveFilesToChangelistResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ClientActionCmd getCmd() {
+        return P4CommandRunner.ClientActionCmd.MOVE_FILES_TO_CHANGELIST;
+    }
 }

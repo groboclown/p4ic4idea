@@ -15,11 +15,16 @@
 package net.groboclown.p4.server.impl.config.part;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.env.PerforceEnvironment;
-import net.groboclown.idea.p4ic.config.ConfigProblem;
-import net.groboclown.idea.p4ic.config.ConfigPropertiesUtil;
-import org.jdom.Element;
+import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.config.ConfigProblem;
+import net.groboclown.p4.server.api.config.ConfigPropertiesUtil;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
+import net.groboclown.p4.server.api.config.part.ConfigPartAdapter;
+import net.groboclown.p4.server.api.config.part.MultipleConfigPart;
+import net.groboclown.p4.server.api.util.JreSettings;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,35 +33,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-public class EnvCompositePart extends CompositePart {
-    static final String TAG_NAME = "env-composite-part";
-    static final ConfigPartFactory<EnvCompositePart> FACTORY = new Factory();
+public class EnvCompositePart implements ConfigPart {
     private static final Logger LOG = Logger.getInstance(EnvCompositePart.class);
 
+    private final VirtualFile vcsRoot;
+    private MultipleConfigPart configParts;
 
-    private final Project project;
-
-    @NotNull
-    private List<ConfigPart> parts;
-
-    private final List<Exception> generatedProblems = new ArrayList<Exception>();
-
-    public EnvCompositePart(@NotNull Project project) {
-        this.project = project;
-        this.parts = new ArrayList<ConfigPart>();
+    public EnvCompositePart(@NotNull VirtualFile vcsRoot) {
+        this.vcsRoot = vcsRoot;
         loadEnvironmentParts();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return o != null && getClass().equals(o.getClass());
-    }
-
-    @Override
-    public int hashCode() {
-        return 1;
     }
 
     @Override
@@ -69,28 +55,150 @@ public class EnvCompositePart extends CompositePart {
         return hasError();
     }
 
-    @NotNull
     @Override
-    public Collection<ConfigProblem> getConfigProblems() {
-        List<ConfigProblem> ret = new ArrayList<ConfigProblem>();
-        for (Exception generatedProblem : generatedProblems) {
-            ret.add(new ConfigProblem(this, generatedProblem));
-        }
-        for (ConfigPart part : parts) {
-            ret.addAll(part.getConfigProblems());
-        }
-        return ret;
+    public String toString() {
+        return configParts.toString();
     }
 
-    @NotNull
     @Override
-    public List<ConfigPart> getConfigParts() {
-        return Collections.unmodifiableList(parts);
+    @NotNull
+    public Collection<ConfigProblem> getConfigProblems() {
+        return configParts.getConfigProblems();
+    }
+
+    @Override
+    public boolean hasError() {
+        return configParts.hasError();
+    }
+
+    @Override
+    public boolean hasServerNameSet() {
+        return configParts.hasServerNameSet();
+    }
+
+    @Override
+    @Nullable
+    public P4ServerName getServerName() {
+        return configParts.getServerName();
+    }
+
+    @Override
+    public boolean hasClientnameSet() {
+        return configParts.hasClientnameSet();
+    }
+
+    @Override
+    @Nullable
+    public String getClientname() {
+        return configParts.getClientname();
+    }
+
+    @Override
+    public boolean hasUsernameSet() {
+        return configParts.hasUsernameSet();
+    }
+
+    @Override
+    @Nullable
+    public String getUsername() {
+        return configParts.getUsername();
+    }
+
+    @Override
+    public boolean hasPasswordSet() {
+        return configParts.hasPasswordSet();
+    }
+
+    @Override
+    @Nullable
+    public String getPlaintextPassword() {
+        return configParts.getPlaintextPassword();
+    }
+
+    @Override
+    public boolean requiresUserEnteredPassword() {
+        return configParts.requiresUserEnteredPassword();
+    }
+
+    @Override
+    public boolean hasAuthTicketFileSet() {
+        return configParts.hasAuthTicketFileSet();
+    }
+
+    @Override
+    @Nullable
+    public File getAuthTicketFile() {
+        return configParts.getAuthTicketFile();
+    }
+
+    @Override
+    public boolean hasTrustTicketFileSet() {
+        return configParts.hasTrustTicketFileSet();
+    }
+
+    @Override
+    @Nullable
+    public File getTrustTicketFile() {
+        return configParts.getTrustTicketFile();
+    }
+
+    @Override
+    public boolean hasServerFingerprintSet() {
+        return configParts.hasServerFingerprintSet();
+    }
+
+    @Override
+    @Nullable
+    public String getServerFingerprint() {
+        return configParts.getServerFingerprint();
+    }
+
+    @Override
+    public boolean hasClientHostnameSet() {
+        return configParts.hasClientHostnameSet();
+    }
+
+    @Override
+    @Nullable
+    public String getClientHostname() {
+        return configParts.getClientHostname();
+    }
+
+    @Override
+    public boolean hasIgnoreFileNameSet() {
+        return configParts.hasIgnoreFileNameSet();
+    }
+
+    @Override
+    @Nullable
+    public String getIgnoreFileName() {
+        return configParts.getIgnoreFileName();
+    }
+
+    @Override
+    public boolean hasDefaultCharsetSet() {
+        return configParts.hasDefaultCharsetSet();
+    }
+
+    @Override
+    @Nullable
+    public String getDefaultCharset() {
+        return configParts.getDefaultCharset();
+    }
+
+    @Override
+    public boolean hasLoginSsoSet() {
+        return configParts.hasLoginSsoSet();
+    }
+
+    @Override
+    @Nullable
+    public String getLoginSso() {
+        return configParts.getLoginSso();
     }
 
     private void loadEnvironmentParts() {
-        generatedProblems.clear();
-        parts = new ArrayList<ConfigPart>();
+        List<ConfigPart> parts = new ArrayList<>();
 
         String p4config = null;
         String p4enviro = null;
@@ -98,7 +206,9 @@ public class EnvCompositePart extends CompositePart {
         if (WinRegDataPart.isAvailable()) {
             WinRegDataPart userReg = new WinRegDataPart(true);
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Loaded user windows registry: " + ConfigPropertiesUtil.toProperties(userReg));
+                LOG.debug("Loaded user windows registry: " +
+                        ConfigPropertiesUtil.toProperties(userReg,
+                        "<unset>", "<empty>", "<set>"));
             }
             // p4config is always null at this point.
             // if (p4config == null) {
@@ -115,7 +225,9 @@ public class EnvCompositePart extends CompositePart {
                 p4enviro = sysReg.getP4EnviroFile();
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Loaded system windows registry: " + ConfigPropertiesUtil.toProperties(sysReg));
+                LOG.debug("Loaded system windows registry: " +
+                        ConfigPropertiesUtil.toProperties(sysReg,
+                                "<unset>", "<empty>", "<set>"));
             }
             parts.add(userReg);
             parts.add(sysReg);
@@ -123,7 +235,7 @@ public class EnvCompositePart extends CompositePart {
 
         parts.add(new EnvPassword());
 
-        SimpleDataPart envData = new SimpleDataPart(project, (Map<String, String>) null);
+        SimpleDataPart envData = new SimpleDataPart(vcsRoot, getSourceName(), null);
         envData.setServerName(PerforceEnvironment.getP4Port());
         envData.setUsername(PerforceEnvironment.getP4User());
         envData.setClientname(PerforceEnvironment.getP4Client());
@@ -133,7 +245,9 @@ public class EnvCompositePart extends CompositePart {
         envData.setTrustTicketFile(PerforceEnvironment.getP4Trust());
         envData.setIgnoreFilename(PerforceEnvironment.getP4Ignore());
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Loaded environment variables: " + ConfigPropertiesUtil.toProperties(envData));
+            LOG.debug("Loaded environment variables: " +
+                    ConfigPropertiesUtil.toProperties(envData,
+                            "<unset>", "<empty>", "<set>"));
         }
 
         if (p4config == null) {
@@ -150,21 +264,25 @@ public class EnvCompositePart extends CompositePart {
                     // File location
                     File f = new File(p4config);
                     if (!f.isAbsolute()) {
-                        f = new File(new File(project.getBaseDir().getPath()), p4config);
+                        f = new File(new File(vcsRoot.getPath()), p4config);
                     }
 
-                    final FileDataPart envConf = new FileDataPart(project, f);
+                    final FileConfigPart envConf = new FileConfigPart(vcsRoot, f);
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Env defined absolute P4CONFIG: " + f + ": " +
-                                ConfigPropertiesUtil.toProperties(envConf));
+                                ConfigPropertiesUtil.toProperties(envConf,
+                                        "<unset>", "<empty>", "<set>"));
                     }
                     parts.add(envConf);
                 } else {
-                    final RelativeConfigCompositePart envConf = new RelativeConfigCompositePart(project, p4config);
+                    // Scan from the vcs root down for a matching file name.
+                    File f = scanParentsForFile(vcsRoot, p4config);
+                    if (f != null) {
+                        parts.add(new FileConfigPart(vcsRoot, f));
+                    }
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Env defined relative P4CONFIG: " + p4config);
                     }
-                    parts.add(envConf);
                 }
             }
         }
@@ -172,39 +290,47 @@ public class EnvCompositePart extends CompositePart {
         // P4ENVIRO loading
         {
             if (p4enviro != null) {
-                File f = new File(p4enviro);
-                if (!f.isAbsolute()) {
-                    f = new File(new File(project.getBaseDir().getPath()), p4enviro);
-                }
+                File f = getRelFile(p4enviro);
                 // The P4ENVIRO will have a default value if the user didn't specify one.
                 // Therefore, if the file doesn't exist, don't complain.
                 if (f.exists()) {
-                    final FileDataPart envConf = new FileDataPart(project, f);
+                    final FileConfigPart envConf = new FileConfigPart(vcsRoot, f);
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Env defined P4ENVIRO: " + f + ": " +
-                                ConfigPropertiesUtil.toProperties(envConf));
+                                ConfigPropertiesUtil.toProperties(envConf,
+                                        "<unset>", "<empty>", "<set>"));
                     }
                     parts.add(envConf);
                 }
             }
         }
-    }
 
-    @NotNull
-    @Override
-    public Element marshal() {
-        return new Element(TAG_NAME);
-    }
+        // Default configuration settings, if they are not set.
 
-    private static class Factory extends ConfigPartFactory<EnvCompositePart> {
-        @Override
-        EnvCompositePart create(@NotNull Project project, @NotNull Element element) {
-            return new EnvCompositePart(project);
+        MultipleConfigPart try1 = new MultipleConfigPart("First Try", parts);
+        if (!try1.hasAuthTicketFileSet()) {
+            envData.setAuthTicketFile(getDefaultAuthTicketFile());
         }
+        if (!try1.hasTrustTicketFileSet()) {
+            envData.setTrustTicketFile(getDefaultTrustTicketFile());
+        }
+
+        // Need to recreate the part, because we just modified it.
+        this.configParts = new MultipleConfigPart("Environment Settings", parts);
     }
 
+    @Override
+    @Nls
+    @NotNull
+    public String getSourceName() {
+        return "Environment";
+    }
 
-    private static class EnvPassword extends DataPartAdapter {
+    private static class EnvPassword extends ConfigPartAdapter {
+        private EnvPassword() {
+            super("Env Password");
+        }
+
         @Override
         public boolean hasPasswordSet() {
             // Note: not trimmed, not empty string checked.
@@ -217,12 +343,6 @@ public class EnvCompositePart extends CompositePart {
             return PerforceEnvironment.getP4Passwd();
         }
 
-        @NotNull
-        @Override
-        public Element marshal() {
-            throw new IllegalStateException("should never be called");
-        }
-
         @Override
         public boolean reload() {
             return true;
@@ -233,5 +353,73 @@ public class EnvCompositePart extends CompositePart {
         public Collection<ConfigProblem> getConfigProblems() {
             return Collections.emptyList();
         }
+    }
+
+
+    /**
+     * See <a href="http://www.perforce.com/perforce/doc.current/manuals/cmdref/P4TICKETS.html">P4TICKETS environment
+     * variable help</a>
+     */
+    @Nullable
+    private File getDefaultAuthTicketFile() {
+        // Cannot use the user.home system property, because there are very exact meanings to
+        // the default locations.
+
+        // Windows check
+        String userprofile = JreSettings.getEnv("USERPROFILE");
+        if (userprofile != null) {
+            return getFileAt(userprofile, "p4tickets.txt");
+        }
+        String home = JreSettings.getEnv("HOME");
+        if (home != null) {
+            return getFileAt(home, ".p4tickets");
+        }
+        return null;
+    }
+
+    /**
+     * See <a href="http://www.perforce.com/perforce/doc.current/manuals/cmdref/P4TICKETS.html">P4TICKETS environment
+     * variable help</a>
+     */
+    @Nullable
+    private File getDefaultTrustTicketFile() {
+        // Windows check
+        String userprofile = JreSettings.getEnv("USERPROFILE");
+        if (userprofile != null) {
+            return getFileAt(userprofile, "p4trust.txt");
+        }
+        String home = JreSettings.getEnv("HOME");
+        if (home != null) {
+            return getFileAt(home, ".p4trust");
+        }
+        return null;
+    }
+
+    @NotNull
+    File getFileAt(@NotNull String dir, @NotNull String name) {
+        return new File(new File(dir), name);
+    }
+
+    @NotNull
+    File getRelFile(@NotNull String path) {
+        File f = new File(path);
+        if (!f.isAbsolute()) {
+            f = new File(vcsRoot.getPath(), path);
+        }
+        return getFileAt(f.getParent(), f.getName());
+    }
+
+    File scanParentsForFile(@NotNull VirtualFile initialDir, @NotNull String fileName) {
+        VirtualFile prevParent;
+        VirtualFile parent = initialDir;
+        do {
+            VirtualFile f = parent.findChild(fileName);
+            if (f != null && f.exists()) {
+                return getFileAt(parent.getPath(), fileName);
+            }
+            prevParent = parent;
+            parent = parent.getParent();
+        } while (parent != null && !parent.equals(prevParent));
+        return null;
     }
 }

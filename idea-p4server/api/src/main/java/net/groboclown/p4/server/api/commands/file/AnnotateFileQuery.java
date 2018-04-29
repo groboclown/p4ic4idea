@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
-public class AnnotateFileQuery {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class AnnotateFileQuery implements P4CommandRunner.ServerQuery<AnnotateFileResult> {
+    @NotNull
+    @Override
+    public Class<? extends AnnotateFileResult> getResultType() {
+        return AnnotateFileResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ServerQueryCmd getCmd() {
+        return P4CommandRunner.ServerQueryCmd.ANNOTATE_FILE;
+    }
 }

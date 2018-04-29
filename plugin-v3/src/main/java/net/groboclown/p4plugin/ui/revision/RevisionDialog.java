@@ -1,4 +1,4 @@
-package net.groboclown.idea.p4ic.ui.revision;
+package net.groboclown.p4plugin.ui.revision;
 
 import com.intellij.openapi.util.AsyncResult;
 import com.intellij.openapi.vfs.VirtualFile;

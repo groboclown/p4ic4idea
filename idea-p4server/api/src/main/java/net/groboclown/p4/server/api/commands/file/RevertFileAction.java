@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
-public class RevertFileAction {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class RevertFileAction implements P4CommandRunner.ClientAction<RevertFileResult> {
+    @NotNull
+    @Override
+    public Class<? extends RevertFileResult> getResultType() {
+        return RevertFileResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ClientActionCmd getCmd() {
+        return P4CommandRunner.ClientActionCmd.REVERT_FILE;
+    }
 }

@@ -12,17 +12,16 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api;
+package net.groboclown.p4.server.api.cache;
 
 
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4ChangelistSummary;
-import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4RemoteChangelist;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.stream.Stream;
 

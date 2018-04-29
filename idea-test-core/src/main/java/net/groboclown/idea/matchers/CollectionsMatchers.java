@@ -115,7 +115,7 @@ public class CollectionsMatchers {
 
         @Override
         public void describeTo(Description description) {
-            description.appendValueList("a collection which contains ", ", ", ", and ", items);
+            description.appendValueList("a collection which contains ", ", ", ".", items);
         }
     }
 

@@ -14,5 +14,77 @@
 
 package net.groboclown.p4.server.api.ide;
 
-public class MockLocalChangelist {
+import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.changes.LocalChangeList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Collection;
+
+public class MockLocalChangeList extends LocalChangeList {
+    private String name ="cl";
+    private boolean isDefault = false;
+
+    @Override
+    public Collection<Change> getChanges() {
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public MockLocalChangeList withName(String name) {
+        this.name = name;
+        return this;
+    }
+
+    @Override
+    public void setName(@NotNull String s) {
+        name = s;
+    }
+
+    @Nullable
+    @Override
+    public String getComment() {
+        return null;
+    }
+
+    @Override
+    public void setComment(@Nullable String s) {
+
+    }
+
+    @Override
+    public boolean isDefault() {
+        return isDefault;
+    }
+
+    public MockLocalChangeList withIsDefault(boolean b) {
+        isDefault = b;
+        return this;
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return false;
+    }
+
+    @Override
+    public void setReadOnly(boolean b) {
+
+    }
+
+    @Nullable
+    @Override
+    public Object getData() {
+        return null;
+    }
+
+    @Override
+    public LocalChangeList copy() {
+        return null;
+    }
 }

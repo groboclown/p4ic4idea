@@ -14,5 +14,15 @@
 
 package net.groboclown.p4.server.api.values;
 
-public class P4Label {
+import org.jetbrains.annotations.NotNull;
+
+public interface P4Label {
+    @NotNull
+    String getName();
+
+    @NotNull
+    String getOwnerUsername();
+
+    @NotNull
+    String getDescription();
 }

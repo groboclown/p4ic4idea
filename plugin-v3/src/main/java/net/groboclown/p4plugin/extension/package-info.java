@@ -12,4 +12,21 @@
  * limitations under the License.
  */
 
+/**
+ * What's missing:
+ *
+ * VcsOutgoingChangesProvider - only needed for DVCS tools, not Perforce.
+ * TreeDiffProvider - not needed for Perforce.
+ *
+ * Interesting tools to use:
+ *  AbstractVcsHelperImpl
+ *    - Provides lots of useful calls for VCS.
+ *    - TransactionRunnable - should we use this?  Probably, for things like
+ *    moving files.
+ *    - ((AbstractVcsHelperImpl)getInstance(project))
+ *    - setCustomExceptionHandler
+ *
+ * Task.Backgroundable + CoreProgressManager.runProcessWithProgressAsynchronously
+ *      + BackgroundableProcessIndicator, and variations therein.
+ */
 package net.groboclown.p4plugin.extension;

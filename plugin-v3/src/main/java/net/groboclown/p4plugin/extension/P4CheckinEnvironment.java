@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.v2.file;
+package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Ref;
@@ -31,10 +31,7 @@ import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
 import net.groboclown.idea.p4ic.P4Bundle;
 import net.groboclown.idea.p4ic.changes.P4ChangeListId;
-import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.P4StatusMessage;
-import net.groboclown.idea.p4ic.server.exceptions.*;
 import net.groboclown.idea.p4ic.ui.checkin.P4SubmitPanel;
 import net.groboclown.idea.p4ic.ui.checkin.SubmitContext;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
@@ -45,8 +42,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 // TODO look at switching to a CommitExecutor and CommitSession, CommitSessionContextAware
 // to fix the long standing issue where changelists must have comments.

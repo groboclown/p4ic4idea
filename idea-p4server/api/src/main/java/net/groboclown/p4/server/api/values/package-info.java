@@ -12,4 +12,11 @@
  * limitations under the License.
  */
 
+/**
+ * Interfaces and classes that reflect a Perforce stored item, but in terms
+ * of the IDE.  These should be translated into concepts that the IDE knows
+ * how to deal with.  The implementation of the vcs API should rely on these
+ * values being directly used.  This may mean making these abstract when
+ * necessary.
+ */
 package net.groboclown.p4.server.api.values;

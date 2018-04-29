@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.ui;
+package net.groboclown.p4plugin.ui;
 
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -42,21 +42,14 @@ import com.intellij.ui.popup.PopupFactoryImpl;
 import com.intellij.util.Consumer;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.UIUtil;
-import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.actions.P4WorkOfflineAction;
-import net.groboclown.idea.p4ic.actions.P4WorkOnlineAction;
-import net.groboclown.idea.p4ic.actions.ReloadP4ConfigAction;
-import net.groboclown.idea.p4ic.config.P4ProjectConfig;
-import net.groboclown.idea.p4ic.config.ServerConfig;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.v2.actions.P4ServerWorkOfflineAction;
-import net.groboclown.idea.p4ic.v2.actions.P4ServerWorkOnlineAction;
-import net.groboclown.idea.p4ic.v2.events.BaseConfigUpdatedListener;
-import net.groboclown.idea.p4ic.v2.events.ConfigInvalidListener;
-import net.groboclown.idea.p4ic.v2.events.Events;
-import net.groboclown.idea.p4ic.v2.events.ServerConnectionStateListener;
-import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
+import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.actions.P4ServerWorkOfflineAction;
+import net.groboclown.p4plugin.actions.P4ServerWorkOnlineAction;
+import net.groboclown.p4plugin.actions.P4WorkOfflineAction;
+import net.groboclown.p4plugin.actions.P4WorkOnlineAction;
+import net.groboclown.p4plugin.actions.ReloadP4ConfigAction;
+import net.groboclown.p4plugin.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

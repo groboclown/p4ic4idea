@@ -14,5 +14,14 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
-public class AddEditResult {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.ClientConfig;
+import org.jetbrains.annotations.NotNull;
+
+public class AddEditResult implements P4CommandRunner.ClientResult {
+    @NotNull
+    @Override
+    public ClientConfig getClientConfig() {
+        return null;
+    }
 }

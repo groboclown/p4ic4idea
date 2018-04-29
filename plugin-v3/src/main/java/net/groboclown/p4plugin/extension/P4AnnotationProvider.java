@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.v2.history;
+package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -24,7 +24,6 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.FileSpecUtil;
 import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
 import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
@@ -39,7 +38,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class P4AnnotationProvider implements AnnotationProvider {
+/**
+ *
+ */
+public class P4AnnotationProvider
+        implements AnnotationProvider {
     private final P4Vcs vcs;
 
     public P4AnnotationProvider(@NotNull P4Vcs vcs) {

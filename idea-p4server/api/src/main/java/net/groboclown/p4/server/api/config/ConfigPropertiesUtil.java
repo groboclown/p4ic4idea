@@ -80,7 +80,7 @@ public class ConfigPropertiesUtil {
 
     @NotNull
     public static Map<String, String> toProperties(@NotNull ServerConfig config, @Nullable String valueIfUnset,
-            @Nullable String valueIfPasswordRequired, @Nullable String valueIfPasswordNotRequired) {
+            @Nullable String valueIfPasswordStored, @Nullable String valueIfPasswordNotStored) {
         Map<String, String> ret = new HashMap<>();
         ret.put(PerforceEnvironment.P4PORT, config.getServerName().getDisplayName());
         ret.put(PerforceEnvironment.P4TRUST,
@@ -97,7 +97,7 @@ public class ConfigPropertiesUtil {
                         ? valueIfUnset
                         : config.getServerFingerprint());
         ret.put(PerforceEnvironment.P4PASSWD,
-                config.usesStoredPassword() ? valueIfPasswordRequired : valueIfPasswordNotRequired);
+                config.usesStoredPassword() ? valueIfPasswordStored : valueIfPasswordNotStored);
         ret.put(PerforceEnvironment.P4LOGINSSO,
                 ! config.hasLoginSso() || config.getLoginSso() == null
                         ? valueIfUnset
@@ -107,8 +107,9 @@ public class ConfigPropertiesUtil {
 
     @NotNull
     public static Map<String, String> toProperties(@NotNull ClientConfig config, @Nullable String valueIfUnset,
-            @Nullable String valueIfPasswordEmpty, @Nullable String valueIfPasswordSet) {
-        Map<String, String> props = toProperties(config.getServerConfig(), valueIfUnset, valueIfPasswordEmpty, valueIfPasswordSet);
+            @Nullable String valueIfPasswordStored, @Nullable String valueIfPasswordNotStored) {
+        Map<String, String> props = toProperties(config.getServerConfig(),
+                valueIfUnset, valueIfPasswordStored, valueIfPasswordNotStored);
         props.put(PerforceEnvironment.P4CHARSET,
                 config.getDefaultCharSet() == null
                         ? valueIfUnset

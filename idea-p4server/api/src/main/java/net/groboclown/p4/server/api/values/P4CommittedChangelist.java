@@ -14,5 +14,14 @@
 
 package net.groboclown.p4.server.api.values;
 
-public class P4CommittedChangelist {
+import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * Perforce stored changelists which are known to be committed on
+ * the server.
+ */
+public interface P4CommittedChangelist extends CommittedChangeList {
+    @NotNull
+    P4ChangelistSummary getSummary();
 }

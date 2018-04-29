@@ -23,19 +23,23 @@ import org.jetbrains.concurrency.Promise;
 import javax.annotation.concurrent.Immutable;
 import java.util.Optional;
 
+// For now, keep all these inner types within this one class.
+// It helps contain all the stuff that the runner does.
+// Eventually, this may get pushed out into the commands package.
+
 /**
  * API for communicating from IDEA to the Perforce server.  This
  * implementation allows for facades that talk to offline caches
  * and the server proper, and enforce concepts of delayed
  * actions due to network latency and server wait time.
  * <p>
- * If the P4ServerExec instance keeps an internal cache, then the
+ * If the P4CommandRunner instance keeps an internal cache, then the
  * cache must be application-wide, and not tied to a project, otherwise
  * issues could arise if the user has two projects open running with
  * the same client workspace.
  */
-public interface P4ServerExec {
-    // TODO this error category and ResultError are being experimented
+public interface P4CommandRunner {
+    /** TODO this error category and ResultError are being experimented
     // with.  Need to try them out and see how well the code "smells"
     // versus standard exception handling.  The idea is that normal
     // real problems are propagated through the system with the
@@ -49,6 +53,7 @@ public interface P4ServerExec {
     // type, hopefully things work out better.  Additionally, by having
     // the messaging handle the errors, and pushing most of the processing
     // into promises, the result for actions can be mostly ignored.
+     */
     enum ErrorCategory {
         /** Something in the java code didn't work right. */
         INTERNAL,
@@ -119,6 +124,9 @@ public interface P4ServerExec {
     // That implies that the server exec MUST be application-wide, so that
     // the cache will reflect those shared changes.
 
+    // Every CMD has its own Request and Result object.  Internally, there will
+    // need to be a mapping between the query class and an executor class.
+
     interface ServerCmd {}
     interface ClientCmd {}
     interface ServerNameCmd {}
@@ -154,6 +162,11 @@ public interface P4ServerExec {
         P4ServerName getServerName();
     }
 
+    // Requests are intentionally not inheriting from a
+    // shared source, to prohibit incorrect usage of the
+    // type.  It makes for a bit more code but for enhanced
+    // compile-time safety.
+
     /**
      * General interface for all requests to the server API.
      *
@@ -162,7 +175,6 @@ public interface P4ServerExec {
     interface ServerRequest<R extends ServerResult, C extends ServerCmd> {
         @NotNull
         Class<? extends R> getResultType();
-
         C getCmd();
     }
 
@@ -183,18 +195,75 @@ public interface P4ServerExec {
      * to make changes to the server state.
      */
     enum ClientActionCmd implements ClientCmd {
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.MoveFileAction
+         * @see net.groboclown.p4.server.api.commands.file.MoveFileResult
+         */
         MOVE_FILE,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.AddEditAction
+         * @see net.groboclown.p4.server.api.commands.file.AddEditResult
+         */
         ADD_EDIT_FILE,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.DeleteFileAction
+         * @see net.groboclown.p4.server.api.commands.file.DeleteFileResult
+         */
         DELETE_FILE,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.RevertFileAction
+         * @see net.groboclown.p4.server.api.commands.file.RevertFileResult
+         */
         REVERT_FILE,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction
+         * @see net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistResult
+         */
         MOVE_FILES_TO_CHANGELIST,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.EditChangelistAction
+         * @see net.groboclown.p4.server.api.commands.changelist.EditChangelistResult
+         */
         EDIT_CHANGELIST_DESCRIPTION,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.AddJobToChangelistAction
+         * @see net.groboclown.p4.server.api.commands.changelist.AddJobToChangelistResult
+         */
         ADD_JOB_TO_CHANGELIST,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction
+         * @see net.groboclown.p4.server.api.commands.changelist.CreateChangelistResult
+         */
         CREATE_CHANGELIST,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction
+         * @see net.groboclown.p4.server.api.commands.changelist.DeleteChangelistResult
+         */
+        DELETE_CHANGELIST,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.FetchFilesAction
+         * @see net.groboclown.p4.server.api.commands.file.FetchFilesResult
+         */
+        FETCH_FILES,
     }
 
     enum ServerActionCmd implements ServerCmd {
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.CreateJobAction
+         * @see net.groboclown.p4.server.api.commands.changelist.CreateJobResult
+         */
         CREATE_JOB,
+
+        // Note: no DELETE_JOB
     }
 
     /**
@@ -222,23 +291,120 @@ public interface P4ServerExec {
 
 
     enum ClientQueryCmd implements ClientCmd {
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.ListOpenedFilesQuery
+         * @see net.groboclown.p4.server.api.commands.file.ListOpenedFilesResult
+         */
         LIST_OPENED_FILES,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.client.ListClientFetchStatusQuery
+         * @see net.groboclown.p4.server.api.commands.client.ListClientFetchStatusResult
+         */
+        LIST_CLIENT_FETCH_STATUS, // cstat
+
+        /**
+         * Information about the default changelist for a specific client.
+         *
+         * @see net.groboclown.p4.server.api.commands.changelist.DefaultChangelistDetailQuery
+         * @see net.groboclown.p4.server.api.commands.changelist.DefaultChangelistDetailResult
+         */
+        DEFAULT_CHANGELIST_DETAIL,
     }
 
     enum ServerQueryCmd implements ServerCmd {
+        // Perhaps streams support can be added later...
+        // LIST_STREAMS,
+        // LIST_STREAM_INTEGRATION_STATUS, // istat
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery
+         * @see net.groboclown.p4.server.api.commands.client.ListClientsForUserResult
+         */
         LIST_CLIENTS_FOR_USER,
+
+        /**
+         * List open changelist details in the client.  Does not return the default changelist.
+         *
+         * @see net.groboclown.p4.server.api.commands.changelist.ListChangelistsForClientQuery
+         * @see net.groboclown.p4.server.api.commands.changelist.ListChangelistsForClientResult
+         */
         LIST_CHANGELISTS_FOR_CLIENT,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.ListChangelistsFixedByJobQuery
+         * @see net.groboclown.p4.server.api.commands.changelist.ListChangelistsFixedByJobResult
+         */
+        LIST_CHANGELISTS_FIXED_BY_JOB,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.ListFilesQuery
+         * @see net.groboclown.p4.server.api.commands.file.ListFilesResult
+         */
         LIST_FILES,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.ListDirectoriesQuery
+         * @see net.groboclown.p4.server.api.commands.file.ListDirectoriesResult
+         */
         LIST_DIRECTORIES,
-        STAT_FILES,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery
+         * @see net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult
+         */
+        LIST_FILES_DETAILS,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery
+         * @see net.groboclown.p4.server.api.commands.changelist.DescribeChangelistResult
+         */
         DESCRIBE_CHANGELIST,
-        FILE_CHANGE_HISTORY,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.ListFilesHistoryQuery
+         * @see net.groboclown.p4.server.api.commands.file.ListFilesHistoryResult
+         */
+        LIST_FILES_HISTORY,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsQuery
+         * @see net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsResult
+         */
         LIST_SUBMITTED_CHANGELISTS,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.user.ListUsersQuery
+         * @see net.groboclown.p4.server.api.commands.user.ListUsersResult
+         */
+        LIST_USERS,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.ListJobsQuery
+         * @see net.groboclown.p4.server.api.commands.changelist.ListJobsResult
+         */
+        LIST_JOBS,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.AnnotateFileQuery
+         * @see net.groboclown.p4.server.api.commands.file.AnnotateFileResult
+         */
+        ANNOTATE_FILE,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.ChangelistDetailQuery
+         * @see net.groboclown.p4.server.api.commands.changelist.ChangelistDetailResult
+         */
+        CHANGELIST_DETAIL,
     }
 
 
     enum ServerNameQueryCmd implements ServerNameCmd {
-        LIST_USERS,
+        /**
+         * @see net.groboclown.p4.server.api.commands.server.ServerInfoQuery
+         * @see net.groboclown.p4.server.api.commands.server.ServerInfoResult
+         */
+        SERVER_INFO
     }
 
     @Immutable
@@ -253,26 +419,31 @@ public interface P4ServerExec {
     interface ServerNameQuery<R extends ServerNameResult> extends ServerNameRequest<R, ServerNameQueryCmd> {
     }
 
-    // Sync queries block thread execution until the server returns with a result
-    // (or some kind of timeout or request stop).  Because of that, these commands
-    // must be restricted to non-EDT threads.  If something from the API absolutely
-    // requires a sync command response, then a cache should be used where possible,
-    // and the Promise should trigger the re-execution of the command against the
-    // updated cache.
+    // Sync queries explicitly return cached results, and so must be
+    // referenced separately.  They do not reuse the non-sync enums
+    // so that we can limit which commands can be called in a synchronous
+    // way, thus limiting the need for cached values.  They do, however,
+    // reuse the result type from the non-sync version.
 
     enum SyncServerQueryCmd implements ServerCmd {
-        LIST_CLIENTS_FOR_USER,
-        LIST_CHANGELISTS_FOR_CLIENT,
-        LIST_FILES,
-        LIST_DIRECTORIES,
-        STAT_FILES,
-        DESCRIBE_CHANGELIST,
-        FILE_CHANGE_HISTORY,
-        LIST_SUBMITTED_CHANGELISTS,
+        /* Add items only when absolutely necessary.
+        SYNC_LIST_CLIENTS_FOR_USER,
+        SYNC_LIST_CHANGELISTS_FOR_CLIENT,
+        SYNC_LIST_FILES,
+        SYNC_LIST_DIRECTORIES,
+        SYNC_STAT_FILES,
+        SYNC_DESCRIBE_CHANGELIST,
+        SYNC_FILE_CHANGE_HISTORY,
+        SYNC_LIST_SUBMITTED_CHANGELISTS,
+        */
     }
 
     enum SyncClientQueryCmd implements ClientCmd {
-        LIST_OPENED_FILES,
+        /**
+         * @see net.groboclown.p4.server.api.commands.sync.SyncListOpenedFilesQuery
+         * @see net.groboclown.p4.server.api.commands.file.ListOpenedFilesResult
+         */
+        SYNC_LIST_OPENED_FILES,
     }
 
     @Immutable
@@ -315,8 +486,9 @@ public interface P4ServerExec {
      * that may or may not take a long time to process.  If running
      * disconnected, the action may be queued and processed later.
      *
-     * @param action
-     * @param <R>
+     * @param config server configuration
+     * @param action action to perform
+     * @param <R> type of server result to expect
      * @return a promise for the result.  Errors for catching are either general
      *      Java errors (NPE and so on) or {@link ServerResultException}.
      */
@@ -338,11 +510,11 @@ public interface P4ServerExec {
     /**
      * Returns the cached result from the most recently stored data.
      *
-     * @param config
-     * @param query
-     * @param <R>
-     * @return
-     * @throws ServerResultException
+     * @param config server configuration
+     * @param query query to perform
+     * @param <R> result type
+     * @return cached results
+     * @throws ServerResultException if there was a problem accessing the results.
      */
     @NotNull
     <R extends ServerResult> R syncCachedQuery(@NotNull ServerConfig config, @NotNull SyncServerQuery<R> query)

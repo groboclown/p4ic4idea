@@ -14,11 +14,16 @@
 
 package net.groboclown.p4.server.api.values;
 
+import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
-public interface P4File {
+/**
+ * A local filesystem file, used for representing its state as the
+ * server knows it, or as we want the sever to know it.
+ */
+public interface P4LocalFile {
     /**
      *
      * @return null if the file isn't in the depot.
@@ -26,6 +31,37 @@ public interface P4File {
     @Nullable
     String getDepotPath();
 
-    @Nullable
+    // Can't be null, because this is a local file.  However, it can be non-existent if locally deleted.
+    @NotNull
+    FilePath getFilePath();
 
+    /**
+     *
+     * @return null if the file does not exist on the server.
+     */
+    @Nullable
+    P4Revision getHaveRevision();
+
+    /**
+     *
+     * @return null if the file does not exist on the server.
+     */
+    @Nullable
+    P4FileRevision getHeadFileRevision();
+
+    /**
+     *
+     * @return null if not checked out, otherwise the changelist number associated to the local edit action.
+     */
+    @Nullable
+    P4ChangelistId getChangelistId();
+
+    @NotNull
+    P4FileAction getFileAction();
+
+    @NotNull
+    P4ResolveType getResolveType();
+
+    @NotNull
+    P4FileType getFileType();
 }

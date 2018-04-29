@@ -11,43 +11,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.v2.history;
+package net.groboclown.p4.server.impl.values;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsException;
-import com.perforce.p4java.core.file.*;
-import com.perforce.p4java.impl.generic.core.file.FileRevisionData;
-import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.server.FileSpecUtil;
-import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
-import net.groboclown.idea.p4ic.v2.server.connection.P4Exec2;
+import com.perforce.p4java.core.file.IFileAnnotation;
+import com.perforce.p4java.core.file.IFileRevisionData;
+import net.groboclown.p4.server.api.values.P4FileRevision;
+import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Date;
 
 public class P4AnnotatedLine {
     private static final Logger LOG = Logger.getInstance(P4AnnotatedLine.class);
 
 
     private final FilePath baseFile;
-    private final String depotPath;
+    private final P4RemoteFile depotPath;
     private final IFileAnnotation ann;
     private final int lineNumber;
     private final IFileRevisionData revisionData;
 
     public P4AnnotatedLine(@NotNull FilePath baseFile, int lineNumber, @NotNull IFileAnnotation ann, @NotNull IFileRevisionData data) {
         this.baseFile = baseFile;
-        this.depotPath = ann.getDepotPath();
+        this.depotPath = new P4RemoteFileImpl(ann.getDepotPath());
         this.ann = ann;
         this.revisionData = data;
         this.lineNumber = lineNumber;
     }
 
     @NotNull
-    public P4RevisionNumber getRev() {
-        return new P4RevisionNumber(baseFile, depotPath, ann);
+    public P4FileRevision getRev() {
+        return new P4FileRevisionImpl(baseFile, depotPath, ann);
     }
 
     public int getChangelist() {
@@ -75,7 +72,7 @@ public class P4AnnotatedLine {
     }
 
     @NotNull
-    public String getDepotPath() {
+    public P4RemoteFile getDepotPath() {
         return depotPath;
     }
 
@@ -87,6 +84,7 @@ public class P4AnnotatedLine {
         return revisionData.getRevision();
     }
 
+    /*
     public static List<P4AnnotatedLine> loadAnnotatedLines(@NotNull P4Exec2 exec,
             @NotNull FilePath baseFile, @NotNull List<IFileAnnotation> annotations) throws VcsException {
         Map<String, IFileRevisionData> revisions = new HashMap<String, IFileRevisionData>();
@@ -207,5 +205,6 @@ public class P4AnnotatedLine {
         LOG.warn("No revision for " + depotRev);
         throw new P4FileException(P4Bundle.message("error.annotate.no-revision", depotRev));
     }
+    */
 
 }

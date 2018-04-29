@@ -14,5 +14,12 @@
 
 package net.groboclown.p4.server.impl.cache;
 
+/**
+ * Project specific data, persisted and cached for a single client.
+ */
 public class ProjectClientCacheImpl {
+
+    // IDE Changelists are project specific.  However, the
+    // Perforce changelists are application-wide.
+    private IdeChangelistMapImpl activeChangelistMap;
 }

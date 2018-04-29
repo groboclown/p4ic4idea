@@ -14,5 +14,35 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class ListJobsQuery {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public class ListJobsQuery implements P4CommandRunner.ServerQuery<ListJobsResult> {
+    private final P4ChangelistId changelistId;
+    private final String username;
+    private final String description;
+    private final int maxResults;
+
+    public ListJobsQuery(
+            @Nullable P4ChangelistId changelistId,
+            @Nullable String username,
+            @Nullable String description, int maxResults) {
+        this.changelistId = changelistId;
+        this.username = username;
+        this.description = description;
+        this.maxResults = maxResults;
+    }
+
+    @NotNull
+    @Override
+    public Class<? extends ListJobsResult> getResultType() {
+        return ListJobsResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ServerQueryCmd getCmd() {
+        return P4CommandRunner.ServerQueryCmd.LIST_JOBS;
+    }
 }

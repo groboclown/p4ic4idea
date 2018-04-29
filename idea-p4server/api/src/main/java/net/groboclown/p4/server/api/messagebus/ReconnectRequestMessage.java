@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.api.messagebus;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.Topic;
 import net.groboclown.p4.server.api.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
  * projects.
  */
 public class ReconnectRequestMessage
-        extends ApplicationMessage<ReconnectRequestMessage.Listener> {
+        extends ProjectMessage<ReconnectRequestMessage.Listener> {
     private static final String DISPLAY_NAME = "p4ic4idea:reconnect to server";
     private static final Topic<Listener> TOPIC = new Topic<>(
             DISPLAY_NAME,
@@ -38,16 +39,17 @@ public class ReconnectRequestMessage
     }
 
 
-    public static void requestReconnectToAllClients(boolean mayDisplayDialogs) {
-        if (canSendMessage()) {
-            getListener(TOPIC).reconnectToAllClients(mayDisplayDialogs);
+    public static void requestReconnectToAllClients(@NotNull Project project, boolean mayDisplayDialogs) {
+        if (canSendMessage(project)) {
+            getListener(project, TOPIC).reconnectToAllClients(mayDisplayDialogs);
         }
     }
 
 
-    public static void requestReconnectToClient(@NotNull ClientServerRef ref, boolean mayDisplayDialogs) {
-        if (canSendMessage()) {
-            getListener(TOPIC).reconnectToClient(ref, mayDisplayDialogs);
+    public static void requestReconnectToClient(@NotNull Project project,
+            @NotNull ClientServerRef ref, boolean mayDisplayDialogs) {
+        if (canSendMessage(project)) {
+            getListener(project, TOPIC).reconnectToClient(ref, mayDisplayDialogs);
         }
     }
 

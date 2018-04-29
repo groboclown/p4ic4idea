@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.util;
+package net.groboclown.p4.server.todo.util;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
@@ -20,7 +20,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
-import net.groboclown.p4.server.api.util.mock.VFFilePath;
+import net.groboclown.p4.server.todo.util.mock.VFFilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

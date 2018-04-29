@@ -16,6 +16,7 @@ package net.groboclown.idea;
 
 import java.util.Collection;
 
+import static net.groboclown.idea.ExtMatchers.containsAll;
 import static net.groboclown.idea.ExtMatchers.isEmpty;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -24,7 +25,11 @@ public class ExtAsserts {
         assertThat(c, isEmpty());
     }
 
-    public static <T> void assertEmpty(String msg, Collection<T> c) {
+    public static <T> void assertEmpty(Collection<T> c, String msg) {
         assertThat(msg, c, isEmpty());
+    }
+
+    public static <T> void assertContainsAll(Collection<T> c, T... expected) {
+        assertThat(c, containsAll(expected));
     }
 }

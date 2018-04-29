@@ -12,6 +12,7 @@ ideaApi.uses(
         'annotations',
         'vcs-api-core',
         'vcs-api',
+
         'platform-api',
         'projectModel-api'
 )
@@ -25,6 +26,9 @@ ideaImplementation.uses(
         'picocontainer',
         'trove4j',
 )
+ideaTest.uses(
+        'kotlin-runtime'
+)
 
 dependencies {
     //compatApi ()
@@ -36,10 +40,9 @@ dependencies {
     compatTest(
             project(':idea-test-core'),
 
-            // TODO by pulling in idea-test-core, that should
-            // automatically pull in its compat* libraries.
             project(':idea-compat/compat-api'),
 
+            // TODO pull in the test jars from the test-core as part of the build.
             'junit:junit:4.12',
             'org.junit.jupiter:junit-jupiter-engine:5.1.0',
             'org.junit.platform:junit-platform-runner:1.1.0',
@@ -49,13 +52,9 @@ dependencies {
             'org.junit.platform:junit-platform-suite-api:1.1.0',
             'org.junit.vintage:junit-vintage-engine:5.1.0',
             'org.opentest4j:opentest4j:1.0.0',
-            'net.bytebuddy:byte-buddy:1.8.0',
             'org.apiguardian:apiguardian-api:1.0.0',
+            'net.bytebuddy:byte-buddy:1.8.0',
             'org.objenesis:objenesis:2.6',
-
-            // For code coverage
-            //'org.jacoco:org.jacoco.agent:0.8.1',
-            //'org.jacoco:org.jacoco.ant:0.8.1',
     )
 }
 
@@ -69,6 +68,7 @@ jacocoTestReport {
         csv.enabled = true
         html.enabled = true
     }
+    classDirectories = sourceSets.mainIdea173.output
 }
 
 test {
@@ -80,6 +80,20 @@ test {
 
 project.tasks.check.dependsOn 'jacocoTestReport'
 
+// allow the test artifacts to be used by other projects
+configurations {
+    testArtifacts
+}
+task testArtifactsJar(type: Jar) {
+    //from(files(sourceSets.findByName('test').java.outputDir, sourceSets.findByName('test').resources.outputDir))
+    from "$buildDir/classes/java/test", "$projectDir/src/test/resources"
+    destinationDir = file("$buildDir/libs")
+    classifier = 'test'
+
+}
+artifacts {
+    testArtifacts testArtifactsJar
+}
 
 repositories {
     ivy {

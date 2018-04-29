@@ -14,5 +14,38 @@
 
 package net.groboclown.p4.server.api.values;
 
-public class P4FileRevision {
+import com.intellij.openapi.vcs.versionBrowser.VcsRevisionNumberAware;
+import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
+
+/**
+ * Represents a revision of a file on the server.
+ */
+@Immutable
+public interface P4FileRevision
+        extends VcsRevisionNumberAware {
+    @NotNull
+    P4RemoteFile getFile();
+
+    @NotNull
+    P4ChangelistId getChangelistId();
+
+    @NotNull
+    P4Revision getRevision();
+
+    @NotNull
+    P4FileAction getFileAction();
+
+    @NotNull
+    P4FileType getFileType();
+
+    /**
+     *
+     * @return null if the change was not an integration, or if the integration source is not known
+     *      (due to the operation that requested the information).
+     */
+    @Nullable
+    P4RemoteFile getIntegratedFrom();
 }

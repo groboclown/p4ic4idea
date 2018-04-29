@@ -20,17 +20,35 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import java.util.List;
 
+/**
+ * Reflects high-level information about a changelist.
+ */
 @Immutable
-public interface P4Changelist {
+public interface P4ChangelistSummary {
     @NotNull
     P4ChangelistId getChangelistId();
 
+    /**
+     *
+     * @return the comment for the changelist.  If the server query was limited, then this might be truncated.
+     */
     @NotNull
     String getComment();
 
     boolean isDeleted();
 
+    boolean isSubmitted();
+
     boolean isOnServer();
+
+    /**
+     * Are there shelved files in this changelist?  Can potentially return "false" if the command that
+     * created this object didn't receive any information about it.
+     *
+     * @return true if the command that generated this object discovered that shelved files are associated
+     *      with this changelist.
+     */
+    boolean hasShelvedFiles();
 
     /**
      *
@@ -45,10 +63,4 @@ public interface P4Changelist {
      */
     @NotNull
     String getUsername();
-
-    @NotNull
-    List<P4Job> getAttachedJobs();
-
-    @Nullable
-    String getJobStatus(@NotNull P4Job job);
 }

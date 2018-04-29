@@ -14,5 +14,17 @@
 
 package net.groboclown.p4plugin.extension;
 
-public class P4ExceptionsHotFixer {
+import com.intellij.ide.errorTreeView.HotfixData;
+import com.intellij.openapi.vcs.ActionType;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.VcsExceptionsHotFixer;
+
+import java.util.List;
+import java.util.Map;
+
+public class P4ExceptionsHotFixer implements VcsExceptionsHotFixer {
+    @Override
+    public Map<HotfixData, List<VcsException>> groupExceptions(ActionType actionType, List<VcsException> list) {
+        return null;
+    }
 }

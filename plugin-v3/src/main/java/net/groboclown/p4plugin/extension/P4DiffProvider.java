@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.v2.history;
+package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -27,7 +27,6 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
 import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
@@ -38,7 +37,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public class P4DiffProvider implements DiffProvider, DiffMixin {
+public class P4DiffProvider
+        implements DiffProvider, DiffMixin {
     private static final Logger LOG = Logger.getInstance(P4DiffProvider.class);
 
     private final Project project;

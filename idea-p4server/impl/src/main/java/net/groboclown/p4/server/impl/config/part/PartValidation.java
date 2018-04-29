@@ -18,7 +18,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ConfigProblem;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
-import net.groboclown.p4.server.impl.config.ConfigProblemImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,6 +26,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+// FIXME this whole thing needs messaging.
 public class PartValidation {
     private static final Logger LOG = Logger.getInstance(PartValidation.class);
 
@@ -36,7 +36,7 @@ public class PartValidation {
         final PartValidation validation = new PartValidation();
         validation.problems.addAll(part.getConfigProblems());
         if (! part.hasServerNameSet() || part.getServerName() == null) {
-            validation.problems.add(new ConfigProblemImpl(part, true, "configuration.port.invalid", part.getServerName()));
+            validation.problems.add(new ConfigProblem(part, "configuration.port.invalid", true));
         }
         validation.checkUsername(part);
         validation.checkAuthTicketFile(part);
@@ -56,7 +56,8 @@ public class PartValidation {
 
     boolean checkPort(@NotNull ConfigPart part, @Nullable String rawPort, @Nullable P4ServerName serverName) {
         if (rawPort != null && serverName == null) {
-            problems.add(new ConfigProblemImpl(part, true, "configuration.port.invalid", rawPort));
+            // FIXME add rawPort in message
+            problems.add(new ConfigProblem(part, "configuration.port.invalid", true));
             return false;
         }
         return true;
@@ -69,7 +70,8 @@ public class PartValidation {
     boolean checkAuthTicketFile(@NotNull ConfigPart part, @Nullable File file) {
         // If it points to a directory, then we ignore this.
         if (file != null && ! file.exists()) {
-            problems.add(new ConfigProblemImpl(part, false, "configuration.problem.authticket.exist", file));
+            // FIXME include "file" in message
+            problems.add(new ConfigProblem(part, "configuration.problem.authticket.exist", false));
             return false;
         }
         return true;
@@ -82,7 +84,8 @@ public class PartValidation {
     boolean checkTrustTicketFile(@NotNull ConfigPart part, @Nullable File file) {
         // If it points to a directory, then we ignore this.
         if (file != null && ! file.exists()) {
-            problems.add(new ConfigProblemImpl(part, false, "configuration.problem.trustticket.exist", file));
+            // FIXME add "File" in message
+            problems.add(new ConfigProblem(part, "configuration.problem.trustticket.exist", false));
             return false;
         }
         return true;
@@ -94,7 +97,8 @@ public class PartValidation {
 
     boolean checkLoginSsoFile(@NotNull ConfigPart part, @Nullable String file) {
         if (file != null && file.isEmpty()) {
-            problems.add(new ConfigProblemImpl(part, false, "configuration.problem.loginsso.exist", file));
+            // FIXME add "File" in message
+            problems.add(new ConfigProblem(part, "configuration.problem.loginsso.exist", false));
             return false;
         }
         return true;
@@ -106,7 +110,7 @@ public class PartValidation {
 
     boolean checkUsername(@NotNull ConfigPart part, @Nullable String username) {
         if (username == null || username.isEmpty()) {
-            problems.add(new ConfigProblemImpl(part, true, "configuration.problem.username"));
+            problems.add(new ConfigProblem(part, "configuration.problem.username", true));
             return false;
         }
         return true;
@@ -124,12 +128,12 @@ public class PartValidation {
         if (clientName != null) {
             try {
                 Integer.parseInt(clientName);
-                problems.add(new ConfigProblemImpl(part, true, "error.config.client.numeric"));
+                problems.add(new ConfigProblem(part, "error.config.client.numeric", true));
             } catch (NumberFormatException e) {
                 // This is fine.  Ignore.
             }
         } else if (ensureNotNull) {
-            problems.add(new ConfigProblemImpl(part, false, "error.config.no-client"));
+            problems.add(new ConfigProblem(part, "error.config.no-client", false));
         }
         return false;
     }

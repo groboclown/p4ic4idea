@@ -55,6 +55,8 @@ dependencies {
 
     compatImplementation (
             project(':idea-compat/compat-api'),
+            project(':idea-p4server/api'),
+            project(':idea-p4server/impl'),
             project(':p4java'),
             project(':swarm')
     )

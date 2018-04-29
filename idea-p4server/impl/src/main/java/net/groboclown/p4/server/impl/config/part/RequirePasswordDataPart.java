@@ -14,19 +14,15 @@
 
 package net.groboclown.p4.server.impl.config.part;
 
-import com.intellij.openapi.project.Project;
-import net.groboclown.idea.p4ic.config.ConfigProblem;
-import org.jdom.Element;
-import org.jetbrains.annotations.NotNull;
+import net.groboclown.p4.server.api.config.part.ConfigPartAdapter;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.Collections;
 
-public class RequirePasswordDataPart extends DataPartAdapter {
-    static final String TAG_NAME = "require-password-data-part";
-    static final ConfigPartFactory<RequirePasswordDataPart> FACTORY = new Factory();
+public class RequirePasswordDataPart extends ConfigPartAdapter {
+    public RequirePasswordDataPart() {
+        super("Require User Password");
+    }
 
     // Explicitly override other authentication methods
     @Override
@@ -45,18 +41,20 @@ public class RequirePasswordDataPart extends DataPartAdapter {
         return null;
     }
 
-    @NotNull
+    @Nullable
     @Override
-    public Element marshal() {
-        return new Element(TAG_NAME);
+    public String getPlaintextPassword() {
+        return null;
     }
 
+    @Override
+    public boolean hasPasswordSet() {
+        return false;
+    }
 
-    private static class Factory extends ConfigPartFactory<RequirePasswordDataPart> {
-        @Override
-        RequirePasswordDataPart create(@NotNull Project project, @NotNull Element element) {
-            return new RequirePasswordDataPart();
-        }
+    @Override
+    public boolean requiresUserEnteredPassword() {
+        return true;
     }
 
     @Override
@@ -69,16 +67,4 @@ public class RequirePasswordDataPart extends DataPartAdapter {
         return 2;
     }
 
-
-    @Override
-    public boolean reload() {
-        // Do nothing
-        return true;
-    }
-
-    @NotNull
-    @Override
-    public Collection<ConfigProblem> getConfigProblems() {
-        return Collections.emptyList();
-    }
 }

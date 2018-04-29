@@ -146,5 +146,8 @@ $ jardir=$( the p4ic4idea lib/172 directory )
 $ mkdir "$jardir/deps"
 $ cp lib/*.jar "$jardir/deps/."
 $ cp license/* "$jardir/deps/."
+$ cp build/dependencies/build/kotlin/Kotlin/lib/kotlin-runtime.jar "$jardir/deps/."
 ```
 
+The `kotlin-runtime.jar` file is created by the dependency fetch, which downloads the build from
+`http://plugins.jetbrains.com/maven/com/jetbrains/plugins/org.jetbrains.kotlin/1.1.4-release-IJ2017.2-3/org.jetbrains.kotlin-1.1.4-release-IJ2017.2-3.zip`.

@@ -11,66 +11,65 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.changes;
+package net.groboclown.p4.server.api.values;
 
-import com.intellij.openapi.vcs.VcsBundle;
-import com.perforce.p4java.core.IChangelist;
-import net.groboclown.idea.p4ic.config.P4ServerName;
-import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.concurrent.Immutable;
 
 /**
  * Perforce changelists must be identified by their ID and their origin
  * server.
+ * <p>
+ * For a changelist that is pending creation, this object will not change.  Instead, when the
+ * creation finishes, the cached version should be refreshed to reflect the new changelist.
  */
-public interface P4ChangeListId {
+@Immutable
+public interface P4ChangelistId extends VcsRevisionNumber {
+    enum State {
+        /** The changelist is a formally created changelist on the server, and not a default changelist. */
+        NUMBERED,
+        /** The changelist is the unnumbered, "default" changelist for the client, stored on the server. */
+        DEFAULT,
+        /** The changelist is pending creation on the server. */
+        PENDING_CREATION
+    }
 
-    int P4_DEFAULT = IChangelist.DEFAULT;
-    int P4_UNKNOWN = IChangelist.UNKNOWN;
-
-    /**
-     * highest number for a local changelist
-     */
-    int P4_LOCAL = -1000;
-
-    /** Default changelist name (in UI) */
-    String DEFAULT_CHANGE_NAME = VcsBundle.message("changes.default.changelist.name");
-
-
-    int getChangeListId();
+    int getChangelistId();
 
     @NotNull
     P4ServerName getServerName();
 
+    /**
+     * The client that created the changelist.
+     *
+     * @return the name of the client that created the changelist.
+     */
     @NotNull
     String getClientName();
 
     @NotNull
     ClientServerRef getClientServerRef();
 
-    boolean isNumberedChangelist();
+    @NotNull
+    State getState();
 
     /**
-     * All changelists will either return true for this call or {@link #isNumberedChangelist()},
-     * but not both.  Unknown changelists are represented as "null" objects.
      *
-     * @return true if this is the default changelist.
+     * @return true if this is the default changelist for the client.
      */
     boolean isDefaultChangelist();
-
-    /**
-     *
-     * @return true if the changelist has not been created on the server.
-     */
-    boolean isUnsynchedChangelist();
 
     /**
      * Is this changelist in the given client?  Matches on the client name
      * and the server config id.
      *
-     * @param client client to check
+     * @param serverConfig server to check
      * @return true if the given client matches the server config and client name.
      */
-    boolean isIn(@NotNull P4Server client);
+    boolean isIn(@NotNull ServerConfig serverConfig);
 }

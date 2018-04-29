@@ -14,5 +14,45 @@
 
 package net.groboclown.p4.server.impl.cache;
 
-public class IdeChangelistMapImpl {
+import com.intellij.openapi.vcs.changes.LocalChangeList;
+import net.groboclown.p4.server.api.cache.IdeChangelistMap;
+import net.groboclown.p4.server.api.cache.IdeFileMap;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.api.values.P4ChangelistSummary;
+import net.groboclown.p4.server.api.values.P4RemoteChangelist;
+import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nullable;
+import java.util.Map;
+import java.util.stream.Stream;
+
+public class IdeChangelistMapImpl implements IdeChangelistMap {
+    @Nullable
+    @Override
+    public LocalChangeList getIdeChangeFor(@NotNull P4ChangelistId changelistId) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public P4ChangelistId getP4ChangeFor(@NotNull LocalChangeList changeList) {
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public Map<P4ChangelistId, LocalChangeList> getLinkedIdeChanges() {
+        return null;
+    }
+
+    @Override
+    public void updateForOpenChanges(@NotNull IdeFileMap fileMap, @NotNull Stream<P4RemoteChangelist> openChanges) {
+
+    }
+
+    @Override
+    public void updateForDeletedSubmittedChanges(@NotNull Stream<P4ChangelistSummary> closedChanges,
+            boolean deleteNotEmpty) {
+
+    }
 }

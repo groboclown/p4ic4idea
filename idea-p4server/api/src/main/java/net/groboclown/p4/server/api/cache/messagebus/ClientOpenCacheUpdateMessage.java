@@ -12,10 +12,19 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.messagebus;
+package net.groboclown.p4.server.api.cache.messagebus;
 
-public class ClientOpenCacheUpdateMessage extends ApplicationMessage<> {
+import com.intellij.util.messages.Topic;
+import net.groboclown.p4.server.api.messagebus.ApplicationMessage;
 
+public class ClientOpenCacheUpdateMessage extends ApplicationMessage<ClientOpenCacheUpdateMessage.Listener> {
+    private static final String DISPLAY_NAME = "p4ic4idea:open cache update";
+    private static final Topic<Listener> TOPIC = new Topic<>(
+            DISPLAY_NAME, Listener.class, Topic.BroadcastDirection.TO_CHILDREN
+    );
+    public interface Listener {
+
+    }
 
 
     public static class Event extends AbstractCacheUpdateEvent {

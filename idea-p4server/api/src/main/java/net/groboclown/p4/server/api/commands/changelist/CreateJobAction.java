@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class CreateJobAction {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class CreateJobAction implements P4CommandRunner.ServerAction<CreateJobResult> {
+    @NotNull
+    @Override
+    public Class<? extends CreateJobResult> getResultType() {
+        return CreateJobResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ServerActionCmd getCmd() {
+        return P4CommandRunner.ServerActionCmd.CREATE_JOB;
+    }
 }

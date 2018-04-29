@@ -14,5 +14,17 @@
 
 package net.groboclown.p4.server.api.values;
 
-public class P4RemoteFile {
+import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.concurrent.Immutable;
+
+/**
+ * Simple typed depot path.  It must not include extra information, such as revision (<tt>#12</tt>)
+ * or other data (<tt>@123</tt>, <tt>@abc</tt>, <tt>@12/21/1980</tt>).  Additionally, it must be
+ * in an unescaped form that's usable by the end user.
+ */
+@Immutable
+public interface P4RemoteFile {
+    @NotNull
+    String getDepotPath();
 }

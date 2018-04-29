@@ -12,14 +12,14 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.util;
+package net.groboclown.p4.server.todo.util;
 
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.p4.server.FileOperationErrorManager;
+import net.groboclown.p4.server.todo.FileOperationErrorManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;

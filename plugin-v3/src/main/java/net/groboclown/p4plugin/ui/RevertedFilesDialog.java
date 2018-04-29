@@ -1,4 +1,4 @@
-package net.groboclown.idea.p4ic.ui;
+package net.groboclown.p4plugin.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;

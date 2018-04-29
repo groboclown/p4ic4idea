@@ -45,5 +45,8 @@ $ jardir=$( this 171 directory )
 $ mkdir "$jardir/deps"
 $ cp lib/*.jar "$jardir/deps/."
 $ cp license/* "$jardir/deps/."
+$ cp build/kotlinc/lib/kotlin-runtime.jar "$jardir/deps/."
 ```
 
+The kotlin-runtime.jar file is pulled in by the `build/scripts/download_kotlin.gant` script (run by
+`ant init`), which in turn pulls from `https://teamcity.jetbrains.com/Kotlin_110_CompilerAndPlugin_NoTests`

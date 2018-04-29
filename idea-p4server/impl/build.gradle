@@ -1,6 +1,7 @@
 plugins {
     id 'java-library'
     id 'p4ic.compat'
+    id 'jacoco'
 }
 
 
@@ -20,8 +21,15 @@ ideaImplementation.uses(
         // this os only used by P4FileAction
         'editor-ui-api',
 
-        'jdom'
+        'jdom',
+        'kotlin-runtime'
 )
+
+
+ideaTest.uses(
+        'platform-resources-en',
+)
+
 
 dependencies {
     compatApi (
@@ -31,13 +39,36 @@ dependencies {
             project(':p4java'),
             project(':idea-compat/compat-api'),
             project(':idea-cache'),
-            project(':messages')
+            project(':swarm'),
     )
     compatTest(
             project(':idea-test-core'),
-            project(':idea-p4server/impl')
+            project(':idea-p4server/api').sourceSets.test.output
     )
 }
+
+
+jacoco {
+    toolVersion = '0.8.1'
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        csv.enabled = true
+        html.enabled = true
+    }
+    classDirectories = sourceSets.mainIdea173.output
+}
+
+test {
+    jacoco {
+        append = false
+    }
+    useJUnitPlatform()
+}
+
+project.tasks.check.dependsOn 'jacocoTestReport'
 
 
 repositories {

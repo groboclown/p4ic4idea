@@ -11,15 +11,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.ui.config;
+package net.groboclown.p4plugin.ui.config;
 
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
-import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
-import net.groboclown.idea.p4ic.config.UserProjectPreferences;
+import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.preferences.UserProjectPreferences;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -55,20 +54,20 @@ public class P4ProjectConfigurable implements SearchableConfigurable {
         if (prefs == null) {
             return null;
         }
-        return myPanel.getPanel(loadConfig(), prefs);
+        return myPanel.getPanel(prefs);
     }
 
     @Override
     public boolean isModified() {
         UserProjectPreferences prefs = loadPreferences();
-        return prefs != null && myPanel.isModified(loadConfig(), prefs);
+        return prefs != null && myPanel.isModified(prefs);
     }
 
     @Override
     public void apply() throws ConfigurationException {
         UserProjectPreferences prefs = loadPreferences();
         if (prefs != null) {
-            myPanel.saveSettings(loadConfig(), prefs);
+            myPanel.saveSettings(prefs);
             // Note: the "save settings" call will call P4ProjectConfigComponent.setUserConfigParts(new config)
         }
     }
@@ -77,7 +76,7 @@ public class P4ProjectConfigurable implements SearchableConfigurable {
     public void reset() {
         UserProjectPreferences prefs = loadPreferences();
         if (prefs != null) {
-            myPanel.loadSettings(loadConfig(), prefs);
+            myPanel.loadSettings(prefs);
         }
     }
 
@@ -95,11 +94,6 @@ public class P4ProjectConfigurable implements SearchableConfigurable {
     @Override
     public Runnable enableSearch(String option) {
         return null;
-    }
-
-    @NotNull
-    private P4ProjectConfigComponent loadConfig() {
-        return P4ProjectConfigComponent.getInstance(myProject);
     }
 
     @Nullable

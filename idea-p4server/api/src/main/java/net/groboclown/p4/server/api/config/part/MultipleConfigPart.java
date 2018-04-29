@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -42,7 +43,7 @@ public class MultipleConfigPart
     public MultipleConfigPart(@NotNull @Nls(capitalization = Nls.Capitalization.Title) String sourceName,
             @NotNull List<ConfigPart> parts) {
         this.sourceName = sourceName;
-        this.parts = parts;
+        this.parts = new ArrayList<>(parts);
     }
 
     @TestOnly

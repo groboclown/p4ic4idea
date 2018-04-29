@@ -19,7 +19,7 @@ import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ClientConfigState;
+import net.groboclown.p4.server.api.cache.ClientConfigState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,17 +28,17 @@ import org.jetbrains.annotations.Nullable;
  * also inform the application server connection registry about the configurations, so that
  * the correct counters can be preserved.
  */
-public abstract class AbstractProjectConfigRegistry
+public abstract class ProjectConfigRegistry
         implements ProjectComponent, Disposable {
-    public static final String COMPONENT_NAME = AbstractProjectConfigRegistry.class.getName();
+    public static final String COMPONENT_NAME = ProjectConfigRegistry.class.getName();
 
-    private static final Logger LOG = Logger.getInstance(AbstractProjectConfigRegistry.class);
+    private static final Logger LOG = Logger.getInstance(ProjectConfigRegistry.class);
 
     private boolean disposed = false;
 
     @NotNull
-    public static AbstractProjectConfigRegistry getInstance(@NotNull Project project) {
-        return (AbstractProjectConfigRegistry) project.getComponent(COMPONENT_NAME);
+    public static ProjectConfigRegistry getInstance(@NotNull Project project) {
+        return (ProjectConfigRegistry) project.getComponent(COMPONENT_NAME);
     }
 
 

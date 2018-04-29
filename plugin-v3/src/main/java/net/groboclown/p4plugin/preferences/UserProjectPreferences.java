@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4plugin.setup;
+package net.groboclown.p4plugin.preferences;
 
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ServiceManager;

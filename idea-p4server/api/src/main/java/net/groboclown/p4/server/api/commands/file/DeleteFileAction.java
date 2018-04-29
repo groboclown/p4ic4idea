@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
-public class DeleteFileAction {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class DeleteFileAction implements P4CommandRunner.ClientAction<DeleteFileResult> {
+    @NotNull
+    @Override
+    public Class<? extends DeleteFileResult> getResultType() {
+        return DeleteFileResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ClientActionCmd getCmd() {
+        return P4CommandRunner.ClientActionCmd.DELETE_FILE;
+    }
 }

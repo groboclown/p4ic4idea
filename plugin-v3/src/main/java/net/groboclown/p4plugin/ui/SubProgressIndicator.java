@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.ui;
+package net.groboclown.p4plugin.ui;
 
 import com.intellij.ide.util.DelegatingProgressIndicator;
 import com.intellij.openapi.progress.ProgressIndicator;

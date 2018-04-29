@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class CreateChangelistAction {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class CreateChangelistAction implements P4CommandRunner.ClientAction<CreateChangelistResult> {
+    @NotNull
+    @Override
+    public Class<? extends CreateChangelistResult> getResultType() {
+        return CreateChangelistResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ClientActionCmd getCmd() {
+        return P4CommandRunner.ClientActionCmd.CREATE_CHANGELIST;
+    }
 }

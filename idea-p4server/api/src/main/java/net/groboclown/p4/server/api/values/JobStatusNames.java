@@ -12,68 +12,22 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.v2.server.cache.state;
+package net.groboclown.p4.server.api.values;
 
-import net.groboclown.idea.p4ic.v2.changes.P4ChangeListJob;
-import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
+import java.util.Set;
 
 /**
  * The valid job statuses that can be set for a job.
  */
-public class JobStatusListState extends CachedState {
-    private final List<String> statuses;
-
-    public JobStatusListState(@NotNull final List<String> statuses) {
-        this.statuses = new ArrayList<String>(statuses);
-    }
-
-    public JobStatusListState() {
-        this.statuses = new ArrayList<String>(P4ChangeListJob.DEFAULT_JOB_STATUS);
-    }
-
-    public void setJobStatuses(@Nullable List<String> jobStatusValues) {
-        statuses.clear();
-        if (jobStatusValues == null || jobStatusValues.isEmpty()) {
-            statuses.addAll(P4ChangeListJob.DEFAULT_JOB_STATUS);
-        } else {
-            statuses.addAll(jobStatusValues);
-        }
-    }
-
+@Immutable
+public interface JobStatusNames {
     @NotNull
-    public List<String> getJobStatuses() {
-        return Collections.unmodifiableList(statuses);
-    }
+    Set<JobStatus> getJobStatusNames();
 
-    @Override
-    protected void serialize(@NotNull final Element wrapper, @NotNull final EncodeReferences refs) {
-        serializeDate(wrapper);
-        for (String status: statuses) {
-            Element el = new Element("s");
-            wrapper.addContent(el);
-            el.setAttribute("s", status);
-        }
-    }
-
-    @SuppressWarnings("UnusedParameters")
     @Nullable
-    protected static JobStatusListState deserialize(@NotNull final Element wrapper, @NotNull final DecodeReferences refs) {
-        List<String> statuses = new ArrayList<String>();
-        for (Element el : wrapper.getChildren("s")) {
-            String status = getAttribute(el, "s");
-            if (status != null && status.length() > 0) {
-                statuses.add(status);
-            }
-        }
-        if (statuses.isEmpty()) {
-            return new JobStatusListState(P4ChangeListJob.DEFAULT_JOB_STATUS);
-        }
-        return new JobStatusListState(statuses);
-    }
+    JobStatus toJobStatus(String name);
 }

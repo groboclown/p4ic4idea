@@ -76,7 +76,7 @@ public final class ClientConfig {
         // Not needed anymore, because the calling class (P4ProjectConfigStack) does this check, and we don't
         // want a misleading double exception in the logs.
         /*
-        if (! serverConfig.isSameServer(data)) {
+        if (! serverConfig.isSameServerConnection(data)) {
             LOG.error("Server config " + serverConfig +
                     " does not match data config " + ConfigPropertiesUtil.toProperties(data));
         }

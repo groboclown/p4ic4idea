@@ -12,13 +12,38 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.messagebus;
+package net.groboclown.p4.server.api.cache.messagebus;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-public class AbstractCacheUpdateEvent {
+public class AbstractCacheUpdateEvent<E extends AbstractCacheUpdateEvent> {
     private final Set<String> visitedCacheIds = new HashSet<>();
+    private final Date created = new Date();
 
+    public interface Visitor<E extends AbstractCacheUpdateEvent> {
+        void visit(@NotNull E event);
+    }
 
+    public void visit(@NotNull String cacheId, @NotNull Visitor<E> visitor) {
+        boolean run;
+        synchronized (visitedCacheIds) {
+            run = !visitedCacheIds.contains(cacheId);
+            if (run) {
+                visitedCacheIds.add(cacheId);
+            }
+        }
+        if (run) {
+            //noinspection unchecked
+            visitor.visit((E) this);
+        }
+    }
+
+    @NotNull
+    public Date getCreated() {
+        return created;
+    }
 }

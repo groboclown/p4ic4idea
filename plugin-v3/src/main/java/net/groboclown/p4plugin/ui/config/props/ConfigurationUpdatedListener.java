@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.ui.config.props;
+package net.groboclown.p4plugin.ui.config.props;
 
 import net.groboclown.idea.p4ic.config.P4ProjectConfig;
 import org.jetbrains.annotations.NotNull;

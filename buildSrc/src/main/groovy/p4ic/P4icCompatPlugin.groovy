@@ -156,7 +156,7 @@ class P4icCompatPlugin implements Plugin<Project> {
         SourceSet main = javaConvention.sourceSets.create("main" + suffix)
         main.java {
             srcDirs = [child(project.projectDir, "src", "main", "java")]
-            outputDir = project.file(child(project.buildDir, "classes", "java" + suffix))
+            outputDir = project.file(child(project.buildDir, "classes", "java", "main" + suffix))
         }
         main.resources {
             srcDirs = [child(project.projectDir, "src", "main", "resources")]
@@ -166,7 +166,7 @@ class P4icCompatPlugin implements Plugin<Project> {
         SourceSet test = javaConvention.sourceSets.create("test" + suffix)
         test.java {
             srcDirs = [child(project.projectDir, "src", "test", "java")]
-            outputDir = project.file(child(project.buildDir, "classes", "test" + suffix))
+            outputDir = project.file(child(project.buildDir, "classes", "java", "test" + suffix))
         }
         test.resources {
             srcDirs = [child(project.projectDir, "src", "main", "resources")]

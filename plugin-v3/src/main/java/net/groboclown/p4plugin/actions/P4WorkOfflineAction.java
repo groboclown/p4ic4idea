@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.actions;
+package net.groboclown.p4plugin.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -71,7 +71,7 @@ public class P4WorkOfflineAction extends AnAction {
      * it will be updated twice a second. This means that this method is supposed to work really fast,
      * no real work should be done at this phase. For example, checking selection in a tree or a list,
      * is considered valid, but working with a file system is not. If you cannot understand the state of
-     * the action fast you should do it in the {@link #actionPerformed(com.intellij.openapi.actionSystem.AnActionEvent)} method and notify
+     * the action fast you should do it in the {@link #actionPerformed(AnActionEvent)} method and notify
      * the user that action cannot be executed if it's the case.
      *
      * @param e Carries information on the invocation place and data available

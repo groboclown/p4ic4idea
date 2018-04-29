@@ -14,5 +14,14 @@
 
 package net.groboclown.p4.server.api.commands.user;
 
-public class ListUsersResult {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.ServerConfig;
+import org.jetbrains.annotations.NotNull;
+
+public class ListUsersResult implements P4CommandRunner.ServerResult {
+    @NotNull
+    @Override
+    public ServerConfig getServerConfig() {
+        return null;
+    }
 }

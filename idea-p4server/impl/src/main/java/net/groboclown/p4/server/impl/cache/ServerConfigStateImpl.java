@@ -12,14 +12,13 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.impl.config;
+package net.groboclown.p4.server.impl.cache;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.api.config.ServerConfigState;
-import net.groboclown.p4.server.api.messagebus.ClientConfigConnectionFailedMessage;
+import net.groboclown.p4.server.api.cache.ServerConfigState;
+import net.groboclown.p4.server.api.cache.messagebus.ClientConfigConnectionFailedMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import org.jetbrains.annotations.NotNull;
 

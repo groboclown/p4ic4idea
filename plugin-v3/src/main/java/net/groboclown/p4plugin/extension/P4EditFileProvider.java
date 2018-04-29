@@ -11,21 +11,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.v2.file;
+package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.EditFileProvider;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.config.UserProjectPreferences;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
-import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
-import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -47,20 +39,8 @@ public class P4EditFileProvider implements EditFileProvider {
     private final P4Vcs vcs;
     private final P4ChangeListMapping changeListMapping;
 
-    /**
-     * Synchronizes on VFS operations; IDEA can send requests to open for edit and move,
-     * or open for edit and delete at nearly the same time.  If these are allowed to
-     * collide, then the incorrect actions can happen.  By making all these basic
-     * actions be synchronized, we guarantee the right operation, but at a slight
-     * cost to time.
-     *
-     * This should be shared with {@link P4VFSListener} and {@link P4RollbackEnvironment}.
-     */
-    private final Lock vfsLock;
-
-    P4EditFileProvider(@NotNull P4Vcs vcs, @NotNull Lock vfsSync) {
+    P4EditFileProvider(@NotNull P4Vcs vcs) {
         this.vcs = vcs;
-        this.vfsLock = vfsSync;
         this.changeListMapping = P4ChangeListMapping.getInstance(vcs.getProject());
     }
 

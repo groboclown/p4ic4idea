@@ -12,13 +12,13 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.config;
+package net.groboclown.p4.server.api.cache;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.cache.ServerConfigState;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.concurrency.Promise;
 
 /**
  * A layer on top of a {@link ServerConfigState} to include the client connection

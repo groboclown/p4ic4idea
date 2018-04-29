@@ -14,5 +14,9 @@
 
 package net.groboclown.p4.server.api.values;
 
-public class JobStatus {
+import org.jetbrains.annotations.NotNull;
+
+public interface JobStatus {
+    @NotNull
+    String getName();
 }

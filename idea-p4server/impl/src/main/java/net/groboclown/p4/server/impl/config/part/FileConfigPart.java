@@ -16,12 +16,11 @@ package net.groboclown.p4.server.impl.config.part;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ConfigProblem;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
-import net.groboclown.p4.server.todo.util.FilePathUtil;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,11 +32,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
 
-public class FileDataPart implements ConfigPart {
-    private static final Logger LOG = Logger.getInstance(FileDataPart.class);
+public class FileConfigPart implements ConfigPart {
+    private static final Logger LOG = Logger.getInstance(FileConfigPart.class);
 
     @Nullable
     private File filePath;
+    private final VirtualFile vcsRoot;
 
     private String rawPort;
     private P4ServerName serverName;
@@ -53,7 +53,8 @@ public class FileDataPart implements ConfigPart {
 
     private IOException loadError = null;
 
-    FileDataPart(@Nullable File filePath) {
+    FileConfigPart(@NotNull VirtualFile vcsRoot, @Nullable File filePath) {
+        this.vcsRoot = vcsRoot;
         this.filePath = filePath;
         reload();
     }
@@ -63,7 +64,7 @@ public class FileDataPart implements ConfigPart {
         if (o == null || ! getClass().equals(o.getClass())) {
             return false;
         }
-        FileDataPart that = (FileDataPart) o;
+        FileConfigPart that = (FileConfigPart) o;
         return FileUtil.filesEqual(filePath, that.filePath);
     }
 
@@ -77,7 +78,7 @@ public class FileDataPart implements ConfigPart {
 
     @Override
     public String toString() {
-        return "FileDataPart(" + filePath + ")";
+        return "FileConfigPart(" + filePath + ")";
     }
 
     @Override
@@ -146,14 +147,16 @@ public class FileDataPart implements ConfigPart {
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
         if (filePath == null) {
-            return Collections.singletonList(new ConfigProblem(this, true, "configuration.p4config.no-file"));
+            // FIXME SET MESSAGE CORRECTLY
+            return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.no-file", true));
         }
         if (! filePath.exists() || ! filePath.isFile()) {
-            return Collections.singletonList(new ConfigProblem(this, true, "configuration.p4config.bad-file",
-                    filePath));
+            // FIXME SET MESSAGE CORRECTLY, and use "filePath"
+            return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.bad-file", true));
         }
         if (loadError != null) {
-            return Collections.singletonList(new ConfigProblem(this, loadError));
+            // FIXME properly handle exception messages
+            return Collections.singletonList(new ConfigProblem(this, loadError.getMessage(), true));
         }
         PartValidation validation = new PartValidation();
         validation.checkPort(this, rawPort);
@@ -184,20 +187,11 @@ public class FileDataPart implements ConfigPart {
         return filePath;
     }
 
-
-    @Nullable
+    @Nls
+    @NotNull
     @Override
-    public VirtualFile getRootPath() {
-        if (filePath == null) {
-            return null;
-        }
-        // We don't want the file itself as the root path, but rather the
-        // owning directory.
-        final FilePath parent = FilePathUtil.getFilePath(filePath).getParentPath();
-        if (parent == null) {
-            return null;
-        }
-        return parent.getVirtualFile();
+    public String getSourceName() {
+        return filePath == null ? "<null file>" : filePath.getPath();
     }
 
     @Override
@@ -242,6 +236,11 @@ public class FileDataPart implements ConfigPart {
     @Override
     public String getPlaintextPassword() {
         return password;
+    }
+
+    @Override
+    public boolean requiresUserEnteredPassword() {
+        return false;
     }
 
     @Override
@@ -333,7 +332,7 @@ public class FileDataPart implements ConfigPart {
         }
         File ret = new File(name);
         if (! ret.isAbsolute()) {
-            ret = new File(new File(project.getBaseDir().getPath()), name);
+            ret = new File(new File(vcsRoot.getPath()), name);
         }
         return ret;
     }

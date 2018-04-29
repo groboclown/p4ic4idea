@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.v2.file;
+package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
@@ -23,21 +23,18 @@ import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.changes.P4ChangeListId;
-import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
-import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
-import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
-import net.groboclown.idea.p4ic.v2.server.FileSyncResult;
-import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.connection.MessageResult;
-import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
+import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
 public class P4RollbackEnvironment implements RollbackEnvironment {
@@ -45,18 +42,8 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
 
     private final P4Vcs vcs;
 
-    /**
-     * See the {@link P4VFSListener} and {@link P4EditFileProvider} for the other places this
-     * object is shared.
-     *
-     * It may not be necessary to include this sync here, but it
-     * makes logical sense to do so.
-     */
-    private final Lock vfsLock;
-
-    P4RollbackEnvironment(@NotNull P4Vcs vcs, @NotNull Lock vfsLock) {
+    P4RollbackEnvironment(@NotNull P4Vcs vcs) {
         this.vcs = vcs;
-        this.vfsLock = vfsLock;
     }
 
     @Override

@@ -14,5 +14,19 @@
 
 package net.groboclown.p4.server.impl.values;
 
-public class P4RemoteFileImpl {
+import net.groboclown.p4.server.api.values.P4RemoteFile;
+import org.jetbrains.annotations.NotNull;
+
+public class P4RemoteFileImpl implements P4RemoteFile {
+    private final String path;
+
+    public P4RemoteFileImpl(@NotNull String path) {
+        this.path = path;
+    }
+
+    @NotNull
+    @Override
+    public String getDepotPath() {
+        return path;
+    }
 }

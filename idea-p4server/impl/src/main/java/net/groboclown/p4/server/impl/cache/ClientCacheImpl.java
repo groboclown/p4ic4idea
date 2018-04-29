@@ -14,5 +14,16 @@
 
 package net.groboclown.p4.server.impl.cache;
 
+/**
+ * Central storage for the persisted, cached objects for a single client.
+ * <p>
+ * Application-wide cached.
+ */
 public class ClientCacheImpl {
+
+    // Mapping from the local file system to the Perforce server files
+    // is global for a client.  This might be different if you run with
+    // different OS, but then you should be on different computers.
+    private IdeFileMapImpl activeFileMap;
+
 }

@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.server;
 
-public class ServerInfoQuery {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class ServerInfoQuery implements P4CommandRunner.ServerNameQuery<ServerInfoResult> {
+    @NotNull
+    @Override
+    public Class<? extends ServerInfoResult> getResultType() {
+        return ServerInfoResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ServerNameQueryCmd getCmd() {
+        return P4CommandRunner.ServerNameQueryCmd.SERVER_INFO;
+    }
 }

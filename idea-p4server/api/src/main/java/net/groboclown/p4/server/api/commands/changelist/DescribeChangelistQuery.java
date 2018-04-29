@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class DescribeChangelistQuery {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class DescribeChangelistQuery implements P4CommandRunner.ServerQuery<DescribeChangelistResult> {
+    @NotNull
+    @Override
+    public Class<? extends DescribeChangelistResult> getResultType() {
+        return DescribeChangelistResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ServerQueryCmd getCmd() {
+        return P4CommandRunner.ServerQueryCmd.DESCRIBE_CHANGELIST;
+    }
 }

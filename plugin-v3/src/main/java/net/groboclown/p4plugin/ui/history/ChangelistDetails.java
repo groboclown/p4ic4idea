@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.ui.history;
+package net.groboclown.p4plugin.ui.history;
 
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.ui.table.JBTable;

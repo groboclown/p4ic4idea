@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.v2.history;
+package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.diagnostic.Logger;
@@ -19,12 +19,19 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.history.*;
+import com.intellij.openapi.vcs.history.DiffFromHistoryHandler;
+import com.intellij.openapi.vcs.history.HistoryAsTreeProvider;
+import com.intellij.openapi.vcs.history.VcsAbstractHistorySession;
+import com.intellij.openapi.vcs.history.VcsAppendableHistorySessionPartner;
+import com.intellij.openapi.vcs.history.VcsDependentHistoryComponents;
+import com.intellij.openapi.vcs.history.VcsFileRevision;
+import com.intellij.openapi.vcs.history.VcsHistoryProvider;
+import com.intellij.openapi.vcs.history.VcsHistorySession;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.ColumnInfo;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.compat.HistoryCompat;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.ui.history.ChangelistDescriptionAction;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
@@ -39,7 +46,8 @@ import java.util.Map;
 
 // TODO add support for VcsHistoryProviderEx, but that means making this conditional as part of the version
 // dependency.
-public class P4HistoryProvider implements VcsHistoryProvider {
+public class P4HistoryProvider
+        implements VcsHistoryProvider {
     private static final Logger LOG = Logger.getInstance(P4HistoryProvider.class);
 
     private final Project project;

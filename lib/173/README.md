@@ -39,5 +39,8 @@ $ jardir=$( this 173 directory )
 $ mkdir "$jardir/deps"
 $ cp lib/*.jar "$jardir/deps/."
 $ cp license/* "$jardir/deps/."
+$ cp build/dependencies/build/kotlin/Kotlin/lib/kotlin-stdlib.jar "$jardir/deps/kotlin-runtime.jar"
 ```
 
+The `kotlin-runtime.jar` is pulled by the dependency build (run by `ant init`), which in turn downloads it from
+`http://plugins.jetbrains.com/maven/com/jetbrains/plugins/org.jetbrains.kotlin/1.2.10-release-IJ2017.3-1/org.jetbrains.kotlin-1.2.10-release-IJ2017.3-1.zip`.

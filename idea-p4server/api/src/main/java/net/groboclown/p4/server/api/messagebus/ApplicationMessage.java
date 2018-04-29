@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @param <L> listener type
  */
-abstract class ApplicationMessage<L> {
+public abstract class ApplicationMessage<L> {
     @NotNull
     protected static <L> L getListener(@NotNull Topic<L> topic) {
         return ApplicationManager.getApplication().getMessageBus().syncPublisher(topic);

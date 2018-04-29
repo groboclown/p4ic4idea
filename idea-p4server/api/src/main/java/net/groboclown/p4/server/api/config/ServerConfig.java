@@ -27,6 +27,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static net.groboclown.p4.server.api.util.EqualUtil.isEqual;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 
@@ -120,7 +121,7 @@ public final class ServerConfig {
 
     private ServerConfig(@NotNull ConfigPart part) {
         if (! isValidServerConfig(part)) {
-            throw new IllegalStateException("Did not check validity before creating");
+            throw new IllegalArgumentException("Did not check validity before creating");
         }
         this.configVersion = COUNT.incrementAndGet();
 
@@ -149,6 +150,9 @@ public final class ServerConfig {
         this.serverId = getServerIdForDataPart(part);
 
         // Must be done at the very end.
+        // This logic is carefully constructed to only store the password if it's supplied by the
+        // user, and the user does not require that it is manually entered into the UI.
+        // This class never stores the password in itself.
         if (!part.requiresUserEnteredPassword() && part.hasPasswordSet() && part.getPlaintextPassword() != null) {
             ApplicationPasswordRegistry.getInstance().store(this, part.getPlaintextPassword().toCharArray(), false);
         }
@@ -159,6 +163,10 @@ public final class ServerConfig {
         return this.configVersion;
     }
 
+    /**
+     *
+     * @return true if the user supplies a password, either through plaintext, or through the UI asking for it.
+     */
     public boolean usesStoredPassword() {
         return usesPassword;
     }
@@ -218,18 +226,28 @@ public final class ServerConfig {
         return serverId;
     }
 
-    boolean isSameServer(@Nullable ConfigPart part) {
+    /**
+     * Checks if the {@literal part} connects to the same server
+     * in the same way as this server configuration.  For identifying
+     * if the server itself is the same, then compare the
+     * {@link P4ServerName} values.
+     *
+     * @param part configuration to compare
+     * @return true if the {@literal part} and this config connect to
+     *      the same server the same way.
+     */
+    boolean isSameServerConnection(@Nullable ConfigPart part) {
         if (part == null) {
-            LOG.debug("isSameServer: input is null");
+            LOG.debug("isSameServerConnection: input is null");
             return false;
         }
 
         if (! isEqual(getServerName(), part.getServerName())) {
             if (LOG.isDebugEnabled()) {
                 if (part.getServerName() == null) {
-                    LOG.debug("isSameServer: input server name is null");
+                    LOG.debug("isSameServerConnection: input server name is null");
                 } else {
-                    LOG.debug("isSameServer: server doesn't match: "
+                    LOG.debug("isSameServerConnection: server doesn't match: "
                             + getServerName().getServerPort() + "::" + getServerName().getServerProtocol() + " <> "
                             + part.getServerName().getServerPort() + "::" + part.getServerName().getServerProtocol());
                 }
@@ -239,7 +257,7 @@ public final class ServerConfig {
 
         if (! filesEqual(hasAuthTicket(), getAuthTicket(), part.hasAuthTicketFileSet(), part.getAuthTicketFile())) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("isSameServer: auth ticket doesn't match: "
+                LOG.debug("isSameServerConnection: auth ticket doesn't match: "
                         + getAuthTicket() + " <> " + part.getAuthTicketFile());
             }
             return false;
@@ -247,7 +265,7 @@ public final class ServerConfig {
 
         if (! filesEqual(hasTrustTicket(), getTrustTicket(), part.hasTrustTicketFileSet(), part.getTrustTicketFile())) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("isSameServer: trust ticket doesn't match: "
+                LOG.debug("isSameServerConnection: trust ticket doesn't match: "
                         + getTrustTicket() + " <> " + part.getTrustTicketFile());
             }
             return false;
@@ -255,14 +273,14 @@ public final class ServerConfig {
 
         if (hasServerFingerprint() != part.hasServerFingerprintSet()) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("isSameServer: has server fingerprint mismatch: "
+                LOG.debug("isSameServerConnection: has server fingerprint mismatch: "
                         + hasServerFingerprint() + " <> " + part.hasServerFingerprintSet());
             }
             return false;
         }
         if (hasServerFingerprint() && ! isEqual(getServerFingerprint(), part.getServerFingerprint())) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("isSameServer: server fingerprint mismatch: "
+                LOG.debug("isSameServerConnection: server fingerprint mismatch: "
                         + getServerFingerprint() + " <> " + part.getServerFingerprint());
             }
             return false;
@@ -270,9 +288,18 @@ public final class ServerConfig {
 
         if (! isEqual(getUsername(), part.getUsername())) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("isSameServer: username mismatch: "
-                       + getUsername() + " <> " + part.getUsername());
+                LOG.debug("isSameServerConnection: username mismatch: "
+                        + getUsername() + " <> " + part.getUsername());
             }
+            return false;
+        }
+
+        // password usage is a bit more complex.
+        if (
+                (usesStoredPassword() && (!part.requiresUserEnteredPassword() && !part.hasPasswordSet()))
+                || (!usesStoredPassword() && (part.requiresUserEnteredPassword() || part.hasPasswordSet()))
+            ) {
+            return false;
         }
 
         return true;
@@ -327,14 +354,5 @@ public final class ServerConfig {
             return file;
         }
         return null;
-    }
-
-
-    private static boolean isEqual(@Nullable Object a, @Nullable Object b) {
-        // Short circuit a.equals(b) if a == b.  This also keeps us from
-        // needing a conditional branch with the ?: operator.
-        // if a == b, then it's false if a != null and b == null, or b != null and a == null.
-        // So, if a == null and a != b, then b must be != null, so that part evaluates to false.
-        return (a == b || (a != null && a.equals(b)));
     }
 }

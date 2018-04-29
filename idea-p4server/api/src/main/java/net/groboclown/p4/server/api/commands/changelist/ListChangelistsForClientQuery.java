@@ -14,5 +14,33 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class ListChangelistsForClientQuery {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * Executes the command <tt>p4 -Ztag changes -s pending -l -c (clientname)</tt>
+ *
+ * Does not return information about the default changelist.
+ */
+public class ListChangelistsForClientQuery implements P4CommandRunner.ServerQuery<ListChangelistsForClientResult> {
+    private final String clientname;
+
+    public ListChangelistsForClientQuery(String clientname) {
+        this.clientname = clientname;
+    }
+
+    @NotNull
+    @Override
+    public Class<? extends ListChangelistsForClientResult> getResultType() {
+        return ListChangelistsForClientResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ServerQueryCmd getCmd() {
+        return P4CommandRunner.ServerQueryCmd.LIST_CHANGELISTS_FOR_CLIENT;
+    }
+
+    public String getClientname() {
+        return clientname;
+    }
 }

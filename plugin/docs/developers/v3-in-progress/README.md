@@ -8,6 +8,7 @@ that have influenced the new design.
 * [Configuration and Connection Management](connection.md)
 * [Synchronous vs Asynchronous Communication](threading.md)
 * [Error reporting](errors.md)
+* [Caching and Data Storage](cache.md)
 
 
 ## Unit Tests

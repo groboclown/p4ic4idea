@@ -14,5 +14,17 @@
 
 package net.groboclown.p4.server.api.values;
 
-public class P4FileType {
+public enum P4FileType {
+    TEXT(false),
+    BINARY(false),
+    TEXT_EXECUTABLE(true),
+    BINARY_EXECUTABLE(true),
+
+    UNKNOWN(false);
+
+    private final boolean executable;
+
+    P4FileType(boolean executable) {
+        this.executable = executable;
+    }
 }

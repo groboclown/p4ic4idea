@@ -15,26 +15,26 @@
 package net.groboclown.p4.server.impl.changelists;
 
 import net.groboclown.p4.server.api.ClientServerRef;
-import net.groboclown.p4.server.api.IdeChangelistMap;
+import net.groboclown.p4.server.api.cache.IdeChangelistMap;
+import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.changelist.ChangelistDetailQuery;
 import net.groboclown.p4.server.api.commands.changelist.ChangelistDetailResult;
+import net.groboclown.p4.server.api.commands.changelist.DefaultChangelistDetailQuery;
+import net.groboclown.p4.server.api.commands.changelist.DefaultChangelistDetailResult;
 import net.groboclown.p4.server.api.commands.changelist.ListChangelistsForClientQuery;
 import net.groboclown.p4.server.api.commands.changelist.ListChangelistsForClientResult;
 import net.groboclown.p4.server.api.commands.file.ListOpenedFilesQuery;
-import net.groboclown.p4.server.api.commands.file.ListOpenedFilesResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.util.StreamUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4ChangelistSummary;
-import net.groboclown.p4.server.api.values.P4RemoteChangelist;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.concurrency.Promise;
 import org.jetbrains.concurrency.Promises;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,68 +42,86 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ChangelistMapSynchronizer {
+public class ChangelistFileMapSynchronizer {
 
-    public Promise<?> synchronizeMapWithServer(
+    /**
+     * Performs a series of queries against the server, and populates the
+     * {@link IdeFileMap} and {@link IdeChangelistMap} to match the values in the server at the
+     * time of the request.
+     *
+     * @param clients list of client-server configurations to query against.
+     * @param runner server runner that will run the queries.
+     * @param fileMap the {@link IdeFileMap} to update to the correct state.
+     * @param changeMap the {@link IdeChangelistMap} to update to the correct state.
+     * @param deleteNonEmptyChangelists true if the changelist mapper should remove IDE changelists
+     *                                  that were linked to submitted/deleted P4 changelists.
+     * @return promise for when the request chain completes, or contains an error of the execution.
+     */
+    public Promise<?> synchronizeWithServer(
             @NotNull final Collection<ClientConfig> clients,
             @NotNull final P4CommandRunner runner,
+            @NotNull final IdeFileMap fileMap,
             @NotNull final IdeChangelistMap changeMap,
             final boolean deleteNonEmptyChangelists) {
         final Set<P4ChangelistId> knownChangeIds = changeMap.getLinkedIdeChanges().keySet();
         final Map<ClientServerRef, ClientConfig> clientMap =
                 StreamUtil.asReversedMap(clients, ClientConfig::getClientServerRef);
         final Promise<?> start = Promise.resolve(null);
-        final Promise<List<ChangelistDetailResult>> knownChangeSummaries;
-        if (knownChangeIds.isEmpty()) {
-            knownChangeSummaries = Promise.resolve(Collections.emptyList());
-        } else {
-            knownChangeSummaries = Promises.collectResults(
-                    queryServerChangelists(runner, clientMap, knownChangeIds).collect(Collectors.toList()));
+
+        // FIXME this is all wrong.  It needs to conform to the message bus execution by generating
+        // a SINGLE event for the entire sync.  It must also return the event object as the promise value.
+
+
+        // If the mapping has existing changelist knowledge, discover if any of them are removed or
+        // submitted on the server.
+        if (! knownChangeIds.isEmpty()) {
             start
-                .thenAsync((x) -> knownChangeSummaries)
+                .thenAsync((x) -> Promises.collectResults(
+                        queryServerChangelists(runner, clientMap, knownChangeIds).collect(Collectors.toList())))
                 .then((resultList) -> reportServerChangelists(changeMap, resultList, deleteNonEmptyChangelists));
         }
+
+        // Next, find all opened files for the clients and report them to the file mapping.
         start.thenAsync((x) ->
+                Promises.collectResults(
+                        clients.stream().map((cl) -> runner.query(
+                                cl, new ListOpenedFilesQuery()
+                        )).collect(Collectors.toList())
+                ))
+        .then((openedFilesList) -> {
+            fileMap.updateAllLinkedFiles(openedFilesList.stream()
+                            .flatMap((openedFiles) -> openedFiles.getOpenedFiles().stream())
+                    );
+                    return null;
+                })
+
+        // Then find all the opened changelists for the clients
+        .thenAsync((x) ->
                 Promises.collectResults(
                         clients.stream().map((cl) -> runner.query(
                                         cl.getServerConfig(),
                                         new ListChangelistsForClientQuery(cl.getClientname())))
                                 .collect(Collectors.toList())
-                )
-        ).thenAsync((resList) -> Promises.collectResults(queryClientChangelists(runner, resList))
-        ).thenAsync((clDetailList) -> Promises.collectResults(
-                constructOpenRequests(runner, clientMap, clDetailList, knownChangeSummaries))
-        ).then((openRemoteChangelists) -> {
-            changeMap.updateForOpenChanges(openRemoteChangelists.stream());
+                ))
+
+        // And gather up summary data for each of them
+        .thenAsync((resList) -> Promises.collectResults(queryClientChangelists(runner, clients, resList)))
+
+        // And finally send those changelist details to the changelist mapping.
+        .then((clDetailList) -> {
+            changeMap.updateForOpenChanges(fileMap, clDetailList.stream().map(ChangelistDetailResult::getChangelist));
             return null;
         });
 
         return start;
     }
 
-    private List<Promise<P4RemoteChangelist>> constructOpenRequests(
-            @NotNull final P4CommandRunner runner,
-            @NotNull final Map<ClientServerRef, ClientConfig> clientMap,
-            @NotNull final List<ChangelistDetailResult> clDetailList,
-            @NotNull final Promise<List<ChangelistDetailResult>> knownChangeSummaries) {
-        // This is the main complex logic.  This is the key method that pulls down the data for:
-        //   * Change list details:
-        //       * associated client / server
-        //       * owner username
-        //       * description
-        //       * jobs fixed and their fix status
-        //   * List of opened files on each client
-        //       * Associated changelist
-        //       * depot path
-        //       * local file path
-        //       * edit status
-        // We need to carefully construct the P4 server calls that can retrieve the best information
-        // in the fewest / most efficient calls.
-    }
-
     private List<Promise<ChangelistDetailResult>> queryClientChangelists(
             P4CommandRunner runner,
+            Collection<ClientConfig> clients,
             List<ListChangelistsForClientResult> resList) {
+
+        // Unroll these lists of lists into a query to get details for each discovered open changelist.
         List<Promise<ChangelistDetailResult>> ret = new ArrayList<>();
         for (ListChangelistsForClientResult result : resList) {
             for (P4ChangelistSummary p4ChangelistSummary : result.getChangelistSummaryList()) {
@@ -111,6 +129,11 @@ public class ChangelistMapSynchronizer {
                         result.getServerConfig(),
                         new ChangelistDetailQuery(p4ChangelistSummary.getChangelistId())));
             }
+        }
+        // Include the default changelist, too.
+        for (ClientConfig client : clients) {
+            ret.add(runner.query(client, new DefaultChangelistDetailQuery())
+                    .then(DefaultChangelistDetailResult::getChangelistDetailResult));
         }
         return ret;
     }
@@ -136,7 +159,11 @@ public class ChangelistMapSynchronizer {
         for (Map.Entry<ClientConfig, Collection<P4ChangelistId>> entry : sortChangelists(
                 clientMap, changelistIds).entrySet()) {
             for (P4ChangelistId p4id : entry.getValue()) {
-                builder.accept(runner.query(entry.getKey().getServerConfig(), new ChangelistDetailQuery(p4id)));
+                // Cannot query default changelist details; it will never be marked as deleted or submitted,
+                // anyway.
+                if (!p4id.isDefaultChangelist()) {
+                    builder.accept(runner.query(entry.getKey().getServerConfig(), new ChangelistDetailQuery(p4id)));
+                }
             }
         }
         return builder.build();

@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.ui.revision;
+package net.groboclown.p4plugin.ui.revision;
 
 import net.groboclown.idea.p4ic.v2.history.P4FileRevision;
 import org.jetbrains.annotations.Nullable;

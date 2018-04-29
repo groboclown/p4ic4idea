@@ -12,10 +12,8 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.impl.todo;
+package net.groboclown.p4.server.api;
 
-import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
@@ -25,17 +23,16 @@ import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-// TODO move into api module, once the dependency-on-test-classes gets working.
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class MockCommandRunner
         implements P4CommandRunner {
 
-    interface ServerQueryAnswer<R extends ServerResult, Q extends ServerQuery<R>> {
+    public interface ServerQueryAnswer<R extends ServerResult, Q extends ServerQuery<R>> {
         R answer(ServerConfig config, Q query);
     }
-    interface ClientQueryAnswer<R extends ClientResult, Q extends ClientQuery<R>> {
+    public interface ClientQueryAnswer<R extends ClientResult, Q extends ClientQuery<R>> {
         R answer(ClientConfig config, Q query);
     }
 
@@ -62,7 +59,7 @@ public class MockCommandRunner
                 serverQueryResultMap.containsKey(query.getCmd()),
                 "Unexpected query cmd " + query.getCmd()
         );
-        return answerQuery(config, query, serverQueryResultMap.get(query.getCmd()));
+        return Promise.resolve(answerQuery(config, query, serverQueryResultMap.get(query.getCmd())));
     }
 
     @SuppressWarnings("unchecked")
@@ -78,7 +75,7 @@ public class MockCommandRunner
                 clientQueryResultMap.containsKey(query.getCmd()),
                 "Unexpected query cmd " + query.getCmd()
         );
-        return answerQuery(config, query, clientQueryResultMap.get(query.getCmd()));
+        return Promise.resolve(answerQuery(config, query, clientQueryResultMap.get(query.getCmd())));
     }
 
     @SuppressWarnings("unchecked")

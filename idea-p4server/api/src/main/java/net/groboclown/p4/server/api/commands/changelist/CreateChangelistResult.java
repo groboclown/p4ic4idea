@@ -14,5 +14,14 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class CreateChangelistResult {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.ClientConfig;
+import org.jetbrains.annotations.NotNull;
+
+public class CreateChangelistResult implements P4CommandRunner.ClientResult {
+    @NotNull
+    @Override
+    public ClientConfig getClientConfig() {
+        return null;
+    }
 }

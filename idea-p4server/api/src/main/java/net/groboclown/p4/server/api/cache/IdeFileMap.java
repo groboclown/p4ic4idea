@@ -12,10 +12,11 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api;
+package net.groboclown.p4.server.api.cache;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;

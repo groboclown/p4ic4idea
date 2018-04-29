@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.api.util;
 
+import com.intellij.openapi.util.Pair;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
@@ -86,4 +87,14 @@ public class JreSettings {
             OVERRIDES.putAll(overrides);
         }
     }
+
+    @SafeVarargs
+    @TestOnly
+    static void setOverrides(@NotNull Pair<String, String>... pairs) {
+        OVERRIDES.clear();
+        for (Pair<String, String> pair : pairs) {
+            OVERRIDES.put(pair.first, pair.second);
+        }
+    }
+
 }

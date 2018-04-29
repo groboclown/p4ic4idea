@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.todo.project;
+package net.groboclown.p4.server.project;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;

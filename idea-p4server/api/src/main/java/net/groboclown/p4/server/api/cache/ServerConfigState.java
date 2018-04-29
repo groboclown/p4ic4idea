@@ -12,10 +12,12 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.config;
+package net.groboclown.p4.server.api.cache;
 
 import com.intellij.openapi.Disposable;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Wraps the {@link ServerConfig} along with information that can change depending upon
@@ -49,5 +51,6 @@ public interface ServerConfigState extends Disposable {
      * @return true if the server is known to be case sensitive, false if not,
      *      and null if the state is not known.
      */
+    @Nullable
     Boolean isCaseSensitive();
 }

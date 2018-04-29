@@ -14,13 +14,11 @@
 
 package net.groboclown.p4.server.impl.config.part;
 
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.p4.server.impl.config.ConfigProblem;
-import net.groboclown.p4.server.impl.config.P4ServerName;
-import org.jdom.Attribute;
-import org.jdom.Element;
+import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.config.ConfigProblem;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,27 +27,24 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SimpleDataPart implements DataPart {
-    private static final Logger LOG = Logger.getInstance(SimpleDataPart.class);
+@SuppressWarnings("WeakerAccess")
+public class SimpleDataPart implements ConfigPart {
+    private final Map<String, String> properties = new HashMap<>();
+    private final String sourceName;
+    private final VirtualFile vcsRoot;
 
-    static final String TAG_NAME = "simple-data-part";
-    static final ConfigPartFactory<SimpleDataPart> FACTORY = new Factory();
-    private static final String PROPERTY_TAG_NAME = "prop";
-    private static final String KEY_ATTRIBUTE_NAME = "key";
-    private static final String VALUE_ATTRIBUTE_NAME = "value";
-
-    private final Project project;
-    private final Map<String, String> properties = new HashMap<String, String>();
-
-    public SimpleDataPart(@NotNull Project project, @Nullable Map<String, String> properties) {
-        this.project = project;
+    public SimpleDataPart(@Nullable VirtualFile vcsRoot, @NotNull String sourceName,
+            @Nullable Map<String, String> properties) {
+        this.sourceName = sourceName;
+        this.vcsRoot = vcsRoot;
         if (properties != null) {
             this.properties.putAll(properties);
         }
     }
 
-    public SimpleDataPart(@NotNull Project project, @NotNull DataPart part) {
-        this(project, (Map<String, String>) null);
+    // copy constructor
+    public SimpleDataPart(@NotNull ConfigPart part) {
+        this(null, part.getSourceName(), null);
 
         setClientname(part.getClientname());
         setServerName(part.getServerName());
@@ -95,13 +90,6 @@ public class SimpleDataPart implements DataPart {
         return false;
     }
 
-
-    @Nullable
-    @Override
-    public VirtualFile getRootPath() {
-        return project.getBaseDir();
-    }
-
     // Password must be carefully stored.
 
     @Override
@@ -113,6 +101,11 @@ public class SimpleDataPart implements DataPart {
     @Override
     public String getPlaintextPassword() {
         return null;
+    }
+
+    @Override
+    public boolean requiresUserEnteredPassword() {
+        return false;
     }
 
     @Override
@@ -131,6 +124,13 @@ public class SimpleDataPart implements DataPart {
 
     // ----------------------------------------------------------------------
     private static final String PORT_KEY = "port";
+
+    @Nls
+    @NotNull
+    @Override
+    public String getSourceName() {
+        return sourceName;
+    }
 
     @Override
     public boolean hasServerNameSet() {
@@ -350,53 +350,6 @@ public class SimpleDataPart implements DataPart {
 
     // ----------------------------------------------------------------------
 
-    @NotNull
-    @Override
-    public Element marshal() {
-        Element ret = new Element(TAG_NAME);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Marshalling " + properties);
-        }
-        for (Map.Entry<String, String> entry : properties.entrySet()) {
-            Element prop = new Element(PROPERTY_TAG_NAME);
-            prop.setAttribute(KEY_ATTRIBUTE_NAME, entry.getKey());
-            if (entry.getValue() != null) {
-                prop.setAttribute(VALUE_ATTRIBUTE_NAME, entry.getValue());
-            }
-            ret.addContent(prop);
-        }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Final marshal: " + ret);
-        }
-        return ret;
-    }
-
-    private static class Factory extends ConfigPartFactory<SimpleDataPart> {
-        @Override
-        SimpleDataPart create(@NotNull Project project, @NotNull Element element) {
-            Map<String, String> props = new HashMap<String, String>();
-            if (isTag(TAG_NAME, element)) {
-                for (Element child : element.getChildren()) {
-                    if (isTag(PROPERTY_TAG_NAME, child)) {
-                        Attribute key = child.getAttribute(KEY_ATTRIBUTE_NAME);
-                        if (key != null) {
-                            Attribute value = child.getAttribute(VALUE_ATTRIBUTE_NAME);
-                            if (value == null) {
-                                props.put(key.getValue(), null);
-                            } else {
-                                props.put(key.getValue(), value.getValue());
-                            }
-                        }
-                    }
-                }
-            }
-            return new SimpleDataPart(project, props);
-        }
-    }
-
-
-    // ----------------------------------------------------------------------
-
 
     @Nullable
     private String trimmedProperty(@NotNull String key) {
@@ -409,8 +362,8 @@ public class SimpleDataPart implements DataPart {
         String path = trimmedProperty(key);
         if (path != null) {
             ret = new File(path);
-            if (project.getBaseDir() != null) {
-                final String baseDir = project.getBaseDir().getCanonicalPath();
+            if (vcsRoot != null) {
+                final String baseDir = vcsRoot.getCanonicalPath();
                 if (!ret.isAbsolute() && baseDir != null) {
                     ret = new File(new File(baseDir), path);
                 }

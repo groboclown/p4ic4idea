@@ -12,16 +12,13 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.impl.config;
+package net.groboclown.p4.server.impl.cache;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ClientConfigState;
+import net.groboclown.p4.server.api.cache.ClientConfigState;
 import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
-import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import org.jetbrains.annotations.NotNull;
 
 public class ClientConfigStateImpl
@@ -30,6 +27,7 @@ public class ClientConfigStateImpl
     private final ClientConfig config;
     private final ServerConfigStateImpl serverConfigState;
     private boolean loaded = false;
+    private Boolean caseSensitive = null;
     private VirtualFile clientRoot = null;
 
     // must monitor for client config removed.
@@ -40,15 +38,6 @@ public class ClientConfigStateImpl
         this.config = config;
         this.serverConfigState = serverConfigState;
         this.disposed = false;
-
-        /* FIXME need to add this dispose somewhere.
-        MessageBusClient client = MessageBusClient.forProject(serverConfigState.getProject(), this);
-        ClientConfigRemovedMessage.addListener(client, removedConfig -> {
-            if (removedConfig.equals(config)) {
-                dispose();
-            }
-        });
-        */
     }
 
     @Override
@@ -100,6 +89,11 @@ public class ClientConfigStateImpl
     @Override
     public boolean isLoadedFromServer() {
         return loaded;
+    }
+
+    @Override
+    public Boolean isCaseSensitive() {
+        return caseSensitive;
     }
 
     @NotNull

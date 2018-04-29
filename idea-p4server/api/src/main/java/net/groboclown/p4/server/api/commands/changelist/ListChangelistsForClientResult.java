@@ -14,5 +14,38 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class ListChangelistsForClientResult {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.values.P4ChangelistSummary;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+
+public class ListChangelistsForClientResult implements P4CommandRunner.ServerResult {
+    private final ServerConfig config;
+    private final String clientname;
+    private final List<P4ChangelistSummary> changelistSummaryList;
+
+    public ListChangelistsForClientResult(@NotNull ServerConfig config,
+            @NotNull String clientname, @NotNull List<P4ChangelistSummary> changelistSummaryList) {
+        this.config = config;
+        this.clientname = clientname;
+        this.changelistSummaryList = changelistSummaryList;
+    }
+
+    @NotNull
+    @Override
+    public ServerConfig getServerConfig() {
+        return config;
+    }
+
+    @NotNull
+    public List<P4ChangelistSummary> getChangelistSummaryList() {
+        return changelistSummaryList;
+    }
+
+    @NotNull
+    public String getClientname() {
+        return clientname;
+    }
 }

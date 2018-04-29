@@ -14,5 +14,30 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
-public class ListOpenedFilesResult {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.values.P4LocalFile;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+
+public class ListOpenedFilesResult implements P4CommandRunner.ClientResult {
+    private final ClientConfig config;
+    private final List<P4LocalFile> openedFiles;
+
+    public ListOpenedFilesResult(@NotNull ClientConfig config, @NotNull List<P4LocalFile> openedFiles) {
+        this.config = config;
+        this.openedFiles = openedFiles;
+    }
+
+
+    @NotNull
+    @Override
+    public ClientConfig getClientConfig() {
+        return config;
+    }
+
+    public List<P4LocalFile> getOpenedFiles() {
+        return openedFiles;
+    }
 }

@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.values;
 
-public class MockJobStatus {
+import org.jetbrains.annotations.NotNull;
+
+public class MockJobStatus implements JobStatus {
+    private String name;
+
+    public MockJobStatus(String name) {
+        this.name = name;
+    }
+
+    @NotNull
+    @Override
+    public String getName() {
+        return name;
+    }
 }

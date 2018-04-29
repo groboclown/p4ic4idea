@@ -11,14 +11,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.ui.config;
+package net.groboclown.p4plugin.ui.config;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Disposer;
-import net.groboclown.idea.p4ic.config.P4ProjectConfigComponent;
-import net.groboclown.idea.p4ic.config.UserProjectPreferences;
+import net.groboclown.p4plugin.preferences.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -30,7 +28,7 @@ public class P4ConfigurationProjectPanel implements Disposable {
     private static final Logger LOG = Logger.getInstance(P4ConfigurationProjectPanel.class);
 
     private final Project project;
-    private P4SettingsPanel myMainPanel;
+    private UserPreferencesPanel myMainPanel;
     private WrapperPanel wrappedPanel;
     private volatile boolean isInitialized = false;
 
@@ -38,45 +36,44 @@ public class P4ConfigurationProjectPanel implements Disposable {
         this.project = project;
     }
 
-    public synchronized boolean isModified(@NotNull P4ProjectConfigComponent myConfig, @NotNull UserProjectPreferences preferences) {
-        return isInitialized && myMainPanel.isModified(myConfig, preferences);
+    public synchronized boolean isModified(@NotNull UserProjectPreferences preferences) {
+        return isInitialized && myMainPanel.isModified(preferences);
     }
 
-    synchronized void saveSettings(@NotNull P4ProjectConfigComponent config, @NotNull UserProjectPreferences preferences) {
+    synchronized void saveSettings(@NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
             // nothing to do
             return;
         }
-        myMainPanel.saveSettingsToConfig(config, preferences);
+        myMainPanel.saveSettingsToConfig(preferences);
     }
 
-    synchronized void loadSettings(@NotNull P4ProjectConfigComponent config, @NotNull UserProjectPreferences preferences) {
+    synchronized void loadSettings(@NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
-            getPanel(config, preferences);
+            getPanel(preferences);
             return;
         }
 
         LOG.debug("Loading settings into the main panel");
-        myMainPanel.loadSettingsIntoGUI(config, preferences);
+        myMainPanel.loadSettingsIntoGUI(preferences);
     }
 
-    synchronized JPanel getPanel(@NotNull P4ProjectConfigComponent config, @NotNull UserProjectPreferences preferences) {
+    synchronized JPanel getPanel(@NotNull UserProjectPreferences preferences) {
         if (!isInitialized) {
             LOG.debug("Creating settings panel");
-            myMainPanel = new P4SettingsPanel();
-            LOG.debug("Initializing settings panel");
-            myMainPanel.initialize(project);
+            myMainPanel = new UserPreferencesPanel();
             isInitialized = true;
-            wrappedPanel = new WrapperPanel(myMainPanel.getPanel());
+            wrappedPanel = new WrapperPanel(myMainPanel.getRootPanel());
         }
-        loadSettings(config, preferences);
+        loadSettings(preferences);
         return wrappedPanel;
     }
 
     public synchronized void dispose() {
-        if (myMainPanel != null) {
-            Disposer.dispose(myMainPanel);
-        }
+        // TODO is there a dispose to call on this panel?
+        //if (myMainPanel != null) {
+        //    Disposer.dispose(myMainPanel);
+        //}
         myMainPanel = null;
         wrappedPanel = null;
         isInitialized = false;

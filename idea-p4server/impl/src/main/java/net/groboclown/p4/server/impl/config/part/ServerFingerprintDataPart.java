@@ -14,23 +14,22 @@
 
 package net.groboclown.p4.server.impl.config.part;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
-import net.groboclown.p4.server.impl.config.ConfigProblem;
-import org.jdom.Attribute;
-import org.jdom.Element;
+import net.groboclown.p4.server.api.config.ConfigProblem;
+import net.groboclown.p4.server.api.config.part.ConfigPartAdapter;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
 
-public class ServerFingerprintDataPart extends DataPartAdapter {
-    public static final String TAG_NAME = "server-fingerprint-data-part";
-    static final ConfigPartFactory<ServerFingerprintDataPart> FACTORY = new Factory();
-    private static final String FINGERPRINT_ATTRIBUTE_NAME = "fingerprint";
-
+public class ServerFingerprintDataPart extends ConfigPartAdapter {
     private String fingerprint;
+
+    public ServerFingerprintDataPart(@Nls @NotNull String sourceName) {
+        super(sourceName);
+    }
 
     @Override
     public boolean hasServerFingerprintSet() {
@@ -52,32 +51,6 @@ public class ServerFingerprintDataPart extends DataPartAdapter {
         }
         this.fingerprint = value;
         reload();
-    }
-
-    @NotNull
-    @Override
-    public Element marshal() {
-        Element ret = new Element(TAG_NAME);
-        if (getServerFingerprint() != null) {
-            ret.setAttribute(FINGERPRINT_ATTRIBUTE_NAME, getServerFingerprint());
-        }
-        return ret;
-    }
-
-    private static class Factory
-            extends ConfigPartFactory<ServerFingerprintDataPart> {
-
-        @Override
-        ServerFingerprintDataPart create(@NotNull Project project, @NotNull Element element) {
-            ServerFingerprintDataPart ret = new ServerFingerprintDataPart();
-            if (isTag(TAG_NAME, element)) {
-                final Attribute attr = element.getAttribute(FINGERPRINT_ATTRIBUTE_NAME);
-                if (attr != null) {
-                    ret.setServerFingerprint(attr.getValue());
-                }
-            }
-            return ret;
-        }
     }
 
     @Override

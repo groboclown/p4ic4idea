@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
-public class ListFilesQuery {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class ListFilesQuery implements P4CommandRunner.ServerQuery<ListFilesResult> {
+    @NotNull
+    @Override
+    public Class<? extends ListFilesResult> getResultType() {
+        return ListFilesResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ServerQueryCmd getCmd() {
+        return P4CommandRunner.ServerQueryCmd.LIST_FILES;
+    }
 }

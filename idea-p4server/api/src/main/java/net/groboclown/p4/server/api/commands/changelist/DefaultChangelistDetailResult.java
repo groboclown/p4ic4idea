@@ -16,12 +16,27 @@ package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.values.P4RemoteChangelist;
 import org.jetbrains.annotations.NotNull;
 
 public class DefaultChangelistDetailResult implements P4CommandRunner.ClientResult {
+    private final ClientConfig config;
+    private final ChangelistDetailResult changelist;
+
+    public DefaultChangelistDetailResult(ClientConfig config,
+            P4RemoteChangelist changelist) {
+        this.config = config;
+        this.changelist = new ChangelistDetailResult(config.getServerConfig(), changelist);
+    }
+
     @NotNull
     @Override
     public ClientConfig getClientConfig() {
-        return null;
+        return config;
+    }
+
+    @NotNull
+    public ChangelistDetailResult getChangelistDetailResult() {
+        return changelist;
     }
 }

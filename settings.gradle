@@ -1,16 +1,16 @@
 rootProject.name = 'p4ic4idea'
 
 include (
-        'messages',
         'p4d-test-core',
         'p4java',
         'swarm',
         'idea-compat/compat-api',
         'idea-compat/v171',
-        'integration-test',
+        'plugin',
         'idea-test-core',
         'idea-p4server/api',
         'idea-p4server/impl',
         'idea-cache',
-        'plugin'
+        'plugin-v3',
+        'integration-test'
 )

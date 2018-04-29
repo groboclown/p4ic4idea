@@ -11,12 +11,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.extension;
+package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
-import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.ChangeListColumn;
+import com.intellij.openapi.vcs.CommittedChangesProvider;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.RepositoryLocation;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.committed.DecoratorManager;
 import com.intellij.openapi.vcs.changes.committed.VcsCommittedListsZipper;
 import com.intellij.openapi.vcs.changes.committed.VcsCommittedViewAuxiliary;
@@ -29,10 +33,10 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.AsynchConsumer;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.extension.P4CommittedChangesProvider.P4ChangeBrowserSettings;
-import net.groboclown.idea.p4ic.ui.history.ChangelistDescriptionAction;
-import net.groboclown.idea.p4ic.v2.changes.P4CommittedChangeList;
+import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.extension.P4CommittedChangesProvider.P4ChangeBrowserSettings;
+import net.groboclown.p4plugin.ui.history.ChangelistDescriptionAction;
+import net.groboclown.p4plugin.v2.changes.P4CommittedChangeList;
 import net.groboclown.idea.p4ic.v2.history.P4RepositoryLocation;
 import net.groboclown.idea.p4ic.v2.history.P4SimpleRepositoryLocation;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
@@ -111,6 +115,15 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
         return null;
     }
 
+    /**
+     * Called by IDE in a Worker Thread.
+     *
+     * @param settings
+     * @param location
+     * @param maxCount
+     * @return
+     * @throws VcsException
+     */
     @Override
     public List<P4CommittedChangeList> getCommittedChanges(P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount) throws VcsException {
         final List<P4CommittedChangeList> ret = new ArrayList<P4CommittedChangeList>();
@@ -201,6 +214,8 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
     }
 
     /**
+     * Called by IDE in a Worker Thread.
+     *
      * @param file
      * @param number
      * @return required list and path of the target file in that revision (changes when move/rename)

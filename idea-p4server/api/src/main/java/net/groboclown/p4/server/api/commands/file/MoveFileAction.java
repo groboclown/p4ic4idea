@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
-public class MoveFileAction {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class MoveFileAction implements P4CommandRunner.ClientAction<MoveFileResult> {
+    @NotNull
+    @Override
+    public Class<? extends MoveFileResult> getResultType() {
+        return MoveFileResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ClientActionCmd getCmd() {
+        return P4CommandRunner.ClientActionCmd.MOVE_FILE;
+    }
 }

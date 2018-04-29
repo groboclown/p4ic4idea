@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.util;
+package net.groboclown.p4plugin.ui;
 
 import com.intellij.ui.JBColor;
 import org.jetbrains.annotations.Nullable;

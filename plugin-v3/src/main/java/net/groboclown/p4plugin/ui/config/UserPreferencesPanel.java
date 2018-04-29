@@ -12,13 +12,13 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.ui.config;
+package net.groboclown.p4plugin.ui.config;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
-import net.groboclown.idea.p4ic.config.UserProjectPreferences;
+import net.groboclown.p4plugin.preferences.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -161,6 +161,10 @@ public class UserPreferencesPanel {
 
     private void createUIComponents() {
         // place custom component creation code here
+    }
+
+    JPanel getRootPanel() {
+        return myRootPanel;
     }
 
     /**

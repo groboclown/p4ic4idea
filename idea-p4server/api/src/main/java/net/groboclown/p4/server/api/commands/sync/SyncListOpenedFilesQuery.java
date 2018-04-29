@@ -14,5 +14,19 @@
 
 package net.groboclown.p4.server.api.commands.sync;
 
-public class SyncListOpenedFilesQuery {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.commands.file.ListOpenedFilesResult;
+import org.jetbrains.annotations.NotNull;
+
+public class SyncListOpenedFilesQuery implements P4CommandRunner.SyncClientQuery<ListOpenedFilesResult> {
+    @NotNull
+    @Override
+    public Class<? extends ListOpenedFilesResult> getResultType() {
+        return ListOpenedFilesResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.SyncClientQueryCmd getCmd() {
+        return P4CommandRunner.SyncClientQueryCmd.SYNC_LIST_OPENED_FILES;
+    }
 }

@@ -12,10 +12,9 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.v2.actions;
+package net.groboclown.p4plugin.actions;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.VcsBundle;
 import com.intellij.openapi.vcs.actions.VcsContext;
 import com.intellij.openapi.vcs.changes.CommitExecutor;
 import com.intellij.openapi.vcs.changes.actions.AbstractCommitChangesAction;

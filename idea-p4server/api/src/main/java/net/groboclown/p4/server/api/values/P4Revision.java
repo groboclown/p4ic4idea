@@ -14,5 +14,12 @@
 
 package net.groboclown.p4.server.api.values;
 
-public class P4Revision {
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+
+public class P4Revision extends VcsRevisionNumber.Int {
+    public static final P4Revision NOT_ON_SERVER = new P4Revision(-1);
+
+    public P4Revision(int value) {
+        super(value);
+    }
 }

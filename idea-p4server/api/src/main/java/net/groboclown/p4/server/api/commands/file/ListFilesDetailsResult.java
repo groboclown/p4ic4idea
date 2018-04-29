@@ -14,5 +14,14 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
-public class ListFilesDetailsResult {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.ServerConfig;
+import org.jetbrains.annotations.NotNull;
+
+public class ListFilesDetailsResult implements P4CommandRunner.ServerResult {
+    @NotNull
+    @Override
+    public ServerConfig getServerConfig() {
+        return null;
+    }
 }

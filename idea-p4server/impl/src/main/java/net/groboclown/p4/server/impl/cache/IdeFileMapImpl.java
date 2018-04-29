@@ -12,7 +12,45 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.impl;
+package net.groboclown.p4.server.impl.cache;
 
-public class IdeFileMapImpl {
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.p4.server.api.cache.IdeFileMap;
+import net.groboclown.p4.server.api.values.P4LocalFile;
+import net.groboclown.p4.server.api.values.P4RemoteFile;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.stream.Stream;
+
+public class IdeFileMapImpl implements IdeFileMap {
+    @Nullable
+    @Override
+    public P4LocalFile forIdeFile(VirtualFile file) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public P4LocalFile forIdeFile(FilePath file) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public P4LocalFile forDepotPath(P4RemoteFile file) {
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public Stream<P4LocalFile> getLinkedFiles() {
+        return null;
+    }
+
+    @Override
+    public void updateAllLinkedFiles(@NotNull Stream<P4LocalFile> files) {
+
+    }
 }

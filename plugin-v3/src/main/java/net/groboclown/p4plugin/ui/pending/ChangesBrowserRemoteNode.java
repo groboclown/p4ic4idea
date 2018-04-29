@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.ui.pending;
+package net.groboclown.p4plugin.ui.pending;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.util.io.FileUtil;

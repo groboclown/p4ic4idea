@@ -16,13 +16,13 @@ package net.groboclown.p4.server.impl.config.part;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.SystemInfo;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.env.PerforceEnvironment;
-import net.groboclown.idea.p4ic.config.ConfigProblem;
-import net.groboclown.idea.p4ic.config.ConfigPropertiesUtil;
-import net.groboclown.idea.p4ic.config.P4ServerName;
-import net.groboclown.idea.p4ic.config.win.PreferencesWinRegistry;
-import org.jdom.Element;
+import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.config.ConfigProblem;
+import net.groboclown.p4.server.api.config.ConfigPropertiesUtil;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
+import net.groboclown.p4.server.impl.config.win.PreferencesWinRegistry;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +32,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Map;
 
-class WinRegDataPart implements DataPart {
+class WinRegDataPart implements ConfigPart {
     private static final Logger LOG = Logger.getInstance(WinRegDataPart.class);
 
     @NonNls
@@ -80,12 +80,6 @@ class WinRegDataPart implements DataPart {
         reload();
     }
 
-    @NotNull
-    @Override
-    public Element marshal() {
-        throw new IllegalStateException("should not be called");
-    }
-
     @Override
     public boolean reload() {
         try {
@@ -104,7 +98,9 @@ class WinRegDataPart implements DataPart {
             loginSso = readRegString("P4LOGINSSO");
 
             if (LOG.isDebugEnabled()) {
-                Map<String, String> props = ConfigPropertiesUtil.toProperties(this);
+                Map<String, String> props = ConfigPropertiesUtil.toProperties(
+                        this, "<unset>", "<empty password>",
+                        "<password>");
                 props.put(PerforceEnvironment.P4CONFIG, configFile);
                 props.put(PerforceEnvironment.P4ENVIRO, enviroFile);
                 LOG.debug("Loaded windows registry " + keys[0] + " " + props);
@@ -156,10 +152,11 @@ class WinRegDataPart implements DataPart {
         return false;
     }
 
-    @Nullable
+    @Nls
+    @NotNull
     @Override
-    public VirtualFile getRootPath() {
-        return null;
+    public String getSourceName() {
+        return "Windows Registry";
     }
 
     @Override
@@ -204,6 +201,11 @@ class WinRegDataPart implements DataPart {
     @Override
     public String getPlaintextPassword() {
         return password;
+    }
+
+    @Override
+    public boolean requiresUserEnteredPassword() {
+        return false;
     }
 
     @Override

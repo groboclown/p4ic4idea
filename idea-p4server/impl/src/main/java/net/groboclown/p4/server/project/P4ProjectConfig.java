@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.p4.server.todo.project;
+package net.groboclown.p4.server.project;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;

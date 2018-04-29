@@ -14,5 +14,7 @@
 
 package net.groboclown.p4plugin.extension;
 
-public class GetFromP4Action {
+import com.intellij.openapi.wm.impl.welcomeScreen.GetFromVcsAction;
+
+public class GetFromP4Action extends GetFromVcsAction {
 }

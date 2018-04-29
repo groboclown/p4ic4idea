@@ -3,8 +3,7 @@
 The big idea to keep in mind with connection management is that
 the server layer will, by necessity, need to maintain a cache of pending commands.
 Also, a user can potentially have multiple projects open that work with the
-same workspace.  That means that all caches, and potentially all server connections,
-need to be application-wide.
+same workspace.  However, [cache data must be owned by the project](cache.md).
 
 
 ## Configuration
@@ -41,6 +40,14 @@ to generate messages that distinguish between when a project is closed and it no
 needs to keep its connections in memory, and when the user removes or changes
 connection settings.
 
+
+## Cached State Sharing
+
+Because we need to maintain the state of the Perforce connections (cache, config, etc) at
+the project level, and we want to maintain cache cohesion between projects, the cache
+updates must be shared between projects via an application-wide message bus.
+
+(TODO describe better)
 
 
 ## The Old Way

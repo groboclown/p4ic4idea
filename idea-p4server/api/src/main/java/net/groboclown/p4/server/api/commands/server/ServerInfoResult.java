@@ -14,5 +14,14 @@
 
 package net.groboclown.p4.server.api.commands.server;
 
-public class ServerInfoResult {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.P4ServerName;
+import org.jetbrains.annotations.NotNull;
+
+public class ServerInfoResult implements P4CommandRunner.ServerNameResult {
+    @NotNull
+    @Override
+    public P4ServerName getServerName() {
+        return null;
+    }
 }

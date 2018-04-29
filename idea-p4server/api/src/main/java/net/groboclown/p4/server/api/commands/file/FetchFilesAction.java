@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
-public class FetchFilesAction {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class FetchFilesAction implements P4CommandRunner.ClientAction<FetchFilesResult> {
+    @NotNull
+    @Override
+    public Class<? extends FetchFilesResult> getResultType() {
+        return FetchFilesResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ClientActionCmd getCmd() {
+        return P4CommandRunner.ClientActionCmd.FETCH_FILES;
+    }
 }

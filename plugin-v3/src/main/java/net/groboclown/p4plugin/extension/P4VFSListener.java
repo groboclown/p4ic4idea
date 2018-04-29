@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.idea.p4ic.v2.file;
+package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
@@ -20,8 +20,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileEvent;
 import com.intellij.vcsUtil.VcsFileUtil;
 import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
 import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
 import net.groboclown.idea.p4ic.v2.changes.P4ChangeListMapping;
 import net.groboclown.idea.p4ic.v2.server.P4Server;
@@ -31,33 +29,25 @@ import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
 public class P4VFSListener extends VcsVFSListener {
     private static final Logger LOG = Logger.getInstance(VcsVFSListener.class);
 
     private final P4Vcs vcs;
-    private final AlertManager alerts;
     private final P4ChangeListMapping changeListMapping;
 
-    /**
-     * Synchronizes on VFS operations; IDEA can send requests to open for edit and move,
-     * or open for edit and delete at nearly the same time.  If these are allowed to
-     * collide, then the incorrect actions can happen.  By making all these basic
-     * actions be synchronized, we guarantee the right operation, but at a slight
-     * cost to time.
-     *
-     * This should be shared with {@link P4EditFileProvider} and {@link P4RollbackEnvironment}.
-     */
-    private final Lock vfsLock;
-
-    P4VFSListener(@NotNull P4Vcs vcs, @NotNull AlertManager alerts, @NotNull Lock vfsLock) {
+    P4VFSListener(@NotNull P4Vcs vcs) {
         super(vcs.getProject(), vcs);
         this.vcs = vcs;
-        this.alerts = alerts;
-        this.vfsLock = vfsLock;
         this.changeListMapping = P4ChangeListMapping.getInstance(vcs.getProject());
     }
 
@@ -176,7 +166,7 @@ public class P4VFSListener extends VcsVFSListener {
         // they should all be interrupted.
 
         try {
-            for (Map.Entry<P4Server, List<VirtualFile>> entry : vcs.mapVirtualFilesToP4Server(addedFiles).entrySet()) {
+            for (Entry<P4Server, List<VirtualFile>> entry : vcs.mapVirtualFilesToP4Server(addedFiles).entrySet()) {
                 final P4Server server = entry.getKey();
                 if (server == null) {
                     // outside of VCS.  Ignore.
@@ -311,7 +301,7 @@ public class P4VFSListener extends VcsVFSListener {
         // slow, tedious method, but precise
         Map<P4Server, List<SplitServerFileEntry>> match = new HashMap<P4Server, List<SplitServerFileEntry>>();
         List<SplitServerFileEntry> cross = new ArrayList<SplitServerFileEntry>();
-        for (Map.Entry<T, T> en : map.entrySet()) {
+        for (Entry<T, T> en : map.entrySet()) {
             P4Server src = getServerFor(en.getKey());
             P4Server tgt = getServerFor(en.getValue());
             SplitServerFileEntry entry = new SplitServerFileEntry(src, en.getKey(), tgt, en.getValue());

@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.ui;
+package net.groboclown.p4plugin.ui;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.ui.VerticalFlowLayout;
@@ -44,7 +44,7 @@ public class ComponentListPanel<T extends ComponentListPanel.WithRootPanel> exte
         @NotNull
         JPanel getRootPanel();
     }
-    public interface ChildListChanged<C extends ComponentListPanel.WithRootPanel> {
+    public interface ChildListChanged<C extends WithRootPanel> {
         void onChildListChanged(Collection<C> childList);
     }
 

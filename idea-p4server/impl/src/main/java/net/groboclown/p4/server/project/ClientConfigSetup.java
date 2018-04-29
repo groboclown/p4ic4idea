@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.todo.project;
+package net.groboclown.p4.server.project;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.config.ClientConfig;

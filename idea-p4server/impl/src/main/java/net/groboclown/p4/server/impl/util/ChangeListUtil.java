@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.impl.util;
 
+import com.intellij.openapi.vcs.VcsBundle;
+import com.intellij.openapi.vcs.changes.ChangeList;
+import org.jetbrains.annotations.Nullable;
+
 public class ChangeListUtil {
+    private static final String DEFAULT_CHANGE_NAME = VcsBundle.message("changes.default.changelist.name");
+
+    public static boolean isDefaultChangelist(@Nullable ChangeList idea) {
+        return (idea != null && isIdeaDefaultChangelistName(idea.getName()));
+    }
+
+    static boolean isIdeaDefaultChangelistName(@Nullable String name) {
+        return DEFAULT_CHANGE_NAME.equals(name);
+    }
 }

@@ -14,18 +14,15 @@
 
 package net.groboclown.p4.server.impl;
 
-import com.intellij.openapi.Disposable;
-import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import net.groboclown.p4.server.api.AbstractProjectConfigRegistry;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ClientConfigState;
+import net.groboclown.p4.server.api.cache.ClientConfigState;
 import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.api.config.ServerConfigState;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
-import net.groboclown.p4.server.api.messagebus.ClientConfigConnectionFailedMessage;
+import net.groboclown.p4.server.api.cache.messagebus.ClientConfigConnectionFailedMessage;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.impl.cache.ServerConfigStateImpl;
@@ -43,10 +40,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * also inform the application server connection registry about the configurations, so that
  * the correct counters can be preserved.
  */
-public class ProjectConfigRegistry extends AbstractProjectConfigRegistry {
-    public static final String COMPONENT_NAME = ProjectConfigRegistry.class.getName();
+public class ProjectConfigRegistryImpl
+       extends ProjectConfigRegistry {
+    public static final String COMPONENT_NAME = ProjectConfigRegistryImpl.class.getName();
 
-    private static final Logger LOG = Logger.getInstance(ProjectConfigRegistry.class);
+    private static final Logger LOG = Logger.getInstance(ProjectConfigRegistryImpl.class);
 
     private final Project project;
     private final Map<ClientServerRef, ClientConfigState> registeredConfigs = new HashMap<>();
@@ -60,7 +58,7 @@ public class ProjectConfigRegistry extends AbstractProjectConfigRegistry {
     private boolean disposed = false;
 
 
-    public ProjectConfigRegistry(Project project) {
+    public ProjectConfigRegistryImpl(Project project) {
         this.project = project;
 
         MessageBusClient mbClient = MessageBusClient.forProject(project, this);
@@ -99,6 +97,13 @@ public class ProjectConfigRegistry extends AbstractProjectConfigRegistry {
             return null;
         }
         return state.getClientConfig();
+    }
+
+    @Nullable
+    @Override
+    public ClientConfigState getRegisteredClientConfigState(@NotNull ClientServerRef ref) {
+        // FIXME
+        return null;
     }
 
     /**

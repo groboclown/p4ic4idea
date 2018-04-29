@@ -15,11 +15,8 @@
 package net.groboclown.p4.server.impl.config.part;
 
 import com.intellij.openapi.util.text.StringUtil;
-import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ConfigProblem;
 import net.groboclown.p4.server.api.config.part.ConfigPartAdapter;
-import net.groboclown.p4.server.connection.ConnectionUIConfiguration;
-import net.groboclown.p4.server.connection.ServerConnectionManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,7 +24,6 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * A data part dedicated to selecting the client name.  It's separate
@@ -40,7 +36,7 @@ public class ClientNameConfigPart
     private String clientName;
     private final transient List<ConfigProblem> additionalProblems = new ArrayList<ConfigProblem>();
 
-    public ClientNameConfigPart() {
+    public ClientNameConfigPart(@NotNull String sourceName) {
         super(sourceName);
     }
 
@@ -80,19 +76,6 @@ public class ClientNameConfigPart
         }
     }
 
-
-
-    public static Map<ClientConfig, ConnectionUIConfiguration.ClientResult> loadClientNames(@NotNull Collection<ClientConfig> config) {
-        return loadClientNames(ServerConnectionManager.getInstance(), config);
-    }
-
-
-    @NotNull
-    private static Map<ClientConfig, ConnectionUIConfiguration.ClientResult> loadClientNames(
-            @NotNull ServerConnectionManager connectionManager,
-            @NotNull Collection<ClientConfig> clientConfigs) {
-        return ConnectionUIConfiguration.getClients(clientConfigs, connectionManager);
-    }
 
     public void addAdditionalProblem(@NotNull ConfigProblem problem) {
         additionalProblems.add(problem);

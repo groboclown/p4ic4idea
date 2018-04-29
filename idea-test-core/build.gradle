@@ -19,6 +19,7 @@ ideaImplementation.uses(
         'util-rt',
         'testFramework',
         'extensions',
+        'projectModel-api',
 
         'jdom',
         'picocontainer',

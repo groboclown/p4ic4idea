@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.user;
 
-public class ListUsersQuery {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class ListUsersQuery implements P4CommandRunner.ServerQuery<ListUsersResult> {
+    @NotNull
+    @Override
+    public Class<? extends ListUsersResult> getResultType() {
+        return ListUsersResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ServerQueryCmd getCmd() {
+        return P4CommandRunner.ServerQueryCmd.LIST_USERS;
+    }
 }

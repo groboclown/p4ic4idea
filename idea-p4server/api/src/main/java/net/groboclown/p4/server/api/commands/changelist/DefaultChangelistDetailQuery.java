@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class DefaultChangelistDetailQuery {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class DefaultChangelistDetailQuery implements P4CommandRunner.ClientQuery<DefaultChangelistDetailResult> {
+    @NotNull
+    @Override
+    public Class<? extends DefaultChangelistDetailResult> getResultType() {
+        return DefaultChangelistDetailResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ClientQueryCmd getCmd() {
+        return P4CommandRunner.ClientQueryCmd.DEFAULT_CHANGELIST_DETAIL;
+    }
 }

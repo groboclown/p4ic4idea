@@ -14,5 +14,23 @@
 
 package net.groboclown.p4.server.api.values;
 
-public class P4FileAction {
+/**
+ * @see com.perforce.p4java.core.file.FileAction
+ */
+public enum P4FileAction {
+    ADD,
+    ADD_EDIT,
+    BRANCH,
+    EDIT,
+    INTEGRATE,
+    DELETE,
+
+    // pseudo-actions for internal use
+    REVERTED,
+    EDIT_RESOLVED,
+
+    UNKNOWN,
+
+    /** not marked as modified */
+    NONE
 }

@@ -14,5 +14,36 @@
 
 package net.groboclown.p4.server.api.util;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
 public class StreamUtil {
+    public static <K,V> Map<K,V> asMap(Collection<K> s, Function<K, ? extends V> f) {
+        Map<K,V> ret = new HashMap<>();
+        s.forEach((k) -> ret.put(k, f.apply(k)));
+        return ret;
+    }
+
+
+    public static <K,V> Map<K,V> asMap(Stream<K> s, Function<K, ? extends V> f) {
+        Map<K,V> ret = new HashMap<>();
+        s.forEach((k) -> ret.put(k, f.apply(k)));
+        return ret;
+    }
+
+    public static <K,V> Map<K,V> asReversedMap(Collection<V> s, Function<V, ? extends K> f) {
+        Map<K,V> ret = new HashMap<>();
+        s.forEach((k) -> ret.put(f.apply(k), k));
+        return ret;
+    }
+
+
+    public static <K,V> Map<K,V> asReversedMap(Stream<V> s, Function<V, ? extends K> f) {
+        Map<K,V> ret = new HashMap<>();
+        s.forEach((k) -> ret.put(f.apply(k), k));
+        return ret;
+    }
 }

@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class EditChangelistAction {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class EditChangelistAction implements P4CommandRunner.ClientAction<EditChangelistResult> {
+    @NotNull
+    @Override
+    public Class<? extends EditChangelistResult> getResultType() {
+        return EditChangelistResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ClientActionCmd getCmd() {
+        return P4CommandRunner.ClientActionCmd.EDIT_CHANGELIST_DESCRIPTION;
+    }
 }

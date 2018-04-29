@@ -14,5 +14,7 @@
 
 package net.groboclown.p4plugin.extension;
 
-public class P4IntegrateEnvironment {
+import com.intellij.openapi.vcs.update.UpdateEnvironment;
+
+public class P4IntegrateEnvironment extends UpdateEnvironment {
 }

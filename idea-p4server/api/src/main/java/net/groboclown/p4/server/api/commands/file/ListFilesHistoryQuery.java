@@ -17,15 +17,16 @@ package net.groboclown.p4.server.api.commands.file;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 
-public class FileHistoryQuery implements P4CommandRunner.ServerQuery<FileHistoryResult> {
+public class ListFilesHistoryQuery
+        implements P4CommandRunner.ServerQuery<ListFilesHistoryResult> {
     @NotNull
     @Override
-    public Class<? extends FileHistoryResult> getResultType() {
-        return null;
+    public Class<? extends ListFilesHistoryResult> getResultType() {
+        return ListFilesHistoryResult.class;
     }
 
     @Override
     public P4CommandRunner.ServerQueryCmd getCmd() {
-        return P4CommandRunner.ServerQueryCmd.FILE_HISTORY;
+        return P4CommandRunner.ServerQueryCmd.LIST_FILES_HISTORY;
     }
 }

@@ -14,5 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
-public class ListDirectoriesQuery {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
+
+public class ListDirectoriesQuery implements P4CommandRunner.ServerQuery<ListDirectoriesResult> {
+    @NotNull
+    @Override
+    public Class<? extends ListDirectoriesResult> getResultType() {
+        return ListDirectoriesResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.ServerQueryCmd getCmd() {
+        return P4CommandRunner.ServerQueryCmd.LIST_DIRECTORIES;
+    }
 }

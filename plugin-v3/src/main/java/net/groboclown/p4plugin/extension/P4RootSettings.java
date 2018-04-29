@@ -14,5 +14,25 @@
 
 package net.groboclown.p4plugin.extension;
 
-public class P4RootSetting {
+import com.intellij.openapi.util.InvalidDataException;
+import com.intellij.openapi.util.WriteExternalException;
+import com.intellij.openapi.vcs.VcsRootSettings;
+import org.jdom.Element;
+
+/**
+ * This must contain the ConfigPart list for a single VCS root.
+ */
+public class P4RootSettings
+        implements VcsRootSettings {
+    @Override
+    public void readExternal(Element element)
+            throws InvalidDataException {
+
+    }
+
+    @Override
+    public void writeExternal(Element element)
+            throws WriteExternalException {
+
+    }
 }

@@ -14,5 +14,14 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-public class ListChangelistsFixedByJobResult {
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.ServerConfig;
+import org.jetbrains.annotations.NotNull;
+
+public class ListChangelistsFixedByJobResult implements P4CommandRunner.ServerResult {
+    @NotNull
+    @Override
+    public ServerConfig getServerConfig() {
+        return null;
+    }
 }

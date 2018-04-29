@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.idea.p4ic.ui.pending;
+package net.groboclown.p4plugin.ui.pending;
 
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.idea.p4ic.v2.server.cache.state.P4JobState;

@@ -12,4 +12,9 @@
  * limitations under the License.
  */
 
+/**
+ * All messages used for cache updates.  All these messages must be application-wide, to ensure that
+ * the potential for multiple open projects sharing the same server and client can reuse single
+ * server requests and responses.
+ */
 package net.groboclown.p4.server.api.cache.messagebus;

@@ -35,9 +35,6 @@ public class VFFilePath
     private final VirtualFile vf;
 
     public VFFilePath(@NotNull final VirtualFile vf) {
-        if (! vf.isInLocalFileSystem()) {
-            throw new IllegalArgumentException("not local");
-        }
         this.vf = vf;
     }
 

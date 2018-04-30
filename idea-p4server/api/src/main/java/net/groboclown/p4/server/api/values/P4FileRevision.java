@@ -16,8 +16,8 @@ package net.groboclown.p4.server.api.values;
 
 import com.intellij.openapi.vcs.versionBrowser.VcsRevisionNumberAware;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 
 /**

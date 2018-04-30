@@ -35,7 +35,7 @@ public abstract class ApplicationMessage<L> {
         return true;
     }
 
-    protected static <L> void addListener(@NotNull MessageBusClient client, @NotNull Topic<L> topic, @NotNull L listener) {
+    protected static <L> void addTopicListener(@NotNull MessageBusClient client, @NotNull Topic<L> topic, @NotNull L listener) {
         assert client.isApplicationBus();
         client.add(topic, listener);
     }

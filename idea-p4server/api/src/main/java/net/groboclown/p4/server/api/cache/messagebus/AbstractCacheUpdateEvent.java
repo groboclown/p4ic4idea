@@ -14,21 +14,34 @@
 
 package net.groboclown.p4.server.api.cache.messagebus;
 
+import com.intellij.util.messages.MessageBus;
+import com.intellij.util.messages.Topic;
+import net.groboclown.p4.server.api.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-public class AbstractCacheUpdateEvent<E extends AbstractCacheUpdateEvent> {
+public class AbstractCacheUpdateEvent<E extends AbstractCacheUpdateEvent<E>> {
+    private final ClientServerRef ref;
     private final Set<String> visitedCacheIds = new HashSet<>();
     private final Date created = new Date();
 
-    public interface Visitor<E extends AbstractCacheUpdateEvent> {
+    /**
+     * Used by messages to receive events posted to the message bus.
+     *
+     * @param <E> event type
+     */
+    public interface Visitor<E extends AbstractCacheUpdateEvent<E>> {
         void visit(@NotNull E event);
     }
 
-    public void visit(@NotNull String cacheId, @NotNull Visitor<E> visitor) {
+    protected AbstractCacheUpdateEvent(@NotNull ClientServerRef ref) {
+        this.ref = ref;
+    }
+
+    void visit(@NotNull String cacheId, @NotNull Visitor<E> visitor) {
         boolean run;
         synchronized (visitedCacheIds) {
             run = !visitedCacheIds.contains(cacheId);
@@ -45,5 +58,10 @@ public class AbstractCacheUpdateEvent<E extends AbstractCacheUpdateEvent> {
     @NotNull
     public Date getCreated() {
         return created;
+    }
+
+    @NotNull
+    public ClientServerRef getRef() {
+        return ref;
     }
 }

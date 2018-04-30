@@ -18,18 +18,20 @@ import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
 
 /**
  * A local filesystem file, used for representing its state as the
  * server knows it, or as we want the sever to know it.
  */
+@Immutable
 public interface P4LocalFile {
     /**
      *
      * @return null if the file isn't in the depot.
      */
     @Nullable
-    String getDepotPath();
+    P4RemoteFile getDepotPath();
 
     // Can't be null, because this is a local file.  However, it can be non-existent if locally deleted.
     @NotNull
@@ -37,9 +39,9 @@ public interface P4LocalFile {
 
     /**
      *
-     * @return null if the file does not exist on the server.
+     * @return {@link P4Revision#NOT_ON_SERVER} if the file does not exist on the server.
      */
-    @Nullable
+    @NotNull
     P4Revision getHaveRevision();
 
     /**

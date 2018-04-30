@@ -15,7 +15,6 @@
 package net.groboclown.p4.server.api.cache.messagebus;
 
 import com.intellij.util.messages.Topic;
-import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ApplicationMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
@@ -55,6 +54,6 @@ public class ServerConnectedMessage
     }
 
     public static void addListener(@NotNull MessageBusClient client, @NotNull Listener listener) {
-        addListener(client, TOPIC, listener);
+        addTopicListener(client, TOPIC, listener);
     }
 }

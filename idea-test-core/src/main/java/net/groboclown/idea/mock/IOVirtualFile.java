@@ -33,9 +33,16 @@ public class IOVirtualFile
         extends VirtualFile {
     private static final VirtualFile[] EMPTY = new VirtualFile[0];
     private final File f;
+    private final boolean isDirectory;
 
     public IOVirtualFile(@NotNull File f) {
         this.f = f;
+        isDirectory = f.isDirectory();
+    }
+
+    public IOVirtualFile(@NotNull File f, boolean isDirectory) {
+        this.f = f;
+        this.isDirectory = isDirectory;
     }
 
     @NotNull
@@ -63,7 +70,7 @@ public class IOVirtualFile
 
     @Override
     public boolean isDirectory() {
-        return f.isDirectory();
+        return isDirectory;
     }
 
     @Override

@@ -125,6 +125,9 @@ public class VFFilePath
     @Nullable
     @Override
     public FilePath getParentPath() {
+        if (vf.getParent() == null) {
+            return null;
+        }
         return new VFFilePath(vf.getParent());
     }
 
@@ -140,6 +143,12 @@ public class VFFilePath
 
     @Override
     public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (obj == this) {
+            return true;
+        }
         return obj instanceof FilePath && vf.equals(((FilePath) obj).getVirtualFile());
     }
 }

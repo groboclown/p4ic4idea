@@ -21,6 +21,9 @@ ideaImplementation.uses(
         'extensions',
         'projectModel-api',
 
+        // for the VcsContextFactory
+        'editor-ui-api',
+
         'jdom',
         'picocontainer',
         'trove4j',

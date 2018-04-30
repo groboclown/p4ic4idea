@@ -14,8 +14,6 @@
 
 package net.groboclown.p4.server.api.cache.messagebus;
 
-import com.intellij.util.messages.MessageBus;
-import com.intellij.util.messages.Topic;
 import net.groboclown.p4.server.api.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,6 +39,7 @@ public class AbstractCacheUpdateEvent<E extends AbstractCacheUpdateEvent<E>> {
         this.ref = ref;
     }
 
+    @SuppressWarnings("unchecked")
     void visit(@NotNull String cacheId, @NotNull Visitor<E> visitor) {
         boolean run;
         synchronized (visitedCacheIds) {
@@ -50,7 +49,6 @@ public class AbstractCacheUpdateEvent<E extends AbstractCacheUpdateEvent<E>> {
             }
         }
         if (run) {
-            //noinspection unchecked
             visitor.visit((E) this);
         }
     }

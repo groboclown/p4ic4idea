@@ -22,9 +22,11 @@ import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.fileTypes.FileTypeRegistry;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.pico.DefaultPicoContainer;
 import net.groboclown.idea.mock.MockPasswordSafe;
+import net.groboclown.idea.mock.MockVcsContextFactory;
 import net.groboclown.idea.mock.SingleThreadedMessageBus;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -119,6 +121,7 @@ public class IdeaLightweightExtension
 
         // Service setup.  See ServiceManager
         pico.registerComponent(service(PasswordSafe.class, new MockPasswordSafe()));
+        pico.registerComponent(service(VcsContextFactory.class, new MockVcsContextFactory()));
     }
 
     private void initializeProject(Project project) {

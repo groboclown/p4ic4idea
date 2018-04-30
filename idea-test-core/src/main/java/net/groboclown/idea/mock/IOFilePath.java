@@ -29,10 +29,18 @@ public class IOFilePath
         implements FilePath {
     private final File f;
     private final VirtualFile vf;
+    private final boolean isDirectory;
 
     public IOFilePath(final File f) {
         this.f = f;
         this.vf = new IOVirtualFile(f);
+        this.isDirectory = f.isDirectory();
+    }
+
+    public IOFilePath(final File f, boolean isDirectory) {
+        this.f = f;
+        this.vf = new IOVirtualFile(f);
+        this.isDirectory = isDirectory;
     }
 
     @Nullable
@@ -110,7 +118,7 @@ public class IOFilePath
 
     @Override
     public boolean isDirectory() {
-        return vf.isDirectory();
+        return isDirectory;
     }
 
     @Override

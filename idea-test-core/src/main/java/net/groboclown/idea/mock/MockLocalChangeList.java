@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.ide;
+package net.groboclown.idea.mock;
 
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.LocalChangeList;

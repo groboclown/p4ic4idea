@@ -14,6 +14,7 @@
 
 package net.groboclown.idea.mock;
 
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileSystem;
 import org.jetbrains.annotations.NotNull;

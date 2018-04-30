@@ -28,11 +28,14 @@ import net.groboclown.p4.server.impl.cache.ServerConfigStateImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -133,6 +136,16 @@ public class ProjectConfigRegistryImpl
         for (ClientConfigState clientConfig : configs) {
             sendClientRemoved(clientConfig);
         }
+    }
+
+    @Nonnull
+    @Override
+    protected Collection<ClientConfigState> getRegisteredStates() {
+        List<ClientConfigState> clients;
+        synchronized (registeredClients) {
+            clients = new ArrayList<>(registeredClients.values());
+        }
+        return clients.stream().filter((ccs) -> !ccs.isDisposed()).collect(Collectors.toList());
     }
 
     @Override

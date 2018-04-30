@@ -18,7 +18,9 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.cache.messagebus.ClientConfigConnectionFailedMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.config.ClientConfig;
@@ -29,8 +31,11 @@ import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
+import net.groboclown.p4.server.api.util.FileTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Collection;
 
 /**
  * Stores the registered configurations for a specific project.  The registry must
@@ -58,6 +63,51 @@ public abstract class ProjectConfigRegistry
         this.project = project;
         this.projectBusClient = MessageBusClient.forProject(project, this);
         this.applicationBusClient = MessageBusClient.forApplication(this);
+    }
+
+
+    /**
+     * Find the client that is closest to the {@literal file}.  If multiple clients
+     * are in the same tree, then the client that is deepest is returned.
+     *
+     * @param file the file
+     * @return the client that is the best match for the {@literal file}.
+     */
+    @Nullable
+    public ClientConfigState getClientFor(@Nullable VirtualFile file) {
+        if (file == null) {
+            return null;
+        }
+        int closestDepth = -1;
+        ClientConfigState closest = null;
+        for (ClientConfigState clientConfigState : getRegisteredStates()) {
+            int depth = FileTreeUtil.getPathDepth(file, clientConfigState.getClientRootDir());
+            if (depth > 0 && (closestDepth < 0 || depth < closestDepth)) {
+                closestDepth = depth;
+                closest = clientConfigState;
+            }
+        }
+
+        return closest;
+    }
+
+
+    @Nullable
+    public ClientConfigState getClientFor(@Nullable FilePath file) {
+        if (file == null) {
+            return null;
+        }
+        int closestDepth = -1;
+        ClientConfigState closest = null;
+        for (ClientConfigState clientConfigState : getRegisteredStates()) {
+            int depth = FileTreeUtil.getPathDepth(file, clientConfigState.getClientRootDir());
+            if (depth > 0 && (closestDepth < 0 || depth < closestDepth)) {
+                closestDepth = depth;
+                closest = clientConfigState;
+            }
+        }
+
+        return closest;
     }
 
 
@@ -176,6 +226,9 @@ public abstract class ProjectConfigRegistry
             ClientConfigAddedMessage.reportClientConfigAdded(getProject(), state.getClientConfig());
         }
     }
+
+    @NotNull
+    protected abstract Collection<ClientConfigState> getRegisteredStates();
 
     protected abstract void onLoginError(@NotNull ClientConfig config);
 

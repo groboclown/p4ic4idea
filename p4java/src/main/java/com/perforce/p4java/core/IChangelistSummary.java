@@ -86,7 +86,7 @@ public interface IChangelistSummary {
 	 * 
 	 * @return IChangelistStatus status, or null if not known.
 	 */
-	
+
 	ChangelistStatus getStatus();
 	
 	/**

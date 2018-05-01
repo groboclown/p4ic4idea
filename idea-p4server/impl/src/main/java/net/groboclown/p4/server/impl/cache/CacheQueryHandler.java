@@ -12,29 +12,20 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.commands.changelist;
+package net.groboclown.p4.server.impl.cache;
 
-import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.api.values.P4Job;
+import net.groboclown.p4.server.api.values.P4ChangelistSummary;
+import net.groboclown.p4.server.api.values.P4LocalFile;
 import org.jetbrains.annotations.NotNull;
 
-public class CreateJobResult implements P4CommandRunner.ServerResult {
-    private final ServerConfig config;
-    private final P4Job job;
+import java.util.List;
 
-    public CreateJobResult(@NotNull ServerConfig config, @NotNull P4Job job) {
-        this.config = config;
-        this.job = job;
-    }
+public interface CacheQueryHandler {
+    @NotNull
+    List<P4LocalFile> getCachedOpenFiles(ClientConfig config);
 
     @NotNull
-    @Override
-    public ServerConfig getServerConfig() {
-        return config;
-    }
-
-    public P4Job getJob() {
-        return job;
-    }
+    List<P4ChangelistSummary> getCachedChangelistsForClient(ServerConfig config, String clientname);
 }

@@ -43,7 +43,8 @@ dependencies {
     )
     compatTest(
             project(':idea-test-core'),
-            project(':idea-p4server/api').sourceSets.test.output
+            project(':idea-p4server/api').sourceSets.test.output,
+            project(':p4d-test-core')
     )
 }
 

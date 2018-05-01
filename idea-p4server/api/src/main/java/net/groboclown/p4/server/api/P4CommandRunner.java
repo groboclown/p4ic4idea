@@ -103,6 +103,11 @@ public interface P4CommandRunner {
             this.error = error;
         }
 
+        public ServerResultException(ResultError error, Throwable cause) {
+            super(cause);
+            this.error = error;
+        }
+
         /**
          * Error that prevented this operation from completing normally.
          *
@@ -396,6 +401,12 @@ public interface P4CommandRunner {
          * @see net.groboclown.p4.server.api.commands.changelist.ChangelistDetailResult
          */
         CHANGELIST_DETAIL,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.GetJobSpecQuery
+         * @see net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult
+         */
+        GET_JOB_SPEC,
     }
 
 
@@ -428,7 +439,6 @@ public interface P4CommandRunner {
     enum SyncServerQueryCmd implements ServerCmd {
         /* Add items only when absolutely necessary.
         SYNC_LIST_CLIENTS_FOR_USER,
-        SYNC_LIST_CHANGELISTS_FOR_CLIENT,
         SYNC_LIST_FILES,
         SYNC_LIST_DIRECTORIES,
         SYNC_STAT_FILES,
@@ -436,6 +446,12 @@ public interface P4CommandRunner {
         SYNC_FILE_CHANGE_HISTORY,
         SYNC_LIST_SUBMITTED_CHANGELISTS,
         */
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.sync.SyncListChangelistsForClientQuery
+         * @see net.groboclown.p4.server.api.commands.changelist.ListChangelistsForClientResult
+         */
+        SYNC_LIST_CHANGELISTS_FOR_CLIENT,
     }
 
     enum SyncClientQueryCmd implements ClientCmd {

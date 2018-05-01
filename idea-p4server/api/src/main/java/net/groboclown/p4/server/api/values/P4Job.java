@@ -20,14 +20,26 @@ import org.jetbrains.annotations.Nullable;
 import javax.annotation.concurrent.Immutable;
 import java.util.Map;
 
+/**
+ * An immutable view of a Perforce Job.  The details might contain additional
+ * whitespace that the user did not originally include when creating the job.
+ * To display to the end user, the {@link P4JobSpec} should be used.
+ *
+ * @see P4Job
+ */
 @Immutable
 public interface P4Job {
     @NotNull
     String getJobId();
 
     @NotNull
-    Map<String, String> getDetails();
+    Map<String, Object> getRawDetails();
 
+    /**
+     *
+     * @return the description as stored on the server.  It might have extra whitespace
+     *      that the user did not intentionally add.
+     */
     @Nullable
     String getDescription();
 }

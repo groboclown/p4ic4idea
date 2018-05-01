@@ -15,9 +15,19 @@
 package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.values.P4Job;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class CreateJobAction implements P4CommandRunner.ServerAction<CreateJobResult> {
+    private final P4Job job;
+
+    public CreateJobAction(@NotNull P4Job job) {
+        this.job = job;
+    }
+
     @NotNull
     @Override
     public Class<? extends CreateJobResult> getResultType() {
@@ -27,5 +37,20 @@ public class CreateJobAction implements P4CommandRunner.ServerAction<CreateJobRe
     @Override
     public P4CommandRunner.ServerActionCmd getCmd() {
         return P4CommandRunner.ServerActionCmd.CREATE_JOB;
+    }
+
+    /**
+     *
+     * @return the underlying fields for the job.
+     * @see com.perforce.p4java.impl.generic.core.Job
+     */
+    @NotNull
+    public Map<String,Object> getFields() {
+        Map<String, Object> ret = new HashMap<>(job.getRawDetails());
+
+        ret.put("Job", job.getJobId());
+        ret.put("Description", job.getDescription());
+
+        return ret;
     }
 }

@@ -20,7 +20,6 @@ import org.junit.runners.model.Statement;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.File;
 import java.io.IOException;
 
 @SuppressWarnings("unused")
@@ -78,7 +77,7 @@ public class ServerRule implements TestRule {
         private final String checkpointResource;
 
         public InitializeWith() {
-            this((ClassLoader) null, null, null);
+            this(null, null, null);
         }
 
         public InitializeWith(@Nullable Object parentObject, @Nullable String depotResource, @Nullable String checkpointResource) {
@@ -109,16 +108,12 @@ public class ServerRule implements TestRule {
 
 
     public static ServerRule createCaseSensitive(Initializer... initializers) {
-        return new ServerRule(new CaseSensitiveTestServer(nextRootDir()), initializers);
+        return new ServerRule(new CaseSensitiveTestServer(), initializers);
     }
 
     public static ServerRule createCaseInsensitive(Initializer... initializers) {
-        return new ServerRule(new TestServer(nextRootDir()), initializers);
+        return new ServerRule(new TestServer(), initializers);
     }
-
-
-    private static int creationCount = 0;
-
 
 	private final TestServer testServer;
 	private final Initializer[] initializers;
@@ -151,11 +146,6 @@ public class ServerRule implements TestRule {
 	public String getPathToRoot() {
 		return testServer.getPathToRoot();
 	}
-
-	private static synchronized File nextRootDir() {
-	    int next = creationCount++;
-	    return new File("out/test-server-" + next);
-    }
 
 	private class ServerStatement extends Statement {
 

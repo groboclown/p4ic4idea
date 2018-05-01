@@ -40,7 +40,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class TestServer {
     public static final String DEFAULT_P4_PORT = "11666";
@@ -49,7 +49,7 @@ public class TestServer {
     private static final String CASE_INSENSITIVE_ARG = "-C0";
     private static final String CASE_SENSITIVE_ARG = "-C1";
 
-    private static AtomicInteger serverCount = new AtomicInteger(0);
+    private static AtomicLong serverCount = new AtomicLong(Math.round(Math.random() * 1000));
 
     private final File outDir;
     private final ProcessDestroyer processDestroyer = new ShutdownHookProcessDestroyer();
@@ -70,6 +70,7 @@ public class TestServer {
 
     public TestServer(@Nonnull File outDir) {
         this.outDir = outDir;
+        System.out.println("Using test server directory " + outDir);
     }
 
     protected void finalize() throws Throwable {
@@ -247,19 +248,20 @@ public class TestServer {
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                         throws IOException {
                     boolean removed = file.toFile().delete();
-                    int attemptCount = 0;
-                    while (! removed && attemptCount < 4) {
+                    //int attemptCount = 4;
+                    int attemptCount = 1000;
+                    while (! removed && --attemptCount >= 0) {
+                        System.err.println("Failed to remove " + file.toFile().getAbsolutePath() + "; trying again");
                         try {
                             Thread.sleep(1000L);
                         } catch (InterruptedException e) {
                             throw new IOException("interrupted by another thread", e);
                         }
-                        attemptCount++;
                         removed = file.toFile().delete();
                     }
 
                     if (!removed) {
-                        throw new IOException("could not delete " + file);
+                        throw new IOException("could not delete " + file.toFile().getAbsolutePath());
                     }
                     return FileVisitResult.CONTINUE;
                 }

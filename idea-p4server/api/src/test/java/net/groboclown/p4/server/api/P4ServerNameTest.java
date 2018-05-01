@@ -14,12 +14,16 @@
 package net.groboclown.p4.server.api;
 
 import com.perforce.p4java.server.IServerAddress;
+import net.groboclown.idea.extensions.TemporaryFolder;
+import net.groboclown.idea.extensions.TemporaryFolderExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class P4ServerNameTest {
     @Test
@@ -141,6 +145,21 @@ class P4ServerNameTest {
         assertThat("protocol name",
                 name.getProtocolName(),
                 is("java"));
+    }
+
+    @ExtendWith(TemporaryFolderExtension.class)
+    @Test
+    void forPort_rsh(TemporaryFolder tmpDir) {
+        // This is what the TestServer uses as the protocol.
+        String port = "p4jrsh://"
+                + tmpDir.newFile("p4d").getAbsolutePath()
+                + " -r "
+                + tmpDir.newFile("root").getAbsolutePath()
+                + ' '
+                + " -L log -i --java";
+        P4ServerName name = P4ServerName.forPort(port);
+        assertNotNull(name);
+        assertThat(name.getServerProtocol(), is(IServerAddress.Protocol.P4JRSHNTS));
     }
 
     @Test

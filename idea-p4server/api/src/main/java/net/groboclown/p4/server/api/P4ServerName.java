@@ -213,6 +213,13 @@ public class P4ServerName {
                 "ntsssl".equals(protocol)) {
             return IServerAddress.Protocol.P4JRPCNTSSSL;
         }
+        if ("rsh".equals(protocol) ||
+                "ntrsh".equals(protocol) ||
+
+                // support for the TestServer
+                "p4jrsh".equals(protocol)) {
+            return IServerAddress.Protocol.P4JRSHNTS;
+        }
         return IServerAddress.Protocol.P4JRPCNTS;
     }
 }

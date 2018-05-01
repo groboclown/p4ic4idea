@@ -15,26 +15,17 @@
 package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.api.values.P4Job;
 import org.jetbrains.annotations.NotNull;
 
-public class CreateJobResult implements P4CommandRunner.ServerResult {
-    private final ServerConfig config;
-    private final P4Job job;
-
-    public CreateJobResult(@NotNull ServerConfig config, @NotNull P4Job job) {
-        this.config = config;
-        this.job = job;
-    }
-
+public class GetJobSpecQuery implements P4CommandRunner.ServerQuery<GetJobSpecResult> {
     @NotNull
     @Override
-    public ServerConfig getServerConfig() {
-        return config;
+    public Class<? extends GetJobSpecResult> getResultType() {
+        return GetJobSpecResult.class;
     }
 
-    public P4Job getJob() {
-        return job;
+    @Override
+    public P4CommandRunner.ServerQueryCmd getCmd() {
+        return P4CommandRunner.ServerQueryCmd.GET_JOB_SPEC;
     }
 }

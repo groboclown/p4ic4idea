@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.api;
 
+import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.Nls;
@@ -61,15 +62,23 @@ public interface P4CommandRunner {
         /** The connection to the server failed. */
         CONNECTION,
 
-        /** The user wasn't allowed to perform the operation. */
+        /**
+         * The user wasn't allowed to perform the operation, potentially because of
+         * a login error, or because the user didn't have adequate permissions. */
         ACCESS_DENIED,
 
-        /** The server encountered an error. */
+        /** The server encountered an error, or otherwise reported a failure with
+         * the request.  Hopefully, this is the most common issue the user will
+         * encounter during normal use. */
         SERVER_ERROR,
+
+        /** Something on the local computer caused a problem. */
+        OS,
 
         /** The request took too long to run.  This is different
          * than a connection timeout, and is usually related to other
-         * commands blocking this one from running. */
+         * commands blocking this one from running.  Or, it could be
+         * the user or other system cancelling the request. */
         TIMEOUT
     }
 
@@ -96,10 +105,11 @@ public interface P4CommandRunner {
      * to fail (the "catch" clause).
      */
     class ServerResultException
-            extends Exception {
+            extends VcsException {
         private final ResultError error;
 
         public ServerResultException(ResultError error) {
+            super(error.getMessage().orElse("unknown problem"), false);
             this.error = error;
         }
 

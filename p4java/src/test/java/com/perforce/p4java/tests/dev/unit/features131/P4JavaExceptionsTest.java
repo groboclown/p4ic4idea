@@ -5,6 +5,7 @@ package com.perforce.p4java.tests.dev.unit.features131;
 
 import static org.junit.Assert.fail;
 
+import com.perforce.p4java.server.IServerMessage;
 import org.junit.Test;
 
 import com.perforce.p4java.exception.AccessException;
@@ -129,6 +130,12 @@ public class P4JavaExceptionsTest extends P4JavaTestCase {
 
 	private void throwAccessException() throws AccessException {
 		
-		throw new AccessException(dummyServerErrorMessage("access exception!"));
+		throw new TestableAccessException(dummyServerErrorMessage("access exception!"));
+	}
+
+	private static class TestableAccessException extends AccessException {
+		TestableAccessException(IServerMessage iServerMessage) {
+			super(iServerMessage);
+		}
 	}
 }

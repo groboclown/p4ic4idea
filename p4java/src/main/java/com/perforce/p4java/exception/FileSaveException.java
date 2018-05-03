@@ -12,14 +12,13 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.exceptions.message;
+package com.perforce.p4java.exception;
 
-import org.jetbrains.annotations.NotNull;
+import java.io.IOException;
 
-public class UserMessageConverter {
-    @NotNull
-    public static Message convert(@NotNull Throwable t, @NotNull UserExceptionMessageHandler converter) {
-        // FIXME
-        throw new IllegalStateException("Not implemented");
+// p4ic4idea: added to better clarify the kind of problem encountered.
+public class FileSaveException extends ConfigException {
+    public FileSaveException(IOException ex) {
+        super(ex);
     }
 }

@@ -29,7 +29,8 @@ public class SslHandshakeException extends SslException {
     public SslHandshakeException(String message, SSLPeerUnverifiedException cause) {
         super(message, cause);
     }
-    public SslHandshakeException(String message, NoSuchAlgorithmException cause) {
-        super(message, cause);
+
+    public SslHandshakeException(String message, NoSuchAlgorithmException e) {
+        super(message, e);
     }
 }

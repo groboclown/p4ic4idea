@@ -32,7 +32,11 @@ ideaTest.uses(
         'java-runtime',
         'lang-api',
         'lang-impl',
-        'trove4j'
+        'trove4j',
+        'log4j',
+        'picocontainer',
+        'boot',
+        'bootstrap',
 )
 
 configurations {

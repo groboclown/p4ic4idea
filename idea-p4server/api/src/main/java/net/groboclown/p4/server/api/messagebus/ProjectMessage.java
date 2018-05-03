@@ -20,6 +20,7 @@ import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.messages.Topic;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Marks a class as a project-level message; messages that are only passed to components within the same project.
@@ -27,10 +28,24 @@ import org.jetbrains.annotations.NotNull;
  * @param <L> listener type.
  */
 public abstract class ProjectMessage<L> {
-    @NotNull
+    @Nullable
     protected static <L> L getListener(@NotNull Project project, @NotNull Topic<L> topic) {
-        return project.getMessageBus().syncPublisher(topic);
+        if (canSendMessage(project)) {
+            return project.getMessageBus().syncPublisher(topic);
+        }
+        return null;
     }
+
+    @NotNull
+    protected static <L> L getListener(@NotNull Project project, @NotNull Topic<L> topic, @NotNull L defaultListener) {
+        L listener = getListener(project, topic);
+        if (listener == null) {
+            listener = defaultListener;
+        }
+        return listener;
+    }
+
+
 
     protected static boolean canSendMessage(@NotNull Project project) {
         return project.isInitialized() && !project.isDisposed();

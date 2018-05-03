@@ -18,6 +18,7 @@ import com.perforce.p4java.Metadata;
 import com.perforce.p4java.common.base.OSUtils;
 import com.perforce.p4java.exception.ConfigException;
 import com.perforce.p4java.exception.ConnectionException;
+import com.perforce.p4java.exception.InvalidImplementationException;
 import com.perforce.p4java.exception.NoSuchObjectException;
 import com.perforce.p4java.exception.NullPointerError;
 import com.perforce.p4java.exception.ResourceException;
@@ -334,14 +335,14 @@ public class ServerFactory {
 			Log.error("Unable to instantiate Perforce server implementation class '"
 					+ implMetadata.getImplClassName() + "' (class cast error)");
 			Log.exception(cce);
-			throw new ConfigException(
+			throw new InvalidImplementationException(
 				"Specified Perforce server implementation class does not implement required interface(s)",
 								cce);
 		} catch (InstantiationException ie) {
 			Log.error("Unable to instantiate Perforce server implementation class '"
 					+ implMetadata.getImplClassName() + "' (instantiation failed)");
 			Log.exception(ie);
-			throw new ConfigException(
+			throw new InvalidImplementationException(
 								"Unable to instantiate Perforce server implementation class '"
 								+ implMetadata.getImplClassName() + "'",
 								ie);
@@ -349,7 +350,7 @@ public class ServerFactory {
 			Log.error("Unable to instantiate Perforce server implementation class '"
 					+ implMetadata.getImplClassName() + "' (illegal access exception)");
 			Log.exception(iae);
-			throw new ConfigException(
+			throw new InvalidImplementationException(
 								"Unable to instantiate Perforce server class '"
 								+ implMetadata.getImplClassName() + "'",
 								iae);

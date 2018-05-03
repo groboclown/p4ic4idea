@@ -176,7 +176,8 @@ public class CharsetConverter {
 
 		CoderResult res = decoder.decode(from, sourceChars, true);
 		if (res.isError()) {
-			throw new FileDecoderException();
+			// p4ic4idea: make explicit reason for error
+			throw new FileDecoderException("Error in file's character encoding");
 		}
 
 		sourceChars.flip();

@@ -229,6 +229,12 @@ public class ServerMessage implements IServerMessage {
         return highestSeverity.getCode();
     }
 
+    /**
+     *
+     * @param fragment string to check against the messages
+     * @return true if the fragment is in one of the messages
+     * @deprecated
+     */
     @Override
     public boolean hasMessageFragment(final String fragment) {
         for (ISingleServerMessage msg: messages) {

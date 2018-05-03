@@ -13,8 +13,8 @@ import com.perforce.p4java.server.IServerMessage;
  * 
  *
  */
-
-public class AccessException extends P4JavaException {
+// p4ic4idea: abstract to better use the more specific sub-types.
+public abstract class AccessException extends P4JavaException {
 
 	private static final long serialVersionUID = 1L;
 

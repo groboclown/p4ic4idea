@@ -10,7 +10,6 @@ import static com.perforce.p4java.common.base.P4JavaExceptions.throwConnectionEx
 import static com.perforce.p4java.common.base.P4JavaExceptions.throwP4JavaError;
 import static com.perforce.p4java.common.base.P4JavaExceptions.throwP4JavaErrorIfConditionFails;
 import static com.perforce.p4java.common.base.P4JavaExceptions.throwProtocolErrorIfConditionFails;
-import static com.perforce.p4java.common.base.StringHelper.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.io.IOException;

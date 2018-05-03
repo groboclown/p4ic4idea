@@ -162,7 +162,8 @@ public abstract class ResultMapParser {
 	    if (nonNull(message) && message.isError()) {
             AuthenticationFailedException.ErrorType type = getAuthFailType(message);
             if (nonNull(type)) {
-                throw new AccessException(message);
+            	// p4ic4idea: replaced with more explicit authentication problem.
+                throw new AuthenticationFailedException(type, message);
             } else {
                 throw new RequestException(message);
             }
@@ -262,6 +263,31 @@ public abstract class ResultMapParser {
     }
 
 	/**
+	 *
+	 * @param err error string
+	 * @return null if not recognized as an auth failure, or the auth failure type.
+	 * @deprecated This shouldn't ever be used, because the errors should be wrapped in the correct
+	 * 		IServerMessage error.  However, there may be cases where the low level code isn't correctly
+	 * 		handling this situation, and other API still needs to know if it's an authentication failure
+	 * 	    or not.
+	 */
+	public static AuthenticationFailedException.ErrorType getAuthFailType(String err) {
+		if (nonNull(err)) {
+			// p4ic4idea: TODO this needs to check the error code instead of the message,
+			// in case the user sets the language.
+			for (int i = 0; i < ACCESS_ERR_MSGS.length; i++) {
+				if (err.toLowerCase().contains(ACCESS_ERR_MSGS[i].toLowerCase())) {
+					return ACCESS_ERR_TYPES[i];
+				}
+			}
+		}
+
+		return null;
+	}
+
+
+
+	/**
 	 * Gets the info message from the passed-in Perforce command results map. If
 	 * no info message found in the results map it returns null.
 	 * <p>
@@ -321,7 +347,7 @@ public abstract class ResultMapParser {
 					IServerMessage errMsg = new ServerMessage(errors);
 					AuthenticationFailedException.ErrorType authFailType = getAuthFailType(errMsg);
 					if (nonNull(authFailType)) {
-						throw new AccessException(errMsg);
+						throw new AuthenticationFailedException(authFailType, errMsg);
 					} else {
 						throw new RequestException(errMsg);
 					}
@@ -393,7 +419,7 @@ public abstract class ResultMapParser {
 		if (nonNull(err)) {
             AuthenticationFailedException.ErrorType authFailType = getAuthFailType(err);
 			if (nonNull(authFailType)) {
-				throw new AccessException(err);
+				throw new AuthenticationFailedException(authFailType, err);
 			} else {
 				throw new RequestException(err);
 			}
@@ -515,8 +541,10 @@ public abstract class ResultMapParser {
 	     */
 	    IServerMessage message = toServerMessage(map);
 	    if (nonNull(message)) {
-            if (nonNull(getAuthFailType(message))) {
-                throw new AccessException(message);
+	    	// p4ic4idea: use more precise errors.
+			AuthenticationFailedException.ErrorType authFailType = getAuthFailType(message);
+            if (nonNull(authFailType)) {
+                throw new AuthenticationFailedException(authFailType, message);
             }
             return message;
         }
@@ -528,7 +556,7 @@ public abstract class ResultMapParser {
 	    if (nonNull(message)) {
             AuthenticationFailedException.ErrorType authFailType = getAuthFailType(message);
             if (nonNull(authFailType)) {
-                throw new AccessException(message);
+                throw new AuthenticationFailedException(authFailType, message);
             }
         }
     }

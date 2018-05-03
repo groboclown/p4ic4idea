@@ -196,11 +196,12 @@ public final class P4JavaExceptions {
     //    }
     //}
 
-    public static void throwAccessExceptionIfConditionFails(boolean expression, IServerMessage msg) throws AccessException {
-        if (!expression) {
-            throw new AccessException(msg);
-        }
-    }
+    // p4ic4idea: must be handled more explicitly
+    //public static void throwAccessExceptionIfConditionFails(boolean expression, IServerMessage msg) throws AccessException {
+    //    if (!expression) {
+    //        throw new AccessException(msg);
+    //    }
+    //}
 
 
     public static void throwIOException(Throwable cause) throws IOException {

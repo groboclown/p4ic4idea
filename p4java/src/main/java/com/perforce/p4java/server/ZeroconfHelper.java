@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.perforce.p4java.Log;
 import com.perforce.p4java.exception.ConfigException;
+import com.perforce.p4java.exception.ZeroconfException;
 
 /**
  * Class designed to help the server factory with zeroconf-based duties.
@@ -88,7 +89,7 @@ public class ZeroconfHelper {
 	
 	protected List<ZeroconfServerInfo> getZeroconfServers() throws ConfigException {
 		if (!isZeroConfAvailable()) {
-			throw new ConfigException(
+			throw new ZeroconfException(
 					"Zeroconf services are not configured for this instance of P4Java");
 		}
 		
@@ -115,24 +116,24 @@ public class ZeroconfHelper {
 						Method addrMethod = null;
 						Method hostNameMethod = null;
 						Method portMethod = null;
-						
-						for (Object info: services) {
+
+						for (Object info : services) {
 							if (info != null) {
 								if (nameMethod == null) {
 									nameMethod = info.getClass().getDeclaredMethod(
-																	"getName", (Class<?>[]) null);
+											"getName", (Class<?>[]) null);
 								}
 								if (hostNameMethod == null) {
 									hostNameMethod = info.getClass().getDeclaredMethod(
-																	"getServer", (Class<?>[]) null);
+											"getServer", (Class<?>[]) null);
 								}
 								if (propMethod == null) {
 									propMethod = info.getClass().getDeclaredMethod(
-																"getPropertyString", String.class);
+											"getPropertyString", String.class);
 								}
 								if (addrMethod == null) {
 									addrMethod = info.getClass().getDeclaredMethod(
-																"getHostAddress", (Class<?>[]) null);
+											"getHostAddress", (Class<?>[]) null);
 								}
 								if (portMethod == null) {
 									portMethod = info.getClass().getDeclaredMethod(
@@ -140,28 +141,31 @@ public class ZeroconfHelper {
 								}
 
 								serverList.add(new ZeroconfServerInfo(
-											(String) nameMethod.invoke(info, (Object[]) null),
-											P4D_ZEROCONF_TYPE,
-											(String) propMethod.invoke(info, "description"),
-											(String) propMethod.invoke(info, "version"),
-											(String) addrMethod.invoke(info, (Object[]) null),
-											(String) hostNameMethod.invoke(info, (Object[]) null),
-											(Integer) portMethod.invoke(info, (Object[]) null)
-									));
+										(String) nameMethod.invoke(info, (Object[]) null),
+										P4D_ZEROCONF_TYPE,
+										(String) propMethod.invoke(info, "description"),
+										(String) propMethod.invoke(info, "version"),
+										(String) addrMethod.invoke(info, (Object[]) null),
+										(String) hostNameMethod.invoke(info, (Object[]) null),
+										(Integer) portMethod.invoke(info, (Object[]) null)
+								));
 							}
 						}
 					}
 				}
 			}
-		} catch (Throwable thr) {
+		// p4ic4idea: be careful when catching "throwable"
+		//} catch (Throwable thr) {
+		} catch (Exception thr) {
 			if (!loggedZeroConfError) {
 				Log.warn("Unexpected exception in ZeroconfHelper.getZeroconfServers: "
 						+ thr);
 				Log.exception(thr);
 				loggedZeroConfError = true;
 			}
-			throw new ConfigException("Unexpected exception in ZeroconfHelper.getZeroconfServers: "
-					+ thr);
+			// p4ic4diea: include the source error
+			throw new ZeroconfException("Unexpected exception in ZeroconfHelper.getZeroconfServers: "
+					+ thr, thr);
 		}
 		
 		return serverList;

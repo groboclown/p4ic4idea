@@ -37,6 +37,7 @@ public class ExtMatchers {
         return new CollectionsMatchers.SizedMapMatcher<>(size);
     }
 
+    @SafeVarargs
     public static <T> CollectionsMatchers.ContainsAllMatcher<T> containsAll(T... items) {
         return new CollectionsMatchers.ContainsAllMatcher<>(items);
     }
@@ -45,6 +46,7 @@ public class ExtMatchers {
         return new CollectionsMatchers.ContainsAllMatcher<>(items);
     }
 
+    @SafeVarargs
     public static <K,V> CollectionsMatchers.MapContainsAllMatcher<K,V> mapContainsAll(Pair<K,V>... pairs) {
         return new CollectionsMatchers.MapContainsAllMatcher<>(pairs);
     }

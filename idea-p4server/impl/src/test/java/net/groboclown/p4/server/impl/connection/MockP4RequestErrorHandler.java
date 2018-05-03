@@ -17,17 +17,18 @@ package net.groboclown.p4.server.impl.connection;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MockP4RequestErrorHandler extends P4RequestErrorHandler {
-    private final List<Exception> exceptions = new ArrayList<>();
+    private final List<Throwable> exceptions = new ArrayList<>();
     private final List<Exception> disconnectExceptions = new ArrayList<>();
 
 
-    List<Exception> getExceptions() {
+    List<Throwable> getExceptions() {
         return exceptions;
     }
 
@@ -36,9 +37,18 @@ public class MockP4RequestErrorHandler extends P4RequestErrorHandler {
     }
 
 
+    @Nonnull
     @Override
-    protected P4CommandRunner.ServerResultException handleException(@Nonnull Exception e) {
+    protected P4CommandRunner.ServerResultException handleException(
+            @NotNull ConnectionInfo info, @Nonnull Exception e) {
         this.exceptions.add(e);
+        return createServerResultException(e, e.getMessage(), P4CommandRunner.ErrorCategory.INTERNAL);
+    }
+
+    @Nonnull
+    @Override
+    protected P4CommandRunner.ServerResultException handleError(@NotNull ConnectionInfo info, @NotNull Error e) {
+        exceptions.add(e);
         return createServerResultException(e, e.getMessage(), P4CommandRunner.ErrorCategory.INTERNAL);
     }
 

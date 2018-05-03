@@ -15,7 +15,6 @@
 package net.groboclown.p4.server.impl.connection.impl;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.util.Function;
 import com.perforce.p4java.Log;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.client.IClient;
@@ -28,10 +27,10 @@ import com.perforce.p4java.exception.ResourceException;
 import com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs;
 import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.server.IServer;
 import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.server.callback.ILogCallback;
 import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
-import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
@@ -41,7 +40,6 @@ import net.groboclown.p4.server.impl.connection.P4RequestErrorHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.concurrency.Promise;
-import org.jetbrains.concurrency.Promises;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -56,7 +54,6 @@ public class SimpleConnectionManager implements ConnectionManager {
     private static final Logger LOG = Logger.getInstance(SimpleConnectionManager.class);
     private static final Logger P4LOG = Logger.getInstance("p4");
 
-    // FIXME
     private static final String PLUGIN_P4HOST_KEY = "P4HOST";
     private static final String PLUGIN_LANGUAGE_KEY = "P4LANG";
 
@@ -79,7 +76,7 @@ public class SimpleConnectionManager implements ConnectionManager {
     public <R> Promise<R> withConnection(@NotNull ClientConfig config, @Nonnull P4Func<IClient, R> fun) {
         if (config.getServerConfig().usesStoredPassword()) {
             return ApplicationPasswordRegistry.getInstance().get(config.getServerConfig())
-                    .thenAsync((password) -> handleAsync(() -> {
+                    .thenAsync((password) -> handleAsync(config, () -> {
                         final IOptionsServer server = connect(
                                 config.getServerConfig(),
                                 password.toString(true),
@@ -91,7 +88,7 @@ public class SimpleConnectionManager implements ConnectionManager {
                         }
                     }));
         }
-        return handleAsync(() -> {
+        return handleAsync(config, () -> {
                     final IOptionsServer server = connect(
                             config.getServerConfig(),
                             null,
@@ -104,58 +101,12 @@ public class SimpleConnectionManager implements ConnectionManager {
                 });
     }
 
-
-    @NotNull
-    @Override
-    public <R> Promise<R> withConnectionAsync(@NotNull ClientConfig config, @Nonnull Function<IClient, Promise<R>> fun) {
-        if (config.getServerConfig().usesStoredPassword()) {
-            return ApplicationPasswordRegistry.getInstance().get(config.getServerConfig())
-                    .thenAsync((password) -> {
-                        final IOptionsServer server;
-                        try {
-                            server = handle(() -> connect(
-                                    config.getServerConfig(),
-                                    password.toString(true),
-                                    createProperties(config)));
-                        } catch (P4CommandRunner.ServerResultException e) {
-                            return Promises.rejectedPromise(e);
-                        }
-                        try {
-                            IClient client = handle(() -> server.getClient(config.getClientname()));
-                            return fun.fun(client);
-                        } catch (P4CommandRunner.ServerResultException e) {
-                            return Promises.rejectedPromise(e);
-                        } finally {
-                            close(server);
-                        }
-                    });
-        }
-
-        final IOptionsServer server;
-        try {
-            server = handle(() -> connect(
-                    config.getServerConfig(),
-                    null,
-                    createProperties(config)));
-        } catch (P4CommandRunner.ServerResultException e) {
-            return Promises.rejectedPromise(e);
-        }
-        try {
-            IClient client = handle(() -> server.getClient(config.getClientname()));
-            return fun.fun(client);
-        } catch (P4CommandRunner.ServerResultException e) {
-            return Promises.rejectedPromise(e);
-        } finally {
-            close(server);
-        }
-    }
-
     @NotNull
     @Override
     public <R> Promise<R> withConnection(@NotNull ServerConfig config, @NotNull P4Func<IOptionsServer, R> fun) {
         if (config.usesStoredPassword()) {
             return ApplicationPasswordRegistry.getInstance().get(config)
-                    .thenAsync((password) -> handleAsync(() -> {
+                    .thenAsync((password) -> handleAsync(config, () -> {
                         final IOptionsServer server = connect(
                                 config,
                                 password.toString(true),
@@ -167,7 +118,7 @@ public class SimpleConnectionManager implements ConnectionManager {
                         }
                     }));
         }
-        return handleAsync(() -> {
+        return handleAsync(config, () -> {
             final IOptionsServer server = connect(
                     config,
                     null,
@@ -182,47 +133,8 @@ public class SimpleConnectionManager implements ConnectionManager {
 
     @NotNull
     @Override
-    public <R> Promise<R> withConnectionAsync(@NotNull ServerConfig config, @NotNull Function<IOptionsServer, Promise<R>> fun) {
-        if (config.usesStoredPassword()) {
-            return ApplicationPasswordRegistry.getInstance().get(config)
-                    .thenAsync((password) -> {
-                        final IOptionsServer server;
-                        try {
-                            server = handle(() -> connect(
-                                    config,
-                                    password.toString(true),
-                                    createProperties(config)));
-                        } catch (P4CommandRunner.ServerResultException e) {
-                            return Promises.rejectedPromise(e);
-                        }
-                        try {
-                            return fun.fun(server);
-                        } finally {
-                            close(server);
-                        }
-                    });
-        }
-
-        final IOptionsServer server;
-        try {
-            server = handle(() -> connect(
-                    config,
-                    null,
-                    createProperties(config)));
-        } catch (P4CommandRunner.ServerResultException e) {
-            return Promises.rejectedPromise(e);
-        }
-        try {
-            return fun.fun(server);
-        } finally {
-            close(server);
-        }
-    }
-
-    @NotNull
-    @Override
     public <R> Promise<R> withConnection(@NotNull P4ServerName config, P4Func<IOptionsServer, R> fun) {
-        return handleAsync(() -> {
+        return handleAsync(config, () -> {
             final IOptionsServer server = getServer(
                     config,
                     createProperties());
@@ -235,30 +147,6 @@ public class SimpleConnectionManager implements ConnectionManager {
             }
         });
     }
-
-    @NotNull
-    @Override
-    public <R> Promise<R> withConnectionAsync(@NotNull P4ServerName config, Function<IOptionsServer, Promise<R>> fun) {
-        final IOptionsServer server;
-        try {
-            server = handle(() -> {
-                IOptionsServer s = getServer(
-                        config,
-                        createProperties());
-                // FIXME need way to add SSL fingerprint; sso callback shouldn't be necessary for this operation.
-                s.connect();
-                return s;
-            });
-        } catch (P4CommandRunner.ServerResultException e) {
-            return Promises.rejectedPromise(e);
-        }
-        try {
-            return fun.fun(server);
-        } finally {
-            close(server);
-        }
-    }
-
 
     private IOptionsServer connect(ServerConfig serverConfig, String password, Properties props)
             throws P4JavaException, URISyntaxException {
@@ -557,16 +445,19 @@ public class SimpleConnectionManager implements ConnectionManager {
         return props;
     }
 
-    private <R> Promise<R> handleAsync(Callable<R> c) {
-        return errorHandler.handleAsync(c);
+    private <R> Promise<R> handleAsync(ClientConfig config, Callable<R> c) {
+        return errorHandler.handleAsync(config, c);
     }
 
-    private <R> R handle(Callable<R> c)
-            throws P4CommandRunner.ServerResultException {
-        return errorHandler.handle(c);
+    private <R> Promise<R> handleAsync(ServerConfig config, Callable<R> c) {
+        return errorHandler.handleAsync(config, c);
     }
 
-    private void close(@NotNull final IOptionsServer server) {
+    private <R> Promise<R> handleAsync(P4ServerName config, Callable<R> c) {
+        return errorHandler.handleAsync(config, c);
+    }
+
+    private void close(@NotNull final IServer server) {
         try {
             server.disconnect();
         } catch (ConnectionException e) {

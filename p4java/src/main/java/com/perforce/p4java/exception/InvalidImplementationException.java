@@ -12,20 +12,19 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.exceptions.message;
+package com.perforce.p4java.exception;
 
-import net.groboclown.p4.server.api.exceptions.P4ApiException;
-import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
-import org.jetbrains.annotations.NotNull;
+// p4ic4idea: specific type to better clarify the source of the problem
+public class InvalidImplementationException extends ConfigException {
+    public InvalidImplementationException(String msg, ClassCastException e) {
+        super(msg, e);
+    }
 
-/**
- * Api that can be implemented once to transform exceptions into a user-consumable string.
- */
-public interface UserExceptionMessageHandler {
+    public InvalidImplementationException(String msg, InstantiationException e) {
+        super(msg, e);
+    }
 
-    @NotNull
-    Message internalError(@NotNull P4ApiException ex);
-
-    @NotNull
-    Message taskInterrupted(@NotNull VcsInterruptedException ex);
+    public InvalidImplementationException(String msg, IllegalAccessException e) {
+        super(msg, e);
+    }
 }

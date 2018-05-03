@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.server.IServerMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
@@ -227,7 +228,7 @@ public class GroupDelegatorTest extends P4JavaTestCase {
     public void testAccessException() throws P4JavaException {
         when(group.getName()).thenReturn(groupName);
         when(server.execMapCmdList(eq(CmdSpec.GROUP.toString()), any(String[].class), any()))
-                .thenThrow(new AccessException(dummyServerErrorMessage("Not allowed!")));
+                .thenThrow(new TestableAccessException(dummyServerErrorMessage("Not allowed!")));
         assertThrows(AccessException.class, () -> groupDelegator.getUserGroup(groupName));
         assertThrows(AccessException.class,
                 () -> groupDelegator.createUserGroup(group, new UpdateUserGroupOptions()));
@@ -333,5 +334,11 @@ public class GroupDelegatorTest extends P4JavaTestCase {
 
         String userGroup = groupDelegator.deleteUserGroup(group, new UpdateUserGroupOptions());
         assertEquals(groupName, userGroup);
+    }
+
+    private static class TestableAccessException extends AccessException {
+        TestableAccessException(IServerMessage iServerMessage) {
+            super(iServerMessage);
+        }
     }
 }

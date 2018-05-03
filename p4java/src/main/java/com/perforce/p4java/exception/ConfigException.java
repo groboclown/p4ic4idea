@@ -8,7 +8,7 @@ package com.perforce.p4java.exception;
  * 
  *
  */
-
+// p4ic4idea: made abstract in favor of using more descriptive sub-classes.
 public class ConfigException extends P4JavaException {
 
 	private static final long serialVersionUID = 1L;

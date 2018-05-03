@@ -14,7 +14,6 @@
 
 package net.groboclown.p4.server.impl.connection;
 
-import com.intellij.util.Function;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.p4.server.api.P4ServerName;
@@ -28,17 +27,8 @@ public interface ConnectionManager {
     <R> Promise<R> withConnection(@NotNull ClientConfig config, @NotNull P4Func<IClient, R> fun);
 
     @NotNull
-    <R> Promise<R> withConnectionAsync(@NotNull ClientConfig config, @NotNull Function<IClient, Promise<R>> fun);
-
-    @NotNull
     <R> Promise<R> withConnection(@NotNull ServerConfig config, @NotNull P4Func<IOptionsServer, R> fun);
 
     @NotNull
-    <R> Promise<R> withConnectionAsync(@NotNull ServerConfig config, @NotNull Function<IOptionsServer, Promise<R>> fun);
-
-    @NotNull
     <R> Promise<R> withConnection(@NotNull P4ServerName config, P4Func<IOptionsServer, R> fun);
-
-    @NotNull
-    <R> Promise<R> withConnectionAsync(@NotNull P4ServerName config, Function<IOptionsServer, Promise<R>> fun);
 }

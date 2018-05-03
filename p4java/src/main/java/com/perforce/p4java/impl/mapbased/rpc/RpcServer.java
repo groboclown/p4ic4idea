@@ -10,6 +10,7 @@ import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.AuthenticationFailedException;
 import com.perforce.p4java.exception.ConfigException;
 import com.perforce.p4java.exception.ConnectionException;
+import com.perforce.p4java.exception.FileSaveException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 
@@ -17,6 +18,7 @@ import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.exception.SslException;
 
 import com.perforce.p4java.exception.TrustException;
+import com.perforce.p4java.exception.UnknownServerException;
 import com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection;
 import com.perforce.p4java.impl.mapbased.rpc.func.client.ClientTrust;
 import com.perforce.p4java.impl.mapbased.rpc.func.proto.PerformanceMonitor;
@@ -788,8 +790,10 @@ public abstract class RpcServer extends Server {
                     new String[]{AUTH_FILE_LOCK_WAIT_KEY_SHORT_FORM, AUTH_FILE_LOCK_WAIT_KEY},
                     AbstractAuthHelper.DEFAULT_LOCK_WAIT);
         } catch (UnknownHostException uhe) {
-            throw new ConfigException(
-                    "Unable to determine client host name: %s" + uhe.getLocalizedMessage());
+            // p4ic4idea: include underlying exception
+            throw new UnknownServerException(
+                    "Unable to determine client host name: %s" + uhe.getLocalizedMessage(),
+                    uhe);
         }
 
         // Initialize client trust
@@ -1262,7 +1266,7 @@ public abstract class RpcServer extends Server {
             FingerprintsHelper.saveFingerprint(fingerprintUser, serverIpPort, fingerprintValue,
                     trustFilePath, authFileLockTry, authFileLockDelay, authFileLockWait);
         } catch (IOException e) {
-            throw new ConfigException(e);
+            throw new FileSaveException(e);
         }
     }
 
@@ -1322,7 +1326,7 @@ public abstract class RpcServer extends Server {
                     exception.addSuppressed(e);
                     return exception;
                 } else {
-                    return new ConfigException(e);
+                    return new FileSaveException(e);
                 }
             }
         }

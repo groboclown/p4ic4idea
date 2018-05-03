@@ -16,6 +16,8 @@ package com.perforce.p4java.exception;
 
 import com.perforce.p4java.server.IServerMessage;
 
+import javax.annotation.Nonnull;
+
 // p4ic4idea: created exception for better precision in understanding the problem
 public class AuthenticationFailedException extends AccessException {
     private final ErrorType type;
@@ -28,11 +30,12 @@ public class AuthenticationFailedException extends AccessException {
         SSO_LOGIN
     }
 
-    public AuthenticationFailedException(ErrorType type, IServerMessage err) {
+    public AuthenticationFailedException(@Nonnull ErrorType type, @Nonnull IServerMessage err) {
         super(err);
         this.type = type;
     }
 
+    @Nonnull
     public ErrorType getErrorType() {
         return type;
     }

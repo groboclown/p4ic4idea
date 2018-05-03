@@ -41,7 +41,7 @@ the Promises exceptions should be *limited* and *clearly documented*.
 
 Some code needs to deal with translating low-level exceptions into messages,
 such as the Perforce server API interaction.  Where possible, this needs
-to be contained in a wrapper.  Lambdas can improve clairy here by allowing a
+to be contained in a wrapper.  Lambdas can improve clarity here by allowing a
 declaration like
 
 ```(java)
@@ -58,3 +58,6 @@ The old versions of the plugin heavily relied upon Exceptions to tell
 other components about errors.  This lead to repeated, messy code that
 essentially turned the "catch" block into a case statement, with all kinds
 of attempts at interpreting intent.
+
+Unfortunately, exceptions are the way the underlying p4java library reports
+errors, so something needs to process these.

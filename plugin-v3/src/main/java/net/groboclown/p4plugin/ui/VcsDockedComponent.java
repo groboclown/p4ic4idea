@@ -41,29 +41,26 @@ public class VcsDockedComponent implements Disposable, ProjectComponent {
 
     private VcsDockedComponent(final Project project) {
         this.project = project;
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                if (project.isDisposed()) {
-                    return;
-                }
-                final ToolWindow toolWindow = getToolWindow();
-                if (toolWindow == null) {
-                    // can happen if the project isn't fully initialized yet
-                    return;
-                }
-                final ContentManager contentManager = toolWindow.getContentManager();
-                contentManager.addContentManagerListener(new ContentManagerAdapter() {
-                    @Override
-                    public void contentRemoved(ContentManagerEvent event) {
-                        final JComponent component = event.getContent().getComponent();
-                        if (component instanceof Disposable) {
-                            Disposer.dispose((Disposable) component);
-                        }
-                    }
-                });
-                toolWindow.installWatcher(contentManager);
+        ApplicationManager.getApplication().invokeLater(() -> {
+            if (project.isDisposed()) {
+                return;
             }
+            final ToolWindow toolWindow = getToolWindow();
+            if (toolWindow == null) {
+                // can happen if the project isn't fully initialized yet
+                return;
+            }
+            final ContentManager contentManager = toolWindow.getContentManager();
+            contentManager.addContentManagerListener(new ContentManagerAdapter() {
+                @Override
+                public void contentRemoved(ContentManagerEvent event) {
+                    final JComponent component = event.getContent().getComponent();
+                    if (component instanceof Disposable) {
+                        Disposer.dispose((Disposable) component);
+                    }
+                }
+            });
+            toolWindow.installWatcher(contentManager);
         });
     }
 

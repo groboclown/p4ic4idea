@@ -4,12 +4,12 @@
 
 To connect to the server, several layers are used:
 
-* [Connection Information](#connectioninformation) defines *how* the plugin
+* [Connection Information](#connection-information) defines *how* the plugin
     contacts the server.  These are constructed on a per-VCS root basis.
-* [Connection Runner](#connectionrunner) performs a specific request against
+* [Connection Runner](#connection-runner) performs a specific request against
     the server using connection information.
 * [Caches](#caches) maintain an offline data store of the known server state.
-* [Error Handlers](#errorhandlers) listen to problems reported by the server
+* [Error Handlers](#error-handlers) listen to problems reported by the server
     and delegate it to responsible parties.
 
 
@@ -40,14 +40,15 @@ to other objects.
 
 The runner explicitly works with `Promise` objects in order to make clear the
 commands which can potentially take a while.  Some commands also clearly reference
-potential cached values, allowing for more immediate responses.
+potential cached values, allowing for more immediate responses.  This forces
+conformity to the [threading model](threading.md).
 
 The runner sends the requestor very simple errors.  The majority of the errors
 are passed as messages through the [error handlers](#error-handlers).  Code that
 directly runs the connection runners only need to deal with simplified errors
 to understand that an error happened, and react accordingly.  The real work
 of communicating the error to the user is done through
-[message listeners](#messagelisteners).
+[message listeners](#message-listeners).
 
 ### Server Command Runners
 

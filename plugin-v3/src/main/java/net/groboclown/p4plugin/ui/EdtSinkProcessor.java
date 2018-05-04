@@ -15,17 +15,21 @@
 package net.groboclown.p4plugin.ui;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.Consumer;
 import com.intellij.util.ui.AsyncProcessIcon;
 import org.jetbrains.annotations.NotNull;
 import com.intellij.openapi.progress.ProgressIndicator;
+import org.jetbrains.concurrency.Promise;
 
 import javax.annotation.Nullable;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -38,8 +42,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * The instances can be safely reused for multiple runs.
  */
 public class EdtSinkProcessor<E> {
+    private static final Logger LOG = Logger.getInstance(EdtSinkProcessor.class);
+
+
     private final List<Consumer<Collection<E>>> batchItemConsumers = new ArrayList<>();
     private final List<Consumer<E>> itemConsumers = new ArrayList<>();
+    private final List<Consumer<Throwable>> errorHandlers = new ArrayList<>();
     private final List<Runnable> starters = new ArrayList<>();
     private final List<Runnable> finalizers = new ArrayList<>();
 
@@ -53,8 +61,16 @@ public class EdtSinkProcessor<E> {
          *                                to process; used for the progress indicator.
          * @throws CancellationException if the user cancelled the progress.
          */
-        void offer(E item, int estimatedRemainingItems)
+        void offer(@Nullable E item, int estimatedRemainingItems)
                 throws CancellationException;
+
+        /**
+         * If the producer experiences an exception that it needs to pass on to the error handler,
+         * it does so here.
+         *
+         * @param e encountered exception
+         */
+        void error(@NotNull Throwable e);
 
         /**
          * Called when the process is finished.  Alternatively, when the process finishes
@@ -110,6 +126,27 @@ public class EdtSinkProcessor<E> {
         }
     }
 
+    /**
+     * Like the other listeners, the error handler will run in the EDT.
+     *
+     * @param consumer error handler
+     */
+    public void addErrorHandler(@NotNull Consumer<Throwable> consumer) {
+        synchronized (errorHandlers) {
+            errorHandlers.add(consumer);
+        }
+    }
+
+    /**
+     *
+     * @param producer object that generates a series of objects.
+     * @param progress optional progress bar.  The processor will set the progress based on
+     *                  the observed number of offered objects against the estimated remaining items.
+     * @param batchSize number of items to bundle up before passing on to the batch consumers.
+     * @param runEdtAsync true if all the EDT actions should run as a "invoke later", false if they should run
+     *                    as "invoke and wait".  If false, then the producer will wait until all the
+     *                    consumers finish processing the item (or items, if a batch consumption runs).
+     */
     public void process(@NotNull final Producer<E> producer,
             @Nullable final ProgressIndicator progress,
             final int batchSize, final boolean runEdtAsync) {
@@ -118,7 +155,8 @@ public class EdtSinkProcessor<E> {
             final QueueSink<E> sink = new QueueSink<>(batchSize, progress,
                     () -> onEnd(runEdtAsync),
                     (e) -> consumeOne(e, runEdtAsync),
-                    (ee) -> consumeBatch(ee, runEdtAsync));
+                    (ee) -> consumeBatch(ee, runEdtAsync),
+                    (t) -> onError(t, runEdtAsync));
             producer.produce(sink);
 
             // Force the end to be called.  The sink will ignore this if it was
@@ -126,6 +164,61 @@ public class EdtSinkProcessor<E> {
             sink.end();
         });
     }
+
+    /**
+     * Runs the process on an object that produces a single value.  If you need a progress bar,
+     * it should be added as part of the finalizers to set its state to completed.
+     *
+     * @param producer object that generates a single value.
+     * @param runEdtAsync true if all the EDT actions should run as a "invoke later", false if they should run
+     *                    as "invoke and wait".
+     */
+    public void processSingle(@NotNull Callable<E> producer, boolean runEdtAsync) {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            onStart(runEdtAsync);
+            E value = null;
+            try {
+                value = producer.call();
+                consumeOne(value, runEdtAsync);
+                consumeBatch(Collections.singletonList(value), runEdtAsync);
+            } catch (Exception e) {
+                LOG.info(e);
+                onError(e, runEdtAsync);
+            }
+            onEnd(runEdtAsync);
+        });
+    }
+
+
+    /**
+     * Runs the process that executes the promise in a pooled thread.
+     *
+     * @param producer object that produces the promise
+     * @param runEdtAsync true if all the EDT actions should run as a "invoke later", false if they should run
+     *                    as "invoke and wait".
+     */
+    public void processPromise(@NotNull Callable<Promise<E>> producer, boolean runEdtAsync) {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            onStart(runEdtAsync);
+            try {
+                producer.call()
+                .then((value) -> {
+                    consumeOne(value, runEdtAsync);
+                    consumeBatch(Collections.singletonList(value), runEdtAsync);
+                    onEnd(runEdtAsync);
+                    return null;
+                })
+                .rejected((t) -> {
+                    onError(t, runEdtAsync);
+                    onEnd(runEdtAsync);
+                });
+            } catch (Exception e) {
+                onError(e, runEdtAsync);
+                onEnd(runEdtAsync);
+            }
+        });
+    }
+
 
     private void consumeOne(E item, boolean runEdtAsync) {
         List<Consumer<E>> consumers;
@@ -144,6 +237,16 @@ public class EdtSinkProcessor<E> {
         }
         for (Consumer<Collection<E>> consumer : consumers) {
             runEdt(consumer, items, runEdtAsync);
+        }
+    }
+
+    private void onError(@NotNull Throwable e, boolean runEdtAsync) {
+        List<Consumer<Throwable>> consumers;
+        synchronized (errorHandlers) {
+            consumers = new ArrayList<>(errorHandlers);
+        }
+        for (Consumer<Throwable> consumer : consumers) {
+            runEdt(consumer, e, runEdtAsync);
         }
     }
 
@@ -189,6 +292,7 @@ public class EdtSinkProcessor<E> {
         private final E[] batch;
         private final Consumer<E> itemConsumer;
         private final Consumer<List<E>> batchConsumer;
+        private final Consumer<Throwable> errorConsumer;
         private final Runnable onEnd;
         private int batchPos;
         private AtomicInteger itemCount;
@@ -196,13 +300,15 @@ public class EdtSinkProcessor<E> {
 
         @SuppressWarnings("unchecked")
         QueueSink(int batchSize, @Nullable ProgressIndicator progress, Runnable onEnd,
-                Consumer<E> itemConsumer, Consumer<List<E>> batchConsumer) {
+                Consumer<E> itemConsumer, Consumer<List<E>> batchConsumer,
+                Consumer<Throwable> errorConsumer) {
             assert batchSize > 0;
             this.progress = progress;
             this.batchSize = batchSize;
             this.batch = (E[]) new Object[batchSize];
             this.itemConsumer = itemConsumer;
             this.batchConsumer = batchConsumer;
+            this.errorConsumer = errorConsumer;
             this.onEnd = onEnd;
 
             batchPos = 0;
@@ -245,10 +351,19 @@ public class EdtSinkProcessor<E> {
         }
 
         @Override
+        public void error(@NotNull Throwable e) {
+            // Regardless of end state, the exception will be handled.
+            errorConsumer.consume(e);
+        }
+
+        @Override
         public void end() {
             synchronized (sync) {
                 if (!ended) {
                     ended = true;
+                    if (batchPos > 0) {
+                        batchConsumer.consume(Arrays.asList(batch).subList(0, batchPos));
+                    }
                     onEnd.run();
                 }
             }

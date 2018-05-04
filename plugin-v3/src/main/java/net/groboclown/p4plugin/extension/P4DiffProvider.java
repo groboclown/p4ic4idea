@@ -26,12 +26,10 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileRevisionData;
-import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -50,17 +48,8 @@ public class P4DiffProvider
     @Nullable
     @Override
     public VcsRevisionNumber getCurrentRevision(VirtualFile file) {
-        FilePath fp = FilePathUtil.getFilePath(file);
-        final IExtendedFileSpec spec = getFileInfo(getServerFor(fp), fp);
-        if (spec == null) {
-            return null;
-        }
-
-        // NOTE: have vs. head!
-        if (spec.getHaveRev() >= 0) {
-            return new P4RevisionNumber(fp, spec.getDepotPathString(), spec, P4RevisionNumber.RevType.HAVE);
-        }
-        return null;
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
     @Nullable
@@ -78,25 +67,15 @@ public class P4DiffProvider
     @Nullable
     @Override
     public ItemLatestState getLastRevision(FilePath filePath) {
-        final IExtendedFileSpec spec = getFileInfo(getServerFor(filePath), filePath);
-        if (spec == null) {
-            return null;
-        }
-
-        return new ItemLatestState(
-                new P4RevisionNumber(filePath, spec.getDepotPathString(), spec, P4RevisionNumber.RevType.HEAD),
-                spec.getHeadRev() != 0 && spec.getHeadAction() != null,
-                false);
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
     @Nullable
     @Override
     public ContentRevision createFileContent(final VcsRevisionNumber revisionNumber, VirtualFile selectedFile) {
-        final FilePath file = VcsUtil.getFilePath(selectedFile);
-        if (! (revisionNumber instanceof P4RevisionNumber)) {
-            throw new IllegalArgumentException(P4Bundle.message("error.diff.bad-revision", revisionNumber));
-        }
-        return new P4ContentRevision(project, file, (P4RevisionNumber) revisionNumber);
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
     @Nullable
@@ -109,69 +88,9 @@ public class P4DiffProvider
     @Nullable
     @Override
     public VcsRevisionDescription getCurrentRevisionDescription(VirtualFile file) {
-        FilePath fp = FilePathUtil.getFilePath(file);
-        P4Server server = getServerFor(fp);
-        final IExtendedFileSpec spec = getFileInfo(server, fp);
-        if (spec == null) {
-            return null;
-        }
-        final String requestedPath = spec.getDepotPathString();
-        if (spec.getHaveRev() <= 0) {
-            return new P4RevisionDescription(fp, requestedPath, null);
-        }
-
-        // TODO this is really bad in terms of performance.
-        List<P4FileRevision> history;
-        try {
-            history = server.getRevisionHistoryOnline(spec, 1);
-        } catch (InterruptedException e) {
-            LOG.info(e);
-            return null;
-        }
-        // just choose the top one
-        if (history == null || history.isEmpty()) {
-            return new P4RevisionDescription(fp, requestedPath, null);
-        } else {
-            return new P4RevisionDescription(fp, requestedPath, history.get(0).getRevisionData());
-        }
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
-
-
-    @Nullable
-    private P4Server getServerFor(@Nullable FilePath file) {
-        if (file == null || project.isDisposed()) {
-            return null;
-        }
-        P4Vcs vcs = P4Vcs.getInstance(project);
-
-        try {
-            return vcs.getP4ServerFor(file);
-        } catch (InterruptedException e) {
-            // just swallow the exception
-            LOG.info(e);
-            return null;
-        }
-    }
-
-
-    @Nullable
-    private IExtendedFileSpec getFileInfo(@Nullable P4Server server, @Nullable FilePath file) {
-        if (file == null || server == null) {
-            return null;
-        }
-        try {
-            final Map<FilePath, IExtendedFileSpec> specs = server.getFileStatus(Collections.singletonList(file));
-            if (specs == null) {
-                return null;
-            }
-            return specs.get(file);
-        } catch (InterruptedException e) {
-            // just swallow the exception
-            LOG.info(e);
-            return null;
-        }
-    }
-
 
 
     private static class P4RevisionDescription implements VcsRevisionDescription {
@@ -185,13 +104,11 @@ public class P4DiffProvider
             this.rev = rev;
         }
 
+        @Nonnull
         @Override
         public VcsRevisionNumber getRevisionNumber() {
-            if (rev == null) {
-                // TODO how to eliminate this special case?
-                return new P4RevisionNumber(baseFile, requestedPath, null, 0);
-            }
-            return new P4RevisionNumber(baseFile, requestedPath, rev);
+            // FIXME
+            throw new IllegalStateException("not implemented");
         }
 
         @Override

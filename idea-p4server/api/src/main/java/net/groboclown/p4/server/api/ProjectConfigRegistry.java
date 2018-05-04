@@ -20,14 +20,15 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.p4.server.api.cache.messagebus.ClientConfigConnectionFailedMessage;
+import com.perforce.p4java.exception.AuthenticationFailedException;
+import net.groboclown.p4.server.api.cache.ClientConfigState;
 import net.groboclown.p4.server.api.cache.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.cache.ClientConfigState;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
+import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
+import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
@@ -152,18 +153,19 @@ public abstract class ProjectConfigRegistry
 
     @Override
     public void initComponent() {
-        ClientConfigConnectionFailedMessage.addListener(projectBusClient,
-                new ClientConfigConnectionFailedMessage.HostErrorListener() {
-                    @Override
-                    public void onLoginError(@NotNull ClientConfig config) {
-                        ProjectConfigRegistry.this.onLoginError(config);
-                    }
-
-                    @Override
-                    public void onHostConnectionError(@NotNull ClientConfig config) {
-                        ProjectConfigRegistry.this.onHostConnectionError(config.getClientServerRef().getServerName());
-                    }
-                });
+        LoginFailureMessage.addListener(applicationBusClient, new LoginFailureMessage.AllErrorListener() {
+            @Override
+            public void onLoginFailure(@NotNull ServerConfig serverConfig, @NotNull AuthenticationFailedException e) {
+                ProjectConfigRegistry.this.onLoginError(serverConfig);
+            }
+        });
+        ConnectionErrorMessage.addListener(applicationBusClient, new ConnectionErrorMessage.AllErrorListener() {
+            @Override
+            public void onHostConnectionError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
+                    @Nullable Exception e) {
+                ProjectConfigRegistry.this.onHostConnectionError(serverName);
+            }
+        });
         ServerConnectedMessage.addListener(applicationBusClient, this::onServerConnected);
         ClientConfigRemovedMessage.addListener(projectBusClient, event -> {
             if (! ProjectConfigRegistry.this.equals(event.getEventSource())) {
@@ -230,7 +232,7 @@ public abstract class ProjectConfigRegistry
     @NotNull
     protected abstract Collection<ClientConfigState> getRegisteredStates();
 
-    protected abstract void onLoginError(@NotNull ClientConfig config);
+    protected abstract void onLoginError(@NotNull ServerConfig config);
 
     protected abstract void onHostConnectionError(@NotNull P4ServerName server);
 

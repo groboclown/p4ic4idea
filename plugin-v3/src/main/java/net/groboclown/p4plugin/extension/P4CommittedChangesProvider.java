@@ -31,16 +31,10 @@ import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import com.intellij.openapi.vcs.versionBrowser.StandardVersionFilterComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.AsynchConsumer;
-import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.p4.server.api.values.P4CommittedChangelist;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.extension.P4CommittedChangesProvider.P4ChangeBrowserSettings;
-import net.groboclown.p4plugin.ui.history.ChangelistDescriptionAction;
-import net.groboclown.p4plugin.v2.changes.P4CommittedChangeList;
-import net.groboclown.idea.p4ic.v2.history.P4RepositoryLocation;
-import net.groboclown.idea.p4ic.v2.history.P4SimpleRepositoryLocation;
-import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,9 +42,8 @@ import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-public class P4CommittedChangesProvider implements CommittedChangesProvider<P4CommittedChangeList, P4ChangeBrowserSettings> {
+public class P4CommittedChangesProvider implements CommittedChangesProvider<P4CommittedChangelist, P4ChangeBrowserSettings> {
     private static final Logger LOG = Logger.getInstance(P4CommittedChangesProvider.class);
 
     private final P4Vcs vcs;
@@ -79,28 +72,8 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
     @Nullable
     @Override
     public RepositoryLocation getLocationFor(FilePath root) {
-        // TODO cache the values?
-
-        try {
-            final P4Server server = vcs.getP4ServerFor(root);
-            if (server == null) {
-                return null;
-            }
-            final Map<FilePath, IExtendedFileSpec> specMap =
-                    server.getFileStatus(Collections.singletonList(root));
-            if (specMap == null) {
-                return null;
-            }
-            IExtendedFileSpec spec = specMap.get(root);
-            if (spec == null) {
-                return null;
-            }
-            return new P4RepositoryLocation(spec);
-        } catch (InterruptedException e) {
-            // FIXME send notification to the Alert system.
-        }
-
-        return null;
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
     @Nullable
@@ -125,8 +98,9 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
      * @throws VcsException
      */
     @Override
-    public List<P4CommittedChangeList> getCommittedChanges(P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount) throws VcsException {
-        final List<P4CommittedChangeList> ret = new ArrayList<P4CommittedChangeList>();
+    public List<P4CommittedChangelist> getCommittedChanges(P4ChangeBrowserSettings settings, RepositoryLocation
+            location, int maxCount) throws VcsException {
+        final List<P4CommittedChangelist> ret = new ArrayList<P4CommittedChangelist>();
         loadCommittedChanges(settings, location, maxCount, new AsynchConsumer<CommittedChangeList>() {
             @Override
             public void finished() {
@@ -135,8 +109,8 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
 
             @Override
             public void consume(CommittedChangeList committedChangeList) {
-                if (committedChangeList instanceof P4CommittedChangeList) {
-                    ret.add((P4CommittedChangeList) committedChangeList);
+                if (committedChangeList instanceof P4CommittedChangelist) {
+                    ret.add((P4CommittedChangelist) committedChangeList);
                 } else {
                     throw new IllegalArgumentException("Must be P4CommitedChangeList: " + committedChangeList);
                 }
@@ -156,6 +130,9 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
             return;
         }
         final IFileSpec spec;
+        // FIXME
+        throw new IllegalStateException("not implemented");
+        /*
         if (location instanceof P4RepositoryLocation) {
             spec = ((P4RepositoryLocation) location).getP4FileInfo();
         } else if (location instanceof P4SimpleRepositoryLocation) {
@@ -176,6 +153,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
             }
         }
         consumer.finished();
+        */
     }
 
     @Override
@@ -192,17 +170,8 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
     @Nullable
     @Override
     public VcsCommittedViewAuxiliary createActions(DecoratorManager manager, RepositoryLocation location) {
-        List<AnAction> allActions = Collections.<AnAction>singletonList(new ChangelistDescriptionAction());
-        return new VcsCommittedViewAuxiliary(
-                allActions,
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        // do nothing
-                    }
-                },
-                allActions
-        );
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
     /**
@@ -222,7 +191,11 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
      */
     @Nullable
     @Override
-    public Pair<P4CommittedChangeList, FilePath> getOneList(VirtualFile file, VcsRevisionNumber number) throws VcsException {
+    public Pair<P4CommittedChangelist, FilePath> getOneList(VirtualFile file, VcsRevisionNumber number)
+            throws VcsException {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+        /*
         FilePath fp = FilePathUtil.getFilePath(file);
         try {
             final P4Server server = vcs.getP4ServerFor(fp);
@@ -252,11 +225,14 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
             LOG.warn(e);
             return null;
         }
+        */
     }
 
     @Override
     public RepositoryLocation getForNonLocal(VirtualFile file) {
-        return getLocationFor(FilePathUtil.getFilePath(file));
+        // FIXME
+        throw new IllegalStateException("not implemented");
+        //return getLocationFor(FilePathUtil.getFilePath(file));
     }
 
     /**
@@ -287,6 +263,9 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
             final List<Filter> ret = super.createFilters();
 
             if (isShowOnlyShelvedFilter()) {
+                // FIXME
+                throw new IllegalStateException("not implemented");
+                /*
                 ret.add(new Filter() {
                     @Override
                     public boolean accepts(final CommittedChangeList change) {
@@ -297,6 +276,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
                         return true;
                     }
                 });
+                */
             }
 
             return ret;
@@ -304,15 +284,18 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
     }
 
 
-    static final ChangeListColumn<P4CommittedChangeList> HAS_SHELVED = new ChangeListColumn<P4CommittedChangeList>() {
+    static final ChangeListColumn<P4CommittedChangelist> HAS_SHELVED = new ChangeListColumn<P4CommittedChangelist>() {
         @Override
         public String getTitle() {
             return P4Bundle.message("changelist.shelved");
         }
 
         @Override
-        public Object getValue(final P4CommittedChangeList changeList) {
-            return changeList.hasShelved();
+        public Object getValue(final P4CommittedChangelist changeList) {
+            // committed changelists can't have shelved files... so this is probably the wrong object.
+            // FIXME
+            throw new IllegalStateException("not implemented");
+            //return changeList.hasShelved();
         }
     };
 }

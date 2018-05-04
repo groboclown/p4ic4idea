@@ -17,7 +17,7 @@ package net.groboclown.p4plugin.ui;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.util.ui.UIUtil;
-import net.groboclown.idea.p4ic.P4Bundle;
+import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 

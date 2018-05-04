@@ -32,9 +32,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.ColumnInfo;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import net.groboclown.idea.p4ic.compat.HistoryCompat;
-import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
-import net.groboclown.idea.p4ic.ui.history.ChangelistDescriptionAction;
-import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.p4.server.api.values.P4FileRevision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -67,9 +65,11 @@ public class P4HistoryProvider
 
     @Override
     public AnAction[] getAdditionalActions(Runnable refresher) {
-        return new AnAction[] {
-                new ChangelistDescriptionAction()
-        };
+        // FIXME
+        throw new IllegalStateException("not implemented");
+        //return new AnAction[] {
+        //        new ChangelistDescriptionAction()
+        //};
     }
 
     @Override
@@ -87,8 +87,12 @@ public class P4HistoryProvider
     @Override
     public VcsHistorySession createSessionFor(FilePath filePath) throws VcsException {
         final List<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();
+        // FIXME
+        throw new IllegalStateException("not implemented");
+        /*
         revisions.addAll(getHistory(filePath, vcs));
         return createAppendableSession(filePath, revisions, null);
+        */
     }
 
     @Override
@@ -99,10 +103,14 @@ public class P4HistoryProvider
         final VcsAbstractHistorySession emptySession = createAppendableSession(path, Collections.<VcsFileRevision>emptyList(), null);
         partner.reportCreatedEmptySession(emptySession);
 
+        /*
         for (P4FileRevision fileRevision : history) {
             partner.acceptRevision(fileRevision);
         }
+        */
         partner.finished();
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
     @Override
@@ -130,6 +138,9 @@ public class P4HistoryProvider
              */
             @Nullable
             protected VcsRevisionNumber calcCurrentRevisionNumber() {
+                // FIXME
+                throw new IllegalStateException("not implemented");
+                /*
                 if (project.isDisposed()) {
                     return null;
                 }
@@ -151,6 +162,7 @@ public class P4HistoryProvider
                     LOG.warn(e);
                     return null;
                 }
+                */
             }
 
             public HistoryAsTreeProvider getHistoryAsTreeProvider() {
@@ -179,25 +191,8 @@ public class P4HistoryProvider
     @NotNull
     private static List<P4FileRevision> getHistory(@NotNull FilePath filePath, @NotNull P4Vcs vcs, int limit)
             throws VcsException {
-        try {
-            P4Server server = vcs.getP4ServerFor(filePath);
-            if (server != null) {
-                final Map<FilePath, IExtendedFileSpec> specs =
-                        server.getFileStatus(Collections.singletonList(filePath));
-                if (specs == null || specs.get(filePath) == null) {
-                    LOG.info("No file information for " + filePath);
-                    return Collections.emptyList();
-                }
-                List<P4FileRevision> ret = server.getRevisionHistoryOnline(specs.get(filePath), limit);
-                if (ret != null) {
-                    return ret;
-                }
-                // fall through
-            }
-        } catch (InterruptedException e) {
-            throw new VcsInterruptedException(e);
-        }
-        return Collections.emptyList();
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
 
@@ -214,7 +209,9 @@ public class P4HistoryProvider
         if (history.isEmpty()) {
             return null;
         }
-        return history.get(0);
+        //return history.get(0);
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
     // Later than v136
@@ -222,6 +219,9 @@ public class P4HistoryProvider
     public void reportAppendableHistory(@NotNull FilePath path, @Nullable VcsRevisionNumber startingRevision,
             @NotNull VcsAppendableHistorySessionPartner partner)
             throws VcsException {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+        /*
         if (vcs.fileIsUnderVcs(path)) {
             try {
                 List<P4FileRevision> history = getHistory(path, vcs);
@@ -235,7 +235,7 @@ public class P4HistoryProvider
             }
         }
         partner.finished();
-
+        */
     }
 
     private static boolean isSameOrAfter(@Nullable P4FileRevision p4Revision,
@@ -246,10 +246,14 @@ public class P4HistoryProvider
         if (startingRevision == null) {
             return true;
         }
+        /*
         if (startingRevision instanceof P4RevisionNumber) {
             P4RevisionNumber rn = (P4RevisionNumber) startingRevision;
             return p4Revision.getChangeListId() >= rn.getChangelist();
         }
         return p4Revision.getRevisionNumber().compareTo(startingRevision) >= 0;
+        */
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 }

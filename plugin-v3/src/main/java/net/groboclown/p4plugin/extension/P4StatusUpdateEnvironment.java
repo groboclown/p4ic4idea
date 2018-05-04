@@ -27,21 +27,13 @@ import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
-import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
-import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
-import net.groboclown.idea.p4ic.ui.SubProgressIndicator;
-import net.groboclown.idea.p4ic.v2.history.P4RevisionNumber;
-import net.groboclown.idea.p4ic.v2.history.P4RevisionNumber.RevType;
-import net.groboclown.idea.p4ic.v2.server.P4Server;
+import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Checks the latest status of the files on the server
@@ -85,62 +77,7 @@ public class P4StatusUpdateEnvironment
     public UpdateSession updateDirectories(@NotNull FilePath[] contentRoots, UpdatedFiles updatedFiles,
             ProgressIndicator progressIndicator, @NotNull Ref<SequentialUpdatesContext> context)
             throws ProcessCanceledException {
-        progressIndicator.setFraction(0.0);
-        StatusUpdateSession session = new StatusUpdateSession();
-        if (project.isDisposed()) {
-            session.exceptions.add(new P4InvalidConfigException("project disposed"));
-            return session;
-        }
-        P4Vcs vcs = P4Vcs.getInstance(project);
-        Map<P4Server, List<FilePath>> mappedRoots;
-        try {
-            mappedRoots = vcs.mapFilePathsToP4Server(Arrays.asList(contentRoots));
-        } catch (InterruptedException e) {
-            session.exceptions.add(new VcsInterruptedException(e));
-            return session;
-        }
-
-        double serverConfigPos = 0.0;
-        for (Map.Entry<P4Server, List<FilePath>> en: mappedRoots.entrySet()) {
-            SubProgressIndicator procIndConfig = new SubProgressIndicator(progressIndicator,
-                    0.1 + (0.6 * (serverConfigPos / (double) mappedRoots.size())),
-                    0.1 + (0.6 * ((serverConfigPos + 1.0) / (double) mappedRoots.size())));
-            serverConfigPos += 1.0;
-            try {
-                P4Server server = en.getKey();
-                final Map<FilePath, IExtendedFileSpec> infos =
-                        server.getFileStatus(en.getValue());
-                if (infos != null) {
-                    double filePos = 0.0;
-                    for (Map.Entry<FilePath, IExtendedFileSpec> infoEntry: infos.entrySet()) {
-                        procIndConfig.setFraction(filePos / (double) infos.size());
-                        filePos += 1.0;
-                        final IExtendedFileSpec spec = infoEntry.getValue();
-                        FileGroup group = updatedFiles.getGroupById(getGroupId(spec));
-                        group.add(infoEntry.getKey().getIOFile().getAbsolutePath(), P4Vcs.getKey(),
-                                new P4RevisionNumber(infoEntry.getKey(),
-                                        spec.getDepotPathString(), spec,
-                                        // Have revision - we're seeing what the user has synced.
-                                        RevType.HAVE));
-                    }
-                } else {
-                    FileGroup group = updatedFiles.getGroupById(OFFLINE_GROUP_ID);
-                    for (FilePath filePath: en.getValue()) {
-                        // TODO get cached known state
-                        group.add(filePath.getIOFile().getAbsolutePath(),
-                                P4Vcs.getKey(),
-                                null);
-                    }
-                }
-                // TODO else mark them w/ offline status
-            } catch (InterruptedException ex) {
-                session.exceptions.add(new VcsInterruptedException(ex));
-            }
-            procIndConfig.setFraction(1.0);
-        }
-
-
-        return session;
+        throw new IllegalStateException("not implemented");
     }
 
     @Nullable

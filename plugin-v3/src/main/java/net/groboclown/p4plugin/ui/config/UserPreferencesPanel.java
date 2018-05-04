@@ -30,6 +30,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
+/**
+ * Global properties.
+ */
 public class UserPreferencesPanel {
     private static final Logger LOG = Logger.getInstance(UserPreferencesPanel.class);
 
@@ -252,13 +255,13 @@ public class UserPreferencesPanel {
         myRootPanel.setLayout(new GridLayoutManager(6, 2, new Insets(0, 0, 0, 0), -1, -1));
         final JLabel label1 = new JLabel();
         this.$$$loadLabelText$$$(label1,
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.max_timeout"));
-        label1.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.max_timeout"));
+        label1.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_timeout.tooltip"));
         myRootPanel.add(label1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myMaxTimeout = new JSpinner();
-        myMaxTimeout.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+        myMaxTimeout.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_timeout.tooltip"));
         myRootPanel.add(myMaxTimeout,
                 new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
@@ -272,9 +275,9 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
                         0, false));
         myOpenForEditInCheckBox = new JCheckBox();
-        this.$$$loadButtonText$$$(myOpenForEditInCheckBox, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+        this.$$$loadButtonText$$$(myOpenForEditInCheckBox, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.edit_in_separate_thread"));
-        myOpenForEditInCheckBox.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+        myOpenForEditInCheckBox.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.edit_in_separate_thread.tooltip"));
         panel1.add(myOpenForEditInCheckBox,
                 new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
@@ -282,9 +285,9 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         myEditedWithoutCheckoutCheckBox = new JCheckBox();
         this.$$$loadButtonText$$$(myEditedWithoutCheckoutCheckBox,
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                         .getString("configuration.user.compare-contents"));
-        myEditedWithoutCheckoutCheckBox.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+        myEditedWithoutCheckoutCheckBox.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("configuration.user.compare-contents.tooltip"));
         panel1.add(myEditedWithoutCheckoutCheckBox,
                 new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
@@ -292,8 +295,8 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         myReconnectWithEachRequest = new JCheckBox();
         this.$$$loadButtonText$$$(myReconnectWithEachRequest,
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.always_reconnect"));
-        myReconnectWithEachRequest.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.always_reconnect"));
+        myReconnectWithEachRequest.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.always_reconnect.tooltip"));
         panel1.add(myReconnectWithEachRequest,
                 new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
@@ -301,9 +304,9 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         myConcatenateChangelistNameComment = new JCheckBox();
         this.$$$loadButtonText$$$(myConcatenateChangelistNameComment,
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                         .getString("user.prefs.concatenate-changelist"));
-        myConcatenateChangelistNameComment.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+        myConcatenateChangelistNameComment.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.concatenate-changelist.tooltip"));
         panel1.add(myConcatenateChangelistNameComment,
                 new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
@@ -311,8 +314,8 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         myShowMessageDialog = new JCheckBox();
         this.$$$loadButtonText$$$(myShowMessageDialog,
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.message-dialog"));
-        myShowMessageDialog.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.message-dialog"));
+        myShowMessageDialog.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.message-dialog.tooltip"));
         panel1.add(myShowMessageDialog,
                 new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
@@ -326,12 +329,12 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
                         0, false));
         panel2.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.rev_display"),
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.rev_display"),
                 TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION,
                 this.$$$getFont$$$(null, -1, -1, panel2.getFont())));
         myPreferRevisionNumber = new JRadioButton();
         this.$$$loadButtonText$$$(myPreferRevisionNumber,
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.revision"));
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.revision"));
         panel2.add(myPreferRevisionNumber,
                 new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
@@ -341,8 +344,8 @@ public class UserPreferencesPanel {
                 new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
                         GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         myPreferChangelist = new JRadioButton();
-        this.$$$loadButtonText$$$(myPreferChangelist, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("user.prefs.prefer_changelist"));
+        this.$$$loadButtonText$$$(myPreferChangelist,
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.prefer_changelist"));
         panel2.add(myPreferChangelist,
                 new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
@@ -353,27 +356,27 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         this.$$$loadLabelText$$$(label2,
-                ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle").getString("user.prefs.max_auth_retry"));
-        label2.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.max_auth_retry"));
+        label2.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_auth_retry.tooltip"));
         myRootPanel.add(label2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myMaxRetryAuthenticationSpinner = new JSpinner();
-        myMaxRetryAuthenticationSpinner.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+        myMaxRetryAuthenticationSpinner.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_auth_retry.tooltip"));
         myRootPanel.add(myMaxRetryAuthenticationSpinner,
                 new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
         final JLabel label3 = new JLabel();
-        this.$$$loadLabelText$$$(label3, ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
-                .getString("user.prefs.socket-so-timeout"));
-        label3.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+        this.$$$loadLabelText$$$(label3,
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.socket-so-timeout"));
+        label3.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.socket-so-timeout.tooltip"));
         myRootPanel.add(label3, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         mySocketSoTimeoutSpinner = new JSpinner();
-        mySocketSoTimeoutSpinner.setToolTipText(ResourceBundle.getBundle("net/groboclown/idea/p4ic/P4Bundle")
+        mySocketSoTimeoutSpinner.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.socket-so-timeout.tooltip"));
         myRootPanel.add(mySocketSoTimeoutSpinner,
                 new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,

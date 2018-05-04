@@ -93,6 +93,7 @@ public abstract class MessageP4RequestErrorHandler
     protected abstract String getMessage(@NonNls @NotNull String messageKey, @NotNull Throwable t,
             Object... arguments);
 
+    @NotNull
     @Override
     protected P4CommandRunner.ServerResultException handleError(
             @NotNull ConnectionInfo info, @NotNull Error e) {
@@ -206,7 +207,7 @@ public abstract class MessageP4RequestErrorHandler
                         // server isn't in the fingerprint registry, and the user didn't
                         // accept the new fingerprint.
                         if (info.hasServerConfig()) {
-                            ConnectionErrorMessage.send(project).sslHostTrustNotEstablished(info.getServerConfig());
+                            ConnectionErrorMessage.send().sslHostTrustNotEstablished(info.getServerConfig());
                             return createServerResultException(e,
                                     getMessage("error.TrustException.NEW_CONNECTION", e),
                                     P4CommandRunner.ErrorCategory.CONNECTION);
@@ -220,7 +221,7 @@ public abstract class MessageP4RequestErrorHandler
                     case NEW_KEY:
                         // fingerprint on record doesn't match server's fingerprint.
                         if (info.hasServerConfig()) {
-                            ConnectionErrorMessage.send(project).sslHostFingerprintMismatch(info.getServerConfig(), te);
+                            ConnectionErrorMessage.send().sslHostFingerprintMismatch(info.getServerConfig(), te);
                             return createServerResultException(e,
                                     getMessage("error.TrustException.NEW_KEY", e),
                                     P4CommandRunner.ErrorCategory.CONNECTION);
@@ -243,7 +244,7 @@ public abstract class MessageP4RequestErrorHandler
             // fall through to config handling.
         }
         if (e instanceof UnknownServerException) {
-            ConnectionErrorMessage.send(project).unknownServer(
+            ConnectionErrorMessage.send().unknownServer(
                     info.getServerName(), info.getServerConfig(), e);
             return createServerResultException(e,
                     getMessage("error.UnknownServerException", e),
@@ -251,7 +252,7 @@ public abstract class MessageP4RequestErrorHandler
         }
         if (e instanceof FileSaveException) {
             if (info.hasServerConfig()) {
-                ConnectionErrorMessage.send(project).couldNotWrite(info.getServerConfig(), (FileSaveException) e);
+                ConnectionErrorMessage.send().couldNotWrite(info.getServerConfig(), (FileSaveException) e);
             } else {
                 // Shouldn't happen.  The information to write to a file should only be
                 // contained in a ServerConfig.
@@ -262,7 +263,7 @@ public abstract class MessageP4RequestErrorHandler
                     P4CommandRunner.ErrorCategory.OS);
         }
         if (e instanceof ZeroconfException) {
-            ConnectionErrorMessage.send(project).zeroconfProblem(
+            ConnectionErrorMessage.send().zeroconfProblem(
                     info.getServerName(), info.getServerConfig(), (ZeroconfException) e);
             return createServerResultException(e,
                     getMessage("error.ZeroconfException", e),
@@ -280,7 +281,7 @@ public abstract class MessageP4RequestErrorHandler
             if (!isUnlimitedStrengthEncryptionInstalled()) {
                 // No such algorithm support - the user probably needs to install the
                 // unlimited strength encryption library.
-                ConnectionErrorMessage.send(project).sslAlgorithmNotSupported(
+                ConnectionErrorMessage.send().sslAlgorithmNotSupported(
                         info.getServerName(), info.getServerConfig());
                 return createServerResultException(e,
                         getMessage("error.SslAlgorithmNotSupportedException", e),
@@ -292,14 +293,14 @@ public abstract class MessageP4RequestErrorHandler
             // No certificate, cipher suite doesn't support authentication,
             // no peer authentication established during SSL handshake, user time
             // isn't close enough to the server time.
-            ConnectionErrorMessage.send(project).sslPeerUnverified(
+            ConnectionErrorMessage.send().sslPeerUnverified(
                     info.getServerName(), info.getServerConfig(), (SslHandshakeException) e);
             return createServerResultException(e,
                     getMessage("error.SslHandshakeException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);
         }
         if (e instanceof SslException) {
-            ConnectionErrorMessage.send(project).sslCertificateIssue(
+            ConnectionErrorMessage.send().sslCertificateIssue(
                     info.getServerName(), info.getServerConfig(), (SslException) e);
             return createServerResultException(e,
                     getMessage("error.SslException", e),
@@ -313,7 +314,7 @@ public abstract class MessageP4RequestErrorHandler
                 e = (ConfigException) cause;
                 // and fall through.
             } else if (cause instanceof UnknownHostException) {
-                ConnectionErrorMessage.send(project).unknownServer(
+                ConnectionErrorMessage.send().unknownServer(
                         info.getServerName(), info.getServerConfig(), e);
                 return createServerResultException(e,
                         getMessage("error.UnknownServerException", e),
@@ -322,7 +323,7 @@ public abstract class MessageP4RequestErrorHandler
                 // General problem with connection, such as socket disconnected mid-stream,
                 // the server version is incompatible with the plugin, the server sends
                 // garbled information, and so on.
-                ConnectionErrorMessage.send(project).connectionError(
+                ConnectionErrorMessage.send().connectionError(
                         info.getServerName(), info.getServerConfig(), (ConnectionException) e);
                 return createServerResultException(e,
                         getMessage("error.ConnectionException", e),
@@ -408,7 +409,7 @@ public abstract class MessageP4RequestErrorHandler
         if (e instanceof ResourceException) {
             // The ServerFactory doesn't have the resources available to create a
             // new connection to the server.
-            ConnectionErrorMessage.send(project).resourcesUnavailable(info.getServerName(), info.getServerConfig(),
+            ConnectionErrorMessage.send().resourcesUnavailable(info.getServerName(), info.getServerConfig(),
                     (ResourceException) e);
             return createServerResultException(e,
                     getMessage("error.ResourceException", e),
@@ -459,7 +460,7 @@ public abstract class MessageP4RequestErrorHandler
                     P4CommandRunner.ErrorCategory.SERVER_ERROR);
         }
         if (e instanceof URISyntaxException) {
-            ConnectionErrorMessage.send(project).connectionError(info.getServerName(), info.getServerConfig(),
+            ConnectionErrorMessage.send().connectionError(info.getServerName(), info.getServerConfig(),
                     new ConnectionException(e));
             return createServerResultException(e,
                     getMessage("error.URISyntaxException", e),

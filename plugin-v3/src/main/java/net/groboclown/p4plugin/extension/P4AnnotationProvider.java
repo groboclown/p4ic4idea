@@ -23,15 +23,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.server.FileSpecUtil;
-import net.groboclown.idea.p4ic.server.exceptions.P4DisconnectedException;
-import net.groboclown.idea.p4ic.server.exceptions.P4Exception;
-import net.groboclown.idea.p4ic.server.exceptions.P4FileException;
-import net.groboclown.idea.p4ic.server.exceptions.P4InvalidConfigException;
-import net.groboclown.idea.p4ic.server.exceptions.VcsInterruptedException;
-import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.util.FilePathUtil;
+import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -53,72 +45,15 @@ public class P4AnnotationProvider
     @Override
     public FileAnnotation annotate(@NotNull VirtualFile file) throws VcsException {
         // Use the "have" revision, not the "head" revision
-        try {
-            final P4Server server = vcs.getP4ServerFor(file);
-            if (server == null) {
-                throw new P4InvalidConfigException(P4Bundle.message("error.filespec.no-client", file));
-            }
-            final FilePath filePath = FilePathUtil.getFilePath(file);
-            final Map<FilePath, IExtendedFileSpec> statusMap =
-                    server.getFileStatus(Collections.singletonList(filePath));
-            if (statusMap == null) {
-                throw new P4DisconnectedException(P4Bundle.message("exception.working-offline"));
-            }
-            final IExtendedFileSpec spec = statusMap.get(filePath);
-            if (spec == null) {
-                throw new P4FileException(file);
-            }
-            P4RevisionNumber rev = new P4RevisionNumber(filePath, spec.getDepotPathString(), spec,
-                    P4RevisionNumber.RevType.HAVE);
-            String contents = rev.loadContentAsString(server, filePath);
-            if (contents == null) {
-                // TODO right way to handle this?
-                contents = "";
-            }
-            return createAnnotation(server, file, server.getAnnotationsForOnline(filePath, spec, spec.getHaveRev()),
-                    rev, contents);
-
-        } catch (InterruptedException e) {
-            throw new VcsInterruptedException(e);
-        }
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
     @NotNull
     @Override
     public FileAnnotation annotate(@NotNull VirtualFile file, VcsFileRevision revision) throws VcsException {
-        FilePath filePath = VcsUtil.getFilePath(file);
-        P4Server server;
-        try {
-            server = vcs.getP4ServerFor(file);
-        } catch (InterruptedException e) {
-            throw new VcsInterruptedException(e);
-        }
-        if (server == null) {
-            throw new P4InvalidConfigException(P4Bundle.message("error.filespec.no-client", file));
-        }
-        VcsRevisionNumber vcsRev = revision.getRevisionNumber();
-        if (!(vcsRev instanceof P4RevisionNumber)) {
-            throw new P4Exception(P4Bundle.message("error.diff.bad-revision", vcsRev));
-        }
-        P4RevisionNumber p4rev = (P4RevisionNumber) vcsRev;
-        int revNumber = p4rev.getRev();
-        String contents;
-        try {
-            contents = server.loadFileAsStringOnline(filePath, revNumber);
-        } catch (InterruptedException e) {
-            throw new VcsInterruptedException(e);
-        }
-        if (contents == null) {
-            // TODO right way to handle this?
-            contents = "";
-        }
-        IFileSpec annotatedSpec = FileSpecUtil.getOneSpecWithRev(filePath, revNumber);
-        try {
-            return createAnnotation(server, file, server.getAnnotationsForOnline(filePath, annotatedSpec, revNumber),
-                    p4rev, contents);
-        } catch (InterruptedException e) {
-            throw new VcsInterruptedException(e);
-        }
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
     /**
@@ -130,20 +65,7 @@ public class P4AnnotationProvider
      */
     @Override
     public boolean isAnnotationValid(@NotNull VcsFileRevision rev) {
-        if (!(rev instanceof P4FileRevision)) {
-            return false;
-        }
-        VcsRevisionNumber revNum = rev.getRevisionNumber();
-        if (!(revNum instanceof P4RevisionNumber)) {
-            return false;
-        }
-        return ((P4RevisionNumber) revNum).getRev() > 0;
-    }
-
-
-    private P4FileAnnotation createAnnotation(@NotNull P4Server server, @NotNull VirtualFile file,
-            @NotNull List<P4AnnotatedLine> annList, @NotNull P4RevisionNumber fileRev, @NotNull String content)
-            throws VcsException {
-        return new P4FileAnnotation(vcs.getProject(), server.getClientServerId(), file, fileRev, annList, content);
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 }

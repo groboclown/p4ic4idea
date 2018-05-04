@@ -53,7 +53,7 @@ public class FileConfigPart implements ConfigPart {
 
     private IOException loadError = null;
 
-    FileConfigPart(@NotNull VirtualFile vcsRoot, @Nullable File filePath) {
+    public FileConfigPart(@NotNull VirtualFile vcsRoot, @Nullable File filePath) {
         this.vcsRoot = vcsRoot;
         this.filePath = filePath;
         reload();

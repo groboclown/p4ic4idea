@@ -28,9 +28,7 @@ import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-
-public class ConnectionErrorMessage extends ProjectMessage<ConnectionErrorMessage.Listener> {
+public class ConnectionErrorMessage extends ApplicationMessage<ConnectionErrorMessage.Listener> {
     private static final String DISPLAY_NAME = "p4ic4idea:reconnect to server";
     private static final Topic<Listener> TOPIC = new Topic<>(
             DISPLAY_NAME,
@@ -156,29 +154,94 @@ public class ConnectionErrorMessage extends ProjectMessage<ConnectionErrorMessag
 
         @Override
         public void sslPeerUnverified(@NotNull P4ServerName name, @Nullable ServerConfig serverConfig,
-                @Nonnull SslHandshakeException e) {
+                @NotNull SslHandshakeException e) {
 
         }
 
         @Override
         public void sslCertificateIssue(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @Nonnull SslException e) {
+                @NotNull SslException e) {
 
         }
 
         @Override
         public void connectionError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @Nonnull ConnectionException e) {
+                @NotNull ConnectionException e) {
 
         }
 
         @Override
-        public void resourcesUnavailable(@Nonnull P4ServerName serverName, ServerConfig serverConfig, @Nonnull ResourceException e) {
+        public void resourcesUnavailable(@NotNull P4ServerName serverName, ServerConfig serverConfig, @NotNull ResourceException e) {
 
         }
     }
 
-    public static Listener send(@NotNull Project project) {
-        return getListener(project, TOPIC, DEFAULT_LISTENER);
+    public static abstract class AllErrorListener implements Listener {
+        @Override
+        public void unknownServer(@NotNull P4ServerName name, @Nullable ServerConfig config, @NotNull Exception e) {
+            onHostConnectionError(name, config, e);
+        }
+
+        @Override
+        public void couldNotWrite(@NotNull ServerConfig config, @NotNull FileSaveException e) {
+            onHostConnectionError(config.getServerName(), config, e);
+        }
+
+        @Override
+        public void zeroconfProblem(@NotNull P4ServerName name, @Nullable ServerConfig config,
+                @NotNull ZeroconfException e) {
+            onHostConnectionError(name, config, e);
+
+        }
+
+        @Override
+        public void sslHostTrustNotEstablished(@NotNull ServerConfig serverConfig) {
+            onHostConnectionError(serverConfig.getServerName(), serverConfig, null);
+        }
+
+        @Override
+        public void sslHostFingerprintMismatch(@NotNull ServerConfig serverConfig, @NotNull TrustException e) {
+            onHostConnectionError(serverConfig.getServerName(), serverConfig, e);
+        }
+
+        @Override
+        public void sslAlgorithmNotSupported(@NotNull P4ServerName name, @Nullable ServerConfig serverConfig) {
+            onHostConnectionError(name, serverConfig, null);
+        }
+
+        @Override
+        public void sslPeerUnverified(@NotNull P4ServerName name, @Nullable ServerConfig serverConfig,
+                @NotNull SslHandshakeException e) {
+            onHostConnectionError(name, serverConfig, e);
+        }
+
+        @Override
+        public void sslCertificateIssue(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
+                @NotNull SslException e) {
+            onHostConnectionError(serverName, serverConfig, e);
+        }
+
+        @Override
+        public void connectionError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
+                @NotNull ConnectionException e) {
+            onHostConnectionError(serverName, serverConfig, e);
+        }
+
+        @Override
+        public void resourcesUnavailable(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
+                @NotNull ResourceException e) {
+            onHostConnectionError(serverName, serverConfig, e);
+        }
+
+        public abstract void onHostConnectionError(@NotNull P4ServerName serverName,
+                @Nullable ServerConfig serverConfig, @Nullable Exception e);
+    }
+
+    public static Listener send() {
+        return getListener(TOPIC, DEFAULT_LISTENER);
+    }
+
+    public static void addListener(@NotNull MessageBusClient client, @NotNull Listener listener) {
+        addTopicListener(client, TOPIC, listener);
     }
 }

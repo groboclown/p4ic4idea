@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="net.groboclown.idea.p4ic.ui.sync.SyncPanel">
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="net.groboclown.p4plugin.ui.sync.SyncPanel">
   <grid id="cae21" binding="myRootPane" layout-manager="BorderLayout" hgap="0" vgap="0">
     <constraints>
       <xy x="20" y="20" width="500" height="400"/>
@@ -11,7 +11,7 @@
         <margin top="4" left="4" bottom="4" right="4"/>
         <constraints border-constraint="North"/>
         <properties/>
-        <border type="line" title-resource-bundle="net/groboclown/idea/p4ic/P4Bundle" title-key="sync.options.to.title"/>
+        <border type="line" title-resource-bundle="net/groboclown/p4plugin/P4Bundle" title-key="sync.options.to.title"/>
         <children>
           <component id="4e7bb" class="javax.swing.JRadioButton" binding="mySyncHead">
             <constraints>
@@ -19,8 +19,8 @@
             </constraints>
             <properties>
               <selected value="true"/>
-              <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="sync.options.head"/>
-              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="sync.options.head.tooltip"/>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="sync.options.head"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="sync.options.head.tooltip"/>
             </properties>
           </component>
           <component id="8fe15" class="javax.swing.JRadioButton" binding="mySyncRev">
@@ -28,8 +28,8 @@
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="sync.options.rev"/>
-              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="sync.options.rev.tooltip"/>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="sync.options.rev"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="sync.options.rev.tooltip"/>
             </properties>
           </component>
           <component id="fc51c" class="javax.swing.JRadioButton" binding="mySyncChangelist">
@@ -37,8 +37,8 @@
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="sync.options.change"/>
-              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="sync.options.other.tooltip"/>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="sync.options.change"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="sync.options.other.tooltip"/>
             </properties>
           </component>
           <hspacer id="33ea6">
@@ -61,7 +61,7 @@
                 <properties>
                   <columns value="4"/>
                   <enabled value="false"/>
-                  <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="sync.options.rev.value.tooltip"/>
+                  <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="sync.options.rev.value.tooltip"/>
                 </properties>
               </component>
               <component id="b3404" class="javax.swing.JLabel" binding="myRevLabel">
@@ -71,7 +71,7 @@
                 <properties>
                   <enabled value="false"/>
                   <labelFor value="7115e"/>
-                  <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="sync.options.rev.value"/>
+                  <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="sync.options.rev.value"/>
                 </properties>
               </component>
             </children>
@@ -92,7 +92,7 @@
                   <columns value="10"/>
                   <editable value="true"/>
                   <enabled value="false"/>
-                  <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="sync.options.other.value.tooltip"/>
+                  <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="sync.options.other.value.tooltip"/>
                 </properties>
               </component>
               <component id="dc2fc" class="javax.swing.JLabel" binding="myOtherLabel">
@@ -102,7 +102,7 @@
                 <properties>
                   <enabled value="false"/>
                   <labelFor value="5b6a4"/>
-                  <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="sync.options.other.field"/>
+                  <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="sync.options.other.field"/>
                 </properties>
               </component>
             </children>
@@ -122,8 +122,8 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="sync.options.force"/>
-              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="sync.options.force.tooltip"/>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="sync.options.force"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="sync.options.force.tooltip"/>
             </properties>
           </component>
           <vspacer id="f23ab">

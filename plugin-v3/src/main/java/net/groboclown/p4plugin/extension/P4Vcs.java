@@ -60,7 +60,6 @@ import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.messages.UserMessage;
 import net.groboclown.p4plugin.preferences.UserProjectPreferences;
 import net.groboclown.p4plugin.ui.ColorUtil;
-import net.groboclown.p4plugin.ui.P4MultipleConnectionWidget;
 import net.groboclown.p4plugin.ui.config.P4ProjectConfigurable;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -159,8 +158,9 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
     private MessageBusConnection appMessageBusConnection;
 
+    // FIXME
     //private P4ConnectionWidget connectionWidget;
-    private P4MultipleConnectionWidget connectionWidget;
+    //private P4MultipleConnectionWidget connectionWidget;
 
     private P4VFSListener myVFSListener;
 
@@ -324,7 +324,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         }
 
         if (myVFSListener == null) {
-            myVFSListener = new P4VFSListener(this);
+            myVFSListener = new P4VFSListener(getProject(), this);
         }
 
         VcsCompat.getInstance().setupPlugin(myProject);
@@ -349,6 +349,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         if (!ApplicationManager.getApplication().isHeadlessEnvironment()) {
             final StatusBar statusBar = WindowManager.getInstance().getStatusBar(myProject);
             if (statusBar != null) {
+                // FIXME
+                /*
                 connectionWidget = new P4MultipleConnectionWidget(this, myProject);
                 ApplicationManager.getApplication().invokeAndWait(new Runnable() {
                     @Override
@@ -358,6 +360,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
                     }
                 }, ModalityState.NON_MODAL);
                 // Initialize the widget separately.
+                */
             }
         }
 
@@ -383,6 +386,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
             @Override
             public void run() {
+                // FIXME
+                /*
                 refreshServerConnectivity();
 
                 if (connectionWidget != null) {
@@ -396,6 +401,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
                         }
                     });
                 }
+                */
             }
         });
 
@@ -410,6 +416,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         tempFileWatchDog.stop();
         tempFileWatchDog.cleanUpTempDir();
 
+        // FIXME
+        /*
         if (connectionWidget != null && !ApplicationManager.getApplication().isHeadlessEnvironment()) {
             final StatusBar statusBar = WindowManager.getInstance().getStatusBar(myProject);
             if (statusBar != null) {
@@ -423,6 +431,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
                 }, ModalityState.NON_MODAL);
             }
         }
+        */
 
         if (myVFSListener != null) {
             Disposer.dispose(myVFSListener);
@@ -609,7 +618,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     @Override
     @Nullable
     protected UpdateEnvironment createUpdateEnvironment() {
-        return new P4SyncUpdateEnvironment(this);
+        return new P4SyncUpdateEnvironment();
     }
 
 

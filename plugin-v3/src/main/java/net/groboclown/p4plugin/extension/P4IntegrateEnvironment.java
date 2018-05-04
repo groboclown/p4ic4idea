@@ -14,7 +14,47 @@
 
 package net.groboclown.p4plugin.extension;
 
+import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.progress.ProcessCanceledException;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.util.Ref;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.update.SequentialUpdatesContext;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
+import com.intellij.openapi.vcs.update.UpdateSession;
+import com.intellij.openapi.vcs.update.UpdatedFiles;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class P4IntegrateEnvironment extends UpdateEnvironment {
+import java.util.Collection;
+
+public class P4IntegrateEnvironment
+        implements UpdateEnvironment {
+    @Override
+    public void fillGroups(UpdatedFiles updatedFiles) {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+    }
+
+    @NotNull
+    @Override
+    public UpdateSession updateDirectories(@NotNull FilePath[] filePaths, UpdatedFiles updatedFiles,
+            ProgressIndicator progressIndicator, @NotNull Ref<SequentialUpdatesContext> ref)
+            throws ProcessCanceledException {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Nullable
+    @Override
+    public Configurable createConfigurable(Collection<FilePath> collection) {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Override
+    public boolean validateOptions(Collection<FilePath> collection) {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+    }
 }

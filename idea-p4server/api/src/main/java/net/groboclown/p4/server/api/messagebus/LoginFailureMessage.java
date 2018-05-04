@@ -29,9 +29,9 @@ public class LoginFailureMessage extends ApplicationMessage<LoginFailureMessage.
 
     public interface Listener {
         void singleSignOnFailed(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e);
-        void sessionExpired(@NotNull ServerConfig clientConfig, @NotNull AuthenticationFailedException e);
+        void sessionExpired(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e);
 
-        void passwordInvalid(@NotNull ServerConfig serverConfig, @NotNull AuthenticationFailedException e);
+        void passwordInvalid(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e);
 
         /**
          * The user supplied a password, but the login does not use one.  The configuration should be changed
@@ -40,7 +40,7 @@ public class LoginFailureMessage extends ApplicationMessage<LoginFailureMessage.
          * @param serverConfig configuration that caused the issue.
          * @param e source exception
          */
-        void passwordUnnecessary(@NotNull ServerConfig serverConfig, @NotNull AuthenticationFailedException e);
+        void passwordUnnecessary(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e);
     }
 
     public static class ListenerAdapter implements Listener {
@@ -50,22 +50,51 @@ public class LoginFailureMessage extends ApplicationMessage<LoginFailureMessage.
         }
 
         @Override
-        public void sessionExpired(@NotNull ServerConfig clientConfig, @NotNull AuthenticationFailedException e) {
+        public void sessionExpired(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
             // do nothing
         }
 
         @Override
-        public void passwordInvalid(@NotNull ServerConfig serverConfig, @NotNull AuthenticationFailedException e) {
+        public void passwordInvalid(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
             // do nothing
         }
 
         @Override
-        public void passwordUnnecessary(@NotNull ServerConfig serverConfig, @NotNull AuthenticationFailedException e) {
+        public void passwordUnnecessary(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
             // do nothing
         }
     }
 
+    public static abstract class AllErrorListener implements Listener {
+        @Override
+        public void singleSignOnFailed(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
+            onLoginFailure(config, e);
+        }
+
+        @Override
+        public void sessionExpired(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
+            onLoginFailure(config, e);
+        }
+
+        @Override
+        public void passwordInvalid(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
+            onLoginFailure(config, e);
+        }
+
+        @Override
+        public void passwordUnnecessary(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
+            onLoginFailure(config, e);
+        }
+
+        public abstract void onLoginFailure(@NotNull ServerConfig serverConfig,
+                @NotNull AuthenticationFailedException e);
+    }
+
     public static Listener send() {
         return getListener(TOPIC, DEFAULT_LISTENER);
+    }
+
+    public static void addListener(@NotNull MessageBusClient client, @NotNull Listener listener) {
+        addTopicListener(client, TOPIC, listener);
     }
 }

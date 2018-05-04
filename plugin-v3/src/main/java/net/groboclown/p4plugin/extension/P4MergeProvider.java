@@ -14,7 +14,41 @@
 
 package net.groboclown.p4plugin.extension;
 
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.merge.MergeData;
 import com.intellij.openapi.vcs.merge.MergeProvider2;
+import com.intellij.openapi.vcs.merge.MergeSession;
+import com.intellij.openapi.vfs.VirtualFile;
+import org.jetbrains.annotations.NotNull;
 
-public class P4MergeProvider extends MergeProvider2 {
+import java.util.List;
+
+public class P4MergeProvider
+        implements MergeProvider2 {
+    @NotNull
+    @Override
+    public MergeSession createMergeSession(@NotNull List<VirtualFile> list) {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+    }
+
+    @NotNull
+    @Override
+    public MergeData loadRevisions(@NotNull VirtualFile virtualFile)
+            throws VcsException {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Override
+    public void conflictResolvedForFile(@NotNull VirtualFile virtualFile) {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Override
+    public boolean isBinary(@NotNull VirtualFile virtualFile) {
+        // FIXME
+        throw new IllegalStateException("not implemented");
+    }
 }

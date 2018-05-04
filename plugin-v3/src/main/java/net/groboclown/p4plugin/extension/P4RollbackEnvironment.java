@@ -73,6 +73,9 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
         }
 
         boolean hasRefreshedFiles = false;
+        // FIXME
+        throw new IllegalStateException("not implemented");
+        /*
         final Map<P4Server, List<FilePath>> mapping;
         try {
             mapping = vcs.mapFilePathsToP4Server(paths);
@@ -121,6 +124,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
 
         // A refresh of the changes is sometimes needed.
         P4ChangesViewRefresher.refreshLater(vcs.getProject());
+        */
     }
 
     @Override
@@ -141,6 +145,9 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
         if (vcs.getProject().isDisposed()) {
             return;
         }
+        // FIXME
+        throw new IllegalStateException("not implemented");
+        /*
 
         final Map<P4Server, List<FilePath>> mapping;
         try {
@@ -165,6 +172,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
                 exceptions.add(new VcsInterruptedException(e));
             }
         }
+        */
     }
 
 
@@ -173,7 +181,10 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
         if (file == null || vcs.getProject().isDisposed()) {
             return;
         }
+        // FIXME
+        throw new IllegalStateException("not implemented");
 
+        /*
         FilePath fp = FilePathUtil.getFilePath(file);
         final P4Server server;
         try {
@@ -209,5 +220,6 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
         if (reverted) {
             P4ChangesViewRefresher.refreshLater(vcs.getProject());
         }
+        */
     }
 }

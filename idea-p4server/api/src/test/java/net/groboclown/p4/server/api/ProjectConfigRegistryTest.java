@@ -112,7 +112,7 @@ class ProjectConfigRegistryTest {
         }
 
         @Override
-        protected void onLoginError(@NotNull ClientConfig config) {
+        protected void onLoginError(@NotNull ServerConfig config) {
             throw new IllegalStateException();
         }
 

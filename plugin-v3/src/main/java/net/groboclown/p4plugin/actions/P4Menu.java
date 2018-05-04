@@ -16,7 +16,7 @@ package net.groboclown.p4plugin.actions;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.actions.StandardVcsGroup;
-import net.groboclown.idea.p4ic.extension.P4Vcs;
+import net.groboclown.p4plugin.extension.P4Vcs;
 
 public class P4Menu extends StandardVcsGroup {
     @Override

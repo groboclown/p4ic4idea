@@ -149,7 +149,7 @@ public class ProjectConfigRegistryImpl
     }
 
     @Override
-    protected void onLoginError(@NotNull ClientConfig config) {
+    protected void onLoginError(@NotNull ServerConfig config) {
         // Note: does not check disposed state.
 
         ServerConfigStateImpl state = getServerConfigState(config);
@@ -252,10 +252,10 @@ public class ProjectConfigRegistryImpl
         }
     }
 
-    private ServerConfigStateImpl getServerConfigState(@NotNull ClientConfig config) {
+    private ServerConfigStateImpl getServerConfigState(@NotNull ServerConfig config) {
         ServerRef ref;
         synchronized (registeredServers) {
-            ref = registeredServers.get(config.getServerConfig().getServerId());
+            ref = registeredServers.get(config.getServerId());
         }
         if (ref != null && !ref.state.isDisposed()) {
             return ref.state;

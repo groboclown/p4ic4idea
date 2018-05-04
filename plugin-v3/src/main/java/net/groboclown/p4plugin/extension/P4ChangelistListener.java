@@ -23,13 +23,6 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListListener;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
-import net.groboclown.idea.p4ic.P4Bundle;
-import net.groboclown.idea.p4ic.changes.P4ChangeListId;
-import net.groboclown.idea.p4ic.v2.server.P4FileAction;
-import net.groboclown.idea.p4ic.v2.server.P4Server;
-import net.groboclown.idea.p4ic.v2.server.cache.ClientServerRef;
-import net.groboclown.idea.p4ic.v2.server.connection.AlertManager;
-import net.groboclown.idea.p4ic.v2.server.util.ChangelistDescriptionGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,14 +39,10 @@ public class P4ChangelistListener
 
     private final Project myProject;
     private final P4Vcs myVcs;
-    private final P4ChangeListMapping changeListMapping;
-    private final AlertManager alerts;
 
     public P4ChangelistListener(@NotNull final Project project, @NotNull final P4Vcs vcs) {
         myProject = project;
         myVcs = vcs;
-        alerts = AlertManager.getInstance();
-        changeListMapping = P4ChangeListMapping.getInstance(project);
     }
 
     @Override
@@ -63,6 +52,8 @@ public class P4ChangelistListener
         // Perforce-backed in order for it to become one.
         LOG.debug("changeListAdded: " + list.getName() + "; [" + list.getComment() + "]; " +
                 list.getClass().getSimpleName());
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
     @Override
@@ -70,22 +61,8 @@ public class P4ChangelistListener
         LOG.debug("changeListRemoved: " + list.getName() + "; [" + list.getComment() + "]; " + list.getClass()
                 .getSimpleName());
 
-        if (list instanceof LocalChangeList && !P4ChangeListMapping.isDefaultChangelist(list)) {
-            final List<P4ChangeListId> changelists = new ArrayList<P4ChangeListId>(
-                    changeListMapping.getAllPerforceChangelistsFor((LocalChangeList) list));
-            for (P4Server server: myVcs.getP4Servers()) {
-                final Iterator<P4ChangeListId> iter = changelists.iterator();
-                while (iter.hasNext()) {
-                    final P4ChangeListId next = iter.next();
-                    if (next.isDefaultChangelist()) {
-                        iter.remove();
-                    } else if (next.isIn(server)) {
-                        iter.remove();
-                        server.deleteChangelist(next.getChangeListId());
-                    }
-                }
-            }
-        }
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
     @Override
@@ -111,31 +88,8 @@ public class P4ChangelistListener
         // other side, then ensure the other side is also moved along with this one.
 
 
-        if (toList instanceof LocalChangeList) {
-            final List<FilePath> paths = getPathsFromChanges(changes);
-            if (paths.isEmpty()) {
-                return;
-            }
-
-            final Map<P4Server, List<FilePath>> perServer;
-            try {
-                perServer = myVcs.mapFilePathsToP4Server(paths);
-            } catch (InterruptedException e) {
-                alerts.addWarning(myProject,
-                        P4Bundle.message("error.cancelled-timeout.changes-added"),
-                        P4Bundle.message("error.cancelled-timeout"),
-                        e, paths);
-                return;
-            }
-            for (Entry<P4Server, List<FilePath>> entry : perServer.entrySet()) {
-                P4Server server = entry.getKey();
-                // Do not find the actual Perforce related changelist here, because
-                // it could potentially not exist yet.  Instead, pass in the IDEA
-                // changelist so that, if it is created, it can be bound to the
-                // IDEA changelist correctly.
-                server.moveFilesToChange(entry.getValue(), (LocalChangeList) toList, changeListMapping);
-            }
-        }
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
     @Override
@@ -156,70 +110,8 @@ public class P4ChangelistListener
             return;
         }
 
-        if (P4ChangeListMapping.isDefaultChangelist(list) &&
-                P4ChangeListMapping.isIdeaDefaultChangelistName(oldName)) {
-            LOG.info("Cannot set a comment to the default changelist in Perforce; ignoring.");
-            return;
-        }
-
-        if (P4ChangeListMapping.isDefaultChangelist(list)) {
-            // Rename a changelist to the default.
-            // So move the files into the default changelist, and delete
-            // the changelist.
-
-            final Map<ClientServerRef, P4ChangeListId> moved =
-                    changeListMapping.rebindChangelistAsDefault((LocalChangeList) list);
-            for (P4Server server: myVcs.getP4Servers()) {
-                final P4ChangeListId p4cl = moved.remove(server.getClientServerId());
-                if (p4cl != null) {
-                    final Collection<P4FileAction> opened;
-                    try {
-                        opened = server.getOpenFiles();
-                    } catch (InterruptedException e) {
-                        LOG.error(e);
-                        continue;
-                    }
-                    List<FilePath> files = new ArrayList<FilePath>(opened.size());
-                    for (P4FileAction p4FileAction : opened) {
-                        if (p4FileAction.getChangeList() == p4cl.getChangeListId()) {
-                            files.add(p4FileAction.getFile());
-                        }
-                    }
-                    server.moveFilesToChange(files, (LocalChangeList) list, changeListMapping);
-                }
-            }
-            return;
-        }
-
-
-        if (P4ChangeListId.DEFAULT_CHANGE_NAME.equals(oldName)) {
-            // Move files out of the default changelist.
-
-            for (P4Server server : myVcs.getP4Servers()) {
-                final Collection<P4FileAction> opened;
-                try {
-                    opened = server.getOpenFiles();
-                } catch (InterruptedException e) {
-                    LOG.error(e);
-                    continue;
-                }
-                List<FilePath> files = new ArrayList<FilePath>(opened.size());
-                for (P4FileAction p4FileAction : opened) {
-                    if (p4FileAction.getChangeList() == P4ChangeListId.P4_DEFAULT) {
-                        files.add(p4FileAction.getFile());
-                    }
-                }
-                server.moveFilesToChange(files, (LocalChangeList) list, changeListMapping);
-            }
-            return;
-        }
-
-        for (P4Server server : myVcs.getP4Servers()) {
-            final P4ChangeListId p4cl = changeListMapping.getPerforceChangelistFor(server, (LocalChangeList) list);
-            if (p4cl != null) {
-                server.renameChangelist(p4cl.getChangeListId(), toDescription(server.getProject(), list));
-            }
-        }
+        // FIXME
+        throw new IllegalStateException("not implemented");
     }
 
     @Override
@@ -284,6 +176,8 @@ public class P4ChangelistListener
 
 
     private static String toDescription(@Nullable Project project, @NotNull ChangeList changeList) {
-        return ChangelistDescriptionGenerator.getDescription(project, changeList);
+        // FIXME
+        throw new IllegalStateException("not implemented");
+        // return ChangelistDescriptionGenerator.getDescription(project, changeList);
     }
 }

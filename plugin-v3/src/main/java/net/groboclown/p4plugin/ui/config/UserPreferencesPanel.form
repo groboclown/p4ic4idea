@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="net.groboclown.idea.p4ic.ui.config.UserPreferencesPanel">
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="net.groboclown.p4plugin.ui.config.UserPreferencesPanel">
   <grid id="27dc6" binding="myRootPanel" layout-manager="GridLayoutManager" row-count="6" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
@@ -14,8 +14,8 @@
         </constraints>
         <properties>
           <labelFor value="4f71f"/>
-          <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.max_timeout"/>
-          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.max_timeout.tooltip"/>
+          <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.max_timeout"/>
+          <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.max_timeout.tooltip"/>
         </properties>
       </component>
       <component id="4f71f" class="javax.swing.JSpinner" binding="myMaxTimeout">
@@ -23,7 +23,7 @@
           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.max_timeout.tooltip"/>
+          <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.max_timeout.tooltip"/>
         </properties>
       </component>
       <grid id="b1b2c" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -39,8 +39,8 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="1" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.edit_in_separate_thread"/>
-              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.edit_in_separate_thread.tooltip"/>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.edit_in_separate_thread"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.edit_in_separate_thread.tooltip"/>
             </properties>
           </component>
           <component id="1ae1f" class="javax.swing.JCheckBox" binding="myEditedWithoutCheckoutCheckBox">
@@ -48,8 +48,8 @@
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="1" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.user.compare-contents"/>
-              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="configuration.user.compare-contents.tooltip"/>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="configuration.user.compare-contents"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="configuration.user.compare-contents.tooltip"/>
             </properties>
           </component>
           <component id="12e6b" class="javax.swing.JCheckBox" binding="myReconnectWithEachRequest">
@@ -57,8 +57,8 @@
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="1" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.always_reconnect"/>
-              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.always_reconnect.tooltip"/>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.always_reconnect"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.always_reconnect.tooltip"/>
             </properties>
           </component>
           <component id="b0091" class="javax.swing.JCheckBox" binding="myConcatenateChangelistNameComment">
@@ -66,8 +66,8 @@
               <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="1" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.concatenate-changelist"/>
-              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.concatenate-changelist.tooltip"/>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.concatenate-changelist"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.concatenate-changelist.tooltip"/>
             </properties>
           </component>
           <component id="b7bf6" class="javax.swing.JCheckBox" binding="myShowMessageDialog">
@@ -75,8 +75,8 @@
               <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="1" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.message-dialog"/>
-              <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.message-dialog.tooltip"/>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.message-dialog"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.message-dialog.tooltip"/>
             </properties>
           </component>
         </children>
@@ -87,7 +87,7 @@
           <grid row="4" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
-        <border type="line" title-resource-bundle="net/groboclown/idea/p4ic/P4Bundle" title-key="user.prefs.rev_display">
+        <border type="line" title-resource-bundle="net/groboclown/p4plugin/P4Bundle" title-key="user.prefs.rev_display">
           <font/>
         </border>
         <children>
@@ -96,7 +96,7 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.revision"/>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.revision"/>
             </properties>
           </component>
           <hspacer id="8629f">
@@ -109,7 +109,7 @@
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.prefer_changelist"/>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.prefer_changelist"/>
             </properties>
           </component>
         </children>
@@ -125,8 +125,8 @@
         </constraints>
         <properties>
           <labelFor value="b493"/>
-          <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.max_auth_retry"/>
-          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.max_auth_retry.tooltip"/>
+          <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.max_auth_retry"/>
+          <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.max_auth_retry.tooltip"/>
         </properties>
       </component>
       <component id="b493" class="javax.swing.JSpinner" binding="myMaxRetryAuthenticationSpinner">
@@ -134,7 +134,7 @@
           <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.max_auth_retry.tooltip"/>
+          <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.max_auth_retry.tooltip"/>
         </properties>
       </component>
       <component id="73ccc" class="javax.swing.JLabel">
@@ -142,8 +142,8 @@
           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.socket-so-timeout"/>
-          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.socket-so-timeout.tooltip"/>
+          <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.socket-so-timeout"/>
+          <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.socket-so-timeout.tooltip"/>
         </properties>
       </component>
       <component id="5a61b" class="javax.swing.JSpinner" binding="mySocketSoTimeoutSpinner">
@@ -151,7 +151,7 @@
           <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <toolTipText resource-bundle="net/groboclown/idea/p4ic/P4Bundle" key="user.prefs.socket-so-timeout.tooltip"/>
+          <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="user.prefs.socket-so-timeout.tooltip"/>
         </properties>
       </component>
     </children>

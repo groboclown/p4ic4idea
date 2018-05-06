@@ -19,7 +19,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ClientConfigStateImplTest {
+class ClientConfigRootImplTest {
     @RegisterExtension
     IdeaLightweightExtension idea = new IdeaLightweightExtension();
 

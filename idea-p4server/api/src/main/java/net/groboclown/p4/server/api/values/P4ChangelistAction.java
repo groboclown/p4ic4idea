@@ -12,15 +12,21 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4plugin.messages.listeners;
+package net.groboclown.p4.server.api.values;
 
-import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
-import net.groboclown.p4.server.api.config.ServerConfig;
-import org.jetbrains.annotations.NotNull;
-
-public class ServerConnectedListener implements ServerConnectedMessage.Listener {
-    @Override
-    public void serverConnected(@NotNull ServerConfig serverConfig) {
-
-    }
+/**
+ * Classifications of changes that can be made to changelists.  These do not directly relate to any
+ * type in the p4java api, but are useful for storing state change information.
+ */
+public enum P4ChangelistAction {
+    CREATE,
+    DELETE,
+    EDIT_DESCRIPTION,
+    ADD_JOB,
+    REMOVE_JOB,
+    ADD_FILE,
+    REMOVE_FILE,
+    SHELVE_FILE,
+    DELETE_SHELVED_FILE,
+    SUBMIT
 }

@@ -23,13 +23,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
-public class ClientOpenCacheUpdateMessage extends AbstractCacheMessage {
+public class ClientOpenCacheUpdateMessage extends AbstractCacheMessage<ClientOpenCacheUpdateMessage.Event> {
     private static final String DISPLAY_NAME = "p4ic4idea:open cache update";
     private static final Topic<AbstractCacheMessage.TopicListener<ClientOpenCacheUpdateMessage.Event>> TOPIC =
             createTopic(DISPLAY_NAME);
 
     public interface Listener {
-        void openFilesChangelistsUpdated(Event event);
+        void openFilesChangelistsUpdated(@NotNull Event event);
     }
 
     public static void addListener(@NotNull MessageBusClient client, @NotNull String cacheId,

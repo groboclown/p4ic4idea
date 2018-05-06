@@ -49,12 +49,41 @@ the event object completes.
 
 ## Storing of the Cached Data
 
-(TODO need a nice way to store the cached data without having to implement custom serialization)
+Cached data is split into two parts: offline changed state, and online cached
+values.  Offline changed state stores pending actions, and its effects on
+files and changelists.  Online cached values stores the last state returned by
+the server.
 
+### Pending File Action Cache
+
+Pending file changes must record the pending action, the original state of the
+file contents before the change occurred (so offline reverts can work), and
+possible source file renames.
+
+File actions are limited to add, edit, and delete.  Any of these are reflected
+in the primary action of the file.  File move actions, though, must be
+remembered based on the source file.  Additional pending actions upon the file
+must be examined against the source origin file to see its effect.  For
+example, if the user moves a file then deletes it, the end resulting action
+is a delete on the source file.  If the user moves a file, then renames it,
+then moves it again, then the resulting action is only a single move.
+
+### Pending Changelist Action Cache
+
+Pending changelist actions, such as performing an action on a file and adding
+it to a changelist, or adding a job to a changelist, or creating a changelist,
+or deleting one, are associated with the pending changelist action cache.
+
+### Constructing an active view based on cached data
+
+Due to the [threading model](threading.md), requests by the IDE will always
+respond with cached data.  This means that the response must take into account
+online cached values combined with the offline pending action information.
 
 
 ## Problems In The Past
 
-When the cache was stored in the application, attempts were made to clean it out when a project removed a
-reference to the server.  This means that the server cache would be removed when one project changed its
-server setup, and other projects would then lose it.
+When the cache was stored in the application, attempts were made to clean it
+out when a project removed a reference to the server.  This means that the
+server cache would be removed when one project changed its server setup, and
+other projects would then lose it.

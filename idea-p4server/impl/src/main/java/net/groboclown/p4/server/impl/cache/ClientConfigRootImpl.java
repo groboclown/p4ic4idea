@@ -17,15 +17,15 @@ package net.groboclown.p4.server.impl.cache;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.cache.ClientConfigState;
+import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 
-public class ClientConfigStateImpl
-        implements ClientConfigState {
-    private static final Logger LOG = Logger.getInstance(ClientConfigStateImpl.class);
+public class ClientConfigRootImpl
+        implements ClientConfigRoot {
+    private static final Logger LOG = Logger.getInstance(ClientConfigRootImpl.class);
     private final ClientConfig config;
-    private final ServerConfigStateImpl serverConfigState;
+    private final ServerStatusImpl serverConfigState;
     private final VirtualFile vcsRoot;
     private boolean loaded = false;
     private Boolean caseSensitive = null;
@@ -34,8 +34,8 @@ public class ClientConfigStateImpl
     // must monitor for client config removed.
     private boolean disposed;
 
-    public ClientConfigStateImpl(@NotNull final ClientConfig config,
-            @NotNull ServerConfigStateImpl serverConfigState,
+    public ClientConfigRootImpl(@NotNull final ClientConfig config,
+            @NotNull ServerStatusImpl serverConfigState,
             @NotNull VirtualFile vcsRootDir) {
         this.config = config;
         this.serverConfigState = serverConfigState;

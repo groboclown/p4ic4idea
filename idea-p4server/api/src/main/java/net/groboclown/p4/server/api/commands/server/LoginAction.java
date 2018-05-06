@@ -12,15 +12,20 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4plugin.messages.listeners;
+package net.groboclown.p4.server.api.commands.server;
 
-import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 
-public class ServerConnectedListener implements ServerConnectedMessage.Listener {
+public class LoginAction implements P4CommandRunner.ServerAction<LoginResult> {
+    @NotNull
     @Override
-    public void serverConnected(@NotNull ServerConfig serverConfig) {
+    public Class<? extends LoginResult> getResultType() {
+        return LoginResult.class;
+    }
 
+    @Override
+    public P4CommandRunner.ServerActionCmd getCmd() {
+        return P4CommandRunner.ServerActionCmd.LOGIN;
     }
 }

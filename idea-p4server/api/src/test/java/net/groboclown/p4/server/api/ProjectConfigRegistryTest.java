@@ -18,7 +18,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.mock.MockVirtualFile;
 import net.groboclown.idea.mock.MockVirtualFileSystem;
-import net.groboclown.p4.server.api.cache.ClientConfigState;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
@@ -82,7 +81,7 @@ class ProjectConfigRegistryTest {
     }
 
     private static class TestableProjectConfigRegistry extends ProjectConfigRegistry {
-        private final List<ClientConfigState> states = new ArrayList<>();
+        private final List<ClientConfigRoot> states = new ArrayList<>();
 
         protected TestableProjectConfigRegistry(@NotNull Project project) {
             super(project);
@@ -90,13 +89,13 @@ class ProjectConfigRegistryTest {
 
         @Nullable
         @Override
-        public ClientConfigState getRegisteredClientConfigState(@NotNull ClientServerRef ref) {
+        public ClientConfigRoot getRegisteredClientConfigState(@NotNull ClientServerRef ref) {
             return null;
         }
 
         @Override
         public void addClientConfig(@NotNull ClientConfig config, @NotNull VirtualFile vcsRootDir) {
-            states.add(new TestableClientConfigState(config, vcsRootDir));
+            states.add(new TestableClientConfigRoot(config, vcsRootDir));
         }
 
         @Override
@@ -107,7 +106,7 @@ class ProjectConfigRegistryTest {
         @Nonnull
         @NotNull
         @Override
-        protected Collection<ClientConfigState> getRegisteredStates() {
+        protected Collection<ClientConfigRoot> getRegisteredStates() {
             return states;
         }
 
@@ -148,11 +147,12 @@ class ProjectConfigRegistryTest {
     }
 
 
-    private static class TestableClientConfigState implements ClientConfigState {
+    private static class TestableClientConfigRoot
+            implements ClientConfigRoot {
         final ClientConfig config;
         final VirtualFile root;
 
-        public TestableClientConfigState(ClientConfig config, VirtualFile vcsRootDir) {
+        public TestableClientConfigRoot(ClientConfig config, VirtualFile vcsRootDir) {
             this.config = config;
             this.root = vcsRootDir;
         }

@@ -278,6 +278,15 @@ public interface P4CommandRunner {
          */
         CREATE_JOB,
 
+        /**
+         * Explicit login request.  This prevents all kinds of hazardous authentication
+         * checks.
+         *
+         * @see net.groboclown.p4.server.api.commands.server.LoginAction
+         * @see net.groboclown.p4.server.api.commands.server.LoginResult
+         */
+        LOGIN,
+
         // Note: no DELETE_JOB
     }
 

@@ -18,7 +18,7 @@ import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.mock.MockVirtualFileSystem;
 import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
-import net.groboclown.p4.server.api.cache.ClientConfigState;
+import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
@@ -65,7 +65,7 @@ class ProjectConfigRegistryImplTest {
         assertEquals(1, added.size());
         assertSame(config, added.get(0));
         assertEquals(0, removed.size());
-        ClientConfigState fetchedState =
+        ClientConfigRoot fetchedState =
                 registry.getRegisteredClientConfigState(config.getClientServerRef());
         assertNotNull(fetchedState);
         assertSame(config, fetchedState.getClientConfig());
@@ -93,7 +93,7 @@ class ProjectConfigRegistryImplTest {
 
         assertEquals(1, added.size());
         assertSame(config, added.get(0));
-        ClientConfigState fetchedState =
+        ClientConfigRoot fetchedState =
                 registry.getRegisteredClientConfigState(config.getClientServerRef());
         assertNotNull(fetchedState);
         assertSame(config, fetchedState.getClientConfig());
@@ -111,7 +111,7 @@ class ProjectConfigRegistryImplTest {
         registry.removeClientConfig(config.getClientServerRef());
 
         assertEquals(0, removed.size());
-        ClientConfigState fetchedState =
+        ClientConfigRoot fetchedState =
                 registry.getRegisteredClientConfigState(config.getClientServerRef());
         assertNull(fetchedState);
     }
@@ -135,7 +135,7 @@ class ProjectConfigRegistryImplTest {
         assertEquals(0, added.size());
         assertEquals(1, removed.size());
         assertSame(config, removed.get(0));
-        ClientConfigState fetchedState =
+        ClientConfigRoot fetchedState =
                 registry.getRegisteredClientConfigState(config.getClientServerRef());
         assertNull(fetchedState);
     }
@@ -162,7 +162,7 @@ class ProjectConfigRegistryImplTest {
         assertEquals(0, added.size());
         assertEquals(1, removed.size());
         assertSame(config, removed.get(0));
-        ClientConfigState fetchedState =
+        ClientConfigRoot fetchedState =
                 registry.getRegisteredClientConfigState(config.getClientServerRef());
         assertNull(fetchedState);
 
@@ -194,7 +194,7 @@ class ProjectConfigRegistryImplTest {
         assertEquals(0, added.size());
         assertEquals(1, removed.size());
         assertSame(config, removed.get(0));
-        ClientConfigState fetchedState =
+        ClientConfigRoot fetchedState =
                 registry.getRegisteredClientConfigState(config.getClientServerRef());
         assertNull(fetchedState);
 

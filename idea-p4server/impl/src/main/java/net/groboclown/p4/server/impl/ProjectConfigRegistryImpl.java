@@ -20,11 +20,11 @@ import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
-import net.groboclown.p4.server.api.cache.ClientConfigState;
+import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.impl.cache.ClientConfigStateImpl;
-import net.groboclown.p4.server.impl.cache.ServerConfigStateImpl;
+import net.groboclown.p4.server.impl.cache.ClientConfigRootImpl;
+import net.groboclown.p4.server.impl.cache.ServerStatusImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,7 +45,7 @@ import java.util.stream.Stream;
  */
 public class ProjectConfigRegistryImpl
        extends ProjectConfigRegistry {
-    private final Map<ClientServerRef, ClientConfigStateImpl> registeredClients = new HashMap<>();
+    private final Map<ClientServerRef, ClientConfigRootImpl> registeredClients = new HashMap<>();
 
     // the servers are stored based on the shared config.  This means that the connection
     // approach (e.g. password vs. auth ticket) is taken into account.  It has a potential
@@ -68,13 +68,13 @@ public class ProjectConfigRegistryImpl
      */
     @Override
     @Nullable
-    public ClientConfigState getRegisteredClientConfigState(@NotNull ClientServerRef ref) {
+    public ClientConfigRoot getRegisteredClientConfigState(@NotNull ClientServerRef ref) {
         if (isDisposed()) {
             // do not throw an error.
             return null;
         }
 
-        ClientConfigState state;
+        ClientConfigRoot state;
         synchronized (registeredClients) {
             state = registeredClients.get(ref);
         }
@@ -88,8 +88,8 @@ public class ProjectConfigRegistryImpl
     public void addClientConfig(@NotNull ClientConfig config, @NotNull VirtualFile vcsRootDir) {
         checkDisposed();
         ClientServerRef ref = config.getClientServerRef();
-        ClientConfigStateImpl updated = createClientConfigState(config, vcsRootDir);
-        ClientConfigState existing;
+        ClientConfigRootImpl updated = createClientConfigState(config, vcsRootDir);
+        ClientConfigRoot existing;
         synchronized (registeredClients) {
             existing = registeredClients.get(ref);
             registeredClients.put(ref, updated);
@@ -110,7 +110,7 @@ public class ProjectConfigRegistryImpl
     @Override
     public boolean removeClientConfig(@NotNull ClientServerRef ref) {
         checkDisposed();
-        ClientConfigState removed;
+        ClientConfigRoot removed;
         synchronized (registeredClients) {
             removed = registeredClients.remove(ref);
         }
@@ -126,22 +126,22 @@ public class ProjectConfigRegistryImpl
     @Override
     public void dispose() {
         super.dispose();
-        final Collection<ClientConfigState> configs;
+        final Collection<ClientConfigRoot> configs;
         synchronized (registeredClients) {
             // need a copy of the values, otherwise they'll be cleared when we
             // clear the registered configs.
             configs = new ArrayList<>(registeredClients.values());
             registeredClients.clear();
         }
-        for (ClientConfigState clientConfig : configs) {
+        for (ClientConfigRoot clientConfig : configs) {
             sendClientRemoved(clientConfig);
         }
     }
 
     @Nonnull
     @Override
-    protected Collection<ClientConfigState> getRegisteredStates() {
-        List<ClientConfigState> clients;
+    protected Collection<ClientConfigRoot> getRegisteredStates() {
+        List<ClientConfigRoot> clients;
         synchronized (registeredClients) {
             clients = new ArrayList<>(registeredClients.values());
         }
@@ -152,7 +152,7 @@ public class ProjectConfigRegistryImpl
     protected void onLoginError(@NotNull ServerConfig config) {
         // Note: does not check disposed state.
 
-        ServerConfigStateImpl state = getServerConfigState(config);
+        ServerStatusImpl state = getServerConfigState(config);
         if (state != null) {
             state.setServerLoginProblem(true);
         }
@@ -182,7 +182,7 @@ public class ProjectConfigRegistryImpl
     protected void onClientRemoved(@NotNull ClientConfig config, @Nullable VirtualFile vcsRootDir) {
         // Note: does not check disposed state.
 
-        ClientConfigState removedState;
+        ClientConfigRoot removedState;
         synchronized (registeredClients) {
             removedState = registeredClients.remove(config.getClientServerRef());
         }
@@ -213,15 +213,15 @@ public class ProjectConfigRegistryImpl
     }
 
 
-    private void cleanupClientState(@NotNull ClientConfigState removed) {
+    private void cleanupClientState(@NotNull ClientConfigRoot removed) {
         // Note: does not check disposed state.
 
         deregisterServerForConfig(removed.getClientConfig());
         removed.dispose();
     }
 
-    private ClientConfigStateImpl createClientConfigState(@NotNull ClientConfig config, @NotNull VirtualFile vcsRootDir) {
-        ServerConfigStateImpl serverState;
+    private ClientConfigRootImpl createClientConfigState(@NotNull ClientConfig config, @NotNull VirtualFile vcsRootDir) {
+        ServerStatusImpl serverState;
         synchronized (registeredServers) {
             ServerRef ref = registeredServers.get(config.getServerConfig().getServerId());
             if (ref == null || ref.state.isDisposed()) {
@@ -231,11 +231,11 @@ public class ProjectConfigRegistryImpl
             ref.addClientConfigRef();
             serverState = ref.state;
         }
-        return new ClientConfigStateImpl(config, serverState, vcsRootDir);
+        return new ClientConfigRootImpl(config, serverState, vcsRootDir);
     }
 
-    private ServerConfigStateImpl createServerConfigState(ServerConfig serverConfig) {
-        ServerConfigStateImpl state = new ServerConfigStateImpl(serverConfig);
+    private ServerStatusImpl createServerConfigState(ServerConfig serverConfig) {
+        ServerStatusImpl state = new ServerStatusImpl(serverConfig);
         Disposer.register(this, state);
         return state;
     }
@@ -252,7 +252,7 @@ public class ProjectConfigRegistryImpl
         }
     }
 
-    private ServerConfigStateImpl getServerConfigState(@NotNull ServerConfig config) {
+    private ServerStatusImpl getServerConfigState(@NotNull ServerConfig config) {
         ServerRef ref;
         synchronized (registeredServers) {
             ref = registeredServers.get(config.getServerId());
@@ -263,12 +263,12 @@ public class ProjectConfigRegistryImpl
         return null;
     }
 
-    private Stream<ServerConfigStateImpl> getServersFor(@NotNull P4ServerName name) {
+    private Stream<ServerStatusImpl> getServersFor(@NotNull P4ServerName name) {
         return getAllServers()
                 .filter((sc) -> name.equals(sc.getServerConfig().getServerName()));
     }
 
-    private Stream<ServerConfigStateImpl> getAllServers() {
+    private Stream<ServerStatusImpl> getAllServers() {
         Collection<ServerRef> servers;
         synchronized (registeredServers) {
             servers = new ArrayList<>(registeredServers.values());
@@ -280,9 +280,9 @@ public class ProjectConfigRegistryImpl
 
     private static class ServerRef {
         private final AtomicInteger refCount = new AtomicInteger(0);
-        final ServerConfigStateImpl state;
+        final ServerStatusImpl state;
 
-        private ServerRef(@NotNull ServerConfigStateImpl state) {
+        private ServerRef(@NotNull ServerStatusImpl state) {
             this.state = state;
         }
 

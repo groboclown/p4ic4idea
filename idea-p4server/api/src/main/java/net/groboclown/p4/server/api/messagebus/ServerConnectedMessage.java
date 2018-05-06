@@ -12,12 +12,10 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.cache.messagebus;
+package net.groboclown.p4.server.api.messagebus;
 
 import com.intellij.util.messages.Topic;
 import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.api.messagebus.ApplicationMessage;
-import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -47,7 +45,7 @@ public class ServerConnectedMessage
     }
 
 
-    public static void requestReconnectToClient(@NotNull ServerConfig serverName) {
+    public static void serverConnected(@NotNull ServerConfig serverName) {
         if (canSendMessage()) {
             getListener(TOPIC).serverConnected(serverName);
         }

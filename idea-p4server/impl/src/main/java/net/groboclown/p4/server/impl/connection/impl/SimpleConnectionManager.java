@@ -26,12 +26,14 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.ResourceException;
 import com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs;
 import com.perforce.p4java.option.UsageOptions;
+import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
 import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.server.callback.ILogCallback;
 import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
 import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.impl.connection.ConnectionManager;
@@ -166,8 +168,22 @@ public class SimpleConnectionManager implements ConnectionManager {
         }
         server.connect();
 
-        if (serverConfig.usesStoredPassword() && password != null) {
-            server.login(password);
+        // Seems to be connected.  Tell the world that it can be
+        // connected to.  Note that this is independent of login validity.
+        ServerConnectedMessage.serverConnected(serverConfig);
+
+        // #147 if the user isn't logged in with an authentication ticket, but has P4LOGINSSO
+        // set, then a simple password login attempt should be made.  The P4LOGINSSO will
+        // ignore the password.
+        // However, we will always perform the SSO login here.
+        // FIXME with the addition of the LoginAction, we should only perform this when absolutely required.
+        // The original server authentication terribleness is enshrined in v2's ServerAuthenticator.
+        if (serverConfig.hasLoginSso() || (serverConfig.usesStoredPassword() && password != null)) {
+            final boolean useTicket = serverConfig.getAuthTicket() != null && serverConfig.getAuthTicket().isFile()
+                    && serverConfig.getAuthTicket().canWrite();
+            final LoginOptions loginOptions = new LoginOptions();
+            loginOptions.setDontWriteTicket(! useTicket);
+            server.login(password, loginOptions);
         }
 
         return server;

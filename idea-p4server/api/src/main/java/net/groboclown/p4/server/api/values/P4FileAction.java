@@ -29,6 +29,10 @@ public enum P4FileAction {
     REVERTED,
     EDIT_RESOLVED,
 
+    // indicates that the file is open for edit, and the
+    // file type is changed.
+    REOPEN,
+
     UNKNOWN,
 
     /** not marked as modified */

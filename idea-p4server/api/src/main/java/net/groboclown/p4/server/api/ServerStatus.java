@@ -12,26 +12,36 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.cache;
+package net.groboclown.p4.server.api;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.p4.server.api.cache.ServerConfigState;
-import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A layer on top of a {@link ServerConfigState} to include the client connection
- * details.  It is limited to project scope.
+ * Wraps the {@link ServerConfig} along with information that can change depending upon
+ * the user requests and server connection results.  It is limited to project scope.
+ * The status does not maintain any cached state.
  */
-public interface ClientConfigState extends Disposable, ServerConfigState {
+public interface ServerStatus
+        extends Disposable {
     @NotNull
-    ClientConfig getClientConfig();
+    ServerConfig getServerConfig();
+
+    boolean isOffline();
+
+    boolean isOnline();
+
+    boolean isServerConnectionProblem();
+
+    boolean isUserWorkingOffline();
+
+    boolean isDisposed();
 
     /**
      *
-     * @return true if the details about the client configuration state
+     * @return true if the details about the server configuration state
      *      have been loaded from the server (or from a cached copy of
      *      the data from the server), or false if the state has no
      *      information about the server configuration.
@@ -40,18 +50,9 @@ public interface ClientConfigState extends Disposable, ServerConfigState {
 
     /**
      *
-     * @return the root of the client work directory, or null if the
-     *      client hasn't been loaded yet.
+     * @return true if the server is known to be case sensitive, false if not,
+     *      and null if the state is not known.
      */
     @Nullable
-    VirtualFile getClientRootDir();
-
-    /**
-     *
-     * @return the project VCS root directory.
-     */
-    @NotNull
-    VirtualFile getProjectVcsRootDir();
-
-    boolean isDisposed();
+    Boolean isCaseSensitive();
 }

@@ -15,14 +15,14 @@
 package net.groboclown.p4.server.impl.cache;
 
 import com.intellij.openapi.diagnostic.Logger;
-import net.groboclown.p4.server.api.cache.ServerConfigState;
+import net.groboclown.p4.server.api.ServerStatus;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class ServerConfigStateImpl
-        implements ServerConfigState {
-    private static final Logger LOG = Logger.getInstance(ServerConfigStateImpl.class);
+public class ServerStatusImpl
+        implements ServerStatus {
+    private static final Logger LOG = Logger.getInstance(ServerStatusImpl.class);
 
     private final ServerConfig config;
     private boolean disposed;
@@ -38,7 +38,7 @@ public class ServerConfigStateImpl
 
     private boolean loaded = false;
 
-    public ServerConfigStateImpl(@NotNull ServerConfig config) {
+    public ServerStatusImpl(@NotNull ServerConfig config) {
         this.config = config;
     }
 

@@ -21,8 +21,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.exception.AuthenticationFailedException;
-import net.groboclown.p4.server.api.cache.ClientConfigState;
-import net.groboclown.p4.server.api.cache.messagebus.ServerConnectedMessage;
+import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
@@ -75,17 +74,17 @@ public abstract class ProjectConfigRegistry
      * @return the client that is the best match for the {@literal file}.
      */
     @Nullable
-    public ClientConfigState getClientFor(@Nullable VirtualFile file) {
+    public ClientConfigRoot getClientFor(@Nullable VirtualFile file) {
         if (file == null) {
             return null;
         }
         int closestDepth = -1;
-        ClientConfigState closest = null;
-        for (ClientConfigState clientConfigState : getRegisteredStates()) {
-            int depth = FileTreeUtil.getPathDepth(file, clientConfigState.getClientRootDir());
+        ClientConfigRoot closest = null;
+        for (ClientConfigRoot clientConfigRoot : getRegisteredStates()) {
+            int depth = FileTreeUtil.getPathDepth(file, clientConfigRoot.getClientRootDir());
             if (depth > 0 && (closestDepth < 0 || depth < closestDepth)) {
                 closestDepth = depth;
-                closest = clientConfigState;
+                closest = clientConfigRoot;
             }
         }
 
@@ -94,17 +93,17 @@ public abstract class ProjectConfigRegistry
 
 
     @Nullable
-    public ClientConfigState getClientFor(@Nullable FilePath file) {
+    public ClientConfigRoot getClientFor(@Nullable FilePath file) {
         if (file == null) {
             return null;
         }
         int closestDepth = -1;
-        ClientConfigState closest = null;
-        for (ClientConfigState clientConfigState : getRegisteredStates()) {
-            int depth = FileTreeUtil.getPathDepth(file, clientConfigState.getClientRootDir());
+        ClientConfigRoot closest = null;
+        for (ClientConfigRoot clientConfigRoot : getRegisteredStates()) {
+            int depth = FileTreeUtil.getPathDepth(file, clientConfigRoot.getClientRootDir());
             if (depth > 0 && (closestDepth < 0 || depth < closestDepth)) {
                 closestDepth = depth;
-                closest = clientConfigState;
+                closest = clientConfigRoot;
             }
         }
 
@@ -120,7 +119,7 @@ public abstract class ProjectConfigRegistry
      * @return the client config state, or null if it isn't registered.
      */
     @Nullable
-    public abstract ClientConfigState getRegisteredClientConfigState(@NotNull ClientServerRef ref);
+    public abstract ClientConfigRoot getRegisteredClientConfigState(@NotNull ClientServerRef ref);
 
     /**
      * Registers the client configuration to the project and the application.  If a configuration with the same
@@ -216,21 +215,21 @@ public abstract class ProjectConfigRegistry
         LOG.assertTrue(!disposed, "Already disposed");
     }
 
-    protected final void sendClientRemoved(@Nullable ClientConfigState state) {
+    protected final void sendClientRemoved(@Nullable ClientConfigRoot state) {
         if (state != null) {
             ClientConfigRemovedMessage.reportClientConfigRemoved(getProject(), this,
                     state.getClientConfig(), state.getProjectVcsRootDir());
         }
     }
 
-    protected final void sendClientAdded(@Nullable ClientConfigState state) {
+    protected final void sendClientAdded(@Nullable ClientConfigRoot state) {
         if (state != null) {
             ClientConfigAddedMessage.reportClientConfigAdded(getProject(), state.getClientConfig());
         }
     }
 
     @NotNull
-    protected abstract Collection<ClientConfigState> getRegisteredStates();
+    protected abstract Collection<ClientConfigRoot> getRegisteredStates();
 
     protected abstract void onLoginError(@NotNull ServerConfig config);
 

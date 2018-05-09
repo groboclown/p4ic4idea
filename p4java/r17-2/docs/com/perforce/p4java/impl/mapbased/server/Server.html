@@ -846,7 +846,7 @@ implements <a href="../../../../../../com/perforce/p4java/impl/mapbased/server/I
 <td class="colFirst"><code><a href="http://java.sun.com/javase/6/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../com/perforce/p4java/client/IClientSummary.html" title="interface in com.perforce.p4java.client">IClientSummary</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../com/perforce/p4java/impl/mapbased/server/Server.html#getClients-java.lang.String-java.lang.String-int-">getClients</a></span>(<a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;userName,
           <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;nameFilter,
-          int&nbsp;maxResults)</code>
+          int&nbsp;maxChangelistResults)</code>
 <div class="block">Get a list of IClientSummary objects for all Perforce clients known to this Perforce
  server.</div>
 </td>
@@ -5467,7 +5467,7 @@ implements <a href="../../../../../../com/perforce/p4java/impl/mapbased/server/I
 <h4>getClients</h4>
 <pre>public&nbsp;<a href="http://java.sun.com/javase/6/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../com/perforce/p4java/client/IClientSummary.html" title="interface in com.perforce.p4java.client">IClientSummary</a>&gt;&nbsp;getClients(<a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;userName,
                                        <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;nameFilter,
-                                       int&nbsp;maxResults)
+                                       int&nbsp;maxChangelistResults)
                                 throws <a href="../../../../../../com/perforce/p4java/exception/ConnectionException.html" title="class in com.perforce.p4java.exception">ConnectionException</a>,
                                        <a href="../../../../../../com/perforce/p4java/exception/RequestException.html" title="class in com.perforce.p4java.exception">RequestException</a>,
                                        <a href="../../../../../../com/perforce/p4java/exception/AccessException.html" title="class in com.perforce.p4java.exception">AccessException</a></pre>
@@ -5489,7 +5489,7 @@ implements <a href="../../../../../../com/perforce/p4java/impl/mapbased/server/I
 <dd><code>userName</code> - user name</dd>
 <dd><code>nameFilter</code> - limits output to clients whose name matches the nameFilter pattern.
                    Corresponds to -enameFilter flag</dd>
-<dd><code>maxResults</code> - If greater than zero, limit output to the first maxResults number of
+<dd><code>maxChangelistResults</code> - If greater than zero, limit output to the first maxChangelistResults number of
                    clients.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>non-null (but possibly empty) list of Client objects for Perforce clients known to</dd>

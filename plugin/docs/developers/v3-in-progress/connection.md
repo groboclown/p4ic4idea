@@ -26,7 +26,6 @@ user can more easily have different roots point to different servers or workspac
 With this change, we can remove support for "relative file" configuration, and instead
 just require the user to specify the setup in each root.
 
-
 ### Requesting the User Password
 
 This directly ties into the [threading model](threading.md).
@@ -39,15 +38,6 @@ be persisted from one execution to the next.  This means that care must be taken
 to generate messages that distinguish between when a project is closed and it no longer
 needs to keep its connections in memory, and when the user removes or changes
 connection settings.
-
-
-## Cached State Sharing
-
-Because we need to maintain the state of the Perforce connections (cache, config, etc) at
-the project level, and we want to maintain cache cohesion between projects, the cache
-updates must be shared between projects via an application-wide message bus.
-
-(TODO describe better)
 
 
 ## The Old Way

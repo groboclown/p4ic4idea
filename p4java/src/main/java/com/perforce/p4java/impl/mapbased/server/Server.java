@@ -577,6 +577,10 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 					return serverVersion;
 				}
 			}
+		// p4ic4idea: don't re-wrap the problem.
+		} catch (ConnectionException e) {
+			Log.exception(e);
+			throw e;
 		} catch (Exception exc) {
 			Log.exception(exc);
 			throw new ConnectionException(exc.getLocalizedMessage(), exc);

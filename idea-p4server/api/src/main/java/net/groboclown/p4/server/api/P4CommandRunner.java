@@ -316,24 +316,16 @@ public interface P4CommandRunner {
 
     enum ClientQueryCmd implements ClientCmd {
         /**
-         * @see net.groboclown.p4.server.api.commands.file.ListOpenedFilesQuery
-         * @see net.groboclown.p4.server.api.commands.file.ListOpenedFilesResult
+         * @see net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesQuery
+         * @see net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult
          */
-        LIST_OPENED_FILES,
+        LIST_OPENED_FILES_CHANGES,
 
         /**
          * @see net.groboclown.p4.server.api.commands.client.ListClientFetchStatusQuery
          * @see net.groboclown.p4.server.api.commands.client.ListClientFetchStatusResult
          */
         LIST_CLIENT_FETCH_STATUS, // cstat
-
-        /**
-         * Information about the default changelist for a specific client.
-         *
-         * @see net.groboclown.p4.server.api.commands.changelist.DefaultChangelistDetailQuery
-         * @see net.groboclown.p4.server.api.commands.changelist.DefaultChangelistDetailResult
-         */
-        DEFAULT_CHANGELIST_DETAIL,
     }
 
     enum ServerQueryCmd implements ServerCmd {
@@ -346,14 +338,6 @@ public interface P4CommandRunner {
          * @see net.groboclown.p4.server.api.commands.client.ListClientsForUserResult
          */
         LIST_CLIENTS_FOR_USER,
-
-        /**
-         * List open changelist details in the client.  Does not return the default changelist.
-         *
-         * @see net.groboclown.p4.server.api.commands.changelist.ListChangelistsForClientQuery
-         * @see net.groboclown.p4.server.api.commands.changelist.ListChangelistsForClientResult
-         */
-        LIST_CHANGELISTS_FOR_CLIENT,
 
         /**
          * @see net.groboclown.p4.server.api.commands.changelist.ListChangelistsFixedByJobQuery
@@ -416,12 +400,6 @@ public interface P4CommandRunner {
         ANNOTATE_FILE,
 
         /**
-         * @see net.groboclown.p4.server.api.commands.changelist.ChangelistDetailQuery
-         * @see net.groboclown.p4.server.api.commands.changelist.ChangelistDetailResult
-         */
-        CHANGELIST_DETAIL,
-
-        /**
          * @see net.groboclown.p4.server.api.commands.changelist.GetJobSpecQuery
          * @see net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult
          */
@@ -465,20 +443,14 @@ public interface P4CommandRunner {
         SYNC_FILE_CHANGE_HISTORY,
         SYNC_LIST_SUBMITTED_CHANGELISTS,
         */
-
-        /**
-         * @see net.groboclown.p4.server.api.commands.sync.SyncListChangelistsForClientQuery
-         * @see net.groboclown.p4.server.api.commands.changelist.ListChangelistsForClientResult
-         */
-        SYNC_LIST_CHANGELISTS_FOR_CLIENT,
     }
 
     enum SyncClientQueryCmd implements ClientCmd {
         /**
-         * @see net.groboclown.p4.server.api.commands.sync.SyncListOpenedFilesQuery
-         * @see net.groboclown.p4.server.api.commands.file.ListOpenedFilesResult
+         * @see net.groboclown.p4.server.api.commands.sync.SyncListOpenedFilesChangesQuery
+         * @see net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult
          */
-        SYNC_LIST_OPENED_FILES,
+        SYNC_LIST_OPENED_FILES_CHANGES,
     }
 
     @Immutable
@@ -562,10 +534,10 @@ public interface P4CommandRunner {
     /**
      * Returns cached results and a Promise for the request.
      *
-     * @param config
-     * @param query
-     * @param <R>
-     * @return
+     * @param config server configuration
+     * @param query query to execute
+     * @param <R> expected result type
+     * @return the cached value + promise when the actual request completes.
      * @throws ServerResultException
      */
     @NotNull

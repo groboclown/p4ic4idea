@@ -105,11 +105,11 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
             Iterator<P4ChangelistId> iter = info.validIds.iterator();
             P4ChangelistId next = iter.next();
             StringBuilder sb = new StringBuilder(P4Bundle.message("changelist.render-many.first",
-                    next.getClientName(), next.getChangelistId()));
+                    next.getClientname(), next.getChangelistId()));
             while (iter.hasNext()) {
                 next = iter.next();
                 sb.append(P4Bundle.message("changelist.render-many.after",
-                        next.getClientName(), next.getChangelistId()));
+                        next.getClientname(), next.getChangelistId()));
             }
             cellRenderer.append(sb.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
         }

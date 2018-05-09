@@ -24,7 +24,10 @@ import org.jetbrains.concurrency.Promise;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AbstractCommandRunner implements P4CommandRunner {
+// FIXME make this NOT implement P4CommandRunner, and instead be its
+// own thing that doesn't need an underlying cache.  That also means
+// that implementations don't need to worry about the messages.
+public abstract class AbstractServerCommandRunner implements P4CommandRunner {
     public interface ServerActionRunner<R extends ServerResult> {
         Promise<R> perform(@NotNull ServerConfig config, @NotNull ServerAction<R> action);
     }
@@ -112,6 +115,14 @@ public class AbstractCommandRunner implements P4CommandRunner {
     protected void register(@NotNull SyncClientQueryCmd cmd, @NotNull SyncClientQueryRunner<?> runner) {
         syncClientQueryRunners.put(cmd, runner);
     }
+
+
+    /**
+     * Force all connections to close, if any are open in a pool.
+     *
+     * @param config server configuration's connections to close.
+     */
+    public abstract void disconnect(@NotNull ServerConfig config);
 
 
     @SuppressWarnings("unchecked")

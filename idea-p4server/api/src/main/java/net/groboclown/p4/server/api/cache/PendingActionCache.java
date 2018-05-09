@@ -14,14 +14,9 @@
 
 package net.groboclown.p4.server.api.cache;
 
-import com.intellij.openapi.vcs.FilePath;
-import net.groboclown.p4.server.api.values.P4ChangelistId;
-import net.groboclown.p4.server.api.values.P4FileAction;
-import net.groboclown.p4.server.api.values.P4FileType;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 
 public interface PendingActionCache {
-    void addPendingAction(@NotNull FilePath sourceFile, @NotNull P4FileAction action);
-    void addPendingAction(@NotNull FilePath sourceFile, @NotNull P4FileAction action, @NotNull P4FileType newFileType);
-    void addPendingChangelistAction(@NotNull P4ChangelistId changelistId, @NotNull PendingChangelistAction action);
+    <R extends P4CommandRunner.ClientResult> void addPendingAction(@NotNull P4CommandRunner.ClientAction<R> action);
 }

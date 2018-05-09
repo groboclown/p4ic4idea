@@ -30,7 +30,7 @@ public class P4ServerErrorMessage extends ProjectMessage<P4ServerErrorMessage.Li
             DISPLAY_NAME,
             Listener.class,
             Topic.BroadcastDirection.TO_CHILDREN);
-    public static final Listener DEFAULT_LISTENER = new ListenerAdapter();
+    private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
     public interface Listener {
 
@@ -51,9 +51,9 @@ public class P4ServerErrorMessage extends ProjectMessage<P4ServerErrorMessage.Li
         /**
          * The plugin generated a RequestException
          *
-         * @param name
-         * @param config
-         * @param re
+         * @param name source name
+         * @param config source, possibly null
+         * @param re generated error
          */
         void requestException(@NotNull P4ServerName name, @Nullable ServerConfig config,
                 @NotNull RequestException re);
@@ -93,6 +93,10 @@ public class P4ServerErrorMessage extends ProjectMessage<P4ServerErrorMessage.Li
                 @NotNull P4JavaException e) {
 
         }
+    }
+
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
+        addListener(client, TOPIC, listener);
     }
 
     public static Listener send(@NotNull Project project) {

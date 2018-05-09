@@ -26,6 +26,7 @@ public class ClientConfigRemovedMessage extends ProjectMessage<ClientConfigRemov
     private static final Topic<Listener> TOPIC = new Topic<>(
             DISPLAY_NAME, Listener.class, Topic.BroadcastDirection.TO_CHILDREN
     );
+    private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
     public static class Event {
         // event source is here so that an object that sends this event can tell if
@@ -60,14 +61,19 @@ public class ClientConfigRemovedMessage extends ProjectMessage<ClientConfigRemov
         void clientConfigurationRemoved(@NotNull Event event);
     }
 
-    public static void reportClientConfigRemoved(@NotNull Project project, @NotNull Object src,
-            @NotNull ClientConfig config, @Nullable VirtualFile vcsRootDir) {
-        if (canSendMessage(project)) {
-            getListener(project, TOPIC).clientConfigurationRemoved(new Event(src, config, vcsRootDir));
+    public static class ListenerAdapter implements Listener {
+        @Override
+        public void clientConfigurationRemoved(@NotNull Event event) {
+
         }
     }
 
-    public static void addListener(@NotNull MessageBusClient client, @NotNull Listener listener) {
+    public static void reportClientConfigRemoved(@NotNull Project project, @NotNull Object src,
+            @NotNull ClientConfig config, @Nullable VirtualFile vcsRootDir) {
+        getListener(project, TOPIC, DEFAULT_LISTENER).clientConfigurationRemoved(new Event(src, config, vcsRootDir));
+    }
+
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
         addListener(client, TOPIC, listener);
     }
 }

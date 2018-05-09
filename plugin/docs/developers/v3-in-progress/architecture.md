@@ -61,13 +61,19 @@ slow connections, this can potentially open too many connections to the server,
 causing the server to reject connections.  It should only be used for testing
 purposes.
 
-The low-level server runners do not maintain caches. 
+The low-level server runners do not maintain caches.  However, when they receive
+data or requests for actions, they send out the cache update messages.  This
+restricts the sources for the cache updates, so that the message sending doesn't
+need to be remembered to be added to a bunch of different places, but instead
+just one (well, each server implementation). 
  
 
 ### Cached Command Runners
 
-The cached command runners delegate commands to the server runners, and
-inform the [cache](#caches) about the updates.
+The cached command runners delegate commands to the server runners.  Updates
+to the caches is done through the messaging system.  The cached server runners
+know how to return immediate values for queries.  These runners should sit
+on top of caches, rather than manage the cache themselves.
 
 
 ## Caches
@@ -86,6 +92,16 @@ projects can update their internal data.  Pending actions, however, are
 only stored in the originating project.  This can have a possible down side,
 where the same pending action is stored multiple times, but that is considered
 a user problem ;) .
+
+One potential issue to look out for is the issue of shared state between
+components, as seen with the
+[Facebook bug](https://www.infoq.com/news/2014/05/facebook-mvc-flux) that
+caused them to redesign their client applications using the
+[Flux model](https://reactjs.org/docs/lifting-state-up.html).  The key take-away
+from that bug was that bi-directional data flow can cause fundamental design
+issues.  Their solution with a dispatcher closely resembles the message bus,
+so keeping to the cache model updates through the message bus should mitigate
+these kinds of issues.
 
 
 ## Error Handlers
@@ -107,7 +123,7 @@ Application bus error messages are
 restricted to information about the connection state of a server, so that all
 projects can share the information, rather than having to rediscover it
 for themselves.  It also means that errors such as password problems are only
-communited to the user once for the entire application (with a big caveat here).
+communicated to the user once for the entire application (with a big caveat here).
 
 Project bus error messages are all the other issues, such as file write problems
 or underlying API errors.  These errors relate more to the requested action,
@@ -115,4 +131,3 @@ and so are restricted to the project originating the request.
 
 There are many categories of errors.  These are split up in the
 `net.groboclown.p4.server.api.messagebus` package.
-

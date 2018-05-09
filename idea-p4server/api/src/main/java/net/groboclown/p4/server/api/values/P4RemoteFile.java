@@ -25,6 +25,18 @@ import javax.annotation.concurrent.Immutable;
  */
 @Immutable
 public interface P4RemoteFile {
+    /**
+     *
+     * @return the full depot path, escaped if necessary, and possibly with annotations.
+     */
     @NotNull
     String getDepotPath();
+
+    /**
+     *
+     * @return the display name as the end-user should see it.  It should be unescaped
+     *      and stripped of annotations.
+     */
+    @NotNull
+    String getDisplayName();
 }

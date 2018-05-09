@@ -17,43 +17,40 @@ package net.groboclown.p4.server.api.messagebus;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.messages.Topic;
 import org.jetbrains.annotations.NotNull;
 
 public class MessageBusClient {
-    private enum Source {
-        PROJECT,
-        APPLICATION
+    public static class ProjectClient {
+        private final MessageBusConnection connection;
+        private ProjectClient(MessageBusConnection connection) {
+            this.connection = connection;
+        }
+
+        public <L> void add(@NotNull Topic<L> topic, @NotNull L listener) {
+            connection.subscribe(topic, listener);
+        }
     }
-    private final MessageBusConnection connection;
-    private final Source source;
+
+    public static class ApplicationClient {
+        private final MessageBusConnection connection;
+        private ApplicationClient(MessageBusConnection connection) {
+            this.connection = connection;
+        }
+
+        public <L> void add(@NotNull Topic<L> topic, @NotNull L listener) {
+            connection.subscribe(topic, listener);
+        }
+    }
 
     @NotNull
-    public static MessageBusClient forProject(@NotNull Project project, @NotNull Disposable owner) {
-        return new MessageBusClient(owner, project.getMessageBus(), Source.PROJECT);
+    public static ProjectClient forProject(@NotNull Project project, @NotNull Disposable owner) {
+        return new ProjectClient(project.getMessageBus().connect(owner));
     }
 
     @NotNull
-    public static MessageBusClient forApplication(@NotNull Disposable owner) {
-        return new MessageBusClient(owner, ApplicationManager.getApplication().getMessageBus(), Source.APPLICATION);
-    }
-
-    private MessageBusClient(@NotNull Disposable owner, @NotNull MessageBus bus, @NotNull Source source) {
-        connection = bus.connect(owner);
-        this.source = source;
-    }
-
-    public <L> void add(@NotNull Topic<L> topic, @NotNull L listener) {
-        connection.subscribe(topic, listener);
-    }
-
-    boolean isProjectBus() {
-        return source == Source.PROJECT;
-    }
-
-    boolean isApplicationBus() {
-        return source == Source.APPLICATION;
+    public static ApplicationClient forApplication(@NotNull Disposable owner) {
+        return new ApplicationClient(ApplicationManager.getApplication().getMessageBus().connect(owner));
     }
 }

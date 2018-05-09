@@ -19,23 +19,25 @@ import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistSummary;
+import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.impl.cache.CacheQueryHandler;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class MockCacheQueryHandler implements CacheQueryHandler {
     private Map<ClientServerRef, List<P4LocalFile>> openFiles = new HashMap<>();
-    private Map<ClientServerRef, List<P4ChangelistSummary>> openChangelists = new HashMap<>();
+    private Map<ClientServerRef, List<P4LocalChangelist>> openChangelists = new HashMap<>();
 
     @NotNull
     @Override
-    public List<P4LocalFile> getCachedOpenFiles(ClientConfig config) {
+    public Collection<P4LocalFile> getCachedOpenedFiles(@NotNull ClientConfig config) {
         return openFiles.computeIfAbsent(config.getClientServerRef(), k -> new ArrayList<>());
     }
 
@@ -46,15 +48,17 @@ public class MockCacheQueryHandler implements CacheQueryHandler {
 
     @NotNull
     @Override
-    public List<P4ChangelistSummary> getCachedChangelistsForClient(ServerConfig config, String clientname) {
+    public Collection<P4LocalChangelist> getCachedOpenedChangelists(@NotNull ClientConfig config) {
         return openChangelists.computeIfAbsent(
-                new ClientServerRef(config.getServerName(), clientname),
+                new ClientServerRef(config.getServerConfig().getServerName(), config.getClientname()),
                 k -> new ArrayList<>()
         );
     }
 
-    public MockCacheQueryHandler withCachedChangelistsForClient(ClientServerRef ref, P4ChangelistSummary... summaries) {
+    public MockCacheQueryHandler withCachedChangelistsForClient(ClientServerRef ref, P4LocalChangelist... summaries) {
         openChangelists.put(ref, Arrays.asList(summaries));
         return this;
     }
+
+
 }

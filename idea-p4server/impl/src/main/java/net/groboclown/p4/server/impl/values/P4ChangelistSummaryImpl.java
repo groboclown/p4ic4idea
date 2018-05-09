@@ -75,7 +75,7 @@ public class P4ChangelistSummaryImpl implements P4ChangelistSummary {
     @NotNull
     @Override
     public String getClientname() {
-        return id.getClientName();
+        return id.getClientname();
     }
 
     @NotNull

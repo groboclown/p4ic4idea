@@ -31,4 +31,6 @@ public interface ConnectionManager {
 
     @NotNull
     <R> Promise<R> withConnection(@NotNull P4ServerName config, P4Func<IOptionsServer, R> fun);
+
+    void disconnect(@NotNull ServerConfig config);
 }

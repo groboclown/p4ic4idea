@@ -1,8 +1,8 @@
-plugins {
-    id 'java-library'
-    id 'p4ic.compat'
-    id 'jacoco'
-}
+    plugins {
+        id 'java-library'
+        id 'p4ic.compat'
+        id 'jacoco'
+    }
 
 
 ideaApi.uses(

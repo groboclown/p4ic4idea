@@ -15,12 +15,13 @@
 package net.groboclown.p4.server.api.cache;
 
 import com.intellij.openapi.vcs.FilePath;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4.server.api.values.P4FileType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
+import java.util.List;
 
 /**
  * A cached view of a file with pending actions.
@@ -30,7 +31,7 @@ public interface CachedAlteredFile {
     P4FileAction getAction();
 
     @NotNull
-    Collection<PendingFileAction> getPendingActions();
+    List<P4CommandRunner.ClientAction<?>> getPendingActions();
 
     /**
      * The file that was altered, as on the local file system.

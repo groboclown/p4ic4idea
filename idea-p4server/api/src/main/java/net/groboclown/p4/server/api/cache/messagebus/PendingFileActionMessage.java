@@ -34,7 +34,7 @@ public class PendingFileActionMessage extends AbstractCacheMessage<PendingFileAc
         void pendingFileAction(@NotNull Event event);
     }
 
-    public static void addListener(@NotNull MessageBusClient client, @NotNull String cacheId,
+    public static void addListener(@NotNull MessageBusClient.ApplicationClient client, @NotNull String cacheId,
             @NotNull Listener listener) {
         abstractAddListener(client, TOPIC, cacheId, listener::pendingFileAction);
     }

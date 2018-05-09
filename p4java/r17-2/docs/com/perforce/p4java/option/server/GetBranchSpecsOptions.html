@@ -149,8 +149,8 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetBranchSpecsOptions.html#maxResults">maxResults</a></span></code>
-<div class="block">If greater than zero, limit output to the first maxResults
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetBranchSpecsOptions.html#maxChangelistResults">maxChangelistResults</a></span></code>
+<div class="block">If greater than zero, limit output to the first maxChangelistResults
  number of branches.</div>
 </td>
 </tr>
@@ -209,7 +209,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetBranchSpecsOptions.html#GetBranchSpecsOptions-boolean-java.lang.String-java.lang.String-int-">GetBranchSpecsOptions</a></span>(boolean&nbsp;showTime,
                      <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;userName,
                      <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;caseInsensitiveNameFilter,
-                     int&nbsp;maxResults)</code>
+                     int&nbsp;maxChangelistResults)</code>
 <div class="block">Explicit-value constructor.</div>
 </td>
 </tr>
@@ -221,14 +221,14 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetBranchSpecsOptions.html#GetBranchSpecsOptions-java.lang.String-java.lang.String-int-">GetBranchSpecsOptions</a></span>(<a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;userName,
                      <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;nameFilter,
-                     int&nbsp;maxResults)</code>
+                     int&nbsp;maxChangelistResults)</code>
 <div class="block">Explicit-value constructor.</div>
 </td>
 </tr>
 <tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetBranchSpecsOptions.html#GetBranchSpecsOptions-java.lang.String-java.lang.String-int-boolean-">GetBranchSpecsOptions</a></span>(<a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;userName,
                      <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;nameFilter,
-                     int&nbsp;maxResults,
+                     int&nbsp;maxChangelistResults,
                      boolean&nbsp;showTime)</code>
 <div class="block">Explicit-value constructor.</div>
 </td>
@@ -281,7 +281,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 </tr>
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../com/perforce/p4java/option/server/GetBranchSpecsOptions.html" title="class in com.perforce.p4java.option.server">GetBranchSpecsOptions</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetBranchSpecsOptions.html#setMaxResults-int-">setMaxResults</a></span>(int&nbsp;maxResults)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetBranchSpecsOptions.html#setMaxResults-int-">setMaxResults</a></span>(int&nbsp;maxChangelistResults)</code>&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../../../../../com/perforce/p4java/option/server/GetBranchSpecsOptions.html" title="class in com.perforce.p4java.option.server">GetBranchSpecsOptions</a></code></td>
@@ -371,14 +371,14 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
  the nameFilter pattern. Corresponds to -EnameFilter flag</div>
 </li>
 </ul>
-<a name="maxResults">
+<a name="maxChangelistResults">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>maxResults</h4>
-<pre>protected&nbsp;int maxResults</pre>
-<div class="block">If greater than zero, limit output to the first maxResults
+<h4>maxChangelistResults</h4>
+<pre>protected&nbsp;int maxChangelistResults</pre>
+<div class="block">If greater than zero, limit output to the first maxChangelistResults
  number of branches. Corresponds to -m flag.</div>
 </li>
 </ul>
@@ -445,7 +445,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <h4>GetBranchSpecsOptions</h4>
 <pre>public&nbsp;GetBranchSpecsOptions(<a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;userName,
                              <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;nameFilter,
-                             int&nbsp;maxResults)</pre>
+                             int&nbsp;maxChangelistResults)</pre>
 <div class="block">Explicit-value constructor.</div>
 </li>
 </ul>
@@ -457,7 +457,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <h4>GetBranchSpecsOptions</h4>
 <pre>public&nbsp;GetBranchSpecsOptions(<a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;userName,
                              <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;nameFilter,
-                             int&nbsp;maxResults,
+                             int&nbsp;maxChangelistResults,
                              boolean&nbsp;showTime)</pre>
 <div class="block">Explicit-value constructor.</div>
 </li>
@@ -471,7 +471,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <pre>public&nbsp;GetBranchSpecsOptions(boolean&nbsp;showTime,
                              <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;userName,
                              <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;caseInsensitiveNameFilter,
-                             int&nbsp;maxResults)</pre>
+                             int&nbsp;maxChangelistResults)</pre>
 <div class="block">Explicit-value constructor.</div>
 </li>
 </ul>
@@ -599,7 +599,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <ul class="blockList">
 <li class="blockList">
 <h4>setMaxResults</h4>
-<pre>public&nbsp;<a href="../../../../../com/perforce/p4java/option/server/GetBranchSpecsOptions.html" title="class in com.perforce.p4java.option.server">GetBranchSpecsOptions</a>&nbsp;setMaxResults(int&nbsp;maxResults)</pre>
+<pre>public&nbsp;<a href="../../../../../com/perforce/p4java/option/server/GetBranchSpecsOptions.html" title="class in com.perforce.p4java.option.server">GetBranchSpecsOptions</a>&nbsp;setMaxResults(int&nbsp;maxChangelistResults)</pre>
 </li>
 </ul>
 <a name="isShowTime--">

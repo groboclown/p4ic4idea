@@ -41,4 +41,12 @@ public enum P4ResolveType {
     public String getContentResolveType() {
         return contentResolveType;
     }
+
+    public static P4ResolveType convert(String resolveType, String contentResolveType) {
+        if (resolveType == null || contentResolveType == null) {
+            return NOT_NECESSARY;
+        }
+        // FIXME
+        return NO_RESOLVE;
+    }
 }

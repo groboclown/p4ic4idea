@@ -51,8 +51,8 @@ public abstract class ProjectMessage<L> {
         return project.isInitialized() && !project.isDisposed();
     }
 
-    protected static <L> void addListener(@NotNull MessageBusClient client, @NotNull Topic<L> topic, @NotNull L listener) {
-        assert client.isProjectBus();
+    protected static <L> void addListener(@NotNull MessageBusClient.ProjectClient client,
+            @NotNull Topic<L> topic, @NotNull L listener) {
         client.add(topic, listener);
     }
 }

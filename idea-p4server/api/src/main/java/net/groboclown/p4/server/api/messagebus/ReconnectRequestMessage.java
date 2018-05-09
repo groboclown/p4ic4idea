@@ -53,7 +53,7 @@ public class ReconnectRequestMessage
         }
     }
 
-    public static void addListener(@NotNull MessageBusClient client, @NotNull Listener listener) {
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
         addListener(client, TOPIC, listener);
     }
 }

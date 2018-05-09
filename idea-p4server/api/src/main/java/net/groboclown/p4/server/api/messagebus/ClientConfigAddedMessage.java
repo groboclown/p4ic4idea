@@ -24,18 +24,24 @@ public class ClientConfigAddedMessage extends ProjectMessage<ClientConfigAddedMe
     private static final Topic<Listener> TOPIC = new Topic<Listener>(
             DISPLAY_NAME, Listener.class, Topic.BroadcastDirection.TO_CHILDREN
     );
+    private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
     public interface Listener {
         void clientConfigurationAdded(@NotNull ClientConfig clientConfig);
     }
 
-    public static void reportClientConfigAdded(@NotNull Project project, @NotNull ClientConfig clientConfig) {
-        if (canSendMessage(project)) {
-            getListener(project, TOPIC).clientConfigurationAdded(clientConfig);
+    public static class ListenerAdapter implements Listener {
+        @Override
+        public void clientConfigurationAdded(@NotNull ClientConfig clientConfig) {
+
         }
     }
 
-    public static void addListener(@NotNull MessageBusClient client, @NotNull Listener listener) {
+    public static Listener send(@NotNull Project project) {
+        return getListener(project, TOPIC, DEFAULT_LISTENER);
+    }
+
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
         addListener(client, TOPIC, listener);
     }
 

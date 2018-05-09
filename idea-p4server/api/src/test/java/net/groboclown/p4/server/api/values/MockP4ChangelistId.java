@@ -61,7 +61,7 @@ public class MockP4ChangelistId implements P4ChangelistId {
 
     @NotNull
     @Override
-    public String getClientName() {
+    public String getClientname() {
         return csRef.getClientName();
     }
 

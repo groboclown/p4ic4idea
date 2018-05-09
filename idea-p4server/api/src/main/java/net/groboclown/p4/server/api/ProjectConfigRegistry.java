@@ -49,8 +49,8 @@ public abstract class ProjectConfigRegistry
     private static final Logger LOG = Logger.getInstance(ProjectConfigRegistry.class);
 
     private final Project project;
-    private final MessageBusClient projectBusClient;
-    private final MessageBusClient applicationBusClient;
+    private final MessageBusClient.ProjectClient projectBusClient;
+    private final MessageBusClient.ApplicationClient applicationBusClient;
     private boolean disposed = false;
 
     @NotNull
@@ -224,7 +224,7 @@ public abstract class ProjectConfigRegistry
 
     protected final void sendClientAdded(@Nullable ClientConfigRoot state) {
         if (state != null) {
-            ClientConfigAddedMessage.reportClientConfigAdded(getProject(), state.getClientConfig());
+            ClientConfigAddedMessage.send(getProject()).clientConfigurationAdded(state.getClientConfig());
         }
     }
 

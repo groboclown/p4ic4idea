@@ -526,6 +526,7 @@ public abstract class MessageP4RequestErrorHandler
         switch (errorType) {
             case SESSION_EXPIRED:
                 if (info.hasServerConfig()) {
+                    // FIXME could be handled at the source.
                     LoginFailureMessage.send().sessionExpired(info.getServerConfig(), sourceAfe);
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.SESSION_EXPIRED", sourceException),
@@ -596,6 +597,7 @@ public abstract class MessageP4RequestErrorHandler
                 if (info.hasServerConfig()) {
                     // By having an explicit message for an unnecessary password, the
                     // rest of the code could perform corrective action.
+                    // FIXME could be handled at the connection level.
                     LoginFailureMessage.send().passwordUnnecessary(info.getServerConfig(), sourceAfe);
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.PASSWORD_UNNECESSARY", sourceException),

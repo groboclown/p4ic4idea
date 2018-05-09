@@ -50,7 +50,7 @@ public interface P4ChangelistId extends VcsRevisionNumber {
      * @return the name of the client that created the changelist.
      */
     @NotNull
-    String getClientName();
+    String getClientname();
 
     @NotNull
     ClientServerRef getClientServerRef();

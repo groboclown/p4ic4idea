@@ -17,22 +17,21 @@ package net.groboclown.p4.server.api.cache.messagebus;
 import com.intellij.util.messages.Topic;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
+import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
-import net.groboclown.p4.server.api.values.P4RemoteChangelist;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
 public class ClientOpenCacheUpdateMessage extends AbstractCacheMessage<ClientOpenCacheUpdateMessage.Event> {
     private static final String DISPLAY_NAME = "p4ic4idea:open cache update";
-    private static final Topic<AbstractCacheMessage.TopicListener<ClientOpenCacheUpdateMessage.Event>> TOPIC =
-            createTopic(DISPLAY_NAME);
+    private static final Topic<AbstractCacheMessage.TopicListener<Event>> TOPIC = createTopic(DISPLAY_NAME);
 
     public interface Listener {
         void openFilesChangelistsUpdated(@NotNull Event event);
     }
 
-    public static void addListener(@NotNull MessageBusClient client, @NotNull String cacheId,
+    public static void addListener(@NotNull MessageBusClient.ApplicationClient client, @NotNull String cacheId,
             @NotNull Listener listener) {
         abstractAddListener(client, TOPIC, cacheId, listener::openFilesChangelistsUpdated);
     }
@@ -44,22 +43,22 @@ public class ClientOpenCacheUpdateMessage extends AbstractCacheMessage<ClientOpe
 
     public static class Event extends AbstractCacheUpdateEvent<Event> {
         private final Collection<P4LocalFile> openedFiles;
-        private final Collection<P4RemoteChangelist> openedChangelists;
+        private final Collection<P4LocalChangelist> pendingChangelists;
 
         public Event(@NotNull ClientServerRef ref,
                 Collection<P4LocalFile> openedFiles,
-                Collection<P4RemoteChangelist> openedChangelists) {
+                Collection<P4LocalChangelist> pendingChangelists) {
             super(ref);
             this.openedFiles = openedFiles;
-            this.openedChangelists = openedChangelists;
+            this.pendingChangelists = pendingChangelists;
         }
 
         public Collection<P4LocalFile> getOpenedFiles() {
             return openedFiles;
         }
 
-        public Collection<P4RemoteChangelist> getOpenedChangelists() {
-            return openedChangelists;
+        public Collection<P4LocalChangelist> getPendingChangelists() {
+            return pendingChangelists;
         }
     }
 }

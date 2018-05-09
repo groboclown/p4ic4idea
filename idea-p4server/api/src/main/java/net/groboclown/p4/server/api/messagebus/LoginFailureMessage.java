@@ -25,7 +25,7 @@ public class LoginFailureMessage extends ApplicationMessage<LoginFailureMessage.
             DISPLAY_NAME,
             Listener.class,
             Topic.BroadcastDirection.TO_CHILDREN);
-    public static final Listener DEFAULT_LISTENER = new ListenerAdapter();
+    private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
     public interface Listener {
         void singleSignOnFailed(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e);
@@ -37,7 +37,7 @@ public class LoginFailureMessage extends ApplicationMessage<LoginFailureMessage.
          * The user supplied a password, but the login does not use one.  The configuration should be changed
          * to use an empty password.
          *
-         * @param serverConfig configuration that caused the issue.
+         * @param config configuration that caused the issue.
          * @param e source exception
          */
         void passwordUnnecessary(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e);
@@ -94,7 +94,7 @@ public class LoginFailureMessage extends ApplicationMessage<LoginFailureMessage.
         return getListener(TOPIC, DEFAULT_LISTENER);
     }
 
-    public static void addListener(@NotNull MessageBusClient client, @NotNull Listener listener) {
+    public static void addListener(@NotNull MessageBusClient.ApplicationClient client, @NotNull Listener listener) {
         addTopicListener(client, TOPIC, listener);
     }
 }

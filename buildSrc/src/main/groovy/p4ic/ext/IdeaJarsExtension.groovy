@@ -18,7 +18,6 @@ import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.file.AbstractFileCollection
-import org.gradle.api.tasks.TaskDependency
 
 import javax.annotation.Nonnull
 

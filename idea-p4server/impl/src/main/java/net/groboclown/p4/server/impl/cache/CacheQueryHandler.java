@@ -15,17 +15,16 @@
 package net.groboclown.p4.server.impl.cache;
 
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.api.values.P4ChangelistSummary;
+import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+import java.util.Collection;
 
 public interface CacheQueryHandler {
     @NotNull
-    List<P4LocalFile> getCachedOpenFiles(ClientConfig config);
+    Collection<P4LocalChangelist> getCachedOpenedChangelists(@NotNull ClientConfig config);
 
     @NotNull
-    List<P4ChangelistSummary> getCachedChangelistsForClient(ServerConfig config, String clientname);
+    Collection<P4LocalFile> getCachedOpenedFiles(@NotNull ClientConfig config);
 }

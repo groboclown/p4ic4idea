@@ -15,6 +15,7 @@ package net.groboclown.p4.server.impl.connection;
 
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.test.P4ServerExtension;
+import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.extensions.TemporaryFolderExtension;
 import net.groboclown.p4.server.api.MockConfigPart;
@@ -51,6 +52,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 class ConnectCommandRunnerTest {
     private static final String JOB_ID = "job-123";
     private static final String JOB_DESCRIPTION = "this is the job description";
+
+    @RegisterExtension
+    IdeaLightweightExtension idea = new IdeaLightweightExtension();
+
     @RegisterExtension
     P4ServerExtension server = new P4ServerExtension(false);
 
@@ -122,6 +127,7 @@ class ConnectCommandRunnerTest {
                     return null;
                 })
                 .rejected((ex) -> {
+                    assertNotNull(ex);
                     assertThat(ex.getCause(), instanceOf(RequestException.class));
                     // FIXME better checks
                 });

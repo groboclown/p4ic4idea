@@ -241,7 +241,7 @@ public class ConnectionErrorMessage extends ApplicationMessage<ConnectionErrorMe
         return getListener(TOPIC, DEFAULT_LISTENER);
     }
 
-    public static void addListener(@NotNull MessageBusClient client, @NotNull Listener listener) {
+    public static void addListener(@NotNull MessageBusClient.ApplicationClient client, @NotNull Listener listener) {
         addTopicListener(client, TOPIC, listener);
     }
 }

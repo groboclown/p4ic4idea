@@ -24,7 +24,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Cache update message that is broadcast across the application.  Event topic
  * objects must directly reference {@link TopicListener}, rather than a subclass,
- * in order to have the {@link #abstractAddListener(MessageBusClient, Topic, String, AbstractCacheUpdateEvent.Visitor)}
+ * in order to have the
+ * {@link #abstractAddListener(MessageBusClient.ApplicationClient, Topic, String, AbstractCacheUpdateEvent.Visitor)}
  * work right.
  * <p>
  * If the message listener has more than one method, then each method should have its own
@@ -65,7 +66,7 @@ public class AbstractCacheMessage<E extends AbstractCacheUpdateEvent<E>>
     }
 
     protected static <E extends AbstractCacheUpdateEvent<E>> void abstractAddListener(
-            @NotNull MessageBusClient client, @NotNull Topic<TopicListener<E>> topic,
+            @NotNull MessageBusClient.ApplicationClient client, @NotNull Topic<TopicListener<E>> topic,
             @NotNull String cacheId,
             @NotNull AbstractCacheUpdateEvent.Visitor<E> visitor) {
         addTopicListener(client, topic, new VisitEventListener<>(cacheId, visitor));

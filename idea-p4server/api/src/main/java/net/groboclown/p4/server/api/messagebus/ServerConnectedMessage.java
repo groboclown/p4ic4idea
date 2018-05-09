@@ -32,6 +32,7 @@ public class ServerConnectedMessage
             DISPLAY_NAME,
             Listener.class,
             Topic.BroadcastDirection.TO_CHILDREN);
+    private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
 
     public interface Listener {
@@ -44,14 +45,19 @@ public class ServerConnectedMessage
         void serverConnected(@NotNull ServerConfig serverConfig);
     }
 
+    public static class ListenerAdapter implements Listener {
+        @Override
+        public void serverConnected(@NotNull ServerConfig serverConfig) {
 
-    public static void serverConnected(@NotNull ServerConfig serverName) {
-        if (canSendMessage()) {
-            getListener(TOPIC).serverConnected(serverName);
         }
     }
 
-    public static void addListener(@NotNull MessageBusClient client, @NotNull Listener listener) {
+
+    public static Listener send() {
+        return getListener(TOPIC, DEFAULT_LISTENER);
+    }
+
+    public static void addListener(@NotNull MessageBusClient.ApplicationClient client, @NotNull Listener listener) {
         addTopicListener(client, TOPIC, listener);
     }
 }

@@ -49,7 +49,7 @@ public class P4ChangelistIdImpl implements P4ChangelistId {
 
     @NotNull
     @Override
-    public String getClientName() {
+    public String getClientname() {
         return ref.getClientName();
     }
 

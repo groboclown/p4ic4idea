@@ -5,10 +5,12 @@
 These are the big issues discovered with the old plugin
 that have influenced the new design.
 
+* [Overall Architecture](architecture.md)
 * [Configuration and Connection Management](connection.md)
 * [Synchronous vs Asynchronous Communication](threading.md)
 * [Error reporting](errors.md)
 * [Caching and Data Storage](cache.md)
+* [State Management](state.md)
 
 
 ## Unit Tests

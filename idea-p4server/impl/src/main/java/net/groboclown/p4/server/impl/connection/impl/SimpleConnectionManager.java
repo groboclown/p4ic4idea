@@ -150,6 +150,12 @@ public class SimpleConnectionManager implements ConnectionManager {
         });
     }
 
+    @Override
+    public void disconnect(@NotNull ServerConfig config) {
+        // Does nothing, because the underlying implementation does
+        // not keep a pool of connections.
+    }
+
     private IOptionsServer connect(ServerConfig serverConfig, String password, Properties props)
             throws P4JavaException, URISyntaxException {
         IOptionsServer server = getServer(serverConfig.getServerName(), props);
@@ -170,7 +176,7 @@ public class SimpleConnectionManager implements ConnectionManager {
 
         // Seems to be connected.  Tell the world that it can be
         // connected to.  Note that this is independent of login validity.
-        ServerConnectedMessage.serverConnected(serverConfig);
+        ServerConnectedMessage.send().serverConnected(serverConfig);
 
         // #147 if the user isn't logged in with an authentication ticket, but has P4LOGINSSO
         // set, then a simple password login attempt should be made.  The P4LOGINSSO will

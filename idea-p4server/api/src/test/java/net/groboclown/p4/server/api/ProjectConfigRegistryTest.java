@@ -95,7 +95,7 @@ class ProjectConfigRegistryTest {
 
         @Override
         public void addClientConfig(@NotNull ClientConfig config, @NotNull VirtualFile vcsRootDir) {
-            states.add(new TestableClientConfigRoot(config, vcsRootDir));
+            states.add(new MockClientConfigRoot(config, vcsRootDir));
         }
 
         @Override
@@ -147,79 +147,4 @@ class ProjectConfigRegistryTest {
     }
 
 
-    private static class TestableClientConfigRoot
-            implements ClientConfigRoot {
-        final ClientConfig config;
-        final VirtualFile root;
-
-        public TestableClientConfigRoot(ClientConfig config, VirtualFile vcsRootDir) {
-            this.config = config;
-            this.root = vcsRootDir;
-        }
-
-        @NotNull
-        @Override
-        public ClientConfig getClientConfig() {
-            return config;
-        }
-
-        @Override
-        public boolean isLoadedFromServer() {
-            return false;
-        }
-
-        @Nullable
-        @Override
-        public Boolean isCaseSensitive() {
-            return null;
-        }
-
-        @Nullable
-        @Override
-        public VirtualFile getClientRootDir() {
-            return root;
-        }
-
-        @NotNull
-        @Override
-        public VirtualFile getProjectVcsRootDir() {
-            return null;
-        }
-
-        @NotNull
-        @Override
-        public ServerConfig getServerConfig() {
-            return config.getServerConfig();
-        }
-
-        @Override
-        public boolean isOffline() {
-            return false;
-        }
-
-        @Override
-        public boolean isOnline() {
-            return true;
-        }
-
-        @Override
-        public boolean isServerConnectionProblem() {
-            return false;
-        }
-
-        @Override
-        public boolean isUserWorkingOffline() {
-            return false;
-        }
-
-        @Override
-        public boolean isDisposed() {
-            return false;
-        }
-
-        @Override
-        public void dispose() {
-
-        }
-    }
 }

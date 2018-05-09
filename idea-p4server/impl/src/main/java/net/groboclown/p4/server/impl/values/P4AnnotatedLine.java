@@ -44,7 +44,9 @@ public class P4AnnotatedLine {
 
     @NotNull
     public P4FileRevision getRev() {
-        return new P4FileRevisionImpl(baseFile, depotPath, ann);
+        // FIXME
+        //return new P4FileRevisionImpl(depotPath, ann);
+        return null;
     }
 
     public int getChangelist() {
@@ -96,7 +98,7 @@ public class P4AnnotatedLine {
         Set<IFileSpec> allDepotPaths = new HashSet<IFileSpec>();
         for (IFileAnnotation ann : annotations) {
             // Depot path is already escaped, so keep it that way.
-            allDepotPaths.add(FileSpecUtil.getAlreadyEscapedSpec(ann.getDepotPath()));
+            allDepotPaths.add(HandleFileSpecUtil.getAlreadyEscapedSpec(ann.getDepotPath()));
         }
         final List<IExtendedFileSpec> allSpecs = exec.getFileStatus(new ArrayList<IFileSpec>(allDepotPaths));
         for (IExtendedFileSpec spec : allSpecs) {
@@ -164,7 +166,7 @@ public class P4AnnotatedLine {
                 depotRev.getFileType(),
                 depotRev.getDesc(),
                 depotRev.getDepotPathString(),
-                depotRev.getClientName());
+                depotRev.getClientname());
     }
 
 
@@ -178,7 +180,7 @@ public class P4AnnotatedLine {
                 depotRev.getFileType(),
                 depotRev.getDesc(), // Should use active Idea changelist name
                 depotRev.getDepotPathString(),
-                exec.getClientName());
+                exec.getClientname());
     }
 
 
@@ -188,7 +190,7 @@ public class P4AnnotatedLine {
         // The "depotRev" came from a Perforce named depot file,
         // so it is already escaped.  Therefore it's okay to use
         // getAlreadyEscapedSpec.
-        IFileSpec depotFile = FileSpecUtil.getAlreadyEscapedSpec(depotRev);
+        IFileSpec depotFile = HandleFileSpecUtil.getAlreadyEscapedSpec(depotRev);
         Map<IFileSpec, List<IFileRevisionData>> history = exec.getRevisionHistory(
                 Collections.singletonList(depotFile), 1);
         for (Map.Entry<IFileSpec, List<IFileRevisionData>> en : history.entrySet()) {

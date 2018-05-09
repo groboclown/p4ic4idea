@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.api.cache;
 
 import com.intellij.openapi.vcs.FilePath;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.values.P4ChangelistAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4Job;
@@ -30,19 +31,22 @@ import java.util.List;
  */
 public interface CachedAlteredChangelist {
     @NotNull
-    P4ChangelistAction getPendingAction();
-
-    @NotNull
     P4ChangelistId getChangelistId();
 
     @Nullable
     String getDescription();
 
     @NotNull
-    Collection<FilePath> getAssociatedFiles();
+    Collection<FilePath> getAddedFiles();
 
     @NotNull
-    Collection<P4Job> getAssociatedJobs();
+    Collection<FilePath> getRemovedFiles();
+
+    @NotNull
+    Collection<P4Job> getAddedJobs();
+
+    @NotNull
+    Collection<P4Job> getRemovedJobs();
 
     /**
      * Returns all local file paths to files that are pending to be shelved.
@@ -58,5 +62,5 @@ public interface CachedAlteredChangelist {
     Collection<P4RemoteFile> getKnownRemoteShelvedFiles();
 
     @NotNull
-    List<PendingChangelistAction<?>> getPendingChangelistActions();
+    List<P4CommandRunner.ClientAction<?>> getPendingChangelistActions();
 }

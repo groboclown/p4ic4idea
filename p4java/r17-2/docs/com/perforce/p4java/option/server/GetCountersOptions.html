@@ -138,8 +138,8 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetCountersOptions.html#maxResults">maxResults</a></span></code>
-<div class="block">If greater than zero, limit output to the first maxResults
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetCountersOptions.html#maxChangelistResults">maxChangelistResults</a></span></code>
+<div class="block">If greater than zero, limit output to the first maxChangelistResults
  number of counters.</div>
 </td>
 </tr>
@@ -196,7 +196,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetCountersOptions.html#GetCountersOptions-boolean-java.lang.String-int-">GetCountersOptions</a></span>(boolean&nbsp;undocCounter,
                   <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;nameFilter,
-                  int&nbsp;maxResults)</code>
+                  int&nbsp;maxChangelistResults)</code>
 <div class="block">Explicit value constructor.</div>
 </td>
 </tr>
@@ -245,7 +245,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../com/perforce/p4java/option/server/GetCountersOptions.html" title="class in com.perforce.p4java.option.server">GetCountersOptions</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetCountersOptions.html#setMaxResults-int-">setMaxResults</a></span>(int&nbsp;maxResults)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetCountersOptions.html#setMaxResults-int-">setMaxResults</a></span>(int&nbsp;maxChangelistResults)</code>&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../../../../../com/perforce/p4java/option/server/GetCountersOptions.html" title="class in com.perforce.p4java.option.server">GetCountersOptions</a></code></td>
@@ -334,14 +334,14 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
  '-u -e nameFilter -e nameFilter ...' flags.</div>
 </li>
 </ul>
-<a name="maxResults">
+<a name="maxChangelistResults">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>maxResults</h4>
-<pre>protected&nbsp;int maxResults</pre>
-<div class="block">If greater than zero, limit output to the first maxResults
+<h4>maxChangelistResults</h4>
+<pre>protected&nbsp;int maxChangelistResults</pre>
+<div class="block">If greater than zero, limit output to the first maxChangelistResults
  number of counters. Corresponds to '-m max' flag.</div>
 </li>
 </ul>
@@ -398,7 +398,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <h4>GetCountersOptions</h4>
 <pre>public&nbsp;GetCountersOptions(boolean&nbsp;undocCounter,
                           <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;nameFilter,
-                          int&nbsp;maxResults)</pre>
+                          int&nbsp;maxChangelistResults)</pre>
 <div class="block">Explicit value constructor.</div>
 </li>
 </ul>
@@ -526,7 +526,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <ul class="blockListLast">
 <li class="blockList">
 <h4>setMaxResults</h4>
-<pre>public&nbsp;<a href="../../../../../com/perforce/p4java/option/server/GetCountersOptions.html" title="class in com.perforce.p4java.option.server">GetCountersOptions</a>&nbsp;setMaxResults(int&nbsp;maxResults)</pre>
+<pre>public&nbsp;<a href="../../../../../com/perforce/p4java/option/server/GetCountersOptions.html" title="class in com.perforce.p4java.option.server">GetCountersOptions</a>&nbsp;setMaxResults(int&nbsp;maxChangelistResults)</pre>
 </li>
 </ul>
 </li>

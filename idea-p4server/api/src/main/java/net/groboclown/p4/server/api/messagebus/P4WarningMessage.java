@@ -39,6 +39,20 @@ public class P4WarningMessage extends ProjectMessage<P4WarningMessage.Listener> 
     }
 
 
+    public static class ListenerAdapter implements Listener {
+
+        @Override
+        public void disconnectCausedError(@NotNull Exception e) {
+
+        }
+
+        @Override
+        public void charsetTranslationError(@NotNull ClientError e) {
+
+        }
+    }
+
+
     public static void sendDisconnectCausedError(@NotNull Project project, @NotNull ConnectionException e) {
         if (canSendMessage(project)) {
             project.getMessageBus().syncPublisher(TOPIC).disconnectCausedError(e);
@@ -57,5 +71,11 @@ public class P4WarningMessage extends ProjectMessage<P4WarningMessage.Listener> 
         if (canSendMessage(project)) {
             project.getMessageBus().syncPublisher(TOPIC).charsetTranslationError(e);
         }
+    }
+
+    // Note: no generic "send" call, so that  the exact error cause is used instead.
+
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
+        client.add(TOPIC, listener);
     }
 }

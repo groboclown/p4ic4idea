@@ -15,7 +15,9 @@
 package net.groboclown.p4.server.api.cache.messagebus;
 
 import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.P4ServerName;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
 import java.util.HashSet;
@@ -23,6 +25,7 @@ import java.util.Set;
 
 public class AbstractCacheUpdateEvent<E extends AbstractCacheUpdateEvent<E>> {
     private final ClientServerRef ref;
+    private final P4ServerName serverName;
     private final Set<String> visitedCacheIds = new HashSet<>();
     private final Date created = new Date();
 
@@ -37,6 +40,12 @@ public class AbstractCacheUpdateEvent<E extends AbstractCacheUpdateEvent<E>> {
 
     protected AbstractCacheUpdateEvent(@NotNull ClientServerRef ref) {
         this.ref = ref;
+        this.serverName = ref.getServerName();
+    }
+
+    protected AbstractCacheUpdateEvent(@NotNull P4ServerName name) {
+        this.ref = null;
+        this.serverName = name;
     }
 
     @SuppressWarnings("unchecked")
@@ -58,8 +67,13 @@ public class AbstractCacheUpdateEvent<E extends AbstractCacheUpdateEvent<E>> {
         return created;
     }
 
-    @NotNull
-    public ClientServerRef getRef() {
+    @Nullable
+    public ClientServerRef getClientRef() {
         return ref;
+    }
+
+    @NotNull
+    public P4ServerName getServerName() {
+        return serverName;
     }
 }

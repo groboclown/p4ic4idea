@@ -145,8 +145,8 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetDepotFilesOptions.html#maxResults">maxResults</a></span></code>
-<div class="block">If positive, return maxResults or fewer files; note: this is
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetDepotFilesOptions.html#maxChangelistResults">maxChangelistResults</a></span></code>
+<div class="block">If positive, return maxChangelistResults or fewer files; note: this is
  an UNDOC feature and may not be supported on all servers.</div>
 </td>
 </tr>
@@ -188,7 +188,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 </td>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetDepotFilesOptions.html#GetDepotFilesOptions-int-boolean-">GetDepotFilesOptions</a></span>(int&nbsp;maxResults,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetDepotFilesOptions.html#GetDepotFilesOptions-int-boolean-">GetDepotFilesOptions</a></span>(int&nbsp;maxChangelistResults,
                     boolean&nbsp;allRevs)</code>
 <div class="block">Explicit-value constructor.</div>
 </td>
@@ -234,7 +234,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="../../../../../com/perforce/p4java/option/server/GetDepotFilesOptions.html" title="class in com.perforce.p4java.option.server">GetDepotFilesOptions</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetDepotFilesOptions.html#setMaxResults-int-">setMaxResults</a></span>(int&nbsp;maxResults)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GetDepotFilesOptions.html#setMaxResults-int-">setMaxResults</a></span>(int&nbsp;maxChangelistResults)</code>&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -279,14 +279,14 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 </dl>
 </li>
 </ul>
-<a name="maxResults">
+<a name="maxChangelistResults">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>maxResults</h4>
-<pre>protected&nbsp;int maxResults</pre>
-<div class="block">If positive, return maxResults or fewer files; note: this is
+<h4>maxChangelistResults</h4>
+<pre>protected&nbsp;int maxChangelistResults</pre>
+<div class="block">If positive, return maxChangelistResults or fewer files; note: this is
  an UNDOC feature and may not be supported on all servers.
  Corresponds to the undoc -m flag.</div>
 </li>
@@ -367,7 +367,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <ul class="blockListLast">
 <li class="blockList">
 <h4>GetDepotFilesOptions</h4>
-<pre>public&nbsp;GetDepotFilesOptions(int&nbsp;maxResults,
+<pre>public&nbsp;GetDepotFilesOptions(int&nbsp;maxChangelistResults,
                             boolean&nbsp;allRevs)</pre>
 <div class="block">Explicit-value constructor.</div>
 </li>
@@ -460,7 +460,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <ul class="blockListLast">
 <li class="blockList">
 <h4>setMaxResults</h4>
-<pre>public&nbsp;<a href="../../../../../com/perforce/p4java/option/server/GetDepotFilesOptions.html" title="class in com.perforce.p4java.option.server">GetDepotFilesOptions</a>&nbsp;setMaxResults(int&nbsp;maxResults)</pre>
+<pre>public&nbsp;<a href="../../../../../com/perforce/p4java/option/server/GetDepotFilesOptions.html" title="class in com.perforce.p4java.option.server">GetDepotFilesOptions</a>&nbsp;setMaxResults(int&nbsp;maxChangelistResults)</pre>
 </li>
 </ul>
 </li>

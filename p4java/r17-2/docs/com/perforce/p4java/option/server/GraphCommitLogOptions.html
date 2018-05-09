@@ -176,7 +176,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 </tr>
 <tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GraphCommitLogOptions.html#GraphCommitLogOptions-java.lang.String-int-java.lang.String-java.lang.String-int-int-java.lang.String...-">GraphCommitLogOptions</a></span>(<a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;repo,
-                     int&nbsp;maxResults,
+                     int&nbsp;maxChangelistResults,
                      <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;startDate,
                      <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;endDate,
                      int&nbsp;minNumberOfParents,
@@ -277,7 +277,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 </tr>
 <tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GraphCommitLogOptions.html#setMaxResults-int-">setMaxResults</a></span>(int&nbsp;maxResults)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/perforce/p4java/option/server/GraphCommitLogOptions.html#setMaxResults-int-">setMaxResults</a></span>(int&nbsp;maxChangelistResults)</code>
 <div class="block">Sets the optional option value for option -m</div>
 </td>
 </tr>
@@ -389,7 +389,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <li class="blockList">
 <h4>GraphCommitLogOptions</h4>
 <pre>public&nbsp;GraphCommitLogOptions(<a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;repo,
-                             int&nbsp;maxResults,
+                             int&nbsp;maxChangelistResults,
                              <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;startDate,
                              <a href="http://java.sun.com/javase/6/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;endDate,
                              int&nbsp;minNumberOfParents,
@@ -399,7 +399,7 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>repo</code> - </dd>
-<dd><code>maxResults</code> - </dd>
+<dd><code>maxChangelistResults</code> - </dd>
 <dd><code>startDate</code> - </dd>
 <dd><code>endDate</code> - </dd>
 <dd><code>minNumberOfParents</code> - </dd>
@@ -491,11 +491,11 @@ extends <a href="../../../../../com/perforce/p4java/option/Options.html" title="
 <ul class="blockList">
 <li class="blockList">
 <h4>setMaxResults</h4>
-<pre>public&nbsp;void&nbsp;setMaxResults(int&nbsp;maxResults)</pre>
+<pre>public&nbsp;void&nbsp;setMaxResults(int&nbsp;maxChangelistResults)</pre>
 <div class="block">Sets the optional option value for option -m</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>maxResults</code> - </dd>
+<dd><code>maxChangelistResults</code> - </dd>
 </dl>
 </li>
 </ul>

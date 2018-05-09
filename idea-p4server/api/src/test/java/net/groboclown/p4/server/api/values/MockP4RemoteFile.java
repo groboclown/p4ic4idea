@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 // supposed to be immutable, but for testing...
 public class MockP4RemoteFile implements P4RemoteFile {
     private String depotPath;
+    private String display;
 
     public MockP4RemoteFile() {
 
@@ -26,6 +27,7 @@ public class MockP4RemoteFile implements P4RemoteFile {
 
     public MockP4RemoteFile(String depotPath) {
         this.depotPath = depotPath;
+        this.display = depotPath;
     }
 
     @NotNull
@@ -34,8 +36,15 @@ public class MockP4RemoteFile implements P4RemoteFile {
         return depotPath;
     }
 
+    @NotNull
+    @Override
+    public String getDisplayName() {
+        return display;
+    }
+
     public MockP4RemoteFile withDepotPath(String s) {
         depotPath = s;
+        display = s;
         return this;
     }
 

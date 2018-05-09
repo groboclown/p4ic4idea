@@ -14,13 +14,15 @@
 
 package net.groboclown.p4.server.api.values;
 
+import com.perforce.p4java.core.file.FileAction;
+import org.jetbrains.annotations.NotNull;
+
 /**
  * @see com.perforce.p4java.core.file.FileAction
  */
 public enum P4FileAction {
     ADD,
     ADD_EDIT,
-    BRANCH,
     EDIT,
     INTEGRATE,
     DELETE,
@@ -36,5 +38,52 @@ public enum P4FileAction {
     UNKNOWN,
 
     /** not marked as modified */
-    NONE
+    NONE;
+
+
+    @NotNull
+    public static P4FileAction convert(@NotNull FileAction action) {
+        switch (action) {
+            // Some of these don't make sense in most contexts, but deal with them
+            // as best as possible.
+
+            case ADD:
+            case ADDED:
+                return ADD;
+            case ADD_EDIT:
+                return ADD_EDIT;
+            case EDIT:
+                return EDIT;
+            case BRANCH:
+            case INTEGRATE:
+            case MOVE:
+            case MOVE_ADD:
+            case RESOLVED:
+            case UNRESOLVED:
+            case COPY_FROM:
+            case MERGE_FROM:
+            case EDIT_FROM:
+            case IMPORT:
+                return INTEGRATE;
+            case DELETE:
+            case DELETED:
+            case MOVE_DELETE:
+            case PURGE:
+            case ARCHIVE:
+                return DELETE;
+
+            case SYNC:
+            case UPDATED:
+            case REFRESHED:
+            case REPLACED:
+            case IGNORED:
+            case ABANDONED:
+            case EDIT_IGNORED:
+                return NONE;
+
+            case UNKNOWN:
+            default:
+                return UNKNOWN;
+        }
+    }
 }

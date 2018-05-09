@@ -30,7 +30,7 @@ public class FileActionCommittedMessage extends AbstractCacheMessage<FileActionC
         void fileActionCommitted(@NotNull Event event);
     }
 
-    public static void addListener(@NotNull MessageBusClient client, @NotNull String cacheId,
+    public static void addListener(@NotNull MessageBusClient.ApplicationClient client, @NotNull String cacheId,
             @NotNull Listener listener) {
         abstractAddListener(client, TOPIC, cacheId, listener::fileActionCommitted);
     }

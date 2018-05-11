@@ -18,6 +18,7 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.concurrent.Immutable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -70,5 +71,12 @@ public class OfflineActionAnswerImpl<S> implements P4CommandRunner.ActionAnswer<
     @Override
     public boolean waitForCompletion(int timeout, TimeUnit unit) {
         return true;
+    }
+
+    @Override
+    public S blockingGet(int timeout, TimeUnit unit)
+            throws InterruptedException, CancellationException, P4CommandRunner.ServerResultException {
+        // offline, so return null.
+        return null;
     }
 }

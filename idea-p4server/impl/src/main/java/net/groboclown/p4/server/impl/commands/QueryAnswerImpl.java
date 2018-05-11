@@ -18,6 +18,7 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.async.Answer;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -78,5 +79,11 @@ public class QueryAnswerImpl<S> implements P4CommandRunner.QueryAnswer<S> {
     @Override
     public boolean waitForCompletion(int timeout, TimeUnit unit) {
         return true;
+    }
+
+    @Override
+    public S blockingGet(int timeout, TimeUnit unit)
+            throws InterruptedException, CancellationException, P4CommandRunner.ServerResultException {
+        return Answer.blockingGet(answer, timeout, unit);
     }
 }

@@ -17,8 +17,10 @@ package net.groboclown.p4.server.impl.commands;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.async.Answer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.concurrent.Immutable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -86,5 +88,12 @@ public class ActionAnswerImpl<S> implements P4CommandRunner.ActionAnswer<S> {
     public boolean waitForCompletion(int timeout, TimeUnit unit)
             throws InterruptedException {
         return answer.blockingWait(timeout, unit);
+    }
+
+    @Nullable
+    @Override
+    public S blockingGet(int timeout, TimeUnit unit)
+            throws InterruptedException, CancellationException, P4CommandRunner.ServerResultException {
+        return Answer.blockingGet(answer, timeout, unit);
     }
 }

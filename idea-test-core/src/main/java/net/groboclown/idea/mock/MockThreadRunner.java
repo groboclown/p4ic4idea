@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4plugin.ui;
+package net.groboclown.idea.mock;
 
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ModalityState;

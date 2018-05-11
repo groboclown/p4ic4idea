@@ -18,6 +18,7 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.concurrency.Promise;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -51,6 +52,11 @@ public interface Answer<S> {
         return DoneAnswer.reject(e);
     }
 
+    static <S> S blockingGet(@NotNull Answer<S> answer, int timeout, TimeUnit unit)
+            throws InterruptedException, CancellationException, P4CommandRunner.ServerResultException {
+        return BlockingAnswer.blockingGet(answer, timeout, unit);
+    }
+
 
     @NotNull
     Answer<S> whenCompleted(@NotNull Consumer<S> c);
@@ -67,6 +73,9 @@ public interface Answer<S> {
     <T> Answer<T> futureMap(@NotNull BiConsumer<S, AnswerSink<T>> func);
 
     /**
+     * TODO this might need to change to be a <tt>blockingGet</tt>, and retrieves
+     * the answer, or throws the exception.  Or perhaps both?  It does complicate
+     * the async implementation, though.
      *
      * @param timeout time to wait
      * @param unit unit of the time to wait

@@ -14,6 +14,7 @@
 package net.groboclown.p4plugin.ui;
 
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
+import net.groboclown.idea.mock.MockThreadRunner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 

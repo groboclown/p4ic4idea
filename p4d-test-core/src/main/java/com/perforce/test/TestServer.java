@@ -227,15 +227,21 @@ public class TestServer {
                 status = newStatus;
                 return null;
             });
-            // TODO need to correctly wait for the server to start.  This is a terrible way.
-            // But then, we should really be using the rsh connection method, not the
-            // async method.
-            Thread.sleep(1000L);
+            waitForStartup();
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void waitForStartup()
+            throws InterruptedException {
+        // TODO need to correctly wait for the server to start.  This is a terrible way.
+        // The
+        // But then, we should really be using the rsh connection method, not the
+        // async method.
+        Thread.sleep(1000L);
     }
 
     // Stop the server and delete the directory.

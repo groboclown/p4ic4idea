@@ -17,10 +17,12 @@ package net.groboclown.p4.server.api;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -208,6 +210,15 @@ public class MockCommandRunner
         public boolean waitForCompletion(int timeout, TimeUnit unit) {
             return true;
         }
+
+        @Override
+        public R blockingGet(int timeout, TimeUnit unit)
+                throws InterruptedException, CancellationException, ServerResultException {
+            if (error == null) {
+                return result;
+            }
+            throw error;
+        }
     }
 
     private static class MockActionAnswer<S> implements ActionAnswer<S> {
@@ -287,6 +298,16 @@ public class MockCommandRunner
         @Override
         public boolean waitForCompletion(int timeout, TimeUnit unit) {
             return true;
+        }
+
+        @Nullable
+        @Override
+        public S blockingGet(int timeout, TimeUnit unit)
+                throws InterruptedException, CancellationException, ServerResultException {
+            if (error == null) {
+                return result;
+            }
+            throw error;
         }
     }
 }

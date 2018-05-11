@@ -19,9 +19,11 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -520,6 +522,19 @@ public interface P4CommandRunner {
          */
         boolean waitForCompletion(int timeout, TimeUnit unit)
                 throws InterruptedException;
+
+        /**
+         *
+         * @param timeout time out for waiting on a response.
+         * @param unit time out unit
+         * @return null if the server was offline.
+         * @throws InterruptedException thread was interrupted
+         * @throws CancellationException timeout occurred
+         * @throws ServerResultException error from the server
+         */
+        @Nullable
+        S blockingGet(int timeout, TimeUnit unit)
+                throws InterruptedException, CancellationException, ServerResultException;
     }
 
     /**
@@ -552,6 +567,9 @@ public interface P4CommandRunner {
          * @return true if the wait completes as normal, or false if there was a timeout.
          */
         boolean waitForCompletion(int timeout, TimeUnit unit);
+
+        S blockingGet(int timeout, TimeUnit unit)
+                throws InterruptedException, CancellationException, ServerResultException;
     }
 
 

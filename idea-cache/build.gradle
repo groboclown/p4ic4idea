@@ -20,11 +20,11 @@ ideaImplementation.uses(
 
 dependencies {
     compatApi (
-            project(":idea-p4server/api")
+            project(":idea-p4server:api")
     )
     compatImplementation (
             project(':p4java'),
-            project(':idea-compat/compat-api'),
+            project(':idea-compat:compat-api'),
     )
     compatTest(
             'junit:junit:4.12',

@@ -3,8 +3,20 @@
   <component name="CompilerConfiguration">
     <addNotNullAssertions enabled="false" />
     <bytecodeTargetLevel target="1.6">
+      <module name="api_main" target="1.8" />
+      <module name="api_mainIdea172" target="1.8" />
+      <module name="api_mainIdea173" target="1.8" />
+      <module name="api_test" target="1.8" />
+      <module name="api_testIdea172" target="1.8" />
+      <module name="api_testIdea173" target="1.8" />
       <module name="buildSrc_main" target="1.8" />
       <module name="buildSrc_test" target="1.8" />
+      <module name="compat-api_main" target="1.8" />
+      <module name="compat-api_mainIdea172" target="1.8" />
+      <module name="compat-api_mainIdea173" target="1.8" />
+      <module name="compat-api_test" target="1.8" />
+      <module name="compat-api_testIdea172" target="1.8" />
+      <module name="compat-api_testIdea173" target="1.8" />
       <module name="idea-cache_main" target="1.8" />
       <module name="idea-cache_mainIdea172" target="1.8" />
       <module name="idea-cache_mainIdea173" target="1.8" />
@@ -43,6 +55,12 @@
       <module name="idea-test-core_test" target="1.8" />
       <module name="idea-test-core_testIdea172" target="1.8" />
       <module name="idea-test-core_testIdea173" target="1.8" />
+      <module name="impl_main" target="1.8" />
+      <module name="impl_mainIdea172" target="1.8" />
+      <module name="impl_mainIdea173" target="1.8" />
+      <module name="impl_test" target="1.8" />
+      <module name="impl_testIdea172" target="1.8" />
+      <module name="impl_testIdea173" target="1.8" />
       <module name="messages_main" target="1.8" />
       <module name="messages_mainIdea172" target="1.8" />
       <module name="messages_mainIdea173" target="1.8" />
@@ -67,6 +85,8 @@
       <module name="plugin_testIdea173" target="1.8" />
       <module name="swarm_main" target="1.8" />
       <module name="swarm_test" target="1.8" />
+      <module name="v171_main" target="1.8" />
+      <module name="v171_test" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

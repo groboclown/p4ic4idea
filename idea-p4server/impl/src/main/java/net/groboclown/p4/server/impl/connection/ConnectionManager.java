@@ -17,20 +17,20 @@ package net.groboclown.p4.server.impl.connection;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.concurrency.Promise;
 
 public interface ConnectionManager {
     @NotNull
-    <R> Promise<R> withConnection(@NotNull ClientConfig config, @NotNull P4Func<IClient, R> fun);
+    <R> Answer<R> withConnection(@NotNull ClientConfig config, @NotNull P4Func<IClient, R> fun);
 
     @NotNull
-    <R> Promise<R> withConnection(@NotNull ServerConfig config, @NotNull P4Func<IOptionsServer, R> fun);
+    <R> Answer<R> withConnection(@NotNull ServerConfig config, @NotNull P4Func<IOptionsServer, R> fun);
 
     @NotNull
-    <R> Promise<R> withConnection(@NotNull P4ServerName config, P4Func<IOptionsServer, R> fun);
+    <R> Answer<R> withConnection(@NotNull P4ServerName config, P4Func<IOptionsServer, R> fun);
 
     void disconnect(@NotNull ServerConfig config);
 }

@@ -15,9 +15,12 @@
 package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.commands.ActionUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class DeleteChangelistAction implements P4CommandRunner.ClientAction<DeleteChangelistResult> {
+    private final String actionId = ActionUtil.createActionId(DeleteChangelistAction.class);
+
     @NotNull
     @Override
     public Class<? extends DeleteChangelistResult> getResultType() {
@@ -27,5 +30,11 @@ public class DeleteChangelistAction implements P4CommandRunner.ClientAction<Dele
     @Override
     public P4CommandRunner.ClientActionCmd getCmd() {
         return P4CommandRunner.ClientActionCmd.DELETE_CHANGELIST;
+    }
+
+    @NotNull
+    @Override
+    public String getActionId() {
+        return actionId;
     }
 }

@@ -16,15 +16,56 @@ package net.groboclown.p4.server;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
 import com.perforce.p4java.exception.AuthenticationFailedException;
+import com.perforce.p4java.impl.mapbased.server.ServerInfo;
+import net.groboclown.p4.server.api.AbstractP4CommandRunner;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
-import net.groboclown.p4.server.api.cache.messagebus.ClientActionCacheUpdateMessage;
-import net.groboclown.p4.server.api.cache.messagebus.ClientActionCompletedCacheUpdateMessage;
-import net.groboclown.p4.server.api.cache.messagebus.ServerActionCacheUpdateMessage;
-import net.groboclown.p4.server.api.cache.messagebus.ServerActionCompletedCacheUpdateMessage;
+import net.groboclown.p4.server.api.cache.messagebus.ClientActionCacheMessage;
+import net.groboclown.p4.server.api.cache.messagebus.DescribeChangelistCacheMessage;
+import net.groboclown.p4.server.api.cache.messagebus.FileActionMessage;
+import net.groboclown.p4.server.api.cache.messagebus.JobSpecCacheMessage;
+import net.groboclown.p4.server.api.cache.messagebus.ServerActionCacheMessage;
+import net.groboclown.p4.server.api.commands.changelist.CreateJobAction;
+import net.groboclown.p4.server.api.commands.changelist.CreateJobResult;
+import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery;
+import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistResult;
+import net.groboclown.p4.server.api.commands.changelist.GetJobSpecQuery;
+import net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult;
+import net.groboclown.p4.server.api.commands.changelist.ListChangelistsFixedByJobQuery;
+import net.groboclown.p4.server.api.commands.changelist.ListChangelistsFixedByJobResult;
+import net.groboclown.p4.server.api.commands.changelist.ListJobsQuery;
+import net.groboclown.p4.server.api.commands.changelist.ListJobsResult;
+import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsQuery;
+import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsResult;
+import net.groboclown.p4.server.api.commands.client.ListClientFetchStatusQuery;
+import net.groboclown.p4.server.api.commands.client.ListClientFetchStatusResult;
+import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
+import net.groboclown.p4.server.api.commands.client.ListClientsForUserResult;
+import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesQuery;
+import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult;
+import net.groboclown.p4.server.api.commands.file.AnnotateFileQuery;
+import net.groboclown.p4.server.api.commands.file.AnnotateFileResult;
+import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
+import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
+import net.groboclown.p4.server.api.commands.file.ListDirectoriesQuery;
+import net.groboclown.p4.server.api.commands.file.ListDirectoriesResult;
+import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
+import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
+import net.groboclown.p4.server.api.commands.file.ListFilesHistoryQuery;
+import net.groboclown.p4.server.api.commands.file.ListFilesHistoryResult;
+import net.groboclown.p4.server.api.commands.file.ListFilesQuery;
+import net.groboclown.p4.server.api.commands.file.ListFilesResult;
+import net.groboclown.p4.server.api.commands.file.MoveFileAction;
+import net.groboclown.p4.server.api.commands.file.MoveFileResult;
+import net.groboclown.p4.server.api.commands.server.LoginAction;
 import net.groboclown.p4.server.api.commands.server.LoginResult;
+import net.groboclown.p4.server.api.commands.server.ServerInfoResult;
+import net.groboclown.p4.server.api.commands.sync.SyncListOpenedFilesChangesQuery;
+import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
+import net.groboclown.p4.server.api.commands.user.ListUsersResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
@@ -33,11 +74,17 @@ import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
+import net.groboclown.p4.server.api.values.P4FileAction;
+import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
 import net.groboclown.p4.server.impl.cache.CacheQueryHandler;
+import net.groboclown.p4.server.impl.commands.DoneQueryAnswer;
+import net.groboclown.p4.server.impl.commands.OfflineActionAnswerImpl;
+import net.groboclown.p4.server.impl.commands.QueryAnswerImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.concurrency.Promise;
+import org.jetbrains.concurrency.Promises;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,11 +92,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 /**
  * Layers a cache and server.
  */
-public class TopCommandRunner
-        implements P4CommandRunner, Disposable {
+public class TopCommandRunner extends AbstractP4CommandRunner
+        implements Disposable {
+
     private final CacheQueryHandler cache;
     private final AbstractServerCommandRunner server;
     private final Map<String, ServerConnectionState> stateCache = new HashMap<>();
@@ -143,131 +192,278 @@ public class TopCommandRunner
         });
     }
 
-    @SuppressWarnings("unchecked")
+
     @NotNull
     @Override
-    public <R extends ServerResult> Promise<R> perform(@NotNull ServerConfig config, @NotNull ServerAction<R> action) {
+    protected ActionAnswer<CreateJobResult> createJob(ServerConfig config, CreateJobAction action) {
         ServerConnectionState state = getStateFor(config);
-        // Some action requests need to be handled and never cached.
-        switch (action.getCmd()) {
-            case LOGIN:
-                if (state.badLogin && !state.userOffline && !state.badConnection) {
-                    return server.perform(config, action)
-                            .then((resp) -> {
-                                // Login was good.
-                                state.needsLogin = false;
-                                state.badConnection = false;
-                                return resp;
-                            });
-                }
-                return (Promise<R>) Promise.resolve(new LoginResult(config));
-            default:
-                ServerActionCacheUpdateMessage.sendEvent(new ServerActionCacheUpdateMessage.Event(
-                        config.getServerName(), action
-                ));
-                // TODO if the state is something that requires a login, should that be done here?
-                if (state.shouldRunCommand()) {
-                    return server.perform(config, action)
-                            .then((result) -> {
-                                ServerActionCompletedCacheUpdateMessage.sendEvent(
-                                        new ServerActionCompletedCacheUpdateMessage.Event(config.getServerName(),
-                                                action));
-                                return result;
-                            });
-                }
-                // FIXME is this a valid response?
-                // Alternatively, we create a static mapping of result values.
-                return Promise.resolve(null);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @NotNull
-    @Override
-    public <R extends ClientResult> Promise<R> perform(@NotNull ClientConfig config, @NotNull ClientAction<R> action) {
-        // All these commands need to be cached.
-        ClientActionCacheUpdateMessage.sendEvent(new ClientActionCacheUpdateMessage.Event(
-                config.getClientServerRef(), action));
-
+        ServerActionCacheMessage.sendEvent(new ServerActionCacheMessage.Event(
+                config.getServerName(), action, ServerActionCacheMessage.ActionState.PENDING));
         // TODO if the state is something that requires a login, should that be done here?
-        ServerConnectionState state = getStateFor(config.getServerConfig());
         if (state.shouldRunCommand()) {
             return server.perform(config, action)
-                    .then((result) -> {
-                        ClientActionCompletedCacheUpdateMessage.sendEvent(
-                                new ClientActionCompletedCacheUpdateMessage.Event(config.getClientServerRef(),
-                                        action)
-                        );
+                    .mapAction((result) -> {
+                        ServerActionCacheMessage.sendEvent(new ServerActionCacheMessage.Event(
+                                config.getServerName(), action, ServerActionCacheMessage.ActionState.COMPLETED));
                         return result;
+                    })
+                    .whenServerError((err) ->
+                        ServerActionCacheMessage.sendEvent(new ServerActionCacheMessage.Event(
+                            config.getServerName(), action, err)));
+        }
+        return new OfflineActionAnswerImpl<>();
+    }
+
+
+    @NotNull
+    @Override
+    protected ActionAnswer<LoginResult> login(ServerConfig config, LoginAction action) {
+        ServerConnectionState state = getStateFor(config);
+        if (state.badLogin && !state.userOffline && !state.badConnection) {
+            return server.perform(config, action)
+                    .whenCompleted((resp) -> {
+                        // Login was good.
+                        state.needsLogin = false;
+                        state.badConnection = false;
                     });
         }
-        // FIXME is this a valid response?
-        // Alternatively, we create a static mapping of result values.
-        return Promise.resolve(null);
+        return new OfflineActionAnswerImpl<>();
     }
 
-    @SuppressWarnings("unchecked")
+
     @NotNull
     @Override
-    public <R extends ServerResult> Promise<R> query(@NotNull ServerConfig config, @NotNull ServerQuery<R> query) {
-        // FIXME
-        throw new IllegalStateException("not implemented");
+    protected ActionAnswer<FetchFilesResult> fetchFiles(ClientConfig config, FetchFilesAction action) {
+        // No cache updates
+        return onlineCheck(config,
+                () -> server.perform(config, action),
+                OfflineActionAnswerImpl::new);
     }
 
-    @SuppressWarnings("unchecked")
+
     @NotNull
     @Override
-    public <R extends ClientResult> Promise<R> query(@NotNull ClientConfig config, @NotNull ClientQuery<R> query) {
-        // FIXME
-        throw new IllegalStateException("not implemented");
+    protected ActionAnswer<MoveFileResult> moveFile(ClientConfig config, MoveFileAction action) {
+        // Move file is turned into 2 messages.
+        FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
+                action.getSourceFile(), P4FileAction.MOVE_DELETE, null, action));
+        FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
+                action.getTargetFile(), P4FileAction.MOVE_ADD_EDIT, null, action));
+        return onlineCheck(config,
+                () -> server.perform(config, action)
+                    .whenCompleted((result) -> {
+                        FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
+                                action.getSourceFile(), P4FileAction.MOVE_DELETE, null, action, result));
+                        FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
+                                action.getTargetFile(), P4FileAction.MOVE_ADD_EDIT, null, action, result));
+                    })
+                    .whenServerError((t) -> {
+                        FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
+                                action.getSourceFile(), P4FileAction.MOVE_DELETE, null, action, t));
+                        FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
+                                action.getTargetFile(), P4FileAction.MOVE_ADD_EDIT, null, action, t));
+
+                    }),
+                OfflineActionAnswerImpl::new
+        );
     }
 
-    @SuppressWarnings("unchecked")
+
     @NotNull
     @Override
-    public <R extends ServerNameResult> Promise<R> query(@NotNull P4ServerName name,
-            @NotNull ServerNameQuery<R> query) {
-        // FIXME
-        throw new IllegalStateException("not implemented");
+    protected <R extends ClientResult> ActionAnswer<R> performFileAction(ClientConfig config,
+            ClientAction<R> action, @NotNull FilePath file, @Nullable P4FileType fileType,
+            @NotNull P4FileAction fileAction) {
+        FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
+                file, fileAction, fileType, action));
+        // TODO if the state is something that requires a login, should that be done here?
+        return onlineCheck(config,
+                () -> server.perform(config, action)
+                        .whenCompleted((result) -> {
+                            FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
+                                    file, fileAction, fileType, action, result));
+                        })
+                        .whenServerError((t) ->
+                            FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
+                                    file, fileAction, fileType, action, t))),
+                OfflineActionAnswerImpl::new
+        );
     }
 
-    @SuppressWarnings("unchecked")
+
     @NotNull
     @Override
-    public <R extends ServerResult> R syncCachedQuery(@NotNull ServerConfig config, @NotNull SyncServerQuery<R> query)
-            throws ServerResultException {
-        // FIXME
-        throw new IllegalStateException("not implemented");
+    protected <R extends ClientResult> ActionAnswer<R> performNonFileAction(ClientConfig config, ClientAction<R> action) {
+        ClientActionCacheMessage.sendEvent(new ClientActionCacheMessage.Event(
+                config.getClientServerRef(), action, ClientActionCacheMessage.ActionState.PENDING));
+        // TODO if the state is something that requires a login, should that be done here?
+        return onlineCheck(config,
+                () -> server.perform(config, action)
+                        .whenCompleted((result) -> {
+                            ClientActionCacheMessage.sendEvent(new ClientActionCacheMessage.Event(
+                                    config.getClientServerRef(), action, ClientActionCacheMessage.ActionState.COMPLETED));
+                        })
+                        .whenServerError((t) -> {
+                            ClientActionCacheMessage.sendEvent(new ClientActionCacheMessage.Event(
+                                    config.getClientServerRef(), action, ClientActionCacheMessage.ActionState.FAILED));
+                        }),
+                OfflineActionAnswerImpl::new
+        );
     }
 
-    @SuppressWarnings("unchecked")
+
     @NotNull
     @Override
-    public <R extends ClientResult> R syncCachedQuery(@NotNull ClientConfig config, @NotNull SyncClientQuery<R> query)
-            throws ServerResultException {
-        // FIXME
-        throw new IllegalStateException("not implemented");
+    protected QueryAnswer<AnnotateFileResult> getAnnotatedFile(ServerConfig config, AnnotateFileQuery query) {
+        // No cache for file annotations.
+        return onlineCheck(config,
+                () -> server.getFileAnnotation(config, query),
+                () -> new DoneQueryAnswer<>(new AnnotateFileResult())
+        );
     }
 
-    @SuppressWarnings("unchecked")
+
     @NotNull
     @Override
-    public <R extends ServerResult> FutureResult<R> syncQuery(@NotNull ServerConfig config,
-            @NotNull SyncServerQuery<R> query)
-            throws ServerResultException {
-        // FIXME
-        throw new IllegalStateException("not implemented");
+    protected QueryAnswer<DescribeChangelistResult> describeChangelist(ServerConfig config, DescribeChangelistQuery query) {
+        return onlineCheck(config,
+                () -> server.describeChangelist(config, query)
+                        .whenCompleted((result) -> {
+                            DescribeChangelistCacheMessage.sendEvent(
+                                    new DescribeChangelistCacheMessage.Event(config.getServerName(),
+                                            result.getRequestedChangelist(), result.getRemoteChangelist()));
+                        }),
+                () -> new DoneQueryAnswer<>(new DescribeChangelistResult(config,
+                        query.getChangelistId(),
+                        cache.getCachedChangelist(config.getServerName(),
+                                query.getChangelistId()),
+                        true))
+        );
     }
 
-    @SuppressWarnings("unchecked")
+
     @NotNull
     @Override
-    public <R extends ClientResult> FutureResult<R> syncQuery(@NotNull ClientConfig config,
-            @NotNull SyncClientQuery<R> query)
-            throws ServerResultException {
-        // FIXME
-        throw new IllegalStateException("not implemented");
+    protected QueryAnswer<GetJobSpecResult> getJobSpec(ServerConfig config, GetJobSpecQuery query) {
+        return onlineCheck(config,
+                () -> server.getJobSpec(config)
+                        .whenCompleted((result) -> {
+                            JobSpecCacheMessage.sendEvent(new JobSpecCacheMessage.Event(
+                                    config.getServerName(), result.getJobSpec()
+                            ));
+                        }),
+                () -> new DoneQueryAnswer<>(new GetJobSpecResult(config,
+                        cache.getCachedJobSpec(config.getServerName())))
+        );
     }
+
+
+    @NotNull
+    @Override
+    protected QueryAnswer<ListChangelistsFixedByJobResult> listChangelistsFixedByJob(ServerConfig config,
+            ListChangelistsFixedByJobQuery query) {
+        return null;
+    }
+
+    @NotNull
+    @Override
+    protected QueryAnswer<ListClientsForUserResult> listClientsForUser(ServerConfig config, ListClientsForUserQuery query) {
+        return null;
+    }
+
+
+    @NotNull
+    @Override
+    protected QueryAnswer<ListDirectoriesResult> listDirectories(ServerConfig config, ListDirectoriesQuery query) {
+        return null;
+    }
+
+
+    @NotNull
+    @Override
+    protected QueryAnswer<ListFilesResult> listFiles(ServerConfig config, ListFilesQuery query) {
+        return null;
+    }
+
+
+    @NotNull
+    @Override
+    protected QueryAnswer<ListFilesDetailsResult> listFilesDetails(ServerConfig config, ListFilesDetailsQuery query) {
+        return null;
+    }
+
+
+    @NotNull
+    @Override
+    protected QueryAnswer<ListFilesHistoryResult> listFilesHistory(ServerConfig config, ListFilesHistoryQuery query) {
+        return null;
+    }
+
+
+    @NotNull
+    @Override
+    protected QueryAnswer<ListJobsResult> listJobs(ServerConfig config, ListJobsQuery query) {
+        return null;
+    }
+
+
+    @NotNull
+    @Override
+    protected QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(ServerConfig config,
+            ListSubmittedChangelistsQuery query) {
+        return null;
+    }
+
+
+    @NotNull
+    @Override
+    protected QueryAnswer<ListUsersResult> listUsers(ServerConfig config, ListUsersQuery query) {
+        return null;
+    }
+
+
+    @NotNull
+    @Override
+    protected QueryAnswer<ListClientFetchStatusResult> listClientFetchStatus(ClientConfig config,
+            ListClientFetchStatusQuery query) {
+        return null;
+    }
+
+
+    @NotNull
+    @Override
+    protected QueryAnswer<ListOpenedFilesChangesResult> listOpenedFilesChanges(ClientConfig config,
+            ListOpenedFilesChangesQuery query) {
+        return onlineCheck(config,
+                () -> server.listOpenedFilesChanges(config, query),
+                () -> new DoneQueryAnswer<>(new ListOpenedFilesChangesResult(config,
+                        cache.getCachedOpenedFiles(config),
+                        cache.getCachedOpenedChangelists(config)))
+        );
+    }
+
+
+    @NotNull
+    @Override
+    protected QueryAnswer<ServerInfoResult> serverInfo(P4ServerName name, ServerInfo query) {
+        return null;
+    }
+
+
+    @NotNull
+    @Override
+    protected ListOpenedFilesChangesResult syncCachedListOpenedFilesChanges(ClientConfig config,
+            SyncListOpenedFilesChangesQuery query) {
+        return null;
+    }
+
+    @NotNull
+    @Override
+    protected FutureResult<ListOpenedFilesChangesResult> syncListOpenedFilesChanges(ClientConfig config,
+            SyncListOpenedFilesChangesQuery query) {
+        return null;
+    }
+
 
     @Override
     public void dispose() {
@@ -313,6 +509,27 @@ public class TopCommandRunner
         // and requested cache updates.
     }
 
+    private <R> R onlineCheck(@NotNull ClientConfig clientConfig, Exec<R> serverExec, Exec<R> cacheExec) {
+        return onlineCheck(clientConfig.getServerConfig(), serverExec, cacheExec);
+    }
+
+    private <R> R onlineCheck(@NotNull ServerConfig serverConfig, Exec<R> serverExec, Exec<R> cacheExec) {
+        ServerConnectionState state = getStateFor(serverConfig);
+        // TODO if the state is something that requires a login, should that be done here?
+        if (state.shouldRunCommand()) {
+            return serverExec.exec();
+        }
+        return cacheExec.exec();
+    }
+
+    interface Exec<R> {
+        R exec();
+    }
+
+    interface ExecThrows<R> {
+        R exec() throws P4CommandRunner.ServerResultException;
+    }
+
     private static class ServerConnectionState {
         final ServerConfig config;
         boolean badConnection;
@@ -333,5 +550,4 @@ public class TopCommandRunner
             return !(badConnection || badLogin || userOffline || needsLogin);
         }
     }
-
 }

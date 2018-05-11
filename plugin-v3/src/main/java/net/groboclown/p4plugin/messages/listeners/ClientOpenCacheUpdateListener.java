@@ -14,13 +14,13 @@
 
 package net.groboclown.p4plugin.messages.listeners;
 
-import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheUpdateMessage;
+import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheMessage;
 
 import javax.annotation.Nonnull;
 
-public class ClientOpenCacheUpdateListener implements ClientOpenCacheUpdateMessage.Listener {
+public class ClientOpenCacheUpdateListener implements ClientOpenCacheMessage.Listener {
     @Override
-    public void openFilesChangelistsUpdated(@Nonnull ClientOpenCacheUpdateMessage.Event event) {
+    public void openFilesChangelistsUpdated(@Nonnull ClientOpenCacheMessage.Event event) {
 
     }
 }

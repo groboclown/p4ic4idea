@@ -16,10 +16,14 @@ package net.groboclown.p4.server.api.cache.messagebus;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.util.messages.Topic;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.messagebus.ApplicationMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Optional;
 
 /**
  * Cache update message that is broadcast across the application.  Event topic
@@ -84,5 +88,25 @@ public class AbstractCacheMessage<E extends AbstractCacheUpdateEvent<E>>
         return new Topic(displayName,
                 TopicListener.class,
                 Topic.BroadcastDirection.TO_CHILDREN);
+    }
+
+    static P4CommandRunner.ServerResultException createUnknownError(final Throwable t) {
+        if (t instanceof P4CommandRunner.ServerResultException) {
+            return (P4CommandRunner.ServerResultException) t;
+        }
+        return new P4CommandRunner.ServerResultException(new P4CommandRunner.ResultError() {
+            @NotNull
+            @Override
+            public P4CommandRunner.ErrorCategory getCategory() {
+                return P4CommandRunner.ErrorCategory.INTERNAL;
+            }
+
+            @Nls
+            @NotNull
+            @Override
+            public Optional<String> getMessage() {
+                return Optional.ofNullable(t.getMessage());
+            }
+        }, t);
     }
 }

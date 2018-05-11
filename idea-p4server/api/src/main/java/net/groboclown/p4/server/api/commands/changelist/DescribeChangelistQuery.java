@@ -15,9 +15,16 @@
 package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
 import org.jetbrains.annotations.NotNull;
 
 public class DescribeChangelistQuery implements P4CommandRunner.ServerQuery<DescribeChangelistResult> {
+    private final P4ChangelistId changelistId;
+
+    public DescribeChangelistQuery(P4ChangelistId changelistId) {
+        this.changelistId = changelistId;
+    }
+
     @NotNull
     @Override
     public Class<? extends DescribeChangelistResult> getResultType() {
@@ -27,5 +34,9 @@ public class DescribeChangelistQuery implements P4CommandRunner.ServerQuery<Desc
     @Override
     public P4CommandRunner.ServerQueryCmd getCmd() {
         return P4CommandRunner.ServerQueryCmd.DESCRIBE_CHANGELIST;
+    }
+
+    public P4ChangelistId getChangelistId() {
+        return changelistId;
     }
 }

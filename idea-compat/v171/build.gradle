@@ -21,7 +21,7 @@ dependencies {
             'credential-store',
             'extensions',
     )
-    api project(":idea-compat/compat-api")
+    api project(":idea-compat:compat-api")
 
     testImplementation (
             'junit:junit:4.12',

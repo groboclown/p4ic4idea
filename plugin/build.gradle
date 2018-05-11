@@ -58,12 +58,12 @@ dependencies {
     //compatApi ()
 
     compatImplementation (
-            project(':idea-compat/compat-api'),
+            project(':idea-compat:compat-api'),
             project(':p4java'),
             project(':swarm')
     )
     runtime (
-            project(':idea-compat/v171')
+            project(':idea-compat:v171')
     )
     compatTest(
             'junit:junit:4.12',
@@ -79,9 +79,9 @@ dependencies {
             // swarm dependencies
             project(':swarm'),
             files(
-                    tasks.getByPath(':idea-compat/compat-api:jar').archivePath,
+                    tasks.getByPath(':idea-compat:compat-api:jar').archivePath,
                     tasks.getByPath(':p4java:jar').archivePath,
-                    tasks.getByPath(':idea-compat/v171:jar').archivePath,
+                    tasks.getByPath(':idea-compat:v171:jar').archivePath,
                     tasks.getByPath(':swarm:jar').archivePath
             )
     )
@@ -112,8 +112,8 @@ jar.dependsOn packageVersion
 
 task assembleZip(type: Zip) {
     dependsOn ':p4java:jar'
-    dependsOn ':idea-compat/compat-api:jar'
-    dependsOn ':idea-compat/v171:jar'
+    dependsOn ':idea-compat:compat-api:jar'
+    dependsOn ':idea-compat:v171:jar'
     dependsOn ':swarm:jar'
     dependsOn 'jar'
 

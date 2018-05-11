@@ -33,17 +33,17 @@ ideaTest.uses(
 
 dependencies {
     compatApi (
-            project(":idea-p4server/api")
+            project(":idea-p4server:api")
     )
     compatImplementation (
             project(':p4java'),
-            project(':idea-compat/compat-api'),
+            project(':idea-compat:compat-api'),
             project(':idea-cache'),
             project(':swarm'),
     )
     compatTest(
             project(':idea-test-core'),
-            project(':idea-p4server/api').sourceSets.test.output,
+            project(':idea-p4server:api').sourceSets.test.output,
             project(':p4d-test-core'),
 
             'org.junit.jupiter:junit-jupiter-engine:5.1.0',

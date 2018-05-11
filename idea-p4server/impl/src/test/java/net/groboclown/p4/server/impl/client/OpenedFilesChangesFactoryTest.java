@@ -15,18 +15,17 @@ package net.groboclown.p4.server.impl.client;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.perforce.p4java.core.CoreFactory;
-import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.client.AddFilesOptions;
-import com.perforce.p4java.option.server.GetExtendedFilesOptions;
 import com.perforce.test.P4ServerExtension;
 import com.perforce.test.ServerRule;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.extensions.TemporaryFolderExtension;
 import net.groboclown.p4.server.api.MockConfigPart;
+import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.impl.connection.MockP4RequestErrorHandler;
@@ -65,7 +64,7 @@ class OpenedFilesChangesFactoryTest {
     @ExtendWith(TemporaryFolderExtension.class)
     @Test
     void simpleAddedFiles_localFiles(TemporaryFolder tmpDir)
-            throws IOException {
+            throws IOException, InterruptedException {
         ClientConfig clientConfig = createClientConfig();
         File clientRoot = tmpDir.newFile("clientRoot");
         if (!clientRoot.isDirectory() && !clientRoot.mkdirs()) {
@@ -73,7 +72,7 @@ class OpenedFilesChangesFactoryTest {
         }
 
         setupClient(clientConfig, tmpDir, clientRoot)
-        .thenAsync((mgr) -> mgr.withConnection(clientConfig, (client) -> {
+        .map((mgr) -> mgr.withConnection(clientConfig, (client) -> {
             // Create initial files
             File f1 = touchFile(clientRoot, "abc.txt");
             File f2 = touchFile(clientRoot, "a@b.txt");
@@ -105,7 +104,7 @@ class OpenedFilesChangesFactoryTest {
             } catch (P4JavaException e) {
                 return Promises.rejectedPromise(e);
             }
-        })).blockingGet(5, TimeUnit.SECONDS);
+        })).blockingWait(5, TimeUnit.SECONDS);
     }
 
 
@@ -125,7 +124,7 @@ class OpenedFilesChangesFactoryTest {
     }
 
 
-    private Promise<SimpleConnectionManager> setupClient(final ClientConfig config,
+    private Answer<SimpleConnectionManager> setupClient(final ClientConfig config,
             final TemporaryFolder tmpDir, File clientRoot) {
         final MockP4RequestErrorHandler errorHandler = new MockP4RequestErrorHandler();
         final SimpleConnectionManager mgr = new SimpleConnectionManager(
@@ -134,7 +133,7 @@ class OpenedFilesChangesFactoryTest {
         return mgr.withConnection(config.getServerConfig(), (server) ->
                 CoreFactory.createClient(server, "client", "new client from CoreFactory",
                 clientRoot.getAbsolutePath(), new String[]{"//depot/... //client/..."}, true))
-            .then((x) -> mgr);
+            .map((x) -> mgr);
     }
 
 

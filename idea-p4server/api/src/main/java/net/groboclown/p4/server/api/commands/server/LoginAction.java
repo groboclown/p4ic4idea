@@ -15,9 +15,12 @@
 package net.groboclown.p4.server.api.commands.server;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.commands.ActionUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class LoginAction implements P4CommandRunner.ServerAction<LoginResult> {
+    private final String actionId = ActionUtil.createActionId(LoginAction.class);
+
     @NotNull
     @Override
     public Class<? extends LoginResult> getResultType() {
@@ -27,5 +30,10 @@ public class LoginAction implements P4CommandRunner.ServerAction<LoginResult> {
     @Override
     public P4CommandRunner.ServerActionCmd getCmd() {
         return P4CommandRunner.ServerActionCmd.LOGIN;
+    }
+
+    @Override
+    public String getActionId() {
+        return actionId;
     }
 }

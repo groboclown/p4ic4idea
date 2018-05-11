@@ -18,10 +18,12 @@ import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.fileTypes.FileTypeRegistry;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.pico.DefaultPicoContainer;
@@ -29,9 +31,12 @@ import net.groboclown.idea.mock.MockPasswordSafe;
 import net.groboclown.idea.mock.MockVcsContextFactory;
 import net.groboclown.idea.mock.SingleThreadedMessageBus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.picocontainer.ComponentAdapter;
 import org.picocontainer.PicoContainer;
 import org.picocontainer.PicoInitializationException;
@@ -41,7 +46,11 @@ import org.picocontainer.PicoVisitor;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -83,6 +92,18 @@ public class IdeaLightweightExtension
 
     public void registerProjectComponent(@NotNull String name, @NotNull ProjectComponent component) {
         when(getMockProject().getComponent(name)).thenReturn(component);
+    }
+
+    public void useInlineThreading(@Nullable List<Throwable> caughtErrors) {
+        Application application = getMockApplication();
+        when(application.executeOnPooledThread((Runnable) any())).then(IMMEDIATE_THREAD_RUNNER);
+        when(application.executeOnPooledThread((Callable<?>) any())).then(IMMEDIATE_THREAD_RUNNER);
+
+        doAnswer(IMMEDIATE_THREAD_RUNNER).when(application).invokeLater(any());
+        doAnswer(IMMEDIATE_THREAD_RUNNER).when(application).invokeLater(any(), (Condition) any());
+        doAnswer(IMMEDIATE_THREAD_RUNNER).when(application).invokeLater(any(), (ModalityState) any());
+        doAnswer(IMMEDIATE_THREAD_RUNNER).when(application).invokeAndWait(any());
+        doAnswer(IMMEDIATE_THREAD_RUNNER).when(application).invokeAndWait(any(), any());
     }
 
     @Override
@@ -232,6 +253,30 @@ public class IdeaLightweightExtension
         @Override
         public void accept(PicoVisitor picoVisitor) {
             picoVisitor.visitComponentAdapter(this);
+        }
+    }
+
+    private final static Answer<Object> IMMEDIATE_THREAD_RUNNER = new ImmediateRunner();
+
+    private static class ImmediateRunner implements Answer<Object> {
+        @Override
+        public Object answer(InvocationOnMock invocation)
+                throws Throwable {
+            final Object arg = invocation.getArgument(0);
+            final Runnable runner;
+            if (arg instanceof Runnable) {
+                runner = (Runnable) arg;
+            } else {
+                runner = () -> {
+                    try {
+                        ((Callable<?>) arg).call();
+                    } catch (Exception e) {
+                        fail(e);
+                    }
+                };
+            }
+            runner.run();
+            return null;
         }
     }
 }

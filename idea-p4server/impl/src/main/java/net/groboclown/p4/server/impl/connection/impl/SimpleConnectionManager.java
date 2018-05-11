@@ -32,16 +32,17 @@ import com.perforce.p4java.server.IServer;
 import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.server.callback.ILogCallback;
 import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
-import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
+import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4.server.impl.connection.P4Func;
 import net.groboclown.p4.server.impl.connection.P4RequestErrorHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.concurrency.Promise;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -75,10 +76,10 @@ public class SimpleConnectionManager implements ConnectionManager {
 
     @NotNull
     @Override
-    public <R> Promise<R> withConnection(@NotNull ClientConfig config, @Nonnull P4Func<IClient, R> fun) {
+    public <R> Answer<R> withConnection(@NotNull ClientConfig config, @Nonnull P4Func<IClient, R> fun) {
         if (config.getServerConfig().usesStoredPassword()) {
-            return ApplicationPasswordRegistry.getInstance().get(config.getServerConfig())
-                    .thenAsync((password) -> handleAsync(config, () -> {
+            return Answer.forPromise(ApplicationPasswordRegistry.getInstance().get(config.getServerConfig()))
+                    .mapAsync((password) -> handleAsync(config, () -> {
                         final IOptionsServer server = connect(
                                 config.getServerConfig(),
                                 password.toString(true),
@@ -105,10 +106,10 @@ public class SimpleConnectionManager implements ConnectionManager {
 
     @NotNull
     @Override
-    public <R> Promise<R> withConnection(@NotNull ServerConfig config, @NotNull P4Func<IOptionsServer, R> fun) {
+    public <R> Answer<R> withConnection(@NotNull ServerConfig config, @NotNull P4Func<IOptionsServer, R> fun) {
         if (config.usesStoredPassword()) {
-            return ApplicationPasswordRegistry.getInstance().get(config)
-                    .thenAsync((password) -> handleAsync(config, () -> {
+            return Answer.forPromise(ApplicationPasswordRegistry.getInstance().get(config))
+                    .mapAsync((password) -> handleAsync(config, () -> {
                         final IOptionsServer server = connect(
                                 config,
                                 password.toString(true),
@@ -135,7 +136,7 @@ public class SimpleConnectionManager implements ConnectionManager {
 
     @NotNull
     @Override
-    public <R> Promise<R> withConnection(@NotNull P4ServerName config, P4Func<IOptionsServer, R> fun) {
+    public <R> Answer<R> withConnection(@NotNull P4ServerName config, P4Func<IOptionsServer, R> fun) {
         return handleAsync(config, () -> {
             final IOptionsServer server = getServer(
                     config,
@@ -467,17 +468,34 @@ public class SimpleConnectionManager implements ConnectionManager {
         return props;
     }
 
-    private <R> Promise<R> handleAsync(ClientConfig config, Callable<R> c) {
-        return errorHandler.handleAsync(config, c);
+    private <R> Answer<R> handleAsync(ClientConfig config, Callable<R> c) {
+        return startPromise(() -> errorHandler.handle(config, c));
     }
 
-    private <R> Promise<R> handleAsync(ServerConfig config, Callable<R> c) {
-        return errorHandler.handleAsync(config, c);
+    private <R> Answer<R> handleAsync(ServerConfig config, Callable<R> c) {
+        return startPromise(() -> errorHandler.handle(config, c));
     }
 
-    private <R> Promise<R> handleAsync(P4ServerName config, Callable<R> c) {
-        return errorHandler.handleAsync(config, c);
+    private <R> Answer<R> handleAsync(P4ServerName config, Callable<R> c) {
+        return startPromise(() -> errorHandler.handle(config, c));
     }
+
+    private interface ExecThrows<R> {
+        R exec() throws P4CommandRunner.ServerResultException;
+    }
+
+    private <R> Answer<R> startPromise(ExecThrows<R> runner) {
+        return Answer.background((sink) -> {
+            try {
+                R res = runner.exec();
+                sink.resolve(res);
+            } catch (P4CommandRunner.ServerResultException e) {
+                sink.reject(e);
+            }
+        });
+    }
+
+
 
     private void close(@NotNull final IServer server) {
         try {

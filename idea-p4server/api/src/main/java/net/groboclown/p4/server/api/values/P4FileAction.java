@@ -31,6 +31,11 @@ public enum P4FileAction {
     REVERTED,
     EDIT_RESOLVED,
 
+    MOVE_DELETE,
+    MOVE_ADD,
+    MOVE_EDIT,
+    MOVE_ADD_EDIT,
+
     // indicates that the file is open for edit, and the
     // file type is changed.
     REOPEN,
@@ -56,8 +61,6 @@ public enum P4FileAction {
                 return EDIT;
             case BRANCH:
             case INTEGRATE:
-            case MOVE:
-            case MOVE_ADD:
             case RESOLVED:
             case UNRESOLVED:
             case COPY_FROM:
@@ -67,10 +70,16 @@ public enum P4FileAction {
                 return INTEGRATE;
             case DELETE:
             case DELETED:
-            case MOVE_DELETE:
             case PURGE:
             case ARCHIVE:
                 return DELETE;
+            case MOVE_DELETE:
+                return MOVE_DELETE;
+            case MOVE:
+                // TODO is this right?
+                return MOVE_EDIT;
+            case MOVE_ADD:
+                return MOVE_ADD;
 
             case SYNC:
             case UPDATED:

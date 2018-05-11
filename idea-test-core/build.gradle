@@ -37,7 +37,7 @@ dependencies {
             'org.mockito:mockito-core:2.0.86-beta',
     )
     compatImplementation (
-            project(':idea-compat/compat-api'),
+            project(':idea-compat:compat-api'),
 
             'junit:junit:4.12',
             'org.junit.jupiter:junit-jupiter-engine:5.1.0',

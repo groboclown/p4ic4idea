@@ -14,10 +14,21 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
+import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.commands.ActionUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class MoveFileAction implements P4CommandRunner.ClientAction<MoveFileResult> {
+    private final String actionId = ActionUtil.createActionId(MoveFileAction.class);
+    private final FilePath source;
+    private final FilePath target;
+
+    public MoveFileAction(FilePath source, FilePath target) {
+        this.source = source;
+        this.target = target;
+    }
+
     @NotNull
     @Override
     public Class<? extends MoveFileResult> getResultType() {
@@ -27,5 +38,21 @@ public class MoveFileAction implements P4CommandRunner.ClientAction<MoveFileResu
     @Override
     public P4CommandRunner.ClientActionCmd getCmd() {
         return P4CommandRunner.ClientActionCmd.MOVE_FILE;
+    }
+
+    @NotNull
+    @Override
+    public String getActionId() {
+        return actionId;
+    }
+
+    @NotNull
+    public FilePath getSourceFile() {
+        return source;
+    }
+
+    @NotNull
+    public FilePath getTargetFile() {
+        return target;
     }
 }

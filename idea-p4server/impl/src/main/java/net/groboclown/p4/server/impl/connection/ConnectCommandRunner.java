@@ -24,23 +24,28 @@ import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.server.IOptionsServer;
-import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheUpdateMessage;
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.JobCacheMessage;
 import net.groboclown.p4.server.api.commands.changelist.CreateJobAction;
 import net.groboclown.p4.server.api.commands.changelist.CreateJobResult;
+import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery;
+import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult;
+import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesQuery;
 import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult;
-import net.groboclown.p4.server.api.commands.sync.SyncListOpenedFilesChangesQuery;
+import net.groboclown.p4.server.api.commands.file.AnnotateFileQuery;
+import net.groboclown.p4.server.api.commands.file.AnnotateFileResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
-import net.groboclown.p4.server.impl.cache.CacheQueryHandler;
 import net.groboclown.p4.server.impl.client.OpenedFilesChangesFactory;
+import net.groboclown.p4.server.impl.commands.ActionAnswerImpl;
+import net.groboclown.p4.server.impl.commands.QueryAnswerImpl;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
 import net.groboclown.p4.server.impl.values.P4JobImpl;
 import net.groboclown.p4.server.impl.values.P4JobSpecImpl;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.concurrency.Promise;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -62,14 +67,13 @@ public class ConnectCommandRunner
     private final ConnectionManager connectionManager;
 
     public ConnectCommandRunner(
-            @NotNull ConnectionManager connectionManager,
-            @NotNull CacheQueryHandler cache) {
+            @NotNull ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
 
-        register(ServerActionCmd.CREATE_JOB,
+        register(P4CommandRunner.ServerActionCmd.CREATE_JOB,
             (ServerActionRunner<CreateJobResult>) (config, action) ->
-                connectionManager.withConnection(config,
-                    (server) -> createJob(server, config, (CreateJobAction) action)));
+                new ActionAnswerImpl<>(connectionManager.withConnection(config,
+                    (server) -> createJob(server, config, (CreateJobAction) action))));
 
         //register(ClientActionCmd.ADD_EDIT_FILE, null);
         //register(ClientActionCmd.ADD_JOB_TO_CHANGELIST, null);
@@ -81,59 +85,48 @@ public class ConnectCommandRunner
         //register(ClientActionCmd.MOVE_FILE, null);
         //register(ClientActionCmd.MOVE_FILES_TO_CHANGELIST, null);
         //register(ClientActionCmd.REVERT_FILE, null);
-
-        //register(ServerNameQueryCmd.SERVER_INFO, null);
-
-        //register(ServerQueryCmd.ANNOTATE_FILE, null);
-        //register(ServerQueryCmd.CHANGELIST_DETAIL, null);
-        //register(ServerQueryCmd.DESCRIBE_CHANGELIST, null);
-        //register(ServerQueryCmd.LIST_CHANGELISTS_FIXED_BY_JOB, null);
-        //register(ServerQueryCmd.LIST_CHANGELISTS_FOR_CLIENT, null);
-        //register(ServerQueryCmd.LIST_CLIENTS_FOR_USER, null);
-        //register(ServerQueryCmd.LIST_DIRECTORIES, null);
-        //register(ServerQueryCmd.LIST_FILES, null);
-        //register(ServerQueryCmd.LIST_FILES_DETAILS, null);
-        //register(ServerQueryCmd.LIST_FILES_HISTORY, null);
-        //register(ServerQueryCmd.LIST_JOBS, null);
-        //register(ServerQueryCmd.LIST_SUBMITTED_CHANGELISTS, null);
-        //register(ServerQueryCmd.LIST_USERS, null);
-
-        register(ServerQueryCmd.GET_JOB_SPEC,
-                (ServerQueryRunner<GetJobSpecResult>) (config, query) ->
-                    connectionManager.withConnection(config,
-                        (server) -> new GetJobSpecResult(
-                            config,
-                            new P4JobSpecImpl(P4CommandUtil.getJobSpec(server))
-                        )
-                    )
-                );
-
-        //register(ClientQueryCmd.DEFAULT_CHANGELIST_DETAIL, null);
-        //register(ClientQueryCmd.LIST_CLIENT_FETCH_STATUS, null);
-        //register(ClientQueryCmd.LIST_OPENED_FILES, null);
-
-        register(SyncClientQueryCmd.SYNC_LIST_OPENED_FILES_CHANGES,
-                (SyncCacheClientQueryRunner<ListOpenedFilesChangesResult>)(config, query) -> {
-                    // Immediately return the cached value.
-                    return new ListOpenedFilesChangesResult(
-                            config, cache.getCachedOpenedFiles(config),
-                            cache.getCachedOpenedChangelists(config));
-                });
-        register(SyncClientQueryCmd.SYNC_LIST_OPENED_FILES_CHANGES,
-                (SyncClientQueryRunner<ListOpenedFilesChangesResult>)(config, query) -> {
-                    SyncListOpenedFilesChangesQuery olcq = (SyncListOpenedFilesChangesQuery) query;
-                    // Run the fetch in the background
-                    Promise<ListOpenedFilesChangesResult> promise =
-                            connectionManager.withConnection(config,
-                                    (client) -> listOpenedFilesChanges(client, config,
-                                            olcq.getMaxChangelistResults(), olcq.getMaxFileResults()));
-
-                    return new FutureResult<>(promise,
-                            new ListOpenedFilesChangesResult(
-                                    config, cache.getCachedOpenedFiles(config),
-                                    cache.getCachedOpenedChangelists(config)));
-                });
     }
+
+    @Override
+    public void disconnect(@NotNull ServerConfig config) {
+        connectionManager.disconnect(config);
+    }
+
+    @NotNull
+    @Override
+    public P4CommandRunner.QueryAnswer<AnnotateFileResult> getFileAnnotation(@NotNull ServerConfig config,
+            @NotNull AnnotateFileQuery query) {
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public P4CommandRunner.QueryAnswer<DescribeChangelistResult> describeChangelist(@NotNull ServerConfig config,
+            @NotNull DescribeChangelistQuery query) {
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public P4CommandRunner.QueryAnswer<GetJobSpecResult> getJobSpec(@NotNull ServerConfig config) {
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config,
+                (server) -> new GetJobSpecResult(
+                        config,
+                        new P4JobSpecImpl(P4CommandUtil.getJobSpec(server))
+                )
+        ));
+    }
+
+    @NotNull
+    @Override
+    public P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> listOpenedFilesChanges(@NotNull ClientConfig config,
+            @NotNull ListOpenedFilesChangesQuery query) {
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config,
+                (client) -> listOpenedFilesChanges(client, config,
+                        query.getMaxChangelistResults(), query.getMaxFileResults())
+        ));
+    }
+
 
     private CreateJobResult createJob(IOptionsServer server, ServerConfig cfg, CreateJobAction action)
             throws ConnectionException, AccessException, RequestException {
@@ -179,14 +172,10 @@ public class ConnectCommandRunner
         // Then join all the information together.
         ListOpenedFilesChangesResult ret = OpenedFilesChangesFactory.createListOpenedFilesChangesResult(
                 config, changes, pendingChangelistFiles, shelvedFiles, openedDefaultChangelistFiles);
-        ClientOpenCacheUpdateMessage.sendEvent(new ClientOpenCacheUpdateMessage.Event(
+        ClientOpenCacheMessage.sendEvent(new ClientOpenCacheMessage.Event(
                 config.getClientServerRef(), ret.getOpenedFiles(), ret.getPendingChangelists()
         ));
         return ret;
     }
 
-    @Override
-    public void disconnect(@NotNull ServerConfig config) {
-        connectionManager.disconnect(config);
-    }
 }

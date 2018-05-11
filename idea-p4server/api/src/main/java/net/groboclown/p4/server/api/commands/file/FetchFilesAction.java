@@ -15,9 +15,13 @@
 package net.groboclown.p4.server.api.commands.file;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.commands.ActionUtil;
+import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import org.jetbrains.annotations.NotNull;
 
 public class FetchFilesAction implements P4CommandRunner.ClientAction<FetchFilesResult> {
+    private final String actionId = ActionUtil.createActionId(FetchFilesAction.class);
+
     @NotNull
     @Override
     public Class<? extends FetchFilesResult> getResultType() {
@@ -27,5 +31,11 @@ public class FetchFilesAction implements P4CommandRunner.ClientAction<FetchFiles
     @Override
     public P4CommandRunner.ClientActionCmd getCmd() {
         return P4CommandRunner.ClientActionCmd.FETCH_FILES;
+    }
+
+    @NotNull
+    @Override
+    public String getActionId() {
+        return actionId;
     }
 }

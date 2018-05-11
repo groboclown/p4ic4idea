@@ -16,12 +16,51 @@ package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.api.values.P4RemoteChangelist;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
+
 public class DescribeChangelistResult implements P4CommandRunner.ServerResult {
+    private final ServerConfig config;
+    private final P4ChangelistId requestedChangelist;
+    private final P4RemoteChangelist remoteChangelist;
+    private final boolean fromCache;
+
+    public DescribeChangelistResult(@NotNull ServerConfig config,
+            @NotNull P4ChangelistId requestedChangelist,
+            @Nullable P4RemoteChangelist changelist,
+            boolean fromCache) {
+        this.config = config;
+        this.requestedChangelist = requestedChangelist;
+        this.remoteChangelist = changelist;
+        this.fromCache = fromCache;
+    }
+
     @NotNull
     @Override
     public ServerConfig getServerConfig() {
-        return null;
+        return config;
+    }
+
+    public P4ChangelistId getRequestedChangelist() {
+        return requestedChangelist;
+    }
+
+    @Nullable
+    public P4RemoteChangelist getRemoteChangelist() {
+        return remoteChangelist;
+    }
+
+    /**
+     * If the changelist is null, and this returns true, then the changelist
+     * might exist on the server, but it isn't in the cache.
+     *
+     * @return true if the changelist was loaded from the cache, or false
+     *      if from the server.
+     */
+    public boolean isFromCache() {
+        return fromCache;
     }
 }

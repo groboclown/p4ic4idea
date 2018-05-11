@@ -14,47 +14,52 @@
 
 package net.groboclown.p4.server.api.cache.messagebus;
 
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.util.messages.Topic;
 import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
-import net.groboclown.p4.server.api.values.P4FileAction;
-import net.groboclown.p4.server.api.values.P4FileType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-/**
- * Indicates that the user requested an action on a file.
- */
-public class PendingFileActionMessage extends AbstractCacheMessage<PendingFileActionMessage.Event> {
-    private static final String DISPLAY_NAME = "p4ic4idea:pending file action";
+public class ClientActionCacheMessage
+        extends AbstractCacheMessage<ClientActionCacheMessage.Event> {
+    private static final String DISPLAY_NAME = "p4ic4idea:client action pending";
     private static final Topic<TopicListener<Event>> TOPIC = createTopic(DISPLAY_NAME);
 
     public interface Listener {
-        void pendingFileAction(@NotNull Event event);
+        void clientActionPending(@NotNull Event event);
     }
 
     public static void addListener(@NotNull MessageBusClient.ApplicationClient client, @NotNull String cacheId,
             @NotNull Listener listener) {
-        abstractAddListener(client, TOPIC, cacheId, listener::pendingFileAction);
+        abstractAddListener(client, TOPIC, cacheId, listener::clientActionPending);
     }
 
     public static void sendEvent(@NotNull Event e) {
         abstractSendEvent(TOPIC, e);
     }
 
-    public static class Event extends AbstractCacheUpdateEvent<Event> {
-        private final FilePath file;
-        private final P4FileAction action;
-        private final P4FileType type;
 
-        public Event(@NotNull ClientServerRef ref, @NotNull FilePath file, @NotNull P4FileAction action,
-                @Nullable P4FileType type) {
-            super(ref);
-            this.file = file;
-            this.action = action;
-            this.type = type;
-        }
+    public enum ActionState {
+        PENDING,
+        COMPLETED,
+        FAILED
     }
 
+
+    public static class Event extends AbstractCacheUpdateEvent<Event> {
+        private final P4CommandRunner.ClientAction action;
+        private final ActionState state;
+
+        public Event(@NotNull ClientServerRef ref,
+                @NotNull P4CommandRunner.ClientAction action,
+                ActionState state) {
+            super(ref);
+            this.action = action;
+            this.state = state;
+        }
+
+        public P4CommandRunner.ClientAction getAction() {
+            return action;
+        }
+    }
 }

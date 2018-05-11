@@ -15,46 +15,68 @@
 package net.groboclown.p4.server.api.cache.messagebus;
 
 import com.intellij.util.messages.Topic;
-import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
-import net.groboclown.p4.server.api.values.P4LocalChangelist;
-import net.groboclown.p4.server.api.values.P4LocalFile;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-
-public class ServerActionCacheUpdateMessage
-        extends AbstractCacheMessage<ServerActionCacheUpdateMessage.Event> {
+public class ServerActionCacheMessage
+        extends AbstractCacheMessage<ServerActionCacheMessage.Event> {
     private static final String DISPLAY_NAME = "p4ic4idea:server action pending";
     private static final Topic<TopicListener<Event>> TOPIC = createTopic(DISPLAY_NAME);
 
     public interface Listener {
-        void serverActionPending(@NotNull Event event);
+        void serverActionUpdate(@NotNull Event event);
     }
 
     public static void addListener(@NotNull MessageBusClient.ApplicationClient client, @NotNull String cacheId,
             @NotNull Listener listener) {
-        abstractAddListener(client, TOPIC, cacheId, listener::serverActionPending);
+        abstractAddListener(client, TOPIC, cacheId, listener::serverActionUpdate);
     }
 
     public static void sendEvent(@NotNull Event e) {
         abstractSendEvent(TOPIC, e);
     }
 
+    public enum ActionState {
+        PENDING,
+        COMPLETED,
+        FAILED
+    }
 
     public static class Event extends AbstractCacheUpdateEvent<Event> {
-        private final P4CommandRunner.ServerAction pendingAction;
+        private final P4CommandRunner.ServerAction action;
+        private final ActionState state;
+        private final P4CommandRunner.ServerResultException error;
 
         public Event(@NotNull P4ServerName ref,
-                @NotNull P4CommandRunner.ServerAction pendingAction) {
+                @NotNull P4CommandRunner.ServerAction action,
+                ActionState state) {
             super(ref);
-            this.pendingAction = pendingAction;
+            this.action = action;
+            this.state = state;
+            this.error = null;
         }
 
-        public P4CommandRunner.ServerAction getPendingAction() {
-            return pendingAction;
+        public Event(@NotNull P4ServerName ref,
+                @NotNull P4CommandRunner.ServerAction action,
+                P4CommandRunner.ServerResultException error) {
+            super(ref);
+            this.action = action;
+            this.state = ActionState.FAILED;
+            this.error = error;
+        }
+
+        public P4CommandRunner.ServerAction getAction() {
+            return action;
+        }
+
+        public ActionState getState() {
+            return state;
+        }
+
+        public P4CommandRunner.ServerResultException getError() {
+            return error;
         }
     }
 }

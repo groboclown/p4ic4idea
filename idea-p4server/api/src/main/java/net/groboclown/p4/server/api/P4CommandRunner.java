@@ -19,10 +19,12 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.concurrency.Promise;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 // For now, keep all these inner types within this one class.
 // It helps contain all the stuff that the runner does.
@@ -145,7 +147,6 @@ public interface P4CommandRunner {
     interface ServerCmd {}
     interface ClientCmd {}
     interface ServerNameCmd {}
-
 
     /**
      * Generic marker interface for all results from the server.
@@ -307,10 +308,27 @@ public interface P4CommandRunner {
         // or not.
         // These internal objects should also have an index, so that they can
         // be properly ordered.
+
+        /**
+         * A unique ID for the action, so that pending vs. completed cached states can be
+         * properly tracked.
+         *
+         * @return ID for the action.
+         */
+        String getActionId();
     }
 
     @Immutable
     interface ClientAction<R extends ClientResult> extends ClientRequest<R, ClientActionCmd> {
+
+        /**
+         * A unique ID for the action, so that pending vs. completed cached states can be
+         * properly tracked.
+         *
+         * @return ID for the action.
+         */
+        @NotNull
+        String getActionId();
     }
 
 
@@ -364,6 +382,8 @@ public interface P4CommandRunner {
         LIST_FILES_DETAILS,
 
         /**
+         * Describe a remote changelist.  Used for history reporting.
+         *
          * @see net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery
          * @see net.groboclown.p4.server.api.commands.changelist.DescribeChangelistResult
          */
@@ -461,19 +481,92 @@ public interface P4CommandRunner {
     interface SyncClientQuery<R extends ClientResult> extends ClientRequest<R, SyncClientQueryCmd> {
     }
 
+    /**
+     * Describes the result from the server.  Because server errors should not be
+     * handled in an Exception clause, errors are enclosed in an answer.
+     * These can potentially run in another thread, but not necessarily.  Do not
+     * rely upon a specific thread of execution.
+     */
+    @Immutable
+    interface ActionAnswer<S> {
+        /**
+         * Executes if the request was not run due to the server being offline.
+         * The command might run in the future, if the cache can handle the
+         * request, but there's no guarantee that it will.
+         *
+         * @param r command to run
+         */
+        @NotNull
+        ActionAnswer<S> whenOffline(Runnable r);
+        @NotNull
+        ActionAnswer<S> whenServerError(Consumer<ServerResultException> c);
+        @NotNull
+        ActionAnswer<S> whenCompleted(Consumer<S> c);
+
+        @NotNull
+        <T> ActionAnswer<T> mapAction(Function<S, T> fun);
+        @NotNull
+        <T> QueryAnswer<T> mapQuery(Function<S, T> fun);
+        @NotNull
+        <T> ActionAnswer<T> mapActionAsync(Function<S, ActionAnswer<T>> fun);
+        @NotNull
+        <T> QueryAnswer<T> mapQueryAsync(Function<S, QueryAnswer<T>> fun);
+
+        /**
+         *
+         * @param timeout time to wait
+         * @param unit time unit
+         * @return true if the wait completes as normal, or false if there was a timeout.
+         */
+        boolean waitForCompletion(int timeout, TimeUnit unit)
+                throws InterruptedException;
+    }
+
+    /**
+     * Describes the result from the server.  Similar to a promise.
+     * These can potentially run in another thread, but not necessarily.  Do not
+     * rely upon a specific thread of execution.
+     *
+     * @param <S>
+     */
+    @Immutable
+    interface QueryAnswer<S> {
+        @NotNull
+        QueryAnswer<S> whenCompleted(Consumer<S> c);
+        @NotNull
+        QueryAnswer<S> whenServerError(Consumer<ServerResultException> c);
+
+        @NotNull
+        <T> ActionAnswer<T> mapAction(Function<S, T> fun);
+        @NotNull
+        <T> QueryAnswer<T> mapQuery(Function<S, T> fun);
+        @NotNull
+        <T> ActionAnswer<T> mapActionAsync(Function<S, ActionAnswer<T>> fun);
+        @NotNull
+        <T> QueryAnswer<T> mapQueryAsync(Function<S, QueryAnswer<T>> fun);
+
+        /**
+         *
+         * @param timeout time to wait
+         * @param unit time unit
+         * @return true if the wait completes as normal, or false if there was a timeout.
+         */
+        boolean waitForCompletion(int timeout, TimeUnit unit);
+    }
+
 
     /**
      * Support for requesting the results from a query, which will
      * return the most recently fetched version for immediate use, along
-     * with a {@link Promise} for when the most recent data becomes available.
+     * with a {@link QueryAnswer} for when the most recent data becomes available.
      *
      * @param <R>
      */
     class FutureResult<R> {
-        private final Promise<R> promise;
+        private final QueryAnswer<R> promise;
         private final R last;
 
-        public FutureResult(Promise<R> promise, R last) {
+        public FutureResult(QueryAnswer<R> promise, R last) {
             this.promise = promise;
             this.last = last;
         }
@@ -482,7 +575,7 @@ public interface P4CommandRunner {
             return last;
         }
 
-        public Promise<R> getPromise() {
+        public QueryAnswer<R> getPromise() {
             return promise;
         }
     }
@@ -493,26 +586,47 @@ public interface P4CommandRunner {
      * that may or may not take a long time to process.  If running
      * disconnected, the action may be queued and processed later.
      *
+     *
      * @param config server configuration
      * @param action action to perform
      * @param <R> type of server result to expect
      * @return a promise for the result.  Errors for catching are either general
      *      Java errors (NPE and so on) or {@link ServerResultException}.
      */
+    // TODO should the result be anything the caller cares about?  Is null an okay response?
+    // Clearly, the promise must be returned, but the resolved value, could it be null?
+    // Should there be a response that indicates that nothing was done because the
+    // server was offline?  Could that be what "null" means?
     @NotNull
-    <R extends ServerResult> Promise<R> perform(@NotNull ServerConfig config, @NotNull ServerAction<R> action);
+    <R extends ServerResult> ActionAnswer<R> perform(
+            @NotNull ServerConfig config, @NotNull ServerAction<R> action);
+
+    // TODO should the result be anything the caller cares about?  Is null an okay response?
+    // Clearly, the promise must be returned, but the resolved value, could it be null?
+    @NotNull
+    <R extends ClientResult> ActionAnswer<R> perform(
+            @NotNull ClientConfig config, @NotNull ClientAction<R> action);
+
+    /**
+     * Attempts to run the query against the server.  If the server is offline, then
+     * the cached response is returned.
+     *
+     * @param config configuration
+     * @param query query
+     * @param <R> request/response type
+     * @return a promise for a future response.
+     */
+    @NotNull
+    <R extends ServerResult> QueryAnswer<R> query(
+            @NotNull ServerConfig config, @NotNull ServerQuery<R> query);
 
     @NotNull
-    <R extends ClientResult> Promise<R> perform(@NotNull ClientConfig config, @NotNull ClientAction<R> action);
+    <R extends ClientResult> QueryAnswer<R> query(
+            @NotNull ClientConfig config, @NotNull ClientQuery<R> query);
 
     @NotNull
-    <R extends ServerResult> Promise<R> query(@NotNull ServerConfig config, @NotNull ServerQuery<R> query);
-
-    @NotNull
-    <R extends ClientResult> Promise<R> query(@NotNull ClientConfig config, @NotNull ClientQuery<R> query);
-
-    @NotNull
-    <R extends ServerNameResult> Promise<R> query(@NotNull P4ServerName name, @NotNull ServerNameQuery<R> query);
+    <R extends ServerNameResult> QueryAnswer<R> query(
+            @NotNull P4ServerName name, @NotNull ServerNameQuery<R> query);
 
     /**
      * Returns the cached result from the most recently stored data.
@@ -521,15 +635,12 @@ public interface P4CommandRunner {
      * @param query query to perform
      * @param <R> result type
      * @return cached results
-     * @throws ServerResultException if there was a problem accessing the results.
      */
     @NotNull
-    <R extends ServerResult> R syncCachedQuery(@NotNull ServerConfig config, @NotNull SyncServerQuery<R> query)
-        throws ServerResultException;
+    <R extends ServerResult> R syncCachedQuery(@NotNull ServerConfig config, @NotNull SyncServerQuery<R> query);
 
     @NotNull
-    <R extends ClientResult> R syncCachedQuery(@NotNull ClientConfig config, @NotNull SyncClientQuery<R> query)
-            throws ServerResultException;
+    <R extends ClientResult> R syncCachedQuery(@NotNull ClientConfig config, @NotNull SyncClientQuery<R> query);
 
     /**
      * Returns cached results and a Promise for the request.
@@ -538,13 +649,12 @@ public interface P4CommandRunner {
      * @param query query to execute
      * @param <R> expected result type
      * @return the cached value + promise when the actual request completes.
-     * @throws ServerResultException
      */
     @NotNull
-    <R extends ServerResult> FutureResult<R> syncQuery(@NotNull ServerConfig config, @NotNull SyncServerQuery<R> query)
-            throws ServerResultException;
+    <R extends ServerResult> FutureResult<R> syncQuery(@NotNull ServerConfig config, @NotNull SyncServerQuery<R> query);
 
     @NotNull
-    <R extends ClientResult> FutureResult<R> syncQuery(@NotNull ClientConfig config, @NotNull SyncClientQuery<R> query)
-            throws ServerResultException;
+    <R extends ClientResult> FutureResult<R> syncQuery(@NotNull ClientConfig config, @NotNull SyncClientQuery<R> query);
+
+
 }

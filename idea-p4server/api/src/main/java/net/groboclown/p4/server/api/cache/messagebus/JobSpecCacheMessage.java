@@ -15,32 +15,42 @@
 package net.groboclown.p4.server.api.cache.messagebus;
 
 import com.intellij.util.messages.Topic;
-import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
+import net.groboclown.p4.server.api.values.P4JobSpec;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Indicates that a pending file action was committed.
- */
-public class FileActionCommittedMessage extends AbstractCacheMessage<FileActionCommittedMessage.Event> {
-    private static final String DISPLAY_NAME = "p4ic4idea:file action committed";
+public class JobSpecCacheMessage
+        extends AbstractCacheMessage<JobSpecCacheMessage.Event> {
+    private static final String DISPLAY_NAME = "p4ic4idea:client action copmleted";
     private static final Topic<TopicListener<Event>> TOPIC = createTopic(DISPLAY_NAME);
 
     public interface Listener {
-        void fileActionCommitted(@NotNull Event event);
+        void jobSpecUpdate(@NotNull Event event);
     }
 
     public static void addListener(@NotNull MessageBusClient.ApplicationClient client, @NotNull String cacheId,
             @NotNull Listener listener) {
-        abstractAddListener(client, TOPIC, cacheId, listener::fileActionCommitted);
+        abstractAddListener(client, TOPIC, cacheId, listener::jobSpecUpdate);
     }
 
-    public static class Event extends AbstractCacheUpdateEvent<Event> {
-        private final String actionId;
+    public static void sendEvent(@NotNull Event e) {
+        abstractSendEvent(TOPIC, e);
+    }
 
-        public Event(@NotNull ClientServerRef ref, @NotNull String actionId) {
+
+    public static class Event
+            extends AbstractCacheUpdateEvent<Event> {
+        private final P4JobSpec jobSpec;
+
+        public Event(@NotNull P4ServerName ref,
+                @NotNull P4JobSpec jobSpec) {
             super(ref);
-            this.actionId = actionId;
+            this.jobSpec = jobSpec;
+        }
+
+        public P4JobSpec getJobSpec() {
+            return jobSpec;
         }
     }
 }

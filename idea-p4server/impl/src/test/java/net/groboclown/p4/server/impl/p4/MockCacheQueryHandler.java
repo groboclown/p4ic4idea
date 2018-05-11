@@ -16,14 +16,19 @@ package net.groboclown.p4.server.impl.p4;
 
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.MockConfigPart;
+import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4ChangelistSummary;
+import net.groboclown.p4.server.api.values.P4JobSpec;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
+import net.groboclown.p4.server.api.values.P4RemoteChangelist;
 import net.groboclown.p4.server.impl.cache.CacheQueryHandler;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,6 +44,18 @@ public class MockCacheQueryHandler implements CacheQueryHandler {
     @Override
     public Collection<P4LocalFile> getCachedOpenedFiles(@NotNull ClientConfig config) {
         return openFiles.computeIfAbsent(config.getClientServerRef(), k -> new ArrayList<>());
+    }
+
+    @Nullable
+    @Override
+    public P4RemoteChangelist getCachedChangelist(P4ServerName config, P4ChangelistId changelistId) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public P4JobSpec getCachedJobSpec(P4ServerName serverName) {
+        return null;
     }
 
     public MockCacheQueryHandler withCachedOpenFile(ClientServerRef ref, P4LocalFile... files) {

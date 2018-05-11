@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.commands.ActionUtil;
 import net.groboclown.p4.server.api.values.P4Job;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CreateJobAction implements P4CommandRunner.ServerAction<CreateJobResult> {
+    private final String actionId = ActionUtil.createActionId(DeleteChangelistAction.class);
     private final P4Job job;
 
     public CreateJobAction(@NotNull P4Job job) {
@@ -52,5 +54,10 @@ public class CreateJobAction implements P4CommandRunner.ServerAction<CreateJobRe
         ret.put("Description", job.getDescription());
 
         return ret;
+    }
+
+    @Override
+    public String getActionId() {
+        return actionId;
     }
 }

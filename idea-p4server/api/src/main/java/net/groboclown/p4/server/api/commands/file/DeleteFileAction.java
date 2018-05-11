@@ -14,10 +14,19 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
+import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.commands.ActionUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class DeleteFileAction implements P4CommandRunner.ClientAction<DeleteFileResult> {
+    private final String actionId = ActionUtil.createActionId(DeleteFileAction.class);
+    private final FilePath file;
+
+    public DeleteFileAction(@NotNull FilePath file) {
+        this.file = file;
+    }
+
     @NotNull
     @Override
     public Class<? extends DeleteFileResult> getResultType() {
@@ -27,5 +36,16 @@ public class DeleteFileAction implements P4CommandRunner.ClientAction<DeleteFile
     @Override
     public P4CommandRunner.ClientActionCmd getCmd() {
         return P4CommandRunner.ClientActionCmd.DELETE_FILE;
+    }
+
+    @NotNull
+    @Override
+    public String getActionId() {
+        return actionId;
+    }
+
+    @NotNull
+    public FilePath getFile() {
+        return file;
     }
 }

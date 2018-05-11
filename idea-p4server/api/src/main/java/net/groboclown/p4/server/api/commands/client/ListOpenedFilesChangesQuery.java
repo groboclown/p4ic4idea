@@ -19,6 +19,18 @@ import org.jetbrains.annotations.NotNull;
 
 public class ListOpenedFilesChangesQuery
         implements P4CommandRunner.ClientQuery<ListOpenedFilesChangesResult> {
+    private final int maxChangelistResults;
+    private final int maxFileResults;
+
+    public ListOpenedFilesChangesQuery() {
+        this(-1, -1);
+    }
+
+    public ListOpenedFilesChangesQuery(int maxFileResults, int maxChangelistResults) {
+        this.maxFileResults = maxFileResults;
+        this.maxChangelistResults = maxChangelistResults;
+    }
+
     @NotNull
     @Override
     public Class<? extends ListOpenedFilesChangesResult> getResultType() {
@@ -28,5 +40,13 @@ public class ListOpenedFilesChangesQuery
     @Override
     public P4CommandRunner.ClientQueryCmd getCmd() {
         return P4CommandRunner.ClientQueryCmd.LIST_OPENED_FILES_CHANGES;
+    }
+
+    public int getMaxChangelistResults() {
+        return maxChangelistResults;
+    }
+
+    public int getMaxFileResults() {
+        return maxFileResults;
     }
 }

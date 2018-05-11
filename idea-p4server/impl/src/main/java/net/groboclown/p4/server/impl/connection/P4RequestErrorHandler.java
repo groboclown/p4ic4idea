@@ -24,8 +24,6 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.concurrency.Promise;
-import org.jetbrains.concurrency.Promises;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
@@ -90,66 +88,6 @@ public abstract class P4RequestErrorHandler {
 
 
     /**
-     * Similar to {@link #handle(ClientConfig, Callable)}, but encases any returned value
-     * inside a {@link Promise}.  Errors are wrapped in a rejected promise,
-     * and normal return values are in a resolved promise.
-     *
-     * @param c callable that's processing the Perforce server.
-     * @param <R> return type
-     * @return the processed value or error, wrapped as a promise.
-     */
-    @NotNull
-    public final <R> Promise<R> handleAsync(@NotNull ClientConfig config, @NotNull Callable<R> c) {
-        try {
-            R ret = handle(config, c);
-            return Promise.resolve(ret);
-        } catch (P4CommandRunner.ServerResultException e) {
-            return Promises.rejectedPromise(e);
-        }
-    }
-
-
-    /**
-     * Similar to {@link #handle(ServerConfig, Callable)}, but encases any returned value
-     * inside a {@link Promise}.  Errors are wrapped in a rejected promise,
-     * and normal return values are in a resolved promise.
-     *
-     * @param c callable that's processing the Perforce server.
-     * @param <R> return type
-     * @return the processed value or error, wrapped as a promise.
-     */
-    @NotNull
-    public final <R> Promise<R> handleAsync(@NotNull ServerConfig config, @NotNull Callable<R> c) {
-        try {
-            R ret = handle(config, c);
-            return Promise.resolve(ret);
-        } catch (P4CommandRunner.ServerResultException e) {
-            return Promises.rejectedPromise(e);
-        }
-    }
-
-
-    /**
-     * Similar to {@link #handle(P4ServerName, Callable)}, but encases any returned value
-     * inside a {@link Promise}.  Errors are wrapped in a rejected promise,
-     * and normal return values are in a resolved promise.
-     *
-     * @param c callable that's processing the Perforce server.
-     * @param <R> return type
-     * @return the processed value or error, wrapped as a promise.
-     */
-    @NotNull
-    public final <R> Promise<R> handleAsync(@NotNull P4ServerName config, @NotNull Callable<R> c) {
-        try {
-            R ret = handle(config, c);
-            return Promise.resolve(ret);
-        } catch (P4CommandRunner.ServerResultException e) {
-            return Promises.rejectedPromise(e);
-        }
-    }
-
-
-    /**
      * Called when the {@link IOptionsServer#disconnect()} throws
      * an exception.  It doesn't affect the overall error state,
      * but it should be at least noted as happening.
@@ -205,17 +143,6 @@ public abstract class P4RequestErrorHandler {
             throw e;
         } catch (Error e) {
             throw handleError(info, e);
-        }
-    }
-
-
-    @NotNull
-    private <R> Promise<R> handleConnectionAsync(@NotNull ConnectionInfo info, @NotNull Callable<R> c) {
-        try {
-            R ret = handleConnection(info, c);
-            return Promise.resolve(ret);
-        } catch (P4CommandRunner.ServerResultException e) {
-            return Promises.rejectedPromise(e);
         }
     }
 
@@ -278,7 +205,6 @@ public abstract class P4RequestErrorHandler {
         private final P4CommandRunner.ErrorCategory category;
 
         private ResultErrorImpl(@Nullable String msg, @NotNull P4CommandRunner.ErrorCategory category) {
-            // FIXME make a better message
             this.msg = msg;
             this.category = category;
         }

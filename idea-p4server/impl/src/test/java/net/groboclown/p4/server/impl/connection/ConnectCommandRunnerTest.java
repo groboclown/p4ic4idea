@@ -21,15 +21,12 @@ import net.groboclown.idea.extensions.TemporaryFolderExtension;
 import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.commands.changelist.CreateJobAction;
 import net.groboclown.p4.server.api.commands.changelist.CreateJobResult;
-import net.groboclown.p4.server.api.commands.changelist.GetJobSpecQuery;
 import net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4JobField;
 import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
-import net.groboclown.p4.server.impl.p4.MockCacheQueryHandler;
 import net.groboclown.p4.server.impl.values.P4JobImpl;
-import org.jetbrains.concurrency.Promise;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +35,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static net.groboclown.idea.ExtAsserts.assertEmpty;
 import static net.groboclown.idea.ExtAsserts.assertSize;
@@ -62,7 +60,8 @@ class ConnectCommandRunnerTest {
     @ExtendWith(TemporaryFolderExtension.class)
     @Test
     void getJobSpec_CreateJob(TemporaryFolder tmpDir)
-            throws IOException {
+            throws IOException, InterruptedException {
+        idea.useInlineThreading(null);
         final ServerConfig config = ServerConfig.createFrom(
                 new MockConfigPart()
                     // By using the RSH port, it means that the connection will be kept open
@@ -77,31 +76,35 @@ class ConnectCommandRunnerTest {
         SimpleConnectionManager mgr = new SimpleConnectionManager(
                 tmpDir.newFile("out"), 1000, "v1",
                 errorHandler);
-        ConnectCommandRunner runner = new ConnectCommandRunner(mgr, new MockCacheQueryHandler());
-        Promise<CreateJobResult> res = runner.query(config, new GetJobSpecQuery())
-                .thenAsync((jobSpec) ->
+        ConnectCommandRunner runner = new ConnectCommandRunner(mgr);
+        final CreateJobResult[] result = new CreateJobResult[1];
+        runner.getJobSpec(config)
+                .mapActionAsync((jobSpec) ->
                     runner.perform(config, new CreateJobAction(createP4Job(config, jobSpec)))
                 )
-                .rejected(Assertions::fail);
-
-        CreateJobResult result = res.blockingGet(1000);
-        assertNotNull(result);
+                .whenCompleted((res) -> {
+                    result[0] = res;
+                })
+                .whenServerError(Assertions::fail)
+                .waitForCompletion(5, TimeUnit.SECONDS);
+        assertNotNull(result[0]);
         assertEmpty(errorHandler.getExceptions());
         assertEmpty(errorHandler.getDisconnectExceptions());
 
-        assertSame(config, result.getServerConfig());
-        assertNotNull(result.getJob());
-        assertEquals(JOB_ID, result.getJob().getJobId());
-        assertNotNull(result.getJob().getDescription());
+        assertSame(config, result[0].getServerConfig());
+        assertNotNull(result[0].getJob());
+        assertEquals(JOB_ID, result[0].getJob().getJobId());
+        assertNotNull(result[0].getJob().getDescription());
         // The server can add extra whitespace to the description.
-        assertEquals(JOB_DESCRIPTION, result.getJob().getDescription().trim());
-        assertEquals(config.getUsername(), result.getJob().getRawDetails().get("User"));
+        assertEquals(JOB_DESCRIPTION, result[0].getJob().getDescription().trim());
+        assertEquals(config.getUsername(), result[0].getJob().getRawDetails().get("User"));
     }
 
     @ExtendWith(TemporaryFolderExtension.class)
     @Test
     void createJob_error(TemporaryFolder tmpDir)
             throws IOException {
+        idea.useInlineThreading(null);
         final ServerConfig config = ServerConfig.createFrom(
                 new MockConfigPart()
                         // By using the RSH port, it means that the connection will be kept open
@@ -116,17 +119,17 @@ class ConnectCommandRunnerTest {
         SimpleConnectionManager mgr = new SimpleConnectionManager(
                 tmpDir.newFile("out"), 1000, "v1",
                 errorHandler);
-        ConnectCommandRunner runner = new ConnectCommandRunner(mgr, new MockCacheQueryHandler());
-        runner.query(config, new GetJobSpecQuery())
-                .thenAsync((jobSpec) ->
+        ConnectCommandRunner runner = new ConnectCommandRunner(mgr);
+        // Should run without needing a blockingGet, because of the inline thread handler.
+        runner.getJobSpec(config)
+                .mapActionAsync((jobSpec) ->
                         // Do not set any expected details.
                         runner.perform(config, new CreateJobAction(new P4JobImpl("j", "x", null)))
                 )
-                .then((x) -> {
+                .whenCompleted((x) -> {
                     fail("Did not throw an error");
-                    return null;
                 })
-                .rejected((ex) -> {
+                .whenServerError((ex) -> {
                     assertNotNull(ex);
                     assertThat(ex.getCause(), instanceOf(RequestException.class));
                     // FIXME better checks

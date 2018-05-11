@@ -23,7 +23,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
-public class ClientOpenCacheUpdateMessage extends AbstractCacheMessage<ClientOpenCacheUpdateMessage.Event> {
+public class ClientOpenCacheMessage
+        extends AbstractCacheMessage<ClientOpenCacheMessage.Event> {
     private static final String DISPLAY_NAME = "p4ic4idea:open cache update";
     private static final Topic<AbstractCacheMessage.TopicListener<Event>> TOPIC = createTopic(DISPLAY_NAME);
 

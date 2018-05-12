@@ -279,14 +279,14 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
     public <R extends ClientResult> R syncCachedQuery(@NotNull ClientConfig config, @NotNull SyncClientQuery<R> query) {
         switch (query.getCmd()) {
             case SYNC_LIST_OPENED_FILES_CHANGES:
-                return (R) syncCachedListOpenedFilesChanges(config, (SyncListOpenedFilesChangesQuery) query);
+                return (R) cachedListOpenedFilesChanges(config, (SyncListOpenedFilesChangesQuery) query);
             default:
                 throw new IllegalStateException("Incompatible class: should match " + SyncClientQueryCmd.class);
         }
     }
 
     @NotNull
-    protected abstract ListOpenedFilesChangesResult syncCachedListOpenedFilesChanges(ClientConfig config, SyncListOpenedFilesChangesQuery query);
+    protected abstract ListOpenedFilesChangesResult cachedListOpenedFilesChanges(ClientConfig config, SyncListOpenedFilesChangesQuery query);
 
     @SuppressWarnings("unchecked")
     @NotNull
@@ -305,35 +305,15 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
     public <R extends ClientResult> FutureResult<R> syncQuery(@NotNull ClientConfig config,
             @NotNull SyncClientQuery<R> query) {
         switch (query.getCmd()) {
-            case SYNC_LIST_OPENED_FILES_CHANGES:
-                return (FutureResult<R>) syncListOpenedFilesChanges(config, (SyncListOpenedFilesChangesQuery) query);
+            case SYNC_LIST_OPENED_FILES_CHANGES: {
+                SyncListOpenedFilesChangesQuery q = (SyncListOpenedFilesChangesQuery) query;
+                return (FutureResult<R>) new FutureResult<>(
+                        listOpenedFilesChanges(config, new ListOpenedFilesChangesQuery(
+                                q.getMaxFileResults(), q.getMaxChangelistResults()
+                        )), cachedListOpenedFilesChanges(config, q));
+            }
             default:
                 throw new IllegalStateException("Incompatible class: should match " + SyncClientQueryCmd.class);
         }
     }
-
-    @NotNull
-    protected abstract FutureResult<ListOpenedFilesChangesResult> syncListOpenedFilesChanges(ClientConfig config, SyncListOpenedFilesChangesQuery query);
-
-    /*
-    protected <S> ActionAnswer<S> createOfflineActionAnswer() {
-        return new ActionAnswerImpl<>(true, null, null);
-    }
-
-    protected <S> ActionAnswer<S> createErrorActionAnswer(@NotNull ServerResultException error) {
-        return new ActionAnswerImpl<>(false, error, null);
-    }
-
-    protected <S> ActionAnswer<S> createActionAnswer(@NotNull S result) {
-        return new ActionAnswerImpl<>(false, null, result);
-    }
-
-    protected <S> QueryAnswer<S> createErrorQueryAnswer(@NotNull ServerResultException error) {
-        return new QueryAnswerImpl<>(error, null);
-    }
-
-    protected <S> QueryAnswer<S> createQueryAnswer(@NotNull S result) {
-        return new QueryAnswerImpl<>(null, result);
-    }
-    */
 }

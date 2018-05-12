@@ -54,7 +54,7 @@ public class LoginSsoCallbackHandler
                 LOG.info("stderr: " + output.getStderr());
                 final ExecutionException ex = new ExecutionException("Exit code " + output.getExitCode());
 
-                // FIXME send out on message bus.
+                // FIXME send out on an error handler
                 //AlertManager.getInstance().addCriticalError(
                 //        new LoginSsoExecFailedHandler(
                 //                loginSsoCmd, output.getStdout(), output.getStderr(), ex),
@@ -67,7 +67,7 @@ public class LoginSsoCallbackHandler
             credBuffer.append(output.getStdout());
             return Status.PASS;
         } catch (ExecutionException e) {
-            // FIXME send out on message bus.
+            // FIXME send out on an error handler
             //AlertManager.getInstance().addCriticalError(
             //        new LoginSsoExecFailedHandler(loginSsoCmd, null, null, e),
             //        e

@@ -128,7 +128,7 @@ public interface P4CommandRunner {
          * @return the result error.
          */
         @NotNull
-        ResultError getResultError() {
+        public ResultError getResultError() {
             return error;
         }
     }
@@ -272,6 +272,9 @@ public interface P4CommandRunner {
          * @see net.groboclown.p4.server.api.commands.file.FetchFilesResult
          */
         FETCH_FILES,
+
+
+        SUBMIT_CHANGELIST,
     }
 
     enum ServerActionCmd implements ServerCmd {
@@ -527,10 +530,10 @@ public interface P4CommandRunner {
          *
          * @param timeout time out for waiting on a response.
          * @param unit time out unit
-         * @return null if the server was offline.
+         * @return the result.
          * @throws InterruptedException thread was interrupted
          * @throws CancellationException timeout occurred
-         * @throws ServerResultException error from the server
+         * @throws ServerResultException error from the server, or if the server was offline.
          */
         @Nullable
         S blockingGet(int timeout, TimeUnit unit)
@@ -603,7 +606,9 @@ public interface P4CommandRunner {
      * Performs the action against the server.  Actions are behaviors
      * that may or may not take a long time to process.  If running
      * disconnected, the action may be queued and processed later.
-     *
+     * <p>
+     * The answer may be something the caller doesn't care about, but some
+     * calls, such as fetching data, will require feedback to the user.
      *
      * @param config server configuration
      * @param action action to perform
@@ -611,16 +616,10 @@ public interface P4CommandRunner {
      * @return a promise for the result.  Errors for catching are either general
      *      Java errors (NPE and so on) or {@link ServerResultException}.
      */
-    // TODO should the result be anything the caller cares about?  Is null an okay response?
-    // Clearly, the promise must be returned, but the resolved value, could it be null?
-    // Should there be a response that indicates that nothing was done because the
-    // server was offline?  Could that be what "null" means?
     @NotNull
     <R extends ServerResult> ActionAnswer<R> perform(
             @NotNull ServerConfig config, @NotNull ServerAction<R> action);
 
-    // TODO should the result be anything the caller cares about?  Is null an okay response?
-    // Clearly, the promise must be returned, but the resolved value, could it be null?
     @NotNull
     <R extends ClientResult> ActionAnswer<R> perform(
             @NotNull ClientConfig config, @NotNull ClientAction<R> action);

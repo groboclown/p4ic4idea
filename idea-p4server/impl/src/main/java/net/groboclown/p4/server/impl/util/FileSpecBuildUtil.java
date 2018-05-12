@@ -53,6 +53,32 @@ public class FileSpecBuildUtil {
         return FileSpecBuilder.makeFileSpecList(src);
     }
 
+    public static List<IFileSpec> forEscapedFilePaths(FilePath... files) {
+        return forEscapedFilePaths(Arrays.asList(files));
+    }
+
+
+    public static List<IFileSpec> forEscapedFilePaths(Collection<FilePath> files) {
+        List<String> src = new ArrayList<>(files.size());
+        for (FilePath file : files) {
+            src.add(escapeToP4Path(file.getPath()));
+        }
+        return FileSpecBuilder.makeFileSpecList(src);
+    }
+
+    public static List<IFileSpec> forEscapedFiles(File... files) {
+        return forFiles(Arrays.asList(files));
+    }
+
+
+    public static List<IFileSpec> forEscapedFiles(Collection<File> files) {
+        List<String> src = new ArrayList<>(files.size());
+        for (File file : files) {
+            src.add(escapeToP4Path(file.getAbsolutePath()));
+        }
+        return FileSpecBuilder.makeFileSpecList(src);
+    }
+
 
     private static String escapeToP4Path(@NotNull String path) {
         if (path.contains("...")) {

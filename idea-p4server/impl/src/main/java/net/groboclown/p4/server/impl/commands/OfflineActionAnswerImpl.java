@@ -76,7 +76,6 @@ public class OfflineActionAnswerImpl<S> implements P4CommandRunner.ActionAnswer<
     @Override
     public S blockingGet(int timeout, TimeUnit unit)
             throws InterruptedException, CancellationException, P4CommandRunner.ServerResultException {
-        // offline, so return null.
-        return null;
+        throw AnswerUtil.createOfflineError();
     }
 }

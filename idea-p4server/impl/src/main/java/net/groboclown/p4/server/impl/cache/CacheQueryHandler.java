@@ -16,12 +16,12 @@ package net.groboclown.p4.server.impl.cache;
 
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4JobSpec;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteChangelist;
+import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -36,13 +36,15 @@ public interface CacheQueryHandler {
 
     /**
      *
-     * @param config config
+     * @param serverName config
      * @param changelistId changelist to fetch the description for
      * @return null if no changelist is cached.
      */
     @Nullable
-    P4RemoteChangelist getCachedChangelist(P4ServerName config, P4ChangelistId changelistId);
+    P4RemoteChangelist getCachedChangelist(P4ServerName serverName, P4ChangelistId changelistId);
 
     @Nullable
     P4JobSpec getCachedJobSpec(P4ServerName serverName);
+
+    Collection<P4WorkspaceSummary> getCachedClientsForUser(@NotNull P4ServerName serverName, @NotNull String username);
 }

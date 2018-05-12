@@ -27,7 +27,6 @@ import java.io.IOException;
 /**
  * Performs operations that, if run within the dispatch thread, require special handling.
  */
-@SuppressWarnings({ "unused", "WeakerAccess" })
 public class DispatchActions {
     /**
      * Perform a write action.  If the current thread is the event dispatch thread,

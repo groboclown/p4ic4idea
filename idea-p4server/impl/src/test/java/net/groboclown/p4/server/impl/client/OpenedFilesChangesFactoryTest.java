@@ -14,7 +14,6 @@
 package net.groboclown.p4.server.impl.client;
 
 import com.intellij.openapi.vcs.FilePath;
-import com.perforce.p4java.core.CoreFactory;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.P4JavaException;
@@ -25,12 +24,9 @@ import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.extensions.TemporaryFolderExtension;
 import net.groboclown.p4.server.api.MockConfigPart;
-import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.impl.connection.MockP4RequestErrorHandler;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
-import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import org.jetbrains.concurrency.Promise;
 import org.jetbrains.concurrency.Promises;
@@ -39,15 +35,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static net.groboclown.idea.ExtAsserts.assertSize;
 import static net.groboclown.p4.server.impl.AssertFileSpec.assertNoErrors;
+import static net.groboclown.p4.server.impl.ClientTestUtil.setupClient;
+import static net.groboclown.p4.server.impl.ClientTestUtil.touchFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Ensures file handling and name escaping is done correctly.
@@ -121,31 +117,5 @@ class OpenedFilesChangesFactoryTest {
 
         final ServerConfig serverConfig = ServerConfig.createFrom(part);
         return ClientConfig.createFrom(serverConfig, part);
-    }
-
-
-    private Answer<SimpleConnectionManager> setupClient(final ClientConfig config,
-            final TemporaryFolder tmpDir, File clientRoot) {
-        final MockP4RequestErrorHandler errorHandler = new MockP4RequestErrorHandler();
-        final SimpleConnectionManager mgr = new SimpleConnectionManager(
-                tmpDir.newFile("tmpdir"), 1000, "v1",
-                errorHandler);
-        return mgr.withConnection(config.getServerConfig(), (server) ->
-                CoreFactory.createClient(server, "client", "new client from CoreFactory",
-                clientRoot.getAbsolutePath(), new String[]{"//depot/... //client/..."}, true))
-            .map((x) -> mgr);
-    }
-
-
-    private static File touchFile(File parent, String name) {
-        File ret = new File(parent, name);
-        try {
-            try (FileWriter fw = new FileWriter(ret)) {
-                fw.write('x');
-            }
-        } catch (IOException e) {
-            fail(e);
-        }
-        return ret;
     }
 }

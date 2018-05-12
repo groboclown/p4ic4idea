@@ -96,7 +96,6 @@ class BasicRequest {
 
     BasicResponse patch(SwarmConfig config, String path, String body)
             throws IOException, UnauthorizedAccessException {
-        // FIXME
         throw new IOException("unsupported operation at the moment");
     }
 

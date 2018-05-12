@@ -121,7 +121,7 @@ class ProjectConfigRegistryTest {
         }
 
         @Override
-        protected void onServerConnected(@NotNull ServerConfig server) {
+        protected void onServerConnected(@NotNull ServerConfig server, boolean loggedIn) {
             throw new IllegalStateException();
         }
 

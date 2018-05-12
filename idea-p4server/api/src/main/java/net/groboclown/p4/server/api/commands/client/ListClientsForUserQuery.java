@@ -18,6 +18,14 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 
 public class ListClientsForUserQuery implements P4CommandRunner.ServerQuery<ListClientsForUserResult> {
+    private final String username;
+    private final int maxClients;
+
+    public ListClientsForUserQuery(@NotNull String username, int maxClients) {
+        this.username = username;
+        this.maxClients = maxClients;
+    }
+
     @NotNull
     @Override
     public Class<? extends ListClientsForUserResult> getResultType() {
@@ -27,5 +35,13 @@ public class ListClientsForUserQuery implements P4CommandRunner.ServerQuery<List
     @Override
     public P4CommandRunner.ServerQueryCmd getCmd() {
         return P4CommandRunner.ServerQueryCmd.LIST_CLIENTS_FOR_USER;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public int getMaxClients() {
+        return maxClients;
     }
 }

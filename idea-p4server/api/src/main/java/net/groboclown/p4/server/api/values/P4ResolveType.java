@@ -46,7 +46,7 @@ public enum P4ResolveType {
         if (resolveType == null || contentResolveType == null) {
             return NOT_NECESSARY;
         }
-        // FIXME
+        // FIXME create the correct resolve type
         return NO_RESOLVE;
     }
 }

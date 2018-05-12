@@ -48,21 +48,24 @@ public class TemporaryFolder {
     void cleanUp() {
         try {
             Files.walkFileTree( rootFolder, new DeleteAllVisitor() );
-        } catch( IOException ioe ) {
-            throw new RuntimeException( ioe );
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
     }
 
     private static class DeleteAllVisitor extends SimpleFileVisitor<Path> {
         @Override
         public FileVisitResult visitFile( Path file, BasicFileAttributes attributes ) throws IOException {
-            Files.delete( file );
+            if (!file.toFile().canWrite()) {
+                file.toFile().setWritable(true);
+            }
+            Files.delete(file);
             return CONTINUE;
         }
 
         @Override
         public FileVisitResult postVisitDirectory( Path directory, IOException exception ) throws IOException {
-            Files.delete( directory );
+            Files.delete(directory);
             return CONTINUE;
         }
     }

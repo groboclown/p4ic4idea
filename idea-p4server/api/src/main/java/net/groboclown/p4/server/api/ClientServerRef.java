@@ -38,7 +38,6 @@ public final class ClientServerRef {
     }
 
 
-    // TODO replace usage of this method with getServerDisplayId()
     @NotNull
     public P4ServerName getServerName() {
         return serverName;

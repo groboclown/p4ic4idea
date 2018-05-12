@@ -15,15 +15,23 @@
 package net.groboclown.p4.server.impl.connection;
 
 import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.core.ChangelistStatus;
+import com.perforce.p4java.core.CoreFactory;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
+import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
+import com.perforce.p4java.option.changelist.SubmitOptions;
+import com.perforce.p4java.option.client.AddFilesOptions;
+import com.perforce.p4java.option.client.EditFilesOptions;
+import com.perforce.p4java.option.server.GetDepotFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.JobCacheMessage;
@@ -32,19 +40,32 @@ import net.groboclown.p4.server.api.commands.changelist.CreateJobResult;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult;
+import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistResult;
+import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
+import net.groboclown.p4.server.api.commands.client.ListClientsForUserResult;
 import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesQuery;
 import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult;
+import net.groboclown.p4.server.api.commands.file.AddEditAction;
+import net.groboclown.p4.server.api.commands.file.AddEditResult;
 import net.groboclown.p4.server.api.commands.file.AnnotateFileQuery;
 import net.groboclown.p4.server.api.commands.file.AnnotateFileResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.api.values.P4FileType;
+import net.groboclown.p4.server.api.values.P4Job;
+import net.groboclown.p4.server.api.values.P4RemoteFile;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
 import net.groboclown.p4.server.impl.client.OpenedFilesChangesFactory;
 import net.groboclown.p4.server.impl.commands.ActionAnswerImpl;
 import net.groboclown.p4.server.impl.commands.QueryAnswerImpl;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
+import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
+import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4.server.impl.values.P4JobImpl;
 import net.groboclown.p4.server.impl.values.P4JobSpecImpl;
+import net.groboclown.p4.server.impl.values.P4RemoteFileImpl;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -75,16 +96,23 @@ public class ConnectCommandRunner
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
                     (server) -> createJob(server, config, (CreateJobAction) action))));
 
-        //register(ClientActionCmd.ADD_EDIT_FILE, null);
-        //register(ClientActionCmd.ADD_JOB_TO_CHANGELIST, null);
-        //register(ClientActionCmd.CREATE_CHANGELIST, null);
-        //register(ClientActionCmd.DELETE_CHANGELIST, null);
-        //register(ClientActionCmd.DELETE_FILE, null);
-        //register(ClientActionCmd.EDIT_CHANGELIST_DESCRIPTION, null);
-        //register(ClientActionCmd.FETCH_FILES, null);
-        //register(ClientActionCmd.MOVE_FILE, null);
-        //register(ClientActionCmd.MOVE_FILES_TO_CHANGELIST, null);
-        //register(ClientActionCmd.REVERT_FILE, null);
+        register(P4CommandRunner.ClientActionCmd.ADD_EDIT_FILE,
+            (ClientActionRunner<AddEditResult>) (config, action) ->
+                new ActionAnswerImpl<>(connectionManager.withConnection(config,
+                    (client) -> addEditFile(client, config, (AddEditAction) action))));
+        register(P4CommandRunner.ClientActionCmd.ADD_JOB_TO_CHANGELIST, null);
+        register(P4CommandRunner.ClientActionCmd.CREATE_CHANGELIST, null);
+        register(P4CommandRunner.ClientActionCmd.DELETE_CHANGELIST, null);
+        register(P4CommandRunner.ClientActionCmd.DELETE_FILE, null);
+        register(P4CommandRunner.ClientActionCmd.EDIT_CHANGELIST_DESCRIPTION, null);
+        register(P4CommandRunner.ClientActionCmd.FETCH_FILES, null);
+        register(P4CommandRunner.ClientActionCmd.MOVE_FILE, null);
+        register(P4CommandRunner.ClientActionCmd.MOVE_FILES_TO_CHANGELIST, null);
+        register(P4CommandRunner.ClientActionCmd.REVERT_FILE, null);
+        register(P4CommandRunner.ClientActionCmd.SUBMIT_CHANGELIST,
+            (ClientActionRunner<SubmitChangelistResult>) (config, action) ->
+                new ActionAnswerImpl<>(connectionManager.withConnection(config,
+                    (client) -> submitChangelist(client, config, (SubmitChangelistAction) action))));
     }
 
     @Override
@@ -127,6 +155,14 @@ public class ConnectCommandRunner
         ));
     }
 
+    @NotNull
+    @Override
+    public P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(@NotNull ServerConfig config,
+            @NotNull ListClientsForUserQuery query) {
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config,
+                (server) -> listClientsForUser(server, config, query.getUsername(), query.getMaxClients())));
+    }
+
 
     private CreateJobResult createJob(IOptionsServer server, ServerConfig cfg, CreateJobAction action)
             throws ConnectionException, AccessException, RequestException {
@@ -135,6 +171,137 @@ public class ConnectCommandRunner
                 JobCacheMessage.JobUpdateAction.JOB_CREATED));
         return new CreateJobResult(cfg, job);
     }
+
+    private AddEditResult addEditFile(IClient client, ClientConfig config, AddEditAction action)
+            throws P4JavaException {
+        // First, discover if the file is known by the server.
+        GetDepotFilesOptions depotOptions = new GetDepotFilesOptions(1, false);
+        // Must put the file path in escaped form when fetching list of depot files.
+        List<IFileSpec> srcFiles = FileSpecBuildUtil.forEscapedFilePaths(action.getFile());
+        List<IFileSpec> res = client.getServer().getDepotFiles(srcFiles, depotOptions);
+        boolean addFile = false;
+        if (res.isEmpty()) {
+            addFile = true;
+        } else {
+            IServerMessage msg = res.get(0).getStatusMessage();
+            if (msg != null) {
+                if (msg.isWarning()) {
+                    // This is how the "no such files" appears.
+                    addFile = true;
+                } else if (msg.isError()) {
+                    // error - perhaps not in the client view?
+                    throw new RequestException(msg);
+                }
+            }
+        }
+
+        List<IFileSpec> ret;
+        if (addFile) {
+            // Adding files uses the non-escaped form, because of the 'use wildcards' flag.
+            srcFiles = FileSpecBuildUtil.forFilePaths(action.getFile());
+            AddFilesOptions addOptions = new AddFilesOptions();
+            if (action.getFileType() != null) {
+                addOptions.setFileType(action.getFileType().toString());
+            }
+            if (action.getChangelistId() != null && !action.getChangelistId().isDefaultChangelist()) {
+                addOptions.setChangelistId(action.getChangelistId().getChangelistId());
+            }
+            addOptions.setUseWildcards(true);
+            if (action.getCharset() != null) {
+                addOptions.setCharset(action.getCharset());
+            }
+            ret = client.addFiles(srcFiles, addOptions);
+        } else {
+            EditFilesOptions editOptions = new EditFilesOptions();
+            if (action.getFileType() != null) {
+                editOptions.setFileType(action.getFileType().toString());
+            }
+            if (action.getChangelistId() != null && !action.getChangelistId().isDefaultChangelist()) {
+                editOptions.setChangelistId(action.getChangelistId().getChangelistId());
+            }
+            if (action.getCharset() != null) {
+                editOptions.setCharset(action.getCharset());
+            }
+            ret = client.editFiles(srcFiles, editOptions);
+        }
+        if (ret.isEmpty()) {
+            throw new P4JavaException("Unexpected error when " + (addFile ? "add" : "edit") +
+                    "ing file: no results from server");
+        }
+        if (ret.get(0).getOpStatus() != FileSpecOpStatus.VALID) {
+            IServerMessage msg = ret.get(0).getStatusMessage();
+            if (msg != null) {
+                throw new RequestException(msg);
+            }
+            throw new P4JavaException("Unexpected error when " + (addFile ? "add" : "edit") +
+                    "ing file: " + ret.get(0));
+        }
+        P4ChangelistId retChange;
+        if (action.getChangelistId() == null ||
+                action.getChangelistId().getChangelistId() != ret.get(0).getChangelistId()) {
+            retChange = new P4ChangelistIdImpl(ret.get(0).getChangelistId(), config.getClientServerRef());
+        } else {
+            retChange = action.getChangelistId();
+        }
+        return new AddEditResult(config, action.getFile(), addFile, P4FileType.convert(ret.get(0).getFileType()),
+                retChange, new P4RemoteFileImpl(ret.get(0)));
+    }
+
+
+    private SubmitChangelistResult submitChangelist(IClient client, ClientConfig config,
+            SubmitChangelistAction action)
+            throws P4JavaException {
+        SubmitOptions options = new SubmitOptions();
+        if (action.getJobStatus() != null) {
+            options.setJobStatus(action.getJobStatus().getName());
+        }
+        if (action.getUpdatedJobs() != null) {
+            List<String> jobIds = new ArrayList<>(action.getUpdatedJobs().size());
+            for (P4Job p4Job : action.getUpdatedJobs()) {
+                jobIds.add(p4Job.getJobId());
+            }
+            options.setJobIds(jobIds);
+        }
+        IChangelist change;
+        if (action.getChangelistId().getState() == P4ChangelistId.State.PENDING_CREATION) {
+            change = CoreFactory.createChangelist(client, action.getUpdatedDescription(), true);
+        } else if (action.getChangelistId().isDefaultChangelist()) {
+            change = client.getServer().getChangelist(IChangelist.DEFAULT);
+        } else {
+            change = client.getServer().getChangelist(action.getChangelistId().getChangelistId());
+        }
+
+        if (change == null || change.getStatus() == ChangelistStatus.SUBMITTED) {
+            throw new P4JavaException("No such pending change on server: " + action.getChangelistId());
+        }
+
+        if (action.getUpdatedDescription() != null) {
+            change.setDescription(action.getUpdatedDescription());
+        } else if (change.getDescription() == null) {
+            throw new P4JavaException("Must include a description for new changelists");
+        }
+
+        List<IFileSpec> res = change.submit(options);
+        List<P4RemoteFile> submitted = new ArrayList<>(res.size());
+        IServerMessage info = null;
+        for (IFileSpec spec : res) {
+            IServerMessage msg = spec.getStatusMessage();
+            if (msg != null) {
+                if (msg.isInfo()) {
+                    info = msg;
+                }
+                if (msg.isWarning() || msg.isError()) {
+                    throw new RequestException(msg);
+                }
+            } else {
+                submitted.add(new P4RemoteFileImpl(spec));
+            }
+        }
+        // FIXME what information should be added to the result?
+        return new SubmitChangelistResult(config, new P4ChangelistIdImpl(change.getId(), config.getClientServerRef()),
+                submitted, info == null ? null : info.getLocalizedMessage());
+    }
+
 
     private ListOpenedFilesChangesResult listOpenedFilesChanges(IClient client, ClientConfig config,
             int maxChangelistResults, int maxFileResults)
@@ -176,6 +343,12 @@ public class ConnectCommandRunner
                 config.getClientServerRef(), ret.getOpenedFiles(), ret.getPendingChangelists()
         ));
         return ret;
+    }
+
+    private ListClientsForUserResult listClientsForUser(IOptionsServer server, ServerConfig config, String username,
+            int maxClients) {
+        // FIXME implement
+        return null;
     }
 
 }

@@ -25,6 +25,7 @@ import net.groboclown.p4.server.api.values.P4JobSpec;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteChangelist;
+import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
 import net.groboclown.p4.server.impl.cache.CacheQueryHandler;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,6 +56,12 @@ public class MockCacheQueryHandler implements CacheQueryHandler {
     @Nullable
     @Override
     public P4JobSpec getCachedJobSpec(P4ServerName serverName) {
+        return null;
+    }
+
+    @Override
+    public Collection<P4WorkspaceSummary> getCachedClientsForUser(@NotNull P4ServerName serverName,
+            @NotNull String username) {
         return null;
     }
 

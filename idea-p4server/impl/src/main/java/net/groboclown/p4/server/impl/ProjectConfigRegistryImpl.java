@@ -166,13 +166,13 @@ public class ProjectConfigRegistryImpl
    }
 
     @Override
-    protected void onServerConnected(@NotNull ServerConfig server) {
+    protected void onServerConnected(@NotNull ServerConfig server, boolean loggedIn) {
         // Note: does not check disposed state.
 
         getServersFor(server.getServerName()).forEach((state) -> {
             state.setServerHostProblem(false);
             // If the connectivity and login all lines up, then the login works.
-            if (server.getServerId().equals(state.getServerConfig().getServerId())) {
+            if (loggedIn && server.getServerId().equals(state.getServerConfig().getServerId())) {
                 state.setServerLoginProblem(false);
             }
         });

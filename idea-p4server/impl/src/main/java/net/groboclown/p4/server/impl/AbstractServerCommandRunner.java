@@ -19,6 +19,8 @@ import net.groboclown.p4.server.api.P4CommandRunner.ServerResult;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult;
+import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
+import net.groboclown.p4.server.api.commands.client.ListClientsForUserResult;
 import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesQuery;
 import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult;
 import net.groboclown.p4.server.api.commands.file.AnnotateFileQuery;
@@ -104,4 +106,8 @@ public abstract class AbstractServerCommandRunner {
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> listOpenedFilesChanges(
             @NotNull ClientConfig config, @NotNull ListOpenedFilesChangesQuery query);
+
+    @NotNull
+    public abstract P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(
+            @NotNull ServerConfig config, @NotNull ListClientsForUserQuery query);
 }

@@ -85,7 +85,11 @@ public class SimpleConnectionManager implements ConnectionManager {
                                 password.toString(true),
                                 createProperties(config));
                         try {
-                            return fun.func(server.getClient(config.getClientname()));
+                            IClient client = server.getClient(config.getClientname());
+                            if (client == null) {
+                                throw new ConfigException("Client does not exist: " + config.getClientname());
+                            }
+                            return fun.func(client);
                         } finally {
                             close(server);
                         }
@@ -97,6 +101,10 @@ public class SimpleConnectionManager implements ConnectionManager {
                             null,
                             createProperties(config));
                     try {
+                        IClient client = server.getClient(config.getClientname());
+                        if (client == null) {
+                            throw new ConfigException("Client does not exist: " + config.getClientname());
+                        }
                         return fun.func(server.getClient(config.getClientname()));
                     } finally {
                         close(server);
@@ -170,6 +178,7 @@ public class SimpleConnectionManager implements ConnectionManager {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Setting up SSO login to execute `" + serverConfig.getLoginSso() + "`");
             }
+            // FIXME pass in a error callback to the callback so that the connection manager can handle errors.
             // TODO look into registering the sso key through user options.
             server.registerSSOCallback(new LoginSsoCallbackHandler(serverConfig.getLoginSso(), 1000), null);
         }
@@ -177,7 +186,7 @@ public class SimpleConnectionManager implements ConnectionManager {
 
         // Seems to be connected.  Tell the world that it can be
         // connected to.  Note that this is independent of login validity.
-        ServerConnectedMessage.send().serverConnected(serverConfig);
+        ServerConnectedMessage.send().serverConnected(serverConfig, false);
 
         // #147 if the user isn't logged in with an authentication ticket, but has P4LOGINSSO
         // set, then a simple password login attempt should be made.  The P4LOGINSSO will
@@ -191,6 +200,7 @@ public class SimpleConnectionManager implements ConnectionManager {
             final LoginOptions loginOptions = new LoginOptions();
             loginOptions.setDontWriteTicket(! useTicket);
             server.login(password, loginOptions);
+            ServerConnectedMessage.send().serverConnected(serverConfig, true);
         }
 
         return server;
@@ -252,15 +262,13 @@ public class SimpleConnectionManager implements ConnectionManager {
                         options.getUnsetClientName(),
                         options.getUnsetUserName(),
                         options.getWorkingDirectory()));
-            }
-            try {
-                // TODO this section doesn't seem to do anything.  Why are
-                // we writing the options to the string writer?  We don't
-                // use that for anything.
-                StringWriter sw = new StringWriter();
-                options.getProps().store(sw, "Options Server Properties");
-            } catch (IOException e) {
-                // Ignore
+                try {
+                    StringWriter sw = new StringWriter();
+                    options.getProps().store(sw, "Options Server Properties");
+                    LOG.debug("Connection Properties:\n" + sw.toString());
+                } catch (IOException e) {
+                    LOG.debug(e);
+                }
             }
         }
         return ServerFactory.getOptionsServer(uri, props, options);

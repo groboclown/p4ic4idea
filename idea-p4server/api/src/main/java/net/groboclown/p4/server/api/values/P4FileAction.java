@@ -76,7 +76,7 @@ public enum P4FileAction {
             case MOVE_DELETE:
                 return MOVE_DELETE;
             case MOVE:
-                // TODO is this right?
+                // TODO check if this is the right mapping
                 return MOVE_EDIT;
             case MOVE_ADD:
                 return MOVE_ADD;

@@ -73,9 +73,6 @@ public interface Answer<S> {
     <T> Answer<T> futureMap(@NotNull BiConsumer<S, AnswerSink<T>> func);
 
     /**
-     * TODO this might need to change to be a <tt>blockingGet</tt>, and retrieves
-     * the answer, or throws the exception.  Or perhaps both?  It does complicate
-     * the async implementation, though.
      *
      * @param timeout time to wait
      * @param unit unit of the time to wait

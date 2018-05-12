@@ -42,12 +42,12 @@ public class ServerConnectedMessage
          *                     More than just a server name, because the successful connection
          *                     also depends on the login and connection method.
          */
-        void serverConnected(@NotNull ServerConfig serverConfig);
+        void serverConnected(@NotNull ServerConfig serverConfig, boolean loggedIn);
     }
 
     public static class ListenerAdapter implements Listener {
         @Override
-        public void serverConnected(@NotNull ServerConfig serverConfig) {
+        public void serverConnected(@NotNull ServerConfig serverConfig, boolean loggedIn) {
 
         }
     }

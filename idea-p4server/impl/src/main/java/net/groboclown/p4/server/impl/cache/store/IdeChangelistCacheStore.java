@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.impl.cache;
+package net.groboclown.p4.server.impl.cache.store;
 
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
@@ -26,34 +26,21 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class IdeChangelistMapImpl implements IdeChangelistMap {
+public class IdeChangelistCacheStore {
 
-    @Nullable
-    @Override
-    public LocalChangeList getIdeChangeFor(@NotNull P4ChangelistId changelistId) {
-        return null;
+    public static class State {
     }
 
-    @Nullable
-    @Override
-    public P4ChangelistId getP4ChangeFor(@NotNull LocalChangeList changeList) {
-        return null;
+
+    IdeChangelistCacheStore(@NotNull State state) {
+
     }
+
 
     @NotNull
-    @Override
-    public Map<P4ChangelistId, LocalChangeList> getLinkedIdeChanges() {
-        return null;
-    }
+    State getState() {
+        State ret = new State();
 
-    @Override
-    public void updateForOpenChanges(@NotNull IdeFileMap fileMap, @NotNull Stream<P4RemoteChangelist> openChanges) {
-
-    }
-
-    @Override
-    public void updateForDeletedSubmittedChanges(@NotNull Stream<P4ChangelistSummary> closedChanges,
-            boolean deleteNotEmpty) {
-
+        return ret;
     }
 }

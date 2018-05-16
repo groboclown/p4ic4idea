@@ -58,7 +58,7 @@ public interface IdeFileMap {
      * be opened by any of the project's clients, and will be marked accordingly.
      * <p>
      * This will not update the association of the files to changelists.  That can only
-     * be done through {@link IdeChangelistMap#updateForOpenChanges(Stream)}.
+     * be done through {@link IdeChangelistMap#updateForOpenChanges(IdeFileMap, Stream)}.
      *
      * @param files all the known files open in the current project.
      */

@@ -12,14 +12,24 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.values;
+package net.groboclown.p4.server.impl.values;
 
+import net.groboclown.p4.server.api.values.JobStatus;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
-public interface JobStatus {
+public class JobStatusImpl implements JobStatus {
+    private final String name;
+
+    public JobStatusImpl(String name) {
+        this.name = name;
+    }
+
     @NotNull
-    String getName();
+    @Override
+    public String getName() {
+        return null;
+    }
 }

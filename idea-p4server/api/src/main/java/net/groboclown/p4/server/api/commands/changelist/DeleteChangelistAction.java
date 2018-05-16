@@ -16,10 +16,16 @@ package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.ActionUtil;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
 import org.jetbrains.annotations.NotNull;
 
 public class DeleteChangelistAction implements P4CommandRunner.ClientAction<DeleteChangelistResult> {
     private final String actionId = ActionUtil.createActionId(DeleteChangelistAction.class);
+    private final P4ChangelistId changelistId;
+
+    public DeleteChangelistAction(P4ChangelistId changelistId) {
+        this.changelistId = changelistId;
+    }
 
     @NotNull
     @Override
@@ -36,5 +42,9 @@ public class DeleteChangelistAction implements P4CommandRunner.ClientAction<Dele
     @Override
     public String getActionId() {
         return actionId;
+    }
+
+    public P4ChangelistId getChangelistId() {
+        return changelistId;
     }
 }

@@ -34,6 +34,10 @@ public class ExtAsserts {
         assertThat(c, containsAll(expected));
     }
 
+    public static <T> void assertContainsAll(Collection<T> c, Collection<T> expected) {
+        assertThat(c, containsAll(expected));
+    }
+
     public static <T> void assertSize(int expectedSize, Collection<T> actual) {
         assertThat(actual, hasSize(expectedSize));
     }

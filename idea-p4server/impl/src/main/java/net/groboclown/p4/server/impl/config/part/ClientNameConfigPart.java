@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.impl.config.part;
 
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.config.ConfigProblem;
 import net.groboclown.p4.server.api.config.part.ConfigPartAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +24,9 @@ import org.jetbrains.annotations.Nullable;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A data part dedicated to selecting the client name.  It's separate
@@ -31,13 +34,19 @@ import java.util.List;
  * configuration for a server to load the list of client names.
  */
 public class ClientNameConfigPart
-        extends ConfigPartAdapter {
-    private static final String CLIENT_NAME_ATTRIBUTE_KEY = "client-name";
+        extends ConfigPartAdapter
+        implements ConfigStateProvider {
     private String clientName;
-    private final transient List<ConfigProblem> additionalProblems = new ArrayList<ConfigProblem>();
+    private final transient List<ConfigProblem> additionalProblems = new ArrayList<>();
 
     public ClientNameConfigPart(@NotNull String sourceName) {
         super(sourceName);
+    }
+
+    public ClientNameConfigPart(@NotNull String sourceName, @NotNull VirtualFile root,
+            @NotNull Map<String, String> stateValues) {
+        super(sourceName);
+        this.clientName = stateValues.get("c");
     }
 
     @Override
@@ -53,7 +62,9 @@ public class ClientNameConfigPart
     public Collection<ConfigProblem> getConfigProblems() {
         PartValidation validation = new PartValidation();
         validation.checkClientName(this, true);
-        return validation.getProblems();
+        List<ConfigProblem> problems = new ArrayList<>(validation.getProblems());
+        problems.addAll(additionalProblems);
+        return problems;
     }
 
 
@@ -100,5 +111,13 @@ public class ClientNameConfigPart
             return 0;
         }
         return getClientname().hashCode();
+    }
+
+    @NotNull
+    @Override
+    public Map<String, String> getState() {
+        Map<String, String> ret = new HashMap<>();
+        ret.put("c", clientName);
+        return ret;
     }
 }

@@ -27,8 +27,8 @@ import net.groboclown.p4.server.api.values.P4RemoteFile;
 import net.groboclown.p4.server.api.values.P4ResolveType;
 import net.groboclown.p4.server.api.values.P4Revision;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 
 public class P4LocalFileImpl implements P4LocalFile {
     private final P4RemoteFile depot;
@@ -39,6 +39,77 @@ public class P4LocalFileImpl implements P4LocalFile {
     private final P4FileAction action;
     private final P4ResolveType resolveType;
     private final P4FileType fileType;
+    private final P4RemoteFile integrateFrom;
+
+    public static class State {
+
+    }
+
+
+    public static class Builder {
+        private P4RemoteFile depot;
+        private FilePath local;
+        private P4Revision haveRev;
+        private P4FileRevision headRev;
+        private P4ChangelistId changelistId;
+        private P4FileAction action;
+        private P4ResolveType resolveType;
+        private P4FileType fileType;
+        private P4RemoteFile integrateFrom;
+
+        public Builder withLocalFile(P4LocalFile file) {
+            this.depot = file.getDepotPath();
+            this.local = file.getFilePath();
+            this.haveRev = file.getHaveRevision();
+            this.headRev = file.getHeadFileRevision();
+            this.changelistId = file.getChangelistId();
+            this.action = file.getFileAction();
+            this.resolveType = file.getResolveType();
+            this.fileType = file.getFileType();
+            this.integrateFrom = file.getIntegrateFrom();
+            return this;
+        }
+
+        public P4RemoteFile getDepot() {
+            return depot;
+        }
+
+        public Builder withLocal(FilePath f) {
+            this.local = f;
+            return this;
+        }
+
+        public Builder withAction(P4FileAction a) {
+            this.action = a;
+            return this;
+        }
+
+        public Builder withHave(P4Revision have) {
+            this.haveRev = have;
+            return this;
+        }
+
+        public Builder withResolveType(P4ResolveType type) {
+            this.resolveType = type;
+            return this;
+        }
+
+        public Builder withFileType(P4FileType type) {
+            this.fileType = type;
+            return this;
+        }
+
+        public Builder withIntegrateFrom(P4RemoteFile r) {
+            this.integrateFrom = r;
+            return this;
+        }
+
+        public P4LocalFileImpl build() {
+            return new P4LocalFileImpl(depot, local, haveRev, headRev, changelistId, action, resolveType,
+                    fileType, integrateFrom);
+        }
+    }
+
 
     /**
      *
@@ -58,6 +129,28 @@ public class P4LocalFileImpl implements P4LocalFile {
         action = P4FileAction.convert(spec.getOpenAction());
         resolveType = P4ResolveType.convert(spec.getResolveType(), spec.getContentResolveType());
         fileType = P4FileType.convert(spec.getFileType());
+        integrateFrom =
+                // TODO double check this logic
+                spec.getMovedFile() != null
+                    ? new P4RemoteFileImpl(spec.getMovedFile())
+                    : (spec.getOriginalPath() != null
+                        ? new P4RemoteFileImpl(spec.getOriginalPath().getPathString())
+                        : null);
+    }
+
+
+    private P4LocalFileImpl(@Nullable P4RemoteFile depot, @NotNull FilePath local, @NotNull P4Revision haveRev,
+            @Nullable P4FileRevision headRev, @Nullable P4ChangelistId changelistId, @NotNull P4FileAction action,
+            @NotNull P4ResolveType resolveType, @Nullable P4FileType fileType, @Nullable P4RemoteFile integrateFrom) {
+        this.depot = depot;
+        this.local = local;
+        this.haveRev = haveRev;
+        this.headRev = headRev;
+        this.changelistId = changelistId;
+        this.action = action;
+        this.resolveType = resolveType;
+        this.fileType = fileType;
+        this.integrateFrom = integrateFrom;
     }
 
 
@@ -107,5 +200,11 @@ public class P4LocalFileImpl implements P4LocalFile {
     @Override
     public P4FileType getFileType() {
         return fileType;
+    }
+
+    @Nullable
+    @Override
+    public P4RemoteFile getIntegrateFrom() {
+        return integrateFrom;
     }
 }

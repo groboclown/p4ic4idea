@@ -390,4 +390,10 @@ public class MultipleConfigPart
         }
         return null;
     }
+
+
+    @NotNull
+    public List<ConfigPart> getChildren() {
+        return new ArrayList<>(parts);
+    }
 }

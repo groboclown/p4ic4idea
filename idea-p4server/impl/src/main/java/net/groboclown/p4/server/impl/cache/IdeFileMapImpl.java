@@ -24,7 +24,18 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.stream.Stream;
 
+/**
+ *
+ */
 public class IdeFileMapImpl implements IdeFileMap {
+    public static class State {
+
+    }
+
+    IdeFileMapImpl(@NotNull State state) {
+
+    }
+
     @Nullable
     @Override
     public P4LocalFile forIdeFile(VirtualFile file) {
@@ -52,5 +63,12 @@ public class IdeFileMapImpl implements IdeFileMap {
     @Override
     public void updateAllLinkedFiles(@NotNull Stream<P4LocalFile> files) {
 
+    }
+
+
+    @NotNull
+    State getState() {
+        State ret = new State();
+        return ret;
     }
 }

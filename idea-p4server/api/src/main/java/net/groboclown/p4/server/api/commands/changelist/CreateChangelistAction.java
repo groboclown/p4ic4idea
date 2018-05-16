@@ -20,6 +20,11 @@ import org.jetbrains.annotations.NotNull;
 
 public class CreateChangelistAction implements P4CommandRunner.ClientAction<CreateChangelistResult> {
     private final String actionId = ActionUtil.createActionId(CreateChangelistAction.class);
+    private final String comment;
+
+    public CreateChangelistAction(@NotNull String comment) {
+        this.comment = comment;
+    }
 
     @NotNull
     @Override
@@ -36,5 +41,9 @@ public class CreateChangelistAction implements P4CommandRunner.ClientAction<Crea
     @Override
     public String getActionId() {
         return actionId;
+    }
+
+    public String getComment() {
+        return comment;
     }
 }

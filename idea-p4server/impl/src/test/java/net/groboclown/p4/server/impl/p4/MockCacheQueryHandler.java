@@ -15,18 +15,15 @@
 package net.groboclown.p4.server.impl.p4;
 
 import net.groboclown.p4.server.api.ClientServerRef;
-import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
-import net.groboclown.p4.server.api.values.P4ChangelistSummary;
 import net.groboclown.p4.server.api.values.P4JobSpec;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteChangelist;
 import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
-import net.groboclown.p4.server.impl.cache.CacheQueryHandler;
+import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;

@@ -14,14 +14,24 @@
 
 package net.groboclown.p4.server.impl.config.part;
 
+import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.config.part.ConfigPartAdapter;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.Map;
 
-public class RequirePasswordDataPart extends ConfigPartAdapter {
+public class RequirePasswordDataPart extends ConfigPartAdapter
+        implements ConfigStateProvider {
     public RequirePasswordDataPart() {
         super("Require User Password");
+    }
+
+    // for ConfigStateProvider
+    public RequirePasswordDataPart(String sourceName, VirtualFile vcsRoot, Map<String, String> values) {
+        super(sourceName);
     }
 
     // Explicitly override other authentication methods
@@ -67,4 +77,9 @@ public class RequirePasswordDataPart extends ConfigPartAdapter {
         return 2;
     }
 
+    @NotNull
+    @Override
+    public Map<String, String> getState() {
+        return Collections.emptyMap();
+    }
 }

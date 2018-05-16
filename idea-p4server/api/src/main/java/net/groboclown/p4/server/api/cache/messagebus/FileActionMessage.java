@@ -34,12 +34,12 @@ public class FileActionMessage
     private static final Topic<TopicListener<Event>> TOPIC = createTopic(DISPLAY_NAME);
 
     public interface Listener {
-        void pendingFileAction(@NotNull Event event);
+        void fileActionUpdate(@NotNull Event event);
     }
 
     public static void addListener(@NotNull MessageBusClient.ApplicationClient client, @NotNull String cacheId,
             @NotNull Listener listener) {
-        abstractAddListener(client, TOPIC, cacheId, listener::pendingFileAction);
+        abstractAddListener(client, TOPIC, cacheId, listener::fileActionUpdate);
     }
 
     public static void sendEvent(@NotNull Event e) {

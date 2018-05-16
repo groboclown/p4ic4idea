@@ -19,8 +19,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.mock.VFFilePath;
 import net.groboclown.p4.server.api.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 // Supposed to be immutable, but it's for testing...
 public class MockP4LocalFile implements P4LocalFile {
@@ -32,6 +31,7 @@ public class MockP4LocalFile implements P4LocalFile {
     private P4FileAction action;
     private P4ResolveType resolveType;
     private P4FileType fileType;
+    private P4RemoteFile integrateFrom;
 
 
     @Nullable
@@ -124,6 +124,16 @@ public class MockP4LocalFile implements P4LocalFile {
 
     public MockP4LocalFile withFileType(P4FileType t) {
         fileType = t;
+        return this;
+    }
+    @Nullable
+    @Override
+    public P4RemoteFile getIntegrateFrom() {
+        return integrateFrom;
+    }
+
+    public MockP4LocalFile withIntegrateFrom(P4RemoteFile f) {
+        this.integrateFrom = f;
         return this;
     }
 }

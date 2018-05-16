@@ -89,7 +89,7 @@ public class P4LocalChangelistBuilder {
     }
 
     public P4LocalChangelist build() {
-        return new P4LocalChangelistImpl(serverConfig, changelistId, comment, deleted, containedFiles,
+        return new P4LocalChangelistImpl(changelistId, comment, deleted, containedFiles,
                 shelvedFiles, type, clientname, username, jobs, jobStatus);
     }
 }

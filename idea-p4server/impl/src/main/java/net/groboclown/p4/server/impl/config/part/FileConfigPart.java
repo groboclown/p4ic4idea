@@ -30,9 +30,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
-public class FileConfigPart implements ConfigPart {
+public class FileConfigPart implements ConfigPart, ConfigStateProvider {
     private static final Logger LOG = Logger.getInstance(FileConfigPart.class);
 
     @Nullable
@@ -57,6 +59,11 @@ public class FileConfigPart implements ConfigPart {
         this.vcsRoot = vcsRoot;
         this.filePath = filePath;
         reload();
+    }
+
+    // for ConfigStateProvider
+    public FileConfigPart(String sourceName, @NotNull VirtualFile vcsRoot, @NotNull Map<String, String> stateValues) {
+        this(vcsRoot, stateValues.get("f") == null ? null : new File(stateValues.get("f")));
     }
 
     @Override
@@ -366,5 +373,13 @@ public class FileConfigPart implements ConfigPart {
         }
         LOG.debug("Loaded property file " + filePath + " keys " + props.keySet());
         return props;
+    }
+
+    @NotNull
+    @Override
+    public Map<String, String> getState() {
+        Map<String, String> ret = new HashMap<>();
+        ret.put("f", filePath == null ? null : filePath.getAbsolutePath());
+        return ret;
     }
 }

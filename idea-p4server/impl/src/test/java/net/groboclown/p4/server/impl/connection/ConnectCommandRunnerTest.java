@@ -54,6 +54,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -394,7 +395,9 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddJobToChangelistAction())
+                        runner.perform(clientConfig, new AddJobToChangelistAction(
+                                    new P4ChangelistIdImpl(2, clientConfig.getClientServerRef()),
+                                    new P4JobImpl("a", "a job", null)))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -428,7 +431,7 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new CreateChangelistAction())
+                        runner.perform(clientConfig, new CreateChangelistAction("simple"))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -462,7 +465,8 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new DeleteChangelistAction())
+                        runner.perform(clientConfig, new DeleteChangelistAction(new P4ChangelistIdImpl(2,
+                                    clientConfig.getClientServerRef())))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -530,7 +534,8 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new EditChangelistAction())
+                        runner.perform(clientConfig, new EditChangelistAction(
+                                    new P4ChangelistIdImpl(2, clientConfig.getClientServerRef()), "new comment"))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -632,7 +637,9 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new MoveFilesToChangelistAction())
+                        runner.perform(clientConfig, new MoveFilesToChangelistAction(
+                                    new P4ChangelistIdImpl(4, clientConfig.getClientServerRef()),
+                                    Collections.emptyList()))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )

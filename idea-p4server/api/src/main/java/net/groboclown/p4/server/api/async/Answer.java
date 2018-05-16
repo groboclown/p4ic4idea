@@ -16,6 +16,7 @@ package net.groboclown.p4.server.api.async;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.concurrency.Promise;
 
 import java.util.concurrent.CancellationException;
@@ -25,11 +26,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public interface Answer<S> {
-    static <S> Answer<S> background(Consumer<AnswerSink<S>> c) {
+    static <S> Answer<S> background(@NotNull Consumer<AnswerSink<S>> c) {
         return AsyncAnswer.background(c);
     }
 
-    static <S> Answer<S> forPromise(Promise<S> p) {
+    static <S> Answer<S> forPromise(@NotNull Promise<S> p) {
         AsyncAnswer<S> ret = new AsyncAnswer<>();
         p
                 .then((s) -> {
@@ -44,11 +45,11 @@ public interface Answer<S> {
         return ret;
     }
 
-    static <S> Answer<S> resolve(S s) {
+    static <S> Answer<S> resolve(@Nullable S s) {
         return DoneAnswer.resolve(s);
     }
 
-    static <S> Answer<S> reject(P4CommandRunner.ServerResultException e) {
+    static <S> Answer<S> reject(@NotNull P4CommandRunner.ServerResultException e) {
         return DoneAnswer.reject(e);
     }
 

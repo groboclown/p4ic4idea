@@ -255,6 +255,9 @@ public interface P4CommandRunner {
          */
         ADD_JOB_TO_CHANGELIST,
 
+        // FIXME implement in all the right places
+        REMOVE_JOB_FROM_CHANGELIST,
+
         /**
          * @see net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction
          * @see net.groboclown.p4.server.api.commands.changelist.CreateChangelistResult
@@ -273,7 +276,10 @@ public interface P4CommandRunner {
          */
         FETCH_FILES,
 
-
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction
+         * @see net.groboclown.p4.server.api.commands.changelist.SubmitChangelistResult
+         */
         SUBMIT_CHANGELIST,
     }
 

@@ -20,18 +20,18 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import org.jetbrains.annotations.NotNull;
 
-public class ClientActionCacheMessage
-        extends AbstractCacheMessage<ClientActionCacheMessage.Event> {
+public class ClientActionMessage
+        extends AbstractCacheMessage<ClientActionMessage.Event> {
     private static final String DISPLAY_NAME = "p4ic4idea:client action pending";
     private static final Topic<TopicListener<Event>> TOPIC = createTopic(DISPLAY_NAME);
 
     public interface Listener {
-        void clientActionPending(@NotNull Event event);
+        void clientActionUpdate(@NotNull Event event);
     }
 
     public static void addListener(@NotNull MessageBusClient.ApplicationClient client, @NotNull String cacheId,
             @NotNull Listener listener) {
-        abstractAddListener(client, TOPIC, cacheId, listener::clientActionPending);
+        abstractAddListener(client, TOPIC, cacheId, listener::clientActionUpdate);
     }
 
     public static void sendEvent(@NotNull Event e) {
@@ -60,6 +60,10 @@ public class ClientActionCacheMessage
 
         public P4CommandRunner.ClientAction getAction() {
             return action;
+        }
+
+        public ActionState getState() {
+            return state;
         }
     }
 }

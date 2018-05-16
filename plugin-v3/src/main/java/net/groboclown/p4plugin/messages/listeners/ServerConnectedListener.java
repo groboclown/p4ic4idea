@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class ServerConnectedListener implements ServerConnectedMessage.Listener {
     @Override
-    public void serverConnected(@NotNull ServerConfig serverConfig) {
+    public void serverConnected(@NotNull ServerConfig serverConfig, boolean loggedIn) {
 
     }
 }

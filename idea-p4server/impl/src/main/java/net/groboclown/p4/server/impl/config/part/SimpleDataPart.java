@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @SuppressWarnings("WeakerAccess")
-public class SimpleDataPart implements ConfigPart {
+public class SimpleDataPart implements ConfigPart, ConfigStateProvider {
     private final Map<String, String> properties = new HashMap<>();
     private final String sourceName;
     private final VirtualFile vcsRoot;
@@ -58,6 +58,13 @@ public class SimpleDataPart implements ConfigPart {
 
         // Ignore
         // part.getPlaintextPassword();
+    }
+
+    // for ConfigStateProvider
+    public SimpleDataPart(String sourceName, VirtualFile vcsRoot, @NotNull Map<String, String> values) {
+        this.sourceName = sourceName;
+        this.vcsRoot = vcsRoot;
+        this.properties.putAll(values);
     }
 
     @Override
@@ -394,5 +401,11 @@ public class SimpleDataPart implements ConfigPart {
             }
         }
         return value;
+    }
+
+    @NotNull
+    @Override
+    public Map<String, String> getState() {
+        return new HashMap<>(properties);
     }
 }

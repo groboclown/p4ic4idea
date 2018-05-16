@@ -23,7 +23,8 @@ import net.groboclown.p4.server.api.AbstractP4CommandRunner;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
-import net.groboclown.p4.server.api.cache.messagebus.ClientActionCacheMessage;
+import net.groboclown.p4.server.api.async.Answer;
+import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
 import net.groboclown.p4.server.api.cache.messagebus.DescribeChangelistCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.FileActionMessage;
 import net.groboclown.p4.server.api.cache.messagebus.JobSpecCacheMessage;
@@ -41,6 +42,8 @@ import net.groboclown.p4.server.api.commands.changelist.ListJobsQuery;
 import net.groboclown.p4.server.api.commands.changelist.ListJobsResult;
 import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsQuery;
 import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsResult;
+import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistResult;
 import net.groboclown.p4.server.api.commands.client.ListClientFetchStatusQuery;
 import net.groboclown.p4.server.api.commands.client.ListClientFetchStatusResult;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
@@ -78,7 +81,8 @@ import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
-import net.groboclown.p4.server.impl.cache.CacheQueryHandler;
+import net.groboclown.p4.server.api.cache.CacheQueryHandler;
+import net.groboclown.p4.server.impl.commands.ActionAnswerImpl;
 import net.groboclown.p4.server.impl.commands.DoneQueryAnswer;
 import net.groboclown.p4.server.impl.commands.OfflineActionAnswerImpl;
 import org.jetbrains.annotations.NotNull;
@@ -224,7 +228,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
             return server.perform(config, action)
                     .whenCompleted((resp) -> {
                         // Login was good.
-                        // FIXME send a message?
+                        ServerConnectedMessage.send().serverConnected(config, true);
                         state.needsLogin = false;
                         state.badConnection = false;
                     });
@@ -242,6 +246,18 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                 OfflineActionAnswerImpl::new);
     }
 
+
+    @NotNull
+    protected ActionAnswer<SubmitChangelistResult> submitChangelist(
+            ClientConfig config, SubmitChangelistAction action) {
+        // Submits are never cached.  Instead, offline submits generate an error.
+        return onlineCheck(config,
+                () -> server.perform(config, action),
+                () -> new ActionAnswerImpl<>(Answer.reject(
+                        // FIXME
+                        null
+                )));
+    }
 
     @NotNull
     @Override
@@ -294,16 +310,16 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @NotNull
     @Override
     protected <R extends ClientResult> ActionAnswer<R> performNonFileAction(ClientConfig config, ClientAction<R> action) {
-        ClientActionCacheMessage.sendEvent(new ClientActionCacheMessage.Event(
-                config.getClientServerRef(), action, ClientActionCacheMessage.ActionState.PENDING));
+        ClientActionMessage.sendEvent(new ClientActionMessage.Event(
+                config.getClientServerRef(), action, ClientActionMessage.ActionState.PENDING));
         return onlineCheck(config,
                 () -> server.perform(config, action)
                         .whenCompleted((result) ->
-                            ClientActionCacheMessage.sendEvent(new ClientActionCacheMessage.Event(
-                                config.getClientServerRef(), action, ClientActionCacheMessage.ActionState.COMPLETED)))
+                            ClientActionMessage.sendEvent(new ClientActionMessage.Event(
+                                config.getClientServerRef(), action, ClientActionMessage.ActionState.COMPLETED)))
                         .whenServerError((t) ->
-                            ClientActionCacheMessage.sendEvent(new ClientActionCacheMessage.Event(
-                                config.getClientServerRef(), action, ClientActionCacheMessage.ActionState.FAILED))),
+                            ClientActionMessage.sendEvent(new ClientActionMessage.Event(
+                                config.getClientServerRef(), action, ClientActionMessage.ActionState.FAILED))),
                 OfflineActionAnswerImpl::new
         );
     }

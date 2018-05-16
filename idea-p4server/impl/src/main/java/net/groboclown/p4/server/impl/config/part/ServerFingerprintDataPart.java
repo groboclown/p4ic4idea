@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.impl.config.part;
 
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.config.ConfigProblem;
 import net.groboclown.p4.server.api.config.part.ConfigPartAdapter;
 import org.jetbrains.annotations.Nls;
@@ -23,12 +24,21 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-public class ServerFingerprintDataPart extends ConfigPartAdapter {
+public class ServerFingerprintDataPart extends ConfigPartAdapter implements ConfigStateProvider {
     private String fingerprint;
 
     public ServerFingerprintDataPart(@Nls @NotNull String sourceName) {
         super(sourceName);
+    }
+
+    // for ConfigStateProvider
+    public ServerFingerprintDataPart(@NotNull String sourceName, VirtualFile root,
+            @NotNull Map<String, String> values) {
+        super(sourceName);
+        this.fingerprint = values.get("f");
     }
 
     @Override
@@ -77,5 +87,13 @@ public class ServerFingerprintDataPart extends ConfigPartAdapter {
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
         return Collections.emptyList();
+    }
+
+    @NotNull
+    @Override
+    public Map<String, String> getState() {
+        Map<String, String> ret = new HashMap<>();
+        ret.put("f", fingerprint);
+        return ret;
     }
 }

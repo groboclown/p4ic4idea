@@ -16,6 +16,7 @@ package net.groboclown.p4.server.impl;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
@@ -46,6 +47,8 @@ import java.util.stream.Stream;
 public class ProjectConfigRegistryImpl
        extends ProjectConfigRegistry {
     private final Map<ClientServerRef, ClientConfigRootImpl> registeredClients = new HashMap<>();
+
+    private final Map<FilePath, ClientServerRef> vcsRootMap = new HashMap<>();
 
     // the servers are stored based on the shared config.  This means that the connection
     // approach (e.g. password vs. auth ticket) is taken into account.  It has a potential

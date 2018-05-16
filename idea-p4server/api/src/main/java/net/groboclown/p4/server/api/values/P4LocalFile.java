@@ -16,8 +16,8 @@ package net.groboclown.p4.server.api.values;
 
 import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 
 /**
@@ -66,4 +66,7 @@ public interface P4LocalFile {
 
     @NotNull
     P4FileType getFileType();
+
+    @Nullable
+    P4RemoteFile getIntegrateFrom();
 }

@@ -33,8 +33,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-public class EnvCompositePart implements ConfigPart {
+public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
     private static final Logger LOG = Logger.getInstance(EnvCompositePart.class);
 
     private final VirtualFile vcsRoot;
@@ -43,6 +44,11 @@ public class EnvCompositePart implements ConfigPart {
     public EnvCompositePart(@NotNull VirtualFile vcsRoot) {
         this.vcsRoot = vcsRoot;
         loadEnvironmentParts();
+    }
+
+    // for ConfigStateProvider
+    public EnvCompositePart(String sourceName, @NotNull VirtualFile vcsRoot, Map<String, String> values) {
+        this(vcsRoot);
     }
 
     @Override
@@ -324,6 +330,12 @@ public class EnvCompositePart implements ConfigPart {
     @NotNull
     public String getSourceName() {
         return "Environment";
+    }
+
+    @NotNull
+    @Override
+    public Map<String, String> getState() {
+        return Collections.emptyMap();
     }
 
     private static class EnvPassword extends ConfigPartAdapter {

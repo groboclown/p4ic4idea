@@ -14,13 +14,23 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
+import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.ActionUtil;
-import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 public class MoveFilesToChangelistAction implements P4CommandRunner.ClientAction<MoveFilesToChangelistResult> {
     private final String actionId = ActionUtil.createActionId(MoveFilesToChangelistAction.class);
+    private final P4ChangelistId changelistId;
+    private final List<FilePath> files;
+
+    public MoveFilesToChangelistAction(@NotNull P4ChangelistId changelistId, @NotNull List<FilePath> files) {
+        this.changelistId = changelistId;
+        this.files = files;
+    }
 
     @NotNull
     @Override
@@ -37,5 +47,13 @@ public class MoveFilesToChangelistAction implements P4CommandRunner.ClientAction
     @Override
     public String getActionId() {
         return actionId;
+    }
+
+    public P4ChangelistId getChangelistId() {
+        return changelistId;
+    }
+
+    public List<FilePath> getFiles() {
+        return files;
     }
 }

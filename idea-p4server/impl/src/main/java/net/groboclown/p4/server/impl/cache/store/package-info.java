@@ -12,18 +12,13 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.impl.cache;
-
 /**
- * Central storage for the persisted, cached objects for a single client.
- * <p>
- * Application-wide cached.
+ * TODO this package is a placeholder for an idea of what the stored cache might look like.
+ * The IDE api + the plugin design implies that this is stored per project.  That means that
+ * the state restore action triggers cache updates.  The big thing to remember with this
+ * storage is that there MUST be a single model of objects for the cache objects to pull
+ * from.
+ *
+ * For now, this is highly un-optimized.
  */
-public class ClientCacheImpl {
-
-    // Mapping from the local file system to the Perforce server files
-    // is global for a client.  This might be different if you run with
-    // different OS, but then you should be on different computers.
-    private IdeFileMapImpl activeFileMap;
-
-}
+package net.groboclown.p4.server.impl.cache.store;

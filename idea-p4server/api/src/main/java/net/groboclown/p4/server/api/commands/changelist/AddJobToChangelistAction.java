@@ -16,10 +16,19 @@ package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.ActionUtil;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.api.values.P4Job;
 import org.jetbrains.annotations.NotNull;
 
 public class AddJobToChangelistAction implements P4CommandRunner.ClientAction<AddJobToChangelistResult> {
     private final String actionId = ActionUtil.createActionId(AddJobToChangelistAction.class);
+    private final P4ChangelistId changelistId;
+    private final P4Job job;
+
+    public AddJobToChangelistAction(@NotNull P4ChangelistId changelistId, @NotNull P4Job job) {
+        this.changelistId = changelistId;
+        this.job = job;
+    }
 
     @NotNull
     @Override
@@ -36,5 +45,13 @@ public class AddJobToChangelistAction implements P4CommandRunner.ClientAction<Ad
     @Override
     public String getActionId() {
         return actionId;
+    }
+
+    public P4ChangelistId getChangelistId() {
+        return changelistId;
+    }
+
+    public P4Job getJob() {
+        return job;
     }
 }

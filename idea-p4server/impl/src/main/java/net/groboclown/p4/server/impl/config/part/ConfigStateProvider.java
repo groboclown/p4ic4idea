@@ -12,11 +12,17 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.cache;
+package net.groboclown.p4.server.impl.config.part;
 
-import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 
-public interface PendingActionCache {
-    <R extends P4CommandRunner.ClientResult> void addPendingAction(@NotNull P4CommandRunner.ClientAction<R> action);
+import java.util.Map;
+
+/**
+ * Subclasses must be loadable through {@link PartStateLoader}, which means providing a constructor with the
+ * arguments ({@link String}, {@link com.intellij.openapi.vfs.VirtualFile}, {@link Map}).
+ */
+public interface ConfigStateProvider {
+    @NotNull
+    Map<String, String> getState();
 }

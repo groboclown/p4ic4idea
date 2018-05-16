@@ -109,4 +109,8 @@ public class AbstractCacheMessage<E extends AbstractCacheUpdateEvent<E>>
             }
         }, t);
     }
+
+    public static String createCacheId() {
+        return Integer.toHexString((int) (Math.random() * 100000));
+    }
 }

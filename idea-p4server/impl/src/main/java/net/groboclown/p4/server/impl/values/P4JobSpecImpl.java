@@ -32,6 +32,10 @@ public class P4JobSpecImpl implements P4JobSpec {
     private final String comments;
     private final List<P4JobField> fields;
 
+    public static class State {
+
+    }
+
     public P4JobSpecImpl(@NotNull IJobSpec src) {
         this.comments = src.getComments();
         List<P4JobField> f = new ArrayList<>(src.getFields().size());

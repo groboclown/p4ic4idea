@@ -12,14 +12,33 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.values;
+package net.groboclown.p4.server.impl.cache.store;
 
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.p4.server.api.cache.IdeFileMap;
+import net.groboclown.p4.server.api.values.P4LocalFile;
+import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.concurrent.Immutable;
+import java.util.stream.Stream;
 
-@Immutable
-public interface JobStatus {
+/**
+ *
+ */
+public class IdeFileCacheStore {
+    public static class State {
+
+    }
+
+    IdeFileCacheStore(@NotNull State state) {
+
+    }
+
     @NotNull
-    String getName();
+    State getState() {
+        State ret = new State();
+        return ret;
+    }
 }

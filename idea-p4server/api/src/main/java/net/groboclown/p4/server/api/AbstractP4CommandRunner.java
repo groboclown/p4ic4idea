@@ -28,6 +28,8 @@ import net.groboclown.p4.server.api.commands.changelist.ListJobsQuery;
 import net.groboclown.p4.server.api.commands.changelist.ListJobsResult;
 import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsQuery;
 import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsResult;
+import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistResult;
 import net.groboclown.p4.server.api.commands.client.ListClientFetchStatusQuery;
 import net.groboclown.p4.server.api.commands.client.ListClientFetchStatusResult;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
@@ -63,6 +65,8 @@ import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4.server.api.values.P4FileType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.awt.event.ActionListener;
 
 
 public abstract class AbstractP4CommandRunner implements P4CommandRunner {
@@ -121,6 +125,8 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
                 return (ActionAnswer<R>) fetchFiles(config, (FetchFilesAction) action);
             case MOVE_FILE:
                 return (ActionAnswer<R>) moveFile(config, (MoveFileAction) action);
+            case SUBMIT_CHANGELIST:
+                return (ActionAnswer<R>) submitChangelist(config, (SubmitChangelistAction) action);
             default:
                 throw new IllegalStateException("Incompatible class: should match " + ClientActionCmd.class);
         }
@@ -140,6 +146,10 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
 
     @NotNull
     protected abstract ActionAnswer<FetchFilesResult> fetchFiles(ClientConfig config, FetchFilesAction action);
+
+    @NotNull
+    protected abstract ActionAnswer<SubmitChangelistResult> submitChangelist(
+            ClientConfig config, SubmitChangelistAction action);
 
     @SuppressWarnings("unchecked")
     @NotNull

@@ -16,6 +16,7 @@ package net.groboclown.idea.extensions;
 
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
@@ -23,8 +24,12 @@ import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.fileTypes.FileTypeRegistry;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.ClassLoaderUtil;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vcs.actions.VcsContextFactory;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.util.ReflectionUtil;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.pico.DefaultPicoContainer;
 import net.groboclown.idea.mock.MockPasswordSafe;
@@ -43,6 +48,8 @@ import org.picocontainer.PicoInitializationException;
 import org.picocontainer.PicoIntrospectionException;
 import org.picocontainer.PicoVisitor;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -81,8 +88,13 @@ public class IdeaLightweightExtension
         return getMockProject(getTopContext());
     }
 
+    public LocalFileSystem getMockLocalFilesystem() {
+        return getMockLocalFilesystem(getTopContext());
+    }
+
     public void registerApplicationComponent(@NotNull String name, @NotNull ApplicationComponent component) {
-        when(getMockApplication().getComponent(name)).thenReturn(component);
+        Application application = getMockApplication();
+        when(application.getComponent(name)).thenReturn(component);
     }
 
     public <I> void registerApplicationService(@NotNull Class<? super I> interfaceClass, @NotNull I service) {
@@ -129,6 +141,10 @@ public class IdeaLightweightExtension
         when(project.isDisposed()).thenReturn(false);
         getStore(extensionContext).put("project", project);
         initializeProject(project);
+
+        LocalFileSystem lfs = mock(LocalFileSystem.class);
+        getStore(extensionContext).put("local-filesystem", lfs);
+        setupLocalFileSystem(lfs);
     }
 
     private void initializeApplication(Application application) {
@@ -141,6 +157,36 @@ public class IdeaLightweightExtension
         // Service setup.  See ServiceManager
         pico.registerComponent(service(PasswordSafe.class, new MockPasswordSafe()));
         pico.registerComponent(service(VcsContextFactory.class, new MockVcsContextFactory()));
+
+        VirtualFileManager vfm = mock(VirtualFileManager.class);
+        when(application.getComponent(VirtualFileManager.class)).thenReturn(vfm);
+
+        AccessToken readToken = mock(AccessToken.class);
+        when(application.acquireReadActionLock()).thenReturn(readToken);
+    }
+
+    private void setupLocalFileSystem(LocalFileSystem lfs) {
+        // Strong arm the LocalFileSystem
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        if (classLoader == null) {
+            classLoader = ClassLoader.getSystemClassLoader();
+        }
+        try {
+            Class<?> holder = classLoader.loadClass(
+                    "com.intellij.openapi.vfs.LocalFileSystem$LocalFileSystemHolder");
+            for (Field field: holder.getDeclaredFields()) {
+                if (LocalFileSystem.class.isAssignableFrom(field.getType())) {
+                    field.setAccessible(true);
+                    Field modifiersField = Field.class.getDeclaredField("modifiers");
+                    modifiersField.setAccessible(true);
+                    modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+                    field.set(null, lfs);
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException | IllegalAccessException | NoSuchFieldException e) {
+            fail(e);
+        }
     }
 
     private void initializeProject(Project project) {
@@ -161,6 +207,10 @@ public class IdeaLightweightExtension
 
     private Project getMockProject(ExtensionContext topContext) {
         return (Project) getStore(topContext).get("project");
+    }
+
+    private LocalFileSystem getMockLocalFilesystem(ExtensionContext topContext) {
+        return (LocalFileSystem) getStore(topContext).get("local-filesystem");
     }
 
     private FileTypeRegistry getMockFileTypeRegistry(ExtensionContext topContext) {

@@ -23,6 +23,13 @@ public class P4RemoteFileImpl implements P4RemoteFile {
     private final String displayName;
     private final String path;
 
+
+    public static class State {
+        public String displayName;
+        public String path;
+    }
+
+
     public P4RemoteFileImpl(@NotNull IFileSpec spec) {
         this.path = spec.getDepotPath().getPathString();
         this.displayName = HandleFileSpecUtil.getDepotDisplayName(spec);
@@ -31,6 +38,11 @@ public class P4RemoteFileImpl implements P4RemoteFile {
     public P4RemoteFileImpl(@NotNull String path) {
         this.path = path;
         this.displayName = path;
+    }
+
+    public P4RemoteFileImpl(@NotNull State state) {
+        this.path = state.path;
+        this.displayName = state.displayName;
     }
 
     @NotNull
@@ -43,5 +55,13 @@ public class P4RemoteFileImpl implements P4RemoteFile {
     @Override
     public String getDisplayName() {
         return displayName;
+    }
+
+    @NotNull
+    public State getState() {
+        State ret = new State();
+        ret.displayName = displayName;
+        ret.path = path;
+        return ret;
     }
 }

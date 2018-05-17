@@ -18,7 +18,7 @@ import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import net.groboclown.p4plugin.P4Bundle;
-import net.groboclown.p4plugin.preferences.UserProjectPreferences;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

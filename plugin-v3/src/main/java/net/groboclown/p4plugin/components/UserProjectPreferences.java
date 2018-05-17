@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4plugin.preferences;
+package net.groboclown.p4plugin.components;
 
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ServiceManager;
@@ -23,16 +23,7 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@State(
-    name = "UserProjectPreferences",
-    storages = {
-        @Storage(
-                // FIXME 2017.1
-                id = "default",
-                file = StoragePathMacros.PROJECT_FILE
-        )
-    }
-)
+@State(name = "UserProjectPreferences")
 public class UserProjectPreferences
         implements PersistentStateComponent<UserProjectPreferences.State> {
     public static final int DEFAULT_SERVER_CONNECTIONS = 2;

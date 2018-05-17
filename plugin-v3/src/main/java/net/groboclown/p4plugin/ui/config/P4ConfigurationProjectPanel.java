@@ -16,7 +16,7 @@ package net.groboclown.p4plugin.ui.config;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import net.groboclown.p4plugin.preferences.UserProjectPreferences;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;

@@ -16,12 +16,10 @@ package net.groboclown.p4plugin.extension;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.UnnamedConfigurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.CommittedChangesProvider;
 import com.intellij.openapi.vcs.EditFileProvider;
@@ -54,13 +52,15 @@ import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.idea.p4ic.compat.CompatFactoryLoader;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
 import net.groboclown.p4.server.api.values.P4CommittedChangelist;
+import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
 import net.groboclown.p4.server.impl.tasks.TempFileWatchDog;
 import net.groboclown.p4.server.impl.util.ChangeListUtil;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.messages.UserMessage;
-import net.groboclown.p4plugin.preferences.UserProjectPreferences;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.ui.ColorUtil;
 import net.groboclown.p4plugin.ui.config.P4ProjectConfigurable;
+import net.groboclown.p4plugin.ui.vcsroot.P4VcsRootConfigurable;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -265,24 +265,28 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
      * @return the configurable instance, or null if no configuration is required.
      */
     public UnnamedConfigurable getRootConfigurable(VcsDirectoryMapping mapping) {
-        // FIXME implement
-        return null;
+        return new P4VcsRootConfigurable(getProject(), mapping);
     }
 
     @Nullable
     public VcsRootSettings createEmptyVcsRootSettings() {
-        // FIXME implement
-        return null;
+        return new P4VcsRootSettingsImpl();
     }
 
-    @Nullable
-    public RootsConvertor getCustomConvertor() {
-        // FIXME implement
-        return null;
-    }
+    // This is only needed if the user's defined VCS roots don't
+    // necessarily match up with the actual VCS.  For this plugin, at the
+    // moment, we're defining the per-client setup at the VCS root level,
+    // so we don't need this conversion (we have an identity mapping).
+    //@Nullable
+    //public RootsConvertor getCustomConvertor() {
+    //    return null;
+    //}
 
 
-    // TODO this should only be for the user settings.
+    /**
+     *
+     * @return plugin-wide configuration UI.
+     */
     @Override
     public Configurable getConfigurable() {
         return myConfigurable;

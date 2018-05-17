@@ -18,7 +18,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
-import net.groboclown.p4plugin.preferences.UserProjectPreferences;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;

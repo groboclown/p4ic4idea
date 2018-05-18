@@ -81,9 +81,10 @@ public class EnvPartUI
         return P4Bundle.getString("connection.env.description");
     }
 
+    @NotNull
     @Override
-    protected void loadUIValuesIntoPart(@NotNull EnvCompositePart part) {
-        // do nothing
+    protected EnvCompositePart loadUIValuesIntoPart(@NotNull EnvCompositePart part) {
+        return part;
     }
 
     @Override

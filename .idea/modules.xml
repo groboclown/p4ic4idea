@@ -9,9 +9,6 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-p4server/api/api_test.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-p4server/api/api_test.iml" group="idea-p4server/api" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-p4server/api/api_testIdea172.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-p4server/api/api_testIdea172.iml" group="idea-p4server/api" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-p4server/api/api_testIdea173.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-p4server/api/api_testIdea173.iml" group="idea-p4server/api" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/buildSrc.iml" filepath="$PROJECT_DIR$/.idea/modules/buildSrc.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/buildSrc_main.iml" filepath="$PROJECT_DIR$/.idea/modules/buildSrc_main.iml" group="buildSrc" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/buildSrc_test.iml" filepath="$PROJECT_DIR$/.idea/modules/buildSrc_test.iml" group="buildSrc" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/compat-api.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/compat-api.iml" group="idea-compat/compat-api" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/compat-api_main.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/compat-api_main.iml" group="idea-compat/compat-api" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/compat-api_mainIdea172.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/compat-api_mainIdea172.iml" group="idea-compat/compat-api" />
@@ -43,6 +40,9 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-p4server/impl/impl_testIdea172.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-p4server/impl/impl_testIdea172.iml" group="idea-p4server/impl" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-p4server/impl/impl_testIdea173.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-p4server/impl/impl_testIdea173.iml" group="idea-p4server/impl" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/integration-test/integration-test.iml" filepath="$PROJECT_DIR$/.idea/modules/integration-test/integration-test.iml" group="integration-test" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/net.groboclown.p4ic4idea_buildSrc.iml" filepath="$PROJECT_DIR$/.idea/modules/net.groboclown.p4ic4idea_buildSrc.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/net.groboclown.p4ic4idea_buildSrc_main.iml" filepath="$PROJECT_DIR$/.idea/modules/net.groboclown.p4ic4idea_buildSrc_main.iml" group="net.groboclown.p4ic4idea_buildSrc" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/net.groboclown.p4ic4idea_buildSrc_test.iml" filepath="$PROJECT_DIR$/.idea/modules/net.groboclown.p4ic4idea_buildSrc_test.iml" group="net.groboclown.p4ic4idea_buildSrc" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core.iml" filepath="$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core.iml" group="p4d-test-core" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core_main.iml" filepath="$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core_main.iml" group="p4d-test-core" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core_test.iml" filepath="$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core_test.iml" group="p4d-test-core" />
@@ -67,6 +67,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/swarm/swarm.iml" filepath="$PROJECT_DIR$/.idea/modules/swarm/swarm.iml" group="swarm" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/swarm/swarm_main.iml" filepath="$PROJECT_DIR$/.idea/modules/swarm/swarm_main.iml" group="swarm" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/swarm/swarm_test.iml" filepath="$PROJECT_DIR$/.idea/modules/swarm/swarm_test.iml" group="swarm" />
+      <module fileurl="file://$PROJECT_DIR$/test-plugin-load/test-plugin-load.iml" filepath="$PROJECT_DIR$/test-plugin-load/test-plugin-load.iml" group="plugin-v3" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/v171/v171.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/v171/v171.iml" group="idea-compat/v171" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/v171/v171_main.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/v171/v171_main.iml" group="idea-compat/v171" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/v171/v171_test.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/v171/v171_test.iml" group="idea-compat/v171" />

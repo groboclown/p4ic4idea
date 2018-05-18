@@ -36,7 +36,7 @@ public class P4RootConfigPanel {
     private JList myProblemsList;
     private ConfigPartStack myConfigPartStack;
 
-    public P4RootConfigPanel(VirtualFile vcsRoot,
+    P4RootConfigPanel(VirtualFile vcsRoot,
             ConfigConnectionController configConnectionController) {
         this.vcsRoot = vcsRoot;
         this.configConnectionController = configConnectionController;
@@ -44,7 +44,7 @@ public class P4RootConfigPanel {
         $$$setupUI$$$();
     }
 
-    JComponent getRootPane() {
+    JPanel getRootPane() {
         return rootPanel;
     }
 
@@ -81,9 +81,20 @@ public class P4RootConfigPanel {
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new BorderLayout(0, 0));
         rootPanel.add(panel1, BorderLayout.CENTER);
-        myConfigRefreshDetailsPanel.setLayout(new FormLayout("fill:d:grow",
-                "center:d:noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow"));
-        panel1.add(myConfigRefreshDetailsPanel, BorderLayout.CENTER);
+        panel1.add(myConfigPartStack.$$$getRootComponent$$$(), BorderLayout.CENTER);
+        final JPanel panel2 = new JPanel();
+        panel2.setLayout(new BorderLayout(0, 0));
+        rootPanel.add(panel2, BorderLayout.NORTH);
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new BorderLayout(0, 0));
+        panel2.add(panel3, BorderLayout.NORTH);
+        myCheckConnectionButton = new JButton();
+        this.$$$loadButtonText$$$(myCheckConnectionButton, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("configuration.check-connection.button"));
+        panel3.add(myCheckConnectionButton, BorderLayout.EAST);
+        myConfigRefreshDetailsPanel
+                .setLayout(new FormLayout("fill:d:grow", "center:d:noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow"));
+        panel2.add(myConfigRefreshDetailsPanel, BorderLayout.CENTER);
         myProblemsPanel = new JPanel();
         myProblemsPanel.setLayout(new FormLayout("fill:d:grow", "center:d:grow,top:4dlu:noGrow,center:d:grow"));
         CellConstraints cc = new CellConstraints();
@@ -92,11 +103,11 @@ public class P4RootConfigPanel {
         myProblemsPanel.add(scrollPane1, cc.xy(1, 3, CellConstraints.FILL, CellConstraints.FILL));
         myProblemsList = new JList();
         scrollPane1.setViewportView(myProblemsList);
-        final JPanel panel2 = new JPanel();
-        panel2.setLayout(new FormLayout("fill:d:grow", "center:d:grow,top:4dlu:noGrow,center:d:grow"));
-        myConfigRefreshDetailsPanel.add(panel2, cc.xy(1, 3));
+        final JPanel panel4 = new JPanel();
+        panel4.setLayout(new FormLayout("fill:d:grow", "center:d:grow,top:4dlu:noGrow,center:d:grow"));
+        myConfigRefreshDetailsPanel.add(panel4, cc.xy(1, 3));
         final JScrollPane scrollPane2 = new JScrollPane();
-        panel2.add(scrollPane2, cc.xy(1, 3, CellConstraints.FILL, CellConstraints.FILL));
+        panel4.add(scrollPane2, cc.xy(1, 3, CellConstraints.FILL, CellConstraints.FILL));
         myResolvedProperties = new JTextPane();
         myResolvedProperties.setEditable(false);
         Font myResolvedPropertiesFont = this.$$$getFont$$$("DialogInput", -1, -1, myResolvedProperties.getFont());
@@ -106,14 +117,6 @@ public class P4RootConfigPanel {
         myResolvedProperties.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("configuration.resolved.tooltip"));
         scrollPane2.setViewportView(myResolvedProperties);
-        myConfigRefreshDetailsPanel.add(myConfigPartStack.$$$getRootComponent$$$(), cc.xy(1, 5));
-        final JPanel panel3 = new JPanel();
-        panel3.setLayout(new BorderLayout(0, 0));
-        panel1.add(panel3, BorderLayout.NORTH);
-        myCheckConnectionButton = new JButton();
-        this.$$$loadButtonText$$$(myCheckConnectionButton, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("configuration.check-connection.button"));
-        panel3.add(myCheckConnectionButton, BorderLayout.EAST);
     }
 
     /**

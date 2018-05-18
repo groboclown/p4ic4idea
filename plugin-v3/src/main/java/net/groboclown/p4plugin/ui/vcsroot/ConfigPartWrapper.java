@@ -24,6 +24,12 @@ import java.awt.*;
 import java.util.ResourceBundle;
 
 public class ConfigPartWrapper {
+    private static final Icon DELETE_ITEM = AllIcons.Actions.Delete;
+    private static final Icon MOVE_UP = AllIcons.Actions.MoveUp;
+    private static final Icon MOVE_DOWN = AllIcons.Actions.MoveDown;
+    private static final Icon EXPAND_DESCRIPTION = AllIcons.Actions.Right;
+    private static final Icon COLLAPSE_DESCRIPTION = AllIcons.Actions.Down;
+
     private final ConfigPartUI ui;
     private int position;
 
@@ -33,50 +39,58 @@ public class ConfigPartWrapper {
     private JButton myUpButton;
     private JButton myDownButton;
     private JPanel myPartDescriptionPanel;
-    private JCheckBox myPartNameToggle;
     private JTextArea myPartDescription;
     private JPanel headerPanel;
+    private JButton myDescriptionToggle;
+    private JLabel myPartName;
 
 
     ConfigPartWrapper(ConfigPartUI ui, ListPositionChangeController listPosController) {
         this.ui = ui;
-        ListPositionChangeController listPosController1 = listPosController;
 
         myRemoveButton.addActionListener(e -> listPosController.removePart());
-        myRemoveButton.setIcon(AllIcons.Actions.Delete);
+        myRemoveButton.setIcon(DELETE_ITEM);
         myRemoveButton.setPreferredSize(new Dimension(
-                AllIcons.Actions.Delete.getIconWidth() + 2,
-                AllIcons.Actions.Delete.getIconHeight() + 2)
+                DELETE_ITEM.getIconWidth() + 2,
+                DELETE_ITEM.getIconHeight() + 2)
         );
 
         myUpButton.setEnabled(false);
         myUpButton.addActionListener(e -> listPosController.moveUpPosition());
-        myUpButton.setIcon(AllIcons.Actions.MoveUp);
+        myUpButton.setIcon(MOVE_UP);
         myUpButton.setPreferredSize(new Dimension(
-                AllIcons.Actions.MoveUp.getIconWidth() + 2,
-                AllIcons.Actions.MoveUp.getIconHeight() + 2)
+                MOVE_UP.getIconWidth() + 2,
+                MOVE_UP.getIconHeight() + 2)
         );
 
         myDownButton.setEnabled(false);
         myDownButton.addActionListener(e -> listPosController.moveDownPosition());
-        myDownButton.setIcon(AllIcons.Actions.MoveDown);
+        myDownButton.setIcon(MOVE_DOWN);
         myDownButton.setPreferredSize(new Dimension(
-                AllIcons.Actions.MoveDown.getIconWidth() + 2,
-                AllIcons.Actions.MoveDown.getIconHeight() + 2)
+                MOVE_DOWN.getIconWidth() + 2,
+                MOVE_DOWN.getIconHeight() + 2)
         );
 
         myPartDescriptionPanel.setVisible(false);
         myPartDescription.setText(ui.getPartDescription());
 
-        myPartNameToggle.setText(ui.getPartTitle());
-        myPartNameToggle.setPressedIcon(AllIcons.Nodes.TreeClosed);
-        myPartNameToggle.setRolloverIcon(AllIcons.Nodes.TreeClosed);
-        myPartNameToggle.setIcon(AllIcons.Nodes.TreeClosed);
-        myPartNameToggle.setSelectedIcon(AllIcons.Nodes.TreeExpandNode);
-        myPartNameToggle.setRolloverSelectedIcon(AllIcons.Nodes.TreeExpandNode);
-        myPartNameToggle.addActionListener((e) -> {
-            myPartDescriptionPanel.setVisible(myPartNameToggle.isSelected());
-            headerPanel.doLayout();
+        myPartName.setText(ui.getPartTitle());
+
+        myDescriptionToggle.setIcon(EXPAND_DESCRIPTION);
+        myDescriptionToggle.setPreferredSize(new Dimension(
+                EXPAND_DESCRIPTION.getIconWidth() + 2,
+                EXPAND_DESCRIPTION.getIconHeight() + 2
+        ));
+        myDescriptionToggle.addActionListener((e) -> {
+            boolean nextVisibleStateEnabled = !myPartDescriptionPanel.isVisible();
+            Icon icon = nextVisibleStateEnabled
+                    ? COLLAPSE_DESCRIPTION
+                    : EXPAND_DESCRIPTION;
+            myPartDescriptionPanel.setVisible(nextVisibleStateEnabled);
+            myDescriptionToggle.setIcon(icon);
+            myDescriptionToggle.setPreferredSize(new Dimension(icon.getIconWidth() + 2, icon.getIconHeight() + 2));
+            rootPane.revalidate();
+            rootPane.doLayout();
         });
 
         panelContainer.add(ui.getPanel(), BorderLayout.CENTER);
@@ -93,10 +107,14 @@ public class ConfigPartWrapper {
         return position;
     }
 
-    ConfigPart getConfigPart() {
+    ConfigPart getOriginalConfigPart() {
         return ui.getPart();
     }
 
+    @SuppressWarnings("unchecked")
+    ConfigPart updateConfigPart() {
+        return ui.loadUIValuesIntoPart(ui.getPart());
+    }
 
     void setListPosition(int pos, boolean isFirst, boolean isLast) {
         this.position = pos;
@@ -133,9 +151,6 @@ public class ConfigPartWrapper {
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new BorderLayout(0, 0));
         headerPanel.add(panel1, BorderLayout.NORTH);
-        myPartNameToggle = new JCheckBox();
-        myPartNameToggle.setText("<component name>");
-        panel1.add(myPartNameToggle, BorderLayout.CENTER);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         panel1.add(panel2, BorderLayout.EAST);
@@ -163,6 +178,18 @@ public class ConfigPartWrapper {
         myDownButton.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("configuration.stack.move-down"));
         panel2.add(myDownButton);
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new FormLayout("fill:d:noGrow,left:4dlu:noGrow,fill:max(d;4px):noGrow", "center:d:grow"));
+        panel1.add(panel3, BorderLayout.CENTER);
+        myDescriptionToggle = new JButton();
+        myDescriptionToggle.setText("");
+        myDescriptionToggle.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("configuration.stack.wrapper.description.toggle.tooltip"));
+        CellConstraints cc = new CellConstraints();
+        panel3.add(myDescriptionToggle, cc.xy(1, 1));
+        myPartName = new JLabel();
+        myPartName.setText("Label");
+        panel3.add(myPartName, cc.xy(3, 1));
         myPartDescriptionPanel = new JPanel();
         myPartDescriptionPanel.setLayout(new FormLayout("fill:d:grow", "center:d:grow"));
         headerPanel.add(myPartDescriptionPanel, BorderLayout.CENTER);
@@ -170,7 +197,6 @@ public class ConfigPartWrapper {
         myPartDescription.setEditable(false);
         myPartDescription.setLineWrap(true);
         myPartDescription.setWrapStyleWord(true);
-        CellConstraints cc = new CellConstraints();
         myPartDescriptionPanel.add(myPartDescription, cc.xy(1, 1, CellConstraints.FILL, CellConstraints.FILL));
     }
 

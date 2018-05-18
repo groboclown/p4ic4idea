@@ -25,12 +25,6 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="5db12" class="javax.swing.JCheckBox" binding="myPartNameToggle">
-                <constraints border-constraint="Center"/>
-                <properties>
-                  <text value="&lt;component name&gt;"/>
-                </properties>
-              </component>
               <grid id="934df" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
                 <constraints border-constraint="East"/>
                 <properties/>
@@ -64,6 +58,36 @@
                       <horizontalTextPosition value="0"/>
                       <text value=""/>
                       <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="configuration.stack.move-down"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="f2cc7" layout-manager="FormLayout">
+                <rowspec value="center:d:grow"/>
+                <colspec value="fill:d:noGrow"/>
+                <colspec value="left:4dlu:noGrow"/>
+                <colspec value="fill:max(d;4px):noGrow"/>
+                <constraints border-constraint="Center"/>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="55212" class="javax.swing.JButton" binding="myDescriptionToggle">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <forms/>
+                    </constraints>
+                    <properties>
+                      <text value=""/>
+                      <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="configuration.stack.wrapper.description.toggle.tooltip"/>
+                    </properties>
+                  </component>
+                  <component id="e33ef" class="javax.swing.JLabel" binding="myPartName">
+                    <constraints>
+                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <forms/>
+                    </constraints>
+                    <properties>
+                      <text value="Label"/>
                     </properties>
                   </component>
                 </children>

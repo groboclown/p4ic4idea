@@ -36,6 +36,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+import java.awt.*;
+import java.awt.event.HierarchyBoundsListener;
+import java.awt.event.HierarchyEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -62,7 +67,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
         panel = new P4RootConfigPanel(vcsRoot, controller);
         controller.configPartContainer = panel;
         reset();
-        return panel.getRootPane();
+        return new WrapperPanel(panel.getRootPane());
     }
 
     @Override
@@ -79,11 +84,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
             List<ConfigPart> parts = panel.getConfigParts();
             settings.setConfigParts(parts);
             mapping.setRootSettings(settings);
-            MultipleConfigPart parentPart = new MultipleConfigPart(
-                    // FIXME set the right string
-                    P4Bundle.getString("???"),
-                    parts
-            );
+            MultipleConfigPart parentPart = loadParentPartFromSettings();
             if (parentPart.hasError()) {
                 Collection<ConfigProblem> problems =
                         parentPart.getConfigProblems();
@@ -123,17 +124,23 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
         return settings.getConfigParts();
     }
 
-    @Nullable
-    private ClientConfig loadConfigFromSettings() {
+    private MultipleConfigPart loadParentPartFromSettings() {
         List<ConfigPart> parts = loadPartsFromSettings();
-        MultipleConfigPart parentPart = new MultipleConfigPart(
-                P4Bundle.getString("???"),
+        return  new MultipleConfigPart(
+                P4Bundle.getString("configuration.connection-choice.wrapped-container"),
                 parts
         );
-        if (!parentPart.hasError()) {
+    }
+
+    @Nullable
+    private ClientConfig loadConfigFromSettings() {
+        MultipleConfigPart parentPart = loadParentPartFromSettings();
+        if (!parentPart.hasError() && ServerConfig.isValidServerConfig(parentPart)) {
             try {
                 ServerConfig serverConfig = ServerConfig.createFrom(parentPart);
-                return ClientConfig.createFrom(serverConfig, parentPart);
+                if (ClientConfig.isValidClientConfig(serverConfig, parentPart)) {
+                    return ClientConfig.createFrom(serverConfig, parentPart);
+                }
             } catch (IllegalArgumentException e) {
                 LOG.info("Should have not caused an error due to previous error check", e);
             }
@@ -156,7 +163,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
         return (P4VcsRootSettings) rawSettings;
     }
 
-    private static class Controller extends ConfigConnectionController {
+    private class Controller extends ConfigConnectionController {
         P4RootConfigPanel configPartContainer;
 
         private Controller(Project project) {
@@ -165,10 +172,123 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
 
         @Override
         public void refreshConfigConnection() {
-            // FIXME pull in the current configuration settings and use those to send out
-            // a note to all the listeners.
-            // ClientConfig clientConfig;
-            // fireConfigConnectionRefreshed(clientConfig);
+            ClientConfig clientConfig = null;
+            ServerConfig serverConfig = null;
+            MultipleConfigPart parentPart = loadParentPartFromSettings();
+            if (!parentPart.hasError()) {
+                if (ServerConfig.isValidServerConfig(parentPart)) {
+                    try {
+                        serverConfig = ServerConfig.createFrom(parentPart);
+                    } catch (IllegalArgumentException e) {
+                        LOG.info("Should have not caused an error due to previous error check", e);
+                    }
+                }
+                if (ClientConfig.isValidClientConfig(serverConfig, parentPart)) {
+                    try {
+                        clientConfig = ClientConfig.createFrom(serverConfig, parentPart);
+                    } catch (IllegalArgumentException e) {
+                        LOG.info("Should have not caused an error due to previous error check", e);
+                    }
+                }
+            }
+
+            fireConfigConnectionRefreshed(clientConfig, serverConfig);
+        }
+    }
+
+
+    // The scrolling outer panel can cause the inner tabs to get sized all wrong,
+    // because of the scrollpanes in scrollpane.
+    // This helps keep the tabs sized right so we essentially ignore the outer scroll pane.
+    private class WrapperPanel
+            extends JPanel
+            implements Scrollable {
+        private final JPanel wrapped;
+        private Dimension size;
+
+        private WrapperPanel(JPanel wrapped) {
+            this.wrapped = wrapped;
+
+            setLayout(new BorderLayout());
+            add(wrapped, BorderLayout.CENTER);
+
+            updateSize();
+
+            addAncestorListener(new AncestorListener() {
+                @Override
+                public void ancestorAdded(AncestorEvent event) {
+                    updateSize();
+                }
+
+                @Override
+                public void ancestorRemoved(AncestorEvent event) {
+                    updateSize();
+                }
+
+                @Override
+                public void ancestorMoved(AncestorEvent event) {
+                    updateSize();
+                }
+            });
+
+            addHierarchyBoundsListener(new HierarchyBoundsListener() {
+                @Override
+                public void ancestorMoved(HierarchyEvent e) {
+                    updateSize();
+                }
+
+                @Override
+                public void ancestorResized(HierarchyEvent e) {
+                    updateSize();
+                }
+            });
+        }
+
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return size;
+        }
+
+        @Override
+        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 0;
+        }
+
+        @Override
+        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 0;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return false;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            return false;
+        }
+
+        private void updateSize() {
+            final Dimension prevSize = this.size;
+            final Container parent = getParent();
+            if (parent != null) {
+                final Container parent2 = parent.getParent();
+                if (parent2 != null) {
+                    size = new Dimension(parent2.getPreferredSize());
+                } else {
+                    size = new Dimension(parent.getPreferredSize());
+                }
+            } else {
+                size = new Dimension(wrapped.getPreferredSize());
+            }
+            if (!size.equals(prevSize)) {
+                setPreferredSize(size);
+                wrapped.revalidate();
+                wrapped.doLayout();
+                wrapped.repaint();
+            }
+            LOG.info("Changed P4 VCS root panel size from " + prevSize + " to " + size);
         }
     }
 }

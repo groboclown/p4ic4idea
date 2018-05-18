@@ -12,6 +12,7 @@ work/
 out/
 build/
 p4ic4idea.zip
+p4ic4idea-*.jar
 
 # p4java needs to be updated to use the build directory instead of these.
 /p4java/tmp/

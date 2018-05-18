@@ -2,6 +2,7 @@ plugins {
     id 'java-library'
     id 'p4ic.compat'
 }
+version '1.6'
 
 ideaImplementation.uses(
         'openapi',
@@ -81,6 +82,8 @@ dependencies {
                     tasks.getByPath(':idea-compat:compat-api:jar').archivePath,
                     tasks.getByPath(':p4java:jar').archivePath,
                     tasks.getByPath(':idea-compat:v171:jar').archivePath,
+                    tasks.getByPath(':idea-p4server:api:jar').archivePath,
+                    tasks.getByPath(':idea-p4server:impl:jar').archivePath,
                     tasks.getByPath(':swarm:jar').archivePath
             )
     )
@@ -96,7 +99,6 @@ task packageVersion {
     doFirst {
         def pluginFile = file("src/main/resources/META-INF/plugin.xml")
         def pluginXml = new XmlSlurper().parse(pluginFile)
-        // logger.lifecycle("Plugin file: id [" + pluginXml.name + ']')
         def version = pluginXml.version
         file("$buildDir/resources/main/p4ic-version.txt").text = version
 
@@ -107,6 +109,10 @@ task packageVersion {
     }
 }
 jar.dependsOn packageVersion
+// Without this explicit version set, the jar creates an archive
+// with 1.0, whereas everything else is trying to pull in the
+// top-level version identifier.
+jar.version = version
 
 
 task assembleZip(type: Zip) {
@@ -119,11 +125,13 @@ task assembleZip(type: Zip) {
     doFirst {
         copy {
             // For some reason, the jar file just isn't added in, even when
-            // explicitly listed by name, or copied to another place.  It
-            // has to be renamed to something different.
-            // However, we do need to explicitly name the jar after the name of the
-            // plugin.  I think.
-            // Is it in some default exclude?
+            // explicitly listed by name, or copied to another place.  It looks
+            // like, here, the version is thought to be 1.6, whereas the jar
+            // command sets the version to 1.0.
+            // With the fix above that explicitly sets the jar version number,
+            // this should be corrected now.
+            // However, we want the correct jar file name, so that the JetBrains
+            // plugin.xml finder is more accurate.
             from file(jar.archivePath)
             into "$buildDir/tmp"
             rename '.*', 'p4ic4idea.jar'
@@ -132,25 +140,11 @@ task assembleZip(type: Zip) {
 
     into('lib') {
         from configurations.zip.resolvedConfiguration.files
-    }
-
-    into('lib') {
-        // For some reason, the jar file just isn't added in.
-        //from file(jar.archivePath)
+        from configurations.zip.resolve()
         from file("$buildDir/tmp/p4ic4idea.jar")
-    }
 
-    into("/") {
-        from "../README.md"
-        from "../LICENSE"
-        from "../CHANGES.md"
-    }
-
-    // All the licenses for the bundled jars...
-    into("lib") {
+        // All the licenses for the bundled jars...
         from "$rootDir/p4java/LICENSE-p4java.txt"
-    }
-    into("lib") {
         from configurations.zip.resolvedConfiguration.files.collect { cfile ->
             def libname = cfile.name
             def p = libname.lastIndexOf('-')
@@ -169,17 +163,86 @@ task assembleZip(type: Zip) {
             it != null
         }
     }
+
+    into("/") {
+        from "../README.md"
+        from "../LICENSE"
+        from "../CHANGES.md"
+        from "src/main/resources/META-INF/plugin.xml"
+    }
 }
 assemble.dependsOn assembleZip
 
+task assembleUberJar(type: Zip) {
+    // Newer versions of IDEA seem to want the jar, not the zip.
+    dependsOn ':p4java:jar'
+    dependsOn ':idea-compat:compat-api:jar'
+    dependsOn ':idea-compat:v171:jar'
+    dependsOn ':swarm:jar'
+    dependsOn 'jar'
+
+    extension 'jar'
+    classifier 'uber'
+
+    includeEmptyDirs false
+    duplicatesStrategy DuplicatesStrategy.FAIL
+
+    logger.info("Adding contents from " + jar.archivePath)
+    into("/") {
+        from "../README.md"
+        from "../LICENSE"
+        from "../CHANGES.md"
+        from "src/main/resources/META-INF/plugin.xml"
+        from "$rootDir/p4java/LICENSE-p4java.txt"
+
+        from zipTree(jar.archivePath)
+        from configurations.zip.resolvedConfiguration.files.collect { cfile ->
+            def libname = cfile.name
+            def p = libname.lastIndexOf('-')
+            def i = 0
+            while (p >= 0) {
+                libname = libname.substring(0, p)
+                File license = file("$rootDir/lib/main/LICENSE-" + libname + '.txt')
+                i++
+                if (license.exists()) {
+                    return license
+                }
+                p = libname.lastIndexOf('-')
+            }
+            return null
+        }.findAll {
+            it != null
+        }
+        from configurations.zip.resolvedConfiguration.files.collect { z ->
+            logger.info("Adding contents from " + z)
+            zipTree(z).matching { f ->
+                f.exclude('META-INF/MANIFEST.MF')
+                f.exclude('META-INF/DEPENDENCIES')
+                f.exclude('META-INF/NOTICE')
+                f.exclude('META-INF/NOTICE.txt')
+                f.exclude('META-INF/LICENSE')
+                f.exclude('META-INF/LICENSE.txt')
+            }
+        }
+    }
+}
+assemble.dependsOn assembleUberJar
+
+
 task finalizeZip {
     dependsOn assembleZip
+    dependsOn assembleUberJar
 
     doLast {
         copy {
             from assembleZip.outputs.files
             into "$rootDir"
             rename '.*', 'p4ic4idea.zip'
+        }
+        copy {
+            from assembleUberJar.outputs.files
+            into "$rootDir"
+            rename '.*', 'p4ic4idea-uber.jar'
         }
     }
 }

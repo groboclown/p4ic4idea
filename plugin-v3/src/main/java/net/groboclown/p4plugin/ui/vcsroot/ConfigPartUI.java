@@ -41,7 +41,8 @@ public abstract class ConfigPartUI<T extends ConfigPart> {
         return part;
     }
 
-    protected abstract void loadUIValuesIntoPart(@NotNull T part);
+    @NotNull
+    protected abstract T loadUIValuesIntoPart(@NotNull T part);
 
     public abstract JComponent getPanel();
 }

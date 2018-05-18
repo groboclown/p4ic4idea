@@ -20,9 +20,11 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.AsyncProcessIcon;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.impl.config.part.ClientNameConfigPart;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.ui.LabelUtil;
 import net.groboclown.p4plugin.ui.vcsroot.ConfigConnectionController;
 import net.groboclown.p4plugin.ui.vcsroot.ConfigPartUI;
 import net.groboclown.p4plugin.ui.vcsroot.ConfigPartUIFactory;
@@ -35,15 +37,16 @@ import java.awt.*;
 import java.util.Collections;
 
 public class ClientNamePartUI extends ConfigPartUI<ClientNameConfigPart> {
+    public static final ConfigPartUIFactory FACTORY = new Factory();
+    private static final Icon REFRESH = AllIcons.Actions.Refresh;
+
     private JComponent rootPanel;
     private JComboBox<String> clientDropdownList;
     private JButton listRefreshButton;
     private AsyncProcessIcon listRefreshSpinner;
-    public static final ConfigPartUIFactory FACTORY = new Factory();
 
 
     private static class Factory implements ConfigPartUIFactory {
-
         @Nls
         @NotNull
         @Override
@@ -86,12 +89,7 @@ public class ClientNamePartUI extends ConfigPartUI<ClientNameConfigPart> {
 
         controller.addConfigConnectionListener(this::refreshList);
         listRefreshButton.addActionListener(e -> {
-            listRefreshButton.setEnabled(false);
-            listRefreshButton.setVisible(false);
-            listRefreshSpinner.resume();
-            listRefreshSpinner.setVisible(true);
-            rootPanel.doLayout();
-            rootPanel.repaint();
+            setRefreshState(true);
             controller.refreshConfigConnection();
         });
     }
@@ -111,9 +109,11 @@ public class ClientNamePartUI extends ConfigPartUI<ClientNameConfigPart> {
         return P4Bundle.getString("configuration.connection-choice.picker.client-name.description");
     }
 
+    @NotNull
     @Override
-    protected void loadUIValuesIntoPart(@NotNull ClientNameConfigPart part) {
-        part.setClientname(clientDropdownList.getItemAt(clientDropdownList.getSelectedIndex()));
+    protected ClientNameConfigPart loadUIValuesIntoPart(@NotNull ClientNameConfigPart part) {
+        part.setClientname(getCurrentClientname());
+        return part;
     }
 
     @Override
@@ -122,24 +122,52 @@ public class ClientNamePartUI extends ConfigPartUI<ClientNameConfigPart> {
     }
 
 
-    private void refreshList(Project project, ClientConfig config) {
-        // FIXME refresh the list of clients.
+    private String getCurrentClientname() {
+        // FIXME if the user entered a value manually, this won't return that value.
+        return clientDropdownList.getItemAt(clientDropdownList.getSelectedIndex());
+    }
+
+
+    private void refreshList(Project project, ClientConfig clientConfig, ServerConfig serverConfig) {
+        String current = getCurrentClientname();
+        clientDropdownList.removeAllItems();
+        clientDropdownList.addItem(current);
+        clientDropdownList.setSelectedIndex(0);
+        if (serverConfig != null) {
+            // FIXME refresh the list of clients.
+        }
+        setRefreshState(false);
+    }
+
+
+    private void setRefreshState(boolean spinnerOn) {
+        listRefreshButton.setEnabled(!spinnerOn);
+        listRefreshButton.setVisible(!spinnerOn);
+        if (spinnerOn) {
+            listRefreshSpinner.resume();
+        } else {
+            listRefreshSpinner.suspend();
+        }
+        listRefreshSpinner.setVisible(spinnerOn);
+        rootPanel.doLayout();
+        rootPanel.repaint();
     }
 
 
     private void setupUI() {
         rootPanel = new JPanel(new BorderLayout());
 
-        JLabel label = new JLabel(P4Bundle.getString("configuration.clientname"));
-
-
         clientDropdownList = new ComboBox<>();
         clientDropdownList.setEditable(true);
         clientDropdownList.setToolTipText(P4Bundle.getString("configuration.clientname.dropdown-list.tooltip"));
 
 
+        JLabel label = LabelUtil.createLabelFor(P4Bundle.getString("configuration.clientname"), clientDropdownList);
+
+
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        listRefreshButton = new JButton(AllIcons.Actions.Refresh);
+        listRefreshButton = new JButton(REFRESH);
+        listRefreshButton.setPreferredSize(new Dimension(REFRESH.getIconWidth() + 2, REFRESH.getIconHeight() + 2));
         listRefreshSpinner = new AsyncProcessIcon("Refresh Client List Progress");
         listRefreshSpinner.setName("Refresh Client List Progress");
         listRefreshSpinner.setVisible(false);

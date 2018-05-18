@@ -211,8 +211,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
 
     public P4Vcs(
-            @NotNull Project project,
-            @NotNull UserProjectPreferences preferences) {
+            @NotNull Project project /*, FIXME add back preferences once it's in the plugin.xml again
+            @NotNull UserProjectPreferences preferences*/) {
         super(project, VCS_NAME);
 
         // there is a situation where project can be null: when the config panel
@@ -231,7 +231,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         */
 
 
-        this.userPreferences = preferences;
+        this.userPreferences = null; // preferences; FIXME
         this.changelistListener = new P4ChangelistListener(project, this);
         this.changeProvider = new P4ChangeProvider(this);
         this.historyProvider = new P4HistoryProvider(project, this);

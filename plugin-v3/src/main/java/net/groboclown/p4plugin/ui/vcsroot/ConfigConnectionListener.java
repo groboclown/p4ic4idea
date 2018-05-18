@@ -16,7 +16,10 @@ package net.groboclown.p4plugin.ui.vcsroot;
 
 import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.ServerConfig;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface ConfigConnectionListener {
-    void onConfigRefresh(Project project, ClientConfig config);
+    void onConfigRefresh(@NotNull Project project, @Nullable ClientConfig clientConfig, @Nullable ServerConfig serverConfig);
 }

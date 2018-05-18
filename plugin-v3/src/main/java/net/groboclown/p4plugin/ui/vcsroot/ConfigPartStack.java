@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class ConfigPartStack {
+    private static final Icon ADD_ITEM = AllIcons.General.Add;
     private JPanel rootPane;
     private JButton myAddItemButton;
     private JPanel partStackPanel;
@@ -56,12 +57,13 @@ public class ConfigPartStack {
         $$$setupUI$$$();
         this.vcsRoot = vcsRoot;
         this.connectionController = connectionController;
-        myAddItemButton.setIcon(AllIcons.Actions.Cross);
-        myAddItemButton.setPreferredSize(new Dimension(AllIcons.Actions.Cross.getIconWidth(), AllIcons.Actions.Cross.getIconHeight()));
+        myAddItemButton.setIcon(ADD_ITEM);
+        myAddItemButton.setPreferredSize(
+                new Dimension(ADD_ITEM.getIconWidth() + 4, ADD_ITEM.getIconHeight() + 4));
         myAddItemButton.addActionListener(e -> showAddItemPopup());
     }
 
-    public void setParts(List<ConfigPart> configParts) {
+    void setParts(List<ConfigPart> configParts) {
         synchronized (parts) {
             parts.clear();
             for (ConfigPart part : configParts) {
@@ -91,14 +93,22 @@ public class ConfigPartStack {
         synchronized (parts) {
             ret = new ArrayList<>(parts.size());
             for (ConfigPartWrapper part : parts) {
-                ret.add(part.getConfigPart());
+                ret.add(part.updateConfigPart());
             }
         }
         return ret;
     }
 
     boolean isModified(List<ConfigPart> configParts) {
-        // FIXME compare the wrapper objects against the parts list.
+        List<ConfigPart> pendingParts = getParts();
+        if (pendingParts.size() != configParts.size()) {
+            return true;
+        }
+        for (int i = 0; i < pendingParts.size(); i++) {
+            if (!pendingParts.get(i).equals(configParts.get(i))) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -152,9 +162,9 @@ public class ConfigPartStack {
                 partStackPanel.add(wrapper.getRootPane());
             }
         }
-        partStackPanel.revalidate();
-        partStackPanel.doLayout();
-        partStackPanel.repaint();
+        partStackPanel.getParent().revalidate();
+        partStackPanel.getParent().doLayout();
+        partStackPanel.getParent().repaint();
     }
 
     private void addChildFirst(ConfigPartUI partUI) {
@@ -298,7 +308,10 @@ public class ConfigPartStack {
 
     private void createUIComponents() {
         // custom component creation code
+
+        // FIXME this panel doesn't change the scroll panel size right.
         partStackPanel = new JPanel(new VerticalFlowLayout());
     }
+
 
 }

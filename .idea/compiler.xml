@@ -67,6 +67,8 @@
       <module name="messages_test" target="1.8" />
       <module name="messages_testIdea172" target="1.8" />
       <module name="messages_testIdea173" target="1.8" />
+      <module name="net.groboclown.p4ic4idea_buildSrc_main" target="1.8" />
+      <module name="net.groboclown.p4ic4idea_buildSrc_test" target="1.8" />
       <module name="p4d-test-core_main" target="1.8" />
       <module name="p4d-test-core_test" target="1.8" />
       <module name="p4java_main" target="1.8" />

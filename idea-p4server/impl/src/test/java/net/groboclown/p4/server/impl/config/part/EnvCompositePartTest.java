@@ -11,15 +11,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.groboclown.p4.server.impl.config.part;
 
-package net.groboclown.p4.server.impl.cache;
+import org.junit.jupiter.api.Test;
 
-/**
- * Project specific data, persisted and cached for a single client.
- */
-public class ProjectClientCacheImpl {
+import static org.junit.jupiter.api.Assertions.*;
 
-    // IDE Changelists are project specific.  However, the
-    // Perforce changelists are application-wide.
-    private IdeChangelistMapImpl activeChangelistMap;
+class EnvCompositePartTest {
+
+    @Test
+    void reload() {
+        fail("Ensure setting P4ENVIRO and P4CONFIG cause the file part to load.");
+    }
 }

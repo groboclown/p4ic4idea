@@ -32,7 +32,7 @@ public class IdeFileCacheStore {
 
     }
 
-    IdeFileCacheStore(@NotNull State state) {
+    IdeFileCacheStore() {
 
     }
 

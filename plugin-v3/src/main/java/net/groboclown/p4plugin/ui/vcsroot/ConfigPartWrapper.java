@@ -18,6 +18,7 @@ import com.intellij.icons.AllIcons;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
+import net.groboclown.p4plugin.ui.SwingUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -48,47 +49,30 @@ public class ConfigPartWrapper {
     ConfigPartWrapper(ConfigPartUI ui, ListPositionChangeController listPosController) {
         this.ui = ui;
 
+        SwingUtil.iconOnlyButton(myRemoveButton, DELETE_ITEM, SwingUtil.ButtonType.MINOR);
         myRemoveButton.addActionListener(e -> listPosController.removePart());
-        myRemoveButton.setIcon(DELETE_ITEM);
-        myRemoveButton.setPreferredSize(new Dimension(
-                DELETE_ITEM.getIconWidth() + 2,
-                DELETE_ITEM.getIconHeight() + 2)
-        );
 
+        SwingUtil.iconOnlyButton(myUpButton, MOVE_UP, SwingUtil.ButtonType.MINOR);
         myUpButton.setEnabled(false);
         myUpButton.addActionListener(e -> listPosController.moveUpPosition());
-        myUpButton.setIcon(MOVE_UP);
-        myUpButton.setPreferredSize(new Dimension(
-                MOVE_UP.getIconWidth() + 2,
-                MOVE_UP.getIconHeight() + 2)
-        );
 
+        SwingUtil.iconOnlyButton(myDownButton, MOVE_DOWN, SwingUtil.ButtonType.MINOR);
         myDownButton.setEnabled(false);
         myDownButton.addActionListener(e -> listPosController.moveDownPosition());
-        myDownButton.setIcon(MOVE_DOWN);
-        myDownButton.setPreferredSize(new Dimension(
-                MOVE_DOWN.getIconWidth() + 2,
-                MOVE_DOWN.getIconHeight() + 2)
-        );
 
         myPartDescriptionPanel.setVisible(false);
         myPartDescription.setText(ui.getPartDescription());
 
         myPartName.setText(ui.getPartTitle());
 
-        myDescriptionToggle.setIcon(EXPAND_DESCRIPTION);
-        myDescriptionToggle.setPreferredSize(new Dimension(
-                EXPAND_DESCRIPTION.getIconWidth() + 2,
-                EXPAND_DESCRIPTION.getIconHeight() + 2
-        ));
+        SwingUtil.iconOnlyButton(myDescriptionToggle, EXPAND_DESCRIPTION, SwingUtil.ButtonType.ACCENT);
         myDescriptionToggle.addActionListener((e) -> {
             boolean nextVisibleStateEnabled = !myPartDescriptionPanel.isVisible();
             Icon icon = nextVisibleStateEnabled
                     ? COLLAPSE_DESCRIPTION
                     : EXPAND_DESCRIPTION;
             myPartDescriptionPanel.setVisible(nextVisibleStateEnabled);
-            myDescriptionToggle.setIcon(icon);
-            myDescriptionToggle.setPreferredSize(new Dimension(icon.getIconWidth() + 2, icon.getIconHeight() + 2));
+            SwingUtil.iconOnlyButton(myDescriptionToggle, icon, SwingUtil.ButtonType.ACCENT);
             rootPane.revalidate();
             rootPane.doLayout();
         });

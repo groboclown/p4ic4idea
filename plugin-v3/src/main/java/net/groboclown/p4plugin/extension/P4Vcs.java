@@ -66,6 +66,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -270,7 +271,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
     @Nullable
     public VcsRootSettings createEmptyVcsRootSettings() {
-        return new P4VcsRootSettingsImpl();
+        return new P4VcsRootSettingsImpl(myProject.getBaseDir());
     }
 
     // This is only needed if the user's defined VCS roots don't
@@ -705,6 +706,11 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     @NotNull
     public UserProjectPreferences getUserPreferences() {
         return userPreferences;
+    }
+
+    @NotNull
+    public File getTempDir() {
+        return tempFileWatchDog.getTempDir();
     }
 
     @Nullable

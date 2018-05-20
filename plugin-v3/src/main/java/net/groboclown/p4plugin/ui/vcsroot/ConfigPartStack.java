@@ -26,6 +26,7 @@ import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.ui.SwingUtil;
 import net.groboclown.p4plugin.ui.vcsroot.part.ClientNamePartUI;
 import net.groboclown.p4plugin.ui.vcsroot.part.EnvPartUI;
 import org.jetbrains.annotations.NotNull;
@@ -57,9 +58,7 @@ public class ConfigPartStack {
         $$$setupUI$$$();
         this.vcsRoot = vcsRoot;
         this.connectionController = connectionController;
-        myAddItemButton.setIcon(ADD_ITEM);
-        myAddItemButton.setPreferredSize(
-                new Dimension(ADD_ITEM.getIconWidth() + 4, ADD_ITEM.getIconHeight() + 4));
+        SwingUtil.iconOnlyButton(myAddItemButton, ADD_ITEM, SwingUtil.ButtonType.MINOR);
         myAddItemButton.addActionListener(e -> showAddItemPopup());
     }
 

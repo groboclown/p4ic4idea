@@ -14,9 +14,12 @@
 
 package net.groboclown.p4plugin.ui;
 
-import javax.swing.*;
+import org.jetbrains.annotations.NotNull;
 
-public class LabelUtil {
+import javax.swing.*;
+import java.awt.*;
+
+public class SwingUtil {
     public static JLabel createLabelFor(String text, JComponent editComponent) {
         JLabel ret = new JLabel();
         loadLabelText(ret, text);
@@ -49,5 +52,29 @@ public class LabelUtil {
             component.setDisplayedMnemonic(mnemonic);
             component.setDisplayedMnemonicIndex(mnemonicIndex);
         }
+    }
+
+    public enum ButtonType {
+        ACCENT(0),
+        MAJOR(6),
+        MINOR(2);
+
+        private final int borderSize;
+
+        ButtonType(int borderSize) {
+            this.borderSize = borderSize;
+        }
+    }
+
+    /**
+     * Set a button to have only the icon.
+     *
+     * @param button
+     * @param icon
+     */
+    public static void iconOnlyButton(@NotNull JButton button, @NotNull Icon icon, @NotNull ButtonType type) {
+        button.setIcon(icon);
+        button.setPreferredSize(new Dimension(icon.getIconWidth() + type.borderSize,
+                icon.getIconHeight() + type.borderSize));
     }
 }

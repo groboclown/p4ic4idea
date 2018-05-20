@@ -24,7 +24,7 @@ import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.impl.config.part.ClientNameConfigPart;
 import net.groboclown.p4plugin.P4Bundle;
-import net.groboclown.p4plugin.ui.LabelUtil;
+import net.groboclown.p4plugin.ui.SwingUtil;
 import net.groboclown.p4plugin.ui.vcsroot.ConfigConnectionController;
 import net.groboclown.p4plugin.ui.vcsroot.ConfigPartUI;
 import net.groboclown.p4plugin.ui.vcsroot.ConfigPartUIFactory;
@@ -128,7 +128,8 @@ public class ClientNamePartUI extends ConfigPartUI<ClientNameConfigPart> {
     }
 
 
-    private void refreshList(Project project, ClientConfig clientConfig, ServerConfig serverConfig) {
+    private void refreshList(Project project, ConfigPart part,
+            ClientConfig clientConfig, ServerConfig serverConfig) {
         String current = getCurrentClientname();
         clientDropdownList.removeAllItems();
         clientDropdownList.addItem(current);
@@ -162,7 +163,7 @@ public class ClientNamePartUI extends ConfigPartUI<ClientNameConfigPart> {
         clientDropdownList.setToolTipText(P4Bundle.getString("configuration.clientname.dropdown-list.tooltip"));
 
 
-        JLabel label = LabelUtil.createLabelFor(P4Bundle.getString("configuration.clientname"), clientDropdownList);
+        JLabel label = SwingUtil.createLabelFor(P4Bundle.getString("configuration.clientname"), clientDropdownList);
 
 
         JPanel buttonPanel = new JPanel(new FlowLayout());

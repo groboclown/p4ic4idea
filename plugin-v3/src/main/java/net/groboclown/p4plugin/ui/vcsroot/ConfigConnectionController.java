@@ -15,16 +15,21 @@
 package net.groboclown.p4plugin.ui.vcsroot;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class ConfigConnectionController {
+    private static final Logger LOG = Logger.getInstance(ConfigConnectionController.class);
+
     private final Project project;
     private final List<ConfigConnectionListener> listeners = new ArrayList<>();
 
@@ -38,14 +43,26 @@ public abstract class ConfigConnectionController {
         }
     }
 
-    public abstract void refreshConfigConnection();
+    public final void refreshConfigConnection() {
+        if (ApplicationManager.getApplication().isDispatchThread()) {
+            ApplicationManager.getApplication().executeOnPooledThread(this::performRefresh);
+        } else {
+            performRefresh();
+        }
+    }
 
-    protected void fireConfigConnectionRefreshed(@Nullable final ClientConfig clientConfig,
+    protected abstract void performRefresh();
+
+    final void fireConfigConnectionRefreshed(
+            @NotNull final ConfigPart parentPart,
+            @Nullable final ClientConfig clientConfig,
             @Nullable final ServerConfig serverConfig) {
         synchronized (listeners) {
             for (ConfigConnectionListener listener : listeners) {
-                ApplicationManager.getApplication().invokeLater(() ->
-                        listener.onConfigRefresh(project, clientConfig, serverConfig));
+                // Because this fire happens from inside a modal dialog, invoke
+                // commands on the Application waits until the dialog completes.
+                EventQueue.invokeLater(() ->
+                        listener.onConfigRefresh(project, parentPart, clientConfig, serverConfig));
             }
         }
     }

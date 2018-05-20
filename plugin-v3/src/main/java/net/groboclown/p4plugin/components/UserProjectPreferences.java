@@ -84,10 +84,10 @@ public class UserProjectPreferences
         public boolean showDialogConnectionMessages = DEFAULT_SHOW_DIALOG_CONNECTION_MESSAGES;
     }
 
-    @Nullable
+    @NotNull
     public static UserProjectPreferences getInstance(@NotNull final Project project) {
         if (project.isDisposed()) {
-            return null;
+            return new UserProjectPreferences();
         }
         return ServiceManager.getService(project, UserProjectPreferences.class);
     }

@@ -12,17 +12,19 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4plugin.ui.vcsroot;
+package net.groboclown.p4plugin.components;
 
-import com.intellij.openapi.project.Project;
-import net.groboclown.p4.server.api.config.ClientConfig;
+import com.intellij.credentialStore.OneTimeString;
+import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
 import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.api.config.part.ConfigPart;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.concurrency.Promise;
 
-public interface ConfigConnectionListener {
-    void onConfigRefresh(@NotNull Project project,
-            @NotNull ConfigPart part,
-            @Nullable ClientConfig clientConfig, @Nullable ServerConfig serverConfig);
+public class ApplicationPasswordRegistryComponent extends ApplicationPasswordRegistry {
+    @NotNull
+    @Override
+    public Promise<OneTimeString> getOrAskFor(@NotNull ServerConfig config) {
+        // FIXME implement correctly
+        return Promise.resolve(null);
+    }
 }

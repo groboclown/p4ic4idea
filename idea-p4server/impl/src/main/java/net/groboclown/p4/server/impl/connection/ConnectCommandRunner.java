@@ -100,15 +100,16 @@ public class ConnectCommandRunner
             (ClientActionRunner<AddEditResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
                     (client) -> addEditFile(client, config, (AddEditAction) action))));
-        register(P4CommandRunner.ClientActionCmd.ADD_JOB_TO_CHANGELIST, null);
-        register(P4CommandRunner.ClientActionCmd.CREATE_CHANGELIST, null);
-        register(P4CommandRunner.ClientActionCmd.DELETE_CHANGELIST, null);
-        register(P4CommandRunner.ClientActionCmd.DELETE_FILE, null);
-        register(P4CommandRunner.ClientActionCmd.EDIT_CHANGELIST_DESCRIPTION, null);
-        register(P4CommandRunner.ClientActionCmd.FETCH_FILES, null);
-        register(P4CommandRunner.ClientActionCmd.MOVE_FILE, null);
-        register(P4CommandRunner.ClientActionCmd.MOVE_FILES_TO_CHANGELIST, null);
-        register(P4CommandRunner.ClientActionCmd.REVERT_FILE, null);
+        // FIXME register job handlers
+        //register(P4CommandRunner.ClientActionCmd.ADD_JOB_TO_CHANGELIST, null);
+        //register(P4CommandRunner.ClientActionCmd.CREATE_CHANGELIST, null);
+        //register(P4CommandRunner.ClientActionCmd.DELETE_CHANGELIST, null);
+        //register(P4CommandRunner.ClientActionCmd.DELETE_FILE, null);
+        //register(P4CommandRunner.ClientActionCmd.EDIT_CHANGELIST_DESCRIPTION, null);
+        //register(P4CommandRunner.ClientActionCmd.FETCH_FILES, null);
+        //register(P4CommandRunner.ClientActionCmd.MOVE_FILE, null);
+        //register(P4CommandRunner.ClientActionCmd.MOVE_FILES_TO_CHANGELIST, null);
+        //register(P4CommandRunner.ClientActionCmd.REVERT_FILE, null);
         register(P4CommandRunner.ClientActionCmd.SUBMIT_CHANGELIST,
             (ClientActionRunner<SubmitChangelistResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,

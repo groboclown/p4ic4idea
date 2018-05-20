@@ -13,33 +13,29 @@
  */
 package net.groboclown.p4plugin.extension;
 
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.VcsRoot;
 import com.intellij.openapi.vcs.changes.ChangeListManagerGate;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
-import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
+import com.intellij.openapi.vcs.roots.VcsRootDetector;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.perforce.p4java.core.file.FileSpecOpStatus;
-import com.perforce.p4java.core.file.IExtendedFileSpec;
+import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Pushes changes FROM Perforce INTO idea.  No Perforce jobs will be altered.
@@ -81,7 +77,115 @@ public class P4ChangeProvider
             @NotNull ChangelistBuilder builder,
             @NotNull ProgressIndicator progress,
             @NotNull ChangeListManagerGate addGate) throws VcsException {
-        // FIXME
-        throw new IllegalStateException("not implemented");
+        if (project.isDisposed()) {
+            return;
+        }
+
+        // This check is kind of necessary.  It's ensuring that IntelliJ is doing the right thing.
+        // Note the identity equals, not .equals().
+        if (dirtyScope.getVcs() != vcs) {
+            throw new VcsException(P4Bundle.message("error.vcs.dirty-scope.wrong"));
+        }
+
+        progress.setFraction(0.0);
+
+        // How this is called by IntelliJ:
+        // IntelliJ calls this method on updates to the files or changes;
+        // not for all the files or changes, but just the ones that are
+        // in the dirty scope.  The method is expected to only categorize
+        // the dirty scoped files, nothing more.
+
+        // The biggest issue that this method presents to us (the plugin makers)
+        // is that incorrect usage will cause infinite refresh of the change lists.
+        // If any dirty file is not handled, this will be called again.  If any
+        // file is marked as dirty by calling this method, the method will be
+        // called again.
+
+        // Unfortunately, there are circumstances where a follow-up call can't be
+        // avoided.  An example of this is where a file is mis-marked to be in
+        // a different changelist.  It's up to this method to correctly sort
+        // files into their IDEA changelists.
+
+        if (dirtyScope.wasEveryThingDirty()) {
+            // Update all the files.
+            Collection<VcsRoot> roots = getRoots();
+            if (roots.isEmpty()) {
+                LOG.info("No project VCS roots");
+                progress.setFraction(1.0);
+                return;
+            }
+
+            double lastFraction = 0.0;
+            double fractionRootIncr = 1.0 / roots.size();
+            for (VcsRoot root : roots) {
+                LOG.info("Processing changes in " + root.getPath());
+
+                updateCache(root, builder, addGate);
+
+                lastFraction += fractionRootIncr;
+                progress.setFraction(lastFraction);
+            }
+        } else {
+            // Update just the dirty files.
+            final Set<FilePath> dirtyFiles = dirtyScope.getDirtyFiles();
+            if (dirtyFiles == null || dirtyFiles.isEmpty()) {
+                LOG.info("No dirty files.");
+                progress.setFraction(1.0);
+                return;
+            }
+
+            Map<VcsRoot, List<FilePath>> fileRoots = VcsUtil.groupByRoots(project, dirtyFiles, (f) -> f);
+            if (!fileRoots.isEmpty()) {
+                double lastFraction = 0.0;
+                double fractionRootIncr = 1.0 / fileRoots.size();
+                for (Map.Entry<VcsRoot, List<FilePath>> entry : fileRoots.entrySet()) {
+                    LOG.info("Processing changes for " + entry.getValue());
+
+                    Set<FilePath> matched = new HashSet<>();
+                    for (FilePath filePath : entry.getValue()) {
+                        if (dirtyFiles.remove(filePath)) {
+                            matched.add(filePath);
+                        }
+                    }
+                    updateCache(entry.getKey(), matched, builder, addGate);
+
+                    lastFraction += fractionRootIncr;
+                    progress.setFraction(lastFraction);
+                }
+            }
+
+            // All the remaining dirty files are not under our VCS, so mark them as ignored.
+            markIgnored(dirtyFiles, builder);
+        }
+
+        progress.setFraction(1.0);
+    }
+
+    private void updateCache(VcsRoot root, ChangelistBuilder builder, ChangeListManagerGate addGate) {
+        // FIXME update the cache
+
+    }
+
+    private void updateCache(VcsRoot root, Set<FilePath> files,
+            ChangelistBuilder builder, ChangeListManagerGate addGate) {
+        // FIXME update the cache
+    }
+
+
+
+    private void markIgnored(Set<FilePath> dirtyFiles, ChangelistBuilder builder) {
+        for (FilePath dirtyFile : dirtyFiles) {
+            builder.processIgnoredFile(dirtyFile.getVirtualFile());
+        }
+    }
+
+
+    private List<VcsRoot> getRoots() {
+        return ServiceManager.getService(project, VcsRootDetector.class).detect()
+                .stream().filter((root) ->
+                        root.getVcs() != null
+                        && root.getPath() != null
+                        && P4Vcs.getKey().equals(root.getVcs().getKeyInstanceMethod()))
+                .collect(Collectors.toList());
     }
 }

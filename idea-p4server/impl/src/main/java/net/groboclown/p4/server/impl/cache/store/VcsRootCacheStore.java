@@ -36,7 +36,6 @@ import java.util.Map;
 public class VcsRootCacheStore {
     private VirtualFile rootDirectory;
     private List<ConfigPart> configParts;
-    private ClientConfigRoot clientConfigRoot;
 
     public static class State {
         public String rootDirectory;
@@ -67,8 +66,13 @@ public class VcsRootCacheStore {
     }
 
 
-    public void setConfigParts(List<ConfigPart> configParts) {
+    public void setConfigParts(@NotNull List<ConfigPart> configParts) {
         this.configParts = new ArrayList<>(configParts);
+    }
+
+    @NotNull
+    public List<ConfigPart> getConfigParts() {
+        return configParts;
     }
 
     @NotNull

@@ -32,7 +32,7 @@ public class IdeChangelistCacheStore {
     }
 
 
-    IdeChangelistCacheStore(@NotNull State state) {
+    IdeChangelistCacheStore() {
 
     }
 

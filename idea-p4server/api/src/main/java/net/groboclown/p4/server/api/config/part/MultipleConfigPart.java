@@ -40,6 +40,8 @@ public class MultipleConfigPart
     private final List<ConfigPart> parts;
     private final int index = COUNT.incrementAndGet();
 
+    private final List<ConfigProblem> extraProblems = new ArrayList<>();
+
     public MultipleConfigPart(@NotNull @Nls(capitalization = Nls.Capitalization.Title) String sourceName,
             @NotNull List<ConfigPart> parts) {
         this.sourceName = sourceName;
@@ -60,7 +62,11 @@ public class MultipleConfigPart
 
     @Override
     public boolean reload() {
-        throw new IllegalStateException("Should not be called");
+        boolean correct = true;
+        for (ConfigPart part : parts) {
+            correct &= part.reload();
+        }
+        return correct;
     }
 
     @Override
@@ -104,6 +110,7 @@ public class MultipleConfigPart
 
             problems.addAll(part.getConfigProblems());
         }
+        problems.addAll(extraProblems);
         return problems;
     }
 
@@ -395,5 +402,10 @@ public class MultipleConfigPart
     @NotNull
     public List<ConfigPart> getChildren() {
         return new ArrayList<>(parts);
+    }
+
+    @NotNull
+    public void addAdditionalProblem(@NotNull ConfigProblem problem) {
+        this.extraProblems.add(problem);
     }
 }

@@ -230,7 +230,6 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <vcs name="p4ic" vcsClass="net.groboclown.p4plugin.extension.P4Vcs" displayName="Perforce"/>
-        <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
         <!-- FIXME
         <vcsPopupProvider implementation="net.groboclown.p4plugin.extension.P4QuickListContentProvider"/>
 
@@ -248,13 +247,28 @@
                 serviceInterface="net.groboclown.p4plugin.changes.P4ChangeListMapping"
                 serviceImplementation="net.groboclown.p4plugin.changes.P4ChangeListMapping"/>
 
-        <projectService
-                serviceInterface="net.groboclown.p4plugin.config.UserProjectPreferences"
-                serviceImplementation="net.groboclown.p4plugin.config.UserProjectPreferences"/>
         -->
+
+        <!-- User settings, independent of the connection configuration; per-project -->
+        <projectService
+                serviceInterface="net.groboclown.p4plugin.components.UserProjectPreferences"
+                serviceImplementation="net.groboclown.p4plugin.components.UserProjectPreferences"/>
     </extensions>
 
     <project-components>
+
+        <!-- The per-project, top-level server connection handler. -->
+        <component>
+            <interface-class>net.groboclown.p4plugin.components.P4ServerComponent</interface-class>
+            <implementation-class>net.groboclown.p4plugin.components.P4ServerComponent</implementation-class>
+        </component>
+
+        <!-- The project-level cache of server-side objects. -->
+        <component>
+            <interface-class>net.groboclown.p4plugin.components.CacheComponent</interface-class>
+            <implementation-class>net.groboclown.p4plugin.components.CacheComponent</implementation-class>
+        </component>
+
         <!-- FIXME
         <component>
             <interface-class>com.intellij.openapi.vcs.changes.ChangeListDecorator</interface-class>
@@ -295,6 +309,13 @@
     </module-components>
 
     <application-components>
+        <!-- Storage and retrieval of passwords -->
+        <component>
+            <interface-class>net.groboclown.p4.server.api.ApplicationPasswordRegistry</interface-class>
+            <implementation-class>net.groboclown.p4plugin.components.ApplicationPasswordRegistryComponent</implementation-class>
+        </component>
+
+
         <!-- FIXME
         <component>
             <implementation-class>net.groboclown.p4plugin.server.connection.AlertManager</implementation-class>

@@ -27,19 +27,42 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="6a442" class="javax.swing.JButton" binding="myCheckConnectionButton">
-                <constraints border-constraint="East"/>
+              <component id="6b4e2" class="javax.swing.JButton" binding="myDetailsToggle">
+                <constraints border-constraint="West"/>
                 <properties>
-                  <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="configuration.check-connection.button"/>
+                  <text value=""/>
                 </properties>
               </component>
+              <grid id="47c26" layout-manager="FormLayout">
+                <rowspec value="center:d:grow"/>
+                <colspec value="fill:max(d;4px):noGrow"/>
+                <colspec value="left:4dlu:noGrow"/>
+                <colspec value="fill:d:grow"/>
+                <constraints border-constraint="East"/>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="6a442" class="javax.swing.JButton" binding="myCheckConnectionButton">
+                    <constraints>
+                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+                      <forms/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="configuration.check-connection.button"/>
+                    </properties>
+                  </component>
+                  <component id="6bd9c" class="com.intellij.util.ui.AsyncProcessIcon" binding="myCheckConnectionSpinner" custom-create="true">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+                      <forms/>
+                    </constraints>
+                    <properties/>
+                  </component>
+                </children>
+              </grid>
             </children>
           </grid>
-          <grid id="4e649" binding="myConfigRefreshDetailsPanel" custom-create="true" layout-manager="FormLayout">
-            <rowspec value="center:d:noGrow"/>
-            <rowspec value="top:4dlu:noGrow"/>
-            <rowspec value="center:max(d;4px):noGrow"/>
-            <colspec value="fill:d:grow"/>
+          <grid id="4e649" binding="myConfigRefreshDetailsPanel" custom-create="true" layout-manager="BorderLayout" hgap="0" vgap="0">
             <constraints border-constraint="Center"/>
             <properties/>
             <border type="none"/>
@@ -49,10 +72,7 @@
                 <rowspec value="top:4dlu:noGrow"/>
                 <rowspec value="center:d:grow"/>
                 <colspec value="fill:d:grow"/>
-                <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                  <forms/>
-                </constraints>
+                <constraints border-constraint="North"/>
                 <properties/>
                 <border type="none"/>
                 <children>
@@ -64,7 +84,7 @@
                     <properties/>
                     <border type="none"/>
                     <children>
-                      <component id="a2e38" class="javax.swing.JList" binding="myProblemsList">
+                      <component id="a2e38" class="javax.swing.JList" binding="myProblemsList" custom-create="true">
                         <constraints/>
                         <properties/>
                       </component>
@@ -72,23 +92,13 @@
                   </scrollpane>
                 </children>
               </grid>
-              <grid id="255bb" layout-manager="FormLayout">
-                <rowspec value="center:d:grow"/>
-                <rowspec value="top:4dlu:noGrow"/>
-                <rowspec value="center:d:grow"/>
-                <colspec value="fill:d:grow"/>
-                <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                  <forms/>
-                </constraints>
+              <grid id="255bb" layout-manager="BorderLayout" hgap="0" vgap="0">
+                <constraints border-constraint="Center"/>
                 <properties/>
                 <border type="none"/>
                 <children>
                   <scrollpane id="afc19">
-                    <constraints>
-                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                      <forms defaultalign-horz="false" defaultalign-vert="false"/>
-                    </constraints>
+                    <constraints border-constraint="North"/>
                     <properties/>
                     <border type="none"/>
                     <children>

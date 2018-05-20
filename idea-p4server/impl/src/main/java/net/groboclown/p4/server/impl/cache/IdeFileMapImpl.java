@@ -28,13 +28,6 @@ import java.util.stream.Stream;
  *
  */
 public class IdeFileMapImpl implements IdeFileMap {
-    public static class State {
-
-    }
-
-    IdeFileMapImpl(@NotNull State state) {
-
-    }
 
     @Nullable
     @Override
@@ -65,10 +58,4 @@ public class IdeFileMapImpl implements IdeFileMap {
 
     }
 
-
-    @NotNull
-    State getState() {
-        State ret = new State();
-        return ret;
-    }
 }

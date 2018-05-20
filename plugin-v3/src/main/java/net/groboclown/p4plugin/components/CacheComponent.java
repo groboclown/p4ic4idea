@@ -14,5 +14,89 @@
 
 package net.groboclown.p4plugin.components;
 
-public class CacheComponent {
+import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.ProjectComponent;
+import com.intellij.openapi.components.State;
+import com.intellij.openapi.project.Project;
+import net.groboclown.p4.server.api.cache.CacheQueryHandler;
+import net.groboclown.p4.server.impl.cache.CacheQueryHandlerImpl;
+import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+@State(
+        name = "P4ProjectCache"
+)
+public class CacheComponent implements ProjectComponent, PersistentStateComponent<ProjectCacheStore.State> {
+    private static final String COMPONENT_NAME = "Perforce Project Cached Data";
+    private final Project project;
+    private final ProjectCacheStore projectCache = new ProjectCacheStore();
+    private CacheQueryHandler queryHandler;
+
+    public static CacheComponent getInstance(Project project) {
+        // a non-registered component can happen when the config is loaded outside a project.
+        CacheComponent ret = null;
+        if (project != null) {
+            ret = project.getComponent(CacheComponent.class);
+        }
+        if (ret == null) {
+            ret = new CacheComponent(project);
+        }
+        return ret;
+    }
+
+    public CacheComponent(Project project) {
+        this.project = project;
+    }
+
+    public CacheQueryHandler getQueryHandler() {
+        return queryHandler;
+    }
+
+    @NotNull
+    @Override
+    public String getComponentName() {
+        return COMPONENT_NAME;
+    }
+
+
+    @Override
+    public void projectOpened() {
+
+    }
+
+    @Override
+    public void projectClosed() {
+        disposeComponent();
+    }
+
+    @Override
+    public void initComponent() {
+        queryHandler = new CacheQueryHandlerImpl(projectCache);
+
+        // FIXME add message listeners
+    }
+
+    @Override
+    public void disposeComponent() {
+        if (queryHandler != null) {
+            queryHandler = null;
+        }
+    }
+
+    @Nullable
+    @Override
+    public ProjectCacheStore.State getState() {
+        return projectCache.getState();
+    }
+
+    @Override
+    public void loadState(ProjectCacheStore.State state) {
+        this.projectCache.setState(state);
+    }
+
+    @Override
+    public void noStateLoaded() {
+        // do nothing
+    }
 }

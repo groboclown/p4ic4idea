@@ -242,6 +242,8 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
         parts.add(new EnvPassword());
 
         SimpleDataPart envData = new SimpleDataPart(vcsRoot, getSourceName(), null);
+
+        // FIXME switch to using the system environment testable class.
         envData.setServerName(PerforceEnvironment.getP4Port());
         envData.setUsername(PerforceEnvironment.getP4User());
         envData.setClientname(PerforceEnvironment.getP4Client());
@@ -274,6 +276,7 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
                     }
 
                     final FileConfigPart envConf = new FileConfigPart(vcsRoot, f);
+                    envConf.reload();
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Env defined absolute P4CONFIG: " + f + ": " +
                                 ConfigPropertiesUtil.toProperties(envConf,
@@ -282,9 +285,13 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
                     parts.add(envConf);
                 } else {
                     // Scan from the vcs root down for a matching file name.
+                    // TODO eventually allow for proper p4config loading, with multiple
+                    // roots generated.
                     File f = scanParentsForFile(vcsRoot, p4config);
                     if (f != null) {
-                        parts.add(new FileConfigPart(vcsRoot, f));
+                        FileConfigPart part = new FileConfigPart(vcsRoot, f);
+                        part.reload();
+                        parts.add(part);
                     }
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Env defined relative P4CONFIG: " + p4config);
@@ -301,12 +308,15 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
                 // Therefore, if the file doesn't exist, don't complain.
                 if (f.exists()) {
                     final FileConfigPart envConf = new FileConfigPart(vcsRoot, f);
+                    envConf.reload();
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Env defined P4ENVIRO: " + f + ": " +
                                 ConfigPropertiesUtil.toProperties(envConf,
                                         "<unset>", "<empty>", "<set>"));
                     }
                     parts.add(envConf);
+                } else if (LOG.isDebugEnabled()) {
+                    LOG.debug("Env defined P4ENVIRO: " + f + ", but it does not exist.");
                 }
             }
         }
@@ -323,6 +333,12 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
 
         // Need to recreate the part, because we just modified it.
         this.configParts = new MultipleConfigPart("Environment Settings", parts);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Final configuration from environment: " +
+                    ConfigPropertiesUtil.toProperties(this.configParts,
+                            "<unset>", "<empty>", "<set>"));
+        }
     }
 
     @Override

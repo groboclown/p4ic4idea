@@ -22,8 +22,14 @@ import com.intellij.openapi.vcs.VcsDirectoryMapping;
 import com.intellij.openapi.vcs.VcsRootSettings;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import com.perforce.p4java.core.file.FileSpecBuilder;
+import com.perforce.p4java.impl.generic.core.Changelist;
+import com.perforce.p4java.option.server.GetClientsOptions;
+import net.groboclown.p4.server.api.async.Answer;
+import net.groboclown.p4.server.api.async.AnswerSink;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ConfigProblem;
+import net.groboclown.p4.server.api.config.ConfigPropertiesUtil;
 import net.groboclown.p4.server.api.config.P4VcsRootSettings;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
@@ -31,7 +37,13 @@ import net.groboclown.p4.server.api.config.part.MultipleConfigPart;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
+import net.groboclown.p4.server.impl.connection.ConnectionManager;
+import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
+import net.groboclown.p4plugin.messages.MessageErrorHandler;
+import net.groboclown.p4plugin.util.TempDirUtil;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,7 +53,6 @@ import javax.swing.event.AncestorListener;
 import java.awt.*;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -80,15 +91,15 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
             throws ConfigurationException {
         if (isModified()) {
             ClientConfig oldConfig = loadConfigFromSettings();
-            P4VcsRootSettings settings = new P4VcsRootSettingsImpl();
-            List<ConfigPart> parts = panel.getConfigParts();
-            settings.setConfigParts(parts);
+            P4VcsRootSettings settings = new P4VcsRootSettingsImpl(vcsRoot);
+            MultipleConfigPart parentPart = loadParentPartFromUI();
+            settings.setConfigParts(parentPart.getChildren());
             mapping.setRootSettings(settings);
-            MultipleConfigPart parentPart = loadParentPartFromSettings();
             if (parentPart.hasError()) {
                 Collection<ConfigProblem> problems =
                         parentPart.getConfigProblems();
-                // FIXME throw the error
+                throw new ConfigurationException(toMessage(problems),
+                        P4Bundle.getString("configuration.error.title"));
             }
             try {
                 ServerConfig serverConfig = ServerConfig.createFrom(parentPart);
@@ -124,9 +135,17 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
         return settings.getConfigParts();
     }
 
-    private MultipleConfigPart loadParentPartFromSettings() {
+    private ConfigPart loadParentPartFromSettings() {
         List<ConfigPart> parts = loadPartsFromSettings();
-        return  new MultipleConfigPart(
+        return new MultipleConfigPart(
+                P4Bundle.getString("configuration.connection-choice.wrapped-container"),
+                parts
+        );
+    }
+
+    private MultipleConfigPart loadParentPartFromUI() {
+        List<ConfigPart> parts = panel.getConfigParts();
+        return new MultipleConfigPart(
                 P4Bundle.getString("configuration.connection-choice.wrapped-container"),
                 parts
         );
@@ -134,7 +153,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
 
     @Nullable
     private ClientConfig loadConfigFromSettings() {
-        MultipleConfigPart parentPart = loadParentPartFromSettings();
+        ConfigPart parentPart = loadParentPartFromSettings();
         if (!parentPart.hasError() && ServerConfig.isValidServerConfig(parentPart)) {
             try {
                 ServerConfig serverConfig = ServerConfig.createFrom(parentPart);
@@ -152,7 +171,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
     private P4VcsRootSettings getRootSettings() {
         VcsRootSettings rawSettings = mapping.getRootSettings();
         if (rawSettings == null) {
-            P4VcsRootSettingsImpl ret = new P4VcsRootSettingsImpl();
+            P4VcsRootSettingsImpl ret = new P4VcsRootSettingsImpl(vcsRoot);
             mapping.setRootSettings(ret);
             return ret;
         }
@@ -163,6 +182,21 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
         return (P4VcsRootSettings) rawSettings;
     }
 
+    @Nls(capitalization = Nls.Capitalization.Sentence)
+    private String toMessage(Collection<ConfigProblem> problems) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (ConfigProblem problem : problems) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(P4Bundle.getString("config.message.separator"));
+            }
+            sb.append(problem.getMessage());
+        }
+        return sb.toString();
+    }
+
     private class Controller extends ConfigConnectionController {
         P4RootConfigPanel configPartContainer;
 
@@ -171,28 +205,101 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
         }
 
         @Override
-        public void refreshConfigConnection() {
-            ClientConfig clientConfig = null;
-            ServerConfig serverConfig = null;
-            MultipleConfigPart parentPart = loadParentPartFromSettings();
+        protected void performRefresh() {
+            LOG.debug("Refreshing configuration in panel");
+            ClientConfig tClientConfig = null;
+            ServerConfig tServerConfig = null;
+            final MultipleConfigPart parentPart = loadParentPartFromUI();
+            parentPart.reload();
             if (!parentPart.hasError()) {
                 if (ServerConfig.isValidServerConfig(parentPart)) {
                     try {
-                        serverConfig = ServerConfig.createFrom(parentPart);
+                        tServerConfig = ServerConfig.createFrom(parentPart);
                     } catch (IllegalArgumentException e) {
                         LOG.info("Should have not caused an error due to previous error check", e);
                     }
                 }
-                if (ClientConfig.isValidClientConfig(serverConfig, parentPart)) {
+                if (ClientConfig.isValidClientConfig(tServerConfig, parentPart)) {
                     try {
-                        clientConfig = ClientConfig.createFrom(serverConfig, parentPart);
+                        tClientConfig = ClientConfig.createFrom(tServerConfig, parentPart);
                     } catch (IllegalArgumentException e) {
                         LOG.info("Should have not caused an error due to previous error check", e);
                     }
                 }
             }
 
-            fireConfigConnectionRefreshed(clientConfig, serverConfig);
+            final ClientConfig clientConfig = tClientConfig;
+            final ServerConfig serverConfig = tServerConfig;
+
+            final ConnectionManager connectionManager;
+            if (serverConfig != null) {
+                // FIXME attempt to connect to the server to see if it
+                // can be connected.  If it can't, then add that as
+                // an error.
+
+                // Because the connection attempt here is directly checking for the
+                // server connection, rather than using cached data, we'll bypass the
+                // usual infrastructure.  See P4ServerComponent.
+
+                UserProjectPreferences preferences = UserProjectPreferences.getInstance(project);
+                connectionManager = new SimpleConnectionManager(
+                        TempDirUtil.getTempDir(project),
+                        preferences.getSocketSoTimeoutMillis(),
+                        "v-10-get-the-right-number",
+                        new MessageErrorHandler(project)
+                );
+            } else {
+                connectionManager = null;
+            }
+
+            Answer.resolve(connectionManager)
+            .mapAsync((mgr) -> {
+                if (mgr != null && serverConfig != null) {
+                    // Check client list, because that only requires a username
+                    // and valid login.
+                    // An error here will cause the client config check to fail, because of
+                    // the rejection.
+                    LOG.debug("Attempting to get the list of clients");
+                    return mgr.withConnection(serverConfig, (server) -> {
+                        GetClientsOptions options = new GetClientsOptions(1, server.getUserName(), null);
+                        server.getClients(options);
+                        return mgr;
+                    });
+                }
+                return Answer.resolve(null);
+            })
+            .mapAsync((mgr) -> {
+                if (mgr != null && clientConfig != null) {
+                    // Check the opened files, because that requires the client to be
+                    // valid for the current user.
+                    LOG.debug("Attempting to get the list of opened files for the client");
+                    return mgr.withConnection(clientConfig, (client) -> {
+                        client.openedFiles(FileSpecBuilder.makeFileSpecList("//..."),
+                                1, Changelist.DEFAULT);
+                        return null;
+                    });
+                }
+                return Answer.resolve(null);
+            })
+            .whenCompleted((obj) -> {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Sending refresh complete notice with configuration " +
+                            ConfigPropertiesUtil.toProperties(parentPart,
+                                    "<unset>", "<empty>", "<set>"));
+                }
+                fireConfigConnectionRefreshed(parentPart, clientConfig, serverConfig);
+            })
+            .whenFailed((err) -> {
+                LOG.info("Server connection attempt failed", err);
+                parentPart.addAdditionalProblem(
+                        new ConfigProblem(null, err.getLocalizedMessage(), false));
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Sending refresh complete notice with configuration " +
+                            ConfigPropertiesUtil.toProperties(parentPart,
+                                    "<unset>", "<empty>", "<set>"));
+                }
+                fireConfigConnectionRefreshed(parentPart, clientConfig, serverConfig);
+            });
         }
     }
 
@@ -288,7 +395,9 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
                 wrapped.doLayout();
                 wrapped.repaint();
             }
-            LOG.info("Changed P4 VCS root panel size from " + prevSize + " to " + size);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Changed P4 VCS root panel size from " + prevSize + " to " + size);
+            }
         }
     }
 }

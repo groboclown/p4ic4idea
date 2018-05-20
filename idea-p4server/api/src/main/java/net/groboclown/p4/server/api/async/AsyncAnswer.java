@@ -123,11 +123,13 @@ class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
     public <T> Answer<T> map(@NotNull Function<S, T> fun) {
         synchronized (sync) {
             if (!completed) {
-                Answer<T> ret = new AsyncAnswer<>();
-                doneListeners.add((s) -> ((AsyncAnswer<T>) ret).resolve(fun.apply(s)));
+                AsyncAnswer<T> ret = new AsyncAnswer<>();
+                doneListeners.add((s) -> ret.resolve(fun.apply(s)));
+                errListeners.add(ret::reject);
                 return ret;
             }
         }
+        // All the current listeners have already run.
         if (error != null) {
             return DoneAnswer.reject(error);
         }
@@ -144,9 +146,11 @@ class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
                     fun.apply(s)
                         .whenCompleted(ret::resolve)
                         .whenFailed(ret::reject));
+                errListeners.add(ret::reject);
                 return ret;
             }
         }
+        // All the current listeners have already run.
         if (error != null) {
             return DoneAnswer.reject(error);
         }
@@ -158,6 +162,7 @@ class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
     public <T> Answer<T> futureMap(@NotNull BiConsumer<S, AnswerSink<T>> func) {
         AsyncAnswer<T> ret = new AsyncAnswer<>();
         whenCompleted((s) -> func.accept(s, ret));
+        whenFailed(ret::reject);
         return ret;
     }
 

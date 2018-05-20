@@ -496,8 +496,12 @@ public class SimpleConnectionManager implements ConnectionManager {
         return Answer.background((sink) -> {
             try {
                 R res = runner.exec();
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Completed execution.");
+                }
                 sink.resolve(res);
             } catch (P4CommandRunner.ServerResultException e) {
+                LOG.info("Command execution failed", e);
                 sink.reject(e);
             }
         });

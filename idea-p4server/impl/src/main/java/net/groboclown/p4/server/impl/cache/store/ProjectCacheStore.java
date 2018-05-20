@@ -42,7 +42,8 @@ import java.util.function.Function;
 
 
 /**
- * Central store for all the cached state information.
+ * Central store for all the cached state information.  Does not store the VcsRootCacheStore, because that's
+ * handled separately.
  */
 public class ProjectCacheStore {
     // The lock timeout is "small", so that there's an incentive to spend as little time in the lock as possible.
@@ -53,6 +54,11 @@ public class ProjectCacheStore {
     private final Map<ClientServerRef, ClientQueryCacheStore> clientQueryCache = new HashMap<>();
     private final List<PendingAction> pendingActions = new ArrayList<>();
     private final Map<String, Integer> pendingChangelistIds = new HashMap<>();
+    private final IdeChangelistCacheStore changelistCacheStore = new IdeChangelistCacheStore();
+
+    // FIXME is this necessary?
+    private final IdeFileCacheStore fileCacheStore = new IdeFileCacheStore();
+
 
     public static class State {
         // All the stuff cached from the server
@@ -84,6 +90,18 @@ public class ProjectCacheStore {
     public void addPendingAction(PendingAction action) {
         pendingActions.add(action);
     }
+
+
+    @Nullable
+    public State getState() {
+        // FIXME return the internal state representation
+        return null;
+    }
+
+    public void setState(@Nullable State state) {
+        // FIXME set the internal state representation.
+    }
+
 
     public int getPendingChangelistId(CreateChangelistAction action) {
         String actionId = action.getActionId();

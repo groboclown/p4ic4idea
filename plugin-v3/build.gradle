@@ -115,12 +115,19 @@ jar.dependsOn packageVersion
 jar.version = version
 
 
-task assembleZip(type: Zip) {
+task assembleDepends {
     dependsOn ':p4java:jar'
     dependsOn ':idea-compat:compat-api:jar'
     dependsOn ':idea-compat:v171:jar'
+    dependsOn ':idea-p4server:api:jar'
+    dependsOn ':idea-p4server:impl:jar'
     dependsOn ':swarm:jar'
     dependsOn 'jar'
+}
+
+
+task assembleZip(type: Zip) {
+    dependsOn 'assembleDepends'
 
     doFirst {
         copy {
@@ -173,13 +180,9 @@ task assembleZip(type: Zip) {
 }
 assemble.dependsOn assembleZip
 
+// Newer versions of IDEA seem to want the jar, not the zip.
 task assembleUberJar(type: Zip) {
-    // Newer versions of IDEA seem to want the jar, not the zip.
-    dependsOn ':p4java:jar'
-    dependsOn ':idea-compat:compat-api:jar'
-    dependsOn ':idea-compat:v171:jar'
-    dependsOn ':swarm:jar'
-    dependsOn 'jar'
+    dependsOn 'assembleDepends'
 
     extension 'jar'
     classifier 'uber'

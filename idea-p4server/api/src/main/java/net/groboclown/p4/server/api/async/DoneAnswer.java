@@ -32,7 +32,7 @@ class DoneAnswer<S> implements Answer<S> {
     }
 
     public static <S> Answer<S> reject(@NotNull P4CommandRunner.ServerResultException error) {
-        return new DoneAnswer<S>(null, error);
+        return new DoneAnswer<>(null, error);
     }
 
     private DoneAnswer(S result, P4CommandRunner.ServerResultException error) {
@@ -62,7 +62,7 @@ class DoneAnswer<S> implements Answer<S> {
     @Override
     public <T> Answer<T> map(@NotNull Function<S, T> fun) {
         if (error != null) {
-            return new DoneAnswer<T>(null, error);
+            return new DoneAnswer<>(null, error);
         }
         return new DoneAnswer<>(fun.apply(result), null);
     }
@@ -71,7 +71,7 @@ class DoneAnswer<S> implements Answer<S> {
     @Override
     public <T> Answer<T> mapAsync(@NotNull Function<S, Answer<T>> fun) {
         if (error != null) {
-            return new DoneAnswer<T>(null, error);
+            return new DoneAnswer<>(null, error);
         }
         return fun.apply(result);
     }

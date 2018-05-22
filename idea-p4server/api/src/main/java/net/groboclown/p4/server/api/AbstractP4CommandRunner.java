@@ -114,6 +114,7 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
             }
 
             case ADD_JOB_TO_CHANGELIST:
+            case REMOVE_JOB_FROM_CHANGELIST:
             case CREATE_CHANGELIST:
             case DELETE_CHANGELIST:
             case EDIT_CHANGELIST_DESCRIPTION:

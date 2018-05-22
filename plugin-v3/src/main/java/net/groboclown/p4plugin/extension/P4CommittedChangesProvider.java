@@ -13,7 +13,6 @@
  */
 package net.groboclown.p4plugin.extension;
 
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.ChangeListColumn;
@@ -40,7 +39,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class P4CommittedChangesProvider implements CommittedChangesProvider<P4CommittedChangelist, P4ChangeBrowserSettings> {

@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.impl.cache.store;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
@@ -46,7 +47,10 @@ import java.util.function.Function;
  * handled separately.
  */
 public class ProjectCacheStore {
+    private static final Logger LOG = Logger.getInstance(ProjectCacheStore.class);
+
     // The lock timeout is "small", so that there's an incentive to spend as little time in the lock as possible.
+    // TODO replace this timeout with the UserProjectPreferences value.
     private static final long LOCK_TIMEOUT_SECONDS = 5;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final AtomicInteger pendingChangelistIdCounter = new AtomicInteger(-2);
@@ -55,9 +59,6 @@ public class ProjectCacheStore {
     private final List<PendingAction> pendingActions = new ArrayList<>();
     private final Map<String, Integer> pendingChangelistIds = new HashMap<>();
     private final IdeChangelistCacheStore changelistCacheStore = new IdeChangelistCacheStore();
-
-    // FIXME is this necessary?
-    private final IdeFileCacheStore fileCacheStore = new IdeFileCacheStore();
 
 
     public static class State {
@@ -72,6 +73,8 @@ public class ProjectCacheStore {
         public List<Map<String, String>> pendingActions;
 
         public Map<String, Integer> pendingChangelistIds;
+
+        public IdeChangelistCacheStore.State changelistState;
 
         public int lastPendingChangelistId;
     }
@@ -95,11 +98,13 @@ public class ProjectCacheStore {
     @Nullable
     public State getState() {
         // FIXME return the internal state representation
+        LOG.warn("FIXME return the internal state representation");
         return null;
     }
 
     public void setState(@Nullable State state) {
         // FIXME set the internal state representation.
+        LOG.warn("FIXME set the internal state representation.");
     }
 
 

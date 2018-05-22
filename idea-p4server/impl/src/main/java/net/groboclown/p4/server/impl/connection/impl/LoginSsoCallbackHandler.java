@@ -55,12 +55,12 @@ public class LoginSsoCallbackHandler
                 final ExecutionException ex = new ExecutionException("Exit code " + output.getExitCode());
 
                 // FIXME send out on an error handler
+                LOG.warn("FIXME Send an error handler event", ex);
                 //AlertManager.getInstance().addCriticalError(
                 //        new LoginSsoExecFailedHandler(
                 //                loginSsoCmd, output.getStdout(), output.getStderr(), ex),
                 //        ex
                 //);
-                ex.printStackTrace();
 
                 return Status.FAIL;
             }
@@ -68,6 +68,7 @@ public class LoginSsoCallbackHandler
             return Status.PASS;
         } catch (ExecutionException e) {
             // FIXME send out on an error handler
+            LOG.warn("FIXME send out on an error handler", e);
             //AlertManager.getInstance().addCriticalError(
             //        new LoginSsoExecFailedHandler(loginSsoCmd, null, null, e),
             //        e

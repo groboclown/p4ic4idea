@@ -76,7 +76,7 @@ public enum P4FileAction {
             case MOVE_DELETE:
                 return MOVE_DELETE;
             case MOVE:
-                // TODO check if this is the right mapping
+                // TODO check if this is the right mapping - that means write an explicit test!
                 return MOVE_EDIT;
             case MOVE_ADD:
                 return MOVE_ADD;

@@ -269,15 +269,15 @@
             <implementation-class>net.groboclown.p4plugin.components.CacheComponent</implementation-class>
         </component>
 
+        <component>
+            <interface-class>net.groboclown.p4.server.api.ProjectConfigRegistry</interface-class>
+            <implementation-class>net.groboclown.p4.server.impl.ProjectConfigRegistryImpl</implementation-class>
+        </component>
+
         <!-- FIXME
         <component>
             <interface-class>com.intellij.openapi.vcs.changes.ChangeListDecorator</interface-class>
             <implementation-class>net.groboclown.p4plugin.ui.P4ChangeListDecorator</implementation-class>
-        </component>
-
-        <component>
-            <interface-class>net.groboclown.p4.server.api.ProjectConfigRegistry</interface-class>
-            <implementation-class>net.groboclown.p4.server.impl.ProjectConfigRegistryImpl</implementation-class>
         </component>
 
         <component>

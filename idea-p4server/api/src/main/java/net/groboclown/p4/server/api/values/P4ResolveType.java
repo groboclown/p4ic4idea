@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.api.values;
 
+import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.Nullable;
 
 public enum P4ResolveType {
@@ -23,6 +24,7 @@ public enum P4ResolveType {
     /** No resolve necessary */
     NOT_NECESSARY("???", "???");
 
+    private static final Logger LOG = Logger.getInstance(P4ResolveType.class);
 
     private final String resolveType;
     private final String contentResolveType;
@@ -47,6 +49,7 @@ public enum P4ResolveType {
             return NOT_NECESSARY;
         }
         // FIXME create the correct resolve type
+        LOG.warn("FIXME create the correct resolve type");
         return NO_RESOLVE;
     }
 }

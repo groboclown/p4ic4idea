@@ -52,6 +52,7 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
     private String charset;
     private String ignoreFile;
     private String loginSsoScript;
+    private String p4config;
 
     private IOException loadError = null;
 
@@ -86,6 +87,10 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
     @Override
     public String toString() {
         return "FileConfigPart(" + filePath + ")";
+    }
+
+    public String getP4Config() {
+        return p4config;
     }
 
     @Override
@@ -146,6 +151,7 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
         ignoreFile = props.getProperty("P4IGNORE");
         charset = props.getProperty("P4CHARSET");
         loginSsoScript = props.getProperty("P4LOGINSSO");
+        p4config = props.getProperty("P4CONFIG");
 
         return hasError();
     }
@@ -153,6 +159,7 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
     @NotNull
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
+        LOG.warn("FIXME SET MESSAGE TEXT CORRECTLY");
         if (filePath == null) {
             // FIXME SET MESSAGE CORRECTLY
             return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.no-file", true));

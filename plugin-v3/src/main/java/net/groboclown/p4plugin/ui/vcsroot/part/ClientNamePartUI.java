@@ -19,15 +19,21 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.AsyncProcessIcon;
+import com.perforce.p4java.client.IClientSummary;
+import com.perforce.p4java.option.server.GetClientsOptions;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.impl.config.part.ClientNameConfigPart;
+import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
+import net.groboclown.p4plugin.messages.MessageErrorHandler;
 import net.groboclown.p4plugin.ui.SwingUtil;
 import net.groboclown.p4plugin.ui.vcsroot.ConfigConnectionController;
 import net.groboclown.p4plugin.ui.vcsroot.ConfigPartUI;
 import net.groboclown.p4plugin.ui.vcsroot.ConfigPartUIFactory;
+import net.groboclown.p4plugin.util.TempDirUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +46,7 @@ public class ClientNamePartUI extends ConfigPartUI<ClientNameConfigPart> {
     public static final ConfigPartUIFactory FACTORY = new Factory();
     private static final Icon REFRESH = AllIcons.Actions.Refresh;
 
+    private final Object sync = new Object();
     private JComponent rootPanel;
     private JComboBox<String> clientDropdownList;
     private JButton listRefreshButton;
@@ -123,21 +130,51 @@ public class ClientNamePartUI extends ConfigPartUI<ClientNameConfigPart> {
 
 
     private String getCurrentClientname() {
-        // FIXME if the user entered a value manually, this won't return that value.
-        return clientDropdownList.getItemAt(clientDropdownList.getSelectedIndex());
+        synchronized (sync) {
+            return (String) clientDropdownList.getSelectedItem();
+        }
     }
 
 
     private void refreshList(Project project, ConfigPart part,
             ClientConfig clientConfig, ServerConfig serverConfig) {
         String current = getCurrentClientname();
-        clientDropdownList.removeAllItems();
-        clientDropdownList.addItem(current);
-        clientDropdownList.setSelectedIndex(0);
-        if (serverConfig != null) {
-            // FIXME refresh the list of clients.
+        synchronized (sync) {
+            clientDropdownList.removeAllItems();
+            clientDropdownList.addItem(current);
+            clientDropdownList.setSelectedIndex(0);
         }
-        setRefreshState(false);
+        if (serverConfig != null) {
+            // Load the list of clients from the server.
+            // Similar to the P4VcsRootConfigurable class, this
+            // needs to use a stand-alone connection without caching.
+            new SimpleConnectionManager(
+                    TempDirUtil.getTempDir(project),
+                    UserProjectPreferences.getSocketSoTimeoutMillis(project),
+                    "v-10-get-the-right-number",
+                    new MessageErrorHandler(project))
+            .withConnection(serverConfig, (server) ->
+                    server.getClients(new GetClientsOptions(
+                            UserProjectPreferences.getMaxClientRetrieveCount(project),
+                            server.getUserName(),
+                            null)))
+            .whenCompleted((clients) -> {
+                synchronized (sync) {
+                    for (IClientSummary client : clients) {
+                        clientDropdownList.addItem(client.getName());
+                    }
+                }
+                setRefreshState(false);
+            })
+            .whenFailed((e) -> {
+                // TODO on an error, mark the UI component has
+                // having a problem.  Maybe even a tooltip with the error,
+                // or a pop-up micro-dialog with the error list.
+                setRefreshState(false);
+            });
+        } else {
+            setRefreshState(false);
+        }
     }
 
 

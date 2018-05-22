@@ -58,7 +58,7 @@ public interface P4WorkspaceSummary {
     String getDescription();
     Map<ClientOption, Boolean> getClientOptions();
 
-    // TODO is this a list of options?
+    // TODO is this a list of options?  Check with a unit test!
     SubmitOption getSubmitOption();
 
     LineEnding getLineEnding();

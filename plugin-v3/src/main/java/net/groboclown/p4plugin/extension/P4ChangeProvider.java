@@ -13,10 +13,10 @@
  */
 package net.groboclown.p4plugin.extension;
 
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsRoot;
@@ -24,10 +24,16 @@ import com.intellij.openapi.vcs.changes.ChangeListManagerGate;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
-import com.intellij.openapi.vcs.roots.VcsRootDetector;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.cache.IdeChangelistMap;
+import net.groboclown.p4.server.api.cache.IdeFileMap;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.components.CacheComponent;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -35,6 +41,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -68,8 +75,8 @@ public class P4ChangeProvider
     @Override
     public void doCleanup(List<VirtualFile> files) {
         // clean up the working copy.
-        // Nothing to do?
         LOG.info("Cleanup called for  " + files);
+        // FIXME clean up cache for the files.
     }
 
     @Override
@@ -87,7 +94,9 @@ public class P4ChangeProvider
             throw new VcsException(P4Bundle.message("error.vcs.dirty-scope.wrong"));
         }
 
-        progress.setFraction(0.0);
+        double lastFraction = 0.0;
+
+        progress.setFraction(lastFraction);
 
         // How this is called by IntelliJ:
         // IntelliJ calls this method on updates to the files or changes;
@@ -106,21 +115,40 @@ public class P4ChangeProvider
         // a different changelist.  It's up to this method to correctly sort
         // files into their IDEA changelists.
 
+        // For the purposes of this implementation, we'll always attempt to
+        // refresh the cache from the server.  Then we'll update the requested file
+        // status.
+
+        Collection<ClientConfigRoot> allClientRoots =
+                ProjectConfigRegistry.getInstance(project).getClientConfigRoots();
+
+        // This request is performed by the IDE in a background thread.
+
+        Pair<IdeChangelistMap, IdeFileMap> cachedMaps = CacheComponent.getInstance(project)
+                .blockingRefreshServerOpenedCache(
+                        allClientRoots.stream()
+                            .map(ClientConfigRoot::getClientConfig)
+                        .collect(Collectors.toList()),
+                        // TODO maybe use a different timeout setting?
+                        UserProjectPreferences.getLockWaitTimeoutMillis(project),
+                        TimeUnit.MILLISECONDS
+                );
+
+        lastFraction = 0.6;
+        progress.setFraction(lastFraction);
+
+        updateChangelists(cachedMaps.first, addGate);
+
         if (dirtyScope.wasEveryThingDirty()) {
             // Update all the files.
-            Collection<VcsRoot> roots = getRoots();
-            if (roots.isEmpty()) {
-                LOG.info("No project VCS roots");
-                progress.setFraction(1.0);
-                return;
-            }
 
-            double lastFraction = 0.0;
-            double fractionRootIncr = 1.0 / roots.size();
-            for (VcsRoot root : roots) {
-                LOG.info("Processing changes in " + root.getPath());
+            double fractionRootIncr = (1.0 - lastFraction) / allClientRoots.size();
+            for (ClientConfigRoot root : allClientRoots) {
+                LOG.info("Processing changes in " + root.getProjectVcsRootDir());
 
-                updateCache(root, builder, addGate);
+                updateCache(root.getProjectVcsRootDir(), root.getClientConfig(),
+                        cachedMaps.first, cachedMaps.second,
+                        builder, addGate);
 
                 lastFraction += fractionRootIncr;
                 progress.setFraction(lastFraction);
@@ -136,18 +164,25 @@ public class P4ChangeProvider
 
             Map<VcsRoot, List<FilePath>> fileRoots = VcsUtil.groupByRoots(project, dirtyFiles, (f) -> f);
             if (!fileRoots.isEmpty()) {
-                double lastFraction = 0.0;
-                double fractionRootIncr = 1.0 / fileRoots.size();
+                double fractionRootIncr = (1.0 - lastFraction) / fileRoots.size();
                 for (Map.Entry<VcsRoot, List<FilePath>> entry : fileRoots.entrySet()) {
-                    LOG.info("Processing changes for " + entry.getValue());
-
-                    Set<FilePath> matched = new HashSet<>();
-                    for (FilePath filePath : entry.getValue()) {
-                        if (dirtyFiles.remove(filePath)) {
-                            matched.add(filePath);
+                    if (entry.getKey().getVcs() != null &&
+                            P4Vcs.getKey().equals(entry.getKey().getVcs().getKeyInstanceMethod())) {
+                        LOG.info("Processing changes for " + entry.getValue());
+                        VirtualFile root = entry.getKey().getPath();
+                        ClientConfigRoot config = ProjectConfigRegistry.getInstance(project).getClientFor(root);
+                        if (config != null) {
+                            Set<FilePath> matched = new HashSet<>();
+                            for (FilePath filePath : entry.getValue()) {
+                                if (dirtyFiles.remove(filePath)) {
+                                    matched.add(filePath);
+                                }
+                            }
+                            if (!matched.isEmpty()) {
+                                updateCache(root, config.getClientConfig(), matched, builder, addGate);
+                            }
                         }
                     }
-                    updateCache(entry.getKey(), matched, builder, addGate);
 
                     lastFraction += fractionRootIncr;
                     progress.setFraction(lastFraction);
@@ -161,12 +196,19 @@ public class P4ChangeProvider
         progress.setFraction(1.0);
     }
 
-    private void updateCache(VcsRoot root, ChangelistBuilder builder, ChangeListManagerGate addGate) {
+    private void updateChangelists(IdeChangelistMap changelistMap, ChangeListManagerGate addGate) {
+        // FIXME implement
+    }
+
+    private void updateCache(VirtualFile root, ClientConfig config,
+            IdeChangelistMap first, IdeFileMap second, ChangelistBuilder builder,
+            ChangeListManagerGate addGate) {
+
         // FIXME update the cache
 
     }
 
-    private void updateCache(VcsRoot root, Set<FilePath> files,
+    private void updateCache(VirtualFile root, ClientConfig config, Set<FilePath> files,
             ChangelistBuilder builder, ChangeListManagerGate addGate) {
         // FIXME update the cache
     }
@@ -177,15 +219,5 @@ public class P4ChangeProvider
         for (FilePath dirtyFile : dirtyFiles) {
             builder.processIgnoredFile(dirtyFile.getVirtualFile());
         }
-    }
-
-
-    private List<VcsRoot> getRoots() {
-        return ServiceManager.getService(project, VcsRootDetector.class).detect()
-                .stream().filter((root) ->
-                        root.getVcs() != null
-                        && root.getPath() != null
-                        && P4Vcs.getKey().equals(root.getVcs().getKeyInstanceMethod()))
-                .collect(Collectors.toList());
     }
 }

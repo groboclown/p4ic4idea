@@ -181,6 +181,7 @@ public interface ConfigPart {
     boolean reload();
 
     /**
+     * FIXME this should take a resource bundle or some custom class that can perform message translation.
      *
      * @return all discovered configuration problems
      */

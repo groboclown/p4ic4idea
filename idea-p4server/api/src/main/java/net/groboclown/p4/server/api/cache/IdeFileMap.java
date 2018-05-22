@@ -51,16 +51,4 @@ public interface IdeFileMap {
      */
     @NotNull
     Stream<P4LocalFile> getLinkedFiles();
-
-    /**
-     * Updates the internal links between the remote files and the local files.  If an
-     * existing linked file is not contained in the argument, then it is assumed to no longer
-     * be opened by any of the project's clients, and will be marked accordingly.
-     * <p>
-     * This will not update the association of the files to changelists.  That can only
-     * be done through {@link IdeChangelistMap#updateForOpenChanges(IdeFileMap, Stream)}.
-     *
-     * @param files all the known files open in the current project.
-     */
-    void updateAllLinkedFiles(@NotNull Stream<P4LocalFile> files);
 }

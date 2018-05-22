@@ -20,6 +20,7 @@ package net.groboclown.p4.server.impl.config.win;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -175,18 +176,17 @@ public class PreferencesWinRegistry {
             InvocationTargetException {
         int[] handles = (int[]) regOpenKey.invoke(
                 root, new Object[]{
-                        new Integer(hkey), toCstr(key), new Integer(KEY_READ)
+                        hkey, toCstr(key), KEY_READ
                 }
         );
         if (handles[1] != REG_SUCCESS) {
             return null;
         }
         byte[] valb = (byte[]) regQueryValueEx.invoke(
-                root, new Object[]{new Integer(handles[0]), toCstr(value)}
+                root, new Object[]{ handles[0], toCstr(value)}
         );
-        regCloseKey.invoke(root, new Object[]{new Integer(handles[0])});
-        // TODO replace with locale
-        return (valb != null ? new String(valb).trim() : null);
+        regCloseKey.invoke(root, handles[0]);
+        return (valb != null ? new String(valb, Charset.defaultCharset()).trim() : null);
     }
 
     private static Map<String, String> readStringValues(Preferences root, int hkey, String key) throws
@@ -213,9 +213,9 @@ public class PreferencesWinRegistry {
                     }
             );
             if (name != null) {
-                // TODO replace with locale
-                final String value = readString(hkey, key, new String(name));
-                results.put(new String(name).trim(), value);
+                String nameText = new String(name, Charset.defaultCharset());
+                final String value = readString(hkey, key, nameText);
+                results.put(nameText.trim(), value);
             }
         }
         regCloseKey.invoke(root, handles[0]);
@@ -245,8 +245,7 @@ public class PreferencesWinRegistry {
                             handles[0], index, maxlen + 1
                     }
             );
-            // TODO replace with locale
-            results.add(new String(name).trim());
+            results.add(new String(name, Charset.defaultCharset()).trim());
         }
         regCloseKey.invoke(root, handles[0]);
         return results;

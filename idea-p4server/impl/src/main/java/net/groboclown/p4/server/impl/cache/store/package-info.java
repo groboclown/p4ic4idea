@@ -13,7 +13,6 @@
  */
 
 /**
- * TODO this package is a placeholder for an idea of what the stored cache might look like.
  * The IDE api + the plugin design implies that this is stored per project.  That means that
  * the state restore action triggers cache updates.  The big thing to remember with this
  * storage is that there MUST be a single model of objects for the cache objects to pull

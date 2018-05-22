@@ -204,68 +204,104 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
     }
 
     private void loadEnvironmentParts() {
-        List<ConfigPart> parts = new ArrayList<>();
 
-        String p4config = null;
-        String p4enviro = null;
+        WinRegDataPart userWinRegistry = null;
+        WinRegDataPart systemWinRegistry = null;
+        EnvPassword envPassword = new EnvPassword();
 
         if (WinRegDataPart.isAvailable()) {
-            WinRegDataPart userReg = new WinRegDataPart(true);
+            userWinRegistry = new WinRegDataPart(true);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Loaded user windows registry: " +
-                        ConfigPropertiesUtil.toProperties(userReg,
+                        ConfigPropertiesUtil.toProperties(userWinRegistry,
                         "<unset>", "<empty>", "<set>"));
             }
-            // p4config is always null at this point.
-            // if (p4config == null) {
-                p4config = userReg.getP4ConfigFile();
-            // }
-            // if (p4enviro == null) {
-                p4enviro = userReg.getP4EnviroFile();
-            // }
-            WinRegDataPart sysReg = new WinRegDataPart(false);
-            if (p4config == null) {
-                p4config = sysReg.getP4ConfigFile();
-            }
-            if (p4enviro == null) {
-                p4enviro = sysReg.getP4EnviroFile();
-            }
+            systemWinRegistry = new WinRegDataPart(false);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Loaded system windows registry: " +
-                        ConfigPropertiesUtil.toProperties(sysReg,
+                        ConfigPropertiesUtil.toProperties(systemWinRegistry,
                                 "<unset>", "<empty>", "<set>"));
             }
-            parts.add(userReg);
-            parts.add(sysReg);
         }
-
-        parts.add(new EnvPassword());
 
         SimpleDataPart envData = new SimpleDataPart(vcsRoot, getSourceName(), null);
 
-        // FIXME switch to using the system environment testable class.
-        envData.setServerName(PerforceEnvironment.getP4Port());
-        envData.setUsername(PerforceEnvironment.getP4User());
-        envData.setClientname(PerforceEnvironment.getP4Client());
-        envData.setClientHostname(PerforceEnvironment.getP4Host());
-        envData.setDefaultCharset(PerforceEnvironment.getP4Charset());
-        envData.setAuthTicketFile(PerforceEnvironment.getP4Tickets());
-        envData.setTrustTicketFile(PerforceEnvironment.getP4Trust());
-        envData.setIgnoreFilename(PerforceEnvironment.getP4Ignore());
+        // Note: using the JreSettings rather than checking the System.env directly.
+        envData.setServerName(JreSettings.getEnv(PerforceEnvironment.P4PORT));
+        envData.setUsername(JreSettings.getEnv(PerforceEnvironment.P4USER));
+        envData.setClientname(JreSettings.getEnv(PerforceEnvironment.P4CLIENT));
+        envData.setClientHostname(JreSettings.getEnv(PerforceEnvironment.P4HOST));
+        envData.setDefaultCharset(JreSettings.getEnv(PerforceEnvironment.P4CHARSET));
+        envData.setAuthTicketFile(JreSettings.getEnv(PerforceEnvironment.P4TICKETS));
+        envData.setTrustTicketFile(JreSettings.getEnv(PerforceEnvironment.P4TRUST));
+        envData.setIgnoreFilename(JreSettings.getEnv(PerforceEnvironment.P4IGNORE));
         if (LOG.isDebugEnabled()) {
             LOG.debug("Loaded environment variables: " +
                     ConfigPropertiesUtil.toProperties(envData,
                             "<unset>", "<empty>", "<set>"));
         }
 
-        if (p4config == null) {
-            p4config = PerforceEnvironment.getP4Config();
+        // Order for environment:
+        //   ENV
+        //   p4config
+        //   p4envio
+        //   win/user registry
+        //   win/system registry
+
+        // Ordering is important.
+        String p4config = null;
+        String p4enviro = JreSettings.getEnv(PerforceEnvironment.P4ENVIRO, PerforceEnvironment.DEFAULT_P4ENVIRO_FILE);
+        // p4config from environment overrides the P4ENVIRO version, so that needs to be
+        // loaded later.
+        if (userWinRegistry != null) {
+            p4config = userWinRegistry.getP4ConfigFile();
+            if (p4enviro == null) {
+                p4enviro = userWinRegistry.getP4EnviroFile();
+            }
         }
-        if (p4enviro == null) {
-            p4enviro = PerforceEnvironment.getP4Enviro();
+        if (systemWinRegistry != null) {
+            if (p4config == null) {
+                p4config = systemWinRegistry.getP4ConfigFile();
+            }
+            if (p4enviro == null) {
+                p4enviro = systemWinRegistry.getP4EnviroFile();
+            }
+        }
+
+
+        // P4ENVIRO loading
+        ConfigPart p4enviroPart = null;
+        {
+            if (p4enviro != null) {
+                File f = getRelFile(p4enviro);
+                // The P4ENVIRO will have a default value if the user didn't specify one.
+                // Therefore, if the file doesn't exist, don't complain.
+                if (f.exists()) {
+                    final FileConfigPart envConf = new FileConfigPart(vcsRoot, f);
+                    envConf.reload();
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Env defined P4ENVIRO: " + f + ": " +
+                                ConfigPropertiesUtil.toProperties(envConf,
+                                        "<unset>", "<empty>", "<set>"));
+                    }
+                    // Overrides
+                    if (envConf.getP4Config() != null) {
+                        p4config = envConf.getP4Config();
+                    }
+                    p4enviroPart = envConf;
+                } else if (LOG.isDebugEnabled()) {
+                    LOG.debug("Env defined P4ENVIRO: " + f + ", but it does not exist.");
+                }
+            }
+        }
+
+        // ENV overrides P4ENVRIO
+        if (JreSettings.getEnv(PerforceEnvironment.P4CONFIG) != null) {
+            p4config = JreSettings.getEnv(PerforceEnvironment.P4CONFIG);
         }
 
         // P4CONFIG loading
+        ConfigPart p4configPart = null;
         {
             if (p4config != null) {
                 if (p4config.indexOf('/') >= 0 || p4config.indexOf('\\') >= 0 || p4config.indexOf(File.separatorChar) >= 0) {
@@ -282,7 +318,7 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
                                 ConfigPropertiesUtil.toProperties(envConf,
                                         "<unset>", "<empty>", "<set>"));
                     }
-                    parts.add(envConf);
+                    p4configPart = envConf;
                 } else {
                     // Scan from the vcs root down for a matching file name.
                     // TODO eventually allow for proper p4config loading, with multiple
@@ -291,7 +327,8 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
                     if (f != null) {
                         FileConfigPart part = new FileConfigPart(vcsRoot, f);
                         part.reload();
-                        parts.add(part);
+
+                        p4configPart = part;
                     }
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Env defined relative P4CONFIG: " + p4config);
@@ -300,39 +337,33 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
             }
         }
 
-        // P4ENVIRO loading
-        {
-            if (p4enviro != null) {
-                File f = getRelFile(p4enviro);
-                // The P4ENVIRO will have a default value if the user didn't specify one.
-                // Therefore, if the file doesn't exist, don't complain.
-                if (f.exists()) {
-                    final FileConfigPart envConf = new FileConfigPart(vcsRoot, f);
-                    envConf.reload();
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Env defined P4ENVIRO: " + f + ": " +
-                                ConfigPropertiesUtil.toProperties(envConf,
-                                        "<unset>", "<empty>", "<set>"));
-                    }
-                    parts.add(envConf);
-                } else if (LOG.isDebugEnabled()) {
-                    LOG.debug("Env defined P4ENVIRO: " + f + ", but it does not exist.");
-                }
-            }
+        List<ConfigPart> parts = new ArrayList<>();
+        parts.add(envData);
+        parts.add(envPassword);
+        if (p4configPart != null) {
+            parts.add(p4configPart);
         }
+        if (p4enviroPart != null) {
+            parts.add(p4enviroPart);
+        }
+        if (userWinRegistry != null) {
+            parts.add(userWinRegistry);
+        }
+        if (systemWinRegistry != null) {
+            parts.add(systemWinRegistry);
+        }
+        MultipleConfigPart finalPart = new MultipleConfigPart("Environment Settings", parts);
 
         // Default configuration settings, if they are not set.
-
-        MultipleConfigPart try1 = new MultipleConfigPart("First Try", parts);
-        if (!try1.hasAuthTicketFileSet()) {
+        if (!finalPart.hasAuthTicketFileSet()) {
             envData.setAuthTicketFile(getDefaultAuthTicketFile());
         }
-        if (!try1.hasTrustTicketFileSet()) {
+        if (!finalPart.hasTrustTicketFileSet()) {
             envData.setTrustTicketFile(getDefaultTrustTicketFile());
         }
 
         // Need to recreate the part, because we just modified it.
-        this.configParts = new MultipleConfigPart("Environment Settings", parts);
+        this.configParts = finalPart;
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Final configuration from environment: " +

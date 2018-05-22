@@ -20,6 +20,7 @@ import com.intellij.credentialStore.OneTimeString;
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
+import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.concurrency.Promise;
@@ -34,6 +35,8 @@ import org.jetbrains.concurrency.Promise;
  */
 public abstract class ApplicationPasswordRegistry
         implements ApplicationComponent {
+    private static final Logger LOG = Logger.getInstance(ApplicationPasswordRegistry.class);
+
     public static final String COMPONENT_NAME = "p4ic4idea:pr";
 
     @NotNull
@@ -49,6 +52,9 @@ public abstract class ApplicationPasswordRegistry
      * @param password
      */
     public final void store(@NotNull ServerConfig config, @NotNull char[] password, boolean inMemoryOnly) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Storing password for config " + config.getServerName());
+        }
         final CredentialAttributes attr = getCredentialAttributes(config, inMemoryOnly);
         PasswordSafe.getInstance().set(attr, new Credentials(config.getUsername(), password));
         for (int i = 0; i < password.length; i++) {
@@ -62,6 +68,9 @@ public abstract class ApplicationPasswordRegistry
      * @param config server configuration for the password.
      */
     public final void remove(@NotNull ServerConfig config) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Removing password for config " + config.getServerName());
+        }
         CredentialAttributes attr = getCredentialAttributes(config, false);
         PasswordSafe.getInstance().set(attr, new Credentials(config.getUsername(), (String) null));
     }
@@ -86,11 +95,14 @@ public abstract class ApplicationPasswordRegistry
      * Retrieve the stored password.  If it was not stored, then the promise's
      * resolved value will be null.
      *
-     * @param config
+     * @param config source
      * @return
      */
     @NotNull
     public final Promise<OneTimeString> get(@NotNull ServerConfig config) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Fetching password for config " + config.getServerName());
+        }
         final CredentialAttributes attr = getCredentialAttributes(config, true);
         return PasswordSafe.getInstance().getAsync(attr).then(Credentials::getPassword);
     }

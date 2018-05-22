@@ -54,7 +54,7 @@ class WinRegDataPart implements ConfigPart {
     private P4ServerName serverName;
     private String clientName;
     private String userName;
-    private String password;
+    private String encodedPassword;
     private String authTicketPath;
     private String trustTicket;
     private String configFile;
@@ -87,7 +87,10 @@ class WinRegDataPart implements ConfigPart {
             serverName = P4ServerName.forPort(rawPort);
             clientName = readRegString(PerforceEnvironment.P4CLIENT);
             userName = readRegString(PerforceEnvironment.P4USER);
-            password = readRegString(PerforceEnvironment.P4PASSWD);
+
+            // FIXME the encodedPassword is encoded.  Need to decode it to use it.
+            encodedPassword = readRegString(PerforceEnvironment.P4PASSWD);
+
             authTicketPath = readRegString(PerforceEnvironment.P4TICKETS);
             trustTicket = readRegString(PerforceEnvironment.P4TRUST);
             configFile = readRegString(PerforceEnvironment.P4CONFIG);
@@ -99,8 +102,8 @@ class WinRegDataPart implements ConfigPart {
 
             if (LOG.isDebugEnabled()) {
                 Map<String, String> props = ConfigPropertiesUtil.toProperties(
-                        this, "<unset>", "<empty password>",
-                        "<password>");
+                        this, "<unset>", "<empty encodedPassword>",
+                        "<encodedPassword>");
                 props.put(PerforceEnvironment.P4CONFIG, configFile);
                 props.put(PerforceEnvironment.P4ENVIRO, enviroFile);
                 LOG.debug("Loaded windows registry " + keys[0] + " " + props);
@@ -194,13 +197,13 @@ class WinRegDataPart implements ConfigPart {
 
     @Override
     public boolean hasPasswordSet() {
-        return password != null;
+        return encodedPassword != null;
     }
 
     @Nullable
     @Override
     public String getPlaintextPassword() {
-        return password;
+        return encodedPassword;
     }
 
     @Override

@@ -16,6 +16,7 @@ package net.groboclown.p4.server.impl.cache;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
+import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.cache.messagebus.AbstractCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheMessage;
@@ -25,9 +26,14 @@ import net.groboclown.p4.server.api.cache.messagebus.JobCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.JobSpecCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ListClientsForUserCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ServerActionCacheMessage;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
+import net.groboclown.p4.server.api.values.P4LocalChangelist;
+import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Collection;
 
 /**
  * Listens to cache update events, and updates the local project cache store.
@@ -56,6 +62,7 @@ public class CacheStoreUpdateListener implements Disposable {
         // TODO perhaps add in listener for client config removal
     }
 
+
     public boolean isDisposed() {
         return disposed;
     }
@@ -64,6 +71,20 @@ public class CacheStoreUpdateListener implements Disposable {
     public void dispose() {
         this.disposed = true;
         // TODO dispose the cache data
+    }
+
+    /**
+     * Update the opened file and changelist cache for the configuration.
+     *
+     * @param ref source
+     * @param pendingChangelists pending changelists for the source
+     * @param openedFiles files open for change in the source
+     */
+    public void setOpenedChanges(ClientServerRef ref,
+            Collection<P4LocalChangelist> pendingChangelists,
+            Collection<P4LocalFile> openedFiles) {
+        // FIXME implement
+        LOG.warn("FIXME implement setOpenedChanges");
     }
 
 
@@ -104,7 +125,7 @@ public class CacheStoreUpdateListener implements Disposable {
 
         @Override
         public void openFilesChangelistsUpdated(@NotNull ClientOpenCacheMessage.Event event) {
-
+            setOpenedChanges(event.getClientRef(), event.getPendingChangelists(), event.getOpenedFiles());
         }
 
         @Override

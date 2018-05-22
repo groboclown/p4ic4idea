@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.impl.cache.store;
 
+import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.values.P4JobSpec;
 import org.jetbrains.annotations.NotNull;
@@ -22,11 +23,13 @@ import org.jetbrains.annotations.NotNull;
  * All the cached server-side information for query results.
  */
 public class ServerQueryCacheStore {
+    private static final Logger LOG = Logger.getInstance(ServerQueryCacheStore.class);
+
     private final P4ServerName serverName;
     private P4JobSpec jobSpec;
 
     public static class State {
-        // FIXME
+        // FIXME implement
     }
 
 
@@ -45,5 +48,16 @@ public class ServerQueryCacheStore {
 
     public P4ServerName getServerName() {
         return serverName;
+    }
+
+    public State getState() {
+        // FIXME implement
+        LOG.warn("FIXME implement state construction");
+        return null;
+    }
+
+    public void setState(State state) {
+        // FIXME implement
+        LOG.warn("FIXME implement state reading");
     }
 }

@@ -15,18 +15,24 @@
 package net.groboclown.p4.server.impl.cache;
 
 import com.intellij.openapi.vcs.changes.LocalChangeList;
+import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
-import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
-import net.groboclown.p4.server.api.values.P4ChangelistSummary;
-import net.groboclown.p4.server.api.values.P4RemoteChangelist;
+import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.Map;
-import java.util.stream.Stream;
 
 public class IdeChangelistMapImpl implements IdeChangelistMap {
+    private final CacheQueryHandler queryHandler;
+    private final ProjectCacheStore cache;
+
+    public IdeChangelistMapImpl(CacheQueryHandler queryHandler, ProjectCacheStore cache) {
+        this.queryHandler = queryHandler;
+        this.cache = cache;
+    }
 
     @Nullable
     @Override
@@ -36,7 +42,7 @@ public class IdeChangelistMapImpl implements IdeChangelistMap {
 
     @Nullable
     @Override
-    public P4ChangelistId getP4ChangeFor(@NotNull LocalChangeList changeList) {
+    public Collection<P4ChangelistId> getP4ChangesFor(@NotNull LocalChangeList changeList) {
         return null;
     }
 
@@ -47,13 +53,7 @@ public class IdeChangelistMapImpl implements IdeChangelistMap {
     }
 
     @Override
-    public void updateForOpenChanges(@NotNull IdeFileMap fileMap, @NotNull Stream<P4RemoteChangelist> openChanges) {
-
-    }
-
-    @Override
-    public void updateForDeletedSubmittedChanges(@NotNull Stream<P4ChangelistSummary> closedChanges,
-            boolean deleteNotEmpty) {
+    public void setMapping(P4ChangelistId p4ChangelistId, LocalChangeList changeList) {
 
     }
 }

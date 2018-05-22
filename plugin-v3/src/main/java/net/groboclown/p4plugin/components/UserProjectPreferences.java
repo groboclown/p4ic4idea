@@ -17,8 +17,6 @@ package net.groboclown.p4plugin.components;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
-import com.intellij.openapi.components.Storage;
-import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,6 +42,9 @@ public class UserProjectPreferences
     public static final int MAX_LOCK_WAIT_TIMEOUT_MILLIS = 5 * 60 * 1000;
     public static final int DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS = 30 * 1000;
     public static final boolean DEFAULT_SHOW_DIALOG_CONNECTION_MESSAGES = true;
+    public static final int DEFAULT_MAX_CLIENT_RETRIEVE_COUNT = 500;
+    public static final int DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT = 500;
+    public static final int DEFAULT_MAX_FILE_RETRIEVE_COUNT = 5000;
 
     @NotNull
     private State state = new State();
@@ -82,12 +83,18 @@ public class UserProjectPreferences
         public int lockWaitTimeoutMillis = DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS;
 
         public boolean showDialogConnectionMessages = DEFAULT_SHOW_DIALOG_CONNECTION_MESSAGES;
+
+        public int maxClientRetrieveCount = DEFAULT_MAX_CLIENT_RETRIEVE_COUNT;
+
+        public int maxChangelistRetrieveCount = DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT;
+
+        public int maxFileRetrieveCount = DEFAULT_MAX_FILE_RETRIEVE_COUNT;
     }
 
-    @NotNull
+    @Nullable
     public static UserProjectPreferences getInstance(@NotNull final Project project) {
         if (project.isDisposed()) {
-            return new UserProjectPreferences();
+            return null;
         }
         return ServiceManager.getService(project, UserProjectPreferences.class);
     }
@@ -317,5 +324,65 @@ public class UserProjectPreferences
 
     public void setLockWaitTimeoutMillis(final int lockWaitTimeoutMillis) {
         state.lockWaitTimeoutMillis = lockWaitTimeoutMillis;
+    }
+
+
+    public static int getMaxClientRetrieveCount(@Nullable final Project project) {
+        if (project == null) {
+            return DEFAULT_MAX_CLIENT_RETRIEVE_COUNT;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return DEFAULT_MAX_CLIENT_RETRIEVE_COUNT;
+        }
+        return prefs.getMaxClientRetrieveCount();
+    }
+
+    public int getMaxClientRetrieveCount() {
+        return state.maxClientRetrieveCount;
+    }
+
+    public void setMaxClientRetrieveCount(final int count) {
+        state.maxClientRetrieveCount = count;
+    }
+
+
+    public static int getMaxChangelistRetrieveCount(@Nullable final Project project) {
+        if (project == null) {
+            return DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT;
+        }
+        return prefs.getMaxChangelistRetrieveCount();
+    }
+
+    public int getMaxChangelistRetrieveCount() {
+        return state.maxChangelistRetrieveCount;
+    }
+
+    public void setMaxChangelistRetrieveCount(final int count) {
+        state.maxChangelistRetrieveCount = count;
+    }
+
+
+    public static int getMaxFileRetrieveCount(@Nullable final Project project) {
+        if (project == null) {
+            return DEFAULT_MAX_FILE_RETRIEVE_COUNT;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return DEFAULT_MAX_FILE_RETRIEVE_COUNT;
+        }
+        return prefs.getMaxFileRetrieveCount();
+    }
+
+    public int getMaxFileRetrieveCount() {
+        return state.maxFileRetrieveCount;
+    }
+
+    public void setMaxFileRetrieveCount(final int count) {
+        state.maxFileRetrieveCount = count;
     }
 }

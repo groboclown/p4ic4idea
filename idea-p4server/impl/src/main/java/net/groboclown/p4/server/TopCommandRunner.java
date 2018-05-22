@@ -254,7 +254,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         return onlineCheck(config,
                 () -> server.perform(config, action),
                 () -> new ActionAnswerImpl<>(Answer.reject(
-                        // FIXME
+                        // FIXME implement correct offline answer
                         null
                 )));
     }

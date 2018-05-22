@@ -17,21 +17,40 @@ package net.groboclown.p4plugin.components;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.components.State;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.async.Answer;
+import net.groboclown.p4.server.api.async.BlockingAnswer;
 import net.groboclown.p4.server.api.cache.CacheQueryHandler;
+import net.groboclown.p4.server.api.cache.IdeChangelistMap;
+import net.groboclown.p4.server.api.cache.IdeFileMap;
+import net.groboclown.p4.server.api.commands.sync.SyncListOpenedFilesChangesQuery;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.impl.cache.CacheQueryHandlerImpl;
+import net.groboclown.p4.server.impl.cache.CacheStoreUpdateListener;
+import net.groboclown.p4.server.impl.cache.IdeChangelistMapImpl;
+import net.groboclown.p4.server.impl.cache.IdeFileMapImpl;
 import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 @State(
         name = "P4ProjectCache"
 )
 public class CacheComponent implements ProjectComponent, PersistentStateComponent<ProjectCacheStore.State> {
+    private static final Logger LOG = Logger.getInstance(CacheComponent.class);
+
     private static final String COMPONENT_NAME = "Perforce Project Cached Data";
     private final Project project;
     private final ProjectCacheStore projectCache = new ProjectCacheStore();
     private CacheQueryHandler queryHandler;
+    private CacheStoreUpdateListener updateListener;
+
 
     public static CacheComponent getInstance(Project project) {
         // a non-registered component can happen when the config is loaded outside a project.
@@ -53,6 +72,51 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
         return queryHandler;
     }
 
+    /**
+     * Force a cache refresh on the opened server objects (changelists and files).
+     *
+     * @return the pending answer.
+     */
+    public Answer<Pair<IdeChangelistMap, IdeFileMap>> refreshServerOpenedCache(Collection<ClientConfig> clients) {
+        Answer<?> ret = Answer.resolve(null);
+
+        for (ClientConfig client : clients) {
+            ret = ret.mapAsync((x) ->
+            Answer.background((sink) -> P4ServerComponent.getInstance(project).getCommandRunner().syncQuery(
+                    client,
+                    new SyncListOpenedFilesChangesQuery(
+                            UserProjectPreferences.getMaxChangelistRetrieveCount(project),
+                            UserProjectPreferences.getMaxFileRetrieveCount(project))).getPromise()
+            .whenCompleted((changesResult) -> {
+                updateListener.setOpenedChanges(
+                        changesResult.getClientConfig().getClientServerRef(),
+                        changesResult.getPendingChangelists(), changesResult.getOpenedFiles());
+                sink.resolve(null);
+            })
+            .whenServerError(sink::reject)));
+        }
+
+        return ret.map((x) -> getServerOpenedCache());
+    }
+
+    public Pair<IdeChangelistMap, IdeFileMap> getServerOpenedCache() {
+        // TODO should the mapping be internal, rather than created on the fly?
+        return new Pair<>(
+                new IdeChangelistMapImpl(queryHandler, projectCache),
+                new IdeFileMapImpl(queryHandler));
+    }
+
+    public Pair<IdeChangelistMap, IdeFileMap> blockingRefreshServerOpenedCache(Collection<ClientConfig> clients,
+            int timeout, TimeUnit timeoutUnit) {
+        try {
+            return BlockingAnswer.defaultBlockingGet(refreshServerOpenedCache(clients), timeout, timeoutUnit,
+                    this::getServerOpenedCache);
+        } catch (P4CommandRunner.ServerResultException e) {
+            LOG.info(e);
+            return getServerOpenedCache();
+        }
+    }
+
     @NotNull
     @Override
     public String getComponentName() {
@@ -62,7 +126,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
 
     @Override
     public void projectOpened() {
-
+        // do nothing
     }
 
     @Override
@@ -73,14 +137,17 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     @Override
     public void initComponent() {
         queryHandler = new CacheQueryHandlerImpl(projectCache);
-
-        // FIXME add message listeners
+        updateListener = new CacheStoreUpdateListener(projectCache);
     }
 
     @Override
     public void disposeComponent() {
         if (queryHandler != null) {
             queryHandler = null;
+        }
+        if (updateListener != null) {
+            updateListener.dispose();
+            updateListener = null;
         }
     }
 

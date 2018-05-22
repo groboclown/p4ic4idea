@@ -125,6 +125,7 @@ public class ConnectCommandRunner
     @Override
     public P4CommandRunner.QueryAnswer<AnnotateFileResult> getFileAnnotation(@NotNull ServerConfig config,
             @NotNull AnnotateFileQuery query) {
+        // FIXME implement
         return null;
     }
 
@@ -132,6 +133,7 @@ public class ConnectCommandRunner
     @Override
     public P4CommandRunner.QueryAnswer<DescribeChangelistResult> describeChangelist(@NotNull ServerConfig config,
             @NotNull DescribeChangelistQuery query) {
+        // FIXME implement
         return null;
     }
 

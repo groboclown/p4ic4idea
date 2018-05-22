@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 public class BlockingAnswer<S> {
     private final CountDownLatch latch = new CountDownLatch(1);
@@ -34,6 +35,16 @@ public class BlockingAnswer<S> {
     public static <S> S blockingGet(@NotNull Answer<S> answer, int timeout, @NotNull TimeUnit unit)
             throws InterruptedException, CancellationException, P4CommandRunner.ServerResultException {
         return new BlockingAnswer<>(answer).blockingGet(timeout, unit);
+    }
+
+    public static <S> S defaultBlockingGet(@NotNull Answer<S> answer, int timeout, @NotNull TimeUnit unit,
+            Supplier<S> defaultValueOnTimeout)
+            throws P4CommandRunner.ServerResultException {
+        try {
+            return new BlockingAnswer<>(answer).blockingGet(timeout, unit);
+        } catch (InterruptedException | CancellationException e) {
+            return defaultValueOnTimeout.get();
+        }
     }
 
 

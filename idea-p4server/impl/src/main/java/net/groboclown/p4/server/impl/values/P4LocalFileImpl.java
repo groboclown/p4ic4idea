@@ -130,7 +130,7 @@ public class P4LocalFileImpl implements P4LocalFile {
         resolveType = P4ResolveType.convert(spec.getResolveType(), spec.getContentResolveType());
         fileType = P4FileType.convert(spec.getFileType());
         integrateFrom =
-                // TODO double check this logic
+                // TODO double check this logic - like with a unit test!
                 spec.getMovedFile() != null
                     ? new P4RemoteFileImpl(spec.getMovedFile())
                     : (spec.getOriginalPath() != null

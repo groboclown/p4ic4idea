@@ -35,7 +35,9 @@ import net.groboclown.p4.server.api.util.FileTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Stores the registered configurations for a specific project.  The registry must
@@ -111,6 +113,12 @@ public abstract class ProjectConfigRegistry
     }
 
 
+    @NotNull
+    public Collection<ClientConfigRoot> getClientConfigRoots() {
+        return new ArrayList<>(getRegisteredStates());
+    }
+
+
     /**
      * Retrieve the client configuration information about the client server ref.  Even though the
      * connections are registered application-wide, individual projects must register themselves
@@ -171,6 +179,20 @@ public abstract class ProjectConfigRegistry
                 onClientRemoved(event.getClientConfig(), event.getVcsRootDir());
             }
         });
+
+        // New clients should only be registered by this component, which means that the "add client"
+        // message should ONLY be sent by this class.  Therefore, this class doesn't need to listen
+        // for add events, as that could cause recursive problems.
+        //ClientConfigAddedMessage.addListener(projectBusClient, (r, c) -> {
+        //    // Need to make sure we don't perform a recursive call here.
+        //    if (r != null) {
+        //        ClientConfigRoot existingClient = getClientFor(r);
+        //        if (existingClient != null && !c.getClientServerRef().equals(existingClient.getClientConfig().getClientServerRef())) {
+        //            addClientConfig(c, r);
+        //        }
+        //    }
+        //});
+
         UserSelectedOfflineMessage.addListener(projectBusClient, this::onUserSelectedOffline);
         ReconnectRequestMessage.addListener(projectBusClient, new ReconnectRequestMessage.Listener() {
             @Override
@@ -224,7 +246,9 @@ public abstract class ProjectConfigRegistry
 
     protected final void sendClientAdded(@Nullable ClientConfigRoot state) {
         if (state != null) {
-            ClientConfigAddedMessage.send(getProject()).clientConfigurationAdded(state.getClientConfig());
+            ClientConfigAddedMessage.send(getProject()).clientConfigurationAdded(
+                    state.getClientRootDir(),
+                    state.getClientConfig());
         }
     }
 

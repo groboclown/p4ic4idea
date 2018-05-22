@@ -58,7 +58,7 @@ public class SimpleConnectionManager implements ConnectionManager {
     private static final Logger P4LOG = Logger.getInstance("p4");
 
     private static final String PLUGIN_P4HOST_KEY = "P4HOST";
-    private static final String PLUGIN_LANGUAGE_KEY = "P4LANG";
+    private static final String PLUGIN_LANGUAGE_KEY = "P4LANGUAGE";
 
     private final File tmpDir;
     private final int socketSoTimeoutMillis;
@@ -78,22 +78,31 @@ public class SimpleConnectionManager implements ConnectionManager {
     @Override
     public <R> Answer<R> withConnection(@NotNull ClientConfig config, @Nonnull P4Func<IClient, R> fun) {
         if (config.getServerConfig().usesStoredPassword()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Using password stored in registry.");
+            }
             return Answer.forPromise(ApplicationPasswordRegistry.getInstance().get(config.getServerConfig()))
                     .mapAsync((password) -> handleAsync(config, () -> {
                         final IOptionsServer server = connect(
                                 config.getServerConfig(),
-                                password.toString(true),
+                                password.toString(false),
                                 createProperties(config));
                         try {
                             IClient client = server.getClient(config.getClientname());
                             if (client == null) {
                                 throw new ConfigException("Client does not exist: " + config.getClientname());
                             }
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Connected to client " + client.getName());
+                            }
                             return fun.func(client);
                         } finally {
                             close(server);
                         }
                     }));
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Skipping password use.");
         }
         return handleAsync(config, () -> {
                     final IOptionsServer server = connect(
@@ -104,6 +113,9 @@ public class SimpleConnectionManager implements ConnectionManager {
                         IClient client = server.getClient(config.getClientname());
                         if (client == null) {
                             throw new ConfigException("Client does not exist: " + config.getClientname());
+                        }
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Connected to client " + client.getName());
                         }
                         return fun.func(server.getClient(config.getClientname()));
                     } finally {
@@ -116,11 +128,14 @@ public class SimpleConnectionManager implements ConnectionManager {
     @Override
     public <R> Answer<R> withConnection(@NotNull ServerConfig config, @NotNull P4Func<IOptionsServer, R> fun) {
         if (config.usesStoredPassword()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Using password stored in registry.");
+            }
             return Answer.forPromise(ApplicationPasswordRegistry.getInstance().get(config))
                     .mapAsync((password) -> handleAsync(config, () -> {
                         final IOptionsServer server = connect(
                                 config,
-                                password.toString(true),
+                                password.toString(false),
                                 createProperties(config));
                         try {
                             return fun.func(server);
@@ -128,6 +143,9 @@ public class SimpleConnectionManager implements ConnectionManager {
                             close(server);
                         }
                     }));
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Skipping password use.");
         }
         return handleAsync(config, () -> {
             final IOptionsServer server = connect(
@@ -182,6 +200,9 @@ public class SimpleConnectionManager implements ConnectionManager {
             // TODO look into registering the sso key through user options.
             server.registerSSOCallback(new LoginSsoCallbackHandler(serverConfig.getLoginSso(), 1000), null);
         }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Sending connect request to server " + serverConfig.getServerName());
+        }
         server.connect();
 
         // Seems to be connected.  Tell the world that it can be
@@ -199,8 +220,18 @@ public class SimpleConnectionManager implements ConnectionManager {
                     && serverConfig.getAuthTicket().canWrite();
             final LoginOptions loginOptions = new LoginOptions();
             loginOptions.setDontWriteTicket(! useTicket);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Attempting to log into the server.  Auth Ticket: " +
+                        (useTicket ? serverConfig.getAuthTicket() : "don't use") +
+                        "; password? " + (password == null ? "(not used)" : "(set)")
+                    );
+            }
             server.login(password, loginOptions);
             ServerConnectedMessage.send().serverConnected(serverConfig, true);
+        } else {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("No attempt made to authenticate with the server.");
+            }
         }
 
         return server;

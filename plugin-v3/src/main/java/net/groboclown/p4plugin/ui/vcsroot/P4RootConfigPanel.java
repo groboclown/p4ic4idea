@@ -57,6 +57,7 @@ public class P4RootConfigPanel {
     private ConfigPartStack myConfigPartStack;
     private JButton myDetailsToggle;
     private AsyncProcessIcon myCheckConnectionSpinner;
+    private JLabel myDetailsTitle;
 
     // FIXME better manage the toggled panel size.  Or, somehow setup
     // a better interface.  The old tab display may work well, but it
@@ -83,7 +84,8 @@ public class P4RootConfigPanel {
         });
 
         myDetailsToggle.setVisible(false);
-        SwingUtil.iconOnlyButton(myDetailsToggle, COLLAPSE_DESCRIPTION, SwingUtil.ButtonType.ACCENT);
+        SwingUtil.iconOnlyButton(myDetailsToggle, EXPAND_DESCRIPTION, SwingUtil.ButtonType.ACCENT);
+        myDetailsTitle.setText("");
         myDetailsToggle.addActionListener((e) -> {
             if (myConfigRefreshDetailsPanel.isVisible()) {
                 SwingUtil.iconOnlyButton(myDetailsToggle, EXPAND_DESCRIPTION, SwingUtil.ButtonType.ACCENT);
@@ -120,20 +122,37 @@ public class P4RootConfigPanel {
         myCheckConnectionSpinner.setVisible(false);
         myCheckConnectionButton.setEnabled(true);
 
-        myConfigRefreshDetailsPanel.setVisible(true);
-        SwingUtil.iconOnlyButton(myDetailsToggle, COLLAPSE_DESCRIPTION, SwingUtil.ButtonType.ACCENT);
+        // Only show the details panel when explicitly clicked.
+        // TODO probably put a high-level text describing the number of problems found.
+        // myConfigRefreshDetailsPanel.setVisible(true);
+        SwingUtil.iconOnlyButton(myDetailsToggle, EXPAND_DESCRIPTION, SwingUtil.ButtonType.ACCENT);
         myDetailsToggle.setVisible(true);
         myResolvedProperties.setText(getResolvedProperties(part));
 
+        int errorCount = 0;
+        int warningCount = 0;
         problemListModel.clear();
         for (ConfigProblem configProblem : PartValidation.findAllProblems(part)) {
             problemListModel.addElement(configProblem);
+            if (configProblem.isError()) {
+                errorCount++;
+            } else {
+                warningCount++;
+            }
         }
 
         myProblemsList.revalidate();
         myProblemsList.doLayout();
 
-        myProblemsPanel.setVisible(!problemListModel.isEmpty());
+        if (problemListModel.isEmpty()) {
+            myProblemsPanel.setVisible(false);
+            myDetailsTitle.setVisible(false);
+        } else {
+            myProblemsPanel.setVisible(true);
+            myDetailsTitle.setVisible(true);
+            myDetailsTitle.setText(P4Bundle.message("configuration.stack.wrapper.toggle.title",
+                    errorCount, warningCount));
+        }
 
         rootPanel.revalidate();
         rootPanel.doLayout();
@@ -191,6 +210,7 @@ public class P4RootConfigPanel {
         panel2.add(panel3, BorderLayout.NORTH);
         myDetailsToggle = new JButton();
         myDetailsToggle.setText("");
+        myDetailsToggle.setVerticalAlignment(3);
         panel3.add(myDetailsToggle, BorderLayout.WEST);
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new FormLayout("fill:max(d;4px):noGrow,left:4dlu:noGrow,fill:d:grow", "center:d:grow"));
@@ -296,6 +316,8 @@ public class P4RootConfigPanel {
         @Override
         public Component getListCellRendererComponent(JList<? extends ConfigProblem> list, ConfigProblem problem,
                 int index, boolean isSelected, boolean cellHasFocus) {
+            // TODO allow selection, and show selection differently.
+
             cell.setForeground(problem.isError()
                     ? JBColor.RED
                     : UIUtil.getTextAreaForeground());

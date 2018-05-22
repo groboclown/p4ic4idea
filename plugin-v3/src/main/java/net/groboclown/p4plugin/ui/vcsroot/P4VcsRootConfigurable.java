@@ -25,8 +25,8 @@ import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.option.server.GetClientsOptions;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.async.Answer;
-import net.groboclown.p4.server.api.async.AnswerSink;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ConfigProblem;
 import net.groboclown.p4.server.api.config.ConfigPropertiesUtil;
@@ -107,7 +107,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
                 if (oldConfig != null) {
                     ClientConfigRemovedMessage.reportClientConfigRemoved(project, this, oldConfig, vcsRoot);
                 }
-                ClientConfigAddedMessage.send(project).clientConfigurationAdded(clientConfig);
+                ProjectConfigRegistry.getInstance(project).addClientConfig(clientConfig, vcsRoot);
             } catch (IllegalArgumentException e) {
                 throw new ConfigurationException(
                         e.getLocalizedMessage(),
@@ -206,6 +206,8 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
 
         @Override
         protected void performRefresh() {
+            // TODO This code should probably be moved into a different class.
+
             LOG.debug("Refreshing configuration in panel");
             ClientConfig tClientConfig = null;
             ServerConfig tServerConfig = null;
@@ -233,7 +235,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
 
             final ConnectionManager connectionManager;
             if (serverConfig != null) {
-                // FIXME attempt to connect to the server to see if it
+                // Attempt to connect to the server to see if it
                 // can be connected.  If it can't, then add that as
                 // an error.
 
@@ -241,10 +243,10 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
                 // server connection, rather than using cached data, we'll bypass the
                 // usual infrastructure.  See P4ServerComponent.
 
-                UserProjectPreferences preferences = UserProjectPreferences.getInstance(project);
                 connectionManager = new SimpleConnectionManager(
                         TempDirUtil.getTempDir(project),
-                        preferences.getSocketSoTimeoutMillis(),
+                        UserProjectPreferences.getSocketSoTimeoutMillis(project),
+                        // FIXME get the right version number
                         "v-10-get-the-right-number",
                         new MessageErrorHandler(project)
                 );

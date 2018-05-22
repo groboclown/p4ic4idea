@@ -87,10 +87,9 @@ public class P4ServerComponent implements ProjectComponent {
 
     @NotNull
     protected ConnectionManager createConnectionManager() {
-        UserProjectPreferences preferences = UserProjectPreferences.getInstance(project);
         return new SimpleConnectionManager(
                 TempDirUtil.getTempDir(project),
-                preferences.getSocketSoTimeoutMillis(),
+                UserProjectPreferences.getSocketSoTimeoutMillis(project),
 
                 // FIXME pull in the version from the classpath file
                 // Update P4VcsRootConfigurable when this is fixed.

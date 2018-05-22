@@ -16,6 +16,7 @@ package net.groboclown.p4.server.impl.cache;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
@@ -28,6 +29,11 @@ import java.util.stream.Stream;
  *
  */
 public class IdeFileMapImpl implements IdeFileMap {
+    private final CacheQueryHandler cache;
+
+    public IdeFileMapImpl(CacheQueryHandler queryHandler) {
+        this.cache = queryHandler;
+    }
 
     @Nullable
     @Override
@@ -52,10 +58,4 @@ public class IdeFileMapImpl implements IdeFileMap {
     public Stream<P4LocalFile> getLinkedFiles() {
         return null;
     }
-
-    @Override
-    public void updateAllLinkedFiles(@NotNull Stream<P4LocalFile> files) {
-
-    }
-
 }

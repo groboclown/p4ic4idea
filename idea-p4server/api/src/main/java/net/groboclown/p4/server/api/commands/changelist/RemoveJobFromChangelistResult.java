@@ -12,33 +12,16 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.impl.cache.store;
+package net.groboclown.p4.server.api.commands.changelist;
 
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.p4.server.api.cache.IdeFileMap;
-import net.groboclown.p4.server.api.values.P4LocalFile;
-import net.groboclown.p4.server.api.values.P4RemoteFile;
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.stream.Stream;
-
-/**
- *
- */
-public class IdeFileCacheStore {
-    public static class State {
-
-    }
-
-    IdeFileCacheStore() {
-
-    }
-
+public class RemoveJobFromChangelistResult implements P4CommandRunner.ClientResult {
     @NotNull
-    State getState() {
-        State ret = new State();
-        return ret;
+    @Override
+    public ClientConfig getClientConfig() {
+        return null;
     }
 }

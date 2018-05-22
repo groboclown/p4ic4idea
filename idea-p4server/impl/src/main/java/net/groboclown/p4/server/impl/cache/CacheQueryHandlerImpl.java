@@ -125,6 +125,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                     }
                     case REMOVE_JOB_FROM_CHANGELIST: {
                         // FIXME implement
+                        LOG.warn("FIXME implement REMOVE_JOB_FROM_CHANGELIST condition");
                         throw new IllegalStateException("not implemented");
                     }
                 }
@@ -217,6 +218,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
     @Override
     public P4RemoteChangelist getCachedChangelist(P4ServerName serverName, P4ChangelistId changelistId) {
         // FIXME implement
+        LOG.warn("FIXME implement getCachedChangelist");
         return null;
     }
 
@@ -235,6 +237,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
     public Collection<P4WorkspaceSummary> getCachedClientsForUser(@NotNull P4ServerName serverName,
             @NotNull String username) {
         // FIXME implement
+        LOG.warn("FIXME implement getCachedClientsForUser");
         return null;
     }
 }

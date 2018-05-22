@@ -15,28 +15,36 @@
 package net.groboclown.p4.server.api.messagebus;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.Topic;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ClientConfigAddedMessage extends ProjectMessage<ClientConfigAddedMessage.Listener> {
     private static final String DISPLAY_NAME = "p4ic4idea:client configuration registration added";
-    private static final Topic<Listener> TOPIC = new Topic<Listener>(
+    private static final Topic<Listener> TOPIC = new Topic<>(
             DISPLAY_NAME, Listener.class, Topic.BroadcastDirection.TO_CHILDREN
     );
     private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
     public interface Listener {
-        void clientConfigurationAdded(@NotNull ClientConfig clientConfig);
+        void clientConfigurationAdded(@Nullable VirtualFile root, @NotNull ClientConfig clientConfig);
     }
 
     public static class ListenerAdapter implements Listener {
         @Override
-        public void clientConfigurationAdded(@NotNull ClientConfig clientConfig) {
+        public void clientConfigurationAdded(@Nullable VirtualFile root, @NotNull ClientConfig clientConfig) {
 
         }
     }
 
+    /**
+     * Should only be called by {@link net.groboclown.p4.server.api.ProjectConfigRegistry}.
+     *
+     * @param project project to send the message on.
+     * @return the listener proxy for this message
+     */
     public static Listener send(@NotNull Project project) {
         return getListener(project, TOPIC, DEFAULT_LISTENER);
     }

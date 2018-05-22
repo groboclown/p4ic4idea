@@ -21,6 +21,7 @@ import com.intellij.util.xmlb.XmlSerializer;
 import net.groboclown.p4.server.api.config.P4VcsRootSettings;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.impl.cache.store.VcsRootCacheStore;
+import net.groboclown.p4.server.impl.config.part.EnvCompositePart;
 import org.jdom.Element;
 
 import java.util.ArrayList;
@@ -28,8 +29,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
-    private final VirtualFile rootDir;
+    private VirtualFile rootDir;
     private List<ConfigPart> parts = new ArrayList<>();
+    private boolean partsSet = false;
 
     public P4VcsRootSettingsImpl(VirtualFile rootDir) {
         this.rootDir = rootDir;
@@ -38,12 +40,16 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
 
     @Override
     public List<ConfigPart> getConfigParts() {
+        if (!partsSet) {
+            return getDefaultConfigParts();
+        }
         return new ArrayList<>(parts);
     }
 
     @Override
     public void setConfigParts(List<ConfigPart> parts) {
         this.parts = new ArrayList<>(parts);
+        partsSet = true;
     }
 
     @Override
@@ -53,6 +59,7 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
         if (configElement == null || configElement.getChildren().isEmpty()) {
             // not set.
             setConfigParts(Collections.emptyList());
+            partsSet = false;
             return;
         }
         Element rootElement = configElement.getChildren().get(0);
@@ -64,12 +71,17 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
     @Override
     public void writeExternal(Element element)
             throws WriteExternalException {
-        VcsRootCacheStore store = new VcsRootCacheStore(rootDir);
-        store.setConfigParts(parts);
-        Element rootElement = XmlSerializer.serialize(store.getState());
-        Element configElement = new Element("p4-config");
-        configElement.addContent(rootElement);
-        element.addContent(configElement);
+        if (partsSet) {
+            VcsRootCacheStore store = new VcsRootCacheStore(rootDir);
+            store.setConfigParts(parts);
+            Element rootElement = XmlSerializer.serialize(store.getState());
+            Element configElement = new Element("p4-config");
+            configElement.addContent(rootElement);
+            element.addContent(configElement);
+        }
     }
 
+    List<ConfigPart> getDefaultConfigParts() {
+        return Collections.singletonList(new EnvCompositePart(rootDir));
+    }
 }

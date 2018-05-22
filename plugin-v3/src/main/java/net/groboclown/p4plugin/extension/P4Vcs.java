@@ -49,6 +49,7 @@ import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.util.ThreeState;
 import com.intellij.util.messages.MessageBusConnection;
+import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.compat.CompatFactoryLoader;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
 import net.groboclown.p4.server.api.values.P4CommittedChangelist;
@@ -266,6 +267,9 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
      * @return the configurable instance, or null if no configuration is required.
      */
     public UnnamedConfigurable getRootConfigurable(VcsDirectoryMapping mapping) {
+        if (mapping.getRootSettings() == null) {
+            mapping.setRootSettings(new P4VcsRootSettingsImpl(VcsUtil.getFilePath(mapping.getDirectory()).getVirtualFile()));
+        }
         return new P4VcsRootConfigurable(getProject(), mapping);
     }
 

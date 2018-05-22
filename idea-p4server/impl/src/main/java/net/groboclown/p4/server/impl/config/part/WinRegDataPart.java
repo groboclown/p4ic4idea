@@ -89,6 +89,12 @@ class WinRegDataPart implements ConfigPart {
             userName = readRegString(PerforceEnvironment.P4USER);
 
             // FIXME the encodedPassword is encoded.  Need to decode it to use it.
+            // From the p4 passwd documentation:
+            // "For Perforce applications on Windows and OS X that connect to Perforce
+            // services at security levels 0 and 1, p4 passwd stores the password by using
+            // p4 set to store the MD5 hash of the password in the registry or system
+            // settings. When connecting to Perforce services at security levels 2, 3,
+            // or 4, password hashes are neither stored in, nor read from, these locations."
             encodedPassword = readRegString(PerforceEnvironment.P4PASSWD);
 
             authTicketPath = readRegString(PerforceEnvironment.P4TICKETS);

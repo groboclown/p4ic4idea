@@ -20,9 +20,11 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsRoot;
+import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManagerGate;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
+import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
@@ -31,6 +33,8 @@ import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.values.P4LocalChangelist;
+import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
@@ -38,6 +42,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -137,7 +142,7 @@ public class P4ChangeProvider
         lastFraction = 0.6;
         progress.setFraction(lastFraction);
 
-        updateChangelists(cachedMaps.first, addGate);
+        updateChangelists(cachedMaps.first, cachedMaps.second, addGate);
 
         if (dirtyScope.wasEveryThingDirty()) {
             // Update all the files.
@@ -196,8 +201,48 @@ public class P4ChangeProvider
         progress.setFraction(1.0);
     }
 
-    private void updateChangelists(IdeChangelistMap changelistMap, ChangeListManagerGate addGate) {
-        // FIXME implement
+    private void updateChangelists(IdeChangelistMap changelistMap, IdeFileMap fileMap, ChangeListManagerGate addGate) {
+        List<LocalChangeList> existingLocalChangeLists = addGate.getListsCopy();
+        Set<LocalChangeList> unvisitedLocalChangeLists = new HashSet<>(existingLocalChangeLists);
+        for (ClientConfigRoot clientConfigRoot : ProjectConfigRegistry.getInstance(project).getClientConfigRoots()) {
+            for (P4LocalChangelist changelist : CacheComponent.getInstance(project).getQueryHandler()
+                    .getCachedOpenedChangelists(clientConfigRoot.getClientConfig())) {
+                LocalChangeList ideChangeList =
+                        changelistMap.getIdeChangeFor(changelist.getChangelistId());
+                if (ideChangeList == null) {
+                    ideChangeList = addGate.addChangeList(
+                            createUniqueChangelistName(changelist, existingLocalChangeLists),
+                            changelist.getComment());
+                    changelistMap.setMapping(changelist.getChangelistId(), ideChangeList);
+                } else {
+                    unvisitedLocalChangeLists.remove(ideChangeList);
+                }
+            }
+        }
+
+        // Loop through the files, and see if any are associated with a local change list that isn't
+        // mapped to a Perforce changelist.  If so, then create that changelist.
+        // FIXME loop through the unvisited local changelists
+        Iterator<LocalChangeList> iter = unvisitedLocalChangeLists.iterator();
+        while (iter.hasNext()) {
+            LocalChangeList ideChangeList = iter.next();
+            for (Change change : ideChangeList.getChanges()) {
+                if (change.getBeforeRevision() != null) {
+                    // FIXME Check if the file is in a P4 VCS root.
+                }
+                if (change.getAfterRevision() != null) {
+                    // FIXME Check if the file is in a P4 VCS root.
+                }
+            }
+        }
+
+        // FIXME any remaining unvisited local changelist but is associated to a
+        // changelist in the map needs to be removed.
+    }
+
+    private String createUniqueChangelistName(P4LocalChangelist changelist,
+            List<LocalChangeList> existingLocalChangeLists) {
+        return null;
     }
 
     private void updateCache(VirtualFile root, ClientConfig config,
@@ -220,4 +265,5 @@ public class P4ChangeProvider
             builder.processIgnoredFile(dirtyFile.getVirtualFile());
         }
     }
+
 }

@@ -31,19 +31,20 @@ import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.impl.config.part.PartValidation;
 import net.groboclown.p4plugin.P4Bundle;
-import net.groboclown.p4plugin.ui.SwingUtil;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 public class P4RootConfigPanel {
-    private static final Icon EXPAND_DESCRIPTION = AllIcons.Actions.Right;
-    private static final Icon COLLAPSE_DESCRIPTION = AllIcons.Actions.Down;
+    private static final Icon ERROR_NOTICE = AllIcons.General.Error;
+    private static final Icon WARNING_NOTICE = AllIcons.General.Warning;
 
     private final VirtualFile vcsRoot;
     private final ConfigConnectionController configConnectionController;
@@ -55,13 +56,12 @@ public class P4RootConfigPanel {
     private JList<ConfigProblem> myProblemsList;
     private DefaultListModel<ConfigProblem> problemListModel;
     private ConfigPartStack myConfigPartStack;
-    private JButton myDetailsToggle;
     private AsyncProcessIcon myCheckConnectionSpinner;
     private JLabel myDetailsTitle;
+    private JTabbedPane myTabbedPane;
+    private JPanel myResolvedPropertyPanel;
+    private JPanel myConfigPanel;
 
-    // FIXME better manage the toggled panel size.  Or, somehow setup
-    // a better interface.  The old tab display may work well, but it
-    // was finicky.
 
     P4RootConfigPanel(VirtualFile vcsRoot,
             ConfigConnectionController configConnectionController) {
@@ -70,6 +70,7 @@ public class P4RootConfigPanel {
 
         $$$setupUI$$$();
 
+        myDetailsTitle.setText("");
         myCheckConnectionSpinner.suspend();
         myCheckConnectionSpinner.setVisible(false);
         configConnectionController.addConfigConnectionListener(this::updateConfigPanel);
@@ -81,22 +82,6 @@ public class P4RootConfigPanel {
             myCheckConnectionSpinner.getParent().doLayout();
             myCheckConnectionSpinner.getParent().repaint();
             configConnectionController.refreshConfigConnection();
-        });
-
-        myDetailsToggle.setVisible(false);
-        SwingUtil.iconOnlyButton(myDetailsToggle, EXPAND_DESCRIPTION, SwingUtil.ButtonType.ACCENT);
-        myDetailsTitle.setText("");
-        myDetailsToggle.addActionListener((e) -> {
-            if (myConfigRefreshDetailsPanel.isVisible()) {
-                SwingUtil.iconOnlyButton(myDetailsToggle, EXPAND_DESCRIPTION, SwingUtil.ButtonType.ACCENT);
-                myConfigRefreshDetailsPanel.setVisible(false);
-            } else {
-                SwingUtil.iconOnlyButton(myDetailsToggle, COLLAPSE_DESCRIPTION, SwingUtil.ButtonType.ACCENT);
-                myConfigRefreshDetailsPanel.setVisible(true);
-            }
-            rootPanel.revalidate();
-            rootPanel.doLayout();
-            rootPanel.repaint();
         });
     }
 
@@ -122,22 +107,22 @@ public class P4RootConfigPanel {
         myCheckConnectionSpinner.setVisible(false);
         myCheckConnectionButton.setEnabled(true);
 
-        // Only show the details panel when explicitly clicked.
-        // TODO probably put a high-level text describing the number of problems found.
-        // myConfigRefreshDetailsPanel.setVisible(true);
-        SwingUtil.iconOnlyButton(myDetailsToggle, EXPAND_DESCRIPTION, SwingUtil.ButtonType.ACCENT);
-        myDetailsToggle.setVisible(true);
         myResolvedProperties.setText(getResolvedProperties(part));
+        myTabbedPane.setEnabledAt(2, true);
 
         int errorCount = 0;
         int warningCount = 0;
         problemListModel.clear();
+        Set<String> problemText = new HashSet<>();
         for (ConfigProblem configProblem : PartValidation.findAllProblems(part)) {
-            problemListModel.addElement(configProblem);
-            if (configProblem.isError()) {
-                errorCount++;
-            } else {
-                warningCount++;
+            if (!problemText.contains(configProblem.getMessage())) {
+                problemText.add(configProblem.getMessage());
+                problemListModel.addElement(configProblem);
+                if (configProblem.isError()) {
+                    errorCount++;
+                } else {
+                    warningCount++;
+                }
             }
         }
 
@@ -145,13 +130,19 @@ public class P4RootConfigPanel {
         myProblemsList.doLayout();
 
         if (problemListModel.isEmpty()) {
-            myProblemsPanel.setVisible(false);
+            myTabbedPane.setEnabledAt(1, false);
             myDetailsTitle.setVisible(false);
         } else {
+            myTabbedPane.setEnabledAt(1, true);
             myProblemsPanel.setVisible(true);
             myDetailsTitle.setVisible(true);
             myDetailsTitle.setText(P4Bundle.message("configuration.stack.wrapper.toggle.title",
                     errorCount, warningCount));
+            if (errorCount > 0) {
+                myDetailsTitle.setIcon(ERROR_NOTICE);
+            } else {
+                myDetailsTitle.setIcon(WARNING_NOTICE);
+            }
         }
 
         rootPanel.revalidate();
@@ -200,40 +191,46 @@ public class P4RootConfigPanel {
         rootPanel.setLayout(new BorderLayout(0, 0));
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new BorderLayout(0, 0));
-        rootPanel.add(panel1, BorderLayout.CENTER);
-        panel1.add(myConfigPartStack.$$$getRootComponent$$$(), BorderLayout.CENTER);
+        rootPanel.add(panel1, BorderLayout.NORTH);
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new BorderLayout(0, 0));
-        rootPanel.add(panel2, BorderLayout.NORTH);
-        final JPanel panel3 = new JPanel();
-        panel3.setLayout(new BorderLayout(0, 0));
-        panel2.add(panel3, BorderLayout.NORTH);
-        myDetailsToggle = new JButton();
-        myDetailsToggle.setText("");
-        myDetailsToggle.setVerticalAlignment(3);
-        panel3.add(myDetailsToggle, BorderLayout.WEST);
-        final JPanel panel4 = new JPanel();
-        panel4.setLayout(new FormLayout("fill:max(d;4px):noGrow,left:4dlu:noGrow,fill:d:grow", "center:d:grow"));
-        panel3.add(panel4, BorderLayout.EAST);
+        panel2.setLayout(new FormLayout("fill:max(d;4px):noGrow,left:4dlu:noGrow,fill:d:grow", "center:d:grow"));
+        panel1.add(panel2, BorderLayout.EAST);
         myCheckConnectionButton = new JButton();
         this.$$$loadButtonText$$$(myCheckConnectionButton, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("configuration.check-connection.button"));
         CellConstraints cc = new CellConstraints();
-        panel4.add(myCheckConnectionButton, cc.xy(3, 1));
-        panel4.add(myCheckConnectionSpinner, cc.xy(1, 1));
-        myConfigRefreshDetailsPanel.setLayout(new BorderLayout(0, 0));
-        panel2.add(myConfigRefreshDetailsPanel, BorderLayout.CENTER);
+        panel2.add(myCheckConnectionButton, cc.xy(3, 1));
+        panel2.add(myCheckConnectionSpinner, cc.xy(1, 1));
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new BorderLayout(0, 0));
+        panel1.add(panel3, BorderLayout.WEST);
+        myDetailsTitle = new JLabel();
+        myDetailsTitle.setText("");
+        panel3.add(myDetailsTitle, BorderLayout.CENTER);
+        myTabbedPane = new JTabbedPane();
+        rootPanel.add(myTabbedPane, BorderLayout.CENTER);
+        myConfigPanel = new JPanel();
+        myConfigPanel.setLayout(new BorderLayout(0, 0));
+        myTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                        .getString("configuration.tab.properties"), null, myConfigPanel,
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                        .getString("configuration.tab.properties.tooltip"));
+        myConfigPanel.add(myConfigPartStack.$$$getRootComponent$$$(), BorderLayout.CENTER);
         myProblemsPanel = new JPanel();
-        myProblemsPanel.setLayout(new FormLayout("fill:d:grow", "center:d:grow,top:4dlu:noGrow,center:d:grow"));
-        myConfigRefreshDetailsPanel.add(myProblemsPanel, BorderLayout.NORTH);
+        myProblemsPanel.setLayout(new BorderLayout(0, 0));
+        myTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("configuration.problems-list.tab"), myProblemsPanel);
+        myTabbedPane.setEnabledAt(1, false);
         final JScrollPane scrollPane1 = new JScrollPane();
-        myProblemsPanel.add(scrollPane1, cc.xy(1, 3, CellConstraints.FILL, CellConstraints.FILL));
+        myProblemsPanel.add(scrollPane1, BorderLayout.CENTER);
         scrollPane1.setViewportView(myProblemsList);
-        final JPanel panel5 = new JPanel();
-        panel5.setLayout(new BorderLayout(0, 0));
-        myConfigRefreshDetailsPanel.add(panel5, BorderLayout.CENTER);
+        myResolvedPropertyPanel = new JPanel();
+        myResolvedPropertyPanel.setLayout(new BorderLayout(0, 0));
+        myTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("configurations.resolved-values.tab"), myResolvedPropertyPanel);
+        myTabbedPane.setEnabledAt(2, false);
         final JScrollPane scrollPane2 = new JScrollPane();
-        panel5.add(scrollPane2, BorderLayout.NORTH);
+        myResolvedPropertyPanel.add(scrollPane2, BorderLayout.CENTER);
         myResolvedProperties = new JTextPane();
         myResolvedProperties.setEditable(false);
         Font myResolvedPropertiesFont = this.$$$getFont$$$("DialogInput", -1, -1, myResolvedProperties.getFont());
@@ -321,6 +318,7 @@ public class P4RootConfigPanel {
             cell.setForeground(problem.isError()
                     ? JBColor.RED
                     : UIUtil.getTextAreaForeground());
+            cell.setBackground(UIUtil.getListBackground(isSelected));
             cell.setText(problem.getMessage());
             return cell;
         }

@@ -66,8 +66,6 @@ import net.groboclown.p4.server.api.values.P4FileType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.event.ActionListener;
-
 
 public abstract class AbstractP4CommandRunner implements P4CommandRunner {
     @SuppressWarnings("unchecked")
@@ -114,8 +112,8 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
             }
 
             case ADD_JOB_TO_CHANGELIST:
-            case REMOVE_JOB_FROM_CHANGELIST:
             case CREATE_CHANGELIST:
+            case REMOVE_JOB_FROM_CHANGELIST:
             case DELETE_CHANGELIST:
             case EDIT_CHANGELIST_DESCRIPTION:
             case MOVE_FILES_TO_CHANGELIST:

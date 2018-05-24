@@ -19,11 +19,12 @@ import com.intellij.openapi.util.Pair;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
-import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.LockTimeoutProvider;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.impl.cache.PendingAction;
 import net.groboclown.p4.server.impl.cache.PendingActionFactory;
+import net.groboclown.p4.server.impl.config.LockTimeoutProviderImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -34,8 +35,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
@@ -49,16 +48,13 @@ import java.util.function.Function;
 public class ProjectCacheStore {
     private static final Logger LOG = Logger.getInstance(ProjectCacheStore.class);
 
-    // The lock timeout is "small", so that there's an incentive to spend as little time in the lock as possible.
-    // TODO replace this timeout with the UserProjectPreferences value.
-    private static final long LOCK_TIMEOUT_SECONDS = 5;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final AtomicInteger pendingChangelistIdCounter = new AtomicInteger(-2);
     private final Map<P4ServerName, ServerQueryCacheStore> serverQueryCache = new HashMap<>();
     private final Map<ClientServerRef, ClientQueryCacheStore> clientQueryCache = new HashMap<>();
     private final List<PendingAction> pendingActions = new ArrayList<>();
-    private final Map<String, Integer> pendingChangelistIds = new HashMap<>();
     private final IdeChangelistCacheStore changelistCacheStore = new IdeChangelistCacheStore();
+
+    private LockTimeoutProvider lockTimeout = new LockTimeoutProviderImpl();
 
 
     public static class State {
@@ -72,11 +68,8 @@ public class ProjectCacheStore {
         // All the pending actions
         public List<Map<String, String>> pendingActions;
 
-        public Map<String, Integer> pendingChangelistIds;
-
         public IdeChangelistCacheStore.State changelistState;
 
-        public int lastPendingChangelistId;
     }
 
     @TestOnly
@@ -107,21 +100,8 @@ public class ProjectCacheStore {
         LOG.warn("FIXME set the internal state representation.");
     }
 
-
-    public int getPendingChangelistId(CreateChangelistAction action) {
-        String actionId = action.getActionId();
-        // Rather than use the read/write lock, which is for managing potentially
-        // rare writes vs. common reads, the pending changelist ID is a combination
-        // read/write that only accesses the local map.
-        Integer id;
-        synchronized (pendingChangelistIds) {
-            id = pendingChangelistIds.get(actionId);
-            if (id == null) {
-                id = pendingChangelistIdCounter.decrementAndGet();
-                pendingChangelistIds.put(actionId, id);
-            }
-        }
-        return id;
+    public IdeChangelistCacheStore getChangelistCacheStore() {
+        return changelistCacheStore;
     }
 
     /**
@@ -153,63 +133,51 @@ public class ProjectCacheStore {
     @Nullable
     public <T> T read(P4ServerName config, T defaultValue, Function<ServerQueryCacheStore, T> fun)
             throws InterruptedException {
-        lock.readLock().tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        try {
+        return lockTimeout.withLock(lock.readLock(), () -> {
             ServerQueryCacheStore store = serverQueryCache.get(config);
             if (store != null) {
                 return fun.apply(store);
             }
             return defaultValue;
-        } finally {
-            lock.readLock().unlock();
-        }
+        });
     }
 
 
     @Nullable
     public <T> T read(ClientConfig config, T defaultValue, Function<ClientQueryCacheStore, T> fun)
             throws InterruptedException {
-        lock.readLock().tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        try {
+        return lockTimeout.withLock(lock.readLock(), () -> {
             ClientQueryCacheStore store = clientQueryCache.get(config.getClientServerRef());
             if (store != null) {
                 return fun.apply(store);
             }
             return defaultValue;
-        } finally {
-            lock.readLock().unlock();
-        }
+        });
     }
 
 
     public void read(ClientConfig config, Consumer<ClientQueryCacheStore> fun)
             throws InterruptedException {
-        lock.readLock().tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        try {
+        lockTimeout.withLock(lock.readLock(), () -> {
             ClientQueryCacheStore store = clientQueryCache.get(config.getClientServerRef());
             if (store != null) {
                 fun.accept(store);
             }
-        } finally {
-            lock.readLock().unlock();
-        }
+        });
     }
 
     @Nullable
     public <T> T readClientActions(ServerConfig config, Function<List<P4CommandRunner.ServerAction<?>>, T> fun)
             throws InterruptedException {
         final String sourceId = PendingActionFactory.getSourceId(config);
-        List<P4CommandRunner.ServerAction<?>> actions = new ArrayList<>();
-        lock.readLock().tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        try {
+        final List<P4CommandRunner.ServerAction<?>> actions = new ArrayList<>();
+        lockTimeout.withLock(lock.readLock(), () -> {
             for (PendingAction pendingAction : pendingActions) {
                 if (pendingAction.isServerAction() && sourceId.equals(pendingAction.getSourceId())) {
                     actions.add(pendingAction.getServerAction());
                 }
             }
-        } finally {
-            lock.readLock().unlock();
-        }
+        });
         return fun.apply(actions);
     }
 
@@ -218,17 +186,14 @@ public class ProjectCacheStore {
     public List<P4CommandRunner.ClientAction<?>> readClientActions(ClientConfig config)
             throws InterruptedException {
         final String sourceId = PendingActionFactory.getSourceId(config);
-        List<P4CommandRunner.ClientAction<?>> actions = new ArrayList<>();
-        lock.readLock().tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        try {
+        final List<P4CommandRunner.ClientAction<?>> actions = new ArrayList<>();
+        lockTimeout.withLock(lock.readLock(), () -> {
             for (PendingAction pendingAction : pendingActions) {
                 if (pendingAction.isClientAction() && sourceId.equals(pendingAction.getSourceId())) {
                     actions.add(pendingAction.getClientAction());
                 }
             }
-        } finally {
-            lock.readLock().unlock();
-        }
+        });
         return actions;
     }
 
@@ -238,9 +203,8 @@ public class ProjectCacheStore {
             throws InterruptedException {
         final String clientSourceId = PendingActionFactory.getSourceId(config);
         final String serverSourceId = PendingActionFactory.getSourceId(config.getServerConfig());
-        List<Pair<P4CommandRunner.ClientAction<?>, P4CommandRunner.ServerAction<?>>> actions = new ArrayList<>();
-        lock.readLock().tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        try {
+        final List<Pair<P4CommandRunner.ClientAction<?>, P4CommandRunner.ServerAction<?>>> actions = new ArrayList<>();
+        lockTimeout.withLock(lock.readLock(), () -> {
             for (PendingAction pendingAction : pendingActions) {
                 if (pendingAction.isClientAction() && clientSourceId.equals(pendingAction.getSourceId())) {
                     actions.add(new Pair<>(pendingAction.getClientAction(), null));
@@ -248,21 +212,14 @@ public class ProjectCacheStore {
                     actions.add(new Pair<>(null, pendingAction.getServerAction()));
                 }
             }
-        } finally {
-            lock.readLock().unlock();
-        }
+        });
         return actions;
     }
 
     public void writeActions(ClientServerRef config, Consumer<WriteActionCache> fun)
             throws InterruptedException {
         WriteActionCache arg = new WriteActionCache(config);
-        lock.writeLock().tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        try {
-            fun.accept(arg);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        lockTimeout.withLock(lock.writeLock(), () -> fun.accept(arg));
     }
 
 

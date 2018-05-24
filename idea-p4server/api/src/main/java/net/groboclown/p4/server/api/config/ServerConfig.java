@@ -154,6 +154,7 @@ public final class ServerConfig {
         // user, and the user does not require that it is manually entered into the UI.
         // This class never stores the password in itself.
         if (!part.requiresUserEnteredPassword() && part.hasPasswordSet() && part.getPlaintextPassword() != null) {
+            LOG.info("Storing user password in password store");
             ApplicationPasswordRegistry.getInstance().store(this, part.getPlaintextPassword().toCharArray(), false);
         }
     }

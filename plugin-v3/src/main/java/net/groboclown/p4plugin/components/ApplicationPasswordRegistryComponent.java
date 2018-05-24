@@ -14,17 +14,53 @@
 
 package net.groboclown.p4plugin.components;
 
+import com.intellij.credentialStore.CredentialPromptDialog;
 import com.intellij.credentialStore.OneTimeString;
+import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.concurrency.AsyncPromise;
 import org.jetbrains.concurrency.Promise;
+
+import java.awt.*;
 
 public class ApplicationPasswordRegistryComponent extends ApplicationPasswordRegistry {
     @NotNull
     @Override
-    public Promise<OneTimeString> getOrAskFor(@NotNull ServerConfig config) {
-        // FIXME implement correctly
-        return Promise.resolve(null);
+    public Promise<OneTimeString> getOrAskFor(@Nullable final Project project, @NotNull final ServerConfig config) {
+        return get(config)
+                .thenAsync((res) -> {
+                    if (res == null) {
+                        return promptForPassword(project, config);
+                    }
+                    return Promise.resolve(res);
+                });
+    }
+
+    @Override
+    public void askForNewPassword(@Nullable Project project, @NotNull ServerConfig config) {
+        promptForPassword(project, config);
+    }
+
+
+    private Promise<OneTimeString> promptForPassword(@Nullable Project project, @NotNull ServerConfig config) {
+        final AsyncPromise<OneTimeString> ret = new AsyncPromise<>();
+        // Because this can happen while a dialog is shown, we instead want to force it to run.
+        // So don't use the ApplicationManager to run later.
+        EventQueue.invokeLater(() -> {
+            CredentialPromptDialog.askPassword(
+                    project,
+                    P4Bundle.getString("login.password.title"),
+                    P4Bundle.message("login.password.message",
+                            config.getServerName().getDisplayName(),
+                            config.getUsername()),
+                    getCredentialAttributes(config, false),
+                    true,
+                    null);
+        });
+        return ret;
     }
 }

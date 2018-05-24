@@ -60,11 +60,13 @@ public class ClientNameConfigPart
     @NotNull
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
-        PartValidation validation = new PartValidation();
-        validation.checkClientName(this, true);
-        List<ConfigProblem> problems = new ArrayList<>(validation.getProblems());
-        problems.addAll(additionalProblems);
-        return problems;
+        // No custom errors
+        return additionalProblems;
+    }
+
+    @Override
+    public String getRawPort() {
+        return null;
     }
 
 

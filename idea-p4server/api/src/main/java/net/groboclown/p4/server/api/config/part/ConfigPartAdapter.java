@@ -192,6 +192,11 @@ public class ConfigPartAdapter
     }
 
     @Override
+    public String getRawPort() {
+        return null;
+    }
+
+    @Override
     public boolean requiresUserEnteredPassword() {
         return false;
     }

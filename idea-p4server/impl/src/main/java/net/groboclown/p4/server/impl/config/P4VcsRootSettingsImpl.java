@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.impl.config;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.WriteExternalException;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -29,6 +30,8 @@ import java.util.Collections;
 import java.util.List;
 
 public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
+    private static final Logger LOG = Logger.getInstance(P4VcsRootSettingsImpl.class);
+
     private VirtualFile rootDir;
     private List<ConfigPart> parts = new ArrayList<>();
     private boolean partsSet = false;
@@ -48,7 +51,14 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
 
     @Override
     public void setConfigParts(List<ConfigPart> parts) {
-        this.parts = new ArrayList<>(parts);
+        this.parts = new ArrayList<>(parts.size());
+        for (ConfigPart part : parts) {
+            if (part == null) {
+                LOG.warn("Added null part" + parts);
+            } else {
+                this.parts.add(part);
+            }
+        }
         partsSet = true;
     }
 

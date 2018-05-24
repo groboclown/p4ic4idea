@@ -24,6 +24,7 @@ import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.async.Answer;
+import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
 import net.groboclown.p4.server.api.cache.messagebus.DescribeChangelistCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.FileActionMessage;
@@ -81,7 +82,6 @@ import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
-import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.impl.commands.ActionAnswerImpl;
 import net.groboclown.p4.server.impl.commands.DoneQueryAnswer;
 import net.groboclown.p4.server.impl.commands.OfflineActionAnswerImpl;
@@ -203,12 +203,12 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @Override
     protected ActionAnswer<CreateJobResult> createJob(ServerConfig config, CreateJobAction action) {
         ServerActionCacheMessage.sendEvent(new ServerActionCacheMessage.Event(
-                config.getServerName(), action, ServerActionCacheMessage.ActionState.PENDING));
+                config.getServerName(), action));
         return onlineCheck(config,
                 () -> server.perform(config, action)
                     .whenCompleted((result) ->
                         ServerActionCacheMessage.sendEvent(new ServerActionCacheMessage.Event(
-                            config.getServerName(), action, ServerActionCacheMessage.ActionState.COMPLETED)))
+                            config.getServerName(), action, result)))
                     .whenServerError((err) ->
                         ServerActionCacheMessage.sendEvent(new ServerActionCacheMessage.Event(
                             config.getServerName(), action, err))
@@ -311,15 +311,15 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @Override
     protected <R extends ClientResult> ActionAnswer<R> performNonFileAction(ClientConfig config, ClientAction<R> action) {
         ClientActionMessage.sendEvent(new ClientActionMessage.Event(
-                config.getClientServerRef(), action, ClientActionMessage.ActionState.PENDING));
+                config.getClientServerRef(), action));
         return onlineCheck(config,
                 () -> server.perform(config, action)
                         .whenCompleted((result) ->
                             ClientActionMessage.sendEvent(new ClientActionMessage.Event(
-                                config.getClientServerRef(), action, ClientActionMessage.ActionState.COMPLETED)))
+                                config.getClientServerRef(), action, result)))
                         .whenServerError((t) ->
                             ClientActionMessage.sendEvent(new ClientActionMessage.Event(
-                                config.getClientServerRef(), action, ClientActionMessage.ActionState.FAILED))),
+                                config.getClientServerRef(), action, t))),
                 OfflineActionAnswerImpl::new
         );
     }

@@ -14,15 +14,18 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
+import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.ActionUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class CreateChangelistAction implements P4CommandRunner.ClientAction<CreateChangelistResult> {
     private final String actionId = ActionUtil.createActionId(CreateChangelistAction.class);
+    private final ClientServerRef ref;
     private final String comment;
 
-    public CreateChangelistAction(@NotNull String comment) {
+    public CreateChangelistAction(@NotNull ClientServerRef ref, @NotNull String comment) {
+        this.ref = ref;
         this.comment = comment;
     }
 
@@ -43,7 +46,13 @@ public class CreateChangelistAction implements P4CommandRunner.ClientAction<Crea
         return actionId;
     }
 
+    @NotNull
     public String getComment() {
         return comment;
+    }
+
+    @NotNull
+    public ClientServerRef getClientServerRef() {
+        return ref;
     }
 }

@@ -21,8 +21,10 @@ import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.concurrency.Promise;
 
 /**
@@ -89,14 +91,16 @@ public abstract class ApplicationPasswordRegistry
      *      enter a password.
      */
     @NotNull
-    public abstract Promise<OneTimeString> getOrAskFor(@NotNull ServerConfig config);
+    public abstract Promise<OneTimeString> getOrAskFor(@Nullable Project project, @NotNull ServerConfig config);
+
+    public abstract void askForNewPassword(@Nullable Project project, @NotNull ServerConfig config);
 
     /**
      * Retrieve the stored password.  If it was not stored, then the promise's
      * resolved value will be null.
      *
      * @param config source
-     * @return
+     * @return promise with a null value (if no password stored) or the password.
      */
     @NotNull
     public final Promise<OneTimeString> get(@NotNull ServerConfig config) {
@@ -124,7 +128,7 @@ public abstract class ApplicationPasswordRegistry
     }
 
     @NotNull
-    private CredentialAttributes getCredentialAttributes(@NotNull ServerConfig config, boolean inMemory) {
+    protected CredentialAttributes getCredentialAttributes(@NotNull ServerConfig config, boolean inMemory) {
         return new CredentialAttributes(
                 "p4ic4idea:" + config.getServerName().getFullPort(),
                 config.getUsername(),

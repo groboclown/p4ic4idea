@@ -431,7 +431,7 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new CreateChangelistAction("simple"))
+                        runner.perform(clientConfig, new CreateChangelistAction(ref, "simple"))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )

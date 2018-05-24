@@ -30,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 class WinRegDataPart implements ConfigPart {
@@ -143,12 +144,8 @@ class WinRegDataPart implements ConfigPart {
     @NotNull
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
-        PartValidation validation = new PartValidation();
-        validation.checkPort(this, rawPort);
-        // validation.checkAuthTicketFile(authTicketPath);
-        // validation.checkTrustTicketFile(trustTicket);
-        // validation.checkUsername()
-        return validation.getProblems();
+        // Nothing custom for this part.
+        return Collections.emptyList();
     }
 
     @Override
@@ -159,6 +156,11 @@ class WinRegDataPart implements ConfigPart {
             }
         }
         return false;
+    }
+
+    @Override
+    public String getRawPort() {
+        return rawPort;
     }
 
     @Nls
@@ -293,4 +295,6 @@ class WinRegDataPart implements ConfigPart {
     public String getLoginSso() {
         return loginSso;
     }
+
+
 }

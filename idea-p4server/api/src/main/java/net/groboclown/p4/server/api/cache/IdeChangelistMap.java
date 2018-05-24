@@ -16,7 +16,10 @@ package net.groboclown.p4.server.api.cache;
 
 
 import com.intellij.openapi.vcs.changes.LocalChangeList;
+import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,10 +45,12 @@ import java.util.Map;
  */
 public interface IdeChangelistMap {
     @Nullable
-    LocalChangeList getIdeChangeFor(@NotNull P4ChangelistId changelistId);
+    LocalChangeList getIdeChangeFor(@NotNull P4ChangelistId changelistId)
+            throws InterruptedException;
 
-    @Nullable
-    Collection<P4ChangelistId> getP4ChangesFor(@NotNull LocalChangeList changeList);
+    @NotNull
+    Collection<P4ChangelistId> getP4ChangesFor(@NotNull LocalChangeList changeList)
+            throws InterruptedException;
 
     /**
      * Returns the current mapping of Perforce changelists to IDE change lists.
@@ -53,7 +58,55 @@ public interface IdeChangelistMap {
      * @return all stored linked IDE ChangeList instances for the given client.
      */
     @NotNull
-    Map<P4ChangelistId, LocalChangeList> getLinkedIdeChanges();
+    Map<P4ChangelistId, LocalChangeList> getLinkedIdeChanges()
+            throws InterruptedException;
 
-    void setMapping(P4ChangelistId p4ChangelistId, LocalChangeList changeList);
+    @Nullable
+    P4LocalChangelist getMappedChangelist(@NotNull CreateChangelistAction action)
+            throws InterruptedException;
+
+    /**
+     * Called by the changelist provider when an existing remote changelist
+     * is associated with an IDE changelist.
+     *
+     *
+     * @param p4ChangelistId
+     * @param changeList
+     */
+    void setMapping(@NotNull P4ChangelistId p4ChangelistId, @NotNull LocalChangeList changeList)
+            throws InterruptedException;
+
+    /**
+     * Called by the changelist provider when an existing IDE changelist needs
+     * to be mapped to a new P4 changelist, but the new P4 changelist hasn't been
+     * committed yet.
+     *
+     * @param action
+     * @param changeList
+     */
+    void setMapping(@NotNull CreateChangelistAction action, @NotNull LocalChangeList changeList)
+            throws InterruptedException;
+
+    /**
+     * Called by the cache listener when a pending changelist creation action
+     * succeeds.  This will cause internal mappings to change from the action
+     * to the changelist ID.
+     *
+     * @param p4ChangelistId
+     * @param action
+     */
+    void setMapping(P4ChangelistId p4ChangelistId, CreateChangelistAction action)
+            throws InterruptedException;
+
+    /**
+     * Called by the cache listener when a pending changelist creation action
+     * fails.
+     *
+     * @param action
+     */
+    void actionFailed(@NotNull CreateChangelistAction action)
+            throws InterruptedException;
+
+    void changelistDeleted(@NotNull P4ChangelistId changelistId)
+            throws InterruptedException;
 }

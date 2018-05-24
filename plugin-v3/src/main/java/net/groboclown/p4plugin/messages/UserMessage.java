@@ -42,6 +42,15 @@ public class UserMessage {
         Notifications.Bus.notify(notification, project);
     }
 
+    public static void showNotification(@Nullable Project project,
+            @NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String message,
+            @NotNull @Nls(capitalization = Nls.Capitalization.Title) String title,
+            @NotNull NotificationType icon, @Nullable NotificationListener question,
+            @Nullable Runnable onMessageExpired) {
+        Notification notification = createNotification(P4Vcs.VCS_NAME, title, message, icon, question, onMessageExpired);
+        Notifications.Bus.notify(notification, project);
+    }
+
     @NotNull
     private static Notification createNotification(@NotNull final String dialogKey, @NotNull String title,
             @NotNull String message, @NotNull NotificationType icon, @Nullable NotificationListener question,

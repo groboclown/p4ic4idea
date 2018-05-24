@@ -19,7 +19,6 @@ import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.commands.changelist.AddJobToChangelistAction;
-import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.EditChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
@@ -39,7 +38,6 @@ import net.groboclown.p4.server.api.values.P4Revision;
 import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
 import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import net.groboclown.p4.server.impl.cache.store.ServerQueryCacheStore;
-import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4.server.impl.values.P4LocalChangelistImpl;
 import net.groboclown.p4.server.impl.values.P4LocalFileImpl;
 import org.jetbrains.annotations.NotNull;
@@ -63,14 +61,14 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
     }
 
 
-    // FIXME these updates need to be aware of issues if several pending actions affect the same object.
-
-
     @NotNull
     @Override
     public Collection<P4LocalChangelist> getCachedOpenedChangelists(@NotNull ClientConfig config) {
         final Map<P4ChangelistId, P4LocalChangelistImpl.Builder> changelists = new HashMap<>();
         try {
+            cache.getChangelistCacheStore().getPendingChangelists().forEach(
+                    (cl) -> changelists.put(cl.getChangelistId(), new P4LocalChangelistImpl.Builder().withSrc(cl)));
+
             cache.read(config, (store) ->
                     store.getChangelists().forEach(
                             (cl) -> changelists
@@ -78,18 +76,11 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
 
             cache.readClientActions(config).forEach((action) -> {
                 switch (action.getCmd()) {
-                    case CREATE_CHANGELIST: {
-                        CreateChangelistAction a = (CreateChangelistAction) action;
-                        P4ChangelistId id = new P4ChangelistIdImpl(
-                                cache.getPendingChangelistId(a), config.getClientServerRef());
-                        P4LocalChangelistImpl.Builder builder = new P4LocalChangelistImpl.Builder();
-                        builder.withChangelistId(id)
-                                .withComment(a.getComment())
-                                .withClientname(config.getClientname())
-                                .withUsername(config.getServerConfig().getUsername());
-                        changelists.put(id, builder);
-                        break;
-                    }
+
+                    // case CREATE_CHANGELIST:
+                        // create changelist action should already have been handled by the
+                        // IdeChangelistCacheStore and P4ChangeProvider.
+
                     case DELETE_CHANGELIST: {
                         DeleteChangelistAction a = (DeleteChangelistAction) action;
                         // Remove the changelist entirely from the returned list.
@@ -219,6 +210,10 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
     public P4RemoteChangelist getCachedChangelist(P4ServerName serverName, P4ChangelistId changelistId) {
         // FIXME implement
         LOG.warn("FIXME implement getCachedChangelist");
+
+        // Probably should check if the changelist is in the "pending" category; if so, pull it *first* from
+        // the IDE changelist map.
+
         return null;
     }
 
@@ -233,6 +228,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
         }
     }
 
+    @NotNull
     @Override
     public Collection<P4WorkspaceSummary> getCachedClientsForUser(@NotNull P4ServerName serverName,
             @NotNull String username) {
@@ -240,4 +236,5 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
         LOG.warn("FIXME implement getCachedClientsForUser");
         return null;
     }
+
 }

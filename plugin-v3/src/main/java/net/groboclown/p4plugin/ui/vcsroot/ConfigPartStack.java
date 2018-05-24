@@ -29,6 +29,8 @@ import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.ui.SwingUtil;
 import net.groboclown.p4plugin.ui.vcsroot.part.ClientNamePartUI;
 import net.groboclown.p4plugin.ui.vcsroot.part.EnvPartUI;
+import net.groboclown.p4plugin.ui.vcsroot.part.FilePartUI;
+import net.groboclown.p4plugin.ui.vcsroot.part.RequirePasswordPartUI;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,8 +51,10 @@ public class ConfigPartStack {
     private final ConfigConnectionController connectionController;
     private final List<ConfigPartWrapper> parts = new ArrayList<>();
     private final List<ConfigPartUIFactory> partFactories = Collections.unmodifiableList(Arrays.asList(
+            FilePartUI.FACTORY,
             EnvPartUI.FACTORY,
-            ClientNamePartUI.FACTORY
+            ClientNamePartUI.FACTORY,
+            RequirePasswordPartUI.FACTORY
             // FIXME add in factories here
     ));
 

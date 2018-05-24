@@ -56,6 +56,7 @@ public class MockCacheQueryHandler implements CacheQueryHandler {
         return null;
     }
 
+    @NotNull
     @Override
     public Collection<P4WorkspaceSummary> getCachedClientsForUser(@NotNull P4ServerName serverName,
             @NotNull String username) {

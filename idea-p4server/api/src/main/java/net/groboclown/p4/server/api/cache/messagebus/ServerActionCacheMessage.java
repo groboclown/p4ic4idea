@@ -19,6 +19,7 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ServerActionCacheMessage
         extends AbstractCacheMessage<ServerActionCacheMessage.Event> {
@@ -46,15 +47,26 @@ public class ServerActionCacheMessage
 
     public static class Event extends AbstractCacheUpdateEvent<Event> {
         private final P4CommandRunner.ServerAction action;
+        private final P4CommandRunner.ServerResult result;
         private final ActionState state;
         private final P4CommandRunner.ServerResultException error;
 
         public Event(@NotNull P4ServerName ref,
-                @NotNull P4CommandRunner.ServerAction action,
-                ActionState state) {
+                @NotNull P4CommandRunner.ServerAction action) {
             super(ref);
             this.action = action;
-            this.state = state;
+            this.result = null;
+            this.state = ActionState.PENDING;
+            this.error = null;
+        }
+
+        public Event(@NotNull P4ServerName ref,
+                @NotNull P4CommandRunner.ServerAction action,
+                @Nullable P4CommandRunner.ServerResult result) {
+            super(ref);
+            this.action = action;
+            this.result = result;
+            this.state = ActionState.COMPLETED;
             this.error = null;
         }
 
@@ -65,6 +77,7 @@ public class ServerActionCacheMessage
             this.action = action;
             this.state = ActionState.FAILED;
             this.error = error;
+            this.result = null;
         }
 
         public P4CommandRunner.ServerAction getAction() {

@@ -17,6 +17,8 @@ package net.groboclown.p4.server.impl.cache;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.cache.messagebus.AbstractCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheMessage;
@@ -26,6 +28,7 @@ import net.groboclown.p4.server.api.cache.messagebus.JobCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.JobSpecCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ListClientsForUserCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ServerActionCacheMessage;
+import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
@@ -42,11 +45,13 @@ public class CacheStoreUpdateListener implements Disposable {
     private static final Logger LOG = Logger.getInstance(CacheStoreUpdateListener.class);
 
     private final ProjectCacheStore cache;
+    private final IdeChangelistMap changelistMap;
     private final String cacheId = AbstractCacheMessage.createCacheId();
     private boolean disposed = false;
 
-    public CacheStoreUpdateListener(@NotNull ProjectCacheStore cache) {
+    public CacheStoreUpdateListener(@NotNull ProjectCacheStore cache, @NotNull IdeChangelistMap changelistMap) {
         this.cache = cache;
+        this.changelistMap = changelistMap;
 
         MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(this);
         CacheListener listener = new CacheListener();
@@ -105,17 +110,15 @@ public class CacheStoreUpdateListener implements Disposable {
             try {
                 switch (event.getState()) {
                     case PENDING:
-                        cache.writeActions(event.getClientRef(), (cache) -> {
-                            cache.addAction(event.getAction());
-                        });
+                        cache.writeActions(event.getClientRef(), (cache) ->
+                                cache.addAction(event.getAction()));
                         break;
                     case COMPLETED:
                     case FAILED:
                         // For the purposes of this cache class, all we care about for the
                         // fail and completed cases is removing the pending action.
-                        cache.writeActions(event.getClientRef(), (cache) -> {
-                            cache.removeActionById(event.getAction().getActionId());
-                        });
+                        cache.writeActions(event.getClientRef(), (cache) ->
+                                cache.removeActionById(event.getAction().getActionId()));
                         break;
                 }
             } catch (InterruptedException e) {
@@ -130,32 +133,32 @@ public class CacheStoreUpdateListener implements Disposable {
 
         @Override
         public void describeChangelistUpdate(@NotNull DescribeChangelistCacheMessage.Event event) {
-
+            // FIXME cache the changelist
         }
 
         @Override
         public void fileActionUpdate(@NotNull FileActionMessage.Event event) {
-
+            // FIXME store the file action
         }
 
         @Override
         public void jobUpdate(@NotNull JobCacheMessage.Event event) {
-
+            // FIXME store the job state
         }
 
         @Override
         public void jobSpecUpdate(@NotNull JobSpecCacheMessage.Event event) {
-
+            // FIXME store the job spec
         }
 
         @Override
         public void listClientsForUserUpdate(@NotNull ListClientsForUserCacheMessage.Event event) {
-
+            // FIXME store the clients
         }
 
         @Override
         public void serverActionUpdate(@NotNull ServerActionCacheMessage.Event event) {
-
+            // FIXME store the action
         }
     }
 }

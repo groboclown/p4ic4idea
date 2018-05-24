@@ -14,7 +14,9 @@
 
 package net.groboclown.p4.server.api.cache;
 
+import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4JobSpec;
@@ -46,5 +48,7 @@ public interface CacheQueryHandler {
     @Nullable
     P4JobSpec getCachedJobSpec(P4ServerName serverName);
 
+    @NotNull
     Collection<P4WorkspaceSummary> getCachedClientsForUser(@NotNull P4ServerName serverName, @NotNull String username);
+
 }

@@ -52,7 +52,7 @@ public class ConfigPropertiesUtil {
                         : configPart.getServerFingerprint());
         ret.put(PerforceEnvironment.P4PASSWD,
                 getPasswordValue(
-                        configPart.hasPasswordSet(),
+                        configPart.hasPasswordSet() && !configPart.requiresUserEnteredPassword(),
                         configPart.getPlaintextPassword(),
                         valueIfUnset, valueIfPasswordEmpty, valueIfPasswordSet));
         ret.put(PerforceEnvironment.P4CHARSET,

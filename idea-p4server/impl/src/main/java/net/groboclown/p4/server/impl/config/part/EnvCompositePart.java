@@ -78,6 +78,11 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
     }
 
     @Override
+    public String getRawPort() {
+        return configParts.getRawPort();
+    }
+
+    @Override
     public boolean hasServerNameSet() {
         return configParts.hasServerNameSet();
     }
@@ -224,6 +229,8 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
             }
         }
 
+        // TODO add OsXPreferencesPart
+
         SimpleDataPart envData = new SimpleDataPart(vcsRoot, getSourceName(), null);
 
         // Note: using the JreSettings rather than checking the System.env directly.
@@ -249,20 +256,13 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
         //   win/system registry
 
         // Ordering is important.
-        String p4config = null;
         String p4enviro = JreSettings.getEnv(PerforceEnvironment.P4ENVIRO, PerforceEnvironment.DEFAULT_P4ENVIRO_FILE);
-        // p4config from environment overrides the P4ENVIRO version, so that needs to be
-        // loaded later.
         if (userWinRegistry != null) {
-            p4config = userWinRegistry.getP4ConfigFile();
             if (p4enviro == null) {
                 p4enviro = userWinRegistry.getP4EnviroFile();
             }
         }
         if (systemWinRegistry != null) {
-            if (p4config == null) {
-                p4config = systemWinRegistry.getP4ConfigFile();
-            }
             if (p4enviro == null) {
                 p4enviro = systemWinRegistry.getP4EnviroFile();
             }
@@ -270,25 +270,20 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
 
 
         // P4ENVIRO loading
-        ConfigPart p4enviroPart = null;
+        FileConfigPart p4enviroPart = null;
         {
             if (p4enviro != null) {
                 File f = getRelFile(p4enviro);
                 // The P4ENVIRO will have a default value if the user didn't specify one.
                 // Therefore, if the file doesn't exist, don't complain.
                 if (f.exists()) {
-                    final FileConfigPart envConf = new FileConfigPart(vcsRoot, f);
-                    envConf.reload();
+                    p4enviroPart = new FileConfigPart(vcsRoot, f);
+                    p4enviroPart.reload();
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Env defined P4ENVIRO: " + f + ": " +
-                                ConfigPropertiesUtil.toProperties(envConf,
+                                ConfigPropertiesUtil.toProperties(p4enviroPart,
                                         "<unset>", "<empty>", "<set>"));
                     }
-                    // Overrides
-                    if (envConf.getP4Config() != null) {
-                        p4config = envConf.getP4Config();
-                    }
-                    p4enviroPart = envConf;
                 } else if (LOG.isDebugEnabled()) {
                     LOG.debug("Env defined P4ENVIRO: " + f + ", but it does not exist.");
                 }
@@ -296,9 +291,21 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
         }
 
         // ENV overrides P4ENVRIO
+        String p4config = null;
         if (JreSettings.getEnv(PerforceEnvironment.P4CONFIG) != null) {
             p4config = JreSettings.getEnv(PerforceEnvironment.P4CONFIG);
         }
+        if (p4config != null && p4enviroPart != null && p4enviroPart.getP4Config() != null) {
+            p4config = p4enviroPart.getP4Config();
+        }
+        if (p4config == null && userWinRegistry != null) {
+            p4config = userWinRegistry.getP4ConfigFile();
+        }
+        if (p4config == null && systemWinRegistry != null) {
+            p4config = systemWinRegistry.getP4ConfigFile();
+        }
+
+
 
         // P4CONFIG loading
         ConfigPart p4configPart = null;
@@ -369,6 +376,9 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
             LOG.debug("Final configuration from environment: " +
                     ConfigPropertiesUtil.toProperties(this.configParts,
                             "<unset>", "<empty>", "<set>"));
+
+            // FIXME REMOVE
+            LOG.debug("Final password: " + this.configParts.getPlaintextPassword());
         }
     }
 
@@ -399,7 +409,7 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
         @Nullable
         @Override
         public String getPlaintextPassword() {
-            return PerforceEnvironment.getP4Passwd();
+            return JreSettings.getEnv(PerforceEnvironment.P4PASSWD);
         }
 
         @Override

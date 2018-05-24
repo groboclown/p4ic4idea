@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.impl.cache.store;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.ClientConfigRoot;
@@ -34,15 +35,20 @@ import java.util.Map;
  * Central storage for all VCS roots.
  */
 public class VcsRootCacheStore {
+    private static final Logger LOG = Logger.getInstance(VcsRootCacheStore.class);
+
+
     private VirtualFile rootDirectory;
     private List<ConfigPart> configParts;
 
+    @SuppressWarnings("WeakerAccess")
     public static class State {
         public String rootDirectory;
         public List<ConfigPartState> configParts;
     }
 
 
+    @SuppressWarnings("WeakerAccess")
     public static class ConfigPartState {
         public String className;
         public String sourceName;
@@ -67,7 +73,14 @@ public class VcsRootCacheStore {
 
 
     public void setConfigParts(@NotNull List<ConfigPart> configParts) {
-        this.configParts = new ArrayList<>(configParts);
+        this.configParts = new ArrayList<>(configParts.size());
+        for (ConfigPart configPart : configParts) {
+            if (configPart == null) {
+                LOG.warn("Tried setting null config part: " + configParts);
+            } else {
+                this.configParts.add(configPart);
+            }
+        }
     }
 
     @NotNull
@@ -81,13 +94,17 @@ public class VcsRootCacheStore {
         ret.rootDirectory = rootDirectory.getPath();
         ret.configParts = new ArrayList<>(configParts.size());
         for (ConfigPart configPart : configParts) {
-            ret.configParts.add(convert(configPart));
+            if (configPart != null) {
+                ret.configParts.add(convert(configPart));
+            } else {
+                LOG.warn("Encountered null config part in state");
+            }
         }
         return ret;
     }
 
 
-    private static ConfigPartState convert(ConfigPart part) {
+    private static ConfigPartState convert(@NotNull ConfigPart part) {
         ConfigPartState cps = new ConfigPartState();
         cps.sourceName = part.getSourceName();
         if (part instanceof MultipleConfigPart) {
@@ -108,6 +125,7 @@ public class VcsRootCacheStore {
     }
 
 
+    @Nullable
     private static ConfigPart convert(ConfigPartState state, VirtualFile root, ClassLoader classLoader) {
         if (state.children != null) {
             List<ConfigPart> children = new ArrayList<>(state.children.size());
@@ -116,11 +134,12 @@ public class VcsRootCacheStore {
             }
             return new MultipleConfigPart(state.sourceName, children);
         }
-        Class<?> ret = null;
+        Class<?> ret;
         try {
             ret = ClassLoaderUtil.loadClass(state.className, classLoader);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+        } catch (ClassNotFoundException | NoClassDefFoundError e) {
+            LOG.warn("Configuration state references unknown class " + state.className, e);
+            return null;
         }
         if (state.values == null) {
             state.values = Collections.emptyMap();

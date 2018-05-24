@@ -29,7 +29,7 @@ import net.groboclown.p4.server.api.config.ConfigProblem;
 import net.groboclown.p4.server.api.config.ConfigPropertiesUtil;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
-import net.groboclown.p4.server.impl.config.part.PartValidation;
+import net.groboclown.p4plugin.util.PartValidation;
 import net.groboclown.p4plugin.P4Bundle;
 
 import javax.swing.*;

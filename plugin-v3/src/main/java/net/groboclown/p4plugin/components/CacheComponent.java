@@ -48,6 +48,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     private static final String COMPONENT_NAME = "Perforce Project Cached Data";
     private final Project project;
     private final ProjectCacheStore projectCache = new ProjectCacheStore();
+    private IdeChangelistMap changelistMap;
     private CacheQueryHandler queryHandler;
     private CacheStoreUpdateListener updateListener;
 
@@ -102,7 +103,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     public Pair<IdeChangelistMap, IdeFileMap> getServerOpenedCache() {
         // TODO should the mapping be internal, rather than created on the fly?
         return new Pair<>(
-                new IdeChangelistMapImpl(queryHandler, projectCache),
+                changelistMap,
                 new IdeFileMapImpl(queryHandler));
     }
 
@@ -137,7 +138,8 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     @Override
     public void initComponent() {
         queryHandler = new CacheQueryHandlerImpl(projectCache);
-        updateListener = new CacheStoreUpdateListener(projectCache);
+        changelistMap = new IdeChangelistMapImpl(project, queryHandler, projectCache.getChangelistCacheStore());
+        updateListener = new CacheStoreUpdateListener(projectCache, changelistMap);
     }
 
     @Override

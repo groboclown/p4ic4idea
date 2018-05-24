@@ -108,7 +108,7 @@ class CacheQueryHandlerImplTest {
                 .withChangelistId(new P4ChangelistIdImpl(1, clientConfig.getClientServerRef()))
                 .withComment("comment 1")
                 .build();
-        CreateChangelistAction addChangelistAction = new CreateChangelistAction("my comment");
+        CreateChangelistAction addChangelistAction = new CreateChangelistAction(ref, "my comment");
         projectStore.addPendingAction(new MockPendingAction()
                 .withClientAction(addChangelistAction)
                 .withSource(clientConfig)

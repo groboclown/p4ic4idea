@@ -93,6 +93,18 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
         return p4config;
     }
 
+    public VirtualFile getVcsRoot() {
+        return vcsRoot;
+    }
+
+    public File getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String name) {
+        this.filePath = toFile(name);
+    }
+
     @Override
     public boolean reload() {
         loadError = null;
@@ -162,22 +174,19 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
         LOG.warn("FIXME SET MESSAGE TEXT CORRECTLY");
         if (filePath == null) {
             // FIXME SET MESSAGE CORRECTLY
-            return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.no-file", true));
+            //return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.no-file", true));
+            return Collections.singleton(new ConfigProblem(this, "No file set", true));
         }
         if (! filePath.exists() || ! filePath.isFile()) {
             // FIXME SET MESSAGE CORRECTLY, and use "filePath"
-            return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.bad-file", true));
+            //return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.bad-file", true));
+            return Collections.singleton(new ConfigProblem(this, "Invalid file " + filePath, true));
         }
         if (loadError != null) {
             // FIXME properly handle exception messages
             return Collections.singletonList(new ConfigProblem(this, loadError.getMessage(), true));
         }
-        PartValidation validation = new PartValidation();
-        validation.checkPort(this, rawPort);
-        validation.checkAuthTicketFile(this);
-        validation.checkTrustTicketFile(this);
-        validation.checkClientName(this, false);
-        return validation.getProblems();
+        return Collections.emptyList();
     }
 
     @Override
@@ -188,6 +197,11 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
             }
         }
         return false;
+    }
+
+    @Override
+    public String getRawPort() {
+        return rawPort;
     }
 
 

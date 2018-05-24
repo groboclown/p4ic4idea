@@ -41,6 +41,9 @@ public class ClientConfigRootImpl
         this.serverConfigState = serverConfigState;
         this.disposed = false;
         this.vcsRoot = vcsRootDir;
+
+        // Temporary setting until the configuration is properly loaded.
+        this.clientRoot = vcsRootDir;
     }
 
     @Override

@@ -181,9 +181,11 @@ public interface ConfigPart {
     boolean reload();
 
     /**
-     * FIXME this should take a resource bundle or some custom class that can perform message translation.
+     * Returns configuration problems specific to this part.  For example, if the part requires
+     * a file but the file does not exist.  General problems such as missing or invalid parameters
+     * are handled at a higher level.
      *
-     * @return all discovered configuration problems
+     * @return all discovered configuration problems that are specific to this part.
      */
     @NotNull
     Collection<ConfigProblem> getConfigProblems();
@@ -194,4 +196,10 @@ public interface ConfigPart {
      *      error.
      */
     boolean hasError();
+
+    /**
+     *
+     * @return the raw port string value, before parsing as a name.
+     */
+    String getRawPort();
 }

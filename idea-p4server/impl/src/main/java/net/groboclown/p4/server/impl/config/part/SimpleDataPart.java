@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -76,15 +77,8 @@ public class SimpleDataPart implements ConfigPart, ConfigStateProvider {
     @NotNull
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
-        // Because reload doesn't do anything, we load the
-        // config problems on each call.  This means that we also don't
-        // need to call reload on each of those methods.
-
-        PartValidation validation = new PartValidation();
-        validation.checkPort(this, trimmedProperty(PORT_KEY));
-        validation.checkAuthTicketFile(this);
-        validation.checkTrustTicketFile(this);
-        return validation.getProblems();
+        // Nothing custom for this part.
+        return Collections.emptyList();
     }
 
     @Override
@@ -95,6 +89,11 @@ public class SimpleDataPart implements ConfigPart, ConfigStateProvider {
             }
         }
         return false;
+    }
+
+    @Override
+    public String getRawPort() {
+        return trimmedProperty(PORT_KEY);
     }
 
     // Password must be carefully stored.

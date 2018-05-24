@@ -125,6 +125,16 @@ public class MultipleConfigPart
     }
 
     @Override
+    public String getRawPort() {
+        for (ConfigPart part : parts) {
+            if (part.getRawPort() != null) {
+                return part.getRawPort();
+            }
+        }
+        return null;
+    }
+
+    @Override
     public boolean hasServerNameSet() {
         for (ConfigPart part : parts) {
             if (part.hasServerNameSet()) {

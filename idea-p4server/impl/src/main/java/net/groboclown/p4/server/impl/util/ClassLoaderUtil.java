@@ -14,10 +14,15 @@
 
 package net.groboclown.p4.server.impl.util;
 
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.util.lang.UrlClassLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ClassLoaderUtil {
+    private static final Logger LOG = Logger.getInstance(ClassLoaderUtil.class);
+
+
     private ClassLoaderUtil() {
         // unused
     }
@@ -28,14 +33,43 @@ public class ClassLoaderUtil {
     public static <T> Class<T> loadClass(@NotNull String className, @Nullable ClassLoader classLoader)
             throws ClassNotFoundException {
         if (classLoader == null) {
-            classLoader = Thread.currentThread().getContextClassLoader();
+            // Attempt using the classloader that loaded a plugin class, so that the same
+            // classloader is used to load the other plugin classes.
+            classLoader = ClassLoaderUtil.class.getClassLoader();
             if (classLoader == null) {
-                classLoader = ClassLoader.getSystemClassLoader();
+                classLoader = Thread.currentThread().getContextClassLoader();
+                if (classLoader == null) {
+                    LOG.debug("Using system classloader");
+                    classLoader = ClassLoader.getSystemClassLoader();
+                } else if (LOG.isDebugEnabled()) {
+                    LOG.debug("Using thread classloader " + classLoader);
+                    if (classLoader instanceof UrlClassLoader) {
+                        LOG.debug("ClassLoader URLs = " + ((UrlClassLoader) classLoader).getBaseUrls() +
+                                "; " + ((UrlClassLoader) classLoader).getUrls());
+                    }
+                }
+            } else {
+                LOG.debug("Using plugin class classloader");
             }
+        } else {
+            LOG.debug("Using passed-in classloader");
         }
         if (classLoader == null) {
+            LOG.debug("No classloader found");
             return (Class<T>) Class.forName(className);
         }
-        return (Class<T>) classLoader.loadClass(className);
+        try {
+            return (Class<T>) classLoader.loadClass(className);
+        } catch (ClassNotFoundException e) {
+            if (LOG.isDebugEnabled()) {
+                if (classLoader instanceof UrlClassLoader) {
+                    UrlClassLoader url = (UrlClassLoader) classLoader;
+                    LOG.debug("No class " + className + " in URLs " + url.getUrls());
+                } else {
+                    LOG.debug("No class " + className + " in class loader " + classLoader);
+                }
+            }
+            throw e;
+        }
     }
 }

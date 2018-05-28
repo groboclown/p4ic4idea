@@ -24,9 +24,11 @@ import com.perforce.p4java.option.server.GetClientsOptions;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
+import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
 import net.groboclown.p4.server.impl.config.part.ClientNameConfigPart;
 import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.messages.MessageErrorHandler;
 import net.groboclown.p4plugin.ui.SwingUtil;
@@ -45,11 +47,13 @@ import java.util.Collections;
 public class ClientNamePartUI extends ConfigPartUI<ClientNameConfigPart> {
     public static final ConfigPartUIFactory FACTORY = new Factory();
     private static final Icon REFRESH = AllIcons.Actions.Refresh;
+    private static final Icon ERROR = AllIcons.General.Warning;
 
     private final Object sync = new Object();
     private JComponent rootPanel;
     private JComboBox<String> clientDropdownList;
     private JButton listRefreshButton;
+    private JLabel errorLabel;
     private AsyncProcessIcon listRefreshSpinner;
 
 
@@ -148,31 +152,31 @@ public class ClientNamePartUI extends ConfigPartUI<ClientNameConfigPart> {
             // Load the list of clients from the server.
             // Similar to the P4VcsRootConfigurable class, this
             // needs to use a stand-alone connection without caching.
-            new SimpleConnectionManager(
-                    TempDirUtil.getTempDir(project),
-                    UserProjectPreferences.getSocketSoTimeoutMillis(project),
-                    "v-10-get-the-right-number",
-                    new MessageErrorHandler(project))
-            .withConnection(serverConfig, (server) ->
-                    server.getClients(new GetClientsOptions(
-                            UserProjectPreferences.getMaxClientRetrieveCount(project),
-                            server.getUserName(),
-                            null)))
+
+
+            // FIXME if there's a login issue, such as a bad password, the user is not notified.
+            // Specifically, the user isn't given an opportunity to enter the correct password.
+
+            P4ServerComponent.getInstance(project)
+            .getClientsForUser(serverConfig)
             .whenCompleted((clients) -> {
                 synchronized (sync) {
-                    for (IClientSummary client : clients) {
-                        clientDropdownList.addItem(client.getName());
+                    for (P4WorkspaceSummary client : clients.getClients()) {
+                        clientDropdownList.addItem(client.getClientName());
                     }
                 }
+                errorLabel.setVisible(false);
                 setRefreshState(false);
             })
-            .whenFailed((e) -> {
+            .whenServerError((e) -> {
                 // TODO on an error, mark the UI component has
                 // having a problem.  Maybe even a tooltip with the error,
                 // or a pop-up micro-dialog with the error list.
+                errorLabel.setVisible(true);
                 setRefreshState(false);
             });
         } else {
+            errorLabel.setVisible(true);
             setRefreshState(false);
         }
     }
@@ -204,11 +208,14 @@ public class ClientNamePartUI extends ConfigPartUI<ClientNameConfigPart> {
 
 
         JPanel buttonPanel = new JPanel(new FlowLayout());
+        errorLabel = new JLabel(ERROR);
+        errorLabel.setVisible(false);
         listRefreshButton = new JButton(REFRESH);
         listRefreshButton.setPreferredSize(new Dimension(REFRESH.getIconWidth() + 2, REFRESH.getIconHeight() + 2));
         listRefreshSpinner = new AsyncProcessIcon("Refresh Client List Progress");
         listRefreshSpinner.setName("Refresh Client List Progress");
         listRefreshSpinner.setVisible(false);
+        buttonPanel.add(errorLabel);
         buttonPanel.add(listRefreshSpinner);
         buttonPanel.add(listRefreshButton);
 

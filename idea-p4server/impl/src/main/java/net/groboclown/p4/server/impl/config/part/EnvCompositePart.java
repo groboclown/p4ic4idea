@@ -256,7 +256,7 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
         //   win/system registry
 
         // Ordering is important.
-        String p4enviro = JreSettings.getEnv(PerforceEnvironment.P4ENVIRO, PerforceEnvironment.DEFAULT_P4ENVIRO_FILE);
+        String p4enviro = JreSettings.getEnv(PerforceEnvironment.P4ENVIRO, null);
         if (userWinRegistry != null) {
             if (p4enviro == null) {
                 p4enviro = userWinRegistry.getP4EnviroFile();
@@ -266,6 +266,10 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
             if (p4enviro == null) {
                 p4enviro = systemWinRegistry.getP4EnviroFile();
             }
+        }
+        if (p4enviro == null) {
+            // Default location for the p4enviro file, if nothing else defined it.
+            p4enviro = PerforceEnvironment.DEFAULT_P4ENVIRO_FILE;
         }
 
 

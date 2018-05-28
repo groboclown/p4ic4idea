@@ -36,7 +36,7 @@ public interface P4WorkspaceSummary {
         REVERT_UNCHANGED,
         REVERT_UNCHANGED_REOPEN,
         LEAVE_UNCHANGED,
-        LEAVE_UNCHANGED_REOPEN,
+        LEAVE_UNCHANGED_REOPEN
     }
     enum LineEnding {
         WIN,

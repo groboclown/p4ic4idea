@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.impl.connection;
 
 import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.CoreFactory;
 import com.perforce.p4java.core.IChangelist;
@@ -29,6 +30,7 @@ import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.AddFilesOptions;
 import com.perforce.p4java.option.client.EditFilesOptions;
+import com.perforce.p4java.option.server.GetClientsOptions;
 import com.perforce.p4java.option.server.GetDepotFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
@@ -56,6 +58,7 @@ import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
+import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
 import net.groboclown.p4.server.impl.client.OpenedFilesChangesFactory;
 import net.groboclown.p4.server.impl.commands.ActionAnswerImpl;
@@ -66,6 +69,7 @@ import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4.server.impl.values.P4JobImpl;
 import net.groboclown.p4.server.impl.values.P4JobSpecImpl;
 import net.groboclown.p4.server.impl.values.P4RemoteFileImpl;
+import net.groboclown.p4.server.impl.values.P4WorkspaceSummaryImpl;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -349,9 +353,14 @@ public class ConnectCommandRunner
     }
 
     private ListClientsForUserResult listClientsForUser(IOptionsServer server, ServerConfig config, String username,
-            int maxClients) {
-        // FIXME implement
-        return null;
+            int maxClients)
+            throws P4JavaException {
+        GetClientsOptions opts = new GetClientsOptions(maxClients, username, null);
+        List<P4WorkspaceSummary> summaries = new ArrayList<>();
+        for (IClientSummary client : server.getClients(opts)) {
+            summaries.add(new P4WorkspaceSummaryImpl(client));
+        }
+        return new ListClientsForUserResult(config, username, summaries);
     }
 
 }

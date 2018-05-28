@@ -24,7 +24,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.impl.generic.core.Changelist;
-import com.perforce.p4java.option.server.GetClientsOptions;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
@@ -34,15 +33,10 @@ import net.groboclown.p4.server.api.config.P4VcsRootSettings;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.config.part.MultipleConfigPart;
-import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
-import net.groboclown.p4.server.impl.connection.ConnectionManager;
-import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
 import net.groboclown.p4plugin.P4Bundle;
-import net.groboclown.p4plugin.components.UserProjectPreferences;
-import net.groboclown.p4plugin.messages.MessageErrorHandler;
-import net.groboclown.p4plugin.util.TempDirUtil;
+import net.groboclown.p4plugin.components.P4ServerComponent;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -233,55 +227,35 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
             final ClientConfig clientConfig = tClientConfig;
             final ServerConfig serverConfig = tServerConfig;
 
-            final ConnectionManager connectionManager;
-            if (serverConfig != null) {
-                // Attempt to connect to the server to see if it
-                // can be connected.  If it can't, then add that as
-                // an error.
+            // We will use the server config as a check for errors; the connection
+            // can only be  valid if the client is not null, but if the client is
+            // null, then that generates its own set of issues.
 
-                // Because the connection attempt here is directly checking for the
-                // server connection, rather than using cached data, we'll bypass the
-                // usual infrastructure.  See P4ServerComponent.
-
-                connectionManager = new SimpleConnectionManager(
-                        TempDirUtil.getTempDir(project),
-                        UserProjectPreferences.getSocketSoTimeoutMillis(project),
-                        // FIXME get the right version number
-                        "v-10-get-the-right-number",
-                        new MessageErrorHandler(project)
-                );
-            } else {
-                connectionManager = null;
-            }
-
-            Answer.resolve(connectionManager)
-            .mapAsync((mgr) -> {
-                if (mgr != null && serverConfig != null) {
+            Answer.background((sink) -> {
+                if (serverConfig != null) {
                     // Check client list, because that only requires a username
                     // and valid login.
                     // An error here will cause the client config check to fail, because of
                     // the rejection.
                     LOG.debug("Attempting to get the list of clients");
-                    return mgr.withConnection(serverConfig, (server) -> {
-                        GetClientsOptions options = new GetClientsOptions(1, server.getUserName(), null);
-                        server.getClients(options);
-                        return mgr;
-                    });
+                    P4ServerComponent.getInstance(project).checkServerConnection(serverConfig)
+                            .whenCompleted(sink::resolve)
+                            .whenServerError(sink::reject);
+                } else {
+                    sink.resolve(null);
                 }
-                return Answer.resolve(null);
             })
-            .mapAsync((mgr) -> {
-                if (mgr != null && clientConfig != null) {
+            .futureMap((result, sink) -> {
+                if (result != null && clientConfig != null) {
                     // Check the opened files, because that requires the client to be
                     // valid for the current user.
                     LOG.debug("Attempting to get the list of opened files for the client");
-                    return mgr.withConnection(clientConfig, (client) -> {
-                        client.openedFiles(FileSpecBuilder.makeFileSpecList("//..."),
-                                1, Changelist.DEFAULT);
-                        return null;
-                    });
+                    P4ServerComponent.getInstance(project).checkClientConnection(clientConfig)
+                            .whenCompleted(sink::resolve)
+                            .whenServerError(sink::reject);
+                } else {
+                    sink.resolve(null);
                 }
-                return Answer.resolve(null);
             })
             .whenCompleted((obj) -> {
                 if (LOG.isDebugEnabled()) {

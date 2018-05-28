@@ -18,6 +18,13 @@ import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.TopCommandRunner;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
+import net.groboclown.p4.server.api.commands.client.ListClientsForUserResult;
+import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesQuery;
+import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult;
+import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
 import net.groboclown.p4.server.impl.connection.ConnectCommandRunner;
 import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4.server.impl.connection.P4RequestErrorHandler;
@@ -30,6 +37,7 @@ public class P4ServerComponent implements ProjectComponent {
     private static final String COMPONENT_NAME = "Perforce Server Primary Connection";
     private final Project project;
     private P4CommandRunner commandRunner;
+    private AbstractServerCommandRunner connectRunner;
 
     public static P4ServerComponent getInstance(Project project) {
         // a non-registered component can happen when the config is loaded outside a project.
@@ -44,12 +52,31 @@ public class P4ServerComponent implements ProjectComponent {
     }
 
 
+    @SuppressWarnings("WeakerAccess")
     public P4ServerComponent(Project project) {
         this.project = project;
     }
 
     public P4CommandRunner getCommandRunner() {
         return commandRunner;
+    }
+
+    // For Configuration UI.  Avoids cache hits.
+    public P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(ServerConfig config) {
+        return connectRunner.getClientsForUser(config, new ListClientsForUserQuery(config.getUsername(),
+                UserProjectPreferences.getMaxClientRetrieveCount(project)));
+    }
+
+    // For Configuration UI.  Avoids cache hits.
+    public P4CommandRunner.QueryAnswer<ListClientsForUserResult> checkServerConnection(ServerConfig config) {
+        return connectRunner.getClientsForUser(config, new ListClientsForUserQuery(config.getUsername(), 1));
+    }
+
+
+    // For Configuration UI.  Avoids cache hits.
+    public P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> checkClientConnection(ClientConfig clientConfig) {
+        return connectRunner.listOpenedFilesChanges(
+                clientConfig, new ListOpenedFilesChangesQuery(1, 1));
     }
 
     @NotNull
@@ -71,9 +98,12 @@ public class P4ServerComponent implements ProjectComponent {
 
     @Override
     public void initComponent() {
+        if (connectRunner == null) {
+            connectRunner = new ConnectCommandRunner(createConnectionManager());
+        }
         if (commandRunner == null) {
             commandRunner = new TopCommandRunner(project, CacheComponent.getInstance(project).getQueryHandler(),
-                    new ConnectCommandRunner(createConnectionManager()));
+                    connectRunner);
         }
     }
 

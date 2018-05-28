@@ -96,7 +96,12 @@ class WinRegDataPart implements ConfigPart {
             // p4 set to store the MD5 hash of the password in the registry or system
             // settings. When connecting to Perforce services at security levels 2, 3,
             // or 4, password hashes are neither stored in, nor read from, these locations."
-            encodedPassword = readRegString(PerforceEnvironment.P4PASSWD);
+            // However, if you look at the P4 C client code, it is encrypted and
+            // encoded using a ticket from the server.  Somehow (need to better find
+            // out) this is passed to the server during authentication.  Until
+            // that's better understood, this password won't be used, because it
+            // leads to a situation where the password is tried and fails.
+            // encodedPassword = readRegString(PerforceEnvironment.P4PASSWD);
 
             authTicketPath = readRegString(PerforceEnvironment.P4TICKETS);
             trustTicket = readRegString(PerforceEnvironment.P4TRUST);

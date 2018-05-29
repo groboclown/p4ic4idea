@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.impl.connection;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.ChangelistStatus;
@@ -74,6 +75,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -89,6 +91,7 @@ import java.util.Map;
  */
 public class ConnectCommandRunner
         extends AbstractServerCommandRunner {
+    private static final Logger LOG = Logger.getInstance(ConnectCommandRunner.class);
     private final ConnectionManager connectionManager;
 
     public ConnectCommandRunner(
@@ -336,12 +339,50 @@ public class ConnectCommandRunner
 
         // Then find details on all the opened files
         List<IExtendedFileSpec> pendingChangelistFiles = P4CommandUtil.getFileDetailsForOpenedSpecs(
-                client.getServer(), pendingChangelistFileSummaries);
+                client.getServer(), pendingChangelistFileSummaries, maxFileResults);
+        Iterator<IExtendedFileSpec> pendingIter = pendingChangelistFiles.iterator();
+        while (pendingIter.hasNext()) {
+            IExtendedFileSpec next = pendingIter.next();
+            if (next.getStatusMessage() != null) {
+                LOG.info("Opened File Spec message: " + next.getStatusMessage().getAllInfoStrings());
+                pendingIter.remove();
+            } else if (next.getAction() == null) {
+                // Really weird - this shouldn't happen.
+                LOG.info("Found non-opened file spec for request of just opened file specs in opened change.  " +
+                        next.getDepotPathString() + " :: open:" + next.getOpenChangelistId() + ", cl:" +
+                        next.getChangelistId() + ", owner:" + next.getOpenActionOwner());
+                pendingIter.remove();
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug("Pending changelist file" +
+                        ": " + next.getDepotPathString() +
+                        "; change " + next.getOpenChangelistId() +
+                        "; action " + next.getAction());
+            }
+        }
 
         // Then get opened files in the default changelist.
-
         List<IExtendedFileSpec> openedDefaultChangelistFiles =
-                P4CommandUtil.getFilesOpenInDefaultChangelist(client.getServer());
+                P4CommandUtil.getFilesOpenInDefaultChangelist(client.getServer(), client.getName(), maxFileResults);
+        Iterator<IExtendedFileSpec> defaultIter = openedDefaultChangelistFiles.iterator();
+        while (defaultIter.hasNext()) {
+            IExtendedFileSpec next = defaultIter.next();
+            if (next.getStatusMessage() != null) {
+                LOG.info("Default File Spec message: " + next.getStatusMessage().getAllInfoStrings());
+                defaultIter.remove();
+            } else if (next.getAction() == null) {
+                // This seems to happen when there's a double entry in the returned list.
+                // TODO Looks like a possible bug in the underlying P4 API code.
+                LOG.info("Found non-opened file spec for request of just opened file specs in default change.  " +
+                        next.getDepotPathString() + " :: open:" + next.getOpenChangelistId() + ", cl:" +
+                        next.getChangelistId() + ", owner:" + next.getOpenActionOwner());
+                defaultIter.remove();
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug("Pending Default changelist file" +
+                        ": " + next.getDepotPathString() +
+                        "; change " + next.getOpenChangelistId() +
+                        "; action " + next.getAction());
+            }
+        }
 
         // Then join all the information together.
         ListOpenedFilesChangesResult ret = OpenedFilesChangesFactory.createListOpenedFilesChangesResult(

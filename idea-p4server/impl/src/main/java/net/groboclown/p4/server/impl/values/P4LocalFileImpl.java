@@ -26,7 +26,6 @@ import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
 import net.groboclown.p4.server.api.values.P4ResolveType;
 import net.groboclown.p4.server.api.values.P4Revision;
-import net.groboclown.p4.server.impl.cache.store.ClientServerRefStore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -130,8 +129,20 @@ public class P4LocalFileImpl implements P4LocalFile {
      * @param spec the description of the opened server file.
      */
     public P4LocalFileImpl(@NotNull ClientServerRef ref, @NotNull IExtendedFileSpec spec) {
-        if (!spec.isMapped() || spec.getOpenAction() == null) {
-            throw new IllegalArgumentException("not an opened file spec");
+        if (!spec.isMapped() || spec.getAction() == null) {
+            throw new IllegalArgumentException("not an opened file spec:" +
+                    spec.getDepotPathString() +
+                    " :: " + spec.getClientPathString() +
+                    " :: " + spec.getLocalPathString() +
+                    "; isMapped? " + spec.isMapped() +
+                    "; open action: " + spec.getOpenAction() +
+                    "; action: " + spec.getAction() +
+                    "; head action: " + spec.getHeadAction() +
+                    "; desc: " + spec.getDesc() +
+                    "; open type: " + spec.getOpenType() +
+                    "; open change id: " + spec.getOpenChangelistId() +
+                    "; code: " + spec.getRawCode() +
+                    "; message: " + spec.getStatusMessage());
         }
 
         depot = new P4RemoteFileImpl(spec);
@@ -139,7 +150,10 @@ public class P4LocalFileImpl implements P4LocalFile {
         haveRev = new P4Revision(spec.getHaveRev());
         headRev = new P4FileRevisionImpl(ref, depot, spec);
         changelistId = new P4ChangelistIdImpl(spec.getOpenChangelistId(), ref);
-        action = P4FileAction.convert(spec.getOpenAction());
+
+        // note: use Action, not OpenAction
+        action = P4FileAction.convert(spec.getAction());
+
         resolveType = P4ResolveType.convert(spec.getResolveType(), spec.getContentResolveType());
         fileType = P4FileType.convert(spec.getFileType());
         integrateFrom =

@@ -66,9 +66,6 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
     public void readExternal(Element element)
             throws InvalidDataException {
         Element configElement = element.getChild("p4-config");
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Reading external data store: " + element.toString());
-        }
         if (configElement == null || configElement.getChildren().isEmpty()) {
             // not set.
             LOG.debug("No configuration settings in the external store.");
@@ -92,9 +89,6 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
             Element configElement = new Element("p4-config");
             configElement.addContent(rootElement);
             element.addContent(configElement);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Write external data: " + element.toString());
-            }
         } else {
             LOG.debug("Write external data: no parts set.");
         }

@@ -46,17 +46,23 @@ import java.util.Map;
  * allows for an easier effort to focus on API compatibility and correctness.
  */
 public class P4CommandUtil {
-    public static List<IExtendedFileSpec> getFilesOpenInDefaultChangelist(IServer server)
+    public static List<IExtendedFileSpec> getFilesOpenInDefaultChangelist(IServer server,
+            String clientName, int maxFileResults)
             throws P4JavaException {
+        GetExtendedFilesOptions options = new GetExtendedFilesOptions("-Olhp -Rco -e default");
+        options.setMaxResults(maxFileResults);
         return server.getExtendedFiles(
-                FileSpecBuilder.makeFileSpecList("//..."),
-                new GetExtendedFilesOptions("-Olhp -Rco -e default")
+                FileSpecBuilder.makeFileSpecList("//" + clientName + "/..."),
+                options
         );
     }
 
-    public static List<IExtendedFileSpec> getFileDetailsForOpenedSpecs(IServer server, List<IFileSpec> sources)
+    public static List<IExtendedFileSpec> getFileDetailsForOpenedSpecs(IServer server, List<IFileSpec> sources,
+            int maxFileResults)
             throws P4JavaException {
-        return server.getExtendedFiles(sources, new GetExtendedFilesOptions("-Olhp"));
+        GetExtendedFilesOptions options = new GetExtendedFilesOptions("-Olhp");
+        options.setMaxResults(maxFileResults);
+        return server.getExtendedFiles(sources, options);
     }
 
     public static IChangelist getChangelistDetails(IServer server, int changelistId)

@@ -14,8 +14,8 @@
 
 package net.groboclown.p4.server.impl.cache.store;
 
+import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.p4.server.api.ClientServerRef;
-import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import org.jetbrains.annotations.NotNull;
@@ -29,9 +29,10 @@ import java.util.List;
  * All the information for a single client config that was cached from queries.
  */
 public class ClientQueryCacheStore {
-
     public static class State {
-
+        public ClientServerRefStore.State source;
+        public List<P4LocalChangelistStore.State> changelists;
+        public List<P4LocalFileStore.State> files;
     }
 
     private final ClientServerRef source;
@@ -39,8 +40,18 @@ public class ClientQueryCacheStore {
     private final List<P4LocalFile> files = new ArrayList<>();
 
 
-    public ClientQueryCacheStore(ClientServerRef source) {
+    public ClientQueryCacheStore(@NotNull ClientServerRef source) {
         this.source = source;
+    }
+
+    ClientQueryCacheStore(@NotNull State state) {
+        this.source = ClientServerRefStore.read(state.source);
+        for (P4LocalChangelistStore.State changelist : state.changelists) {
+            changelists.add(P4LocalChangelistStore.read(changelist));
+        }
+        for (P4LocalFileStore.State file : state.files) {
+            files.add(P4LocalFileStore.read(file));
+        }
     }
 
     @TestOnly
@@ -62,5 +73,20 @@ public class ClientQueryCacheStore {
     @NotNull
     public ClientServerRef getClientServerRef() {
         return source;
+    }
+
+    @NotNull
+    public State getState() {
+        State ret = new State();
+        ret.source = ClientServerRefStore.getState(source);
+        ret.changelists = new ArrayList<>(changelists.size());
+        for (P4LocalChangelist changelist : changelists) {
+            ret.changelists.add(P4LocalChangelistStore.getState(changelist));
+        }
+        ret.files = new ArrayList<>(files.size());
+        for (P4LocalFile file : files) {
+            ret.files.add(P4LocalFileStore.getState(file));
+        }
+        return ret;
     }
 }

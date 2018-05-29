@@ -49,7 +49,6 @@ public class P4RootConfigPanel {
     private final VirtualFile vcsRoot;
     private final ConfigConnectionController configConnectionController;
     private JPanel rootPanel;
-    private JPanel myConfigRefreshDetailsPanel;
     private JButton myCheckConnectionButton;
     private JPanel myProblemsPanel;
     private JTextPane myResolvedProperties;
@@ -130,11 +129,14 @@ public class P4RootConfigPanel {
         myProblemsList.doLayout();
 
         if (problemListModel.isEmpty()) {
+            if (myTabbedPane.getSelectedIndex() == 1) {
+                myTabbedPane.setSelectedIndex(0);
+            }
             myTabbedPane.setEnabledAt(1, false);
             myDetailsTitle.setVisible(false);
         } else {
             myTabbedPane.setEnabledAt(1, true);
-            myProblemsPanel.setVisible(true);
+            myTabbedPane.setSelectedIndex(1);
             myDetailsTitle.setVisible(true);
             myDetailsTitle.setText(P4Bundle.message("configuration.stack.wrapper.toggle.title",
                     errorCount, warningCount));
@@ -167,8 +169,6 @@ public class P4RootConfigPanel {
 
     private void createUIComponents() {
         // custom component creation code
-        myConfigRefreshDetailsPanel = new JPanel(new VerticalFlowLayout());
-        myConfigRefreshDetailsPanel.setVisible(false);
         myConfigPartStack = new ConfigPartStack(vcsRoot, configConnectionController);
 
         problemListModel = new DefaultListModel<>();

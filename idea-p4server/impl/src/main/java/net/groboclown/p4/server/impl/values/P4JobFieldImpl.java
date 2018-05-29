@@ -16,6 +16,7 @@ package net.groboclown.p4.server.impl.values;
 
 import com.perforce.p4java.core.IJobSpec;
 import net.groboclown.p4.server.api.values.P4JobField;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +33,7 @@ public class P4JobFieldImpl implements P4JobField {
     private final String preset;
     private final List<String> selectValues;
 
-    public P4JobFieldImpl(IJobSpec.IJobSpecField field, IJobSpec spec) {
+    P4JobFieldImpl(IJobSpec.IJobSpecField field, IJobSpec spec) {
         code = field.getCode();
         name = field.getName();
         rawDataType = field.getDataType();
@@ -45,6 +46,33 @@ public class P4JobFieldImpl implements P4JobField {
         } else {
             selectValues = Collections.unmodifiableList(new ArrayList<>(selects));
         }
+
+        DataType dt;
+        try {
+            dt = DataType.valueOf(rawDataType.trim().toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            dt = DataType.UNKNOWN;
+        }
+        dataType = dt;
+
+        FieldType ft;
+        try {
+            ft = FieldType.valueOf(rawFieldType.trim().toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            ft = FieldType.UNKNOWN;
+        }
+        fieldType = ft;
+    }
+
+    public P4JobFieldImpl(int code, String name, String rawDataType, int length, String rawFieldType, String preset,
+            @NotNull List<String> selectValues) {
+        this.code = code;
+        this.name = name;
+        this.rawDataType = rawDataType;
+        this.length = length;
+        this.rawFieldType = rawFieldType;
+        this.preset = preset;
+        this.selectValues = Collections.unmodifiableList(new ArrayList<>(selectValues));
 
         DataType dt;
         try {

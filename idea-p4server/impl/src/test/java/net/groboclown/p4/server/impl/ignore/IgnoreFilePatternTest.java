@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.groboclown.p4.server.cache.ignore;
+package net.groboclown.p4.server.impl.ignore;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -20,8 +20,11 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class IgnoreFilePatternTest {
 

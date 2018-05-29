@@ -12,11 +12,10 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.cache.ignore;
+package net.groboclown.p4.server.impl.ignore;
 
 import net.groboclown.idea.mock.MockVirtualFile;
 import net.groboclown.idea.mock.MockVirtualFileSystem;
-import net.groboclown.p4.server.cache.ignore.IgnoreFileSet;
 import org.junit.Before;
 import org.junit.Test;
 

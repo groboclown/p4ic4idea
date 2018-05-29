@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.concurrent.Immutable;
+import java.util.Date;
 
 /**
  * Represents a revision of a file on the server.
@@ -48,4 +49,10 @@ public interface P4FileRevision
      */
     @Nullable
     P4RemoteFile getIntegratedFrom();
+
+    @Nullable
+    Date getDate();
+
+    @Nullable
+    String getCharset();
 }

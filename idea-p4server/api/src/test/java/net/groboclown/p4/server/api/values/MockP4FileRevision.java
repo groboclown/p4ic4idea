@@ -19,6 +19,8 @@ import net.groboclown.p4.server.api.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Date;
+
 // supposed to be immutable, but it's for testing...
 public class MockP4FileRevision implements P4FileRevision {
     private P4RemoteFile file;
@@ -92,6 +94,18 @@ public class MockP4FileRevision implements P4FileRevision {
     @Override
     public P4RemoteFile getIntegratedFrom() {
         return integratedFrom;
+    }
+
+    @Nullable
+    @Override
+    public Date getDate() {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public String getCharset() {
+        return null;
     }
 
     public MockP4FileRevision withIntegratedFrom(String s) {

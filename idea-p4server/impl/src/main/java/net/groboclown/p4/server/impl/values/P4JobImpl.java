@@ -28,12 +28,6 @@ public class P4JobImpl implements P4Job {
     private final String description;
     private final Map<String, Object> details;
 
-    public static class State {
-        public String jobId;
-        public String description;
-        public Map<String, Object> details;
-    }
-
     public P4JobImpl(@NotNull IJob job) {
         jobId = job.getId();
         description = job.getDescription();
@@ -44,7 +38,7 @@ public class P4JobImpl implements P4Job {
         details = Collections.unmodifiableMap(fields);
     }
 
-    public P4JobImpl(@NotNull String jobId, @NotNull String description, @Nullable Map<String, String> details) {
+    public P4JobImpl(@NotNull String jobId, @NotNull String description, @Nullable Map<String, Object> details) {
         this.jobId = jobId;
         this.description = description;
         if (details == null) {
@@ -52,24 +46,6 @@ public class P4JobImpl implements P4Job {
         } else {
             this.details = new HashMap<>(details);
         }
-    }
-
-    public P4JobImpl(@NotNull State state) {
-        if (state.jobId == null || state.description == null || state.details == null) {
-            throw new IllegalArgumentException("null fields");
-        }
-        this.jobId = state.jobId;
-        this.description = state.description;
-        this.details = new HashMap<>(state.details);
-    }
-
-    @NotNull
-    public State getState() {
-        State ret = new State();
-        ret.jobId = jobId;
-        ret.description = description;
-        ret.details = new HashMap<>(details);
-        return ret;
     }
 
     @NotNull

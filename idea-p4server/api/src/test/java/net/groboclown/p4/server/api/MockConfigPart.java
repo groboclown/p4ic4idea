@@ -303,6 +303,11 @@ public class MockConfigPart
         return false;
     }
 
+    @Override
+    public String getRawPort() {
+        return serverName.getFullPort();
+    }
+
     public MockConfigPart withConfigProblems(ConfigProblem... problems) {
         configProblems = Arrays.asList(problems);
         return this;

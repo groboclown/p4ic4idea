@@ -26,6 +26,7 @@ import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
 import net.groboclown.p4.server.api.values.P4ResolveType;
 import net.groboclown.p4.server.api.values.P4Revision;
+import net.groboclown.p4.server.impl.cache.store.ClientServerRefStore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,10 +41,6 @@ public class P4LocalFileImpl implements P4LocalFile {
     private final P4ResolveType resolveType;
     private final P4FileType fileType;
     private final P4RemoteFile integrateFrom;
-
-    public static class State {
-
-    }
 
 
     public static class Builder {
@@ -72,6 +69,11 @@ public class P4LocalFileImpl implements P4LocalFile {
 
         public P4RemoteFile getDepot() {
             return depot;
+        }
+
+        public Builder withDepot(P4RemoteFile file) {
+            this.depot = file;
+            return this;
         }
 
         public Builder withLocal(FilePath f) {
@@ -104,10 +106,21 @@ public class P4LocalFileImpl implements P4LocalFile {
             return this;
         }
 
+        public Builder withHead(P4FileRevision rev) {
+            headRev = rev;
+            return this;
+        }
+
+        public Builder withChangelist(P4ChangelistId id) {
+            this.changelistId = id;
+            return this;
+        }
+
         public P4LocalFileImpl build() {
             return new P4LocalFileImpl(depot, local, haveRev, headRev, changelistId, action, resolveType,
                     fileType, integrateFrom);
         }
+
     }
 
 

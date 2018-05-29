@@ -10,7 +10,6 @@ include (
         'idea-test-core',
         'idea-p4server:api',
         'idea-p4server:impl',
-        'idea-cache',
         'plugin-v3',
         'integration-test'
 )

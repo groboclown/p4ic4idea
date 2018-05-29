@@ -55,7 +55,7 @@ class ProjectConfigRegistryImplTest {
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient.ProjectClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
-        ClientConfigAddedMessage.addListener(client, added::add);
+        ClientConfigAddedMessage.addListener(client, (root, config) -> added.add(config));
         ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
         VirtualFile root = MockVirtualFileSystem.createRoot();
@@ -84,7 +84,7 @@ class ProjectConfigRegistryImplTest {
         ProjectConfigRegistry registry = new ProjectConfigRegistryImpl(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         MessageBusClient.ProjectClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
-        ClientConfigAddedMessage.addListener(client, added::add);
+        ClientConfigAddedMessage.addListener(client, (root, config) -> added.add(config));
         ClientConfigRemovedMessage.addListener(client, (event) -> fail("incorrectly called remove"));
         ClientConfig config = createClientConfig();
         VirtualFile root = MockVirtualFileSystem.createRoot();
@@ -104,7 +104,7 @@ class ProjectConfigRegistryImplTest {
         ProjectConfigRegistry registry = new ProjectConfigRegistryImpl(idea.getMockProject());
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient.ProjectClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
-        ClientConfigAddedMessage.addListener(client, clientConfig -> fail("should not have added anything"));
+        ClientConfigAddedMessage.addListener(client, (root, clientConfig) -> fail("should not have added anything"));
         ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
 
@@ -122,7 +122,7 @@ class ProjectConfigRegistryImplTest {
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient.ProjectClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
-        ClientConfigAddedMessage.addListener(client, added::add);
+        ClientConfigAddedMessage.addListener(client, (root, config) -> added.add(config));
         ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
         VirtualFile root = MockVirtualFileSystem.createRoot();
@@ -149,7 +149,7 @@ class ProjectConfigRegistryImplTest {
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient.ProjectClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
-        ClientConfigAddedMessage.addListener(client, added::add);
+        ClientConfigAddedMessage.addListener(client, (root, config) -> added.add(config));
         ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
         VirtualFile root = MockVirtualFileSystem.createRoot();
@@ -181,7 +181,7 @@ class ProjectConfigRegistryImplTest {
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient.ProjectClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
-        ClientConfigAddedMessage.addListener(client, added::add);
+        ClientConfigAddedMessage.addListener(client, (root, config) -> added.add(config));
         ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
         VirtualFile root = MockVirtualFileSystem.createRoot();

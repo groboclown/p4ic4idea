@@ -14,7 +14,6 @@
 
 package net.groboclown.p4.server.impl.cache.store;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
@@ -30,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -46,8 +46,6 @@ import java.util.function.Function;
  * handled separately.
  */
 public class ProjectCacheStore {
-    private static final Logger LOG = Logger.getInstance(ProjectCacheStore.class);
-
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Map<P4ServerName, ServerQueryCacheStore> serverQueryCache = new HashMap<>();
     private final Map<ClientServerRef, ClientQueryCacheStore> clientQueryCache = new HashMap<>();
@@ -57,16 +55,14 @@ public class ProjectCacheStore {
     private LockTimeoutProvider lockTimeout = new LockTimeoutProviderImpl();
 
 
+    @SuppressWarnings("WeakerAccess")
     public static class State {
         // All the stuff cached from the server
         public List<ServerQueryCacheStore.State> serverState;
         public List<ClientQueryCacheStore.State> clientState;
 
-        // All the stuff associated with the VCS Root directories
-        public List<VcsRootCacheStore.State> rootState;
-
         // All the pending actions
-        public List<Map<String, String>> pendingActions;
+        public List<PendingAction.State> pendingActions;
 
         public IdeChangelistCacheStore.State changelistState;
 
@@ -89,15 +85,55 @@ public class ProjectCacheStore {
 
 
     @Nullable
-    public State getState() {
-        // FIXME return the internal state representation
-        LOG.warn("FIXME return the internal state representation");
-        return null;
+    public State getState()
+            throws InterruptedException {
+        State ret = new State();
+
+        ret.serverState = new ArrayList<>(serverQueryCache.size());
+        for (ServerQueryCacheStore entry : serverQueryCache.values()) {
+            ret.serverState.add(entry.getState());
+        }
+
+        ret.clientState = new ArrayList<>(clientQueryCache.size());
+        for (ClientQueryCacheStore value : clientQueryCache.values()) {
+            ret.clientState.add(value.getState());
+        }
+
+        ret.pendingActions = new ArrayList<>(pendingActions.size());
+        for (PendingAction pendingAction : pendingActions) {
+            ret.pendingActions.add(pendingAction.getState());
+        }
+
+        ret.changelistState = changelistCacheStore.getState();
+
+        return ret;
     }
 
-    public void setState(@Nullable State state) {
-        // FIXME set the internal state representation.
-        LOG.warn("FIXME set the internal state representation.");
+    public void setState(@Nullable State state)
+            throws InterruptedException {
+        lockTimeout.withLock(lock.writeLock(), () -> {
+            serverQueryCache.clear();
+            clientQueryCache.clear();
+            pendingActions.clear();
+            if (state == null) {
+                changelistCacheStore.setState(null);
+            } else {
+                List<ServerConfig> knownServerConfigs = new ArrayList<>();
+                for (ServerQueryCacheStore.State serverState : state.serverState) {
+                    ServerQueryCacheStore store = new ServerQueryCacheStore(serverState);
+                    serverQueryCache.put(store.getServerName(), store);
+                }
+                for (ClientQueryCacheStore.State clientState : state.clientState) {
+                    ClientQueryCacheStore store = new ClientQueryCacheStore(clientState);
+                    clientQueryCache.put(store.getClientServerRef(), store);
+                }
+                for (PendingAction.State actionState : state.pendingActions) {
+                    PendingAction action = PendingActionFactory.read(actionState);
+                    pendingActions.add(action);
+                }
+                changelistCacheStore.setState(state.changelistState);
+            }
+        });
     }
 
     public IdeChangelistCacheStore getChangelistCacheStore() {
@@ -174,7 +210,7 @@ public class ProjectCacheStore {
         lockTimeout.withLock(lock.readLock(), () -> {
             for (PendingAction pendingAction : pendingActions) {
                 if (pendingAction.isServerAction() && sourceId.equals(pendingAction.getSourceId())) {
-                    actions.add(pendingAction.getServerAction());
+                    actions.add(pendingAction.getServerAction(config));
                 }
             }
         });
@@ -190,7 +226,7 @@ public class ProjectCacheStore {
         lockTimeout.withLock(lock.readLock(), () -> {
             for (PendingAction pendingAction : pendingActions) {
                 if (pendingAction.isClientAction() && sourceId.equals(pendingAction.getSourceId())) {
-                    actions.add(pendingAction.getClientAction());
+                    actions.add(pendingAction.getClientAction(config));
                 }
             }
         });
@@ -207,9 +243,9 @@ public class ProjectCacheStore {
         lockTimeout.withLock(lock.readLock(), () -> {
             for (PendingAction pendingAction : pendingActions) {
                 if (pendingAction.isClientAction() && clientSourceId.equals(pendingAction.getSourceId())) {
-                    actions.add(new Pair<>(pendingAction.getClientAction(), null));
+                    actions.add(new Pair<>(pendingAction.getClientAction(config), null));
                 } else if (pendingAction.isServerAction() && serverSourceId.equals(pendingAction.getSourceId())) {
-                    actions.add(new Pair<>(null, pendingAction.getServerAction()));
+                    actions.add(new Pair<>(null, pendingAction.getServerAction(config.getServerConfig())));
                 }
             }
         });
@@ -235,20 +271,26 @@ public class ProjectCacheStore {
             this.serverSourceId = PendingActionFactory.getSourceId(config.getServerName());
         }
 
-        public List<P4CommandRunner.ClientAction<?>> getClientActions() {
+        public List<P4CommandRunner.ClientAction<?>> getClientActions(ClientConfig config) {
+            if (!ref.equals(config.getClientServerRef())) {
+                return Collections.emptyList();
+            }
             List<P4CommandRunner.ClientAction<?>> actions = new ArrayList<>();
             for (PendingAction pendingAction : pendingActions) {
                 if (pendingAction.isClientAction() && clientSourceId.equals(pendingAction.getSourceId())) {
-                    actions.add(pendingAction.getClientAction());
+                    actions.add(pendingAction.getClientAction(config));
                 }
             }
             return actions;
         }
 
-        public Optional<P4CommandRunner.ClientAction<?>> getClientActionById(String actionId) {
+        public Optional<P4CommandRunner.ClientAction<?>> getClientActionById(ClientConfig config, String actionId) {
+            if (!ref.equals(config.getClientServerRef())) {
+                return Optional.empty();
+            }
             for (PendingAction pendingAction : pendingActions) {
                 if (pendingAction.isClientAction() && clientSourceId.equals(pendingAction.getSourceId())) {
-                    return Optional.of(pendingAction.getClientAction());
+                    return Optional.of(pendingAction.getClientAction(config));
                 }
             }
             return Optional.empty();
@@ -261,7 +303,7 @@ public class ProjectCacheStore {
                 if (actionId.equals(next.getActionId()) &&
                         (
                             (next.isClientAction() && clientSourceId.equals(next.getSourceId()))
-                            || (next.isServerAction() && serverQueryCache.equals(next.getSourceId()))
+                            || (next.isServerAction() && serverSourceId.equals(next.getSourceId()))
                         )) {
                     iter.remove();
                     return true;
@@ -291,14 +333,18 @@ public class ProjectCacheStore {
                 @Override
                 public Pair<P4CommandRunner.ClientAction<?>, P4CommandRunner.ServerAction<?>> next() {
                     PendingAction pendingAction = proxy.next();
+                    // FIXME return something other than a pair; say, an object that can construct the right
+                    // value?  Return the underlying PendingAction?
                     P4CommandRunner.ClientAction<?> clientAction = null;
                     P4CommandRunner.ServerAction<?> serverAction = null;
                     if (pendingAction.isClientAction()) {
-                        clientAction = pendingAction.getClientAction();
+                        throw new IllegalStateException("FIXME No ClientConfig known");
+                        //clientAction = pendingAction.getClientAction();
                     } else {
-                        serverAction = pendingAction.getServerAction();
+                        throw new IllegalStateException("FIXME No ServerConfig known");
+                        //serverAction = pendingAction.getServerAction();
                     }
-                    return new Pair<>(clientAction, serverAction);
+                    //return new Pair<>(clientAction, serverAction);
                 }
 
                 @Override

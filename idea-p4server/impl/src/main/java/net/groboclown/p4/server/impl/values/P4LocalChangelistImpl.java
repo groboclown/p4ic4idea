@@ -24,6 +24,7 @@ import net.groboclown.p4.server.api.values.P4ChangelistType;
 import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
+import net.groboclown.p4.server.impl.cache.store.P4RemoteFileStore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -127,20 +128,6 @@ public class P4LocalChangelistImpl implements P4LocalChangelist {
     }
 
 
-    @SuppressWarnings("WeakerAccess")
-    public static class State {
-        public int id;
-        public String comment;
-        public boolean deleted;
-        public List<String> containedFiles;
-        public List<P4RemoteFileImpl.State> shelvedFiles;
-        public String type;
-        public String clientname;
-        public String username;
-        public List<P4JobImpl.State> jobs;
-        public String jobStatus;
-    }
-
 
     P4LocalChangelistImpl(
             @NotNull P4ChangelistId changelistId,
@@ -162,29 +149,6 @@ public class P4LocalChangelistImpl implements P4LocalChangelist {
         this.username = username;
         this.jobs = new ArrayList<>(jobs);
         this.jobStatus = jobStatus;
-    }
-
-
-    public P4LocalChangelistImpl(@NotNull ClientServerRef src, @NotNull State state) {
-        this.changelistId = new P4ChangelistIdImpl(state.id, src);
-        this.comment = state.comment;
-        this.deleted = state.deleted;
-        this.containedFiles = new ArrayList<>(state.containedFiles.size());
-        for (String containedFile : state.containedFiles) {
-            containedFiles.add(VcsUtil.getFilePath(containedFile));
-        }
-        this.shelvedFiles = new ArrayList<>(state.shelvedFiles.size());
-        for (P4RemoteFileImpl.State shelvedFile : state.shelvedFiles) {
-            shelvedFiles.add(new P4RemoteFileImpl(shelvedFile));
-        }
-        this.type = P4ChangelistType.valueOf(state.type);
-        this.clientname = state.clientname;
-        this.username = state.username;
-        this.jobs = new ArrayList<>(state.jobs.size());
-        for (P4JobImpl.State job : state.jobs) {
-            this.jobs.add(new P4JobImpl(job));
-        }
-        this.jobStatus = new JobStatusImpl(state.jobStatus);
     }
 
 
@@ -257,28 +221,4 @@ public class P4LocalChangelistImpl implements P4LocalChangelist {
         return shelvedFiles;
     }
 
-    @NotNull
-    public State getState() {
-        State ret = new State();
-        ret.id = changelistId.getChangelistId();
-        ret.comment = comment;
-        ret.deleted = deleted;
-        ret.containedFiles = new ArrayList<>(containedFiles.size());
-        for (FilePath containedFile : containedFiles) {
-            ret.containedFiles.add(containedFile.getPath());
-        }
-        ret.shelvedFiles = new ArrayList<>(shelvedFiles.size());
-        for (P4RemoteFile shelvedFile : shelvedFiles) {
-            ret.shelvedFiles.add(((P4RemoteFileImpl) shelvedFile).getState());
-        }
-        ret.type = type.name();
-        ret.clientname = clientname;
-        ret.username = username;
-        ret.jobs = new ArrayList<>(jobs.size());
-        for (P4Job job : jobs) {
-            ret.jobs.add(((P4JobImpl) job).getState());
-        }
-        ret.jobStatus = jobStatus.getName();
-        return ret;
-    }
 }

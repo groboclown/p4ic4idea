@@ -42,7 +42,7 @@ public class MockPendingAction implements PendingAction {
     }
 
     @Override
-    public Map<String, String> getState() {
+    public State getState() {
         return null;
     }
 

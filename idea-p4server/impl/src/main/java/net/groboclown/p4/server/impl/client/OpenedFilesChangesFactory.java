@@ -76,7 +76,6 @@ public class OpenedFilesChangesFactory {
 
         // Default changelist
         ret.add(new P4LocalChangelistBuilder()
-                .withServerConfig(clientConfig.getServerConfig())
                 .withDefaultChangelist(clientConfig.getClientServerRef())
                 .withClientname(clientConfig.getClientname())
                 .withUsername(clientConfig.getServerConfig().getUsername())
@@ -87,7 +86,6 @@ public class OpenedFilesChangesFactory {
         for (IChangelist change : changes) {
             ret.add(
                     new P4LocalChangelistBuilder()
-                            .withServerConfig(clientConfig.getServerConfig())
                             .withChangelistId(clientConfig.getClientServerRef(), change.getId())
                             .withClientname(clientConfig.getClientname())
                             .withUsername(clientConfig.getServerConfig().getUsername())

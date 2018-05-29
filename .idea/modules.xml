@@ -16,13 +16,6 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/compat-api_test.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/compat-api_test.iml" group="idea-compat/compat-api" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/compat-api_testIdea172.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/compat-api_testIdea172.iml" group="idea-compat/compat-api" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/compat-api_testIdea173.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/compat-api/compat-api_testIdea173.iml" group="idea-compat/compat-api" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache.iml" group="idea-cache" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache_main.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache_main.iml" group="idea-cache" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache_mainIdea172.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache_mainIdea172.iml" group="idea-cache" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache_mainIdea173.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache_mainIdea173.iml" group="idea-cache" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache_test.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache_test.iml" group="idea-cache" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache_testIdea172.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache_testIdea172.iml" group="idea-cache" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache_testIdea173.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-cache/idea-cache_testIdea173.iml" group="idea-cache" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/idea-compat.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/idea-compat.iml" group="idea-compat" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-p4server/idea-p4server.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-p4server/idea-p4server.iml" group="idea-p4server" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-test-core/idea-test-core.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-test-core/idea-test-core.iml" group="idea-test-core" />

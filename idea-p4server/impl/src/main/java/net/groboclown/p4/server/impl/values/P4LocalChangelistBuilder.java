@@ -15,9 +15,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 import java.util.List;
 
+// FIXME either use this or P4LocalChangelistImpl.Builder, but not both.
 public class P4LocalChangelistBuilder {
     private P4ChangelistId changelistId;
-    private ServerConfig serverConfig;
     private String comment;
     private boolean deleted = false;
     private List<FilePath> containedFiles = Collections.emptyList();
@@ -38,8 +38,8 @@ public class P4LocalChangelistBuilder {
         return this;
     }
 
-    public P4LocalChangelistBuilder withServerConfig(ServerConfig config) {
-        this.serverConfig = serverConfig;
+    public P4LocalChangelistBuilder withChangelistType(@NotNull P4ChangelistType type) {
+        this.type = type;
         return this;
     }
 
@@ -85,6 +85,11 @@ public class P4LocalChangelistBuilder {
 
     public P4LocalChangelistBuilder withJobStatus(JobStatus jobStatus) {
         this.jobStatus = jobStatus;
+        return this;
+    }
+
+    public P4LocalChangelistBuilder withChangelistId(P4ChangelistId id) {
+        this.changelistId = id;
         return this;
     }
 

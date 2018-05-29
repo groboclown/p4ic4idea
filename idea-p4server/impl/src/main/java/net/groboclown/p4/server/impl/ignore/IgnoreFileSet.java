@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.cache.ignore;
+package net.groboclown.p4.server.impl.ignore;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;

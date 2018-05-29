@@ -22,8 +22,8 @@ import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.impl.config.LockTimeoutProviderImpl;
 import net.groboclown.p4.server.impl.values.P4LocalChangelistBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,29 +47,26 @@ public class IdeChangelistCacheStore {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private LockTimeoutProvider lockTimeout = new LockTimeoutProviderImpl();
 
+    @SuppressWarnings("WeakerAccess")
     public static class State {
         public int lastPendingChangelistId;
         public List<LinkedChangelistState> linkedChangelistMap;
+        public List<PendingChangelistState> pendingChangelistMap;
     }
 
 
+    @SuppressWarnings("WeakerAccess")
     public static class LinkedChangelistState {
-        public String clientName;
-        public String serverName;
-
-        // Note: one local changelist ID to a perforce changelist ID.
-        public Map<String, Integer> linkedChangelistIds;
-        public Map<String, PendingChangelistState> linkedPendingIds;
+        public P4ChangelistIdStore.State changelistId;
+        public String linkedLocalChangeId;
     }
 
 
+    @SuppressWarnings("WeakerAccess")
     public static class PendingChangelistState {
         // note: this duplicates data that's stored with the action.
-        public String comment;
-        public int internalId;
-        public String actionId;
+        public P4LocalChangelistStore.State p4Changelist;
         public String linkedLocalChangeId;
-        public List<String> associatedJobs;
     }
 
 
@@ -193,12 +190,52 @@ public class IdeChangelistCacheStore {
 
 
     @NotNull
-    State getState() {
-        State ret = new State();
+    State getState()
+            throws InterruptedException {
+        final State ret = new State();
 
-        // FIXME populate the state.
-        LOG.warn("FIXME populate the state");
+        lockTimeout.withLock(lock.readLock(), () -> {
+            ret.linkedChangelistMap = new ArrayList<>(linkedChangelistIds.size());
+            for (Map.Entry<P4ChangelistId, String> entry : linkedChangelistIds.entrySet()) {
+                LinkedChangelistState state = new LinkedChangelistState();
+                state.changelistId = P4ChangelistIdStore.getState(entry.getKey());
+                state.linkedLocalChangeId = entry.getValue();
+                ret.linkedChangelistMap.add(state);
+            }
+
+            ret.pendingChangelistMap = new ArrayList<>(pendingChangelists.size());
+            for (Map.Entry<String, P4LocalChangelist> entry : pendingChangelists.entrySet()) {
+                PendingChangelistState state = new PendingChangelistState();
+                state.linkedLocalChangeId = entry.getKey();
+                state.p4Changelist = P4LocalChangelistStore.getState(entry.getValue());
+                ret.pendingChangelistMap.add(state);
+            }
+
+            ret.lastPendingChangelistId = pendingChangelistIdCounter.get();
+        });
 
         return ret;
     }
+
+    void setState(@Nullable State state)
+            throws InterruptedException {
+        if (state != null) {
+            lockTimeout.withLock(lock.writeLock(), () -> {
+                linkedChangelistIds.clear();
+                for (LinkedChangelistState linkedChangelistState : state.linkedChangelistMap) {
+                    P4ChangelistId p4id = P4ChangelistIdStore.read(linkedChangelistState.changelistId);
+                    linkedChangelistIds.put(p4id, linkedChangelistState.linkedLocalChangeId);
+                }
+
+                pendingChangelists.clear();
+                for (PendingChangelistState pendingChangelistState : state.pendingChangelistMap) {
+                    P4LocalChangelist p4cl = P4LocalChangelistStore.read(pendingChangelistState.p4Changelist);
+                    pendingChangelists.put(pendingChangelistState.linkedLocalChangeId, p4cl);
+                }
+
+                pendingChangelistIdCounter.set(state.lastPendingChangelistId);
+            });
+        }
+    }
+
 }

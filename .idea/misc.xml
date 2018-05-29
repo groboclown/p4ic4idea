@@ -26,6 +26,28 @@
       </value>
     </option>
   </component>
+  <component name="P4ProjectCache">
+    <option name="serverState">
+      <list />
+    </option>
+    <option name="clientState">
+      <list />
+    </option>
+    <option name="pendingActions">
+      <list />
+    </option>
+    <option name="changelistState">
+      <State>
+        <option name="lastPendingChangelistId" value="-2" />
+        <option name="linkedChangelistMap">
+          <list />
+        </option>
+        <option name="pendingChangelistMap">
+          <list />
+        </option>
+      </State>
+    </option>
+  </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" default="false" project-jdk-name="1.8" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/.idea/out" />
   </component>

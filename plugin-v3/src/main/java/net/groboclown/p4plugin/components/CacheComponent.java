@@ -156,12 +156,21 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     @Nullable
     @Override
     public ProjectCacheStore.State getState() {
-        return projectCache.getState();
+        try {
+            return projectCache.getState();
+        } catch (InterruptedException e) {
+            LOG.warn("Timed out while trying to access the cache.  Could not serialize cache state.", e);
+            return null;
+        }
     }
 
     @Override
     public void loadState(ProjectCacheStore.State state) {
-        this.projectCache.setState(state);
+        try {
+            this.projectCache.setState(state);
+        } catch (InterruptedException e) {
+            LOG.warn("Timed out while writing to the cache.  Could not deserialize the cache state.", e);
+        }
     }
 
     @Override

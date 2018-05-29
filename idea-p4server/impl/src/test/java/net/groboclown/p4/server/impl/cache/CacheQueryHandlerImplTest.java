@@ -97,7 +97,8 @@ class CacheQueryHandlerImplTest {
     }
 
     @Test
-    void getCachedOpenedChangelists_createAction() {
+    void getCachedOpenedChangelists_createAction()
+            throws InterruptedException {
         MockConfigPart configPart = createConfigPart();
         ServerConfig serverConfig = ServerConfig.createFrom(configPart);
         ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, configPart);
@@ -108,7 +109,7 @@ class CacheQueryHandlerImplTest {
                 .withChangelistId(new P4ChangelistIdImpl(1, clientConfig.getClientServerRef()))
                 .withComment("comment 1")
                 .build();
-        CreateChangelistAction addChangelistAction = new CreateChangelistAction(ref, "my comment");
+        CreateChangelistAction addChangelistAction = new CreateChangelistAction(clientConfig.getClientServerRef(), "my comment");
         projectStore.addPendingAction(new MockPendingAction()
                 .withClientAction(addChangelistAction)
                 .withSource(clientConfig)
@@ -126,7 +127,7 @@ class CacheQueryHandlerImplTest {
 
         assertEqualChangelists(cl1, res1);
 
-        assertEquals(projectStore.getPendingChangelistId(addChangelistAction),
+        assertEquals(projectStore.getChangelistCacheStore().getPendingChangelist(addChangelistAction, false),
                 res2.getChangelistId().getChangelistId());
         assertEquals("my comment", res2.getComment());
         assertEquals(clientConfig.getClientname(), res2.getClientname());

@@ -17,4 +17,8 @@
  * <p>
  * Added to the "cache" package for offline management of ignored files.
  */
-package net.groboclown.p4.server.cache.ignore;
+
+/**
+ * TODO look at splitting this into API vs. implementation.
+ */
+package net.groboclown.p4.server.impl.ignore;

@@ -14,12 +14,14 @@
 package net.groboclown.p4.server.api.config;
 
 import com.intellij.credentialStore.OneTimeString;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
 import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.P4ServerName;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.concurrency.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,8 +50,13 @@ class ConfigPropertiesUtilTest {
                 new ApplicationPasswordRegistry() {
                     @NotNull
                     @Override
-                    public Promise<OneTimeString> getOrAskFor(@NotNull ServerConfig config) {
+                    public Promise<OneTimeString> getOrAskFor(@Nullable Project project, @NotNull ServerConfig config) {
                         return get(config);
+                    }
+
+                    @Override
+                    public void askForNewPassword(@Nullable Project project, @NotNull ServerConfig config) {
+                        // do nothing
                     }
                 }
         );
@@ -128,7 +135,8 @@ class ConfigPropertiesUtilTest {
                 new Pair<>("P4USER", "username"),
                 new Pair<>("P4TICKETS", "auth.txt"),
                 new Pair<>("P4FINGERPRINT", "fingerprint"),
-                new Pair<>("P4PASSWD", "<set>"),
+                // with Requires User Entered Password, it doesn't matter if the password is explicitly set.
+                new Pair<>("P4PASSWD", "<unset>"),
                 new Pair<>("P4CHARSET", "charset"),
                 new Pair<>("P4IGNORE", "ignore"),
                 new Pair<>("P4CLIENT", "clientname"),

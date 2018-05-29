@@ -32,10 +32,6 @@ public class P4JobSpecImpl implements P4JobSpec {
     private final String comments;
     private final List<P4JobField> fields;
 
-    public static class State {
-
-    }
-
     public P4JobSpecImpl(@NotNull IJobSpec src) {
         this.comments = src.getComments();
         List<P4JobField> f = new ArrayList<>(src.getFields().size());
@@ -43,6 +39,11 @@ public class P4JobSpecImpl implements P4JobSpec {
             f.add(new P4JobFieldImpl(field, src));
         }
         fields = Collections.unmodifiableList(f);
+    }
+
+    public P4JobSpecImpl(@Nullable String comment, @NotNull List<P4JobField> fields) {
+        this.comments = comment;
+        this.fields = Collections.unmodifiableList(new ArrayList<>(fields));
     }
 
     @Override

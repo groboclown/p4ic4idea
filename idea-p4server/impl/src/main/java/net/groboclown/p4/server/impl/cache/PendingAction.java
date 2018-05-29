@@ -16,15 +16,26 @@ package net.groboclown.p4.server.impl.cache;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.ServerConfig;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
 /**
  * The state storage for actions, so that they can be easily cached to file and restored.
  * Needs to be usable by PersistentStateComponent.
+ * <p>
+ * These action implementations must
  */
 public interface PendingAction {
-    Map<String, String> getState();
+
+    class State {
+        String actionClassName;
+        Map<String, String> data;
+    }
+
+
+    State getState();
 
     /**
      *
@@ -36,8 +47,8 @@ public interface PendingAction {
     String getActionId();
 
     boolean isClientAction();
-    P4CommandRunner.ClientAction<?> getClientAction();
+    P4CommandRunner.ClientAction<?> getClientAction(@NotNull ClientConfig config);
 
     boolean isServerAction();
-    P4CommandRunner.ServerAction<?> getServerAction();
+    P4CommandRunner.ServerAction<?> getServerAction(@NotNull ServerConfig config);
 }

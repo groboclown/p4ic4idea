@@ -29,12 +29,18 @@ public class ServerQueryCacheStore {
     private P4JobSpec jobSpec;
 
     public static class State {
-        // FIXME implement
+        public String serverName;
+        public P4JobSpecStore.State jobSpec;
     }
 
 
     public ServerQueryCacheStore(@NotNull P4ServerName config) {
         this.serverName = config;
+    }
+
+    ServerQueryCacheStore(@NotNull State state) {
+        this.serverName = P4ServerName.forPortNotNull(state.serverName);
+        this.jobSpec = P4JobSpecStore.readNullable(state.jobSpec);
     }
 
 
@@ -50,14 +56,11 @@ public class ServerQueryCacheStore {
         return serverName;
     }
 
+    @NotNull
     public State getState() {
-        // FIXME implement
-        LOG.warn("FIXME implement state construction");
-        return null;
-    }
-
-    public void setState(State state) {
-        // FIXME implement
-        LOG.warn("FIXME implement state reading");
+        State ret = new State();
+        ret.serverName = serverName.getFullPort();
+        ret.jobSpec = P4JobSpecStore.getStateNullable(jobSpec);
+        return ret;
     }
 }

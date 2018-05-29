@@ -47,7 +47,8 @@ class MultipleConfigPartTest {
         //noinspection SimplifiableJUnitAssertion
         assertTrue(part.equals(new MultipleConfigPart("Blah", Collections.emptyList())));
 
-        assertThrows(IllegalStateException.class, part::reload);
+        // Show that reload doesn't throw an error.
+        part.reload();
 
         assertEquals("Blah".hashCode() + Collections.emptyList().hashCode(), part.hashCode());
         assertEquals("MultipleConfigPart(Blah):" + part.getInstanceIndex(), part.toString());
@@ -105,7 +106,8 @@ class MultipleConfigPartTest {
         //noinspection SimplifiableJUnitAssertion
         assertTrue(part.equals(new MultipleConfigPart("Blah2", Collections.singletonList(mockPart))));
 
-        assertThrows(IllegalStateException.class, part::reload);
+        // Show that reload doesn't throw an error.
+        part.reload();
 
         assertEquals("Blah2".hashCode() + Collections.singletonList(mockPart).hashCode(), part.hashCode());
         assertEquals("MultipleConfigPart(Blah2):" + part.getInstanceIndex(), part.toString());
@@ -168,8 +170,8 @@ class MultipleConfigPartTest {
         //noinspection SimplifiableJUnitAssertion
         assertTrue(part.equals(new MultipleConfigPart("Blah2", Arrays.asList(mockPartFirst, mockPartLast))));
 
-        assertThrows(IllegalStateException.class, part::reload);
-
+        // Show that reload doesn't throw an error.
+        part.reload();
 
         //assertEquals("Blah2".hashCode() + Collections.singletonList(mockPart).hashCode(), part.hashCode());
         assertEquals("MultipleConfigPart(Blah2):" + part.getInstanceIndex(), part.toString());

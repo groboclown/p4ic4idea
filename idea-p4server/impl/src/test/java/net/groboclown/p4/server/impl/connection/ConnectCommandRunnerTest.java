@@ -431,9 +431,10 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new CreateChangelistAction(ref, "simple"))
-                                .whenCompleted(sink::resolve)
-                                .whenServerError(sink::reject)
+                        runner.perform(clientConfig,
+                                new CreateChangelistAction(clientConfig.getClientServerRef(), "simple"))
+                        .whenCompleted(sink::resolve)
+                        .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
                     // FIXME
@@ -790,7 +791,7 @@ class ConnectCommandRunnerTest {
 
     private P4Job createP4Job(ServerConfig config, GetJobSpecResult jobSpec) {
         assertNotNull(jobSpec);
-        Map<String, String> details = new HashMap<>();
+        Map<String, Object> details = new HashMap<>();
         for (P4JobField jobField : jobSpec.getJobSpec().getFields()) {
             if (jobField.getSelectValues() != null && !jobField.getSelectValues().isEmpty()) {
                 details.put(jobField.getName(), jobField.getSelectValues().get(0));

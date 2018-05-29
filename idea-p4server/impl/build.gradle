@@ -38,7 +38,6 @@ dependencies {
     compatImplementation (
             project(':p4java'),
             project(':idea-compat:compat-api'),
-            project(':idea-cache'),
             project(':swarm'),
     )
     compatTest(

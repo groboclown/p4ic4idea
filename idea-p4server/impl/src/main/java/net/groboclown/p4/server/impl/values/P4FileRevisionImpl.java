@@ -42,6 +42,7 @@ public class P4FileRevisionImpl
     private final Date date;
     private final String charset;
 
+
     public P4FileRevisionImpl(ClientServerRef ref, IExtendedFileSpec spec) {
         this(ref, new P4RemoteFileImpl(spec), spec);
     }
@@ -54,7 +55,7 @@ public class P4FileRevisionImpl
                 spec.getHeadModTime(), spec.getCharset());
     }
 
-    private P4FileRevisionImpl(@NotNull P4RemoteFile depotPath, @NotNull P4ChangelistId changelistId,
+    public P4FileRevisionImpl(@NotNull P4RemoteFile depotPath, @NotNull P4ChangelistId changelistId,
             @NotNull P4Revision rev, @NotNull P4FileAction action, @NotNull P4FileType type,
             @Nullable P4RemoteFile integratedFrom, @Nullable VcsRevisionNumber revisionNumber,
             Date date, String charset) {
@@ -109,5 +110,17 @@ public class P4FileRevisionImpl
     @Override
     public VcsRevisionNumber getRevisionNumber() {
         return revisionNumber;
+    }
+
+    @Nullable
+    @Override
+    public Date getDate() {
+        return date;
+    }
+
+    @Nullable
+    @Override
+    public String getCharset() {
+        return charset;
     }
 }

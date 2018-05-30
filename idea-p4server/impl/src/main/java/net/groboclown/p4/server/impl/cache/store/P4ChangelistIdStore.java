@@ -19,6 +19,7 @@ import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 
 public class P4ChangelistIdStore {
 
@@ -28,7 +29,7 @@ public class P4ChangelistIdStore {
     }
 
     @Nullable
-    public static State getStateNullable(@Nullable P4ChangelistId changelistId) {
+    static State getStateNullable(@Nullable P4ChangelistId changelistId) {
         if (changelistId == null) {
             return null;
         }
@@ -44,7 +45,7 @@ public class P4ChangelistIdStore {
     }
 
     @Nullable
-    public static P4ChangelistId readNullable(@Nullable State state) {
+    static P4ChangelistId readNullable(@Nullable State state) {
         if (state == null) {
             return null;
         }

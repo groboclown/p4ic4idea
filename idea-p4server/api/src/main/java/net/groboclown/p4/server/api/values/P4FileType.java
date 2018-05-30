@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.api.values;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.ArrayList;
@@ -104,6 +105,14 @@ public class P4FileType {
 
     public String toString() {
         return display;
+    }
+
+    @Nullable
+    public static P4FileType convertNullable(@Nullable String fileType) {
+        if (fileType == null) {
+            return null;
+        }
+        return convert(fileType);
     }
 
     @NotNull

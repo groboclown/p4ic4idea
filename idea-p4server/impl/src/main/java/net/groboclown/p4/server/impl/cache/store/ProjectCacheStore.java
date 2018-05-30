@@ -21,8 +21,6 @@ import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.LockTimeoutProvider;
 import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.impl.cache.PendingAction;
-import net.groboclown.p4.server.impl.cache.PendingActionFactory;
 import net.groboclown.p4.server.impl.config.LockTimeoutProviderImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,7 +47,7 @@ public class ProjectCacheStore {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Map<P4ServerName, ServerQueryCacheStore> serverQueryCache = new HashMap<>();
     private final Map<ClientServerRef, ClientQueryCacheStore> clientQueryCache = new HashMap<>();
-    private final List<PendingAction> pendingActions = new ArrayList<>();
+    private final List<ActionStore.PendingAction> pendingActions = new ArrayList<>();
     private final IdeChangelistCacheStore changelistCacheStore = new IdeChangelistCacheStore();
 
     private LockTimeoutProvider lockTimeout = new LockTimeoutProviderImpl();
@@ -62,7 +60,7 @@ public class ProjectCacheStore {
         public List<ClientQueryCacheStore.State> clientState;
 
         // All the pending actions
-        public List<PendingAction.State> pendingActions;
+        public List<ActionStore.State> pendingActions;
 
         public IdeChangelistCacheStore.State changelistState;
 
@@ -79,7 +77,7 @@ public class ProjectCacheStore {
     }
 
     @TestOnly
-    public void addPendingAction(PendingAction action) {
+    public void addPendingAction(ActionStore.PendingAction action) {
         pendingActions.add(action);
     }
 
@@ -100,7 +98,7 @@ public class ProjectCacheStore {
         }
 
         ret.pendingActions = new ArrayList<>(pendingActions.size());
-        for (PendingAction pendingAction : pendingActions) {
+        for (ActionStore.PendingAction pendingAction : pendingActions) {
             ret.pendingActions.add(pendingAction.getState());
         }
 
@@ -127,8 +125,8 @@ public class ProjectCacheStore {
                     ClientQueryCacheStore store = new ClientQueryCacheStore(clientState);
                     clientQueryCache.put(store.getClientServerRef(), store);
                 }
-                for (PendingAction.State actionState : state.pendingActions) {
-                    PendingAction action = PendingActionFactory.read(actionState);
+                for (ActionStore.State actionState : state.pendingActions) {
+                    ActionStore.PendingAction action = ActionStore.read(actionState);
                     pendingActions.add(action);
                 }
                 changelistCacheStore.setState(state.changelistState);
@@ -205,12 +203,12 @@ public class ProjectCacheStore {
     @Nullable
     public <T> T readClientActions(ServerConfig config, Function<List<P4CommandRunner.ServerAction<?>>, T> fun)
             throws InterruptedException {
-        final String sourceId = PendingActionFactory.getSourceId(config);
+        final String sourceId = ActionStore.getSourceId(config);
         final List<P4CommandRunner.ServerAction<?>> actions = new ArrayList<>();
         lockTimeout.withLock(lock.readLock(), () -> {
-            for (PendingAction pendingAction : pendingActions) {
-                if (pendingAction.isServerAction() && sourceId.equals(pendingAction.getSourceId())) {
-                    actions.add(pendingAction.getServerAction(config));
+            for (ActionStore.PendingAction pendingAction : pendingActions) {
+                if (pendingAction.isServerAction() && sourceId.equals(pendingAction.sourceId)) {
+                    actions.add(pendingAction.serverAction);
                 }
             }
         });
@@ -221,12 +219,12 @@ public class ProjectCacheStore {
     @NotNull
     public List<P4CommandRunner.ClientAction<?>> readClientActions(ClientConfig config)
             throws InterruptedException {
-        final String sourceId = PendingActionFactory.getSourceId(config);
+        final String sourceId = ActionStore.getSourceId(config);
         final List<P4CommandRunner.ClientAction<?>> actions = new ArrayList<>();
         lockTimeout.withLock(lock.readLock(), () -> {
-            for (PendingAction pendingAction : pendingActions) {
-                if (pendingAction.isClientAction() && sourceId.equals(pendingAction.getSourceId())) {
-                    actions.add(pendingAction.getClientAction(config));
+            for (ActionStore.PendingAction pendingAction : pendingActions) {
+                if (pendingAction.isClientAction() && sourceId.equals(pendingAction.sourceId)) {
+                    actions.add(pendingAction.clientAction);
                 }
             }
         });
@@ -237,15 +235,15 @@ public class ProjectCacheStore {
     @NotNull
     public List<Pair<P4CommandRunner.ClientAction<?>, P4CommandRunner.ServerAction<?>>> readActions(ClientConfig config)
             throws InterruptedException {
-        final String clientSourceId = PendingActionFactory.getSourceId(config);
-        final String serverSourceId = PendingActionFactory.getSourceId(config.getServerConfig());
+        final String clientSourceId = ActionStore.getSourceId(config);
+        final String serverSourceId = ActionStore.getSourceId(config.getServerConfig());
         final List<Pair<P4CommandRunner.ClientAction<?>, P4CommandRunner.ServerAction<?>>> actions = new ArrayList<>();
         lockTimeout.withLock(lock.readLock(), () -> {
-            for (PendingAction pendingAction : pendingActions) {
-                if (pendingAction.isClientAction() && clientSourceId.equals(pendingAction.getSourceId())) {
-                    actions.add(new Pair<>(pendingAction.getClientAction(config), null));
-                } else if (pendingAction.isServerAction() && serverSourceId.equals(pendingAction.getSourceId())) {
-                    actions.add(new Pair<>(null, pendingAction.getServerAction(config.getServerConfig())));
+            for (ActionStore.PendingAction pendingAction : pendingActions) {
+                if (pendingAction.isClientAction() && clientSourceId.equals(pendingAction.sourceId)) {
+                    actions.add(new Pair<>(pendingAction.clientAction, null));
+                } else if (pendingAction.isServerAction() && serverSourceId.equals(pendingAction.sourceId)) {
+                    actions.add(new Pair<>(null, pendingAction.serverAction));
                 }
             }
         });
@@ -267,8 +265,8 @@ public class ProjectCacheStore {
 
         private WriteActionCache(ClientServerRef config) {
             this.ref = config;
-            this.clientSourceId = PendingActionFactory.getSourceId(config);
-            this.serverSourceId = PendingActionFactory.getSourceId(config.getServerName());
+            this.clientSourceId = ActionStore.getSourceId(config);
+            this.serverSourceId = ActionStore.getSourceId(config.getServerName());
         }
 
         public List<P4CommandRunner.ClientAction<?>> getClientActions(ClientConfig config) {
@@ -276,9 +274,9 @@ public class ProjectCacheStore {
                 return Collections.emptyList();
             }
             List<P4CommandRunner.ClientAction<?>> actions = new ArrayList<>();
-            for (PendingAction pendingAction : pendingActions) {
-                if (pendingAction.isClientAction() && clientSourceId.equals(pendingAction.getSourceId())) {
-                    actions.add(pendingAction.getClientAction(config));
+            for (ActionStore.PendingAction pendingAction : pendingActions) {
+                if (pendingAction.isClientAction() && clientSourceId.equals(pendingAction.sourceId)) {
+                    actions.add(pendingAction.clientAction);
                 }
             }
             return actions;
@@ -288,22 +286,22 @@ public class ProjectCacheStore {
             if (!ref.equals(config.getClientServerRef())) {
                 return Optional.empty();
             }
-            for (PendingAction pendingAction : pendingActions) {
-                if (pendingAction.isClientAction() && clientSourceId.equals(pendingAction.getSourceId())) {
-                    return Optional.of(pendingAction.getClientAction(config));
+            for (ActionStore.PendingAction pendingAction : pendingActions) {
+                if (pendingAction.isClientAction() && clientSourceId.equals(pendingAction.sourceId)) {
+                    return Optional.of(pendingAction.clientAction);
                 }
             }
             return Optional.empty();
         }
 
         public boolean removeActionById(String actionId) {
-            Iterator<PendingAction> iter = pendingActions.iterator();
+            Iterator<ActionStore.PendingAction> iter = pendingActions.iterator();
             while (iter.hasNext()) {
-                PendingAction next = iter.next();
+                ActionStore.PendingAction next = iter.next();
                 if (actionId.equals(next.getActionId()) &&
                         (
-                            (next.isClientAction() && clientSourceId.equals(next.getSourceId()))
-                            || (next.isServerAction() && serverSourceId.equals(next.getSourceId()))
+                            (next.isClientAction() && clientSourceId.equals(next.sourceId))
+                            || (next.isServerAction() && serverSourceId.equals(next.sourceId))
                         )) {
                     iter.remove();
                     return true;
@@ -313,17 +311,17 @@ public class ProjectCacheStore {
         }
 
         public void addAction(P4CommandRunner.ClientAction<?> action) {
-            pendingActions.add(PendingActionFactory.create(ref, action));
+            pendingActions.add(ActionStore.createPendingAction(ref, action));
         }
 
         public void addAction(P4CommandRunner.ServerAction<?> action) {
-            pendingActions.add(PendingActionFactory.create(ref.getServerName(), action));
+            pendingActions.add(ActionStore.createPendingAction(ref.getServerName(), action));
         }
 
         @NotNull
         @Override
         public Iterator<Pair<P4CommandRunner.ClientAction<?>, P4CommandRunner.ServerAction<?>>> iterator() {
-            final Iterator<PendingAction> proxy = pendingActions.iterator();
+            final Iterator<ActionStore.PendingAction> proxy = pendingActions.iterator();
             return new Iterator<Pair<P4CommandRunner.ClientAction<?>, P4CommandRunner.ServerAction<?>>>() {
                 @Override
                 public boolean hasNext() {
@@ -332,7 +330,7 @@ public class ProjectCacheStore {
 
                 @Override
                 public Pair<P4CommandRunner.ClientAction<?>, P4CommandRunner.ServerAction<?>> next() {
-                    PendingAction pendingAction = proxy.next();
+                    ActionStore.PendingAction pendingAction = proxy.next();
                     // FIXME return something other than a pair; say, an object that can construct the right
                     // value?  Return the underlying PendingAction?
                     P4CommandRunner.ClientAction<?> clientAction = null;

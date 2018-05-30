@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class AddEditAction implements P4CommandRunner.ClientAction<AddEditResult> {
-    private final String actionId = ActionUtil.createActionId(AddEditAction.class);
+    private final String actionId;
     private final FilePath file;
     private final P4FileType type;
     private final P4ChangelistId changelistId;
@@ -31,6 +31,12 @@ public class AddEditAction implements P4CommandRunner.ClientAction<AddEditResult
 
     public AddEditAction(@NotNull FilePath file, @Nullable P4FileType type,
             P4ChangelistId changelistId, String charset) {
+        this(ActionUtil.createActionId(AddEditAction.class), file, type, changelistId, charset);
+    }
+
+    public AddEditAction(@NotNull String actionId, @NotNull FilePath file, @Nullable P4FileType type,
+            P4ChangelistId changelistId, String charset) {
+        this.actionId = actionId;
         this.file = file;
         this.type = type;
         this.changelistId = changelistId;

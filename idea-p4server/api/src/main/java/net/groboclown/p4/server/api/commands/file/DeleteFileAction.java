@@ -20,10 +20,16 @@ import net.groboclown.p4.server.api.commands.ActionUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class DeleteFileAction implements P4CommandRunner.ClientAction<DeleteFileResult> {
-    private final String actionId = ActionUtil.createActionId(DeleteFileAction.class);
+    private final String actionId;
     private final FilePath file;
 
+
     public DeleteFileAction(@NotNull FilePath file) {
+        this(ActionUtil.createActionId(DeleteFileAction.class), file);
+    }
+
+    public DeleteFileAction(@NotNull String actionId, @NotNull FilePath file) {
+        this.actionId = actionId;
         this.file = file;
     }
 

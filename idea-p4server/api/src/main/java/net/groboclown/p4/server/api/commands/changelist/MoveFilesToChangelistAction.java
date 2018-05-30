@@ -23,11 +23,17 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class MoveFilesToChangelistAction implements P4CommandRunner.ClientAction<MoveFilesToChangelistResult> {
-    private final String actionId = ActionUtil.createActionId(MoveFilesToChangelistAction.class);
+    private final String actionId;
     private final P4ChangelistId changelistId;
     private final List<FilePath> files;
 
     public MoveFilesToChangelistAction(@NotNull P4ChangelistId changelistId, @NotNull List<FilePath> files) {
+        this(ActionUtil.createActionId(MoveFilesToChangelistAction.class), changelistId, files);
+    }
+
+    public MoveFilesToChangelistAction(@NotNull String actionId, @NotNull P4ChangelistId changelistId,
+            @NotNull List<FilePath> files) {
+        this.actionId = actionId;
         this.changelistId = changelistId;
         this.files = files;
     }

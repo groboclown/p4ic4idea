@@ -20,11 +20,16 @@ import net.groboclown.p4.server.api.commands.ActionUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class MoveFileAction implements P4CommandRunner.ClientAction<MoveFileResult> {
-    private final String actionId = ActionUtil.createActionId(MoveFileAction.class);
+    private final String actionId;
     private final FilePath source;
     private final FilePath target;
 
-    public MoveFileAction(FilePath source, FilePath target) {
+    public MoveFileAction(@NotNull FilePath source, @NotNull FilePath target) {
+        this(ActionUtil.createActionId(MoveFileAction.class), source, target);
+    }
+
+    public MoveFileAction(@NotNull String actionId, @NotNull FilePath source, @NotNull FilePath target) {
+        this.actionId = actionId;
         this.source = source;
         this.target = target;
     }

@@ -16,6 +16,9 @@ package net.groboclown.p4.server.impl.cache.store;
 
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
 
 public class ClientServerRefStore {
 
@@ -26,15 +29,30 @@ public class ClientServerRefStore {
     }
 
 
-    public static State getState(ClientServerRef ref) {
+    @NotNull
+    public static State getState(@NotNull ClientServerRef ref) {
         State ret = new State();
         ret.serverPort = ref.getServerName().getFullPort();
         ret.clientName = ref.getClientName();
         return ret;
     }
 
-    public static ClientServerRef read(State state) {
+    @NotNull
+    public static ClientServerRef read(@NotNull State state) {
         P4ServerName server = P4ServerName.forPortNotNull(state.serverPort);
         return new ClientServerRef(server, state.clientName);
+    }
+
+    @NotNull
+    public static ClientServerRef readState(@NotNull Map<String, Object> data) {
+        return new ClientServerRef(
+                P4ServerName.forPortNotNull((String) data.get("csr:port")),
+                (String) data.get("csr:clientname")
+        );
+    }
+
+    public static void createActionState(@NotNull ClientServerRef ref, @NotNull Map<String, Object> data) {
+        data.put("csr:port", ref.getServerName().getFullPort());
+        data.put("csr:clientname", ref.getClientName());
     }
 }

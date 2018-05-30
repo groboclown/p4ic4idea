@@ -20,10 +20,15 @@ import net.groboclown.p4.server.api.commands.ActionUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class RevertFileAction implements P4CommandRunner.ClientAction<RevertFileResult> {
-    private final String actionId = ActionUtil.createActionId(RevertFileAction.class);
+    private final String actionId;
     private final FilePath file;
 
     public RevertFileAction(@NotNull FilePath file) {
+        this(ActionUtil.createActionId(RevertFileAction.class), file);
+    }
+
+    public RevertFileAction(@NotNull String actionId, @NotNull FilePath file) {
+        this.actionId = actionId;
         this.file = file;
     }
 

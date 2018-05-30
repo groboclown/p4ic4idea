@@ -23,10 +23,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CreateJobAction implements P4CommandRunner.ServerAction<CreateJobResult> {
-    private final String actionId = ActionUtil.createActionId(DeleteChangelistAction.class);
+    private final String actionId;
     private final P4Job job;
 
     public CreateJobAction(@NotNull P4Job job) {
+        this(ActionUtil.createActionId(CreateJobAction.class), job);
+    }
+
+    public CreateJobAction(@NotNull String actionId, @NotNull P4Job job) {
+        this.actionId = actionId;
         this.job = job;
     }
 
@@ -59,5 +64,10 @@ public class CreateJobAction implements P4CommandRunner.ServerAction<CreateJobRe
     @Override
     public String getActionId() {
         return actionId;
+    }
+
+    @NotNull
+    public P4Job getJob() {
+        return job;
     }
 }

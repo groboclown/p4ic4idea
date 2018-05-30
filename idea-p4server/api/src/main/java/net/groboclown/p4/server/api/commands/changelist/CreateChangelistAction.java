@@ -20,11 +20,16 @@ import net.groboclown.p4.server.api.commands.ActionUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class CreateChangelistAction implements P4CommandRunner.ClientAction<CreateChangelistResult> {
-    private final String actionId = ActionUtil.createActionId(CreateChangelistAction.class);
+    private final String actionId;
     private final ClientServerRef ref;
     private final String comment;
 
     public CreateChangelistAction(@NotNull ClientServerRef ref, @NotNull String comment) {
+        this(ActionUtil.createActionId(CreateChangelistAction.class), ref, comment);
+    }
+
+    public CreateChangelistAction(@NotNull String actionId, @NotNull ClientServerRef ref, @NotNull String comment) {
+        this.actionId = actionId;
         this.ref = ref;
         this.comment = comment;
     }

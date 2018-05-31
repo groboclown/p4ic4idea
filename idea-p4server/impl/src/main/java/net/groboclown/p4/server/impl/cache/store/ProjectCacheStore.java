@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.impl.cache.store;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
@@ -44,6 +45,8 @@ import java.util.function.Function;
  * handled separately.
  */
 public class ProjectCacheStore {
+    private static final Logger LOG = Logger.getInstance(ProjectCacheStore.class);
+
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Map<P4ServerName, ServerQueryCacheStore> serverQueryCache = new HashMap<>();
     private final Map<ClientServerRef, ClientQueryCacheStore> clientQueryCache = new HashMap<>();
@@ -116,7 +119,6 @@ public class ProjectCacheStore {
             if (state == null) {
                 changelistCacheStore.setState(null);
             } else {
-                List<ServerConfig> knownServerConfigs = new ArrayList<>();
                 for (ServerQueryCacheStore.State serverState : state.serverState) {
                     ServerQueryCacheStore store = new ServerQueryCacheStore(serverState);
                     serverQueryCache.put(store.getServerName(), store);
@@ -126,8 +128,13 @@ public class ProjectCacheStore {
                     clientQueryCache.put(store.getClientServerRef(), store);
                 }
                 for (ActionStore.State actionState : state.pendingActions) {
-                    ActionStore.PendingAction action = ActionStore.read(actionState);
-                    pendingActions.add(action);
+                    // TODO look into this weird bug...
+                    if (actionState.clientActionCmd != null || actionState.serverActionCmd != null) {
+                        ActionStore.PendingAction action = ActionStore.read(actionState);
+                        pendingActions.add(action);
+                    } else {
+                        LOG.warn("Invalid action state " + actionState.actionId + ": " + actionState.data);
+                    }
                 }
                 changelistCacheStore.setState(state.changelistState);
             }
@@ -197,6 +204,18 @@ public class ProjectCacheStore {
             if (store != null) {
                 fun.accept(store);
             }
+        });
+    }
+
+    public void write(ClientConfig config, Consumer<ClientQueryCacheStore> fun)
+            throws InterruptedException {
+        lockTimeout.withLock(lock.writeLock(), () -> {
+            ClientQueryCacheStore store = clientQueryCache.get(config.getClientServerRef());
+            if (store == null) {
+                store = new ClientQueryCacheStore(config.getClientServerRef());
+                clientQueryCache.put(config.getClientServerRef(), store);
+            }
+            fun.accept(store);
         });
     }
 

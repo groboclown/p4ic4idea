@@ -17,6 +17,7 @@ package net.groboclown.p4.server.api.cache;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
@@ -37,13 +38,13 @@ import java.util.stream.Stream;
  */
 public interface IdeFileMap {
     @Nullable
-    P4LocalFile forIdeFile(VirtualFile file);
+    P4LocalFile forIdeFile(@Nullable VirtualFile file);
 
     @Nullable
-    P4LocalFile forIdeFile(FilePath file);
+    P4LocalFile forIdeFile(@Nullable FilePath file);
 
     @Nullable
-    P4LocalFile forDepotPath(P4RemoteFile file);
+    P4LocalFile forDepotPath(@Nullable P4RemoteFile file);
 
     /**
      *
@@ -51,4 +52,7 @@ public interface IdeFileMap {
      */
     @NotNull
     Stream<P4LocalFile> getLinkedFiles();
+
+    @NotNull
+    Stream<P4LocalFile> getLinkedFiles(@NotNull ClientConfig config);
 }

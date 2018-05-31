@@ -174,5 +174,20 @@ public class FileTreeUtil {
 
         return getPathDepth(child, parent) >= 0;
     }
+
+    /**
+     * Tests if {@literal child} is a child (a sub-directory or sub-file) or the same directory as
+     * {@literal parent}
+     *
+     * @param parent base directory for comparison.
+     * @param child  file or directory to check against parent.
+     * @return true if child is the same directory as parent, a sub-directory of parent, or a file in parent.
+     */
+    public static boolean isSameOrUnder(@Nullable VirtualFile parent, @NotNull FilePath child) {
+        // "FilePath.isUnder" has been questionable in its implementation.  Some versions of
+        // Idea have a bug in it.
+
+        return getPathDepth(child, parent) >= 0;
+    }
 }
 

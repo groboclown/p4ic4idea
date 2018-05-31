@@ -15,23 +15,32 @@ package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListListener;
+import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
+import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.EditChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
+import net.groboclown.p4.server.api.util.FileTreeUtil;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.api.values.P4LocalChangelist;
+import net.groboclown.p4plugin.components.CacheComponent;
+import net.groboclown.p4plugin.components.P4ServerComponent;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Set;
 
 public class P4ChangelistListener
         implements ChangeListListener {
@@ -40,7 +49,7 @@ public class P4ChangelistListener
     private final Project myProject;
     private final P4Vcs myVcs;
 
-    public P4ChangelistListener(@NotNull final Project project, @NotNull final P4Vcs vcs) {
+    P4ChangelistListener(@NotNull final Project project, @NotNull final P4Vcs vcs) {
         myProject = project;
         myVcs = vcs;
     }
@@ -52,17 +61,13 @@ public class P4ChangelistListener
         // Perforce-backed in order for it to become one.
         LOG.debug("changeListAdded: " + list.getName() + "; [" + list.getComment() + "]; " +
                 list.getClass().getSimpleName());
-        // FIXME
-        throw new IllegalStateException("not implemented");
     }
 
     @Override
     public void changeListRemoved(@NotNull final ChangeList list) {
         LOG.debug("changeListRemoved: " + list.getName() + "; [" + list.getComment() + "]; " + list.getClass()
                 .getSimpleName());
-
-        // FIXME
-        throw new IllegalStateException("not implemented");
+        // TODO will removing a changelist force the pending changelist delete?
     }
 
     @Override
@@ -75,6 +80,8 @@ public class P4ChangelistListener
         // It is called when part of a change is removed.  Only
         // changeListRemoved will perform the move to default
         // changelist.  A revert will move it out of the changelist.
+        // Note that if a change is removed, it is usually added or
+        // moved, so we can ignore this call.
     }
 
 
@@ -83,13 +90,51 @@ public class P4ChangelistListener
         LOG.debug("changesAdded: changes " + changes);
         LOG.debug("changesAdded: changelist " + toList.getName() + "; [" + toList.getComment() + "]");
 
+        if (! (toList instanceof LocalChangeList)) {
+            return;
+        }
 
         // TODO if a file in a "move" operation is included, but not the
         // other side, then ensure the other side is also moved along with this one.
 
 
-        // FIXME
-        throw new IllegalStateException("not implemented");
+        LocalChangeList local = (LocalChangeList) toList;
+
+        for (ClientConfigRoot clientConfigRoot : ProjectConfigRegistry.getInstance(myProject).getClientConfigRoots()) {
+            // First, see if there are any changes for this client config that require an
+            // underlying P4 changelist move.
+
+            Collection<FilePath> affectedFiles = getAffectedFiles(clientConfigRoot, changes);
+            if (affectedFiles.isEmpty()) {
+                continue;
+            }
+
+            try {
+                P4ChangelistId p4change =
+                        CacheComponent.getInstance(myProject).getServerOpenedCache().first.getP4ChangeFor(
+                                clientConfigRoot.getClientConfig().getClientServerRef(),
+                                local);
+                if (p4change == null) {
+                    // No server changelist associated with this ide change.  Create one.
+                    CreateChangelistAction action =
+                            new CreateChangelistAction(clientConfigRoot.getClientConfig().getClientServerRef(),
+                                    toDescription(local));
+                    P4LocalChangelist cl =
+                            CacheComponent.getInstance(myProject).getServerOpenedCache().first
+                                    .getMappedChangelist(action);
+                    p4change = cl.getChangelistId();
+                    P4ServerComponent.getInstance(myProject)
+                            .getCommandRunner()
+                            .perform(clientConfigRoot.getClientConfig(), action);
+                }
+                P4ServerComponent.getInstance(myProject)
+                        .getCommandRunner()
+                        .perform(clientConfigRoot.getClientConfig(),
+                                new MoveFilesToChangelistAction(p4change, affectedFiles));
+            } catch (InterruptedException e) {
+                LOG.warn(e);
+            }
+        }
     }
 
     @Override
@@ -106,12 +151,27 @@ public class P4ChangelistListener
             return;
         }
 
-        if (Comparing.equal(list.getName(), oldName)) {
-            return;
-        }
+        // Don't check name equality, due to the reuse from
+        // changeListCommentChanged
 
-        // FIXME
-        throw new IllegalStateException("not implemented");
+        LocalChangeList local = (LocalChangeList) list;
+
+        for (ClientConfigRoot clientConfigRoot : ProjectConfigRegistry.getInstance(myProject).getClientConfigRoots()) {
+            try {
+                P4ChangelistId change =
+                        CacheComponent.getInstance(myProject).getServerOpenedCache().first.getP4ChangeFor(
+                                clientConfigRoot.getClientConfig().getClientServerRef(),
+                                local);
+                if (change != null) {
+                    P4ServerComponent.getInstance(myProject)
+                            .getCommandRunner()
+                            .perform(clientConfigRoot.getClientConfig(),
+                                    new EditChangelistAction(change, toDescription(local)));
+                }
+            } catch (InterruptedException e) {
+                LOG.warn(e);
+            }
+        }
     }
 
     @Override
@@ -134,6 +194,8 @@ public class P4ChangelistListener
     @Override
     public void defaultListChanged(final ChangeList oldDefaultList, final ChangeList newDefaultList) {
         LOG.debug("defaultListChanged: " + oldDefaultList + " to " + newDefaultList);
+
+        // Don't change the internal default changelist id mapping to the IDE change list.
     }
 
     @Override
@@ -175,9 +237,24 @@ public class P4ChangelistListener
     }
 
 
-    private static String toDescription(@Nullable Project project, @NotNull ChangeList changeList) {
+    private String toDescription(@NotNull ChangeList changeList) {
         // FIXME
         throw new IllegalStateException("not implemented");
         // return ChangelistDescriptionGenerator.getDescription(project, changeList);
+    }
+
+    private Collection<FilePath> getAffectedFiles(ClientConfigRoot clientConfigRoot, Collection<Change> changes) {
+        Set<FilePath> ret = new HashSet<>();
+        for (Change change : changes) {
+            for (ContentRevision cr : Arrays.asList(change.getBeforeRevision(), change.getAfterRevision())) {
+                if (cr != null) {
+                    FilePath file = cr.getFile();
+                    if (!ret.contains(file) && FileTreeUtil.isSameOrUnder(clientConfigRoot.getClientRootDir(), file)) {
+                        ret.add(cr.getFile());
+                    }
+                }
+            }
+        }
+        return ret;
     }
 }

@@ -65,6 +65,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
         return ret;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public CacheComponent(Project project) {
         this.project = project;
     }
@@ -78,7 +79,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
      *
      * @return the pending answer.
      */
-    public Answer<Pair<IdeChangelistMap, IdeFileMap>> refreshServerOpenedCache(Collection<ClientConfig> clients) {
+    private Answer<Pair<IdeChangelistMap, IdeFileMap>> refreshServerOpenedCache(Collection<ClientConfig> clients) {
         Answer<?> ret = Answer.resolve(null);
 
         for (ClientConfig client : clients) {
@@ -104,7 +105,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
         // TODO should the mapping be internal, rather than created on the fly?
         return new Pair<>(
                 changelistMap,
-                new IdeFileMapImpl(queryHandler));
+                new IdeFileMapImpl(project, queryHandler));
     }
 
     public Pair<IdeChangelistMap, IdeFileMap> blockingRefreshServerOpenedCache(Collection<ClientConfig> clients,
@@ -139,7 +140,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     public void initComponent() {
         queryHandler = new CacheQueryHandlerImpl(projectCache);
         changelistMap = new IdeChangelistMapImpl(project, queryHandler, projectCache.getChangelistCacheStore());
-        updateListener = new CacheStoreUpdateListener(projectCache, changelistMap);
+        updateListener = new CacheStoreUpdateListener(project, projectCache, changelistMap);
     }
 
     @Override

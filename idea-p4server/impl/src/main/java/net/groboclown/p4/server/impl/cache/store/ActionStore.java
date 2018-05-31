@@ -104,7 +104,7 @@ public class ActionStore {
         if (state.clientActionCmd != null) {
             return new PendingAction(state.sourceId, readClientAction(state));
         }
-        throw new IllegalArgumentException("Unknown action command " + state);
+        throw new IllegalArgumentException("Unknown action " + state.actionId + ": " + state.data);
     }
 
 
@@ -176,7 +176,6 @@ public class ActionStore {
         }
         throw new IllegalArgumentException("Unknown server cmd " + state.serverActionCmd);
     }
-
 
 
     @NotNull

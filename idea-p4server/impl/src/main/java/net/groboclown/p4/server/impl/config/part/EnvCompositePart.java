@@ -380,9 +380,6 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
             LOG.debug("Final configuration from environment: " +
                     ConfigPropertiesUtil.toProperties(this.configParts,
                             "<unset>", "<empty>", "<set>"));
-
-            // FIXME REMOVE
-            LOG.debug("Final password: " + this.configParts.getPlaintextPassword());
         }
     }
 

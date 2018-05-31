@@ -17,14 +17,12 @@ package net.groboclown.p4.server.impl.values;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4ChangelistType;
 import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
-import net.groboclown.p4.server.impl.cache.store.P4RemoteFileStore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -221,4 +219,11 @@ public class P4LocalChangelistImpl implements P4LocalChangelist {
         return shelvedFiles;
     }
 
+    @Override
+    public String toString() {
+        return "P4LocalChangelist(" + changelistId
+                + ": [" + comment + "] with files "
+                + containedFiles
+                + ')';
+    }
 }

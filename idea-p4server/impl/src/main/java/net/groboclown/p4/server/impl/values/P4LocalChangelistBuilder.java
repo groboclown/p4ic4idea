@@ -1,6 +1,8 @@
 package net.groboclown.p4.server.impl.values;
 
 import com.intellij.openapi.vcs.FilePath;
+import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.core.IChangelistSummary;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.JobStatus;
@@ -34,7 +36,7 @@ public class P4LocalChangelistBuilder {
     }
 
     public P4LocalChangelistBuilder withDefaultChangelist(@NotNull ClientServerRef ref) {
-        this.changelistId = new P4ChangelistIdImpl(-1, ref);
+        this.changelistId = new P4ChangelistIdImpl(IChangelist.DEFAULT, ref);
         return this;
     }
 
@@ -85,6 +87,11 @@ public class P4LocalChangelistBuilder {
 
     public P4LocalChangelistBuilder withJobStatus(JobStatus jobStatus) {
         this.jobStatus = jobStatus;
+        return this;
+    }
+
+    public P4LocalChangelistBuilder withJobStatus(String jobStatusName) {
+        this.jobStatus = jobStatusName == null ? null : new JobStatusImpl(jobStatusName);
         return this;
     }
 

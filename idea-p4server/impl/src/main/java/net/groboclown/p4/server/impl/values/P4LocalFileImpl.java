@@ -234,4 +234,26 @@ public class P4LocalFileImpl implements P4LocalFile {
     public P4RemoteFile getIntegrateFrom() {
         return integrateFrom;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("P4LocalFile(");
+        sb.append(action).append(' ')
+                .append(local).append('#').append(haveRev);
+        if (depot != null) {
+            sb.append(" -> ").append(depot);
+        }
+        if (changelistId != null) {
+            sb.append(" @").append(changelistId);
+        }
+        if (headRev != null) {
+            sb.append("; head ").append(headRev);
+        }
+        sb.append("; ").append(fileType);
+        if (integrateFrom != null) {
+            sb.append("; integrated from ").append(integrateFrom);
+        }
+        sb.append(')');
+        return sb.toString();
+    }
 }

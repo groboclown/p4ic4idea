@@ -34,7 +34,11 @@
       <list />
     </option>
     <option name="pendingActions">
-      <list />
+      <list>
+        <State />
+        <State />
+        <State />
+      </list>
     </option>
     <option name="changelistState">
       <State>

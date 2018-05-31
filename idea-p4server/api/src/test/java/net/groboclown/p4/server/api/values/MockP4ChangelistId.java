@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.api.values;
 
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.perforce.p4java.core.IChangelist;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ServerConfig;
@@ -27,7 +28,7 @@ public class MockP4ChangelistId implements P4ChangelistId {
 
     public MockP4ChangelistId(@NotNull ClientServerRef ref) {
         csRef = ref;
-        id = -1;
+        id = IChangelist.DEFAULT;
         state = State.DEFAULT;
     }
 
@@ -35,7 +36,7 @@ public class MockP4ChangelistId implements P4ChangelistId {
         csRef = ref;
         id = id;
         state =
-                id == -1
+                id == IChangelist.DEFAULT
                         ? State.DEFAULT
                         : (id > 0
                                 ? State.NUMBERED

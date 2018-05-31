@@ -17,6 +17,7 @@ package net.groboclown.p4.server.impl.cache;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
+import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
@@ -59,6 +60,18 @@ public class IdeChangelistMapImpl implements IdeChangelistMap {
     public Collection<P4ChangelistId> getP4ChangesFor(@NotNull LocalChangeList changeList)
             throws InterruptedException {
         return new HashSet<>(cache.getLinkedChangelists(changeList.getId()));
+    }
+
+    @Nullable
+    @Override
+    public P4ChangelistId getP4ChangeFor(@NotNull ClientServerRef ref, @NotNull LocalChangeList changeList)
+            throws InterruptedException {
+        for (P4ChangelistId p4ChangelistId : getP4ChangesFor(changeList)) {
+            if (ref.equals(p4ChangelistId.getClientServerRef())) {
+                return p4ChangelistId;
+            }
+        }
+        return null;
     }
 
     @NotNull

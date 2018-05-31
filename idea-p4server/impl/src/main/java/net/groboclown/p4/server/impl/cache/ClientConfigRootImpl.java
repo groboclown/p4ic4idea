@@ -113,4 +113,9 @@ public class ClientConfigRootImpl
     public VirtualFile getProjectVcsRootDir() {
         return vcsRoot;
     }
+
+    @Override
+    public String toString() {
+        return "ConfigClientRoot(" + clientRoot + " @ " + config + ")";
+    }
 }

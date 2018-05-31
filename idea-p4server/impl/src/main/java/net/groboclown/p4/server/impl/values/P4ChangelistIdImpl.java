@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.impl.values;
 
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.perforce.p4java.core.IChangelist;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ServerConfig;
@@ -31,7 +32,7 @@ public class P4ChangelistIdImpl implements P4ChangelistId {
         this.ref = ref;
         state = id < -1
                 ? State.PENDING_CREATION
-                    : id == -1
+                    : id == IChangelist.DEFAULT
                         ? State.DEFAULT
                         : State.NUMBERED;
     }
@@ -107,5 +108,10 @@ public class P4ChangelistIdImpl implements P4ChangelistId {
     @Override
     public int hashCode() {
         return id + ref.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return ref + "@" + id;
     }
 }

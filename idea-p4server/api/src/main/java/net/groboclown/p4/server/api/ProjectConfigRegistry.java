@@ -19,9 +19,9 @@ import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.exception.AuthenticationFailedException;
-import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
@@ -30,6 +30,7 @@ import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
 import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
+import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.util.FileTreeUtil;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +38,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * Stores the registered configurations for a specific project.  The registry must
@@ -205,6 +205,11 @@ public abstract class ProjectConfigRegistry
                 onUserSelectedOnline(ref);
             }
         });
+
+
+        projectBusClient.add(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED, this::updateVcsRoots);
+        projectBusClient.add(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED_IN_PLUGIN, this::updateVcsRoots);
+
     }
 
     public boolean isDisposed() {
@@ -268,4 +273,6 @@ public abstract class ProjectConfigRegistry
     protected abstract void onUserSelectedOnline(@NotNull ClientServerRef clientServerRef);
 
     protected abstract void onUserSelectedAllOnline();
+
+    protected abstract void updateVcsRoots();
 }

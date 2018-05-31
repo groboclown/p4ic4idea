@@ -61,7 +61,6 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/swarm/swarm.iml" filepath="$PROJECT_DIR$/.idea/modules/swarm/swarm.iml" group="swarm" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/swarm/swarm_main.iml" filepath="$PROJECT_DIR$/.idea/modules/swarm/swarm_main.iml" group="swarm" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/swarm/swarm_test.iml" filepath="$PROJECT_DIR$/.idea/modules/swarm/swarm_test.iml" group="swarm" />
-      <module fileurl="file://$PROJECT_DIR$/test-plugin-load/test-plugin-load.iml" filepath="$PROJECT_DIR$/test-plugin-load/test-plugin-load.iml" group="plugin-v3" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/v171/v171.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/v171/v171.iml" group="idea-compat/v171" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/v171/v171_main.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/v171/v171_main.iml" group="idea-compat/v171" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/idea-compat/v171/v171_test.iml" filepath="$PROJECT_DIR$/.idea/modules/idea-compat/v171/v171_test.iml" group="idea-compat/v171" />

@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+// TODO looks like this class can be removed.
 /**
  * Encapsulates the state of a client configuration, from where it came from (source), to its list of
  * problems at the time of the last refresh, to its actual configuration.  Additionally, because the

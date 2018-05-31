@@ -52,6 +52,7 @@ import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.p4ic.compat.CompatFactoryLoader;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
+import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.values.P4CommittedChangelist;
 import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
 import net.groboclown.p4.server.impl.tasks.TempFileWatchDog;
@@ -143,7 +144,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     };
 
     @NonNls
-    public static final String VCS_NAME = "p4ic";
+    public static final String VCS_NAME = P4VcsKey.VCS_NAME;
 
     private static final VcsKey VCS_KEY = createKey(VCS_NAME);
 
@@ -176,8 +177,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     private final P4ChangelistListener changelistListener;
 
     private final P4ChangeProvider changeProvider;
-
-    private final UserProjectPreferences userPreferences;
 
     private final DiffProvider diffProvider;
 
@@ -212,9 +211,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     }
 
 
-    public P4Vcs(
-            @NotNull Project project /*, FIXME add back preferences once it's in the plugin.xml again
-            @NotNull UserProjectPreferences preferences*/) {
+    public P4Vcs(@NotNull Project project) {
         super(project, VCS_NAME);
 
         // there is a situation where project can be null: when the config panel
@@ -233,7 +230,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         */
 
 
-        this.userPreferences = null; // preferences; FIXME
         this.changelistListener = new P4ChangelistListener(project, this);
         this.changeProvider = new P4ChangeProvider(this);
         this.historyProvider = new P4HistoryProvider(project, this);
@@ -706,11 +702,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     // ---------------------------------------------------------------------------
     // Specialized P4Vcs methods
 
-
-    @NotNull
-    public UserProjectPreferences getUserPreferences() {
-        return userPreferences;
-    }
 
     @NotNull
     public File getTempDir() {

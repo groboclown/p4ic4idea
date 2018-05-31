@@ -12,24 +12,8 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.impl.values;
+package net.groboclown.p4.server.api;
 
-import net.groboclown.p4.server.api.values.JobStatus;
-import org.jetbrains.annotations.NotNull;
-
-import javax.annotation.concurrent.Immutable;
-
-@Immutable
-public class JobStatusImpl implements JobStatus {
-    private final String name;
-
-    public JobStatusImpl(@NotNull String name) {
-        this.name = name;
-    }
-
-    @NotNull
-    @Override
-    public String getName() {
-        return name;
-    }
+public class P4VcsKey {
+    public static final String VCS_NAME = "p4ic";
 }

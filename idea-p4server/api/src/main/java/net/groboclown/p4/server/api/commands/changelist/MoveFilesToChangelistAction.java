@@ -20,6 +20,8 @@ import net.groboclown.p4.server.api.commands.ActionUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class MoveFilesToChangelistAction implements P4CommandRunner.ClientAction<MoveFilesToChangelistResult> {
@@ -27,15 +29,15 @@ public class MoveFilesToChangelistAction implements P4CommandRunner.ClientAction
     private final P4ChangelistId changelistId;
     private final List<FilePath> files;
 
-    public MoveFilesToChangelistAction(@NotNull P4ChangelistId changelistId, @NotNull List<FilePath> files) {
+    public MoveFilesToChangelistAction(@NotNull P4ChangelistId changelistId, @NotNull Collection<FilePath> files) {
         this(ActionUtil.createActionId(MoveFilesToChangelistAction.class), changelistId, files);
     }
 
     public MoveFilesToChangelistAction(@NotNull String actionId, @NotNull P4ChangelistId changelistId,
-            @NotNull List<FilePath> files) {
+            @NotNull Collection<FilePath> files) {
         this.actionId = actionId;
         this.changelistId = changelistId;
-        this.files = files;
+        this.files = new ArrayList<>(files);
     }
 
     @NotNull

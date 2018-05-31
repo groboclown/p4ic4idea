@@ -95,7 +95,7 @@ public class P4LocalChangelistStore {
                 .withClientname(state.clientname)
                 .withUsername(state.username)
                 .withJobs(jobs)
-                .withJobStatus(new JobStatusImpl(state.jobStatus))
+                .withJobStatus(state.jobStatus)
                 .build();
     }
 }

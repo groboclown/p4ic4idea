@@ -16,8 +16,10 @@ package net.groboclown.p4.server.impl.cache;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
+import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
-import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.cache.messagebus.AbstractCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
@@ -28,15 +30,18 @@ import net.groboclown.p4.server.api.cache.messagebus.JobCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.JobSpecCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ListClientsForUserCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ServerActionCacheMessage;
-import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
-import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
+import net.groboclown.p4.server.api.util.FileTreeUtil;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Listens to cache update events, and updates the local project cache store.
@@ -44,12 +49,16 @@ import java.util.Collection;
 public class CacheStoreUpdateListener implements Disposable {
     private static final Logger LOG = Logger.getInstance(CacheStoreUpdateListener.class);
 
+    private final Project project;
     private final ProjectCacheStore cache;
     private final IdeChangelistMap changelistMap;
     private final String cacheId = AbstractCacheMessage.createCacheId();
     private boolean disposed = false;
 
-    public CacheStoreUpdateListener(@NotNull ProjectCacheStore cache, @NotNull IdeChangelistMap changelistMap) {
+    public CacheStoreUpdateListener(@NotNull Project project,
+            @NotNull ProjectCacheStore cache,
+            @NotNull IdeChangelistMap changelistMap) {
+        this.project = project;
         this.cache = cache;
         this.changelistMap = changelistMap;
 
@@ -88,8 +97,65 @@ public class CacheStoreUpdateListener implements Disposable {
     public void setOpenedChanges(ClientServerRef ref,
             Collection<P4LocalChangelist> pendingChangelists,
             Collection<P4LocalFile> openedFiles) {
-        // FIXME implement
-        LOG.warn("FIXME implement setOpenedChanges");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Opened changes for reference " + ref);
+            LOG.debug("Opened changelists: " + pendingChangelists);
+            LOG.debug("Opened files: " + openedFiles);
+        }
+
+        // FIXME variables used for debug code
+        Set<P4LocalChangelist> unusedChangelists = new HashSet<>(pendingChangelists);
+        Set<P4LocalFile> unusedFiles = new HashSet<>(openedFiles);
+
+        for (ClientConfigRoot root : ProjectConfigRegistry.getInstance(project).getClientConfigRoots()) {
+            if (ref.equals(root.getClientConfig().getClientServerRef())) {
+                try {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Writing data to the cache of root " + root);
+                    }
+                    cache.write(root.getClientConfig(), (store) -> {
+                        List<P4LocalFile> rootFiles = new ArrayList<>();
+                        for (P4LocalFile openedFile : openedFiles) {
+                            if (FileTreeUtil.isSameOrUnder(root.getClientRootDir(), openedFile.getFilePath())) {
+                                rootFiles.add(openedFile);
+                            } else if (LOG.isDebugEnabled()) {
+                                LOG.debug("File " + openedFile.getFilePath() + " not under root " +
+                                        root.getClientRootDir());
+                            }
+                        }
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Associating with " + root + " files " + rootFiles);
+                        }
+                        unusedFiles.removeAll(rootFiles);
+                        store.setFiles(rootFiles);
+
+                        unusedChangelists.removeAll(pendingChangelists);
+                        store.setChangelists(pendingChangelists);
+                    });
+                } catch (InterruptedException e) {
+                    LOG.info("Could not write to the cache due to lock timeout", e);
+                }
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug("Root " + root + ", ref " + root.getClientConfig().getClientServerRef() +
+                        " is not the same ref as " + ref);
+                LOG.debug("param ref: clientname: [" + ref.getClientName() + "]; server [" +
+                        ref.getServerName().getServerPort() + "]; protocol [" + ref.getServerName().getServerProtocol() + "]");
+                ClientServerRef rt = root.getClientConfig().getClientServerRef();
+                LOG.debug("root ref: clientname: [" + rt.getClientName() + "]; server [" +
+                        rt.getServerName().getServerPort() + "]; protocol [" + rt.getServerName().getServerProtocol() + "]");
+            }
+        }
+
+        if (LOG.isDebugEnabled()) {
+            if (unusedChangelists.isEmpty()) {
+                LOG.debug("Used all changelists in mapping");
+            } else {
+                LOG.debug("Changelists not associated with any root.  Roots: " +
+                        ProjectConfigRegistry.getInstance(project).getClientConfigRoots());
+            }
+
+            LOG.debug("Unused file associations: " + unusedFiles);
+        }
     }
 
 
@@ -107,6 +173,9 @@ public class CacheStoreUpdateListener implements Disposable {
 
         @Override
         public void clientActionUpdate(@NotNull ClientActionMessage.Event event) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Caching action " + event.getAction());
+            }
             try {
                 switch (event.getState()) {
                     case PENDING:
@@ -134,31 +203,37 @@ public class CacheStoreUpdateListener implements Disposable {
         @Override
         public void describeChangelistUpdate(@NotNull DescribeChangelistCacheMessage.Event event) {
             // FIXME cache the changelist
+            LOG.warn("FIXME cache the changelist");
         }
 
         @Override
         public void fileActionUpdate(@NotNull FileActionMessage.Event event) {
             // FIXME store the file action
+            LOG.warn("FIXME store the file action");
         }
 
         @Override
         public void jobUpdate(@NotNull JobCacheMessage.Event event) {
             // FIXME store the job state
+            LOG.warn("FIXME store the job state");
         }
 
         @Override
         public void jobSpecUpdate(@NotNull JobSpecCacheMessage.Event event) {
             // FIXME store the job spec
+            LOG.warn("FIXME store the job spec");
         }
 
         @Override
         public void listClientsForUserUpdate(@NotNull ListClientsForUserCacheMessage.Event event) {
             // FIXME store the clients
+            LOG.warn("FIXME store the clients");
         }
 
         @Override
         public void serverActionUpdate(@NotNull ServerActionCacheMessage.Event event) {
             // FIXME store the action
+            LOG.warn("FIXME store the action");
         }
     }
 }

@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.stream.Stream;
 
+// TODO looks like this class can be removed, and its implementations.
 /**
  * Manages the configuration for an entire project.  The configuration must be refined through a file path,
  * or by getting a list of configurations.

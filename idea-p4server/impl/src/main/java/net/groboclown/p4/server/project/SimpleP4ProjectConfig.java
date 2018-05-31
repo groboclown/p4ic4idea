@@ -31,6 +31,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
+
+// TODO looks like this class can be removed.
 public class SimpleP4ProjectConfig implements P4ProjectConfig {
     private final Project project;
     private final Collection<ClientConfigSetup> configSetups;

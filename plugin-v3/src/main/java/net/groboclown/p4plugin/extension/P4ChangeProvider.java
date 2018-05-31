@@ -18,12 +18,15 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsRoot;
 import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeListManagerGate;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
+import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -47,8 +50,12 @@ import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
+import net.groboclown.p4plugin.revision.P4LocalFileContentRevision;
+import net.groboclown.p4plugin.revision.P4RemoteFileContentRevision;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -56,7 +63,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Pushes changes FROM Perforce INTO idea.  No Perforce jobs will be altered.
@@ -71,12 +81,13 @@ import java.util.stream.Collectors;
 public class P4ChangeProvider
         implements ChangeProvider {
     private static final Logger LOG = Logger.getInstance(P4ChangeProvider.class);
+    private static final int CHANGELIST_NAME_LENGTH = 32;
 
     private final Project project;
     private final P4Vcs vcs;
     private final String cacheId = AbstractCacheMessage.createCacheId();
 
-    public P4ChangeProvider(@NotNull P4Vcs vcs) {
+    P4ChangeProvider(@NotNull P4Vcs vcs) {
         this.project = vcs.getProject();
         this.vcs = vcs;
 
@@ -188,9 +199,8 @@ public class P4ChangeProvider
             for (ClientConfigRoot root : allClientRoots) {
                 LOG.info("Processing changes in " + root.getProjectVcsRootDir());
 
-                updateCache(root.getProjectVcsRootDir(), root.getClientConfig(),
-                        cachedMaps.first, cachedMaps.second,
-                        builder, addGate);
+                updateFileCache(root.getProjectVcsRootDir(), root.getClientConfig(),
+                        cachedMaps.first, cachedMaps.second, builder);
 
                 lastFraction += fractionRootIncr;
                 progress.setFraction(lastFraction);
@@ -204,6 +214,9 @@ public class P4ChangeProvider
                 return;
             }
 
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Processing dirty files " + dirtyFiles);
+            }
             Map<VcsRoot, List<FilePath>> fileRoots = VcsUtil.groupByRoots(project, dirtyFiles, (f) -> f);
             if (!fileRoots.isEmpty()) {
                 double fractionRootIncr = (1.0 - lastFraction) / fileRoots.size();
@@ -221,7 +234,8 @@ public class P4ChangeProvider
                                 }
                             }
                             if (!matched.isEmpty()) {
-                                updateCache(root, config.getClientConfig(), matched, builder, addGate);
+                                updateFileCache(root, config.getClientConfig(),
+                                        matched, cachedMaps.first, cachedMaps.second, builder);
                             }
                         }
                     }
@@ -243,16 +257,34 @@ public class P4ChangeProvider
         List<LocalChangeList> existingLocalChangeLists = addGate.getListsCopy();
         Set<LocalChangeList> unvisitedLocalChangeLists = new HashSet<>(existingLocalChangeLists);
         for (ClientConfigRoot clientConfigRoot : ProjectConfigRegistry.getInstance(project).getClientConfigRoots()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Updating changelists for " + clientConfigRoot);
+            }
             for (P4LocalChangelist changelist : CacheComponent.getInstance(project).getQueryHandler()
                     .getCachedOpenedChangelists(clientConfigRoot.getClientConfig())) {
                 LocalChangeList ideChangeList =
                         changelistMap.getIdeChangeFor(changelist.getChangelistId());
                 if (ideChangeList == null) {
-                    ideChangeList = addGate.addChangeList(
-                            createUniqueChangelistName(changelist, existingLocalChangeLists),
-                            changelist.getComment());
-                    changelistMap.setMapping(changelist.getChangelistId(), ideChangeList);
+                    if (changelist.getChangelistId().isDefaultChangelist()) {
+                        // Link to the IDE default changelist.
+                        LOG.debug("Attaching default changelist to IDE default changelist");
+                        changelistMap.setMapping(changelist.getChangelistId(),
+                            ChangeListManager.getInstance(project).getDefaultChangeList());
+                    } else {
+                        // Create a new IDE changelist and link to that.
+                        ideChangeList = addGate.addChangeList(
+                                createUniqueChangelistName(changelist, existingLocalChangeLists),
+                                changelist.getComment());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Attaching " + changelist + " to IDE change " + ideChangeList);
+                        }
+                        changelistMap.setMapping(changelist.getChangelistId(), ideChangeList);
+                    }
                 } else {
+                    // TODO possibly rename the changelist with the server's comment and ID.
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Already attached " + changelist + " to IDE change " + ideChangeList);
+                    }
                     unvisitedLocalChangeLists.remove(ideChangeList);
                 }
             }
@@ -260,6 +292,9 @@ public class P4ChangeProvider
 
         // Loop through the files, and see if any are associated with a local change list that isn't
         // mapped to a Perforce changelist.  If so, then create that changelist.
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Processing remaining " + unvisitedLocalChangeLists);
+        }
         Iterator<LocalChangeList> iter = unvisitedLocalChangeLists.iterator();
         while (iter.hasNext()) {
             LocalChangeList ideChangeList = iter.next();
@@ -270,67 +305,286 @@ public class P4ChangeProvider
                             changelistMap.getIdeChangeFor(p4file.getChangelistId()) == null)) {
 
                         ClientConfig clientConfig = getClientConfigFor(p4file);
-                        CreateChangelistAction action = new CreateChangelistAction(clientConfig.getClientServerRef(),
-                                createP4ChangelistDescription(ideChangeList));
-                        CacheComponent.getInstance(project).getServerOpenedCache().first.setMapping(
-                                action, ideChangeList
-                        );
-                        P4ServerComponent.getInstance(project).getCommandRunner().perform(clientConfig, action);
+                        if (clientConfig != null) {
+                            LOG.info("Creating P4 changelist due to IDE change refresh: " +
+                                    ideChangeList);
+                            CreateChangelistAction action =
+                                    new CreateChangelistAction(clientConfig.getClientServerRef(),
+                                            createP4ChangelistDescription(ideChangeList));
+                            CacheComponent.getInstance(project).getServerOpenedCache().first.setMapping(
+                                    action, ideChangeList);
+                            P4ServerComponent.getInstance(project).getCommandRunner().perform(clientConfig, action);
+                        } else {
+                            LOG.warn("IDE changelist " + ideChangeList +
+                                    " file " + file + " -> " + p4file +
+                                    " has no associated config");
+                        }
 
                         iter.remove();
                         break;
                     }
+                } else if (LOG.isDebugEnabled()) {
+                    LOG.debug("IDE changelist " + ideChangeList +
+                            " contains non-P4 file " + file);
                 }
             }
         }
 
-        // FIXME any remaining unvisited local changelist but is associated to a
-        // changelist in the map needs to be removed.
-        LOG.warn("FIXME remove all unvisited local changelist.");
+
+        if (!unvisitedLocalChangeLists.isEmpty()) {
+            // FIXME any remaining unvisited local changelist but is associated to a
+            // changelist in the map needs to be removed.
+            LOG.warn("FIXME remove all unvisited local changelists: " + unvisitedLocalChangeLists);
+        }
     }
 
     @NotNull
     private String createUniqueChangelistName(P4LocalChangelist changelist,
             List<LocalChangeList> existingLocalChangeLists) {
-        // FIXME complete
-        LOG.warn("FIXME implement createUniqueChangelistName; pull from original plugin");
-        return null;
+        String baseName = getPrefix(changelist, CHANGELIST_NAME_LENGTH);
+        boolean match = true;
+        int index = -1;
+        while (match) {
+            match = false;
+            for (LocalChangeList lcl : existingLocalChangeLists) {
+                if (baseName.equals(lcl.getName())) {
+                    // TODO use the messaging API
+                    index++;
+                    String count = " (" + index + ')';
+                    baseName = getPrefix(changelist, CHANGELIST_NAME_LENGTH - count.length());
+                }
+            }
+        }
+        return baseName;
     }
+
+    private String getPrefix(P4LocalChangelist changelist, int characterCount) {
+        String ret = changelist.getComment();
+        if (ret.length() > characterCount) {
+            ret = ret.substring(0, characterCount - 3) + "...";
+        }
+        return ret;
+    }
+
+    private static final Pattern CL_INDEX_SUFFIX = Pattern.compile("^\\s*(.*?)\\s+\\(\\d+\\)\\s*$");
 
     @NotNull
     private String createP4ChangelistDescription(LocalChangeList ideChangeList) {
-        // FIXME complete
-        LOG.warn("FIXME implement, pull from original plugin");
-        return null;
+        String name = ideChangeList.getName();
+        String desc = ideChangeList.getComment();
+        Matcher m1 = CL_INDEX_SUFFIX.matcher(name);
+        if (m1.matches()) {
+            name = m1.group(1);
+        }
+        if (name.endsWith("...")) {
+            name = name.substring(0, name.length() - 3);
+        }
+        name = name.trim();
+        if (desc == null || desc.trim().length() <= 0) {
+            return name;
+        }
+        if (desc.startsWith(name)) {
+            return desc;
+        }
+        if (!name.endsWith(".")) {
+            name += '.';
+        }
+        return name + "  " + desc;
     }
 
-    @NotNull
+    @Nullable
     private ClientConfig getClientConfigFor(@NotNull P4LocalFile p4file) {
-        // FIXME complete
-        LOG.warn("FIXME implement getClientConfigFor");
-        return null;
+        ClientConfigRoot ret = ProjectConfigRegistry.getInstance(project)
+                .getClientFor(p4file.getFilePath());
+        if (ret == null) {
+            LOG.info("File " + p4file.getDepotPath() + ", mapped to " +
+                    p4file.getFilePath() + ", is not under a vcs root with a valid client configuration");
+            return null;
+        }
+        return ret.getClientConfig();
     }
 
-    private void updateCache(VirtualFile root, ClientConfig config,
-            IdeChangelistMap first, IdeFileMap second, ChangelistBuilder builder,
-            ChangeListManagerGate addGate) {
-        // FIXME update the cache
-        LOG.warn("FIXME update the cache");
+    /**
+     * Everything is marked as dirty.  Just look at the state of files on the server,
+     * and move files into the right changelist.
+     *
+     *
+     * @param root vcs root directory
+     * @param config config for the root.
+     * @param changes changelist mapping
+     * @param files file mapping, which has already been loaded from the server.
+     * @param builder changelist builder
+     */
+    private void updateFileCache(VirtualFile root, ClientConfig config,
+            IdeChangelistMap changes, IdeFileMap files, ChangelistBuilder builder) {
+        updateLocalFileCache(config, files.getLinkedFiles(), changes, builder);
     }
 
-    private void updateCache(VirtualFile root, ClientConfig config, Set<FilePath> files,
-            ChangelistBuilder builder, ChangeListManagerGate addGate) {
-        // FIXME update the cache
-        LOG.warn("FIXME update the cache");
+    /**
+     * Just the list of files are dirty.  If additional files are checked out
+     * on the server, but they aren't marked as dirty, then make a call to mark
+     * them as dirty.
+     *
+     * @param root root directory
+     * @param config config
+     * @param files cached files
+     * @param builder builds changelists
+     */
+    private void updateFileCache(VirtualFile root, ClientConfig config, Set<FilePath> dirty,
+            IdeChangelistMap changes, IdeFileMap files, ChangelistBuilder builder) {
+        List<P4LocalFile> localFiles = new ArrayList<>(dirty.size());
+        for (FilePath filePath : dirty) {
+            P4LocalFile local = files.forIdeFile(filePath);
+            if (local == null) {
+                if (filePath.getVirtualFile() == null || !filePath.getVirtualFile().exists()) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Marking " + filePath + " as locally deleted");
+                    }
+                    builder.processLocallyDeletedFile(filePath);
+                } else {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Marking " + filePath + " as modified without checkout");
+                    }
+                    builder.processModifiedWithoutCheckout(filePath.getVirtualFile());
+                }
+            } else {
+                localFiles.add(local);
+            }
+        }
+        updateLocalFileCache(config, localFiles.stream(), changes, builder);
     }
 
+
+    private void updateLocalFileCache(ClientConfig config, Stream<P4LocalFile> files,
+            IdeChangelistMap changes, ChangelistBuilder builder) {
+        files.forEach((file) -> {
+            if (file.getChangelistId() != null) {
+                try {
+                    // FIXME looks like the changlist ID isn't equals correctly.
+                    LocalChangeList localChangeList = changes.getIdeChangeFor(file.getChangelistId());
+                    if (localChangeList == null) {
+                        // Should have already been created.
+                        LOG.warn("Encountered changelist " + file.getChangelistId() +
+                                " that wasn't mapped to an IDE changelist.");
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Mapped changelists: " + changes.getLinkedIdeChanges());
+                        }
+                        builder.processModifiedWithoutCheckout(file.getFilePath().getVirtualFile());
+                    } else {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Adding change " + file + " to IDE changelist " + localChangeList);
+                        }
+                        Change change = createChange(file, config);
+                        builder.processChangeInList(change, localChangeList, P4Vcs.getKey());
+                    }
+                } catch (InterruptedException e) {
+                    LOG.warn("Lock timed out for " + file);
+                    builder.processModifiedWithoutCheckout(file.getFilePath().getVirtualFile());
+                }
+            } else {
+                LOG.warn("Encountered file " + file + " with no changelist.");
+                builder.processModifiedWithoutCheckout(file.getFilePath().getVirtualFile());
+            }
+        });
+    }
 
 
     private void markIgnored(Set<FilePath> dirtyFiles, ChangelistBuilder builder) {
+        // TODO if these files aren't in P4, then they are locally edited but not
+        // marked so by the server.
+
         for (FilePath dirtyFile : dirtyFiles) {
-            builder.processIgnoredFile(dirtyFile.getVirtualFile());
+            if (dirtyFile.getVirtualFile() == null || !dirtyFile.getVirtualFile().exists()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Marking " + dirtyFile + " as locally deleted");
+                }
+                builder.processLocallyDeletedFile(dirtyFile);
+            } else {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Marking " + dirtyFile + " as unversioned");
+                }
+                builder.processUnversionedFile(dirtyFile.getVirtualFile());
+            }
         }
     }
+
+
+    private Change createChange(P4LocalFile file, ClientConfig config) {
+        ContentRevision before = null;
+        ContentRevision after = null;
+        FileStatus status;
+        switch (file.getFileAction()) {
+            case ADD:
+            case ADD_EDIT:
+                after = new P4LocalFileContentRevision(file);
+                status = FileStatus.ADDED;
+                break;
+            case EDIT:
+            case REOPEN:
+                assert file.getDepotPath() != null;
+                // If we set the before to a different file location, then the IDE will
+                // think we set the wrong status, and set it to a "move" operation.
+                // before = new P4RemoteFileContentRevision(project,
+                //        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig());
+                before = after = new P4LocalFileContentRevision(file);
+                status = FileStatus.MODIFIED;
+                break;
+            case INTEGRATE:
+                after = new P4LocalFileContentRevision(file);
+                if (file.getIntegrateFrom() != null) {
+                    before = new P4RemoteFileContentRevision(project,
+                            file.getIntegrateFrom(),
+                            null, config.getServerConfig());
+                } else if (file.getDepotPath() != null) {
+                    before = new P4RemoteFileContentRevision(project,
+                            file.getDepotPath(), file.getHaveRevision(), config.getServerConfig());
+                } else {
+                    before = after;
+                }
+                status = FileStatus.MERGE;
+                break;
+            case DELETE:
+                before = new P4LocalFileContentRevision(file);
+                status = FileStatus.DELETED;
+                break;
+            case REVERTED:
+            case NONE:
+                before = after = new P4LocalFileContentRevision(file);
+                status = FileStatus.NOT_CHANGED;
+                break;
+            case EDIT_RESOLVED:
+                assert file.getDepotPath() != null;
+                before = new P4RemoteFileContentRevision(project,
+                        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig());
+                after = new P4LocalFileContentRevision(file);
+                status = FileStatus.MERGE;
+                break;
+            case MOVE_DELETE:
+                assert file.getDepotPath() != null;
+                before = new P4RemoteFileContentRevision(project,
+                        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig());
+                status = FileStatus.DELETED;
+                break;
+            case MOVE_ADD:
+            case MOVE_ADD_EDIT:
+            case MOVE_EDIT:
+                assert file.getDepotPath() != null;
+                before = new P4RemoteFileContentRevision(project,
+                        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig());
+                after = new P4LocalFileContentRevision(file);
+                // TODO set the status to moved
+                status = FileStatus.ADDED;
+                break;
+            case UNKNOWN:
+                before = after = new P4LocalFileContentRevision(file);
+                status = FileStatus.UNKNOWN;
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown file action " + file.getFileAction());
+        }
+        return new Change(before, after, status);
+    }
+
 
     private Collection<FilePath> getChangeListFiles(LocalChangeList changeList) {
         Set<FilePath> ret = new HashSet<>();

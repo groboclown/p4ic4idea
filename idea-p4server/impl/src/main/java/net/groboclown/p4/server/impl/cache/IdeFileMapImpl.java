@@ -14,48 +14,104 @@
 
 package net.groboclown.p4.server.impl.cache;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.cache.IdeFileMap;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.stream.Stream;
 
 /**
  *
  */
 public class IdeFileMapImpl implements IdeFileMap {
+    private final Project project;
     private final CacheQueryHandler cache;
 
-    public IdeFileMapImpl(CacheQueryHandler queryHandler) {
+    // Really unoptimized.
+
+    public IdeFileMapImpl(@NotNull Project project, @NotNull CacheQueryHandler queryHandler) {
+        this.project = project;
         this.cache = queryHandler;
     }
 
     @Nullable
     @Override
-    public P4LocalFile forIdeFile(VirtualFile file) {
+    public P4LocalFile forIdeFile(@Nullable VirtualFile file) {
+        if (file == null) {
+            return null;
+        }
+        ClientConfigRoot clientConfig =
+                ProjectConfigRegistry.getInstance(project).getClientFor(file);
+        if (clientConfig == null) {
+            return null;
+        }
+        for (P4LocalFile openedFile : cache.getCachedOpenedFiles(clientConfig.getClientConfig())) {
+            if (file.equals(openedFile.getFilePath().getVirtualFile())) {
+                return openedFile;
+            }
+        }
         return null;
     }
 
     @Nullable
     @Override
-    public P4LocalFile forIdeFile(FilePath file) {
+    public P4LocalFile forIdeFile(@Nullable FilePath file) {
+        if (file == null) {
+            return null;
+        }
+        ClientConfigRoot clientConfig =
+                ProjectConfigRegistry.getInstance(project).getClientFor(file);
+        if (clientConfig == null) {
+            return null;
+        }
+        for (P4LocalFile openedFile : cache.getCachedOpenedFiles(clientConfig.getClientConfig())) {
+            if (file.equals(openedFile.getFilePath())) {
+                return openedFile;
+            }
+        }
         return null;
     }
 
     @Nullable
     @Override
-    public P4LocalFile forDepotPath(P4RemoteFile file) {
+    public P4LocalFile forDepotPath(@Nullable P4RemoteFile file) {
+        if (file == null) {
+            return null;
+        }
+        for (ClientConfigRoot root : ProjectConfigRegistry.getInstance(project).getClientConfigRoots()) {
+            for (P4LocalFile openedFile : cache.getCachedOpenedFiles(root.getClientConfig())) {
+                if (file.equals(openedFile.getDepotPath())) {
+                    return openedFile;
+                }
+            }
+        }
         return null;
     }
 
     @NotNull
     @Override
     public Stream<P4LocalFile> getLinkedFiles() {
-        return null;
+        List<P4LocalFile> ret = new LinkedList<>();
+        for (ClientConfigRoot root : ProjectConfigRegistry.getInstance(project).getClientConfigRoots()) {
+            ret.addAll(cache.getCachedOpenedFiles(root.getClientConfig()));
+        }
+        return ret.stream();
+    }
+
+    @NotNull
+    @Override
+    public Stream<P4LocalFile> getLinkedFiles(@NotNull ClientConfig config) {
+        return cache.getCachedOpenedFiles(config).stream();
     }
 }

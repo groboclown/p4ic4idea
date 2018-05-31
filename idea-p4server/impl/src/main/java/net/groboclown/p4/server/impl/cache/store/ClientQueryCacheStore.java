@@ -23,6 +23,8 @@ import org.jetbrains.annotations.TestOnly;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -60,14 +62,25 @@ public class ClientQueryCacheStore {
         this.changelists.addAll(Arrays.asList(changelists));
     }
 
+    @TestOnly
+    public void setChangelists(Collection<P4LocalChangelist> changelists) {
+        this.changelists.clear();
+        this.changelists.addAll(changelists);
+    }
+
     @NotNull
     public List<P4LocalChangelist> getChangelists() {
-        return changelists;
+        return Collections.unmodifiableList(changelists);
     }
 
     @NotNull
     public List<P4LocalFile> getFiles() {
-        return files;
+        return Collections.unmodifiableList(files);
+    }
+
+    public void setFiles(Collection<P4LocalFile> files) {
+        this.files.clear();
+        this.files.addAll(files);
     }
 
     @NotNull

@@ -49,4 +49,18 @@ public class P4RemoteFileImpl implements P4RemoteFile {
     public String getDisplayName() {
         return displayName;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof P4RemoteFile)) {
+            return false;
+        }
+        P4RemoteFile that = (P4RemoteFile) o;
+        return that.getDepotPath().equals(getDepotPath());
+    }
+
+    @Override
+    public int hashCode() {
+        return path.hashCode() + 1;
+    }
 }

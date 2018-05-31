@@ -52,6 +52,10 @@ public interface IdeChangelistMap {
     Collection<P4ChangelistId> getP4ChangesFor(@NotNull LocalChangeList changeList)
             throws InterruptedException;
 
+    @Nullable
+    P4ChangelistId getP4ChangeFor(@NotNull ClientServerRef ref, @NotNull LocalChangeList changeList)
+            throws InterruptedException;
+
     /**
      * Returns the current mapping of Perforce changelists to IDE change lists.
      *

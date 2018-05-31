@@ -22,8 +22,6 @@ import com.intellij.openapi.vcs.VcsDirectoryMapping;
 import com.intellij.openapi.vcs.VcsRootSettings;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import com.perforce.p4java.core.file.FileSpecBuilder;
-import com.perforce.p4java.impl.generic.core.Changelist;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
@@ -35,6 +33,7 @@ import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.config.part.MultipleConfigPart;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
+import net.groboclown.p4.server.impl.util.DirectoryMappingUtil;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import org.jetbrains.annotations.Nls;
@@ -61,7 +60,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
 
     public P4VcsRootConfigurable(Project project, VcsDirectoryMapping mapping) {
         this.project = project;
-        this.vcsRoot = VcsUtil.getVirtualFile(mapping.getDirectory());
+        this.vcsRoot = DirectoryMappingUtil.getDirectory(project, mapping);
         this.mapping = mapping;
     }
 
@@ -95,19 +94,9 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
                 throw new ConfigurationException(toMessage(problems),
                         P4Bundle.getString("configuration.error.title"));
             }
-            try {
-                ServerConfig serverConfig = ServerConfig.createFrom(parentPart);
-                ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, parentPart);
-                if (oldConfig != null) {
-                    ClientConfigRemovedMessage.reportClientConfigRemoved(project, this, oldConfig, vcsRoot);
-                }
-                ProjectConfigRegistry.getInstance(project).addClientConfig(clientConfig, vcsRoot);
-            } catch (IllegalArgumentException e) {
-                throw new ConfigurationException(
-                        e.getLocalizedMessage(),
-                        P4Bundle.getString("configuration.error.title")
-                );
-            }
+            // This class just deals with the configuration.
+            // The actual generation of the events for the configuration is done by the
+            // mapping updates (ClientConfigComponent).
         }
     }
 

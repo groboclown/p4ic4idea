@@ -414,7 +414,6 @@ public class MultipleConfigPart
         return new ArrayList<>(parts);
     }
 
-    @NotNull
     public void addAdditionalProblem(@NotNull ConfigProblem problem) {
         this.extraProblems.add(problem);
     }

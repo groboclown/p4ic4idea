@@ -14,18 +14,28 @@
 
 package net.groboclown.p4.server.impl;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.vcs.VcsDirectoryMapping;
+import com.intellij.openapi.vcs.VcsRootSettings;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
-import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.P4VcsRootSettings;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
+import net.groboclown.p4.server.api.config.part.MultipleConfigPart;
+import net.groboclown.p4.server.api.util.FilteredIterable;
 import net.groboclown.p4.server.impl.cache.ClientConfigRootImpl;
 import net.groboclown.p4.server.impl.cache.ServerStatusImpl;
+import net.groboclown.p4.server.impl.util.DirectoryMappingUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,9 +56,9 @@ import java.util.stream.Stream;
  */
 public class ProjectConfigRegistryImpl
        extends ProjectConfigRegistry {
-    private final Map<ClientServerRef, ClientConfigRootImpl> registeredClients = new HashMap<>();
+    private static final Logger LOG = Logger.getInstance(ProjectConfigRegistryImpl.class);
 
-    private final Map<FilePath, ClientServerRef> vcsRootMap = new HashMap<>();
+    private final Map<ClientServerRef, ClientConfigRootImpl> registeredClients = new HashMap<>();
 
     // the servers are stored based on the shared config.  This means that the connection
     // approach (e.g. password vs. auth ticket) is taken into account.  It has a potential
@@ -57,6 +67,7 @@ public class ProjectConfigRegistryImpl
     private final Map<String, ServerRef> registeredServers = new HashMap<>();
 
 
+    @SuppressWarnings("WeakerAccess")
     public ProjectConfigRegistryImpl(Project project) {
         super(project);
     }
@@ -98,7 +109,12 @@ public class ProjectConfigRegistryImpl
             registeredClients.put(ref, updated);
         }
         if (existing != null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(vcsRootDir + ": replacing " + existing + " with " + config);
+            }
             sendClientRemoved(existing);
+        } else if (LOG.isDebugEnabled()) {
+            LOG.debug(vcsRootDir + ": setting to " + config);
         }
         sendClientAdded(updated);
     }
@@ -121,6 +137,9 @@ public class ProjectConfigRegistryImpl
         if (registered) {
             sendClientRemoved(removed);
             cleanupClientState(removed);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Removed client config " + ref);
+            }
         }
         // FIXME dispose the removed client config.
         return registered;
@@ -213,6 +232,64 @@ public class ProjectConfigRegistryImpl
     protected void onUserSelectedAllOnline() {
         getAllServers()
                 .forEach((sc) -> sc.setUserOffline(false));
+    }
+
+    @Override
+    protected void updateVcsRoots() {
+        synchronized (registeredServers) {
+            for (VcsDirectoryMapping directoryMapping : getDirectoryMappings()) {
+                VcsRootSettings settings = directoryMapping.getRootSettings();
+                if (settings == null) {
+                    LOG.info("Skipping root " + directoryMapping.getDirectory() + "; no settings");
+                    return;
+                }
+                if (settings instanceof P4VcsRootSettings) {
+                    updateRoot((P4VcsRootSettings) settings, directoryMapping);
+                } else {
+                    LOG.warn("P4Vcs root mapping has non-vcs settings " + settings.getClass());
+                }
+            }
+        }
+    }
+
+    private void updateRoot(@NotNull P4VcsRootSettings settings,
+            @NotNull VcsDirectoryMapping directoryMapping) {
+        VirtualFile root = DirectoryMappingUtil.getDirectory(getProject(), directoryMapping);
+        List<ConfigPart> parts = settings.getConfigParts();
+        // TODO set the source name.
+        MultipleConfigPart parentPart = new MultipleConfigPart("", parts);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Adding mapping for " + root + " -> " + parentPart + " (directory mapping dir [" + directoryMapping.getDirectory() + "])");
+        }
+        try {
+            if (ServerConfig.isValidServerConfig(parentPart)) {
+                ServerConfig serverConfig = ServerConfig.createFrom(parentPart);
+                if (ClientConfig.isValidClientConfig(serverConfig, parentPart)) {
+                    ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, parentPart);
+                    addClientConfig(clientConfig, root);
+                    return;
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(root + ": skipping invalid config " + parentPart);
+                }
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug(root + ": skipping invalid config " + parentPart);
+            }
+        } catch (IllegalArgumentException e) {
+            LOG.info("Problem with config under " + root + ": " + parentPart, e);
+        }
+
+        // Invalid config.
+        ClientConfigRoot oldConfig = getClientFor(root);
+        if (oldConfig != null) {
+            removeClientConfig(oldConfig.getClientConfig().getClientServerRef());
+        }
+    }
+
+    @NotNull
+    private Iterable<VcsDirectoryMapping> getDirectoryMappings() {
+        return new FilteredIterable<>(ProjectLevelVcsManager.getInstance(getProject())
+                .getDirectoryMappings(), (mapping) -> mapping != null && P4VcsKey.VCS_NAME.equals(mapping.getVcs()));
     }
 
 

@@ -219,6 +219,18 @@ public class ProjectCacheStore {
         });
     }
 
+    public void write(P4ServerName config, Consumer<ServerQueryCacheStore> fun)
+            throws InterruptedException {
+        lockTimeout.withLock(lock.writeLock(), () -> {
+            ServerQueryCacheStore store = serverQueryCache.get(config);
+            if (store == null) {
+                store = new ServerQueryCacheStore(config);
+                serverQueryCache.put(config, store);
+            }
+            fun.accept(store);
+        });
+    }
+
     @Nullable
     public <T> T readClientActions(ServerConfig config, Function<List<P4CommandRunner.ServerAction<?>>, T> fun)
             throws InterruptedException {
@@ -275,21 +287,38 @@ public class ProjectCacheStore {
         lockTimeout.withLock(lock.writeLock(), () -> fun.accept(arg));
     }
 
+    public void writeActions(P4ServerName config, Consumer<WriteActionCache> fun)
+            throws InterruptedException {
+        WriteActionCache arg = new WriteActionCache(config);
+        lockTimeout.withLock(lock.writeLock(), () -> fun.accept(arg));
+    }
+
 
     public class WriteActionCache
             implements Iterable<Pair<P4CommandRunner.ClientAction<?>, P4CommandRunner.ServerAction<?>>> {
+        @Nullable
         private final ClientServerRef ref;
+        private final P4ServerName serverName;
+        @Nullable
         private final String clientSourceId;
         private final String serverSourceId;
 
-        private WriteActionCache(ClientServerRef config) {
+        private WriteActionCache(@NotNull ClientServerRef config) {
             this.ref = config;
+            this.serverName = config.getServerName();
             this.clientSourceId = ActionStore.getSourceId(config);
             this.serverSourceId = ActionStore.getSourceId(config.getServerName());
         }
 
+        private WriteActionCache(@NotNull P4ServerName config) {
+            this.ref = null;
+            this.serverName = config;
+            this.clientSourceId = null;
+            this.serverSourceId = ActionStore.getSourceId(config);
+        }
+
         public List<P4CommandRunner.ClientAction<?>> getClientActions(ClientConfig config) {
-            if (!ref.equals(config.getClientServerRef())) {
+            if (ref == null || clientSourceId == null || !ref.equals(config.getClientServerRef())) {
                 return Collections.emptyList();
             }
             List<P4CommandRunner.ClientAction<?>> actions = new ArrayList<>();
@@ -302,7 +331,7 @@ public class ProjectCacheStore {
         }
 
         public Optional<P4CommandRunner.ClientAction<?>> getClientActionById(ClientConfig config, String actionId) {
-            if (!ref.equals(config.getClientServerRef())) {
+            if (ref== null || clientSourceId == null || !ref.equals(config.getClientServerRef())) {
                 return Optional.empty();
             }
             for (ActionStore.PendingAction pendingAction : pendingActions) {
@@ -319,7 +348,7 @@ public class ProjectCacheStore {
                 ActionStore.PendingAction next = iter.next();
                 if (actionId.equals(next.getActionId()) &&
                         (
-                            (next.isClientAction() && clientSourceId.equals(next.sourceId))
+                            (next.isClientAction() && clientSourceId != null && clientSourceId.equals(next.sourceId))
                             || (next.isServerAction() && serverSourceId.equals(next.sourceId))
                         )) {
                     iter.remove();
@@ -334,7 +363,7 @@ public class ProjectCacheStore {
         }
 
         public void addAction(P4CommandRunner.ServerAction<?> action) {
-            pendingActions.add(ActionStore.createPendingAction(ref.getServerName(), action));
+            pendingActions.add(ActionStore.createPendingAction(serverName, action));
         }
 
         @NotNull
@@ -359,7 +388,7 @@ public class ProjectCacheStore {
                         //clientAction = pendingAction.getClientAction();
                     } else {
                         throw new IllegalStateException("FIXME No ServerConfig known");
-                        //serverAction = pendingAction.getServerAction();
+                        //serverAction = pendingAction.getClientAction();
                     }
                     //return new Pair<>(clientAction, serverAction);
                 }

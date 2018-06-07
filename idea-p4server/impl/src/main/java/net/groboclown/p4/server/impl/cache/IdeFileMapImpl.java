@@ -27,6 +27,8 @@ import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -70,8 +72,7 @@ public class IdeFileMapImpl implements IdeFileMap {
         if (file == null) {
             return null;
         }
-        ClientConfigRoot clientConfig =
-                ProjectConfigRegistry.getInstance(project).getClientFor(file);
+        ClientConfigRoot clientConfig = getClientFor(file);
         if (clientConfig == null) {
             return null;
         }
@@ -89,7 +90,7 @@ public class IdeFileMapImpl implements IdeFileMap {
         if (file == null) {
             return null;
         }
-        for (ClientConfigRoot root : ProjectConfigRegistry.getInstance(project).getClientConfigRoots()) {
+        for (ClientConfigRoot root : getClientConfigRoots()) {
             for (P4LocalFile openedFile : cache.getCachedOpenedFiles(root.getClientConfig())) {
                 if (file.equals(openedFile.getDepotPath())) {
                     return openedFile;
@@ -103,7 +104,7 @@ public class IdeFileMapImpl implements IdeFileMap {
     @Override
     public Stream<P4LocalFile> getLinkedFiles() {
         List<P4LocalFile> ret = new LinkedList<>();
-        for (ClientConfigRoot root : ProjectConfigRegistry.getInstance(project).getClientConfigRoots()) {
+        for (ClientConfigRoot root : getClientConfigRoots()) {
             ret.addAll(cache.getCachedOpenedFiles(root.getClientConfig()));
         }
         return ret.stream();
@@ -113,5 +114,16 @@ public class IdeFileMapImpl implements IdeFileMap {
     @Override
     public Stream<P4LocalFile> getLinkedFiles(@NotNull ClientConfig config) {
         return cache.getCachedOpenedFiles(config).stream();
+    }
+
+    private ClientConfigRoot getClientFor(FilePath file) {
+        ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(project);
+        return reg == null ? null : reg.getClientFor(file);
+    }
+
+    @NotNull
+    private Collection<ClientConfigRoot> getClientConfigRoots() {
+        ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(project);
+        return reg == null ? Collections.emptyList() : reg.getClientConfigRoots();
     }
 }

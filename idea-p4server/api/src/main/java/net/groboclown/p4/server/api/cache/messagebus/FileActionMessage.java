@@ -56,7 +56,7 @@ public class FileActionMessage
         private final FilePath file;
         private final P4FileAction action;
         private final P4FileType type;
-        private final P4CommandRunner.ClientAction<?> serverAction;
+        private final P4CommandRunner.ClientAction<?> clientAction;
         private final ActionState state;
         private final P4CommandRunner.ServerResultException problem;
         private final Throwable error;
@@ -66,12 +66,12 @@ public class FileActionMessage
         private final P4CommandRunner.ClientResult result;
 
         public Event(@NotNull ClientServerRef ref, @NotNull FilePath file, @NotNull P4FileAction action,
-                @Nullable P4FileType type, @NotNull P4CommandRunner.ClientAction<?> serverAction) {
+                @Nullable P4FileType type, @NotNull P4CommandRunner.ClientAction<?> clientAction) {
             super(ref);
             this.file = file;
             this.action = action;
             this.type = type;
-            this.serverAction = serverAction;
+            this.clientAction = clientAction;
             this.state = ActionState.PENDING;
             this.result = null;
             this.problem = null;
@@ -79,13 +79,13 @@ public class FileActionMessage
         }
 
         public Event(@NotNull ClientServerRef ref, @NotNull FilePath file, @NotNull P4FileAction action,
-                @Nullable P4FileType type, @NotNull P4CommandRunner.ClientAction<?> serverAction,
+                @Nullable P4FileType type, @NotNull P4CommandRunner.ClientAction<?> clientAction,
                 @NotNull P4CommandRunner.ClientResult serverResult) {
             super(ref);
             this.file = file;
             this.action = action;
             this.type = type;
-            this.serverAction = serverAction;
+            this.clientAction = clientAction;
             this.state = ActionState.COMPLETED;
             this.result = serverResult;
             this.problem = null;
@@ -93,13 +93,13 @@ public class FileActionMessage
         }
 
         public Event(@NotNull ClientServerRef ref, @NotNull FilePath file, @NotNull P4FileAction action,
-                @Nullable P4FileType type, @NotNull P4CommandRunner.ClientAction<?> serverAction,
+                @Nullable P4FileType type, @NotNull P4CommandRunner.ClientAction<?> clientAction,
                 @NotNull Throwable error) {
             super(ref);
             this.file = file;
             this.action = action;
             this.type = type;
-            this.serverAction = serverAction;
+            this.clientAction = clientAction;
             this.state = ActionState.FAILED;
             this.result = null;
             if (error instanceof P4CommandRunner.ServerResultException) {
@@ -109,6 +109,34 @@ public class FileActionMessage
                 this.problem = null;
                 this.error = error;
             }
+        }
+
+        public P4FileAction getAction() {
+            return action;
+        }
+
+        public FilePath getFile() {
+            return file;
+        }
+
+        public Throwable getError() {
+            return error;
+        }
+
+        public ActionState getState() {
+            return state;
+        }
+
+        public P4CommandRunner.ClientAction<?> getClientAction() {
+            return clientAction;
+        }
+
+        public P4FileType getType() {
+            return type;
+        }
+
+        public P4CommandRunner.ServerResultException getProblem() {
+            return problem;
         }
     }
 }

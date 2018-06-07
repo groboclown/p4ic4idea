@@ -53,5 +53,14 @@ public class ListClientsForUserCacheMessage
             this.clients = clients;
         }
 
+        @NotNull
+        public String getUser() {
+            return user;
+        }
+
+        @NotNull
+        public Collection<P4WorkspaceSummary> getClients() {
+            return clients;
+        }
     }
 }

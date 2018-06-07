@@ -160,7 +160,7 @@ public class P4AnnotatedLine {
     private static IFileRevisionData getDeletedHistoryFor(@NotNull IExtendedFileSpec depotRev) {
         return new FileRevisionData(
                 0, 0,
-                depotRev.getAction(),
+                depotRev.getClientAction(),
                 depotRev.getDate(),
                 depotRev.getUserName(),
                 depotRev.getFileType(),

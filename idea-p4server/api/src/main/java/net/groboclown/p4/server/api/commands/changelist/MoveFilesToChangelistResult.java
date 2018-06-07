@@ -16,12 +16,37 @@ package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class MoveFilesToChangelistResult implements P4CommandRunner.ClientResult {
+    private final ClientConfig config;
+    private final String message;
+    private final List<P4RemoteFile> files;
+
+    public MoveFilesToChangelistResult(@NotNull ClientConfig config, @Nullable String message,
+            @NotNull List<P4RemoteFile> files) {
+        this.config = config;
+        this.message = message;
+        this.files = files;
+    }
+
     @NotNull
     @Override
     public ClientConfig getClientConfig() {
-        return null;
+        return config;
+    }
+
+    @Nullable
+    public String getMessage() {
+        return message;
+    }
+
+    @NotNull
+    public List<P4RemoteFile> getFiles() {
+        return files;
     }
 }

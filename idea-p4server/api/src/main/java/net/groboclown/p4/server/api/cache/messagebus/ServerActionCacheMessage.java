@@ -80,7 +80,7 @@ public class ServerActionCacheMessage
             this.result = null;
         }
 
-        public P4CommandRunner.ServerAction getAction() {
+        public P4CommandRunner.ServerAction getServerAction() {
             return action;
         }
 

@@ -80,4 +80,27 @@ public class P4RemoteFileContentRevision implements ContentRevision {
     public VcsRevisionNumber getRevisionNumber() {
         return rev;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (o instanceof P4RemoteFileContentRevision) {
+            P4RemoteFileContentRevision that = (P4RemoteFileContentRevision) o;
+            return that.file.equals(file)
+                    && that.rev.equals(rev);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return file.hashCode() + rev.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return file.getDisplayName() + "@" + rev;
+    }
 }

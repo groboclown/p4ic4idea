@@ -13,17 +13,34 @@
  */
 package net.groboclown.p4plugin.extension;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.EditFileProvider;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.commands.file.AddEditAction;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.api.values.P4FileType;
+import net.groboclown.p4.server.impl.util.DispatchActions;
+import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
+import net.groboclown.p4plugin.components.CacheComponent;
+import net.groboclown.p4plugin.components.P4ServerComponent;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
-import java.util.List;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * This is only called when the file is changed from
@@ -34,10 +51,11 @@ public class P4EditFileProvider implements EditFileProvider {
 
     public static final String EDIT = "Edit files";
 
-
+    private final Project project;
     private final P4Vcs vcs;
 
     P4EditFileProvider(@NotNull P4Vcs vcs) {
+        this.project = vcs.getProject();
         this.vcs = vcs;
     }
 
@@ -50,8 +68,33 @@ public class P4EditFileProvider implements EditFileProvider {
             return;
         }
 
-        // FIXME
-        throw new IllegalStateException("not implemented");
+        // In order to speed up the operation of this call, we will not care who
+        // has this open for edit or not.  Make the file writable, then pass on
+        // the actual server edit checks to a background thread.
+
+        makeWritable(allFiles);
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            Map<ClientServerRef, P4ChangelistId> activeChangelistIds = getActiveChangelistIds();
+            for (VirtualFile file : allFiles) {
+                FilePath fp = VcsUtil.getFilePath(file);
+                if (fp == null || !file.isInLocalFileSystem()) {
+                    continue;
+                }
+                ClientConfigRoot root = getClientFor(file);
+                if (root != null) {
+                    P4ChangelistId id = getActiveChangelistFor(root, activeChangelistIds);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Opening for add/edit: " + fp + " (@" + id + ")");
+                    }
+                    P4ServerComponent.getInstance(project)
+                            .getCommandRunner()
+                            .perform(root.getClientConfig(),
+                                    new AddEditAction(fp, getFileType(fp), id, null));
+                } else {
+                    LOG.info("Not under Perforce VCS root: " + file);
+                }
+            }
+        });
     }
 
     @Override
@@ -60,12 +103,59 @@ public class P4EditFileProvider implements EditFileProvider {
     }
 
     private void makeWritable(@NotNull final VirtualFile[] allFiles) {
-        // FIXME
-        throw new IllegalStateException("not implemented");
+        DispatchActions.writeAction(() -> {
+            for (VirtualFile file : allFiles) {
+                if (file.isInLocalFileSystem()) {
+                    try {
+                        file.setWritable(true);
+                    } catch (IOException e) {
+                        handleError(e);
+                    }
+                }
+            }
+        });
     }
 
-    private void openForEdit(final VirtualFile[] allFiles) throws VcsInterruptedException {
-        // FIXME
-        throw new IllegalStateException("not implemented");
+    private Map<ClientServerRef, P4ChangelistId> getActiveChangelistIds() {
+        LocalChangeList defaultIdeChangeList =
+                ChangeListManager.getInstance(project).getDefaultChangeList();
+        Map<ClientServerRef, P4ChangelistId> ret = new HashMap<>();
+        try {
+            CacheComponent.getInstance(project).getServerOpenedCache().first
+                    .getP4ChangesFor(defaultIdeChangeList)
+                    .forEach((id) -> ret.put(id.getClientServerRef(), id));
+        } catch (InterruptedException e) {
+            LOG.warn(e);
+        }
+        return ret;
     }
-}
+
+    private P4ChangelistId getActiveChangelistFor(ClientConfigRoot root, Map<ClientServerRef, P4ChangelistId> ids) {
+        ClientServerRef ref = root.getClientConfig().getClientServerRef();
+        P4ChangelistId ret = ids.get(ref);
+        if (ret == null) {
+            ret = P4ChangelistIdImpl.createDefaultChangelistId(ref);
+            ids.put(ref, ret);
+        }
+        return ret;
+    }
+
+    private P4FileType getFileType(FilePath fp) {
+        FileType ft = fp.getFileType();
+        if (ft.isBinary()) {
+            return P4FileType.convert("binary");
+        }
+        return P4FileType.convert("text");
+    }
+
+    private void handleError(IOException e) {
+        // FIXME
+        LOG.warn("FIXME implement error handler", e);
+    }
+
+
+    private ClientConfigRoot getClientFor(VirtualFile file) {
+        ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(project);
+        return reg == null ? null : reg.getClientFor(file);
+    }
+    }

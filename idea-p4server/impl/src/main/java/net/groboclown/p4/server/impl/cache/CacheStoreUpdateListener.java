@@ -20,7 +20,6 @@ import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
-import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.cache.messagebus.AbstractCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheMessage;
@@ -32,13 +31,16 @@ import net.groboclown.p4.server.api.cache.messagebus.ListClientsForUserCacheMess
 import net.groboclown.p4.server.api.cache.messagebus.ServerActionCacheMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.util.FileTreeUtil;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
+import net.groboclown.p4.server.api.values.P4RemoteChangelist;
 import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -51,16 +53,13 @@ public class CacheStoreUpdateListener implements Disposable {
 
     private final Project project;
     private final ProjectCacheStore cache;
-    private final IdeChangelistMap changelistMap;
     private final String cacheId = AbstractCacheMessage.createCacheId();
     private boolean disposed = false;
 
     public CacheStoreUpdateListener(@NotNull Project project,
-            @NotNull ProjectCacheStore cache,
-            @NotNull IdeChangelistMap changelistMap) {
+            @NotNull ProjectCacheStore cache) {
         this.project = project;
         this.cache = cache;
-        this.changelistMap = changelistMap;
 
         MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(this);
         CacheListener listener = new CacheListener();
@@ -103,11 +102,10 @@ public class CacheStoreUpdateListener implements Disposable {
             LOG.debug("Opened files: " + openedFiles);
         }
 
-        // FIXME variables used for debug code
-        Set<P4LocalChangelist> unusedChangelists = new HashSet<>(pendingChangelists);
+        // Debug data.
         Set<P4LocalFile> unusedFiles = new HashSet<>(openedFiles);
 
-        for (ClientConfigRoot root : ProjectConfigRegistry.getInstance(project).getClientConfigRoots()) {
+        for (ClientConfigRoot root : getClientConfigRoots()) {
             if (ref.equals(root.getClientConfig().getClientServerRef())) {
                 try {
                     if (LOG.isDebugEnabled()) {
@@ -129,7 +127,6 @@ public class CacheStoreUpdateListener implements Disposable {
                         unusedFiles.removeAll(rootFiles);
                         store.setFiles(rootFiles);
 
-                        unusedChangelists.removeAll(pendingChangelists);
                         store.setChangelists(pendingChangelists);
                     });
                 } catch (InterruptedException e) {
@@ -146,15 +143,38 @@ public class CacheStoreUpdateListener implements Disposable {
             }
         }
 
-        if (LOG.isDebugEnabled()) {
-            if (unusedChangelists.isEmpty()) {
-                LOG.debug("Used all changelists in mapping");
-            } else {
-                LOG.debug("Changelists not associated with any root.  Roots: " +
-                        ProjectConfigRegistry.getInstance(project).getClientConfigRoots());
-            }
-
+        if (LOG.isDebugEnabled() && !unusedFiles.isEmpty()) {
             LOG.debug("Unused file associations: " + unusedFiles);
+        }
+    }
+
+    private Collection<ClientConfigRoot> getClientConfigRoots() {
+        ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(project);
+        return reg == null ? Collections.emptyList() : reg.getClientConfigRoots();
+    }
+
+    private void addChangelistDetails(P4ChangelistId requestedChangelist, P4RemoteChangelist updatedChangelist) {
+        // FIXME add the cached data
+        LOG.warn("FIXME add the cached data");
+    }
+
+    private void handleClientAction(@NotNull ClientActionMessage.Event event)
+            throws InterruptedException {
+        switch (event.getState()) {
+            case PENDING:
+                cache.writeActions(event.getClientRef(), (cache) ->
+                        cache.addAction(event.getAction()));
+                break;
+            case COMPLETED:
+            case FAILED:
+                // For the purposes of this cache class, all we care about for the
+                // fail and completed cases is removing the pending action.
+                cache.writeActions(event.getClientRef(), (cache) ->
+                        cache.removeActionById(event.getAction().getActionId()));
+
+                // handling changelist specific changes to the IDE mappings is done by P4ChangeProvider
+
+                break;
         }
     }
 
@@ -177,19 +197,7 @@ public class CacheStoreUpdateListener implements Disposable {
                 LOG.debug("Caching action " + event.getAction());
             }
             try {
-                switch (event.getState()) {
-                    case PENDING:
-                        cache.writeActions(event.getClientRef(), (cache) ->
-                                cache.addAction(event.getAction()));
-                        break;
-                    case COMPLETED:
-                    case FAILED:
-                        // For the purposes of this cache class, all we care about for the
-                        // fail and completed cases is removing the pending action.
-                        cache.writeActions(event.getClientRef(), (cache) ->
-                                cache.removeActionById(event.getAction().getActionId()));
-                        break;
-                }
+                handleClientAction(event);
             } catch (InterruptedException e) {
                 LOG.error("Waited too long for the write lock for accessing the server cache.", e);
             }
@@ -202,14 +210,37 @@ public class CacheStoreUpdateListener implements Disposable {
 
         @Override
         public void describeChangelistUpdate(@NotNull DescribeChangelistCacheMessage.Event event) {
-            // FIXME cache the changelist
-            LOG.warn("FIXME cache the changelist");
+            addChangelistDetails(event.getRequestedChangelist(), event.getUpdatedChangelist());
         }
 
         @Override
         public void fileActionUpdate(@NotNull FileActionMessage.Event event) {
-            // FIXME store the file action
-            LOG.warn("FIXME store the file action");
+            try {
+                if (event.getState() == FileActionMessage.ActionState.PENDING) {
+                    cache.writeActions(event.getClientRef(), (store) -> store.addAction(event.getClientAction()));
+                    switch (event.getClientAction().getCmd()) {
+                        case MOVE_FILE:
+                        case ADD_EDIT_FILE:
+                        case DELETE_FILE:
+                            // FIXME store the contents
+                            LOG.warn("FIXME store the contents of " + event.getFile() + " for revert usage");
+                            break;
+
+                        case REVERT_FILE:
+                            // FIXME restore the contents
+                            LOG.warn("FIXME restore the contents of " + event.getFile());
+                            break;
+
+                        default:
+                            // Ignore extra caching
+                    }
+                } else {
+                    cache.writeActions(event.getClientRef(),
+                            (store) -> store.removeActionById(event.getClientAction().getActionId()));
+                }
+            } catch (InterruptedException e) {
+                LOG.error("Waited too long for the write lock for accessing the server cache.", e);
+            }
         }
 
         @Override
@@ -220,20 +251,36 @@ public class CacheStoreUpdateListener implements Disposable {
 
         @Override
         public void jobSpecUpdate(@NotNull JobSpecCacheMessage.Event event) {
-            // FIXME store the job spec
-            LOG.warn("FIXME store the job spec");
+            try {
+                cache.write(event.getServerName(), (store) -> store.setJobSpec(event.getJobSpec()));
+            } catch (InterruptedException e) {
+                LOG.error("Waited too long for the write lock for accessing the server cache.", e);
+            }
         }
 
         @Override
         public void listClientsForUserUpdate(@NotNull ListClientsForUserCacheMessage.Event event) {
-            // FIXME store the clients
-            LOG.warn("FIXME store the clients");
+            try {
+                cache.write(event.getServerName(), (store) -> store.setUserClients(event.getUser(), event.getClients()));
+            } catch (InterruptedException e) {
+                LOG.error("Waited too long for the write lock for accessing the server cache.", e);
+            }
         }
 
         @Override
         public void serverActionUpdate(@NotNull ServerActionCacheMessage.Event event) {
-            // FIXME store the action
-            LOG.warn("FIXME store the action");
+            try {
+                if (event.getState() == ServerActionCacheMessage.ActionState.PENDING) {
+                    // Add the event
+                    cache.writeActions(event.getServerName(), (store) -> store.addAction(event.getServerAction()));
+                } else {
+                    // Remove the event
+                    cache.writeActions(event.getServerName(),
+                            (store) -> store.removeActionById(event.getServerAction().getActionId()));
+                }
+            } catch (InterruptedException e) {
+                LOG.error("Waited too long for the write lock for accessing the server cache.", e);
+            }
         }
     }
 }

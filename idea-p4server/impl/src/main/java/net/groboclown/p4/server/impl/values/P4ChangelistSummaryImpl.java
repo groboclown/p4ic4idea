@@ -20,6 +20,7 @@ import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4ChangelistSummary;
+import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import org.jetbrains.annotations.NotNull;
 
 public class P4ChangelistSummaryImpl implements P4ChangelistSummary {
@@ -36,6 +37,14 @@ public class P4ChangelistSummaryImpl implements P4ChangelistSummary {
         submitted = summary.getStatus() == ChangelistStatus.SUBMITTED;
         hasShelved = summary.isShelved();
         username = summary.getUsername();
+    }
+
+    P4ChangelistSummaryImpl(P4LocalChangelist changelist) {
+        id = changelist.getChangelistId();
+        comment = changelist.getComment();
+        submitted = false;
+        hasShelved = !changelist.getShelvedFiles().isEmpty();
+        username = changelist.getUsername();
     }
 
 

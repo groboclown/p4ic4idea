@@ -74,7 +74,7 @@ public interface P4RemoteChangelist {
     List<P4Job> getAttachedJobs();
 
     @Nullable
-    JobStatus getJobStatus(@NotNull P4Job job);
+    JobStatus getJobStatus();
 
     @NotNull
     List<P4RemoteFile> getFiles();

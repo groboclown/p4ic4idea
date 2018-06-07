@@ -16,12 +16,35 @@ package net.groboclown.p4.server.api.commands.file;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class DeleteFileResult implements P4CommandRunner.ClientResult {
+    private final ClientConfig config;
+    private final String message;
+    private final List<P4RemoteFile> files;
+
+    public DeleteFileResult(@NotNull ClientConfig config,
+            @NotNull List<P4RemoteFile> files, @Nullable String message) {
+        this.config = config;
+        this.files = files;
+        this.message = message;
+    }
+
     @NotNull
     @Override
     public ClientConfig getClientConfig() {
-        return null;
+        return config;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public List<P4RemoteFile> getFiles() {
+        return files;
     }
 }

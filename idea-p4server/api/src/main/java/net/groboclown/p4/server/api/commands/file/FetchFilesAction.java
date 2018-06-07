@@ -14,13 +14,36 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
+import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.ActionUtil;
-import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.File;
 
 public class FetchFilesAction implements P4CommandRunner.ClientAction<FetchFilesResult> {
     private final String actionId = ActionUtil.createActionId(FetchFilesAction.class);
+    private final String syncPath;
+
+    public FetchFilesAction(String syncPath) {
+        this.syncPath = syncPath;
+    }
+
+    public FetchFilesAction(File syncPath) {
+        if (syncPath.isDirectory()) {
+            this.syncPath = syncPath.getAbsolutePath() + "/...";
+        } else {
+            this.syncPath = syncPath.getAbsolutePath();
+        }
+    }
+
+    public FetchFilesAction(FilePath syncPath) {
+        if (syncPath.isDirectory()) {
+            this.syncPath = syncPath.getPath() + "/...";
+        } else {
+            this.syncPath = syncPath.getPath();
+        }
+    }
 
     @NotNull
     @Override
@@ -37,5 +60,9 @@ public class FetchFilesAction implements P4CommandRunner.ClientAction<FetchFiles
     @Override
     public String getActionId() {
         return actionId;
+    }
+
+    public String getSyncPath() {
+        return syncPath;
     }
 }

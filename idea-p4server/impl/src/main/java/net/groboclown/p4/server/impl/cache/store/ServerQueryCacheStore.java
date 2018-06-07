@@ -17,7 +17,14 @@ package net.groboclown.p4.server.impl.cache.store;
 import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.values.P4JobSpec;
+import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * All the cached server-side information for query results.
@@ -27,10 +34,13 @@ public class ServerQueryCacheStore {
 
     private final P4ServerName serverName;
     private P4JobSpec jobSpec;
+    private Map<String, List<P4WorkspaceSummary>> userClients = new HashMap<>();
 
+    @SuppressWarnings("WeakerAccess")
     public static class State {
         public String serverName;
         public P4JobSpecStore.State jobSpec;
+        public Map<String, List<P4WorkspaceSummaryStore.State>> userClients;
     }
 
 
@@ -43,6 +53,9 @@ public class ServerQueryCacheStore {
         this.jobSpec = P4JobSpecStore.readNullable(state.jobSpec);
     }
 
+    public P4ServerName getServerName() {
+        return serverName;
+    }
 
     public P4JobSpec getJobSpec() {
         return jobSpec;
@@ -52,8 +65,8 @@ public class ServerQueryCacheStore {
         this.jobSpec = jobSpec;
     }
 
-    public P4ServerName getServerName() {
-        return serverName;
+    public void setUserClients(String user, Collection<P4WorkspaceSummary> clients) {
+        userClients.put(user, new ArrayList<>(clients));
     }
 
     @NotNull
@@ -61,6 +74,14 @@ public class ServerQueryCacheStore {
         State ret = new State();
         ret.serverName = serverName.getFullPort();
         ret.jobSpec = P4JobSpecStore.getStateNullable(jobSpec);
+        ret.userClients = new HashMap<>();
+        for (Map.Entry<String, List<P4WorkspaceSummary>> entry : userClients.entrySet()) {
+            List<P4WorkspaceSummaryStore.State> states = new ArrayList<>(entry.getValue().size());
+            for (P4WorkspaceSummary summary : entry.getValue()) {
+                states.add(P4WorkspaceSummaryStore.getState(summary));
+            }
+            ret.userClients.put(entry.getKey(), states);
+        }
         return ret;
     }
 }

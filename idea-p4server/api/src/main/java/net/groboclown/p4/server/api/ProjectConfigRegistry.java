@@ -55,7 +55,7 @@ public abstract class ProjectConfigRegistry
     private final MessageBusClient.ApplicationClient applicationBusClient;
     private boolean disposed = false;
 
-    @NotNull
+    @Nullable
     public static ProjectConfigRegistry getInstance(@NotNull Project project) {
         return (ProjectConfigRegistry) project.getComponent(COMPONENT_NAME);
     }

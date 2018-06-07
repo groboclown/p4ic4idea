@@ -126,7 +126,8 @@ public class ActionStore {
                         (String) state.data.get("charset"));
             case DELETE_FILE:
                 return new DeleteFileAction(state.actionId,
-                        VcsUtil.getFilePath((String) state.data.get("file")));
+                        VcsUtil.getFilePath((String) state.data.get("file")),
+                        P4ChangelistIdStore.read((P4ChangelistIdStore.State) state.data.get("cl-id")));
             case REVERT_FILE:
                 return new RevertFileAction(state.actionId,
                         VcsUtil.getFilePath((String) state.data.get("file")));
@@ -238,9 +239,12 @@ public class ActionStore {
                 ret.data.put("charset", a.getCharset());
                 break;
             }
-            case DELETE_FILE:
-                ret.data.put("file", ((DeleteFileAction) action).getFile());
+            case DELETE_FILE: {
+                DeleteFileAction a = (DeleteFileAction) action;
+                ret.data.put("file", a.getFile());
+                ret.data.put("cl-id", P4ChangelistIdStore.getState(a.getChangelistId()));
                 break;
+            }
             case REVERT_FILE:
                 ret.data.put("file", ((RevertFileAction) action).getFile());
                 break;

@@ -19,9 +19,15 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
 
 public class EditChangelistResult implements P4CommandRunner.ClientResult {
+    private final ClientConfig config;
+
+    public EditChangelistResult(@NotNull ClientConfig config) {
+        this.config = config;
+    }
+
     @NotNull
     @Override
     public ClientConfig getClientConfig() {
-        return null;
+        return config;
     }
 }

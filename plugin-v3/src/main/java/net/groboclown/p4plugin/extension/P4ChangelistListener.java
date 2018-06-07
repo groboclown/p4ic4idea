@@ -38,6 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -100,7 +101,7 @@ public class P4ChangelistListener
 
         LocalChangeList local = (LocalChangeList) toList;
 
-        for (ClientConfigRoot clientConfigRoot : ProjectConfigRegistry.getInstance(myProject).getClientConfigRoots()) {
+        for (ClientConfigRoot clientConfigRoot : getClientConfigRoots()) {
             // First, see if there are any changes for this client config that require an
             // underlying P4 changelist move.
 
@@ -156,7 +157,7 @@ public class P4ChangelistListener
 
         LocalChangeList local = (LocalChangeList) list;
 
-        for (ClientConfigRoot clientConfigRoot : ProjectConfigRegistry.getInstance(myProject).getClientConfigRoots()) {
+        for (ClientConfigRoot clientConfigRoot : getClientConfigRoots()) {
             try {
                 P4ChangelistId change =
                         CacheComponent.getInstance(myProject).getServerOpenedCache().first.getP4ChangeFor(
@@ -256,5 +257,11 @@ public class P4ChangelistListener
             }
         }
         return ret;
+    }
+
+    @NotNull
+    private Collection<ClientConfigRoot> getClientConfigRoots() {
+        ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(myProject);
+        return reg == null ? Collections.emptyList() : reg.getClientConfigRoots();
     }
 }

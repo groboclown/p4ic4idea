@@ -17,20 +17,24 @@ package net.groboclown.p4.server.api.commands.file;
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.ActionUtil;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
 import org.jetbrains.annotations.NotNull;
 
 public class DeleteFileAction implements P4CommandRunner.ClientAction<DeleteFileResult> {
     private final String actionId;
     private final FilePath file;
+    private final P4ChangelistId changelistId;
 
 
-    public DeleteFileAction(@NotNull FilePath file) {
-        this(ActionUtil.createActionId(DeleteFileAction.class), file);
+    public DeleteFileAction(@NotNull FilePath file, P4ChangelistId changelistId) {
+        this(ActionUtil.createActionId(DeleteFileAction.class), file, changelistId);
     }
 
-    public DeleteFileAction(@NotNull String actionId, @NotNull FilePath file) {
+    public DeleteFileAction(@NotNull String actionId, @NotNull FilePath file,
+            P4ChangelistId changelistId) {
         this.actionId = actionId;
         this.file = file;
+        this.changelistId = changelistId;
     }
 
     @NotNull
@@ -53,5 +57,9 @@ public class DeleteFileAction implements P4CommandRunner.ClientAction<DeleteFile
     @NotNull
     public FilePath getFile() {
         return file;
+    }
+
+    public P4ChangelistId getChangelistId() {
+        return changelistId;
     }
 }

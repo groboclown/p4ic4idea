@@ -35,6 +35,7 @@ public interface CacheQueryHandler {
     Collection<P4LocalFile> getCachedOpenedFiles(@NotNull ClientConfig config);
 
     /**
+     * Describe a submitted changelist.
      *
      * @param serverName config
      * @param changelistId changelist to fetch the description for

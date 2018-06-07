@@ -27,6 +27,10 @@ public class P4ChangelistIdImpl implements P4ChangelistId {
     private final ClientServerRef ref;
     private final State state;
 
+    public static P4ChangelistId createDefaultChangelistId(ClientServerRef ref) {
+        return new P4ChangelistIdImpl(IChangelist.DEFAULT, ref);
+    }
+
     public P4ChangelistIdImpl(int id, ClientServerRef ref) {
         this.id = id;
         this.ref = ref;

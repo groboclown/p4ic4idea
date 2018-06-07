@@ -47,7 +47,7 @@ public class P4FileRevisionImpl
         this(ref, new P4RemoteFileImpl(spec), spec);
     }
 
-    public P4FileRevisionImpl(ClientServerRef ref, P4RemoteFile depotPath, IExtendedFileSpec spec) {
+    P4FileRevisionImpl(ClientServerRef ref, P4RemoteFile depotPath, IExtendedFileSpec spec) {
         this(depotPath, new P4ChangelistIdImpl(spec.getChangelistId(), ref),
                 new P4Revision(spec.getHeadRev()),
                 P4FileAction.convert(spec.getHeadAction()),

@@ -22,6 +22,7 @@ import net.groboclown.p4.server.api.commands.changelist.AddJobToChangelistAction
 import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.EditChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.RemoveJobFromChangelistAction;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
@@ -40,6 +41,7 @@ import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import net.groboclown.p4.server.impl.cache.store.ServerQueryCacheStore;
 import net.groboclown.p4.server.impl.values.P4LocalChangelistImpl;
 import net.groboclown.p4.server.impl.values.P4LocalFileImpl;
+import net.groboclown.p4.server.impl.values.P4RemoteChangelistImpl;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -115,9 +117,11 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         break;
                     }
                     case REMOVE_JOB_FROM_CHANGELIST: {
-                        // FIXME implement
-                        LOG.warn("FIXME implement REMOVE_JOB_FROM_CHANGELIST condition");
-                        throw new IllegalStateException("not implemented");
+                        RemoveJobFromChangelistAction a = (RemoveJobFromChangelistAction) action;
+                        P4LocalChangelistImpl.Builder builder = changelists.get(a.getChangelistId());
+                        if (builder != null) {
+                            builder.withJobRemoved(a.getJob());
+                        }
                     }
                 }
             });
@@ -208,13 +212,20 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
     @Nullable
     @Override
     public P4RemoteChangelist getCachedChangelist(P4ServerName serverName, P4ChangelistId changelistId) {
-        // FIXME implement
-        LOG.warn("FIXME implement getCachedChangelist");
-
-        // Probably should check if the changelist is in the "pending" category; if so, pull it *first* from
-        // the IDE changelist map.
-
-        return null;
+        // The default changelist is per-client, and this API is supposed to report submitted changes.
+        if (changelistId.isDefaultChangelist()) {
+            return null;
+        }
+        try {
+            return cache.read(serverName, null, (store) -> {
+                // FIXME implement
+                LOG.warn("FIXME implement getCachedChangelist");
+                return null;
+            });
+        } catch (InterruptedException e) {
+            LOG.error("Spent too long waiting for a read cache; Something is spending too much time writing to the cache.", e);
+            return null;
+        }
     }
 
     @Nullable

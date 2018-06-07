@@ -41,6 +41,98 @@ public class P4WorkspaceSummaryImpl implements P4WorkspaceSummary {
     private final String stream;
     private final int streamAtChange;
 
+    public static class Builder {
+        private String clientname;
+        private Date lastUpdate;
+        private Date lastAccess;
+        private String owner;
+        private String description;
+        private Map<P4WorkspaceSummary.ClientOption, Boolean> options;
+        private P4WorkspaceSummary.SubmitOption submitOption;
+        private P4WorkspaceSummary.LineEnding lineEnding;
+        private P4WorkspaceSummary.ClientType clientType;
+        private List<String> roots;
+        private String host;
+        private String serverId;
+        private String stream;
+        private int streamAtChange;
+
+        public Builder setClientname(String clientname) {
+            this.clientname = clientname;
+            return this;
+        }
+
+        public Builder setLastUpdate(Date lastUpdate) {
+            this.lastUpdate = lastUpdate;
+            return this;
+        }
+
+        public Builder setLastAccess(Date lastAccess) {
+            this.lastAccess = lastAccess;
+            return this;
+        }
+
+        public Builder setOwner(String owner) {
+            this.owner = owner;
+            return this;
+        }
+
+        public Builder setDescription(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder setOptions(Map<P4WorkspaceSummary.ClientOption, Boolean> options) {
+            this.options = options;
+            return this;
+        }
+
+        public Builder setSubmitOption(P4WorkspaceSummary.SubmitOption submitOption) {
+            this.submitOption = submitOption;
+            return this;
+        }
+
+        public Builder setLineEnding(P4WorkspaceSummary.LineEnding lineEnding) {
+            this.lineEnding = lineEnding;
+            return this;
+        }
+
+        public Builder setClientType(P4WorkspaceSummary.ClientType clientType) {
+            this.clientType = clientType;
+            return this;
+        }
+
+        public Builder setRoots(List<String> roots) {
+            this.roots = roots;
+            return this;
+        }
+
+        public Builder setHost(String host) {
+            this.host = host;
+            return this;
+        }
+
+        public Builder setServerId(String serverId) {
+            this.serverId = serverId;
+            return this;
+        }
+
+        public Builder setStream(String stream) {
+            this.stream = stream;
+            return this;
+        }
+
+        public Builder setStreamAtChange(int streamAtChange) {
+            this.streamAtChange = streamAtChange;
+            return this;
+        }
+
+        public P4WorkspaceSummaryImpl createP4WorkspaceSummary() {
+            return new P4WorkspaceSummaryImpl(clientname,
+                    lastUpdate, lastAccess, owner, description, options, submitOption, lineEnding, clientType,
+                    roots, host, serverId, stream, streamAtChange);
+        }
+    }
 
     public P4WorkspaceSummaryImpl(@NotNull IClientSummary client) {
         clientname = client.getName();
@@ -57,6 +149,26 @@ public class P4WorkspaceSummaryImpl implements P4WorkspaceSummary {
         serverId = client.getServerId();
         stream = client.getStream();
         streamAtChange = client.getStreamAtChange();
+    }
+
+    private P4WorkspaceSummaryImpl(String clientname, Date lastUpdate, Date lastAccess, String owner,
+            String description, Map<ClientOption, Boolean> options, SubmitOption submitOption,
+            LineEnding lineEnding, ClientType clientType, List<String> roots, String host,
+            String serverId, String stream, int streamAtChange) {
+        this.clientname = clientname;
+        this.lastUpdate = lastUpdate;
+        this.lastAccess = lastAccess;
+        this.owner = owner;
+        this.description = description;
+        this.options = options;
+        this.submitOption = submitOption;
+        this.lineEnding = lineEnding;
+        this.clientType = clientType;
+        this.roots = roots;
+        this.host = host;
+        this.serverId = serverId;
+        this.stream = stream;
+        this.streamAtChange = streamAtChange;
     }
 
     @Override

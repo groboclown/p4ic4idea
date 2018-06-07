@@ -596,7 +596,7 @@ public interface P4CommandRunner {
         private final QueryAnswer<R> promise;
         private final R last;
 
-        public FutureResult(QueryAnswer<R> promise, R last) {
+        FutureResult(QueryAnswer<R> promise, R last) {
             this.promise = promise;
             this.last = last;
         }

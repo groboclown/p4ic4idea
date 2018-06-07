@@ -49,6 +49,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     private final Project project;
     private final ProjectCacheStore projectCache = new ProjectCacheStore();
     private IdeChangelistMap changelistMap;
+    private IdeFileMap fileMap;
     private CacheQueryHandler queryHandler;
     private CacheStoreUpdateListener updateListener;
 
@@ -101,13 +102,19 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
         return ret.map((x) -> getServerOpenedCache());
     }
 
+    /**
+     *
+     * @return the opened cache pair.  The values can be null if the cache has not yet been initialized.
+     */
+    @NotNull
     public Pair<IdeChangelistMap, IdeFileMap> getServerOpenedCache() {
-        // TODO should the mapping be internal, rather than created on the fly?
-        return new Pair<>(
-                changelistMap,
-                new IdeFileMapImpl(project, queryHandler));
+        return new Pair<>(changelistMap, fileMap);
     }
 
+    /**
+     *
+     * @return the opened cache pair.  The values can be null if the cache has not yet been initialized.
+     */
     public Pair<IdeChangelistMap, IdeFileMap> blockingRefreshServerOpenedCache(Collection<ClientConfig> clients,
             int timeout, TimeUnit timeoutUnit) {
         try {
@@ -140,7 +147,8 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     public void initComponent() {
         queryHandler = new CacheQueryHandlerImpl(projectCache);
         changelistMap = new IdeChangelistMapImpl(project, queryHandler, projectCache.getChangelistCacheStore());
-        updateListener = new CacheStoreUpdateListener(project, projectCache, changelistMap);
+        fileMap = new IdeFileMapImpl(project, queryHandler);
+        updateListener = new CacheStoreUpdateListener(project, projectCache);
     }
 
     @Override

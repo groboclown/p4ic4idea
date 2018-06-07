@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.todo.util;
+package net.groboclown.p4.server.impl.util;
 
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;

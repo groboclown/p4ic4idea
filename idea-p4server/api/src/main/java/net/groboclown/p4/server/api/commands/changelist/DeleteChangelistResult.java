@@ -17,11 +17,24 @@ package net.groboclown.p4.server.api.commands.changelist;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class DeleteChangelistResult implements P4CommandRunner.ClientResult {
+    private final ClientConfig config;
+    private final String message;
+
+    public DeleteChangelistResult(@NotNull ClientConfig config, @Nullable String message) {
+        this.config = config;
+        this.message = message;
+    }
+
     @NotNull
     @Override
     public ClientConfig getClientConfig() {
-        return null;
+        return config;
+    }
+
+    public String getMessage() {
+        return message;
     }
 }

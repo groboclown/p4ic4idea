@@ -17,6 +17,7 @@ package net.groboclown.p4.server.impl.values;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
+import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileAction;
@@ -163,6 +164,17 @@ public class P4LocalFileImpl implements P4LocalFile {
                     : (spec.getOriginalPath() != null
                         ? new P4RemoteFileImpl(spec.getOriginalPath().getPathString())
                         : null);
+    }
+
+    public P4LocalFileImpl(@NotNull ClientServerRef ref, @NotNull IFileSpec spec) {
+        this(new P4RemoteFileImpl(spec),
+            VcsUtil.getFilePath(spec.getLocalPath().getPathString(), false),
+            new P4Revision(IFileSpec.HEAD_REVISION),
+            null, null,
+            P4FileAction.NONE,
+            P4ResolveType.convert(null, null),
+            P4FileType.convert(spec.getFileType()),
+            null);
     }
 
 

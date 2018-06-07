@@ -501,7 +501,8 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new DeleteFileAction(newFile))
+                        runner.perform(clientConfig, new DeleteFileAction(newFile,
+                                    new P4ChangelistIdImpl(1, clientConfig.getClientServerRef())))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -570,7 +571,7 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new FetchFilesAction())
+                        runner.perform(clientConfig, new FetchFilesAction(clientRoot))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )

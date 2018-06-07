@@ -11,23 +11,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.groboclown.p4.server.impl.util;
 
-package net.groboclown.p4.server.api.commands.changelist;
+import org.junit.jupiter.api.Test;
 
-import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.config.ClientConfig;
-import org.jetbrains.annotations.NotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class AddJobToChangelistResult implements P4CommandRunner.ClientResult {
-    private final ClientConfig config;
+class DispatchActionsTest {
 
-    public AddJobToChangelistResult(ClientConfig config) {
-        this.config = config;
+    @Test
+    void writeAction() {
     }
 
-    @NotNull
-    @Override
-    public ClientConfig getClientConfig() {
-        return config;
+    @Test
+    void writeAction1() {
+    }
+
+    @Test
+    void readAction() {
+    }
+
+    @Test
+    void readAction1() {
+    }
+
+    @Test
+    void setWritable() {
+    }
+
+    @Test
+    void setWritable1() {
+    }
+
+    @Test
+    void setWritable2() {
     }
 }

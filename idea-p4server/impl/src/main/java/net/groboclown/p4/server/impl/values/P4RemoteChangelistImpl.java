@@ -1,0 +1,217 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package net.groboclown.p4.server.impl.values;
+
+import net.groboclown.p4.server.api.values.JobStatus;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.api.values.P4ChangelistSummary;
+import net.groboclown.p4.server.api.values.P4ChangelistType;
+import net.groboclown.p4.server.api.values.P4Job;
+import net.groboclown.p4.server.api.values.P4LocalChangelist;
+import net.groboclown.p4.server.api.values.P4RemoteChangelist;
+import net.groboclown.p4.server.api.values.P4RemoteFile;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+public class P4RemoteChangelistImpl implements P4RemoteChangelist {
+    private final P4ChangelistId changelistId;
+    private final P4ChangelistSummary summary;
+    private final String comment;
+    private final boolean deleted;
+    private final boolean onServer;
+    private final boolean shelved;
+    private final Date submittedDate;
+    private final P4ChangelistType changelistType;
+    private final String clientname;
+    private final String username;
+    private final List<P4Job> attachedJobs;
+    private final JobStatus jobStatus;
+    private final List<P4RemoteFile> files;
+
+    public static class Builder {
+        private P4ChangelistId changelistId;
+        private P4ChangelistSummary summary;
+        private String comment;
+        private boolean deleted;
+        private boolean onServer;
+        private boolean shelved;
+        private Date submittedDate;
+        private P4ChangelistType changelistType;
+        private String clientname;
+        private String username;
+        private List<P4Job> attachedJobs;
+        private JobStatus jobStatus;
+
+        public Builder withChangelistId(P4ChangelistId id) {
+            this.changelistId = id;
+            return this;
+        }
+
+        public Builder withSummary(P4ChangelistSummary summary) {
+            this.summary = summary;
+            return this;
+        }
+
+        public Builder withComment(String comment) {
+            this.comment = comment;
+            return this;
+        }
+
+        public Builder withDeleted(boolean deleted) {
+            this.deleted = deleted;
+            return this;
+        }
+
+        public Builder withOnServer(boolean onServer) {
+            this.onServer = onServer;
+            return this;
+        }
+
+        public Builder withShelved(boolean shelved) {
+            this.shelved = shelved;
+            return this;
+        }
+
+        public Builder withSubmittedDate(Date date) {
+            this.submittedDate = date;
+            return this;
+        }
+    }
+
+
+    public P4RemoteChangelistImpl(P4ChangelistId changelistId,
+            P4ChangelistSummary summary, String comment, boolean deleted, boolean onServer, boolean shelved,
+            Date submittedDate, P4ChangelistType changelistType, String clientname, String username,
+            List<P4Job> attachedJobs, JobStatus jobStatus,
+            List<P4RemoteFile> files) {
+        this.changelistId = changelistId;
+        this.summary = summary;
+        this.comment = comment;
+        this.deleted = deleted;
+        this.onServer = onServer;
+        this.shelved = shelved;
+        this.submittedDate = submittedDate;
+        this.changelistType = changelistType;
+        this.clientname = clientname;
+        this.username = username;
+        this.attachedJobs = attachedJobs;
+        this.jobStatus = jobStatus;
+        this.files = files;
+    }
+
+    public P4RemoteChangelistImpl(P4LocalChangelist changelist) {
+        this.changelistId = changelist.getChangelistId();
+        this.summary = new P4ChangelistSummaryImpl(changelist);
+        this.comment = changelist.getComment();
+        this.deleted = changelist.isDeleted();
+        this.onServer = changelist.isOnServer();
+        this.shelved = !changelist.getShelvedFiles().isEmpty();
+        this.submittedDate = null;
+        this.changelistType = changelist.getChangelistType();
+        this.clientname = changelist.getClientname();
+        this.username = changelist.getUsername();
+        this.attachedJobs = changelist.getAttachedJobs();
+        this.jobStatus = changelist.getJobStatus();
+
+        // TODO is there a better way to get the associated remote files?
+        //this.files = changelist.getFiles();
+        this.files = Collections.emptyList();
+    }
+
+
+    @NotNull
+    @Override
+    public P4ChangelistId getChangelistId() {
+        return changelistId;
+    }
+
+    @NotNull
+    @Override
+    public P4ChangelistSummary getSummary() {
+        return summary;
+    }
+
+    @NotNull
+    @Override
+    public String getComment() {
+        return comment;
+    }
+
+    @Override
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    @Override
+    public boolean isOnServer() {
+        return onServer;
+    }
+
+    @Override
+    public boolean isSubmitted() {
+        return submittedDate != null;
+    }
+
+    @Override
+    public boolean hasShelvedFiles() {
+        return shelved;
+    }
+
+    @Nullable
+    @Override
+    public Date getSubmittedDate() {
+        return submittedDate;
+    }
+
+    @NotNull
+    @Override
+    public P4ChangelistType getChangelistType() {
+        return changelistType;
+    }
+
+    @NotNull
+    @Override
+    public String getClientname() {
+        return clientname;
+    }
+
+    @NotNull
+    @Override
+    public String getUsername() {
+        return username;
+    }
+
+    @NotNull
+    @Override
+    public List<P4Job> getAttachedJobs() {
+        return attachedJobs;
+    }
+
+    @Nullable
+    @Override
+    public JobStatus getJobStatus() {
+        return jobStatus;
+    }
+
+    @NotNull
+    @Override
+    public List<P4RemoteFile> getFiles() {
+        return files;
+    }
+}

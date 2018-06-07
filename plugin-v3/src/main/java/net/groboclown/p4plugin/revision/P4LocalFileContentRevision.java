@@ -23,6 +23,8 @@ import net.groboclown.p4.server.api.values.P4LocalFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static com.intellij.openapi.util.Comparing.equal;
+
 public class P4LocalFileContentRevision implements ContentRevision {
     private final P4LocalFile file;
     private final ContentRevision contentProxy;
@@ -49,5 +51,29 @@ public class P4LocalFileContentRevision implements ContentRevision {
     @Override
     public VcsRevisionNumber getRevisionNumber() {
         return file.getHaveRevision();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (o instanceof P4LocalFileContentRevision) {
+            P4LocalFileContentRevision that = (P4LocalFileContentRevision) o;
+            return equal(that.file.getDepotPath(), file.getDepotPath())
+                    && equal(that.contentProxy.getRevisionNumber(), contentProxy.getRevisionNumber());
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return (file.getDepotPath() == null ? 0 : file.getDepotPath().hashCode()) +
+                contentProxy.getRevisionNumber().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return file.toString();
     }
 }

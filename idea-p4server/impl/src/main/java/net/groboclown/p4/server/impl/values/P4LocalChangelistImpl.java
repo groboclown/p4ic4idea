@@ -117,6 +117,11 @@ public class P4LocalChangelistImpl implements P4LocalChangelist {
             return this;
         }
 
+        public Builder withJobRemoved(P4Job job) {
+            this.jobs.remove(job);
+            return this;
+        }
+
         public Builder withVirtualFiles(VirtualFile... files) {
             for (VirtualFile file : files) {
                 this.containedFiles.add(VcsUtil.getFilePath(file));

@@ -16,12 +16,36 @@ package net.groboclown.p4.server.api.commands.file;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.values.P4LocalFile;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class FetchFilesResult implements P4CommandRunner.ClientResult {
+    private final ClientConfig config;
+    private final List<P4LocalFile> files;
+    private final String message;
+
+    public FetchFilesResult(@NotNull ClientConfig config, @NotNull List<P4LocalFile> files, @Nullable String message) {
+        this.config = config;
+        this.files = files;
+        this.message = message;
+    }
+
     @NotNull
     @Override
     public ClientConfig getClientConfig() {
-        return null;
+        return config;
+    }
+
+    @NotNull
+    public List<P4LocalFile> getFiles() {
+        return files;
+    }
+
+    @Nullable
+    public String getMessage() {
+        return message;
     }
 }

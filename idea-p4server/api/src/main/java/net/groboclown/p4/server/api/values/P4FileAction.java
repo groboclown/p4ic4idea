@@ -16,6 +16,7 @@ package net.groboclown.p4.server.api.values;
 
 import com.perforce.p4java.core.file.FileAction;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @see com.perforce.p4java.core.file.FileAction
@@ -47,7 +48,10 @@ public enum P4FileAction {
 
 
     @NotNull
-    public static P4FileAction convert(@NotNull FileAction action) {
+    public static P4FileAction convert(@Nullable FileAction action) {
+        if (action == null) {
+            return NONE;
+        }
         switch (action) {
             // Some of these don't make sense in most contexts, but deal with them
             // as best as possible.

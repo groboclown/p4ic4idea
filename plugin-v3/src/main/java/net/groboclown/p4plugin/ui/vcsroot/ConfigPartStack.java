@@ -30,7 +30,9 @@ import net.groboclown.p4plugin.ui.SwingUtil;
 import net.groboclown.p4plugin.ui.vcsroot.part.ClientNamePartUI;
 import net.groboclown.p4plugin.ui.vcsroot.part.EnvPartUI;
 import net.groboclown.p4plugin.ui.vcsroot.part.FilePartUI;
+import net.groboclown.p4plugin.ui.vcsroot.part.PropertiesPartUI;
 import net.groboclown.p4plugin.ui.vcsroot.part.RequirePasswordPartUI;
+import net.groboclown.p4plugin.ui.vcsroot.part.ServerFingerprintPartUI;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -54,8 +56,9 @@ public class ConfigPartStack {
             FilePartUI.FACTORY,
             EnvPartUI.FACTORY,
             ClientNamePartUI.FACTORY,
-            RequirePasswordPartUI.FACTORY
-            // FIXME add in factories here
+            RequirePasswordPartUI.FACTORY,
+            ServerFingerprintPartUI.FACTORY,
+            PropertiesPartUI.FACTORY
     ));
 
     ConfigPartStack(VirtualFile vcsRoot, ConfigConnectionController connectionController) {

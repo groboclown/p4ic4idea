@@ -86,13 +86,14 @@ public class ActionStore {
     }
 
 
+    @SuppressWarnings("WeakerAccess")
     public static class State {
-        P4CommandRunner.ClientActionCmd clientActionCmd;
-        P4CommandRunner.ServerActionCmd serverActionCmd;
+        public P4CommandRunner.ClientActionCmd clientActionCmd;
+        public P4CommandRunner.ServerActionCmd serverActionCmd;
 
-        String sourceId;
-        String actionId;
-        Map<String, Object> data;
+        public String sourceId;
+        public String actionId;
+        public Map<String, Object> data;
     }
 
 
@@ -180,14 +181,14 @@ public class ActionStore {
 
 
     @NotNull
-    static PendingAction createPendingAction(P4ServerName serverName,
+    public static PendingAction createPendingAction(P4ServerName serverName,
             @NotNull P4CommandRunner.ServerAction<?> action) {
         return new PendingAction(getSourceId(serverName), action);
     }
 
 
     @NotNull
-    static PendingAction createPendingAction(ClientServerRef ref,
+    public static PendingAction createPendingAction(ClientServerRef ref,
             @NotNull P4CommandRunner.ClientAction<?> action) {
         return new PendingAction(getSourceId(ref), action);
     }

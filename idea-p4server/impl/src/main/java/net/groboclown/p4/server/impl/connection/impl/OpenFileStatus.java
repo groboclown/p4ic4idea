@@ -14,7 +14,7 @@
 
 package net.groboclown.p4.server.impl.connection.impl;
 
-import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.server.IServerMessage;
 
@@ -27,24 +27,31 @@ import java.util.Map;
 import java.util.Set;
 
 public class OpenFileStatus {
-    private final Set<IFileSpec> add = new HashSet<>();
-    private final Set<IFileSpec> delete = new HashSet<>();
-    private final Set<IFileSpec> edit = new HashSet<>();
-    private final List<IFileSpec> messages = new ArrayList<>();
-    private final List<IFileSpec> skipped = new ArrayList<>();
+    private final Set<IExtendedFileSpec> add = new HashSet<>();
+    private final Set<IExtendedFileSpec> delete = new HashSet<>();
+    private final Set<IExtendedFileSpec> edit = new HashSet<>();
+    private final Set<IExtendedFileSpec> filesWithMessage = new HashSet<>();
+    private final List<IServerMessage> messages = new ArrayList<>();
+    private final List<IExtendedFileSpec> skipped = new ArrayList<>();
 
     // Note: everything in move is in one of the other collections.
-    private final Map<IFileSpec, IFileSpec> moveMap = new HashMap<>();
+    private final Map<IExtendedFileSpec, IExtendedFileSpec> moveMap = new HashMap<>();
 
-    public OpenFileStatus(Collection<IFileSpec> status) {
-        final Map<String, IFileSpec> integrateMap = new HashMap<>();
+    public OpenFileStatus(Collection<IExtendedFileSpec> status) {
+        final Map<String, IExtendedFileSpec> integrateMap = new HashMap<>();
 
-        for (IFileSpec spec : status) {
+        for (IExtendedFileSpec spec : status) {
             if (spec == null) {
                 continue;
             }
             if (spec.getStatusMessage() != null) {
-                messages.add(spec);
+                if (spec.getDepotPath() != null || spec.getClientPath() != null
+                        || spec.getOriginalPathString() != null) {
+                    filesWithMessage.add(spec);
+                }
+                messages.add(spec.getStatusMessage());
+            } else if (spec.getAction() == null) {
+                skipped.add(spec);
             } else {
                 switch (spec.getAction()) {
                     case ADD:
@@ -83,14 +90,14 @@ public class OpenFileStatus {
             }
         }
 
-        for (IFileSpec spec : delete) {
+        for (IExtendedFileSpec spec : delete) {
             if (integrateMap.containsKey(spec.getDepotPath().getPathString())) {
                 moveMap.put(spec, integrateMap.get(spec.getDepotPath().getPathString()));
             }
         }
     }
 
-    public Set<IFileSpec> getAdd() {
+    public Set<IExtendedFileSpec> getAdd() {
         return add;
     }
 
@@ -98,7 +105,7 @@ public class OpenFileStatus {
         return !add.isEmpty();
     }
 
-    public Set<IFileSpec> getDelete() {
+    public Set<IExtendedFileSpec> getDelete() {
         return delete;
     }
 
@@ -106,12 +113,16 @@ public class OpenFileStatus {
         return !delete.isEmpty();
     }
 
-    public Set<IFileSpec> getEdit() {
+    public Set<IExtendedFileSpec> getEdit() {
         return edit;
     }
 
     public boolean hasEdit() {
         return !edit.isEmpty();
+    }
+
+    public boolean hasAddEdit() {
+        return !edit.isEmpty() || !add.isEmpty();
     }
 
     public int getOpenedCount() {
@@ -122,20 +133,36 @@ public class OpenFileStatus {
         return getOpenedCount() > 0;
     }
 
-    public List<IFileSpec> getOpen() {
-        List<IFileSpec> ret = new ArrayList<>();
+    public List<IExtendedFileSpec> getOpen() {
+        List<IExtendedFileSpec> ret = new ArrayList<>();
         ret.addAll(add);
         ret.addAll(delete);
         ret.addAll(edit);
         return ret;
     }
 
-    public List<IFileSpec> getMessages() {
+    public List<IServerMessage> getMessages() {
         return messages;
     }
 
-    public List<IFileSpec> getSkipped() {
+    public boolean hasMessages() {
+        return !messages.isEmpty();
+    }
+
+    /**
+     *
+     * @return files not categorized because they had an info/warning/error associated with them.
+     */
+    public Set<IExtendedFileSpec> getFilesWithMessages() {
+        return filesWithMessage;
+    }
+
+    public List<IExtendedFileSpec> getSkipped() {
         return skipped;
+    }
+
+    public boolean hasSkipped() {
+        return !skipped.isEmpty();
     }
 
     /**
@@ -143,8 +170,7 @@ public class OpenFileStatus {
      */
     public void throwIfError()
             throws RequestException {
-        for (IFileSpec message : messages) {
-            IServerMessage msg = message.getStatusMessage();
+        for (IServerMessage msg : messages) {
             if (msg != null && msg.isError()) {
                 throw new RequestException(msg);
             }
@@ -155,7 +181,13 @@ public class OpenFileStatus {
      *
      * @return mapping of from (deleted) spec to new location (added/edited).
      */
-    public Map<IFileSpec, IFileSpec> getMoveMap() {
+    public Map<IExtendedFileSpec, IExtendedFileSpec> getMoveMap() {
         return moveMap;
+    }
+
+    @Override
+    public String toString() {
+        return "Status{ add: " + add + "; edit: " + edit + "; delete: " + delete +
+                "; skipped: " + skipped + "; messages: " + messages + " }";
     }
 }

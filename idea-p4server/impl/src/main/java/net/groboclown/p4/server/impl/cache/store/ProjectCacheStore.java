@@ -379,8 +379,8 @@ public class ProjectCacheStore {
                 @Override
                 public Pair<P4CommandRunner.ClientAction<?>, P4CommandRunner.ServerAction<?>> next() {
                     ActionStore.PendingAction pendingAction = proxy.next();
-                    // FIXME return something other than a pair; say, an object that can construct the right
-                    // value?  Return the underlying PendingAction?
+                    // TODO return something other than a pair; say, an object that can construct the right value?
+                    // Return the underlying PendingAction?
                     P4CommandRunner.ClientAction<?> clientAction = null;
                     P4CommandRunner.ServerAction<?> serverAction = null;
                     if (pendingAction.isClientAction()) {

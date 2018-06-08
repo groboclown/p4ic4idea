@@ -14,11 +14,17 @@
 
 package net.groboclown.p4.server.impl.connection.impl;
 
+import com.perforce.p4java.core.file.FileSpecOpStatus;
+import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.server.IServerMessage;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.function.Predicate;
 
 public class MessageStatusUtil {
     /**
@@ -31,6 +37,32 @@ public class MessageStatusUtil {
             if (msg != null && msg.isError()) {
                 throw new RequestException(msg);
             }
+        }
+    }
+
+    public static void throwIf(Collection<IFileSpec> specs, Predicate<IServerMessage> predicate)
+            throws RequestException {
+        for (IFileSpec spec : specs) {
+            IServerMessage msg = spec.getStatusMessage();
+            if (msg != null && predicate.test(msg)) {
+                throw new RequestException(msg);
+            }
+        }
+    }
+
+    public static void throwIfMessageOrEmpty(String operation, List<IFileSpec> ret)
+            throws P4JavaException {
+        if (ret.isEmpty()) {
+            throw new P4JavaException("Unexpected error when performing " + operation +
+                    " on file: no results from server");
+        }
+        if (ret.get(0).getOpStatus() != FileSpecOpStatus.VALID) {
+            IServerMessage msg = ret.get(0).getStatusMessage();
+            if (msg != null) {
+                throw new RequestException(msg);
+            }
+            throw new P4JavaException("Unexpected error when performing " + operation +
+                    " on file: " + ret.get(0));
         }
     }
 
@@ -55,5 +87,9 @@ public class MessageStatusUtil {
 
     public static String getMessages(Collection<IFileSpec> specs, String separator) {
         return getMessages(null, specs, separator).toString();
+    }
+
+    public static String getExtendedMessages(Collection<IExtendedFileSpec> specs, String separator) {
+        return getMessages(null, new ArrayList<>(specs), separator).toString();
     }
 }

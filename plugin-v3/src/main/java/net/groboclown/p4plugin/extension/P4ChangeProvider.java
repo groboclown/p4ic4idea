@@ -229,20 +229,33 @@ public class P4ChangeProvider
                 for (Map.Entry<VcsRoot, List<FilePath>> entry : fileRoots.entrySet()) {
                     if (entry.getKey().getVcs() != null &&
                             P4Vcs.getKey().equals(entry.getKey().getVcs().getKeyInstanceMethod())) {
-                        LOG.info("Processing changes for " + entry.getValue());
                         VirtualFile root = entry.getKey().getPath();
+                        LOG.info("Processing changes for " + entry.getValue() + " under " + root);
                         ClientConfigRoot config = getClientFor(root);
                         if (config != null) {
                             Set<FilePath> matched = new HashSet<>();
                             for (FilePath filePath : entry.getValue()) {
                                 if (dirtyFiles.remove(filePath)) {
+                                    if (LOG.isDebugEnabled()) {
+                                        LOG.debug("Matched " + filePath + " in dirty file list");
+                                    }
                                     matched.add(filePath);
+                                } else if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Not in dirty file list (" + filePath + "); already processed?");
                                 }
+                            }
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Processing under " + root + ": matched dirty files " +
+                                        entry.getValue() + " to root: " + matched);
+                                LOG.debug("Remaining dirty files: " + dirtyFiles);
                             }
                             if (!matched.isEmpty()) {
                                 updateFileCache(config.getClientConfig(),
                                         matched, cachedMaps.first, cachedMaps.second, builder);
                             }
+                        } else if (LOG.isDebugEnabled()) {
+                            LOG.debug("Skipping because not under a Perforce root: " + entry.getKey() + " @ " +
+                                    root);
                         }
                     }
 

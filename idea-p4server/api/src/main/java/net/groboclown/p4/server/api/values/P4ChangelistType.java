@@ -16,5 +16,6 @@ package net.groboclown.p4.server.api.values;
 
 public enum P4ChangelistType {
     PUBLIC,
-    RESTRICTED
+    RESTRICTED,
+    UNKNOWN
 }

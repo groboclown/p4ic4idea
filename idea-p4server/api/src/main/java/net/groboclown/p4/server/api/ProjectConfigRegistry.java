@@ -80,11 +80,11 @@ public abstract class ProjectConfigRegistry
         if (file == null) {
             return null;
         }
-        int closestDepth = -1;
+        int closestDepth = Integer.MAX_VALUE;
         ClientConfigRoot closest = null;
         for (ClientConfigRoot clientConfigRoot : getRegisteredStates()) {
             int depth = FileTreeUtil.getPathDepth(file, clientConfigRoot.getClientRootDir());
-            if (depth > 0 && (closestDepth < 0 || depth < closestDepth)) {
+            if (depth >= 0 && depth < closestDepth) {
                 closestDepth = depth;
                 closest = clientConfigRoot;
             }
@@ -99,11 +99,11 @@ public abstract class ProjectConfigRegistry
         if (file == null) {
             return null;
         }
-        int closestDepth = -1;
+        int closestDepth = Integer.MAX_VALUE;
         ClientConfigRoot closest = null;
         for (ClientConfigRoot clientConfigRoot : getRegisteredStates()) {
             int depth = FileTreeUtil.getPathDepth(file, clientConfigRoot.getClientRootDir());
-            if (depth > 0 && (closestDepth < 0 || depth < closestDepth)) {
+            if (depth >= 0 && depth < closestDepth) {
                 closestDepth = depth;
                 closest = clientConfigRoot;
             }

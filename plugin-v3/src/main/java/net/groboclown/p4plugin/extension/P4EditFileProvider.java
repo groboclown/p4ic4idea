@@ -32,13 +32,13 @@ import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.impl.util.DispatchActions;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
+import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,14 +49,10 @@ import java.util.Map;
 public class P4EditFileProvider implements EditFileProvider {
     private static final Logger LOG = Logger.getInstance(P4EditFileProvider.class);
 
-    public static final String EDIT = "Edit files";
-
     private final Project project;
-    private final P4Vcs vcs;
 
     P4EditFileProvider(@NotNull P4Vcs vcs) {
         this.project = vcs.getProject();
-        this.vcs = vcs;
     }
 
 
@@ -64,6 +60,9 @@ public class P4EditFileProvider implements EditFileProvider {
     // performant.
     @Override
     public void editFiles(final VirtualFile[] allFiles) throws VcsException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Calling `editFiles` with " + Arrays.asList(allFiles));
+        }
         if (allFiles == null || allFiles.length <= 0) {
             return;
         }
@@ -71,6 +70,8 @@ public class P4EditFileProvider implements EditFileProvider {
         // In order to speed up the operation of this call, we will not care who
         // has this open for edit or not.  Make the file writable, then pass on
         // the actual server edit checks to a background thread.
+
+        // TODO This is ignoring the user property to edit in another thread.
 
         makeWritable(allFiles);
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
@@ -89,7 +90,16 @@ public class P4EditFileProvider implements EditFileProvider {
                     P4ServerComponent.getInstance(project)
                             .getCommandRunner()
                             .perform(root.getClientConfig(),
-                                    new AddEditAction(fp, getFileType(fp), id, null));
+                                    new AddEditAction(fp, getFileType(fp), id, null))
+                    .whenCompleted((res) -> {
+                        LOG.info("Opened for add/edit: " + fp + ": add? " + res.isAdd() + "; cl: " + res.getChangelistId());
+                    })
+                    .whenOffline(() -> {
+                        LOG.warn("Queued add/edit action for " + fp + "; server offline");
+                    })
+                    .whenServerError((e) -> {
+                        LOG.warn("Could not open for add", e);
+                    });
                 } else {
                     LOG.info("Not under Perforce VCS root: " + file);
                 }
@@ -99,7 +109,8 @@ public class P4EditFileProvider implements EditFileProvider {
 
     @Override
     public String getRequestText() {
-        return null;
+        // TODO verify where this is used, and whether the text makes sense in the context.
+        return P4Bundle.getString("file.open-for-edit");
     }
 
     private void makeWritable(@NotNull final VirtualFile[] allFiles) {
@@ -158,4 +169,4 @@ public class P4EditFileProvider implements EditFileProvider {
         ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(project);
         return reg == null ? null : reg.getClientFor(file);
     }
-    }
+}

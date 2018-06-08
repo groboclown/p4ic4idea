@@ -175,7 +175,8 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         P4LocalFileImpl.Builder builder = files.get(a.getFile());
                         if (builder == null) {
                             builder = new P4LocalFileImpl.Builder()
-                                    .withLocal(a.getFile());
+                                    .withLocal(a.getFile())
+                                    .withHave(new P4Revision(-1));
                             files.put(a.getFile(), builder);
                         }
                         builder
@@ -188,7 +189,8 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         P4LocalFileImpl.Builder builder = files.get(a.getFile());
                         if (builder == null) {
                             builder = new P4LocalFileImpl.Builder()
-                                    .withLocal(a.getFile());
+                                    .withLocal(a.getFile())
+                                    .withHave(new P4Revision(-1));
                             files.put(a.getFile(), builder);
                         }
                         builder

@@ -14,11 +14,13 @@
 package net.groboclown.p4.server.impl.cache;
 
 import net.groboclown.p4.server.api.MockConfigPart;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
+import net.groboclown.p4.server.impl.cache.store.ActionStore;
 import net.groboclown.p4.server.impl.cache.store.ClientQueryCacheStore;
 import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
@@ -84,10 +86,9 @@ class CacheQueryHandlerImplTest {
                 .withChangelistId(new P4ChangelistIdImpl(1, clientConfig.getClientServerRef()))
                 .withComment("comment 1")
                 .build();
-        projectStore.addPendingAction(new MockPendingAction()
-                .withClientAction(new DeleteChangelistAction(cl1.getChangelistId()))
-                .withSource(clientConfig)
-        );
+
+        projectStore.addPendingAction(ActionStore.createPendingAction(
+                clientConfig.getClientServerRef(), new DeleteChangelistAction(cl1.getChangelistId())));
         clientStore.setChangelists(cl1);
         projectStore.addCache(clientStore);
 
@@ -110,10 +111,8 @@ class CacheQueryHandlerImplTest {
                 .withComment("comment 1")
                 .build();
         CreateChangelistAction addChangelistAction = new CreateChangelistAction(clientConfig.getClientServerRef(), "my comment");
-        projectStore.addPendingAction(new MockPendingAction()
-                .withClientAction(addChangelistAction)
-                .withSource(clientConfig)
-        );
+        projectStore.addPendingAction(ActionStore.createPendingAction(
+                clientConfig.getClientServerRef(), addChangelistAction));
         clientStore.setChangelists(cl1);
         projectStore.addCache(clientStore);
 

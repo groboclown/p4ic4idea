@@ -144,6 +144,11 @@ class ProjectConfigRegistryTest {
         protected void onUserSelectedAllOnline() {
             throw new IllegalStateException();
         }
+
+        @Override
+        protected void updateVcsRoots() {
+            throw new IllegalStateException();
+        }
     }
 
 

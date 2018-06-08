@@ -13,8 +13,10 @@
  */
 package net.groboclown.p4plugin.extension;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.util.Ref;
+import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -22,36 +24,47 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
-import com.intellij.openapi.vcs.checkin.CheckinChangeListSpecificComponent;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
+import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.commands.file.AddEditAction;
+import net.groboclown.p4.server.api.commands.file.AddEditResult;
+import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
+import net.groboclown.p4.server.api.commands.file.DeleteFileResult;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.api.values.P4FileType;
+import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.components.CacheComponent;
+import net.groboclown.p4plugin.components.P4ServerComponent;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 // TODO look at switching to a CommitExecutor and CommitSession, CommitSessionContextAware
 // to fix the long standing issue where changelists must have comments.
 public class P4CheckinEnvironment implements CheckinEnvironment {
     private static final Logger LOG = Logger.getInstance(P4CheckinEnvironment.class);
 
-    private final P4Vcs vcs;
+    private final Project project;
 
-    public P4CheckinEnvironment(@NotNull P4Vcs vcs) {
-        this.vcs = vcs;
+    P4CheckinEnvironment(@NotNull P4Vcs vcs) {
+        this.project = vcs.getProject();
     }
 
     @Nullable
@@ -108,17 +121,86 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     @Nullable
     @Override
     public List<VcsException> scheduleMissingFileForDeletion(List<FilePath> files) {
-        LOG.info("scheduleMissingFileForDeletion: " + files);
-        // FIXME
-        throw new IllegalStateException("not implemented");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("scheduleMissingFileForDeletion: " + files);
+        }
+        List<VcsException> ret = new ArrayList<>();
+        ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        if (registry == null) {
+            ret.add(new VcsException("Project not configured"));
+            return ret;
+        }
+        Map<ClientServerRef, P4ChangelistId> activeChangelistIds = getActiveChangelistIds();
+        for (FilePath file : files) {
+            ClientConfigRoot root = registry.getClientFor(file);
+            if (root == null) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Skipped adding file not in VCS root: " + file);
+                }
+            } else {
+                P4ChangelistId id = getActiveChangelistFor(root, activeChangelistIds);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Opening for add/edit: " + file + " (@" + id + ")");
+                }
+                P4CommandRunner.ActionAnswer<DeleteFileResult> answer =
+                        P4ServerComponent.getInstance(project).getCommandRunner()
+                                .perform(root.getClientConfig(), new DeleteFileAction(file, id));
+                if (ApplicationManager.getApplication().isDispatchThread()) {
+                    LOG.info("Running delete file command in EDT; will not wait for server errors.");
+                } else {
+                    try {
+                        answer.blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project),
+                                TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
+                        ret.add(new VcsException(e));
+                    }
+                }
+            }
+        }
+        return ret;
     }
 
     @Nullable
     @Override
     public List<VcsException> scheduleUnversionedFilesForAddition(List<VirtualFile> files) {
-        LOG.info("scheduleUnversionedFilesForAddition: " + files);
-        // FIXME
-        throw new IllegalStateException("not implemented");
+        if (LOG.isDebugEnabled()) {
+            LOG.info("scheduleUnversionedFilesForAddition: " + files);
+        }
+        List<VcsException> ret = new ArrayList<>();
+        ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        if (registry == null) {
+            ret.add(new VcsException("Project not configured"));
+            return ret;
+        }
+        Map<ClientServerRef, P4ChangelistId> activeChangelistIds = getActiveChangelistIds();
+        for (VirtualFile file : files) {
+            ClientConfigRoot root = registry.getClientFor(file);
+            if (root == null) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Skipped adding file not in VCS root: " + file);
+                }
+            } else {
+                FilePath fp = VcsUtil.getFilePath(file);
+                P4ChangelistId id = getActiveChangelistFor(root, activeChangelistIds);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Opening for add/edit: " + fp + " (@" + id + ")");
+                }
+                P4CommandRunner.ActionAnswer<AddEditResult> answer =
+                        P4ServerComponent.getInstance(project).getCommandRunner()
+                                .perform(root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, null));
+                if (ApplicationManager.getApplication().isDispatchThread()) {
+                    LOG.info("Running add/edit command in EDT; will not wait for server errors.");
+                } else {
+                    try {
+                        answer.blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project),
+                                TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
+                        ret.add(new VcsException(e));
+                    }
+                }
+            }
+        }
+        return ret;
     }
 
     @Override
@@ -133,4 +215,39 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         return true;
     }
 
+
+    // TODO this is shared with P4VFSListener.  Look at making shared utility.
+    private Map<ClientServerRef, P4ChangelistId> getActiveChangelistIds() {
+        LocalChangeList defaultIdeChangeList =
+                ChangeListManager.getInstance(project).getDefaultChangeList();
+        Map<ClientServerRef, P4ChangelistId> ret = new HashMap<>();
+        try {
+            CacheComponent.getInstance(project).getServerOpenedCache().first
+                    .getP4ChangesFor(defaultIdeChangeList)
+                    .forEach((id) -> ret.put(id.getClientServerRef(), id));
+        } catch (InterruptedException e) {
+            LOG.warn(e);
+        }
+        return ret;
+    }
+
+    // TODO this is shared with P4VFSListener.  Look at making shared utility.
+    private P4ChangelistId getActiveChangelistFor(ClientConfigRoot root, Map<ClientServerRef, P4ChangelistId> ids) {
+        ClientServerRef ref = root.getClientConfig().getClientServerRef();
+        P4ChangelistId ret = ids.get(ref);
+        if (ret == null) {
+            ret = P4ChangelistIdImpl.createDefaultChangelistId(ref);
+            ids.put(ref, ret);
+        }
+        return ret;
+    }
+
+    // TODO this is shared with P4VFSListener.  Look at making shared utility.
+    private P4FileType getFileType(FilePath fp) {
+        FileType ft = fp.getFileType();
+        if (ft.isBinary()) {
+            return P4FileType.convert("binary");
+        }
+        return P4FileType.convert("text");
+    }
 }

@@ -1,0 +1,16 @@
+Perforce server info:
+	2018/06/08 12:42:55 pid 6688 luser@_____CLIENT_UNSET_____ unknown [intellij-perforce-community-plugin-connection/v1] 'user-info'
+Perforce server info:
+	2018/06/08 12:42:55 pid 6688 luser@_____CLIENT_UNSET_____ unknown [intellij-perforce-community-plugin-connection/v1] 'user-client -i'
+Perforce server info:
+	2018/06/08 12:42:55 pid 6688 luser@_____CLIENT_UNSET_____ unknown [intellij-perforce-community-plugin-connection/v1] 'user-client -o client1'
+Perforce server info:
+	2018/06/08 12:42:55 pid 19420 luser@client1 unknown [intellij-perforce-community-plugin-connection/v1] 'user-info'
+Perforce server info:
+	2018/06/08 12:42:55 pid 19420 luser@client1 unknown [intellij-perforce-community-plugin-connection/v1] 'user-client -o client1'
+Perforce server info:
+	2018/06/08 12:42:55 pid 19420 luser@client1 unknown [intellij-perforce-community-plugin-connection/v1] 'user-client -o client1'
+Perforce server info:
+	2018/06/08 12:42:55 pid 19420 luser@client1 unknown [intellij-perforce-community-plugin-connection/v1] 'user-add -f C:\Users\ALBREC~1\AppData\Local\Temp\test7705467194791971206\clientRoot\abc.txt'
+Perforce server info:
+	2018/06/08 12:42:56 pid 19420 luser@client1 unknown [intellij-perforce-community-plugin-connection/v1] 'user-fstat -Olhp C:\Users\ALBREC~1\AppData\Local\Temp\test7705467194791971206\clientRoot\abc.txt'

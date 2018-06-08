@@ -194,7 +194,7 @@ public class MockP4RemoteChangelist implements P4RemoteChangelist {
 
     @Nullable
     @Override
-    public JobStatus getJobStatus(@NotNull P4Job job) {
+    public JobStatus getJobStatus() {
         return jobStatus;
     }
 

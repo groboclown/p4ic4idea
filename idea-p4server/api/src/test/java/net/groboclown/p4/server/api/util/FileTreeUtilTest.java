@@ -276,7 +276,8 @@ class FileTreeUtilTest {
 
         assertFalse(FileTreeUtil.isSameOrUnder(five, other));
         assertFalse(FileTreeUtil.isSameOrUnder(other, five));
-        assertFalse(FileTreeUtil.isSameOrUnder(null, five));
+        assertFalse(FileTreeUtil.isSameOrUnder((FilePath) null, five));
+        assertFalse(FileTreeUtil.isSameOrUnder((VirtualFile) null, five));
         assertTrue(FileTreeUtil.isSameOrUnder(five.getParentPath(), five));
         assertTrue(FileTreeUtil.isSameOrUnder(five.getParentPath().getParentPath(), five));
         assertTrue(FileTreeUtil.isSameOrUnder(five.getParentPath().getParentPath().getParentPath(), five));

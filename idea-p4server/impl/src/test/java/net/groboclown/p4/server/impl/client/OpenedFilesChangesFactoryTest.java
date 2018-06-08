@@ -61,6 +61,7 @@ class OpenedFilesChangesFactoryTest {
     @Test
     void simpleAddedFiles_localFiles(TemporaryFolder tmpDir)
             throws IOException, InterruptedException {
+        P4CommandUtil cmd = new P4CommandUtil();
         ClientConfig clientConfig = createClientConfig();
         File clientRoot = tmpDir.newFile("clientRoot");
         if (!clientRoot.isDirectory() && !clientRoot.mkdirs()) {
@@ -81,7 +82,7 @@ class OpenedFilesChangesFactoryTest {
 
                 // Yoinked from ConnectCommandRunner
                 List<IExtendedFileSpec> openedDefaultChangelistFiles =
-                        P4CommandUtil.getFilesOpenInDefaultChangelist(client.getServer());
+                        cmd.getFilesOpenInDefaultChangelist(client.getServer(), clientConfig.getClientname(), 100);
 
                 List<FilePath> paths = OpenedFilesChangesFactory.getLocalFiles(openedDefaultChangelistFiles);
 

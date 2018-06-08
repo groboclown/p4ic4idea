@@ -14,14 +14,34 @@
 
 package net.groboclown.p4.server.impl.values;
 
+import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
 import net.groboclown.p4.server.impl.util.HandleFileSpecUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class P4RemoteFileImpl implements P4RemoteFile {
     private final String displayName;
     private final String path;
+
+    public static List<P4RemoteFile> createFor(@NotNull Collection<IFileSpec> specList) {
+        return specList.stream()
+                .filter((spec) -> spec.getStatusMessage() == null && spec.getDepotPath() != null)
+                .map(P4RemoteFileImpl::new)
+                .collect(Collectors.toList());
+    }
+
+    public static List<P4RemoteFile> createForExtended(@NotNull Collection<IExtendedFileSpec> specList) {
+        return specList.stream()
+                .filter((spec) -> spec.getStatusMessage() == null && spec.getDepotPath() != null)
+                .map(P4RemoteFileImpl::new)
+                .collect(Collectors.toList());
+    }
 
     public P4RemoteFileImpl(@NotNull IFileSpec spec) {
         this.path = spec.getDepotPath().getPathString();

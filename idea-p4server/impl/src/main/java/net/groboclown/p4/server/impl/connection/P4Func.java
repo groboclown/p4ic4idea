@@ -14,8 +14,6 @@
 
 package net.groboclown.p4.server.impl.connection;
 
-import com.perforce.p4java.exception.P4JavaException;
-
 public interface P4Func<V, R> {
     R func(V v)
         throws Exception;

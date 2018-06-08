@@ -14,6 +14,13 @@
 
 package net.groboclown.p4.server.impl.values;
 
+import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.core.IChangelistSummary;
+import com.perforce.p4java.core.IJob;
+import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4ChangelistSummary;
@@ -25,6 +32,7 @@ import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -57,6 +65,7 @@ public class P4RemoteChangelistImpl implements P4RemoteChangelist {
         private String username;
         private List<P4Job> attachedJobs;
         private JobStatus jobStatus;
+        private List<P4RemoteFile> files;
 
         public Builder withChangelistId(P4ChangelistId id) {
             this.changelistId = id;
@@ -91,6 +100,42 @@ public class P4RemoteChangelistImpl implements P4RemoteChangelist {
         public Builder withSubmittedDate(Date date) {
             this.submittedDate = date;
             return this;
+        }
+
+        public Builder withChangelist(ServerConfig config, IChangelist changelist) {
+            ClientServerRef ref = new ClientServerRef(config.getServerName(), changelist.getClientId());
+            this.changelistId = new P4ChangelistIdImpl(changelist.getId(), ref);
+            this.summary = new P4ChangelistSummaryImpl(config, ref, changelist);
+            this.comment = changelist.getDescription();
+            this.deleted = false;
+            this.onServer = true;
+            this.shelved = changelist.isShelved();
+            this.submittedDate = changelist.getDate();
+            this.changelistType = (changelist.getVisibility() == IChangelistSummary.Visibility.PUBLIC
+                    ? P4ChangelistType.PUBLIC
+                    : (changelist.getVisibility() == IChangelistSummary.Visibility.RESTRICTED
+                            ? P4ChangelistType.RESTRICTED
+                            : P4ChangelistType.UNKNOWN));
+            this.clientname = changelist.getClientId();
+            this.username = changelist.getUsername();
+            return this;
+        }
+
+        public Builder withJobs(Collection<IJob> jobs) {
+            this.attachedJobs = P4JobImpl.createFor(jobs);
+            this.jobStatus = null; // FIXME how to determine?
+            return this;
+        }
+
+        public Builder withFiles(List<IFileSpec> files) {
+            this.files = P4RemoteFileImpl.createFor(files);
+            return this;
+        }
+
+        public P4RemoteChangelist build() {
+            return new P4RemoteChangelistImpl(changelistId, summary, comment, deleted, onServer,
+                    shelved, submittedDate, changelistType, clientname, username, attachedJobs,
+                    jobStatus, files);
         }
     }
 

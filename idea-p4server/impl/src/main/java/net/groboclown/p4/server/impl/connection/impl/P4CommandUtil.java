@@ -15,6 +15,8 @@
 package net.groboclown.p4.server.impl.connection.impl;
 
 import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.core.ChangelistStatus;
+import com.perforce.p4java.core.CoreFactory;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IJob;
@@ -26,7 +28,9 @@ import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
+import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.AddFilesOptions;
+import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.server.ChangelistOptions;
@@ -35,9 +39,13 @@ import com.perforce.p4java.option.server.GetDepotFilesOptions;
 import com.perforce.p4java.option.server.GetExtendedFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
+import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
+import net.groboclown.p4.server.api.values.P4Job;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -95,6 +103,11 @@ public class P4CommandUtil {
     public IJob createJob(IOptionsServer server, Map<String, Object> fields)
             throws ConnectionException, AccessException, RequestException {
         return server.createJob(fields);
+    }
+
+    public IJob getJob(IServer server, String jobId)
+            throws ConnectionException, AccessException, RequestException {
+        return server.getJob(jobId);
     }
 
     public IJobSpec getJobSpec(IOptionsServer server)
@@ -182,5 +195,38 @@ public class P4CommandUtil {
             editOptions.setCharset(charset);
         }
         return client.editFiles(files, editOptions);
+    }
+
+    public List<IFileSpec> deleteFiles(IClient client, List<IFileSpec> files, P4ChangelistId changelistId)
+            throws P4JavaException {
+        DeleteFilesOptions options = new DeleteFilesOptions();
+        if (changelistId != null && changelistId.getState() == P4ChangelistId.State.NUMBERED) {
+            options.setChangelistId(changelistId.getChangelistId());
+        }
+
+        // Let the IDE perform the delete.
+        // FIXME double check if this is right.
+        options.setBypassClientDelete(true);
+
+        return client.deleteFiles(files, options);
+    }
+
+    public List<IFileSpec> submitChangelist(
+            JobStatus jobStatus,
+            Collection<P4Job> updatedJobs,
+            IChangelist changelist)
+            throws P4JavaException {
+        SubmitOptions options = new SubmitOptions();
+        if (jobStatus != null) {
+            options.setJobStatus(jobStatus.getName());
+        }
+        if (updatedJobs != null) {
+            List<String> jobIds = new ArrayList<>(updatedJobs.size());
+            for (P4Job p4Job : updatedJobs) {
+                jobIds.add(p4Job.getJobId());
+            }
+            options.setJobIds(jobIds);
+        }
+        return changelist.submit(options);
     }
 }

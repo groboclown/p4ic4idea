@@ -19,14 +19,23 @@ import net.groboclown.p4.server.api.values.P4Job;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class P4JobImpl implements P4Job {
     private final String jobId;
     private final String description;
     private final Map<String, Object> details;
+
+    public static List<P4Job> createFor(Collection<IJob> jobs) {
+        return jobs.stream()
+                .map(P4JobImpl::new)
+                .collect(Collectors.toList());
+    }
 
     public P4JobImpl(@NotNull IJob job) {
         jobId = job.getId();

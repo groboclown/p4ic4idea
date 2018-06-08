@@ -338,6 +338,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         projectMessageBusConnection = myProject.getMessageBus().connect();
         appMessageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
 
+        // TODO is this cache still used here?
         // Keep our cache up-to-date
         projectMessageBusConnection.subscribe(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED, new VcsListener() {
             @Override
@@ -640,8 +641,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     }
 
 
-    // After v135.
-    // @Override
+    @Override
     // @CalledInAwt
     @NotNull
     public ThreeState mayRemoveChangeList(@NotNull LocalChangeList list, boolean explicitly) {
@@ -651,9 +651,13 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         return ThreeState.YES;
     }
 
-    // TODO can this be switched to false?
-    public boolean fileListenerIsSynchronous() {
+
+    public boolean allowsNestedRoots() {
         return true;
+    }
+
+    public boolean fileListenerIsSynchronous() {
+        return false;
     }
 
     // TODO implement these
@@ -691,11 +695,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
      */
     @Override
     public boolean isVcsBackgroundOperationsAllowed(final VirtualFile root) {
-        return true;
-    }
-
-
-    public boolean allowsNestedRoots() {
         return true;
     }
 

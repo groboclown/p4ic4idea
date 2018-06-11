@@ -43,25 +43,8 @@ public class SimpleDataPart implements ConfigPart, ConfigStateProvider {
         }
     }
 
-    // copy constructor
-    public SimpleDataPart(@NotNull ConfigPart part) {
-        this(null, part.getSourceName(), null);
-
-        setClientname(part.getClientname());
-        setServerName(part.getServerName());
-        setAuthTicketFile(part.getAuthTicketFile());
-        setClientHostname(part.getClientHostname());
-        setDefaultCharset(part.getDefaultCharset());
-        setIgnoreFilename(part.getIgnoreFileName());
-        setServerFingerprint(part.getServerFingerprint());
-        setTrustTicketFile(part.getTrustTicketFile());
-        setUsername(part.getUsername());
-
-        // Ignore
-        // part.getPlaintextPassword();
-    }
-
     // for ConfigStateProvider
+    @SuppressWarnings("unused")
     public SimpleDataPart(String sourceName, VirtualFile vcsRoot, @NotNull Map<String, String> values) {
         this.sourceName = sourceName;
         this.vcsRoot = vcsRoot;
@@ -228,6 +211,14 @@ public class SimpleDataPart implements ConfigPart, ConfigStateProvider {
         }
     }
 
+    public void setAuthTicketFile(@Nullable VirtualFile file) {
+        if (file != null) {
+            setTrimmed(AUTH_TICKET_KEY, file.getPath());
+        } else {
+            setTrimmed(AUTH_TICKET_KEY, null);
+        }
+    }
+
     // ----------------------------------------------------------------------
     private static final String TRUST_TICKET_KEY = "trustticket";
 
@@ -250,6 +241,14 @@ public class SimpleDataPart implements ConfigPart, ConfigStateProvider {
     public void setTrustTicketFile(@Nullable File file) {
         if (file != null) {
             setTrimmed(TRUST_TICKET_KEY, file.getAbsolutePath());
+        } else {
+            setTrimmed(TRUST_TICKET_KEY, null);
+        }
+    }
+
+    public void setTrustTicketFile(@Nullable VirtualFile file) {
+        if (file != null) {
+            setTrimmed(TRUST_TICKET_KEY, file.getPath());
         } else {
             setTrimmed(TRUST_TICKET_KEY, null);
         }

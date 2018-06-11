@@ -4,26 +4,33 @@
     <session id="1876122035">
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="class" value="8" />
+          <entry key="class" value="25" />
           <entry key="form" value="3" />
-          <entry key="java" value="114" />
-          <entry key="properties" value="4" />
+          <entry key="gradle" value="2" />
+          <entry key="java" value="222" />
+          <entry key="properties" value="5" />
+          <entry key="sh" value="1" />
           <entry key="xml" value="2" />
+          <entry key="yaml" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="CLASS" value="8" />
+          <entry key="Bash" value="1" />
+          <entry key="CLASS" value="25" />
           <entry key="GUI_DESIGNER_FORM" value="3" />
-          <entry key="JAVA" value="114" />
-          <entry key="Properties" value="4" />
+          <entry key="Groovy" value="2" />
+          <entry key="JAVA" value="222" />
+          <entry key="Properties" value="5" />
           <entry key="XML" value="2" />
+          <entry key="YAML" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="class" value="1" />
-          <entry key="java" value="10305" />
+          <entry key="gradle" value="35" />
+          <entry key="java" value="17775" />
           <entry key="properties" value="348" />
           <entry key="txt" value="6" />
         </counts>
@@ -31,7 +38,8 @@
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="CLASS" value="1" />
-          <entry key="JAVA" value="10305" />
+          <entry key="Groovy" value="35" />
+          <entry key="JAVA" value="17775" />
           <entry key="PLAIN_TEXT" value="6" />
           <entry key="Properties" value="348" />
         </counts>

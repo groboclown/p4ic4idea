@@ -72,13 +72,13 @@ public class IdeChangelistCacheStore {
 
     public String getMappedIdeChangeListId(P4ChangelistId p4id)
             throws InterruptedException {
-        return lockTimeout.withLock(lock.readLock(), () -> linkedChangelistIds.get(p4id));
+        return lockTimeout.withReadLock(lock, () -> linkedChangelistIds.get(p4id));
     }
 
     @NotNull
     public List<P4ChangelistId> getLinkedChangelists(@NotNull String ideId)
             throws InterruptedException {
-        return lockTimeout.withLock(lock.readLock(), () -> {
+        return lockTimeout.withReadLock(lock, () -> {
             List<P4ChangelistId> ret = new ArrayList<>();
             for (Map.Entry<P4ChangelistId, String> entry : linkedChangelistIds.entrySet()) {
                 if (entry.getValue().equals(ideId)) {
@@ -92,14 +92,14 @@ public class IdeChangelistCacheStore {
     @NotNull
     public Map<P4ChangelistId, String> getLinkedChangelistIds()
             throws InterruptedException {
-        return lockTimeout.withLock(lock.readLock(), () -> new HashMap<>(linkedChangelistIds));
+        return lockTimeout.withReadLock(lock, () -> new HashMap<>(linkedChangelistIds));
     }
 
 
     @NotNull
     public List<P4LocalChangelist> getPendingChangelists()
             throws InterruptedException {
-        return lockTimeout.withLock(lock.readLock(), () -> new ArrayList<>(pendingChangelists.values()));
+        return lockTimeout.withReadLock(lock, () -> new ArrayList<>(pendingChangelists.values()));
     }
 
 
@@ -107,20 +107,25 @@ public class IdeChangelistCacheStore {
     public P4LocalChangelist getPendingChangelist(CreateChangelistAction action, boolean create)
             throws InterruptedException {
         String actionId = action.getActionId();
-        return lockTimeout.withLock(lock.readLock(), () -> {
+        // Note: cannot obtain a write lock while within a read lock, so, because the operation
+        // has the chance to perform a write operation, the whole thing must be a write operation.
+        return lockTimeout.withWriteLock(lock, () -> {
             P4LocalChangelist pending = pendingChangelists.get(actionId);
             if (pending == null && create) {
-                pending = lockTimeout.withLock(lock.writeLock(), () -> {
-                    Integer next = pendingChangelistIdCounter.decrementAndGet();
-                    P4LocalChangelist changelist = new P4LocalChangelistBuilder()
-                            .withChangelistId(action.getClientServerRef(), next)
-                            .withClientname(action.getClientServerRef().getClientName())
-                            .withComment(action.getComment())
-                            .build();
+                int next = pendingChangelistIdCounter.decrementAndGet();
+                pending = new P4LocalChangelistBuilder()
+                        .withChangelistId(action.getClientServerRef(), next)
+                        .withClientname(action.getClientServerRef().getClientName())
+                        .withComment(action.getComment())
 
-                    pendingChangelists.put(actionId, changelist);
-                    return changelist;
-                });
+                        // We don't have this information, but we can't use a null value.
+                        // Attempting to store this information won't enrich the UI, so leave
+                        // a dummy value.
+                        .withUsername("(unknown)")
+
+                        .build();
+
+                pendingChangelists.put(actionId, pending);
             }
             return pending;
         });
@@ -132,7 +137,7 @@ public class IdeChangelistCacheStore {
 
         // Should always be non-null, because of create=true, but just to be sure...
         if (changelist != null) {
-            lockTimeout.withLock(lock.writeLock(), () -> {
+            lockTimeout.withWriteLock(lock, () -> {
                 linkedChangelistIds.put(changelist.getChangelistId(), localId);
             });
         }
@@ -140,7 +145,7 @@ public class IdeChangelistCacheStore {
 
     public void setLink(@NotNull P4ChangelistId p4ChangelistId, @NotNull String localId)
             throws InterruptedException {
-        lockTimeout.withLock(lock.writeLock(), () -> {
+        lockTimeout.withWriteLock(lock, () -> {
             linkedChangelistIds.put(p4ChangelistId, localId);
         });
     }
@@ -148,7 +153,7 @@ public class IdeChangelistCacheStore {
 
     public void updateCreatedChangelist(@NotNull P4ChangelistId serverChangelistId, @NotNull CreateChangelistAction action)
             throws InterruptedException {
-        lockTimeout.withLock(lock.writeLock(), () -> {
+        lockTimeout.withWriteLock(lock, () -> {
             P4LocalChangelist pendingChange = pendingChangelists.get(action.getActionId());
             if (pendingChange != null) {
                 // Update its link
@@ -166,7 +171,7 @@ public class IdeChangelistCacheStore {
 
     public void removeAction(@NotNull CreateChangelistAction action)
             throws InterruptedException {
-        lockTimeout.withLock(lock.writeLock(), () -> {
+        lockTimeout.withWriteLock(lock, () -> {
             P4LocalChangelist pendingChange = pendingChangelists.remove(action.getActionId());
             if (pendingChange != null) {
                 linkedChangelistIds.remove(pendingChange.getChangelistId());
@@ -177,7 +182,7 @@ public class IdeChangelistCacheStore {
 
     public void deleteChangelist(@NotNull P4ChangelistId changelistId)
             throws InterruptedException {
-        lockTimeout.withLock(lock.writeLock(), () -> {
+        lockTimeout.withWriteLock(lock, () -> {
             linkedChangelistIds.remove(changelistId);
             for (Map.Entry<String, P4LocalChangelist> entry : pendingChangelists.entrySet()) {
                 if (entry.getValue().getChangelistId().equals(changelistId)) {
@@ -194,7 +199,7 @@ public class IdeChangelistCacheStore {
             throws InterruptedException {
         final State ret = new State();
 
-        lockTimeout.withLock(lock.readLock(), () -> {
+        lockTimeout.withReadLock(lock, () -> {
             ret.linkedChangelistMap = new ArrayList<>(linkedChangelistIds.size());
             for (Map.Entry<P4ChangelistId, String> entry : linkedChangelistIds.entrySet()) {
                 LinkedChangelistState state = new LinkedChangelistState();
@@ -220,7 +225,7 @@ public class IdeChangelistCacheStore {
     void setState(@Nullable State state)
             throws InterruptedException {
         if (state != null) {
-            lockTimeout.withLock(lock.writeLock(), () -> {
+            lockTimeout.withWriteLock(lock, () -> {
                 linkedChangelistIds.clear();
                 for (LinkedChangelistState linkedChangelistState : state.linkedChangelistMap) {
                     P4ChangelistId p4id = P4ChangelistIdStore.read(linkedChangelistState.changelistId);

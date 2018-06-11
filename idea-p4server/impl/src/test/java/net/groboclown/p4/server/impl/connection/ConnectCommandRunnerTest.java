@@ -15,6 +15,8 @@ package net.groboclown.p4.server.impl.connection;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.vcsUtil.VcsUtil;
+import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.test.P4ServerExtension;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
@@ -44,7 +46,10 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4JobField;
+import net.groboclown.p4.server.impl.connection.impl.MessageStatusUtil;
+import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
 import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
+import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4.server.impl.values.P4JobImpl;
 import org.junit.jupiter.api.Assertions;
@@ -56,6 +61,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -78,9 +84,11 @@ class ConnectCommandRunnerTest {
     private static final String JOB_ID = "job-123";
     private static final String JOB_DESCRIPTION = "this is the job description";
 
+    @SuppressWarnings("WeakerAccess")
     @RegisterExtension
     IdeaLightweightExtension idea = new IdeaLightweightExtension();
 
+    @SuppressWarnings("WeakerAccess")
     @RegisterExtension
     P4ServerExtension server = new P4ServerExtension(false);
 
@@ -308,7 +316,7 @@ class ConnectCommandRunnerTest {
                         runner.perform(clientConfig, new AddEditAction(newFile, null, null, null))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
-                                                new P4ChangelistIdImpl(-1, clientConfig.getClientServerRef()),
+                                                new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
                                                 null, "add file", null)))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new AddEditAction(newFile, null, null, null)))
@@ -358,7 +366,7 @@ class ConnectCommandRunnerTest {
                         runner.perform(clientConfig, new AddEditAction(newFile, null, null, null))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
-                                                new P4ChangelistIdImpl(-1, clientConfig.getClientServerRef()),
+                                                new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
                                                 null, null, null)))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
@@ -497,12 +505,25 @@ class ConnectCommandRunnerTest {
         final File clientRoot = tmpDir.newFile("clientRoot");
         final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
+        final List<IFileSpec> specs = FileSpecBuildUtil.forFilePaths(newFile);
+        final P4CommandUtil cmd = new P4CommandUtil();
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
+                .mapAsync((runner) ->
+                    runner.withConnection(clientConfig, (client) -> {
+                        List<IFileSpec> msgs = cmd.addFiles(client, specs, null, null, null);
+                        MessageStatusUtil.throwIfError(msgs);
+                        IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
+                        change.setDescription("add initial file");
+                        msgs = cmd.submitChangelist(null, null, change);
+                        MessageStatusUtil.throwIfError(msgs);
+                        return runner;
+                    })
+                )
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig, new DeleteFileAction(newFile,
-                                    new P4ChangelistIdImpl(1, clientConfig.getClientServerRef())))
+                                    new P4ChangelistIdImpl(0, clientConfig.getClientServerRef())))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -744,7 +765,7 @@ class ConnectCommandRunnerTest {
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
                         runner.describeChangelist(serverConfig, new DescribeChangelistQuery(
-                                new P4ChangelistIdImpl(-1, clientConfig.getClientServerRef())))
+                                new P4ChangelistIdImpl(0, clientConfig.getClientServerRef())))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )

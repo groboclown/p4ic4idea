@@ -65,9 +65,13 @@ public class VcsRootCacheStore {
 
     public VcsRootCacheStore(@NotNull State root, @Nullable ClassLoader classLoader) {
         this.rootDirectory = VcsUtil.getVirtualFile(root.rootDirectory);
-        this.configParts = new ArrayList<>(root.configParts.size());
-        for (ConfigPartState configPart : root.configParts) {
-            this.configParts.add(convert(configPart, rootDirectory, classLoader));
+        if (root.configParts == null) {
+            this.configParts = new ArrayList<>();
+        } else {
+            this.configParts = new ArrayList<>(root.configParts.size());
+            for (ConfigPartState configPart : root.configParts) {
+                this.configParts.add(convert(configPart, rootDirectory, classLoader));
+            }
         }
     }
 
@@ -86,6 +90,11 @@ public class VcsRootCacheStore {
     @NotNull
     public List<ConfigPart> getConfigParts() {
         return configParts;
+    }
+
+    @NotNull
+    VirtualFile getRootDirectory() {
+        return rootDirectory;
     }
 
     @NotNull

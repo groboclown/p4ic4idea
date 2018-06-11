@@ -81,7 +81,7 @@ public class JreSettings {
     }
 
     @TestOnly
-    static void setOverrides(@Nullable Map<String, String> overrides) {
+    public static void setOverrides(@Nullable Map<String, String> overrides) {
         OVERRIDES.clear();
         if (overrides != null) {
             OVERRIDES.putAll(overrides);
@@ -90,7 +90,7 @@ public class JreSettings {
 
     @SafeVarargs
     @TestOnly
-    static void setOverrides(@NotNull Pair<String, String>... pairs) {
+    public static void setOverrides(@NotNull Pair<String, String>... pairs) {
         OVERRIDES.clear();
         for (Pair<String, String> pair : pairs) {
             OVERRIDES.put(pair.first, pair.second);

@@ -46,6 +46,7 @@ public enum P4FileAction {
     /** not marked as modified */
     NONE;
 
+    // Tests are in impl.
 
     @NotNull
     public static P4FileAction convert(@Nullable FileAction action) {

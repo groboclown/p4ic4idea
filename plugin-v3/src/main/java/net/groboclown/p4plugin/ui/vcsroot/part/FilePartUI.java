@@ -17,6 +17,7 @@ package net.groboclown.p4plugin.ui.vcsroot.part;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.impl.config.part.FileConfigPart;
 import net.groboclown.p4plugin.P4Bundle;
@@ -67,7 +68,7 @@ public class FilePartUI extends ConfigPartUI<FileConfigPart> {
         @NotNull
         @Override
         public ConfigPartUI createEmpty(@NotNull VirtualFile vcsRoot, ConfigConnectionController controller) {
-            return new FilePartUI(new FileConfigPart(vcsRoot, new File(DEFAULT_FILE_NAME)));
+            return new FilePartUI(new FileConfigPart(vcsRoot, VcsUtil.getVirtualFile(DEFAULT_FILE_NAME)));
         }
     }
 
@@ -76,8 +77,8 @@ public class FilePartUI extends ConfigPartUI<FileConfigPart> {
         super(part);
         setupUI();
 
-        File path = part.getFilePath();
-        fileLocation.getTextField().setText(path == null ? null : path.getAbsolutePath());
+        VirtualFile path = part.getConfigFile();
+        fileLocation.getTextField().setText(path == null ? null : path.getPath());
         fileLocation.addBrowseFolderListener(
                 P4Bundle.message("configuration.connection-choice.picker.p4config"),
                 P4Bundle.message("configuration.p4config.chooser"),
@@ -103,7 +104,7 @@ public class FilePartUI extends ConfigPartUI<FileConfigPart> {
     @NotNull
     @Override
     protected FileConfigPart loadUIValuesIntoPart(@NotNull FileConfigPart part) {
-        part.setFilePath(getSelectedLocation());
+        part.setConfigFile(getSelectedLocation());
         return part;
     }
 

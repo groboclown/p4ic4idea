@@ -17,23 +17,15 @@ import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.mock.MockThreadRunner;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ResultErrorUtil;
-import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 class AsyncAnswerTest {
     @RegisterExtension
@@ -159,10 +151,17 @@ class AsyncAnswerTest {
     }
 
     @Test
-    void future_resolved() {
+    void future_resolved()
+            throws InterruptedException, P4CommandRunner.ServerResultException {
         MockThreadRunner tr = new MockThreadRunner(idea);
         tr.setNextWaitKey("bg1");
         AsyncAnswer<Object> answer1 = new AsyncAnswer<>();
-        // FIXME ensure future -> resolved works right, when setup before action starts.
+        answer1.resolve("a");
+        AsyncAnswer<Object> answer2 = new AsyncAnswer<>();
+        Answer<Object> answer3 = answer2.futureMap((x, sink) -> answer1.whenCompleted(sink::resolve));
+        answer2.resolve("b");
+        assertEquals("a", Answer.blockingGet(answer3, 100, TimeUnit.MILLISECONDS));
     }
+
+    // TODO tests for reject errors passed to other promises.
 }

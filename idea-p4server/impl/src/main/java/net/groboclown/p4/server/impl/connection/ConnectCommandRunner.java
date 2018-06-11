@@ -30,7 +30,6 @@ import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
-import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.FixJobsOptions;
@@ -77,7 +76,6 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
-import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
 import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
@@ -262,7 +260,7 @@ public class ConnectCommandRunner
         }
 
         // First, discover if the file is known by the server.
-        List<IFileSpec> srcFiles = FileSpecBuildUtil.forEscapedFilePaths(action.getFile());
+        List<IFileSpec> srcFiles = FileSpecBuildUtil.escapedForFilePaths(action.getFile());
         OpenFileStatus status = new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(), srcFiles, 1000));
         status.throwIfError();
 
@@ -465,7 +463,7 @@ public class ConnectCommandRunner
             LOG.debug("Running delete against the server for " + action.getFile());
         }
 
-        List<IFileSpec> files = FileSpecBuildUtil.forFilePaths(action.getFile());
+        List<IFileSpec> files = FileSpecBuildUtil.escapedForFilePaths(action.getFile());
         OpenFileStatus status = new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(), files, 1000));
         status.throwIfError();
 

@@ -15,19 +15,20 @@
 package net.groboclown.p4.server.impl.config.part;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ConfigProblem;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
+import net.groboclown.p4.server.api.util.EqualUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +39,7 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
     private static final Logger LOG = Logger.getInstance(FileConfigPart.class);
 
     @Nullable
-    private File filePath;
+    private VirtualFile filePath;
     private final VirtualFile vcsRoot;
 
     private String rawPort;
@@ -56,15 +57,18 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
 
     private IOException loadError = null;
 
-    public FileConfigPart(@NotNull VirtualFile vcsRoot, @Nullable File filePath) {
+    public FileConfigPart(@NotNull VirtualFile vcsRoot, @Nullable VirtualFile filePath) {
         this.vcsRoot = vcsRoot;
         this.filePath = filePath;
         reload();
     }
 
     // for ConfigStateProvider
+    @SuppressWarnings("unused")
     public FileConfigPart(String sourceName, @NotNull VirtualFile vcsRoot, @NotNull Map<String, String> stateValues) {
-        this(vcsRoot, stateValues.get("f") == null ? null : new File(stateValues.get("f")));
+        this(vcsRoot, stateValues.get("f") == null
+                ? null
+                : LocalFileSystem.getInstance().findFileByPath(stateValues.get("f")));
     }
 
     @Override
@@ -73,7 +77,7 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
             return false;
         }
         FileConfigPart that = (FileConfigPart) o;
-        return FileUtil.filesEqual(filePath, that.filePath);
+        return EqualUtil.isEqual(filePath, that.filePath);
     }
 
     @Override
@@ -81,7 +85,7 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
         if (filePath == null) {
             return 0;
         }
-        return FileUtil.fileHashCode(filePath);
+        return filePath.hashCode();
     }
 
     @Override
@@ -97,12 +101,18 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
         return vcsRoot;
     }
 
-    public File getFilePath() {
-        return filePath;
+    public void setConfigFile(@Nullable VirtualFile filePath) {
+        this.filePath = filePath;
+        reload();
     }
 
-    public void setFilePath(String name) {
-        this.filePath = toFile(name);
+    public void setConfigFile(@Nullable String filePath) {
+        setConfigFile(filePath == null ? null : LocalFileSystem.getInstance().findFileByPath(filePath));
+    }
+
+    @Nullable
+    public VirtualFile getConfigFile() {
+        return filePath;
     }
 
     @Override
@@ -177,7 +187,7 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
             //return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.no-file", true));
             return Collections.singleton(new ConfigProblem(this, "No file set", true));
         }
-        if (! filePath.exists() || ! filePath.isFile()) {
+        if (! filePath.exists() || filePath.isDirectory()) {
             // FIXME SET MESSAGE CORRECTLY, and use "filePath"
             //return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.bad-file", true));
             return Collections.singleton(new ConfigProblem(this, "Invalid file " + filePath, true));
@@ -202,17 +212,6 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
     @Override
     public String getRawPort() {
         return rawPort;
-    }
-
-
-    public void setConfigFile(@Nullable File filePath) {
-        this.filePath = filePath;
-        reload();
-    }
-
-    @Nullable
-    public File getConfigFile() {
-        return filePath;
     }
 
     @Nls
@@ -365,11 +364,10 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
         return ret;
     }
 
-    private static Properties loadProps(@Nullable File filePath) throws IOException {
+    private static Properties loadProps(@Nullable VirtualFile filePath) throws IOException {
         Properties props = new Properties();
         if (filePath != null) {
-            FileReader reader = new FileReader(filePath);
-            try {
+            try (InputStreamReader reader = new InputStreamReader(filePath.getInputStream(), filePath.getCharset())) {
                 // The Perforce config file is NOT the same as a Java
                 // config file.  Java config files will read the "\" as
                 // an escape character, whereas the Perforce config file
@@ -388,8 +386,6 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
                         }
                     }
                 }
-            } finally {
-                reader.close();
             }
         }
         LOG.debug("Loaded property file " + filePath + " keys " + props.keySet());
@@ -400,7 +396,7 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
     @Override
     public Map<String, String> getState() {
         Map<String, String> ret = new HashMap<>();
-        ret.put("f", filePath == null ? null : filePath.getAbsolutePath());
+        ret.put("f", filePath == null ? null : filePath.getPath());
         return ret;
     }
 }

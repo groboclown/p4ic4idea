@@ -47,6 +47,8 @@ class WinRegDataPart implements ConfigPart {
             "SOFTWARE\\Wow6432Node\\Perforce\\Environment"
     };
 
+    private static boolean available = true;
+
     private final int hive;
     private final String[] keys;
 
@@ -67,7 +69,11 @@ class WinRegDataPart implements ConfigPart {
 
 
     static boolean isAvailable() {
-        return SystemInfo.isWindows;
+        return available && SystemInfo.isWindows;
+    }
+
+    static void setAvailable(boolean avail) {
+        available = avail;
     }
 
     WinRegDataPart(boolean userReg) {

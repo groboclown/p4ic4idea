@@ -77,7 +77,7 @@ class OpenFileStatusTest {
         setupClient(clientConfig, tmpDir, clientRoot)
                 .mapAsync((runner) ->
                     runner.withConnection(clientConfig, (client) -> {
-                        List<IFileSpec> srcFiles = FileSpecBuildUtil.forEscapedFilePaths(newFile);
+                        List<IFileSpec> srcFiles = FileSpecBuildUtil.escapedForFilePaths(newFile);
                         return new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(), srcFiles, 1000));
                     })
                 )
@@ -130,7 +130,7 @@ class OpenFileStatusTest {
                             MessageStatusUtil.throwIfError(msgs);
 
                             // Get the status
-                            List<IFileSpec> serverFiles = FileSpecBuildUtil.forEscapedFilePaths(newFile);
+                            List<IFileSpec> serverFiles = FileSpecBuildUtil.escapedForFilePaths(newFile);
                             return new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(),
                                     serverFiles, 1000));
                         })
@@ -188,7 +188,7 @@ class OpenFileStatusTest {
                             MessageStatusUtil.throwIfError(msgs);
 
                             // Get the status
-                            List<IFileSpec> serverFiles = FileSpecBuildUtil.forEscapedFilePaths(newFile);
+                            List<IFileSpec> serverFiles = FileSpecBuildUtil.escapedForFilePaths(newFile);
                             return new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(),
                                     serverFiles, 1000));
                         })
@@ -246,7 +246,7 @@ class OpenFileStatusTest {
                             MessageStatusUtil.throwIfError(msgs);
 
                             // Open for edit
-                            List<IFileSpec> serverFiles = FileSpecBuildUtil.forEscapedFilePaths(newFile);
+                            List<IFileSpec> serverFiles = FileSpecBuildUtil.escapedForFilePaths(newFile);
                             msgs = cmd.editFiles(client, serverFiles, null, null, null);
                             MessageStatusUtil.throwIfError(msgs);
 
@@ -308,7 +308,7 @@ class OpenFileStatusTest {
                             MessageStatusUtil.throwIfError(msgs);
 
                             // Open for delete
-                            List<IFileSpec> serverFiles = FileSpecBuildUtil.forEscapedFilePaths(newFile);
+                            List<IFileSpec> serverFiles = FileSpecBuildUtil.escapedForFilePaths(newFile);
                             msgs = cmd.deleteFiles(client, serverFiles, null);
                             MessageStatusUtil.throwIfError(msgs);
 

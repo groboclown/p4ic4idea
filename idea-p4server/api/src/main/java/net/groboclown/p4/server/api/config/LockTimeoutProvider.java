@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnegative;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Supplier;
 
 public interface LockTimeoutProvider {
@@ -28,11 +29,26 @@ public interface LockTimeoutProvider {
     @NotNull
     TimeUnit getLockTimeoutUnit();
 
+
+    <T> T withWriteLock(@NotNull ReadWriteLock lock, @NotNull InterruptableSupplier<T> supplier)
+            throws InterruptedException;
+
+    <T> T withReadLock(@NotNull ReadWriteLock lock, @NotNull InterruptableSupplier<T> supplier)
+            throws InterruptedException;
+
+    void withWriteLock(@NotNull ReadWriteLock lock, @NotNull InterruptableRunner runnable)
+            throws InterruptedException;
+
+    void withReadLock(@NotNull ReadWriteLock lock, @NotNull InterruptableRunner runnable)
+            throws InterruptedException;
+
+    /*
     <T> T withLock(@NotNull Lock lock, @NotNull InterruptableSupplier<T> supplier)
             throws InterruptedException;
 
     void withLock(@NotNull Lock lock, @NotNull InterruptableRunner runnable)
             throws InterruptedException;
+    */
 
     interface InterruptableRunner {
         void run() throws InterruptedException;

@@ -15,6 +15,8 @@
 package net.groboclown.p4.server.impl.config.part;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.env.PerforceEnvironment;
 import net.groboclown.p4.server.api.P4ServerName;
@@ -47,6 +49,7 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
     }
 
     // for ConfigStateProvider
+    @SuppressWarnings("unused")
     public EnvCompositePart(String sourceName, @NotNull VirtualFile vcsRoot, Map<String, String> values) {
         this(vcsRoot);
     }
@@ -277,10 +280,10 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
         FileConfigPart p4enviroPart = null;
         {
             if (p4enviro != null) {
-                File f = getRelFile(p4enviro);
+                VirtualFile f = getRelFile(p4enviro);
                 // The P4ENVIRO will have a default value if the user didn't specify one.
                 // Therefore, if the file doesn't exist, don't complain.
-                if (f.exists()) {
+                if (f != null && f.exists()) {
                     p4enviroPart = new FileConfigPart(vcsRoot, f);
                     p4enviroPart.reload();
                     if (LOG.isDebugEnabled()) {
@@ -317,24 +320,22 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
             if (p4config != null) {
                 if (p4config.indexOf('/') >= 0 || p4config.indexOf('\\') >= 0 || p4config.indexOf(File.separatorChar) >= 0) {
                     // File location
-                    File f = new File(p4config);
-                    if (!f.isAbsolute()) {
-                        f = new File(new File(vcsRoot.getPath()), p4config);
+                    VirtualFile f = getRelFile(p4config);
+                    if (f != null) {
+                        final FileConfigPart envConf = new FileConfigPart(vcsRoot, f);
+                        envConf.reload();
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Env defined absolute P4CONFIG: " + f + ": " +
+                                    ConfigPropertiesUtil.toProperties(envConf,
+                                            "<unset>", "<empty>", "<set>"));
+                        }
+                        p4configPart = envConf;
                     }
-
-                    final FileConfigPart envConf = new FileConfigPart(vcsRoot, f);
-                    envConf.reload();
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Env defined absolute P4CONFIG: " + f + ": " +
-                                ConfigPropertiesUtil.toProperties(envConf,
-                                        "<unset>", "<empty>", "<set>"));
-                    }
-                    p4configPart = envConf;
                 } else {
                     // Scan from the vcs root down for a matching file name.
                     // TODO eventually allow for proper p4config loading, with multiple
                     // roots generated.
-                    File f = scanParentsForFile(vcsRoot, p4config);
+                    VirtualFile f = scanParentsForFile(vcsRoot, p4config);
                     if (f != null) {
                         FileConfigPart part = new FileConfigPart(vcsRoot, f);
                         part.reload();
@@ -431,7 +432,7 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
      * variable help</a>
      */
     @Nullable
-    private File getDefaultAuthTicketFile() {
+    private VirtualFile getDefaultAuthTicketFile() {
         // Cannot use the user.home system property, because there are very exact meanings to
         // the default locations.
 
@@ -452,7 +453,7 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
      * variable help</a>
      */
     @Nullable
-    private File getDefaultTrustTicketFile() {
+    private VirtualFile getDefaultTrustTicketFile() {
         // Windows check
         String userprofile = JreSettings.getEnv("USERPROFILE");
         if (userprofile != null) {
@@ -465,21 +466,20 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
         return null;
     }
 
-    @NotNull
-    File getFileAt(@NotNull String dir, @NotNull String name) {
-        return new File(new File(dir), name);
+    @Nullable
+    private VirtualFile getFileAt(@NotNull String dir, @NotNull String name) {
+        return LocalFileSystem.getInstance().findFileByPath(FileUtil.join(dir, name));
     }
 
-    @NotNull
-    File getRelFile(@NotNull String path) {
-        File f = new File(path);
-        if (!f.isAbsolute()) {
-            f = new File(vcsRoot.getPath(), path);
+    @Nullable
+    private VirtualFile getRelFile(@NotNull String path) {
+        if (FileUtil.isAbsolute(path)) {
+            return LocalFileSystem.getInstance().findFileByPath(path);
         }
-        return getFileAt(f.getParent(), f.getName());
+        return getFileAt(vcsRoot.getPath(), path);
     }
 
-    File scanParentsForFile(@NotNull VirtualFile initialDir, @NotNull String fileName) {
+    private VirtualFile scanParentsForFile(@NotNull VirtualFile initialDir, @NotNull String fileName) {
         VirtualFile prevParent;
         VirtualFile parent = initialDir;
         do {

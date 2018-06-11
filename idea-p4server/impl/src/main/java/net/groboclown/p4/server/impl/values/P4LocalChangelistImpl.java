@@ -50,7 +50,7 @@ public class P4LocalChangelistImpl implements P4LocalChangelist {
         private boolean deleted;
         private List<FilePath> containedFiles = new ArrayList<>();
         private List<P4RemoteFile> shelvedFiles = new ArrayList<>();
-        private P4ChangelistType type;
+        private P4ChangelistType type = P4ChangelistType.PUBLIC;
         private String clientname;
         private String username;
         private List<P4Job> jobs = new ArrayList<>();
@@ -94,11 +94,6 @@ public class P4LocalChangelistImpl implements P4LocalChangelist {
             return this;
         }
 
-        public P4LocalChangelistImpl build() {
-            return new P4LocalChangelistImpl(changelistId, comment, deleted, containedFiles,
-                    shelvedFiles, type, clientname, username, jobs, jobStatus);
-        }
-
         public Builder withDelete(boolean b) {
             this.deleted = b;
             return this;
@@ -122,11 +117,21 @@ public class P4LocalChangelistImpl implements P4LocalChangelist {
             return this;
         }
 
+        public Builder withType(P4ChangelistType type) {
+            this.type = type;
+            return this;
+        }
+
         public Builder withVirtualFiles(VirtualFile... files) {
             for (VirtualFile file : files) {
                 this.containedFiles.add(VcsUtil.getFilePath(file));
             }
             return this;
+        }
+
+        public P4LocalChangelistImpl build() {
+            return new P4LocalChangelistImpl(changelistId, comment, deleted, containedFiles,
+                    shelvedFiles, type, clientname, username, jobs, jobStatus);
         }
     }
 

@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Supplier;
 
 public class LockTimeoutProviderImpl implements LockTimeoutProvider {
@@ -36,25 +37,46 @@ public class LockTimeoutProviderImpl implements LockTimeoutProvider {
         return unit;
     }
 
-    @Override
-    public <T> T withLock(@NotNull Lock lock, @NotNull InterruptableSupplier<T> supplier)
+    public <T> T withWriteLock(@NotNull ReadWriteLock lock, @NotNull InterruptableSupplier<T> supplier)
             throws InterruptedException {
-        lock.tryLock(getLockTimeout(), getLockTimeoutUnit());
+        tryLock(lock.writeLock());
         try {
             return supplier.get();
         } finally {
-            lock.unlock();
+            lock.writeLock().unlock();
         }
     }
 
     @Override
-    public void withLock(@NotNull Lock lock, @NotNull InterruptableRunner runnable)
+    public void withWriteLock(@NotNull ReadWriteLock lock, @NotNull InterruptableRunner runnable)
             throws InterruptedException {
-        lock.tryLock(getLockTimeout(), getLockTimeoutUnit());
+        tryLock(lock.writeLock());
         try {
             runnable.run();
         } finally {
-            lock.unlock();
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public <T> T withReadLock(@NotNull ReadWriteLock lock, @NotNull InterruptableSupplier<T> supplier)
+            throws InterruptedException {
+        tryLock(lock.readLock());
+        try {
+            return supplier.get();
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public void withReadLock(@NotNull ReadWriteLock lock, @NotNull InterruptableRunner runnable)
+            throws InterruptedException {
+        tryLock(lock.readLock());
+        try {
+            runnable.run();
+        } finally {
+            lock.readLock().unlock();
         }
     }
 
@@ -64,5 +86,13 @@ public class LockTimeoutProviderImpl implements LockTimeoutProvider {
         }
         this.timeout = timeout;
         this.unit = unit;
+    }
+
+    private final void tryLock(@NotNull Lock lock)
+            throws InterruptedException {
+        if (!lock.tryLock(getLockTimeout(), getLockTimeoutUnit())) {
+            throw new InterruptedException("Timeout acquiring lock after " + getLockTimeout() + " " +
+                    getLockTimeoutUnit().toString().toLowerCase());
+        }
     }
 }

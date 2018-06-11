@@ -13,8 +13,10 @@
  */
 package net.groboclown.p4.server.impl.cache;
 
+import net.groboclown.idea.extensions.IdeaLightweightExtension;
+import net.groboclown.idea.mock.MockLocalChangeList;
 import net.groboclown.p4.server.api.MockConfigPart;
-import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
@@ -26,6 +28,7 @@ import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4.server.impl.values.P4LocalChangelistImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,6 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class CacheQueryHandlerImplTest {
+    @RegisterExtension
+    IdeaLightweightExtension idea = new IdeaLightweightExtension();
 
     @Test
     void getCachedOpenedChangelists_noCacheForClient() {
@@ -64,6 +69,8 @@ class CacheQueryHandlerImplTest {
         P4LocalChangelist cl1 = new P4LocalChangelistImpl.Builder()
                 .withChangelistId(new P4ChangelistIdImpl(1, clientConfig.getClientServerRef()))
                 .withComment("comment 1")
+                .withClientname(clientConfig.getClientname())
+                .withUsername(serverConfig.getUsername())
                 .build();
         clientStore.setChangelists(cl1);
         projectStore.addCache(clientStore);
@@ -85,6 +92,8 @@ class CacheQueryHandlerImplTest {
         P4LocalChangelist cl1 = new P4LocalChangelistImpl.Builder()
                 .withChangelistId(new P4ChangelistIdImpl(1, clientConfig.getClientServerRef()))
                 .withComment("comment 1")
+                .withClientname(clientConfig.getClientname())
+                .withUsername(serverConfig.getUsername())
                 .build();
 
         projectStore.addPendingAction(ActionStore.createPendingAction(
@@ -109,8 +118,18 @@ class CacheQueryHandlerImplTest {
         P4LocalChangelist cl1 = new P4LocalChangelistImpl.Builder()
                 .withChangelistId(new P4ChangelistIdImpl(1, clientConfig.getClientServerRef()))
                 .withComment("comment 1")
+                .withClientname(clientConfig.getClientname())
+                .withUsername(serverConfig.getUsername())
                 .build();
         CreateChangelistAction addChangelistAction = new CreateChangelistAction(clientConfig.getClientServerRef(), "my comment");
+
+        // Simulated P4ChangeProvider action.
+        MockLocalChangeList ideChangeList = new MockLocalChangeList();
+        ideChangeList.setName("id:123");
+        IdeChangelistMap ideChangelistMap = new IdeChangelistMapImpl(idea.getMockProject(), query,
+                projectStore.getChangelistCacheStore());
+        ideChangelistMap.setMapping(addChangelistAction, ideChangeList);
+
         projectStore.addPendingAction(ActionStore.createPendingAction(
                 clientConfig.getClientServerRef(), addChangelistAction));
         clientStore.setChangelists(cl1);
@@ -126,11 +145,15 @@ class CacheQueryHandlerImplTest {
 
         assertEqualChangelists(cl1, res1);
 
-        assertEquals(projectStore.getChangelistCacheStore().getPendingChangelist(addChangelistAction, false),
+        assertEquals(projectStore.getChangelistCacheStore().getPendingChangelist(addChangelistAction, false).getChangelistId().getChangelistId(),
                 res2.getChangelistId().getChangelistId());
         assertEquals("my comment", res2.getComment());
         assertEquals(clientConfig.getClientname(), res2.getClientname());
-        assertEquals(clientConfig.getServerConfig().getUsername(), res2.getUsername());
+
+        // Note: information about the user name just isn't available in the depths of the code,
+        // and it doesn't add any real benefit to the UI display.
+        assertEquals("(unknown)", res2.getUsername());
+
         assertEmpty(res2.getAttachedJobs());
         assertEmpty(res2.getShelvedFiles());
         assertEmpty(res2.getFiles());

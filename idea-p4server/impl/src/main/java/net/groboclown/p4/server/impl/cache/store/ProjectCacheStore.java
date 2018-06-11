@@ -112,7 +112,7 @@ public class ProjectCacheStore {
 
     public void setState(@Nullable State state)
             throws InterruptedException {
-        lockTimeout.withLock(lock.writeLock(), () -> {
+        lockTimeout.withWriteLock(lock, () -> {
             serverQueryCache.clear();
             clientQueryCache.clear();
             pendingActions.clear();
@@ -174,7 +174,7 @@ public class ProjectCacheStore {
     @Nullable
     public <T> T read(P4ServerName config, T defaultValue, Function<ServerQueryCacheStore, T> fun)
             throws InterruptedException {
-        return lockTimeout.withLock(lock.readLock(), () -> {
+        return lockTimeout.withReadLock(lock, () -> {
             ServerQueryCacheStore store = serverQueryCache.get(config);
             if (store != null) {
                 return fun.apply(store);
@@ -187,7 +187,7 @@ public class ProjectCacheStore {
     @Nullable
     public <T> T read(ClientConfig config, T defaultValue, Function<ClientQueryCacheStore, T> fun)
             throws InterruptedException {
-        return lockTimeout.withLock(lock.readLock(), () -> {
+        return lockTimeout.withReadLock(lock, () -> {
             ClientQueryCacheStore store = clientQueryCache.get(config.getClientServerRef());
             if (store != null) {
                 return fun.apply(store);
@@ -199,7 +199,7 @@ public class ProjectCacheStore {
 
     public void read(ClientConfig config, Consumer<ClientQueryCacheStore> fun)
             throws InterruptedException {
-        lockTimeout.withLock(lock.readLock(), () -> {
+        lockTimeout.withReadLock(lock, () -> {
             ClientQueryCacheStore store = clientQueryCache.get(config.getClientServerRef());
             if (store != null) {
                 fun.accept(store);
@@ -209,7 +209,7 @@ public class ProjectCacheStore {
 
     public void write(ClientConfig config, Consumer<ClientQueryCacheStore> fun)
             throws InterruptedException {
-        lockTimeout.withLock(lock.writeLock(), () -> {
+        lockTimeout.withWriteLock(lock, () -> {
             ClientQueryCacheStore store = clientQueryCache.get(config.getClientServerRef());
             if (store == null) {
                 store = new ClientQueryCacheStore(config.getClientServerRef());
@@ -221,7 +221,7 @@ public class ProjectCacheStore {
 
     public void write(P4ServerName config, Consumer<ServerQueryCacheStore> fun)
             throws InterruptedException {
-        lockTimeout.withLock(lock.writeLock(), () -> {
+        lockTimeout.withWriteLock(lock, () -> {
             ServerQueryCacheStore store = serverQueryCache.get(config);
             if (store == null) {
                 store = new ServerQueryCacheStore(config);
@@ -236,7 +236,7 @@ public class ProjectCacheStore {
             throws InterruptedException {
         final String sourceId = ActionStore.getSourceId(config);
         final List<P4CommandRunner.ServerAction<?>> actions = new ArrayList<>();
-        lockTimeout.withLock(lock.readLock(), () -> {
+        lockTimeout.withReadLock(lock, () -> {
             for (ActionStore.PendingAction pendingAction : pendingActions) {
                 if (pendingAction.isServerAction() && sourceId.equals(pendingAction.sourceId)) {
                     actions.add(pendingAction.serverAction);
@@ -252,7 +252,7 @@ public class ProjectCacheStore {
             throws InterruptedException {
         final String sourceId = ActionStore.getSourceId(config);
         final List<P4CommandRunner.ClientAction<?>> actions = new ArrayList<>();
-        lockTimeout.withLock(lock.readLock(), () -> {
+        lockTimeout.withReadLock(lock, () -> {
             for (ActionStore.PendingAction pendingAction : pendingActions) {
                 if (pendingAction.isClientAction() && sourceId.equals(pendingAction.sourceId)) {
                     actions.add(pendingAction.clientAction);
@@ -269,7 +269,7 @@ public class ProjectCacheStore {
         final String clientSourceId = ActionStore.getSourceId(config);
         final String serverSourceId = ActionStore.getSourceId(config.getServerConfig());
         final List<Pair<P4CommandRunner.ClientAction<?>, P4CommandRunner.ServerAction<?>>> actions = new ArrayList<>();
-        lockTimeout.withLock(lock.readLock(), () -> {
+        lockTimeout.withReadLock(lock, () -> {
             for (ActionStore.PendingAction pendingAction : pendingActions) {
                 if (pendingAction.isClientAction() && clientSourceId.equals(pendingAction.sourceId)) {
                     actions.add(new Pair<>(pendingAction.clientAction, null));
@@ -284,13 +284,13 @@ public class ProjectCacheStore {
     public void writeActions(ClientServerRef config, Consumer<WriteActionCache> fun)
             throws InterruptedException {
         WriteActionCache arg = new WriteActionCache(config);
-        lockTimeout.withLock(lock.writeLock(), () -> fun.accept(arg));
+        lockTimeout.withWriteLock(lock, () -> fun.accept(arg));
     }
 
     public void writeActions(P4ServerName config, Consumer<WriteActionCache> fun)
             throws InterruptedException {
         WriteActionCache arg = new WriteActionCache(config);
-        lockTimeout.withLock(lock.writeLock(), () -> fun.accept(arg));
+        lockTimeout.withWriteLock(lock, () -> fun.accept(arg));
     }
 
 

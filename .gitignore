@@ -17,6 +17,7 @@ p4ic4idea-*.jar
 # p4java needs to be updated to use the build directory instead of these.
 /p4java/tmp/
 /p4java/p4root/
+/idea-p4server/impl/p4d.d-*/
 
 # specific user properties
 local.properties

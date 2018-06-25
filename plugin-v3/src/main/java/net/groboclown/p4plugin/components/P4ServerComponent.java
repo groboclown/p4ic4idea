@@ -18,6 +18,7 @@ import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.TopCommandRunner;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.P4PluginVersion;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserResult;
 import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesQuery;
@@ -120,11 +121,7 @@ public class P4ServerComponent implements ProjectComponent {
         return new SimpleConnectionManager(
                 TempDirUtil.getTempDir(project),
                 UserProjectPreferences.getSocketSoTimeoutMillis(project),
-
-                // FIXME pull in the version from the classpath file
-                // Update P4VcsRootConfigurable when this is fixed.
-                "v-10-get-the-right-number",
-
+                P4PluginVersion.getPluginVersion(),
                 createErrorHandler()
         );
     }

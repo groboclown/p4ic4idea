@@ -36,7 +36,7 @@ public class P4ConfigurationProjectPanel implements Disposable {
         this.project = project;
     }
 
-    public synchronized boolean isModified(@NotNull UserProjectPreferences preferences) {
+    synchronized boolean isModified(@NotNull UserProjectPreferences preferences) {
         return isInitialized && myMainPanel.isModified(preferences);
     }
 

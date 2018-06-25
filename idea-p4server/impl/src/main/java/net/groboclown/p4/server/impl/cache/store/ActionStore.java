@@ -43,6 +43,7 @@ import java.util.Map;
 public class ActionStore {
 
 
+    @SuppressWarnings("WeakerAccess")
     public static class PendingAction {
         public final String sourceId;
         public final P4CommandRunner.ClientAction<?> clientAction;
@@ -110,7 +111,7 @@ public class ActionStore {
 
 
     @NotNull
-    public static P4CommandRunner.ClientAction<?> readClientAction(@NotNull State state) {
+    private static P4CommandRunner.ClientAction<?> readClientAction(@NotNull State state) {
         if (state.clientActionCmd == null) {
             throw new IllegalArgumentException("not a client action");
         }
@@ -166,7 +167,7 @@ public class ActionStore {
 
 
     @NotNull
-    public static P4CommandRunner.ServerAction<?> readServerAction(@NotNull State state) {
+    private static P4CommandRunner.ServerAction<?> readServerAction(@NotNull State state) {
         if (state.serverActionCmd == null) {
             throw new IllegalArgumentException("not a server action");
         }
@@ -242,16 +243,16 @@ public class ActionStore {
             }
             case DELETE_FILE: {
                 DeleteFileAction a = (DeleteFileAction) action;
-                ret.data.put("file", a.getFile());
+                ret.data.put("file", a.getFile().getPath());
                 ret.data.put("cl-id", P4ChangelistIdStore.getState(a.getChangelistId()));
                 break;
             }
             case REVERT_FILE:
-                ret.data.put("file", ((RevertFileAction) action).getFile());
+                ret.data.put("file", ((RevertFileAction) action).getFile().getPath());
                 break;
             case MOVE_FILES_TO_CHANGELIST: {
                 MoveFilesToChangelistAction a = (MoveFilesToChangelistAction) action;
-                ret.data.put("cl-id", a.getChangelistId());
+                ret.data.put("cl-id", P4ChangelistIdStore.getState(a.getChangelistId()));
                 ret.data.put("files", getState(a.getFiles()));
                 break;
             }

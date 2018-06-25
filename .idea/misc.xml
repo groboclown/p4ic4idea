@@ -35,7 +35,25 @@
     </option>
     <option name="pendingActions">
       <list>
-        <State />
+        <State>
+          <option name="clientActionCmd" value="MOVE_FILES_TO_CHANGELIST" />
+          <option name="sourceId" value="client:albrechtm_micro-sync-registry_dev:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction@163fe5d52ea:1" />
+          <option name="data">
+            <map>
+              <entry key="cl-id">
+                <value>
+                  <Object />
+                </value>
+              </entry>
+              <entry key="files">
+                <value>
+                  <Object />
+                </value>
+              </entry>
+            </map>
+          </option>
+        </State>
       </list>
     </option>
     <option name="changelistState">

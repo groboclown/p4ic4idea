@@ -128,7 +128,7 @@ public class ProjectCacheStore {
                     clientQueryCache.put(store.getClientServerRef(), store);
                 }
                 for (ActionStore.State actionState : state.pendingActions) {
-                    // TODO look into this weird bug...
+                    // TODO look into this weird bug; stuff was coming back null.  Is it still happening?
                     if (actionState.clientActionCmd != null || actionState.serverActionCmd != null) {
                         ActionStore.PendingAction action = ActionStore.read(actionState);
                         pendingActions.add(action);

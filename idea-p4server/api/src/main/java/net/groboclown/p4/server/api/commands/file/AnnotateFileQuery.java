@@ -14,10 +14,31 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
+import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
 
 public class AnnotateFileQuery implements P4CommandRunner.ServerQuery<AnnotateFileResult> {
+    private final FilePath localFile;
+    private final P4RemoteFile remoteFile;
+    private final int rev;
+
+    // Eventually, this might be needed.  For now, though, it's not.
+    // private final String changelist;
+
+    public AnnotateFileQuery(@NotNull FilePath localFile, int rev) {
+        this.localFile = localFile;
+        this.remoteFile = null;
+        this.rev = rev;
+    }
+
+    public AnnotateFileQuery(@NotNull P4RemoteFile remoteFile, int rev) {
+        this.localFile = null;
+        this.remoteFile = remoteFile;
+        this.rev = rev;
+    }
+
     @NotNull
     @Override
     public Class<? extends AnnotateFileResult> getResultType() {
@@ -27,5 +48,17 @@ public class AnnotateFileQuery implements P4CommandRunner.ServerQuery<AnnotateFi
     @Override
     public P4CommandRunner.ServerQueryCmd getCmd() {
         return P4CommandRunner.ServerQueryCmd.ANNOTATE_FILE;
+    }
+
+    public FilePath getLocalFile() {
+        return localFile;
+    }
+
+    public P4RemoteFile getRemoteFile() {
+        return remoteFile;
+    }
+
+    public int getRev() {
+        return rev;
     }
 }

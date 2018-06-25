@@ -45,14 +45,14 @@ public class P4AnnotationProvider
     @Override
     public FileAnnotation annotate(@NotNull VirtualFile file) throws VcsException {
         // Use the "have" revision, not the "head" revision
-        // FIXME
+        // FIXME implement annotation
         throw new IllegalStateException("not implemented");
     }
 
     @NotNull
     @Override
     public FileAnnotation annotate(@NotNull VirtualFile file, VcsFileRevision revision) throws VcsException {
-        // FIXME
+        // FIXME implement annotation
         throw new IllegalStateException("not implemented");
     }
 
@@ -65,7 +65,7 @@ public class P4AnnotationProvider
      */
     @Override
     public boolean isAnnotationValid(@NotNull VcsFileRevision rev) {
-        // FIXME
+        // FIXME implement is annotation valid.
         throw new IllegalStateException("not implemented");
     }
 }

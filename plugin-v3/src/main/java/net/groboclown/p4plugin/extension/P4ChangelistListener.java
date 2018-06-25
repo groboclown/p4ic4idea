@@ -239,7 +239,7 @@ public class P4ChangelistListener
 
 
     private String toDescription(@NotNull ChangeList changeList) {
-        // FIXME
+        // FIXME implement description
         throw new IllegalStateException("not implemented");
         // return ChangelistDescriptionGenerator.getDescription(project, changeList);
     }

@@ -18,13 +18,13 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.ChangelistStatus;
-import com.perforce.p4java.core.CoreFactory;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IFix;
 import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
+import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -83,6 +83,7 @@ import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
 import net.groboclown.p4.server.impl.client.OpenedFilesChangesFactory;
 import net.groboclown.p4.server.impl.commands.ActionAnswerImpl;
 import net.groboclown.p4.server.impl.commands.QueryAnswerImpl;
+import net.groboclown.p4.server.impl.connection.impl.FileAnnotationParser;
 import net.groboclown.p4.server.impl.connection.impl.MessageStatusUtil;
 import net.groboclown.p4.server.impl.connection.impl.OpenFileStatus;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
@@ -191,11 +192,18 @@ public class ConnectCommandRunner
 
     @NotNull
     @Override
-    public P4CommandRunner.QueryAnswer<AnnotateFileResult> getFileAnnotation(@NotNull ServerConfig config,
-            @NotNull AnnotateFileQuery query) {
-        // FIXME implement using P4CommandUtil
-        LOG.warn("Implement getFileAnnotation");
-        return null;
+    public P4CommandRunner.QueryAnswer<AnnotateFileResult> getFileAnnotation(@NotNull final ServerConfig config,
+            @NotNull final AnnotateFileQuery query) {
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
+            List<IFileSpec> specs;
+            if (query.getLocalFile() != null) {
+                specs = FileSpecBuildUtil.escapedForFilePathRev(query.getLocalFile(), query.getRev());
+            } else {
+                specs = FileSpecBuildUtil.escapedForRemoteFileRev(query.getRemoteFile(), query.getRev());
+            }
+            List<IFileAnnotation> annotations = cmd.getAnnotations(server, specs);
+            return new AnnotateFileResult(config, FileAnnotationParser.getFileAnnotation(annotations));
+        }));
     }
 
     @NotNull
@@ -330,8 +338,7 @@ public class ConnectCommandRunner
 
         IChangelist change;
         if (action.getChangelistId().getState() == P4ChangelistId.State.PENDING_CREATION) {
-            // FIXME use P4CommandUtil
-            change = CoreFactory.createChangelist(client, action.getUpdatedDescription(), true);
+            change = cmd.createChangelist(client, action.getUpdatedDescription());
         } else if (action.getChangelistId().isDefaultChangelist()) {
             change = cmd.getChangelistDetails(client.getServer(), IChangelist.DEFAULT);
         } else {
@@ -379,10 +386,7 @@ public class ConnectCommandRunner
             LOG.debug("Running create changelist against the server for " + action.getComment());
         }
 
-        // FIXME use P4CommandUtil
-        LOG.warn("FIXME use P4CommandUtil");
-
-        IChangelist changelist = CoreFactory.createChangelist(client, action.getComment(), true);
+        IChangelist changelist = cmd.createChangelist(client, action.getComment());
         return new CreateChangelistResult(config, changelist.getId());
     }
 

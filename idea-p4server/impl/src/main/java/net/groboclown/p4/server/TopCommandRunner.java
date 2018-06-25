@@ -331,7 +331,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         // No cache for file annotations.
         return onlineCheck(config,
                 () -> server.getFileAnnotation(config, query),
-                () -> new DoneQueryAnswer<>(new AnnotateFileResult())
+                () -> new DoneQueryAnswer<>(new AnnotateFileResult(config, annotatedFile))
         );
     }
 

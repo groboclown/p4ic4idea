@@ -14,12 +14,11 @@
 
 package net.groboclown.p4.server.api.values;
 
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.annotate.FileAnnotation;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class P4FileAnnotation extends FileAnnotation {
-    protected P4FileAnnotation(@NotNull Project project) {
-        super(project);
-    }
+import java.util.List;
+
+public interface P4FileAnnotation {
+    @NotNull
+    List<P4AnnotatedLine> getAnnotatedLines();
 }

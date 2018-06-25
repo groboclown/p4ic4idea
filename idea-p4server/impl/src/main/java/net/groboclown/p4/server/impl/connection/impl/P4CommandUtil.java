@@ -15,7 +15,6 @@
 package net.groboclown.p4.server.impl.connection.impl;
 
 import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.CoreFactory;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
@@ -23,6 +22,7 @@ import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.core.IJobSpec;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
+import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -35,8 +35,8 @@ import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.server.ChangelistOptions;
 import com.perforce.p4java.option.server.GetChangelistsOptions;
-import com.perforce.p4java.option.server.GetDepotFilesOptions;
 import com.perforce.p4java.option.server.GetExtendedFilesOptions;
+import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
 import net.groboclown.p4.server.api.values.JobStatus;
@@ -118,14 +118,21 @@ public class P4CommandUtil {
     /**
      *
      * @param server server
-     * @param files escaped-form of the files.
-     * @return
-     * @throws P4JavaException
+     * @param files escaped name of the files
+     * @return annotated file information
      */
-    public List<IFileSpec> getDepotFiles(IServer server, List<IFileSpec> files)
+    public List<IFileAnnotation> getAnnotations(IServer server, List<IFileSpec> files)
             throws P4JavaException {
-        GetDepotFilesOptions depotOptions = new GetDepotFilesOptions(1, false);
-        return server.getDepotFiles(files, depotOptions);
+        GetFileAnnotationsOptions options = new GetFileAnnotationsOptions(
+                false, // allResults
+                false, // useChangeNumbers
+                false, // followBranches
+                false, // ignoreWhitespaceChanges
+                false, // ignoreWhitespace
+                true, // ignoreLineEndings
+                false // followAllIntegrations
+        );
+        return server.getFileAnnotations(files, options);
     }
 
     /**
@@ -162,7 +169,7 @@ public class P4CommandUtil {
      * @param files escaped file specs
      * @param onlyUnchanged true if revert only unchanged files.
      * @return result
-     * @throws P4JavaException
+     * @throws P4JavaException underlying error
      */
     public List<IFileSpec> revertFiles(IClient client, List<IFileSpec> files, boolean onlyUnchanged)
             throws P4JavaException {
@@ -178,8 +185,8 @@ public class P4CommandUtil {
      * @param fileType file type
      * @param changelistId changelist to edit the file in
      * @param charset charset
-     * @return
-     * @throws P4JavaException
+     * @return edit file results
+     * @throws P4JavaException underlying error
      */
     public List<IFileSpec> editFiles(IClient client, List<IFileSpec> files, P4FileType fileType,
             P4ChangelistId changelistId, String charset)
@@ -228,5 +235,10 @@ public class P4CommandUtil {
             options.setJobIds(jobIds);
         }
         return changelist.submit(options);
+    }
+
+    public IChangelist createChangelist(IClient client, String description)
+            throws P4JavaException {
+        return CoreFactory.createChangelist(client, description, true);
     }
 }

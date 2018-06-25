@@ -161,7 +161,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
     private MessageBusConnection appMessageBusConnection;
 
-    // FIXME
+    // FIXME add the connection widget.
     //private P4ConnectionWidget connectionWidget;
     //private P4MultipleConnectionWidget connectionWidget;
 

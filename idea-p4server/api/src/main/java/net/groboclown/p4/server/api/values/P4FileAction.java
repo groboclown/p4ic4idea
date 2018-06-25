@@ -80,12 +80,12 @@ public enum P4FileAction {
                 return DELETE;
             case MOVE_DELETE:
                 return MOVE_DELETE;
-            case MOVE:
-                // TODO check if this is the right mapping - that means write an explicit test!
-                return MOVE_EDIT;
             case MOVE_ADD:
                 return MOVE_ADD;
 
+            case MOVE:
+                // Not a valid action, but we'll support it anyway.
+                return MOVE_EDIT;
             case SYNC:
             case UPDATED:
             case REFRESHED:

@@ -72,7 +72,7 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
             return;
         }
         final P4Vcs vcs = P4Vcs.getInstance(project);
-        // FIXME
+        // FIXME implement decorator
         throw new IllegalStateException("not implemented");
         /*
         final P4ChangeListMapping changeListMapping = P4ChangeListMapping.getInstance(project);

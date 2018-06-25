@@ -14,5 +14,19 @@
 
 package net.groboclown.p4.server.impl.connection.impl;
 
+import com.intellij.openapi.diagnostic.Logger;
+import com.perforce.p4java.core.file.IFileAnnotation;
+import net.groboclown.p4.server.api.values.P4FileAnnotation;
+import net.groboclown.p4.server.api.values.P4RemoteFile;
+
+import java.util.List;
+
 public class FileAnnotationParser {
+    private static final Logger LOG = Logger.getInstance(FileAnnotationParser.class);
+
+
+    public static P4FileAnnotation getFileAnnotation(List<IFileAnnotation> annotations) {
+        // FIXME implement file annotation parser
+        throw new IllegalStateException("Not implemented");
+    }
 }

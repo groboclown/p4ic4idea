@@ -14,5 +14,31 @@
 
 package net.groboclown.p4.server.api.values;
 
-public class P4AnnotatedLine {
+import com.perforce.p4java.core.file.IFileRevisionData;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Date;
+
+public interface P4AnnotatedLine {
+    P4ChangelistId getChangelist();
+
+    @Nullable
+    String getAuthor();
+
+    @Nullable
+    Date getDate();
+
+    @Nullable
+    String getComment();
+
+    @Nullable
+    IFileRevisionData getRevisionData();
+
+    @NotNull
+    String getDepotPath();
+
+    int getLineNumber();
+
+    int getRevNumber();
 }

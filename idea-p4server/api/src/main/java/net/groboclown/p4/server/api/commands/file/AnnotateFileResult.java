@@ -16,12 +16,26 @@ package net.groboclown.p4.server.api.commands.file;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.values.P4FileAnnotation;
 import org.jetbrains.annotations.NotNull;
 
 public class AnnotateFileResult implements P4CommandRunner.ServerResult {
+    private final ServerConfig config;
+    private final P4FileAnnotation annotatedFile;
+
+    public AnnotateFileResult(@NotNull ServerConfig config,
+            P4FileAnnotation annotatedFile) {
+        this.config = config;
+        this.annotatedFile = annotatedFile;
+    }
+
     @NotNull
     @Override
     public ServerConfig getServerConfig() {
-        return null;
+        return config;
+    }
+
+    public P4FileAnnotation getAnnotatedFile() {
+        return annotatedFile;
     }
 }

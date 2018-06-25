@@ -17,6 +17,7 @@ package net.groboclown.p4.server.impl.util;
 import com.intellij.openapi.vcs.FilePath;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -66,10 +67,26 @@ public class FileSpecBuildUtil {
         return FileSpecBuilder.makeFileSpecList(src);
     }
 
+    public static List<IFileSpec> escapedForFilePathRev(FilePath file, int revision) {
+        String depotPath = escapeToP4Path(file.getPath());
+        if (revision > 0) {
+            depotPath = depotPath + '#' + revision;
+        }
+        return FileSpecBuilder.makeFileSpecList(depotPath);
+    }
+
+    public static List<IFileSpec> escapedForRemoteFileRev(P4RemoteFile file, int revision) {
+        // Guaranteed way to ensure that the underlying path is properly escaped.
+        String depotPath = escapeToP4Path(file.getDisplayName());
+        if (revision > 0) {
+            depotPath = depotPath + '#' + revision;
+        }
+        return FileSpecBuilder.makeFileSpecList(depotPath);
+    }
+
     public static List<IFileSpec> escapedForFiles(File... files) {
         return forFiles(Arrays.asList(files));
     }
-
 
     public static List<IFileSpec> escapedForFiles(Collection<File> files) {
         List<String> src = new ArrayList<>(files.size());

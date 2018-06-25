@@ -58,7 +58,8 @@ public interface P4WorkspaceSummary {
     String getDescription();
     Map<ClientOption, Boolean> getClientOptions();
 
-    // TODO is this a list of options?  Check with a unit test!
+    // The client specifies a single string, and this returns the corresponding
+    // enum representation of that string.
     SubmitOption getSubmitOption();
 
     LineEnding getLineEnding();

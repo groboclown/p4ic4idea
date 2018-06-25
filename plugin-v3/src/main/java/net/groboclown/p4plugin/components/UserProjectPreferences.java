@@ -21,6 +21,8 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.Function;
+
 @State(name = "UserProjectPreferences")
 public class UserProjectPreferences
         implements PersistentStateComponent<UserProjectPreferences.State> {
@@ -45,6 +47,7 @@ public class UserProjectPreferences
     public static final int DEFAULT_MAX_CLIENT_RETRIEVE_COUNT = 500;
     public static final int DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT = 500;
     public static final int DEFAULT_MAX_FILE_RETRIEVE_COUNT = 5000;
+    public static final boolean DEFAULT_AUTO_CHECKOUT_MODIFIED_FILES = false;
 
     @NotNull
     private State state = new State();
@@ -89,6 +92,8 @@ public class UserProjectPreferences
         public int maxChangelistRetrieveCount = DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT;
 
         public int maxFileRetrieveCount = DEFAULT_MAX_FILE_RETRIEVE_COUNT;
+
+        public boolean autoCheckoutModifiedFiles = DEFAULT_AUTO_CHECKOUT_MODIFIED_FILES;
     }
 
     @Nullable
@@ -368,14 +373,8 @@ public class UserProjectPreferences
 
 
     public static int getMaxFileRetrieveCount(@Nullable final Project project) {
-        if (project == null) {
-            return DEFAULT_MAX_FILE_RETRIEVE_COUNT;
-        }
-        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
-        if (prefs == null) {
-            return DEFAULT_MAX_FILE_RETRIEVE_COUNT;
-        }
-        return prefs.getMaxFileRetrieveCount();
+        return getValue(project, DEFAULT_MAX_FILE_RETRIEVE_COUNT,
+                (prefs) -> prefs.getMaxFileRetrieveCount());
     }
 
     public int getMaxFileRetrieveCount() {
@@ -384,5 +383,32 @@ public class UserProjectPreferences
 
     public void setMaxFileRetrieveCount(final int count) {
         state.maxFileRetrieveCount = count;
+    }
+
+
+    public static boolean getAutoCheckoutModifiedFiles(@Nullable final Project project) {
+        return getValue(project, DEFAULT_AUTO_CHECKOUT_MODIFIED_FILES,
+                (prefs) -> prefs.getAutoCheckoutModifiedFiles());
+    }
+
+    public boolean getAutoCheckoutModifiedFiles() {
+        return state.autoCheckoutModifiedFiles;
+    }
+
+    public void setAutoCheckoutModifiedFiles(final boolean value) {
+        state.autoCheckoutModifiedFiles = value;
+    }
+
+
+    private static <T> T getValue(@Nullable final Project project, @NotNull T defaultValue,
+            @NotNull Function<UserProjectPreferences, T> fetcher) {
+        if (project == null) {
+            return defaultValue;
+        }
+        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
+        if (prefs == null) {
+            return defaultValue;
+        }
+        return fetcher.apply(prefs);
     }
 }

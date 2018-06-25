@@ -18,13 +18,14 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4FileAnnotation;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class AnnotateFileResult implements P4CommandRunner.ServerResult {
     private final ServerConfig config;
     private final P4FileAnnotation annotatedFile;
 
     public AnnotateFileResult(@NotNull ServerConfig config,
-            P4FileAnnotation annotatedFile) {
+            @Nullable P4FileAnnotation annotatedFile) {
         this.config = config;
         this.annotatedFile = annotatedFile;
     }
@@ -35,6 +36,7 @@ public class AnnotateFileResult implements P4CommandRunner.ServerResult {
         return config;
     }
 
+    @Nullable
     public P4FileAnnotation getAnnotatedFile() {
         return annotatedFile;
     }

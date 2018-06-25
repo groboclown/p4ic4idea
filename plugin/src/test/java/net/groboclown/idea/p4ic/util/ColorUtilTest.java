@@ -16,16 +16,20 @@ package net.groboclown.idea.p4ic.util;
 
 import com.intellij.ui.JBColor;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 import java.awt.*;
+import java.util.Properties;
 
 public class ColorUtilTest {
     private boolean isSetupDark;
+    private static String origHeadlessValue = null;
 
 
     @Test
@@ -78,10 +82,38 @@ public class ColorUtilTest {
                 c.getAlpha(), is(255));
     }
 
+    /*
+    private static boolean isHeadless() {
+        return
+            GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .isHeadlessInstance();
+    }
+    */
+
+    // These tests need to run in explicit headless mode to prevent AWT code from
+    // trying to do too much.
+    @BeforeClass
+    public static void beforeClass() {
+        origHeadlessValue = System.getProperty("java.awt.headless");
+        System.setProperty("java.awt.headless", "true");
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        if (origHeadlessValue == null) {
+            Properties props = System.getProperties();
+            if (props.contains("java.awt.headless")) {
+                props.remove("java.awt.headless");
+            }
+            System.setProperties(props);
+        } else {
+            System.setProperty("java.awt.headless", origHeadlessValue);
+        }
+    }
 
     @Before
     public void setup() {
-        isSetupDark = false; // FIXME 2017.1 ! JBColor.isBright();
+        isSetupDark = !JBColor.isBright();
     }
 
     @After

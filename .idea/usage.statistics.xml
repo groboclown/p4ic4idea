@@ -4,44 +4,46 @@
     <session id="1876122035">
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="class" value="26" />
-          <entry key="form" value="4" />
-          <entry key="gradle" value="2" />
-          <entry key="java" value="270" />
-          <entry key="properties" value="5" />
+          <entry key="class" value="31" />
+          <entry key="form" value="5" />
+          <entry key="gradle" value="3" />
+          <entry key="java" value="358" />
+          <entry key="properties" value="9" />
           <entry key="sh" value="1" />
-          <entry key="xml" value="2" />
-          <entry key="yaml" value="1" />
+          <entry key="xml" value="3" />
+          <entry key="yaml" value="2" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="Bash" value="1" />
-          <entry key="CLASS" value="26" />
-          <entry key="GUI_DESIGNER_FORM" value="4" />
-          <entry key="Groovy" value="2" />
-          <entry key="JAVA" value="270" />
-          <entry key="Properties" value="5" />
-          <entry key="XML" value="2" />
-          <entry key="YAML" value="1" />
+          <entry key="CLASS" value="31" />
+          <entry key="GUI_DESIGNER_FORM" value="5" />
+          <entry key="Groovy" value="3" />
+          <entry key="JAVA" value="358" />
+          <entry key="Properties" value="9" />
+          <entry key="XML" value="3" />
+          <entry key="YAML" value="2" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="class" value="1" />
           <entry key="gradle" value="35" />
-          <entry key="java" value="19834" />
-          <entry key="properties" value="348" />
+          <entry key="java" value="23988" />
+          <entry key="properties" value="439" />
           <entry key="txt" value="6" />
+          <entry key="xml" value="2" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="CLASS" value="1" />
           <entry key="Groovy" value="35" />
-          <entry key="JAVA" value="19834" />
+          <entry key="JAVA" value="23988" />
           <entry key="PLAIN_TEXT" value="6" />
-          <entry key="Properties" value="348" />
+          <entry key="Properties" value="439" />
+          <entry key="XML" value="2" />
         </counts>
       </usages-collector>
     </session>

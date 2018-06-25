@@ -72,6 +72,19 @@ public class InvalidPasswordMonitorComponent
             }
 
             @Override
+            public void singleSignOnExecutionFailed(@NotNull ServerConfig config,
+                    @NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
+                // No explicit action to take
+                UserMessage.showNotification(null,
+                        P4Bundle.message("error.loginsso.exec-failed.long",
+                                config.getLoginSso(), e.getExitCode(), e.getStdout(), e.getStderr()),
+                        P4Bundle.message("error.loginsso.exec-failed.title"),
+                        NotificationType.ERROR);
+
+                // TODO once the Single Sign On can take an argument, let this prompt for the argument.
+            }
+
+            @Override
             public void sessionExpired(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
                 // Force a log-in.  If this fails, another message will be handled.
                 if (shouldHandleProblem(config, FailureType.SESSION_EXPIRED)) {

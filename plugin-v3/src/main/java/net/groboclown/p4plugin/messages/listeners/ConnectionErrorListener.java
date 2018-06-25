@@ -27,6 +27,7 @@ import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+// FIXME implement handlers
 public class ConnectionErrorListener implements ConnectionErrorMessage.Listener {
     @Override
     public void unknownServer(@NotNull P4ServerName name, @Nullable ServerConfig config, @NotNull Exception e) {

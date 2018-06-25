@@ -18,6 +18,7 @@ import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 
+// FIXME implement handlers
 public class ServerConnectedListener implements ServerConnectedMessage.Listener {
     @Override
     public void serverConnected(@NotNull ServerConfig serverConfig, boolean loggedIn) {

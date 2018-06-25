@@ -18,6 +18,7 @@ import com.perforce.p4java.exception.ClientError;
 import net.groboclown.p4.server.api.messagebus.P4WarningMessage;
 import org.jetbrains.annotations.NotNull;
 
+// FIXME implement handlers
 public class P4WarningListener implements P4WarningMessage.Listener {
     @Override
     public void disconnectCausedError(@NotNull Exception e) {

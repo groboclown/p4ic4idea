@@ -107,7 +107,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     @Nullable
     @Override
     public List<VcsException> commit(List<Change> changes, String preparedComment) {
-        return commit(changes, preparedComment, NullableFunction.NULL, new HashSet<String>());
+        return commit(changes, preparedComment, NullableFunction.NULL, new HashSet<>());
     }
 
     @Nullable
@@ -144,7 +144,10 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                 }
                 P4CommandRunner.ActionAnswer<DeleteFileResult> answer =
                         P4ServerComponent.getInstance(project).getCommandRunner()
-                                .perform(root.getClientConfig(), new DeleteFileAction(file, id));
+                                .perform(root.getClientConfig(), new DeleteFileAction(file, id))
+                                .whenCompleted((res) -> {
+                                    P4ChangesViewRefresher.refreshLater(project);
+                                });
                 if (ApplicationManager.getApplication().isDispatchThread()) {
                     LOG.info("Running delete file command in EDT; will not wait for server errors.");
                 } else {
@@ -187,7 +190,13 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                 }
                 P4CommandRunner.ActionAnswer<AddEditResult> answer =
                         P4ServerComponent.getInstance(project).getCommandRunner()
-                                .perform(root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, null));
+                                .perform(root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, null))
+                                .whenCompleted((res) -> {
+                                    P4ChangesViewRefresher.refreshLater(project);
+                                })
+                                //.whenServerError(asdf)
+                                //.whenOffline(asdf)
+                                ;
                 if (ApplicationManager.getApplication().isDispatchThread()) {
                     LOG.info("Running add/edit command in EDT; will not wait for server errors.");
                 } else {

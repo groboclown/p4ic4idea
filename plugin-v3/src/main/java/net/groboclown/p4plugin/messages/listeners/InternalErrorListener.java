@@ -17,6 +17,7 @@ package net.groboclown.p4plugin.messages.listeners;
 import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import org.jetbrains.annotations.NotNull;
 
+// FIXME implement handlers
 public class InternalErrorListener implements InternalErrorMessage.Listener {
     @Override
     public void internalError(@NotNull Throwable t) {

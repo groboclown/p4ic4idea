@@ -47,6 +47,7 @@ public class UserPreferencesPanel {
     private JCheckBox myConcatenateChangelistNameComment;
     private JSpinner mySocketSoTimeoutSpinner;
     private JCheckBox myShowMessageDialog;
+    private JCheckBox myAutoCheckout;
     private ButtonGroup myPreferRevisionGroup;
 
 
@@ -93,6 +94,7 @@ public class UserPreferencesPanel {
         myReconnectWithEachRequest.setSelected(userPrefs.getReconnectWithEachRequest());
         myConcatenateChangelistNameComment.setSelected(userPrefs.getConcatenateChangelistNameComment());
         myShowMessageDialog.setSelected(userPrefs.getShowDialogConnectionMessages());
+        myAutoCheckout.setSelected(userPrefs.getAutoCheckoutModifiedFiles());
         LOG.debug("Finished loading settings into the UI");
     }
 
@@ -107,6 +109,7 @@ public class UserPreferencesPanel {
         userPrefs.setReconnectWithEachRequest(getReconnectWithEachRequest());
         userPrefs.setConcatenateChangelistNameComment(getConcatenateChangelistNameComment());
         userPrefs.setShowDialogConnectionMessages(getShowMessageDialog());
+        userPrefs.setAutoCheckoutModifiedFiles(getAutoCheckout());
     }
 
 
@@ -120,7 +123,8 @@ public class UserPreferencesPanel {
                         getMaxAuthenticationRetries() != preferences.getMaxAuthenticationRetries() ||
                         getReconnectWithEachRequest() != preferences.getReconnectWithEachRequest() ||
                         getConcatenateChangelistNameComment() != preferences.getConcatenateChangelistNameComment() ||
-                        getShowMessageDialog() != preferences.getShowDialogConnectionMessages();
+                        getShowMessageDialog() != preferences.getShowDialogConnectionMessages() ||
+                        getAutoCheckout() != preferences.getAutoCheckoutModifiedFiles();
     }
 
 
@@ -160,6 +164,10 @@ public class UserPreferencesPanel {
 
     private boolean getShowMessageDialog() {
         return myShowMessageDialog.isSelected();
+    }
+
+    private boolean getAutoCheckout() {
+        return myAutoCheckout.isSelected();
     }
 
     private void createUIComponents() {
@@ -268,7 +276,7 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(6, 1, new Insets(0, 0, 0, 0), -1, -1));
         myRootPanel.add(panel1,
                 new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
@@ -319,6 +327,15 @@ public class UserPreferencesPanel {
                 .getString("user.prefs.message-dialog.tooltip"));
         panel1.add(myShowMessageDialog,
                 new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        myAutoCheckout = new JCheckBox();
+        this.$$$loadButtonText$$$(myAutoCheckout,
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.auto-checkout"));
+        myAutoCheckout.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.auto-checkout.tooltip"));
+        panel1.add(myAutoCheckout,
+                new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         final JPanel panel2 = new JPanel();
@@ -476,7 +493,7 @@ public class UserPreferencesPanel {
 
     static class MinMaxSpinnerModel
             implements SpinnerModel {
-        private final List<ChangeListener> listeners = new ArrayList<ChangeListener>();
+        private final List<ChangeListener> listeners = new ArrayList<>();
         private final int minValue;
         private final int maxValue;
         private final int step;

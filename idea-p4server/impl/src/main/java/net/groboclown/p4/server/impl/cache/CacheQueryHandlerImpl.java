@@ -41,7 +41,6 @@ import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import net.groboclown.p4.server.impl.cache.store.ServerQueryCacheStore;
 import net.groboclown.p4.server.impl.values.P4LocalChangelistImpl;
 import net.groboclown.p4.server.impl.values.P4LocalFileImpl;
-import net.groboclown.p4.server.impl.values.P4RemoteChangelistImpl;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -220,7 +219,8 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
         }
         try {
             return cache.read(serverName, null, (store) -> {
-                // FIXME implement
+                // FIXME possibly scan the known clients for information, or construct one based on changelist ID, or
+                // keep a cache of queried changelists.
                 LOG.warn("FIXME implement getCachedChangelist");
                 return null;
             });

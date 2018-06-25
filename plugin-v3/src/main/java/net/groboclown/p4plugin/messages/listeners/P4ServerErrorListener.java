@@ -23,6 +23,7 @@ import net.groboclown.p4.server.api.messagebus.P4ServerErrorMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+// FIXME implement handlers
 public class P4ServerErrorListener implements P4ServerErrorMessage.Listener {
     @Override
     public void requestCausedError(@NotNull P4ServerName name, @Nullable ServerConfig config,

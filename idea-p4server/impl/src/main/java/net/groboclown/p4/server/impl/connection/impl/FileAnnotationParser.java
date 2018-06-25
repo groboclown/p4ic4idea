@@ -17,7 +17,6 @@ package net.groboclown.p4.server.impl.connection.impl;
 import com.intellij.openapi.diagnostic.Logger;
 import com.perforce.p4java.core.file.IFileAnnotation;
 import net.groboclown.p4.server.api.values.P4FileAnnotation;
-import net.groboclown.p4.server.api.values.P4RemoteFile;
 
 import java.util.List;
 

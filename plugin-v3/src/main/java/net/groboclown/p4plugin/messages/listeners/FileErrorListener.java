@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 
+// FIXME implement handlers
 public class FileErrorListener implements FileErrorMessage.Listener {
     @Override
     public void fileReceiveError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,

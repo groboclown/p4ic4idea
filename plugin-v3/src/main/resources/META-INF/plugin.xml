@@ -285,17 +285,6 @@
             <option name="workspace" value="true"/>
         </component>
         <component>
-            <implementation-class>net.groboclown.p4plugin.server.P4ServerManager</implementation-class>
-        </component>
-        <component>
-            <implementation-class>net.groboclown.p4plugin.changes.P4ChangeListMapping</implementation-class>
-            <interface-class>net.groboclown.p4plugin.changes.P4ChangeListMapping</interface-class>
-        </component>
-        <component>
-            <implementation-class>net.groboclown.p4plugin.config.P4ProjectConfigComponent</implementation-class>
-            <interface-class>net.groboclown.p4plugin.config.P4ProjectConfigComponent</interface-class>
-        </component>
-        <component>
             <implementation-class>net.groboclown.p4plugin.ui.VcsDockedComponent</implementation-class>
             <interface-class>net.groboclown.p4plugin.ui.VcsDockedComponent</interface-class>
         </component>
@@ -330,12 +319,6 @@
         </component>
         <component>
             <implementation-class>net.groboclown.p4plugin.server.cache.state.AllClientsState</implementation-class>
-        </component>
-        <component>
-            <implementation-class>net.groboclown.p4plugin.historic_compat.ClearPasswordStoreService</implementation-class>
-        </component>
-        <component>
-            <implementation-class>net.groboclown.p4plugin.server.authentication.PasswordManager</implementation-class>
         </component>
         <component>
             <implementation-class>net.groboclown.p4plugin.swarm.SwarmConnectionComponent</implementation-class>

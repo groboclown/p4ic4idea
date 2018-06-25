@@ -34,6 +34,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.cache.messagebus.AbstractCacheMessage;
@@ -41,6 +42,7 @@ import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction;
+import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
@@ -456,6 +458,13 @@ public class P4ChangeProvider
                         LOG.debug("Marking " + filePath + " as locally deleted");
                     }
                     builder.processLocallyDeletedFile(filePath);
+                } else if (UserProjectPreferences.getAutoCheckoutModifiedFiles(project)) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Scheduling " + filePath + " for edit and marking it as modified without checkout");
+                    }
+                    vcs.getCheckinEnvironment().scheduleUnversionedFilesForAddition(
+                            Collections.singletonList(filePath.getVirtualFile()));
+                    builder.processModifiedWithoutCheckout(filePath.getVirtualFile());
                 } else {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Marking " + filePath + " as modified without checkout");

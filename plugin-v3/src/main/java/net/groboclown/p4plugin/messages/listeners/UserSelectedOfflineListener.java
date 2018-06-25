@@ -18,6 +18,7 @@ import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import org.jetbrains.annotations.NotNull;
 
+// FIXME implement handlers
 public class UserSelectedOfflineListener implements UserSelectedOfflineMessage.Listener {
     @Override
     public void userSelectedServerOffline(@NotNull P4ServerName name) {

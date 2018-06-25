@@ -16,6 +16,7 @@ package net.groboclown.p4plugin.extension;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.UnnamedConfigurable;
 import com.intellij.openapi.project.Project;
@@ -26,6 +27,7 @@ import com.intellij.openapi.vcs.EditFileProvider;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusFactory;
+import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsDirectoryMapping;
 import com.intellij.openapi.vcs.VcsException;
@@ -59,7 +61,6 @@ import net.groboclown.p4.server.impl.tasks.TempFileWatchDog;
 import net.groboclown.p4.server.impl.util.ChangeListUtil;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.messages.UserMessage;
-import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.ui.ColorUtil;
 import net.groboclown.p4plugin.ui.config.P4ProjectConfigurable;
 import net.groboclown.p4plugin.ui.vcsroot.P4VcsRootConfigurable;
@@ -74,6 +75,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
+    private static final Logger LOG = Logger.getInstance(P4Vcs.class);
+
     public static final FileStatus ADDED_OFFLINE =
             FileStatusFactory.getInstance().createFileStatus(
                     "ADDED_OFFLINE",
@@ -278,6 +281,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     // necessarily match up with the actual VCS.  For this plugin, at the
     // moment, we're defining the per-client setup at the VCS root level,
     // so we don't need this conversion (we have an identity mapping).
+    // Eventually, if the relative config file is implemented again, we can use this.
     //@Nullable
     //public RootsConvertor getCustomConvertor() {
     //    return null;
@@ -483,6 +487,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     @Override
     @NotNull
     public synchronized EditFileProvider getEditFileProvider() {
+        // TODO remove statement when debugging is done
+        LOG.info("Getting EditFileProvider");
         if (editProvider == null) {
             editProvider = new P4EditFileProvider(this);
         }
@@ -505,6 +511,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         return new P4CheckinEnvironment(this);
     }
 
+    @NotNull
     @Override
     public CheckinEnvironment getCheckinEnvironment() {
         // There is a weird situation where the parent wouldn't
@@ -641,6 +648,15 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     }
 
 
+    /**
+     * Invoked when a changelist is deleted explicitly by user or implicitly (e.g. after default changelist switch
+     * when the previous one was empty).
+     * @param list change list that's about to be removed
+     * @param explicitly whether it's a result of explicit Delete action, or just after switching the active changelist.
+     * @return UNSURE if the VCS has nothing to say about this changelist.
+     * YES or NO if the changelist has to be removed or not, and no further confirmations are needed about this changelist
+     * (in particular, the VCS can show a confirmation to the user by itself)
+     */
     @Override
     // @CalledInAwt
     @NotNull
@@ -695,6 +711,29 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
      */
     @Override
     public boolean isVcsBackgroundOperationsAllowed(final VirtualFile root) {
+        return true;
+    }
+
+
+
+    /**
+     * Returns true if the specified file path represents a file which exists in the VCS repository (is neither
+     * unversioned nor scheduled for addition).
+     * This method is called only for directories which are mapped to this VCS in the project configuration.
+     *
+     * @param path the path to check.
+     * @return true if the corresponding file exists in the repository, false otherwise.
+     */
+    @Override
+    public boolean fileExistsInVcs(FilePath path) {
+        // TODO if this ends up being called as we expect, then delete this overridden method.
+
+        final VirtualFile virtualFile = path.getVirtualFile();
+        if (virtualFile != null) {
+            final FileStatus fileStatus = FileStatusManager.getInstance(myProject).getStatus(virtualFile);
+            LOG.info("Checking if file exists in VCS; if so, then it will use the `VcsHandleType` to edit the file.  File: [" + path + "]; status: " + fileStatus);
+            return fileStatus != FileStatus.UNKNOWN && fileStatus != FileStatus.ADDED;
+        }
         return true;
     }
 

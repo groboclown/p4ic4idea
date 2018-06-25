@@ -600,6 +600,8 @@ public class ConnectCommandRunner
         List<IExtendedFileSpec> pendingChangelistFiles = cmd.getFileDetailsForOpenedSpecs(
                 client.getServer(), pendingChangelistFileSummaries, maxFileResults);
         Iterator<IExtendedFileSpec> pendingIter = pendingChangelistFiles.iterator();
+        // TODO DEBUG variable
+        boolean foundNonOpened = false;
         while (pendingIter.hasNext()) {
             IExtendedFileSpec next = pendingIter.next();
             if (next.getStatusMessage() != null) {
@@ -608,9 +610,13 @@ public class ConnectCommandRunner
             } else if (next.getAction() == null) {
                 // TODO better understand why this situation happens; when it does, the CL is always -1.
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Found non-opened file spec for request of just opened file specs in opened change.  " +
-                            next.getDepotPathString() + " :: open:" + next.getOpenChangelistId() + ", cl:" +
-                            next.getChangelistId() + ", owner:" + next.getOpenActionOwner());
+                    if (!foundNonOpened) {
+                        LOG.debug(
+                                "Found non-opened file spec for request of just opened file specs in opened change.  " +
+                                        next.getDepotPathString() + " :: open:" + next.getOpenChangelistId() + ", cl:" +
+                                        next.getChangelistId() + ", owner:" + next.getOpenActionOwner());
+                        foundNonOpened = true;
+                    }
                 }
                 pendingIter.remove();
             } else if (LOG.isDebugEnabled()) {
@@ -634,9 +640,14 @@ public class ConnectCommandRunner
                 // This seems to happen when there's a double entry in the returned list.
                 // TODO better understand why this situation happens; when it does, the CL is always -1.
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Found non-opened file spec for request of just opened file specs in default change.  " +
-                            next.getDepotPathString() + " :: open:" + next.getOpenChangelistId() + ", cl:" +
-                            next.getChangelistId() + ", owner:" + next.getOpenActionOwner());
+                    if (!foundNonOpened) {
+                        LOG.debug(
+                                "Found non-opened file spec for request of just opened file specs in default change.  "
+                                        +
+                                        next.getDepotPathString() + " :: open:" + next.getOpenChangelistId() + ", cl:" +
+                                        next.getChangelistId() + ", owner:" + next.getOpenActionOwner());
+                        foundNonOpened = true;
+                    }
                 }
                 defaultIter.remove();
             } else if (LOG.isDebugEnabled()) {

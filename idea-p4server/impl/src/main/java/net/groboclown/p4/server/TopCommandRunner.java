@@ -15,6 +15,7 @@
 package net.groboclown.p4.server;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.perforce.p4java.exception.AuthenticationFailedException;
@@ -23,7 +24,6 @@ import net.groboclown.p4.server.api.AbstractP4CommandRunner;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
-import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
 import net.groboclown.p4.server.api.cache.messagebus.DescribeChangelistCacheMessage;
@@ -82,8 +82,9 @@ import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
-import net.groboclown.p4.server.impl.commands.ActionAnswerImpl;
+import net.groboclown.p4.server.impl.commands.AnswerUtil;
 import net.groboclown.p4.server.impl.commands.DoneQueryAnswer;
+import net.groboclown.p4.server.impl.commands.ErrorQueryAnswerImpl;
 import net.groboclown.p4.server.impl.commands.OfflineActionAnswerImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -100,6 +101,8 @@ import java.util.Map;
  */
 public class TopCommandRunner extends AbstractP4CommandRunner
         implements Disposable {
+    private static final Logger LOG = Logger.getInstance(TopCommandRunner.class);
+
 
     private final CacheQueryHandler cache;
     private final AbstractServerCommandRunner server;
@@ -163,6 +166,12 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         LoginFailureMessage.addListener(appClient, new LoginFailureMessage.Listener() {
             @Override
             public void singleSignOnFailed(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
+                getStateFor(config).badLogin = true;
+            }
+
+            @Override
+            public void singleSignOnExecutionFailed(@NotNull ServerConfig config,
+                    @NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
                 getStateFor(config).badLogin = true;
             }
 
@@ -253,10 +262,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         // Submits are never cached.  Instead, offline submits generate an error.
         return onlineCheck(config,
                 () -> server.perform(config, action),
-                () -> new ActionAnswerImpl<>(Answer.reject(
-                        // FIXME implement correct offline answer
-                        null
-                )));
+                OfflineActionAnswerImpl::new
+                );
     }
 
     @NotNull
@@ -331,7 +338,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         // No cache for file annotations.
         return onlineCheck(config,
                 () -> server.getFileAnnotation(config, query),
-                () -> new DoneQueryAnswer<>(new AnnotateFileResult(config, annotatedFile))
+                () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError())
         );
     }
 
@@ -374,6 +381,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     protected QueryAnswer<ListChangelistsFixedByJobResult> listChangelistsFixedByJob(ServerConfig config,
             ListChangelistsFixedByJobQuery query) {
         // FIXME implement
+        LOG.warn("FIXME implement listChangelistsFixedByJob");
         return null;
     }
 
@@ -398,6 +406,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @Override
     protected QueryAnswer<ListDirectoriesResult> listDirectories(ServerConfig config, ListDirectoriesQuery query) {
         // FIXME implement
+        LOG.warn("FIXME implement listDirectories");
         return null;
     }
 
@@ -406,6 +415,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @Override
     protected QueryAnswer<ListFilesResult> listFiles(ServerConfig config, ListFilesQuery query) {
         // FIXME implement
+        LOG.warn("FIXME implement listFiles");
         return null;
     }
 
@@ -414,6 +424,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @Override
     protected QueryAnswer<ListFilesDetailsResult> listFilesDetails(ServerConfig config, ListFilesDetailsQuery query) {
         // FIXME implement
+        LOG.warn("FIXME implement listFilesDetails");
         return null;
     }
 
@@ -422,6 +433,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @Override
     protected QueryAnswer<ListFilesHistoryResult> listFilesHistory(ServerConfig config, ListFilesHistoryQuery query) {
         // FIXME implement
+        LOG.warn("FIXME implement listFilesHistory");
         return null;
     }
 
@@ -430,6 +442,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @Override
     protected QueryAnswer<ListJobsResult> listJobs(ServerConfig config, ListJobsQuery query) {
         // FIXME implement
+        LOG.warn("FIXMDE implement listJobs");
         return null;
     }
 
@@ -439,6 +452,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     protected QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(ServerConfig config,
             ListSubmittedChangelistsQuery query) {
         // FIXME implement
+        LOG.warn("FIXME implement listSubmittedChangelists");
         return null;
     }
 
@@ -447,6 +461,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @Override
     protected QueryAnswer<ListUsersResult> listUsers(ServerConfig config, ListUsersQuery query) {
         // FIXME implement
+        LOG.warn("FIXME implement listUsers");
         return null;
     }
 
@@ -456,6 +471,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     protected QueryAnswer<ListClientFetchStatusResult> listClientFetchStatus(ClientConfig config,
             ListClientFetchStatusQuery query) {
         // FIXME implement
+        LOG.warn("FIXME implement listClientFetchStatus");
         return null;
     }
 
@@ -475,6 +491,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @Override
     protected QueryAnswer<ServerInfoResult> serverInfo(P4ServerName name, ServerInfo query) {
         // FIXME implement
+        LOG.warn("FIXME implement serverInfo");
         return null;
     }
 
@@ -529,8 +546,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     }
 
     private void sendPendingCacheRequests(ServerConfig serverConfig) {
-        // FIXME pull the pending actions and perform them, and perform
-        // and requested cache updates.
+        // FIXME pull the pending actions and perform them, and perform requested cache updates.
+        LOG.warn("FIXME pull the pending actions and perform them, and perform requested cache updates.");
     }
 
     private <R> R onlineCheck(@NotNull ClientConfig clientConfig, Exec<R> serverExec, Exec<R> cacheExec) {

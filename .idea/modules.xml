@@ -36,7 +36,6 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/net.groboclown.p4ic4idea_buildSrc.iml" filepath="$PROJECT_DIR$/.idea/modules/net.groboclown.p4ic4idea_buildSrc.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/net.groboclown.p4ic4idea_buildSrc_main.iml" filepath="$PROJECT_DIR$/.idea/modules/net.groboclown.p4ic4idea_buildSrc_main.iml" group="net.groboclown.p4ic4idea_buildSrc" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/net.groboclown.p4ic4idea_buildSrc_test.iml" filepath="$PROJECT_DIR$/.idea/modules/net.groboclown.p4ic4idea_buildSrc_test.iml" group="net.groboclown.p4ic4idea_buildSrc" />
-      <module fileurl="file://$PROJECT_DIR$/p4-c-client-2018-1/p4-c-client-2018-1.iml" filepath="$PROJECT_DIR$/p4-c-client-2018-1/p4-c-client-2018-1.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core.iml" filepath="$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core.iml" group="p4d-test-core" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core_main.iml" filepath="$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core_main.iml" group="p4d-test-core" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core_test.iml" filepath="$PROJECT_DIR$/.idea/modules/p4d-test-core/p4d-test-core_test.iml" group="p4d-test-core" />

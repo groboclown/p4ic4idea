@@ -730,7 +730,7 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.getFileAnnotation(serverConfig, new AnnotateFileQuery())
+                        runner.getFileAnnotation(serverConfig, new AnnotateFileQuery(newFile, 1))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )

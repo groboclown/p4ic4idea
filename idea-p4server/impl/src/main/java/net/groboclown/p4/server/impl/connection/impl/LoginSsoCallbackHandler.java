@@ -22,6 +22,8 @@ import com.intellij.execution.util.ExecUtil;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.SystemInfo;
 import com.perforce.p4java.server.callback.ISSOCallback;
+import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -31,12 +33,17 @@ public class LoginSsoCallbackHandler
         implements ISSOCallback {
     private static final Logger LOG = Logger.getInstance(LoginSsoCallbackHandler.class);
 
+    private final ServerConfig serverConfig;
     private final String loginSsoCmd;
 
     private int lockWaitTimeoutMillis;
 
-    public LoginSsoCallbackHandler(@NotNull String loginSsoCmd, int lockWaitTimeoutMillis) {
-        this.loginSsoCmd = loginSsoCmd;
+    LoginSsoCallbackHandler(@NotNull ServerConfig serverConfig, int lockWaitTimeoutMillis) {
+        this.serverConfig = serverConfig;
+        this.loginSsoCmd = serverConfig.getLoginSso();
+        if (loginSsoCmd == null) {
+            throw new IllegalStateException("Should have login SSO at this point");
+        }
         this.lockWaitTimeoutMillis = lockWaitTimeoutMillis;
     }
 
@@ -52,27 +59,25 @@ public class LoginSsoCallbackHandler
                 LOG.info("failed with exit code " + output.getExitCode());
                 LOG.info("stdout: " + output.getStdout());
                 LOG.info("stderr: " + output.getStderr());
-                final ExecutionException ex = new ExecutionException("Exit code " + output.getExitCode());
+                //final ExecutionException ex = new ExecutionException("Exit code " + output.getExitCode());
 
-                // FIXME send out on an error handler
-                LOG.warn("FIXME Send an error handler event", ex);
-                //AlertManager.getInstance().addCriticalError(
-                //        new LoginSsoExecFailedHandler(
-                //                loginSsoCmd, output.getStdout(), output.getStderr(), ex),
-                //        ex
-                //);
+                LoginFailureMessage.send().singleSignOnExecutionFailed(serverConfig,
+                        new LoginFailureMessage.SingleSignOnExecutionFailureEvent(
+                                loginSsoCmd,
+                                output.getExitCode(), output.getStdout(), output.getStderr()
+                        ));
 
                 return Status.FAIL;
             }
             credBuffer.append(output.getStdout());
             return Status.PASS;
         } catch (ExecutionException e) {
-            // FIXME send out on an error handler
-            LOG.warn("FIXME send out on an error handler", e);
-            //AlertManager.getInstance().addCriticalError(
-            //        new LoginSsoExecFailedHandler(loginSsoCmd, null, null, e),
-            //        e
-            //);
+            LOG.warn("Failed to run single sign in command [" + loginSsoCmd + "]", e);
+            LoginFailureMessage.send().singleSignOnExecutionFailed(serverConfig,
+                    new LoginFailureMessage.SingleSignOnExecutionFailureEvent(
+                            loginSsoCmd,
+                            -1, "", e.getLocalizedMessage()
+                    ));
             return Status.FAIL;
         }
     }

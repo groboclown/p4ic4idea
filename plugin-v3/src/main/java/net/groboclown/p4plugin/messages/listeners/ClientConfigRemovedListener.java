@@ -17,6 +17,7 @@ package net.groboclown.p4plugin.messages.listeners;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import org.jetbrains.annotations.NotNull;
 
+// FIXME implement handlers
 public class ClientConfigRemovedListener implements ClientConfigRemovedMessage.Listener {
     @Override
     public void clientConfigurationRemoved(@NotNull ClientConfigRemovedMessage.Event event) {

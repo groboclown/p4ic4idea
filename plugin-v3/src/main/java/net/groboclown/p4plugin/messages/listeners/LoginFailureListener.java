@@ -19,9 +19,16 @@ import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import org.jetbrains.annotations.NotNull;
 
+// FIXME implement handlers
 public class LoginFailureListener implements LoginFailureMessage.Listener {
     @Override
     public void singleSignOnFailed(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
+
+    }
+
+    @Override
+    public void singleSignOnExecutionFailed(@NotNull ServerConfig config,
+            @NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
 
     }
 

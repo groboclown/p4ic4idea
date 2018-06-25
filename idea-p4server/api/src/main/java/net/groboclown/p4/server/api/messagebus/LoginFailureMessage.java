@@ -16,8 +16,11 @@ package net.groboclown.p4.server.api.messagebus;
 
 import com.intellij.util.messages.Topic;
 import com.perforce.p4java.exception.AuthenticationFailedException;
+import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
 
 public class LoginFailureMessage extends ApplicationMessage<LoginFailureMessage.Listener> {
     private static final String DISPLAY_NAME = "p4ic4idea:login failed";
@@ -27,8 +30,40 @@ public class LoginFailureMessage extends ApplicationMessage<LoginFailureMessage.
             Topic.BroadcastDirection.TO_CHILDREN);
     private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
+    public static class SingleSignOnExecutionFailureEvent {
+        private final String cmd;
+        private final int exitCode;
+        private final String stdout;
+        private final String stderr;
+
+        public SingleSignOnExecutionFailureEvent(String cmd, int exitCode, String stdout, String stderr) {
+            this.cmd = cmd;
+            this.exitCode = exitCode;
+            this.stdout = stdout;
+            this.stderr = stderr;
+        }
+
+        public String getCmd() {
+            return cmd;
+        }
+
+        public int getExitCode() {
+            return exitCode;
+        }
+
+        public String getStdout() {
+            return stdout;
+        }
+
+        public String getStderr() {
+            return stderr;
+        }
+    }
+
+
     public interface Listener {
         void singleSignOnFailed(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e);
+        void singleSignOnExecutionFailed(@NotNull ServerConfig config, @NotNull SingleSignOnExecutionFailureEvent e);
         void sessionExpired(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e);
 
         void passwordInvalid(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e);
@@ -46,6 +81,12 @@ public class LoginFailureMessage extends ApplicationMessage<LoginFailureMessage.
     public static class ListenerAdapter implements Listener {
         @Override
         public void singleSignOnFailed(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
+            // do nothing
+        }
+
+        @Override
+        public void singleSignOnExecutionFailed(@NotNull ServerConfig config,
+                @NotNull SingleSignOnExecutionFailureEvent e) {
             // do nothing
         }
 
@@ -69,6 +110,14 @@ public class LoginFailureMessage extends ApplicationMessage<LoginFailureMessage.
         @Override
         public void singleSignOnFailed(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
             onLoginFailure(config, e);
+        }
+
+        @Override
+        public void singleSignOnExecutionFailed(@NotNull ServerConfig config,
+                @NotNull SingleSignOnExecutionFailureEvent e) {
+            onLoginFailure(config,
+                    new AuthenticationFailedException(AuthenticationFailedException.ErrorType.SSO_LOGIN,
+                            new ServerMessage(new ArrayList<>())));
         }
 
         @Override

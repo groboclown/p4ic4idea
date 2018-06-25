@@ -198,7 +198,7 @@ public class SimpleConnectionManager implements ConnectionManager {
             }
             // FIXME pass in a error callback to the callback so that the connection manager can handle errors.
             // TODO look into registering the sso key through user options.
-            server.registerSSOCallback(new LoginSsoCallbackHandler(serverConfig.getLoginSso(), 1000), null);
+            server.registerSSOCallback(new LoginSsoCallbackHandler(serverConfig, 1000), null);
         }
         if (LOG.isDebugEnabled()) {
             LOG.debug("Sending connect request to server " + serverConfig.getServerName());

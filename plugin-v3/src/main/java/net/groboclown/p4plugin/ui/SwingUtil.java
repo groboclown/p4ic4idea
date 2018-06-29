@@ -72,9 +72,10 @@ public class SwingUtil {
      * @param button
      * @param icon
      */
-    public static void iconOnlyButton(@NotNull JButton button, @NotNull Icon icon, @NotNull ButtonType type) {
+    public static JButton iconOnlyButton(@NotNull JButton button, @NotNull Icon icon, @NotNull ButtonType type) {
         button.setIcon(icon);
         button.setPreferredSize(new Dimension(icon.getIconWidth() + type.borderSize,
                 icon.getIconHeight() + type.borderSize));
+        return button;
     }
 }

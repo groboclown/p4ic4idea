@@ -118,52 +118,44 @@
     -->
 
     <actions>
-        <!-- FIXME
-        <group id="P4Connection">
-            <action id="P4.WorkOnline" class="net.groboclown.p4plugin.actions.P4WorkOnlineAction"
-                    text="Work online"/>
-            <action id="P4.WorkOffline" class="net.groboclown.p4plugin.actions.P4WorkOfflineAction"
-                    text="Work offline"/>
-            <action id="P4.ReloadConfiguration" class="net.groboclown.p4plugin.actions.ReloadP4ConfigAction"
-                    text="Reload configuration"/>
-        </group>
-        -->
-
-        <!-- FIXME
         <group id="P4ExtendedActions">
+            <!-- FIXME
             <action id="P4.RevertUnchanged" class="net.groboclown.p4plugin.actions.P4RevertUnchanged"
                 text="Revert unchanged"
                 description="Revert files that are checked out but not different from the server version."
                 />
+            -->
 
 
-            <! - -
+            <!--
             We want to change the shelve behavior, but we can't replace an action id.
             <action id="ChangesView.Shelve" class="net.groboclown.p4plugin.actions.P4ShelveChangesAction"/>
-            - - >
+            -->
+            <!-- FIXME
             <action id="P4.Shelve" class="net.groboclown.p4plugin.actions.P4ShelveChangesAction"
                     description="Preserve work to the Perforce server without committing them"/>
 
             <action id="P4.CreateSwarmReview" class="net.groboclown.p4plugin.actions.CreateSwarmReviewAction"
                     text=""
                     description="Send a review request from the selected changelist"/>
+            -->
 
-            <! - - Add the revert unchanged to the changelist menu - - >
+            <reference ref="P4Connection"/>
+
+            <!-- Add the revert unchanged to the changelist menu -->
             <add-to-group group-id="ChangesViewPopupMenu"
                           anchor="after" relative-to-action="ChangesView.Edit"/>
+    </group>
 
-        </group>
-        -->
+    <!-- FIXME
+    <group id="P4RollbackHistory">
+        <action id="P4.RollbackHistory" class="net.groboclown.p4plugin.actions.P4RollbackHistoryAction"
+            text="Revert to version..." icon="AllIcons.Actions.Rollback"/>
 
-        <!-- FIXME
-        <group id="P4RollbackHistory">
-            <action id="P4.RollbackHistory" class="net.groboclown.p4plugin.actions.P4RollbackHistoryAction"
-                text="Revert to version..." icon="AllIcons.Actions.Rollback"/>
-
-            <add-to-group group-id="CommittedChangesToolbar"/>
-            <add-to-group group-id="VcsHistoryActionsGroup"/>
-        </group>
-        -->
+        <add-to-group group-id="CommittedChangesToolbar"/>
+        <add-to-group group-id="VcsHistoryActionsGroup"/>
+    </group>
+    -->
 
         <!-- Need to add to the welcome screen.
         To add ourself to the welcome screen ("checkout from project"), need to add an extension
@@ -201,9 +193,7 @@
             <separator/>
             -->
 
-            <!-- FIXME
             <reference ref="P4Connection"/>
-            -->
         </group>
 
         <group id="P4.Menu" class="net.groboclown.p4plugin.actions.P4Menu" popup="true" text="_P4">
@@ -220,13 +210,11 @@
         <!--
         -->
 
-        <!--
         <group id="P4.ContextMenu" class="net.groboclown.p4plugin.actions.P4Menu" popup="true" text="_P4">
             <reference ref="P4FileActions"/>
 
             <add-to-group group-id="VcsGroup" anchor="last"/>
         </group>
-        -->
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">

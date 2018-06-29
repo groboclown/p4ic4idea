@@ -16,7 +16,6 @@ package net.groboclown.p4plugin.ui.vcsroot;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBList;
@@ -29,8 +28,8 @@ import net.groboclown.p4.server.api.config.ConfigProblem;
 import net.groboclown.p4.server.api.config.ConfigPropertiesUtil;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
-import net.groboclown.p4plugin.util.PartValidation;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.util.PartValidation;
 
 import javax.swing.*;
 import java.awt.*;
@@ -136,7 +135,12 @@ public class P4RootConfigPanel {
             myDetailsTitle.setVisible(false);
         } else {
             myTabbedPane.setEnabledAt(1, true);
-            myTabbedPane.setSelectedIndex(1);
+
+            // This isn't the best action.  If the user is looking at
+            // something else, we don't want their work interrupted to
+            // suddenly be looking at something different.
+            // myTabbedPane.setSelectedIndex(1);
+
             myDetailsTitle.setVisible(true);
             myDetailsTitle.setText(P4Bundle.message("configuration.stack.wrapper.toggle.title",
                     errorCount, warningCount));

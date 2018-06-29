@@ -29,6 +29,7 @@ import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
+import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.extension.P4Vcs;
@@ -45,14 +46,10 @@ public class P4EditAction
         extends BasicAction {
     private static final Logger LOG = Logger.getInstance(P4EditAction.class);
 
-    public static final String EDIT = "Edit files";
-
-
-    @NotNull
-    @Override
-    protected String getActionName() {
-        return EDIT;
+    public P4EditAction() {
+        super(P4Bundle.getString("files.edit.action-name"));
     }
+
 
     @Override
     protected boolean isEnabled(@NotNull Project project, @NotNull P4Vcs vcs, @NotNull VirtualFile... vFiles) {

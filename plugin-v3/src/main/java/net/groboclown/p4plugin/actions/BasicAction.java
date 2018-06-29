@@ -52,6 +52,10 @@ import static com.intellij.openapi.vfs.VirtualFileVisitor.SKIP_ROOT;
  * Basic abstract action handler for all actions to extend.
  */
 public abstract class BasicAction extends DumbAwareAction {
+    BasicAction(String title) {
+        super(title);
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -136,12 +140,6 @@ public abstract class BasicAction extends DumbAwareAction {
             }
         });
     }
-
-    /**
-     * @return the name of action (it is used in a number of ui elements)
-     */
-    @NotNull
-    protected abstract String getActionName();
 
 
     /**

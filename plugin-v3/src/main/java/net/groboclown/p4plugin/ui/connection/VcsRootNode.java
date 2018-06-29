@@ -14,5 +14,7 @@
 
 package net.groboclown.p4plugin.ui.connection;
 
-public class VcsRootNode {
+import javax.swing.tree.DefaultMutableTreeNode;
+
+public class VcsRootNode extends DefaultMutableTreeNode {
 }

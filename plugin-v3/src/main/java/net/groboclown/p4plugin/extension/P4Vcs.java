@@ -62,7 +62,9 @@ import net.groboclown.p4.server.impl.util.ChangeListUtil;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.messages.UserMessage;
 import net.groboclown.p4plugin.ui.ColorUtil;
+import net.groboclown.p4plugin.ui.VcsDockedComponent;
 import net.groboclown.p4plugin.ui.config.P4ProjectConfigurable;
+import net.groboclown.p4plugin.ui.connection.ActiveConnectionPanel;
 import net.groboclown.p4plugin.ui.vcsroot.P4VcsRootConfigurable;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -386,33 +388,39 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         // Activate any other services that are required.
         */
 
-
         // This is a good time to check for passwords and connectivity
         // See bugs #81, #84
         // But, additionally, bug #110 which can cause a deadlock when this
         // is done in the activation thread.  So instead, push this to the
         // background.
 
-        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
-            @Override
-            public void run() {
-                // FIXME
-                /*
-                refreshServerConnectivity();
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
 
-                if (connectionWidget != null) {
-                    // This widget needs to be initialized outside the activation thread.
-                    // Do not block on running this, as it can indirectly run the password
-                    // store, and cause a deadlock (bug #110).
-                    ApplicationManager.getApplication().invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            connectionWidget.setValues();
-                        }
-                    });
-                }
-                */
+            // Add the connection panel view in the future, after initializations.
+            ApplicationManager.getApplication().invokeLater(() -> {
+                ActiveConnectionPanel panel = new ActiveConnectionPanel(myProject, null);
+                VcsDockedComponent.getInstance(myProject).addVcsTab(
+                        P4Bundle.getString("connection.tree.docked-title"),
+                        panel.getRoot(), true, false);
+                panel.refresh();
+            });
+
+            // FIXME
+            /*
+            refreshServerConnectivity();
+
+            if (connectionWidget != null) {
+                // This widget needs to be initialized outside the activation thread.
+                // Do not block on running this, as it can indirectly run the password
+                // store, and cause a deadlock (bug #110).
+                ApplicationManager.getApplication().invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        connectionWidget.setValues();
+                    }
+                });
             }
+            */
         });
 
     }

@@ -12,7 +12,12 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4plugin.actions;
+package net.groboclown.p4plugin.ui.connection;
 
-public class ShowConnectionAction {
+class PendingParentNode {
+    final int pendingCount;
+
+    PendingParentNode(int pendingCount) {
+        this.pendingCount = pendingCount;
+    }
 }

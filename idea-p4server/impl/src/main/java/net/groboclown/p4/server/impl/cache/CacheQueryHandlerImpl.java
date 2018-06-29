@@ -16,6 +16,7 @@ package net.groboclown.p4.server.impl.cache;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.commands.changelist.AddJobToChangelistAction;
@@ -37,6 +38,7 @@ import net.groboclown.p4.server.api.values.P4RemoteChangelist;
 import net.groboclown.p4.server.api.values.P4ResolveType;
 import net.groboclown.p4.server.api.values.P4Revision;
 import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
+import net.groboclown.p4.server.impl.cache.store.ActionStore;
 import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import net.groboclown.p4.server.impl.cache.store.ServerQueryCacheStore;
 import net.groboclown.p4.server.impl.values.P4LocalChangelistImpl;
@@ -45,8 +47,10 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -75,23 +79,23 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                             (cl) -> changelists
                                     .put(cl.getChangelistId(), new P4LocalChangelistImpl.Builder().withSrc(cl))));
 
-            cache.readClientActions(config).forEach((action) -> {
+            pendingClientActions(config, (action) -> {
                 switch (action.getCmd()) {
 
                     // case CREATE_CHANGELIST:
-                        // create changelist action should already have been handled by the
-                        // IdeChangelistCacheStore and P4ChangeProvider.
+                    // create changelist action should already have been handled by the
+                    // IdeChangelistCacheStore and P4ChangeProvider.
 
                     case DELETE_CHANGELIST: {
-                        DeleteChangelistAction a = (DeleteChangelistAction) action;
+                        DeleteChangelistAction a = toDeleteChangelistAction(action);
                         // Remove the changelist entirely from the returned list.
                         changelists.remove(a.getChangelistId());
                         break;
                     }
                     case MOVE_FILES_TO_CHANGELIST: {
-                        MoveFilesToChangelistAction a = (MoveFilesToChangelistAction) action;
-                        for (P4LocalChangelistImpl.Builder builder : changelists.values()) {
-                            if (builder.is(((MoveFilesToChangelistAction) action).getChangelistId())) {
+                        MoveFilesToChangelistAction a = toMoveFilesToChangelistAction(action);
+                        for (P4LocalChangelistImpl.Builder builder: changelists.values()) {
+                            if (builder.is(a.getChangelistId())) {
                                 builder.addFiles(a.getFiles());
                             } else {
                                 builder.removeFiles(a.getFiles());
@@ -100,7 +104,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         break;
                     }
                     case EDIT_CHANGELIST_DESCRIPTION: {
-                        EditChangelistAction a = (EditChangelistAction) action;
+                        EditChangelistAction a = toEditChangelistAction(action);
                         P4LocalChangelistImpl.Builder builder = changelists.get(a.getChangelistId());
                         if (builder != null) {
                             builder.withComment(a.getComment());
@@ -108,7 +112,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         break;
                     }
                     case ADD_JOB_TO_CHANGELIST: {
-                        AddJobToChangelistAction a = (AddJobToChangelistAction) action;
+                        AddJobToChangelistAction a = toAddJobToChangelistAction(action);
                         P4LocalChangelistImpl.Builder builder = changelists.get(a.getChangelistId());
                         if (builder != null) {
                             builder.withJob(a.getJob());
@@ -116,7 +120,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         break;
                     }
                     case REMOVE_JOB_FROM_CHANGELIST: {
-                        RemoveJobFromChangelistAction a = (RemoveJobFromChangelistAction) action;
+                        RemoveJobFromChangelistAction a = toRemoveJobFromChangelistAction(action);
                         P4LocalChangelistImpl.Builder builder = changelists.get(a.getChangelistId());
                         if (builder != null) {
                             builder.withJobRemoved(a.getJob());
@@ -142,10 +146,10 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
             // Because we read the pending actions in order of their behavior,
             // this will (should?) update each file with the correct status.
 
-            cache.readClientActions(config).forEach((action) -> {
+            pendingClientActions(config, (action) -> {
                 switch (action.getCmd()) {
                     case MOVE_FILE: {
-                        MoveFileAction a = (MoveFileAction) action;
+                        MoveFileAction a = toMoveFileAction(action);
                         P4LocalFileImpl.Builder srcBuilder = files.get(a.getSourceFile());
                         P4LocalFileImpl.Builder tgtBuilder = files.get(a.getTargetFile());
                         if (srcBuilder == null) {
@@ -170,7 +174,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         break;
                     }
                     case ADD_EDIT_FILE: {
-                        AddEditAction a = (AddEditAction) action;
+                        AddEditAction a = toAddEditAction(action);
                         P4LocalFileImpl.Builder builder = files.get(a.getFile());
                         if (builder == null) {
                             builder = new P4LocalFileImpl.Builder()
@@ -184,7 +188,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         break;
                     }
                     case DELETE_FILE: {
-                        DeleteFileAction a = (DeleteFileAction) action;
+                        DeleteFileAction a = toDeleteFileAction(action);
                         P4LocalFileImpl.Builder builder = files.get(a.getFile());
                         if (builder == null) {
                             builder = new P4LocalFileImpl.Builder()
@@ -198,7 +202,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         break;
                     }
                     case REVERT_FILE: {
-                        RevertFileAction a = (RevertFileAction) action;
+                        RevertFileAction a = toRevertFileAction(action);
                         files.remove(a.getFile());
                         break;
                     }
@@ -247,7 +251,52 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
             @NotNull String username) {
         // FIXME implement
         LOG.warn("FIXME implement getCachedClientsForUser");
-        return null;
+        return Collections.emptyList();
     }
 
+    // TODO look at using the CachePendingActionHandler's read.
+    private void pendingClientActions(@NotNull ClientConfig config, @NotNull Consumer<P4CommandRunner.ClientAction<?>> f)
+            throws InterruptedException {
+        final String sourceId = ActionStore.getSourceId(config);
+        cache.copyActions()
+                .stream()
+                .filter((a) -> a.clientAction != null && sourceId.equals(a.sourceId))
+                .forEach((a) -> f.accept(a.clientAction));
+    }
+
+    private static DeleteChangelistAction toDeleteChangelistAction(P4CommandRunner.ClientAction<?> action) {
+        return (DeleteChangelistAction) action;
+    }
+
+    private static MoveFilesToChangelistAction toMoveFilesToChangelistAction(P4CommandRunner.ClientAction<?> action) {
+        return (MoveFilesToChangelistAction) action;
+    }
+
+    private static EditChangelistAction toEditChangelistAction(P4CommandRunner.ClientAction<?> action) {
+        return (EditChangelistAction) action;
+    }
+
+    private static AddJobToChangelistAction toAddJobToChangelistAction(P4CommandRunner.ClientAction<?> action) {
+        return (AddJobToChangelistAction) action;
+    }
+
+    private static RemoveJobFromChangelistAction toRemoveJobFromChangelistAction(P4CommandRunner.ClientAction<?> action) {
+        return (RemoveJobFromChangelistAction) action;
+    }
+
+    private static MoveFileAction toMoveFileAction(P4CommandRunner.ClientAction<?> action) {
+        return (MoveFileAction) action;
+    }
+
+    private static AddEditAction toAddEditAction(P4CommandRunner.ClientAction<?> action) {
+        return (AddEditAction) action;
+    }
+
+    private static DeleteFileAction toDeleteFileAction(P4CommandRunner.ClientAction<?> action) {
+        return (DeleteFileAction) action;
+    }
+
+    private static RevertFileAction toRevertFileAction(P4CommandRunner.ClientAction<?> action) {
+        return (RevertFileAction) action;
+    }
 }

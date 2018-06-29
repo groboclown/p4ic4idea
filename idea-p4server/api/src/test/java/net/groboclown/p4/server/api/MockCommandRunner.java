@@ -207,6 +207,11 @@ public class MockCommandRunner
         }
 
         @Override
+        public void after(Runnable fun) {
+            fun.run();
+        }
+
+        @Override
         public boolean waitForCompletion(int timeout, TimeUnit unit) {
             return true;
         }
@@ -293,6 +298,11 @@ public class MockCommandRunner
                 return fun.apply(result);
             }
             return new MockQueryAnswer<>(null, error);
+        }
+
+        @Override
+        public void after(Runnable fun) {
+            fun.run();
         }
 
         @Override

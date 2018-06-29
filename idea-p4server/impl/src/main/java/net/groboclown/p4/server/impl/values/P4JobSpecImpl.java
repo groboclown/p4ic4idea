@@ -112,7 +112,11 @@ public class P4JobSpecImpl implements P4JobSpec {
                 Object r = field.getDataType().convert(job.getRawDetails().get(field.getName()));
                 return r == null
                         ? null
-                        : (r instanceof Date ? (Date) r : null);
+                        : (r instanceof Date
+                                ? (Date) r
+                                : (r instanceof Long
+                                    ? new Date((long) r)
+                                    : null));
             }
         }
         return null;

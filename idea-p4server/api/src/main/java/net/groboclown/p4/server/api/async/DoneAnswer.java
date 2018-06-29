@@ -85,6 +85,11 @@ class DoneAnswer<S> implements Answer<S> {
     }
 
     @Override
+    public void after(@NotNull Runnable r) {
+        r.run();
+    }
+
+    @Override
     public boolean blockingWait(int timeout, TimeUnit unit) {
         return true;
     }

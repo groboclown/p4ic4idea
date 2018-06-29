@@ -103,7 +103,9 @@ public class P4ServerComponent implements ProjectComponent {
             connectRunner = new ConnectCommandRunner(createConnectionManager());
         }
         if (commandRunner == null) {
-            commandRunner = new TopCommandRunner(project, CacheComponent.getInstance(project).getQueryHandler(),
+            commandRunner = new TopCommandRunner(project,
+                    CacheComponent.getInstance(project).getCacheQuery(),
+                    CacheComponent.getInstance(project).getCachePending(),
                     connectRunner);
         }
     }

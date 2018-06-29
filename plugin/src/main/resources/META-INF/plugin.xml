@@ -216,7 +216,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <vcs name="p4ic" vcsClass="net.groboclown.idea.p4ic.extension.P4Vcs" displayName="Perforce"/>
-        <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
+        <!-- <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/> -->
         <vcsPopupProvider implementation="net.groboclown.idea.p4ic.extension.P4QuickListContentProvider"/>
 
         <vcsChangesViewRefresher implementation="net.groboclown.idea.p4ic.changes.P4ChangesViewRefresher" />

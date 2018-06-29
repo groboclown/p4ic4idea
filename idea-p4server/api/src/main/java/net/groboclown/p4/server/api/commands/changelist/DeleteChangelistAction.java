@@ -23,11 +23,11 @@ public class DeleteChangelistAction implements P4CommandRunner.ClientAction<Dele
     private final String actionId;
     private final P4ChangelistId changelistId;
 
-    public DeleteChangelistAction(P4ChangelistId changelistId) {
+    public DeleteChangelistAction(@NotNull P4ChangelistId changelistId) {
         this(ActionUtil.createActionId(DeleteChangelistAction.class), changelistId);
     }
 
-    public DeleteChangelistAction(String actionId, P4ChangelistId changelistId) {
+    public DeleteChangelistAction(@NotNull String actionId, @NotNull P4ChangelistId changelistId) {
         this.actionId = actionId;
         this.changelistId = changelistId;
     }

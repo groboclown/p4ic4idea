@@ -314,8 +314,6 @@ public class ConfigPartStack {
 
     private void createUIComponents() {
         // custom component creation code
-
-        // FIXME this panel doesn't change the scroll panel size right.
         partStackPanel = new JPanel(new VerticalFlowLayout());
     }
 

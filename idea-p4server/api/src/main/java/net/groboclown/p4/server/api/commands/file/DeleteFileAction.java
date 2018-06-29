@@ -19,6 +19,7 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.ActionUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class DeleteFileAction implements P4CommandRunner.ClientAction<DeleteFileResult> {
     private final String actionId;
@@ -31,7 +32,7 @@ public class DeleteFileAction implements P4CommandRunner.ClientAction<DeleteFile
     }
 
     public DeleteFileAction(@NotNull String actionId, @NotNull FilePath file,
-            P4ChangelistId changelistId) {
+            @Nullable P4ChangelistId changelistId) {
         this.actionId = actionId;
         this.file = file;
         this.changelistId = changelistId;

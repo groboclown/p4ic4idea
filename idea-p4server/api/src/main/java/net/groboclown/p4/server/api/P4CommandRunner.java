@@ -526,6 +526,8 @@ public interface P4CommandRunner {
         @NotNull
         <T> QueryAnswer<T> mapQueryAsync(Function<S, QueryAnswer<T>> fun);
 
+        void after(Runnable fun);
+
         /**
          *
          * @param timeout time to wait
@@ -571,6 +573,8 @@ public interface P4CommandRunner {
         <T> ActionAnswer<T> mapActionAsync(Function<S, ActionAnswer<T>> fun);
         @NotNull
         <T> QueryAnswer<T> mapQueryAsync(Function<S, QueryAnswer<T>> fun);
+
+        void after(Runnable fun);
 
         /**
          *

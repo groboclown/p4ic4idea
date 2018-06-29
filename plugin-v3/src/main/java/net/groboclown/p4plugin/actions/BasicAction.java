@@ -23,16 +23,25 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
+import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4plugin.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.intellij.openapi.vfs.VirtualFileVisitor.ONE_LEVEL_DEEP;
 import static com.intellij.openapi.vfs.VirtualFileVisitor.SKIP_ROOT;
@@ -52,11 +61,7 @@ public abstract class BasicAction extends DumbAwareAction {
         if (project == null) {
             return;
         }
-        ApplicationManager.getApplication().runWriteAction(new Runnable() {
-            public void run() {
-                FileDocumentManager.getInstance().saveAllDocuments();
-            }
-        });
+        saveAll();
         final VirtualFile[] vFiles = event.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
         assert vFiles != null : "The action is only available when files are selected";
 
@@ -66,7 +71,10 @@ public abstract class BasicAction extends DumbAwareAction {
         }
         final List<VirtualFile> affectedFiles = collectAffectedFiles(project, vFiles);
         final List<VcsException> exceptions = new ArrayList<VcsException>();
-        perform(project, vcs, exceptions, affectedFiles);
+        perform(project, vcs, exceptions, affectedFiles)
+            .after(() -> {
+                // FIXME report errors
+            });
     }
 
 
@@ -78,7 +86,8 @@ public abstract class BasicAction extends DumbAwareAction {
      * @param exceptions    the list of exceptions to be collected.
      * @param affectedFiles the files to be affected by the operation
      */
-    protected abstract void perform(@NotNull Project project,
+    @NotNull
+    protected abstract P4CommandRunner.ActionAnswer<?> perform(@NotNull Project project,
                                        @NotNull P4Vcs vcs,
                                        @NotNull List<VcsException> exceptions,
                                        @NotNull List<VirtualFile> affectedFiles);
@@ -155,6 +164,25 @@ public abstract class BasicAction extends DumbAwareAction {
         return !file.isDirectory();
     }
 
+    protected Stream<Pair<ClientConfig, List<VirtualFile>>> getFilesByConfiguration(@NotNull final Project project,
+            @NotNull final Collection<VirtualFile> files) {
+        final ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        if (registry == null) {
+            return Stream.empty();
+        }
+        final Map<ClientConfigRoot, List<VirtualFile>> mapping = new HashMap<>();
+        files.forEach((file) -> {
+            ClientConfigRoot config = registry.getClientFor(file);
+            List<VirtualFile> mappedFiles = mapping.computeIfAbsent(config, k -> new ArrayList<>());
+            mappedFiles.add(file);
+        });
+        Stream.Builder<Pair<ClientConfig, List<VirtualFile>>> builder = Stream.builder();
+        for (Map.Entry<ClientConfigRoot, List<VirtualFile>> entry: mapping.entrySet()) {
+            builder.accept(Pair.create(entry.getKey().getClientConfig(), entry.getValue()));
+        }
+        return builder.build();
+    }
+
     /**
      * Disable the action if the event does not apply in this context.
      *
@@ -203,11 +231,7 @@ public abstract class BasicAction extends DumbAwareAction {
     /**
      * Save all files in the application (the operation creates write action)
      */
-    public static void saveAll() {
-        ApplicationManager.getApplication().runWriteAction(new Runnable() {
-            public void run() {
-                FileDocumentManager.getInstance().saveAllDocuments();
-            }
-        });
+    protected static void saveAll() {
+        ApplicationManager.getApplication().runWriteAction(() -> FileDocumentManager.getInstance().saveAllDocuments());
     }
 }

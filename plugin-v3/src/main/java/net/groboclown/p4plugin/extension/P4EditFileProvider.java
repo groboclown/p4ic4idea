@@ -90,7 +90,7 @@ public class P4EditFileProvider implements EditFileProvider {
                     P4ServerComponent.getInstance(project)
                             .getCommandRunner()
                             .perform(root.getClientConfig(),
-                                    new AddEditAction(fp, getFileType(fp), id, null))
+                                    new AddEditAction(fp, getFileType(fp), id, (String) null))
                     .whenCompleted((res) -> {
                         LOG.info("Opened for add/edit: " + fp + ": add? " + res.isAdd() + "; cl: " + res.getChangelistId());
                     })

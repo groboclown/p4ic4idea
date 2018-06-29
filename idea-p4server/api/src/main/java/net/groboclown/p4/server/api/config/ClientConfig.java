@@ -155,6 +155,10 @@ public final class ClientConfig {
         return clientServerRef;
     }
 
+    public boolean isIn(@NotNull ServerConfig config) {
+        return getServerConfig().getServerId().equals(config.getServerId());
+    }
+
     @Override
     public String toString() {
         if (clientName != null) {

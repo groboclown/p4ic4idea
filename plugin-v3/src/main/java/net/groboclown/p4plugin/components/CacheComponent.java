@@ -23,11 +23,13 @@ import com.intellij.openapi.util.Pair;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.async.BlockingAnswer;
+import net.groboclown.p4.server.api.cache.CachePendingActionHandler;
 import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.commands.sync.SyncListOpenedFilesChangesQuery;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.impl.cache.CachePendingActionHandlerImpl;
 import net.groboclown.p4.server.impl.cache.CacheQueryHandlerImpl;
 import net.groboclown.p4.server.impl.cache.CacheStoreUpdateListener;
 import net.groboclown.p4.server.impl.cache.IdeChangelistMapImpl;
@@ -51,6 +53,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     private IdeChangelistMap changelistMap;
     private IdeFileMap fileMap;
     private CacheQueryHandler queryHandler;
+    private CachePendingActionHandler pendingHandler;
     private CacheStoreUpdateListener updateListener;
 
 
@@ -71,8 +74,12 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
         this.project = project;
     }
 
-    public CacheQueryHandler getQueryHandler() {
+    public CacheQueryHandler getCacheQuery() {
         return queryHandler;
+    }
+
+    public CachePendingActionHandler getCachePending() {
+        return pendingHandler;
     }
 
     /**
@@ -146,6 +153,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     @Override
     public void initComponent() {
         queryHandler = new CacheQueryHandlerImpl(projectCache);
+        pendingHandler = new CachePendingActionHandlerImpl(projectCache);
         changelistMap = new IdeChangelistMapImpl(project, queryHandler, projectCache.getChangelistCacheStore());
         fileMap = new IdeFileMapImpl(project, queryHandler);
         updateListener = new CacheStoreUpdateListener(project, projectCache);

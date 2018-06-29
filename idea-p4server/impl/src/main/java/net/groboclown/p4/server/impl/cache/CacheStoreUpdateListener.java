@@ -20,6 +20,7 @@ import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.cache.CachePendingActionHandler;
 import net.groboclown.p4.server.api.cache.messagebus.AbstractCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheMessage;
@@ -53,6 +54,7 @@ public class CacheStoreUpdateListener implements Disposable {
 
     private final Project project;
     private final ProjectCacheStore cache;
+    private final CachePendingActionHandler pendingCache;
     private final String cacheId = AbstractCacheMessage.createCacheId();
     private boolean disposed = false;
 
@@ -60,6 +62,9 @@ public class CacheStoreUpdateListener implements Disposable {
             @NotNull ProjectCacheStore cache) {
         this.project = project;
         this.cache = cache;
+
+        // TODO don't create our own cache, instead use the project one.
+        this.pendingCache = new CachePendingActionHandlerImpl(cache);
 
         MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(this);
         CacheListener listener = new CacheListener();
@@ -162,14 +167,14 @@ public class CacheStoreUpdateListener implements Disposable {
             throws InterruptedException {
         switch (event.getState()) {
             case PENDING:
-                cache.writeActions(event.getClientRef(), (cache) ->
+                pendingCache.writeActions(event.getClientRef(), (cache) ->
                         cache.addAction(event.getAction()));
                 break;
             case COMPLETED:
             case FAILED:
                 // For the purposes of this cache class, all we care about for the
                 // fail and completed cases is removing the pending action.
-                cache.writeActions(event.getClientRef(), (cache) ->
+                pendingCache.writeActions(event.getClientRef(), (cache) ->
                         cache.removeActionById(event.getAction().getActionId()));
 
                 // handling changelist specific changes to the IDE mappings is done by P4ChangeProvider
@@ -217,7 +222,7 @@ public class CacheStoreUpdateListener implements Disposable {
         public void fileActionUpdate(@NotNull FileActionMessage.Event event) {
             try {
                 if (event.getState() == FileActionMessage.ActionState.PENDING) {
-                    cache.writeActions(event.getClientRef(), (store) -> store.addAction(event.getClientAction()));
+                    pendingCache.writeActions(event.getClientRef(), (store) -> store.addAction(event.getClientAction()));
                     switch (event.getClientAction().getCmd()) {
                         case MOVE_FILE:
                         case ADD_EDIT_FILE:
@@ -235,7 +240,7 @@ public class CacheStoreUpdateListener implements Disposable {
                             // Ignore extra caching
                     }
                 } else {
-                    cache.writeActions(event.getClientRef(),
+                    pendingCache.writeActions(event.getClientRef(),
                             (store) -> store.removeActionById(event.getClientAction().getActionId()));
                 }
             } catch (InterruptedException e) {
@@ -272,10 +277,10 @@ public class CacheStoreUpdateListener implements Disposable {
             try {
                 if (event.getState() == ServerActionCacheMessage.ActionState.PENDING) {
                     // Add the event
-                    cache.writeActions(event.getServerName(), (store) -> store.addAction(event.getServerAction()));
+                    pendingCache.writeActions(event.getServerName(), (store) -> store.addAction(event.getServerAction()));
                 } else {
                     // Remove the event
-                    cache.writeActions(event.getServerName(),
+                    pendingCache.writeActions(event.getServerName(),
                             (store) -> store.removeActionById(event.getServerAction().getActionId()));
                 }
             } catch (InterruptedException e) {

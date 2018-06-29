@@ -85,6 +85,11 @@ public class ActionAnswerImpl<S> implements P4CommandRunner.ActionAnswer<S> {
     }
 
     @Override
+    public void after(Runnable fun) {
+        answer.after(fun);
+    }
+
+    @Override
     public boolean waitForCompletion(int timeout, TimeUnit unit)
             throws InterruptedException {
         return answer.blockingWait(timeout, unit);

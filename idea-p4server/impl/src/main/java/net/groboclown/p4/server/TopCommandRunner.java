@@ -18,12 +18,15 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.exception.AuthenticationFailedException;
 import com.perforce.p4java.impl.mapbased.server.ServerInfo;
 import net.groboclown.p4.server.api.AbstractP4CommandRunner;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.cache.ActionChoice;
+import net.groboclown.p4.server.api.cache.CachePendingActionHandler;
 import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
 import net.groboclown.p4.server.api.cache.messagebus.DescribeChangelistCacheMessage;
@@ -73,6 +76,8 @@ import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
 import net.groboclown.p4.server.api.commands.user.ListUsersResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
+import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
 import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
@@ -83,6 +88,7 @@ import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
 import net.groboclown.p4.server.impl.commands.AnswerUtil;
+import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
 import net.groboclown.p4.server.impl.commands.DoneQueryAnswer;
 import net.groboclown.p4.server.impl.commands.ErrorQueryAnswerImpl;
 import net.groboclown.p4.server.impl.commands.OfflineActionAnswerImpl;
@@ -94,29 +100,37 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 
 /**
- * Layers a cache and server.
+ * Layers a queryCache and server.
  */
 public class TopCommandRunner extends AbstractP4CommandRunner
         implements Disposable {
     private static final Logger LOG = Logger.getInstance(TopCommandRunner.class);
 
 
-    private final CacheQueryHandler cache;
+    private final CacheQueryHandler queryCache;
+    private final CachePendingActionHandler pendingActionCache;
     private final AbstractServerCommandRunner server;
     private final Map<String, ServerConnectionState> stateCache = new HashMap<>();
     private boolean disposed;
 
 
     public TopCommandRunner(@NotNull Project project,
-            @NotNull CacheQueryHandler cache, @NotNull AbstractServerCommandRunner server) {
-        this.cache = cache;
+            @NotNull CacheQueryHandler queryCache, @NotNull CachePendingActionHandler pendingActionCache,
+            @NotNull AbstractServerCommandRunner server) {
+        this.queryCache = queryCache;
+        this.pendingActionCache = pendingActionCache;
         this.server = server;
+
+        final Map<VirtualFile, ClientConfig> clientConfigs = new HashMap<>();
 
         MessageBusClient.ApplicationClient appClient = MessageBusClient.forApplication(this);
         MessageBusClient.ProjectClient projClient = MessageBusClient.forProject(project, this);
+        ClientConfigAddedMessage.addListener(projClient, clientConfigs::put);
+        ClientConfigRemovedMessage.addListener(projClient, (event) -> clientConfigs.remove(event.getVcsRootDir()));
         ServerConnectedMessage.addListener(appClient, (serverConfig, loggedIn) -> {
             ServerConnectionState state = getStateFor(serverConfig);
             state.badConnection = false;
@@ -127,7 +141,11 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                 state.badLogin = false;
             }
 
-            sendPendingCacheRequests(serverConfig);
+            for (ClientConfig clientConfig: clientConfigs.values()) {
+                if (clientConfig.isIn(serverConfig)) {
+                    sendCachedPendingRequests(clientConfig);
+                }
+            }
         });
         UserSelectedOfflineMessage.addListener(projClient, name -> {
             // User wants to work offline, regardless of connection status.
@@ -146,8 +164,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                     state.badConnection = false;
                     state.badLogin = false;
                     state.needsLogin = false;
-
-                    sendPendingCacheRequests(state.config);
+                }
+                for (ClientConfig clientConfig: clientConfigs.values()) {
+                    sendCachedPendingRequests(clientConfig);
                 }
             }
 
@@ -158,8 +177,11 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                     state.badConnection = false;
                     state.badLogin = false;
                     state.needsLogin = false;
-
-                    sendPendingCacheRequests(state.config);
+                }
+                for (ClientConfig clientConfig: clientConfigs.values()) {
+                    if (clientConfig.getClientServerRef().equals(ref)) {
+                        sendCachedPendingRequests(clientConfig);
+                    }
                 }
             }
         });
@@ -213,7 +235,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     protected ActionAnswer<CreateJobResult> createJob(ServerConfig config, CreateJobAction action) {
         ServerActionCacheMessage.sendEvent(new ServerActionCacheMessage.Event(
                 config.getServerName(), action));
-        return onlineCheck(config,
+        return onlineExec(config,
                 () -> server.perform(config, action)
                     .whenCompleted((result) ->
                         ServerActionCacheMessage.sendEvent(new ServerActionCacheMessage.Event(
@@ -249,8 +271,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @NotNull
     @Override
     protected ActionAnswer<FetchFilesResult> fetchFiles(ClientConfig config, FetchFilesAction action) {
-        // No cache updates
-        return onlineCheck(config,
+        // No queryCache updates
+        return onlineExec(config,
                 () -> server.perform(config, action),
                 OfflineActionAnswerImpl::new);
     }
@@ -260,7 +282,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     protected ActionAnswer<SubmitChangelistResult> submitChangelist(
             ClientConfig config, SubmitChangelistAction action) {
         // Submits are never cached.  Instead, offline submits generate an error.
-        return onlineCheck(config,
+        return onlineExec(config,
                 () -> server.perform(config, action),
                 OfflineActionAnswerImpl::new
                 );
@@ -274,7 +296,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                 action.getSourceFile(), P4FileAction.MOVE_DELETE, null, action));
         FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
                 action.getTargetFile(), P4FileAction.MOVE_ADD_EDIT, null, action));
-        return onlineCheck(config,
+        return onlineExec(config,
                 () -> server.perform(config, action)
                     .whenCompleted((result) -> {
                         FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
@@ -301,7 +323,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
             @NotNull P4FileAction fileAction) {
         FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
                 file, fileAction, fileType, action));
-        return onlineCheck(config,
+        return onlineExec(config,
                 () -> server.perform(config, action)
                         .whenCompleted((result) ->
                             FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
@@ -319,7 +341,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     protected <R extends ClientResult> ActionAnswer<R> performNonFileAction(ClientConfig config, ClientAction<R> action) {
         ClientActionMessage.sendEvent(new ClientActionMessage.Event(
                 config.getClientServerRef(), action));
-        return onlineCheck(config,
+        return onlineExec(config,
                 () -> server.perform(config, action)
                         .whenCompleted((result) ->
                             ClientActionMessage.sendEvent(new ClientActionMessage.Event(
@@ -335,8 +357,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @NotNull
     @Override
     protected QueryAnswer<AnnotateFileResult> getAnnotatedFile(ServerConfig config, AnnotateFileQuery query) {
-        // No cache for file annotations.
-        return onlineCheck(config,
+        // No queryCache for file annotations.
+        return onlineQuery(config,
                 () -> server.getFileAnnotation(config, query),
                 () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError())
         );
@@ -346,7 +368,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @NotNull
     @Override
     protected QueryAnswer<DescribeChangelistResult> describeChangelist(ServerConfig config, DescribeChangelistQuery query) {
-        return onlineCheck(config,
+        return onlineQuery(config,
                 () -> server.describeChangelist(config, query)
                         .whenCompleted((result) ->
                             DescribeChangelistCacheMessage.sendEvent(
@@ -354,7 +376,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                                         result.getRequestedChangelist(), result.getRemoteChangelist()))),
                 () -> new DoneQueryAnswer<>(new DescribeChangelistResult(config,
                         query.getChangelistId(),
-                        cache.getCachedChangelist(config.getServerName(),
+                        queryCache.getCachedChangelist(config.getServerName(),
                                 query.getChangelistId()),
                         true))
         );
@@ -364,14 +386,14 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @NotNull
     @Override
     protected QueryAnswer<GetJobSpecResult> getJobSpec(ServerConfig config, GetJobSpecQuery query) {
-        return onlineCheck(config,
+        return onlineQuery(config,
                 () -> server.getJobSpec(config)
                         .whenCompleted((result) ->
                             JobSpecCacheMessage.sendEvent(new JobSpecCacheMessage.Event(
                                 config.getServerName(), result.getJobSpec()))
                         ),
                 () -> new DoneQueryAnswer<>(new GetJobSpecResult(config,
-                        cache.getCachedJobSpec(config.getServerName())))
+                        queryCache.getCachedJobSpec(config.getServerName())))
         );
     }
 
@@ -389,7 +411,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @NotNull
     @Override
     protected QueryAnswer<ListClientsForUserResult> listClientsForUser(ServerConfig config, ListClientsForUserQuery query) {
-        return onlineCheck(config,
+        return onlineQuery(config,
                 () -> server.getClientsForUser(config, query)
                         .whenCompleted((result) ->
                                 ListClientsForUserCacheMessage.sendEvent(new ListClientsForUserCacheMessage.Event(
@@ -397,7 +419,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                                 ))
                         ),
                 () -> new DoneQueryAnswer<>(new ListClientsForUserResult(config, query.getUsername(),
-                        cache.getCachedClientsForUser(config.getServerName(), query.getUsername())))
+                        queryCache.getCachedClientsForUser(config.getServerName(), query.getUsername())))
         );
     }
 
@@ -480,7 +502,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @Override
     protected QueryAnswer<ListOpenedFilesChangesResult> listOpenedFilesChanges(ClientConfig config,
             ListOpenedFilesChangesQuery query) {
-        return onlineCheck(config,
+        return onlineQuery(config,
                 () -> server.listOpenedFilesChanges(config, query),
                 () -> new DoneQueryAnswer<>(cachedListOpenedFilesChanges(config, null))
         );
@@ -501,8 +523,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     protected ListOpenedFilesChangesResult cachedListOpenedFilesChanges(ClientConfig config,
             SyncListOpenedFilesChangesQuery query) {
         return new ListOpenedFilesChangesResult(config,
-                cache.getCachedOpenedFiles(config),
-                cache.getCachedOpenedChangelists(config));
+                queryCache.getCachedOpenedFiles(config),
+                queryCache.getCachedOpenedChangelists(config));
     }
 
 
@@ -545,22 +567,84 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         }
     }
 
-    private void sendPendingCacheRequests(ServerConfig serverConfig) {
-        // FIXME pull the pending actions and perform them, and perform requested cache updates.
-        LOG.warn("FIXME pull the pending actions and perform them, and perform requested cache updates.");
-    }
-
-    private <R> R onlineCheck(@NotNull ClientConfig clientConfig, Exec<R> serverExec, Exec<R> cacheExec) {
-        return onlineCheck(clientConfig.getServerConfig(), serverExec, cacheExec);
-    }
-
-    private <R> R onlineCheck(@NotNull ServerConfig serverConfig, Exec<R> serverExec, Exec<R> cacheExec) {
-        ServerConnectionState state = getStateFor(serverConfig);
-        // TODO if the state is something that requires a login, should that be done here?
-        if (!(state.badConnection || state.badLogin || state.userOffline || state.needsLogin)) {
-            return serverExec.exec();
+    /**
+     * Fire-and-forget send cached pending requests.
+     *
+     * @param clientConfig configuration
+     */
+    @SuppressWarnings("unchecked")
+    private void sendCachedPendingRequests(ClientConfig clientConfig) {
+        try {
+            // Note: must be serially applied, because the pending actions have a strict order.
+            pendingActionCache.copyActions(clientConfig)
+                .reduce(new DoneActionAnswer(null),
+                    (BiFunction<ActionAnswer, ActionChoice, ActionAnswer>) (answer, action) -> answer.mapActionAsync((x) ->
+                            action.when(
+                                    (c) -> perform(clientConfig, c),
+                                    (s) -> perform(clientConfig.getServerConfig(), s)
+                            ).whenCompleted((ev) -> {
+                                try {
+                                    pendingActionCache.writeActions(clientConfig.getClientServerRef(),
+                                            (cache) -> cache.removeActionById(action.getActionId()));
+                                } catch (InterruptedException ex) {
+                                    LOG.warn(ex);
+                                }
+                            }).whenServerError((ex) -> {
+                                LOG.warn("Problem committing pending action " + action, ex);
+                            })),
+                    (actionLeft, actionRight) -> actionLeft.mapActionAsync((x) -> actionRight))
+                .whenServerError((e) -> {
+                    LOG.warn("Encountered unexpected error: " + e);
+                });
+        } catch (InterruptedException e) {
+            LOG.warn(e);
         }
-        return cacheExec.exec();
+    }
+
+    private <R> ActionAnswer<R> onlineExec(@NotNull ClientConfig clientConfig, Exec<ActionAnswer<R>> serverExec,
+            Exec<ActionAnswer<R>> cacheExec) {
+        return onlineExec(clientConfig.getServerConfig(), serverExec, cacheExec);
+    }
+
+    private <R> ActionAnswer<R> onlineExec(@NotNull ServerConfig serverConfig, Exec<ActionAnswer<R>> serverExec,
+            Exec<ActionAnswer<R>> cacheExec) {
+        final ServerConnectionState firstState = getStateFor(serverConfig);
+        final ActionAnswer<R> ret;
+        if (firstState.needsLogin && !(firstState.badLogin || firstState.badConnection || firstState.userOffline)) {
+            ret = login(serverConfig, new LoginAction()).mapAction((x) -> null);
+        } else {
+            ret = new DoneActionAnswer<>(null);
+        }
+        return ret.mapActionAsync((x) -> {
+            final ServerConnectionState nextState = getStateFor(serverConfig);
+            if (!(nextState.badConnection || nextState.badLogin || nextState.userOffline || nextState.needsLogin)) {
+                return serverExec.exec();
+            }
+            return cacheExec.exec();
+        });
+    }
+
+    private <R> QueryAnswer<R> onlineQuery(@NotNull ClientConfig clientConfig, Exec<QueryAnswer<R>> serverExec,
+            Exec<QueryAnswer<R>> cacheExec) {
+        return onlineQuery(clientConfig.getServerConfig(), serverExec, cacheExec);
+    }
+
+    private <R> QueryAnswer<R> onlineQuery(@NotNull ServerConfig serverConfig, Exec<QueryAnswer<R>> serverExec,
+            Exec<QueryAnswer<R>> cacheExec) {
+        final ServerConnectionState firstState = getStateFor(serverConfig);
+        final QueryAnswer<R> ret;
+        if (firstState.needsLogin && !(firstState.badLogin || firstState.badConnection || firstState.userOffline)) {
+            ret = login(serverConfig, new LoginAction()).mapQuery((x) -> null);
+        } else {
+            ret = new DoneQueryAnswer<>(null);
+        }
+        return ret.mapQueryAsync((x) -> {
+            final ServerConnectionState nextState = getStateFor(serverConfig);
+            if (!(nextState.badConnection || nextState.badLogin || nextState.userOffline || nextState.needsLogin)) {
+                return serverExec.exec();
+            }
+            return cacheExec.exec();
+        });
     }
 
     interface Exec<R> {

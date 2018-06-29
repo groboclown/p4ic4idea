@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -111,6 +112,44 @@ public class CollectionsMatchers {
                 }
             }
             return remaining.isEmpty();
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendValueList("a collection which contains ", ", ", ".", items);
+        }
+    }
+
+
+    public static class ContainsExactlyMatcher<T> extends BaseMatcher<Collection<T>> {
+        private final List<T> items;
+
+        public ContainsExactlyMatcher(T... items) {
+            this.items = Arrays.asList(items);
+        }
+
+        public ContainsExactlyMatcher(Collection<T> items) {
+            this.items = new ArrayList<>(items);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public boolean matches(Object o) {
+            Iterator<T> that = ((Collection<T>) o).iterator();
+            Iterator<T> mine = items.iterator();
+            while (true) {
+                if (that.hasNext() && mine.hasNext()) {
+                    T tn = that.next();
+                    T mn = mine.next();
+                    if ((mn == null && tn != null) || (mn != null && !mn.equals(tn))) {
+                        return false;
+                    }
+                } else if (!that.hasNext() && !mine.hasNext()) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         }
 
         @Override

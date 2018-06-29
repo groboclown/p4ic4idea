@@ -80,7 +80,7 @@ public class P4VFSListener extends VcsVFSListener {
                     LOG.debug("Opening for add/edit: " + fp + " (@" + id + ")");
                 }
                 P4ServerComponent.getInstance(myProject).getCommandRunner()
-                        .perform(root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, null));
+                        .perform(root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, (String) null));
             } else {
                 LOG.info("Skipped adding " + file + "; not under known P4 client");
             }

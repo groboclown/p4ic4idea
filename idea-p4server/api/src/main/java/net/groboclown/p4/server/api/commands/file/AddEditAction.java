@@ -22,6 +22,8 @@ import net.groboclown.p4.server.api.values.P4FileType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.charset.Charset;
+
 public class AddEditAction implements P4CommandRunner.ClientAction<AddEditResult> {
     private final String actionId;
     private final FilePath file;
@@ -30,7 +32,7 @@ public class AddEditAction implements P4CommandRunner.ClientAction<AddEditResult
     private final String charset;
 
     public AddEditAction(@NotNull FilePath file, @Nullable P4FileType type,
-            P4ChangelistId changelistId, String charset) {
+            @Nullable P4ChangelistId changelistId, String charset) {
         this(ActionUtil.createActionId(AddEditAction.class), file, type, changelistId, charset);
     }
 
@@ -41,6 +43,11 @@ public class AddEditAction implements P4CommandRunner.ClientAction<AddEditResult
         this.type = type;
         this.changelistId = changelistId;
         this.charset = charset;
+    }
+
+    public AddEditAction(@NotNull FilePath file, @Nullable P4FileType type,
+            @Nullable P4ChangelistId changelistId, @Nullable Charset charset) {
+        this(file, type, changelistId, charset == null ? null : charset.name());
     }
 
     @NotNull

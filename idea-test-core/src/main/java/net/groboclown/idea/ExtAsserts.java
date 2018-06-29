@@ -17,25 +17,32 @@ package net.groboclown.idea;
 import java.util.Collection;
 
 import static net.groboclown.idea.ExtMatchers.containsAll;
+import static net.groboclown.idea.ExtMatchers.containsExactly;
 import static net.groboclown.idea.ExtMatchers.hasSize;
 import static net.groboclown.idea.ExtMatchers.isEmpty;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ExtAsserts {
-    public static <T> void assertEmpty(Collection<T> c) {
-        assertThat(c, isEmpty());
+    public static <T> void assertEmpty(Collection<T> actual) {
+        assertThat(actual, isEmpty());
     }
 
-    public static <T> void assertEmpty(Collection<T> c, String msg) {
-        assertThat(msg, c, isEmpty());
+    public static <T> void assertEmpty(Collection<T> actual, String msg) {
+        assertThat(msg, actual, isEmpty());
     }
 
-    public static <T> void assertContainsAll(Collection<T> c, T... expected) {
-        assertThat(c, containsAll(expected));
+    @SafeVarargs
+    public static <T> void assertContainsAll(Collection<T> actual, T... expected) {
+        assertThat(actual, containsAll(expected));
     }
 
-    public static <T> void assertContainsAll(Collection<T> c, Collection<T> expected) {
-        assertThat(c, containsAll(expected));
+    public static <T> void assertContainsAll(Collection<T> actual, Collection<T> expected) {
+        assertThat(actual, containsAll(expected));
+    }
+
+    @SafeVarargs
+    public static <T> void assertContainsExactly(Collection<T> actual, T... expected) {
+        assertThat(actual, containsExactly(expected));
     }
 
     public static <T> void assertSize(int expectedSize, Collection<T> actual) {

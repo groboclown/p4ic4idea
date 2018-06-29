@@ -46,6 +46,10 @@ public class ExtMatchers {
         return new CollectionsMatchers.ContainsAllMatcher<>(items);
     }
 
+    public static <T> CollectionsMatchers.ContainsExactlyMatcher<T> containsExactly(T... items) {
+        return new CollectionsMatchers.ContainsExactlyMatcher<T>(items);
+    }
+
     @SafeVarargs
     public static <K,V> CollectionsMatchers.MapContainsAllMatcher<K,V> mapContainsAll(Pair<K,V>... pairs) {
         return new CollectionsMatchers.MapContainsAllMatcher<>(pairs);

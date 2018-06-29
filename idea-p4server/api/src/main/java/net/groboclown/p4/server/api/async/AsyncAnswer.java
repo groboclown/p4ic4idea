@@ -19,6 +19,7 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -37,8 +38,9 @@ import java.util.function.Function;
  */
 class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
     private final Object sync = new Object();
-    private final List<Consumer<S>> doneListeners = new ArrayList<>();
+    private final List<Consumer<S>> resolveListeners = new ArrayList<>();
     private final List<Consumer<P4CommandRunner.ServerResultException>> errListeners = new ArrayList<>();
+    private final List<Runnable> afterListeners = new ArrayList<>();
     private final CountDownLatch completedSignal = new CountDownLatch(1);
     private S result;
     private P4CommandRunner.ServerResultException error;
@@ -62,10 +64,14 @@ class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
 
         // already completed, so the list of listeners will never change from
         // another call.
-        for (Consumer<S> listener : doneListeners) {
+        for (Consumer<S> listener : resolveListeners) {
             listener.accept(result);
         }
-        doneListeners.clear();
+        for (Runnable listener : afterListeners) {
+            listener.run();
+        }
+        resolveListeners.clear();
+        afterListeners.clear();
         errListeners.clear();
     }
 
@@ -84,7 +90,11 @@ class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
         for (Consumer<P4CommandRunner.ServerResultException> listener : errListeners) {
             listener.accept(error);
         }
-        doneListeners.clear();
+        for (Runnable listener : afterListeners) {
+            listener.run();
+        }
+        resolveListeners.clear();
+        afterListeners.clear();
         errListeners.clear();
     }
 
@@ -93,7 +103,7 @@ class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
     public Answer<S> whenCompleted(@NotNull Consumer<S> c) {
         synchronized (sync) {
             if (!completed) {
-                doneListeners.add(c);
+                resolveListeners.add(c);
                 return this;
             }
         }
@@ -118,13 +128,24 @@ class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
         return this;
     }
 
+    @Override
+    public void after(@Nonnull Runnable r) {
+        synchronized (sync) {
+            if (!completed) {
+                afterListeners.add(r);
+                return;
+            }
+        }
+        r.run();
+    }
+
     @NotNull
     @Override
     public <T> Answer<T> map(@NotNull Function<S, T> fun) {
         synchronized (sync) {
             if (!completed) {
                 AsyncAnswer<T> ret = new AsyncAnswer<>();
-                doneListeners.add((s) -> ret.resolve(fun.apply(s)));
+                resolveListeners.add((s) -> ret.resolve(fun.apply(s)));
                 errListeners.add(ret::reject);
                 return ret;
             }
@@ -142,7 +163,7 @@ class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
         synchronized (sync) {
             if (!completed) {
                 AsyncAnswer<T> ret = new AsyncAnswer<>();
-                doneListeners.add((s) ->
+                resolveListeners.add((s) ->
                     fun.apply(s)
                         .whenCompleted(ret::resolve)
                         .whenFailed(ret::reject));

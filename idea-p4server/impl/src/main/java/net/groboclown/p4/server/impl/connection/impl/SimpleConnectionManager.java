@@ -244,8 +244,7 @@ public class SimpleConnectionManager implements ConnectionManager {
         final UsageOptions options = new UsageOptions(props);
         // These are not set in the usage options via the properties, so we
         // need to manually configure them.
-        // TODO alter the p4java API code so that it is properly loaded
-        // in the UsageOptions class.
+        // TODO alter the p4java API code so that these are properly loaded in the UsageOptions class.
         {
             // see bug #61
             // Hostname as used by the Java code:

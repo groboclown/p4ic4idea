@@ -173,11 +173,9 @@
 
         <group id="P4FileActions">
             <reference ref="CheckinFiles"/>
-            <!-- FIXME
-            <action id="P4.Edit" class="net.groboclown.p4plugin.file.P4Edit"
+            <action id="P4.Edit" class="net.groboclown.p4plugin.actions.P4EditAction"
                     text="Add or edit" icon="AllIcons.Actions.Edit"
                     use-shortcut-of="ChangesView.AddUnversioned"/>
-            -->
             <reference ref="ChangesView.Revert"/>
             <reference ref="UpdateFiles" />
             <!-- FIXME
@@ -208,15 +206,18 @@
             -->
         </group>
 
-        <!--
         <group id="P4.Menu" class="net.groboclown.p4plugin.actions.P4Menu" popup="true" text="_P4">
             <reference ref="P4FileActions"/>
 
+            <!--
             <separator/>
             <reference ref="P4RepositoryActions"/>
+            -->
 
             <add-to-group group-id="VcsGlobalGroup" anchor="after" relative-to-action="Vcs.Specific"/>
         </group>
+
+        <!--
         -->
 
         <!--
@@ -274,6 +275,11 @@
             <implementation-class>net.groboclown.p4.server.impl.ProjectConfigRegistryImpl</implementation-class>
         </component>
 
+        <component>
+            <implementation-class>net.groboclown.p4plugin.ui.VcsDockedComponent</implementation-class>
+            <interface-class>net.groboclown.p4plugin.ui.VcsDockedComponent</interface-class>
+        </component>
+
         <!-- FIXME
         <component>
             <interface-class>com.intellij.openapi.vcs.changes.ChangeListDecorator</interface-class>
@@ -283,10 +289,6 @@
         <component>
             <implementation-class>net.groboclown.idea.p4ci.extension.P4FileUrlMappingImpl</implementation-class>
             <option name="workspace" value="true"/>
-        </component>
-        <component>
-            <implementation-class>net.groboclown.p4plugin.ui.VcsDockedComponent</implementation-class>
-            <interface-class>net.groboclown.p4plugin.ui.VcsDockedComponent</interface-class>
         </component>
         <component>
             <implementation-class>net.groboclown.p4plugin.ui.pending.PendingChangesView</implementation-class>

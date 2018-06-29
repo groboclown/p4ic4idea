@@ -73,6 +73,8 @@ public interface Answer<S> {
     @NotNull
     <T> Answer<T> futureMap(@NotNull BiConsumer<S, AnswerSink<T>> func);
 
+    void after(@NotNull Runnable r);
+
     /**
      *
      * @param timeout time to wait

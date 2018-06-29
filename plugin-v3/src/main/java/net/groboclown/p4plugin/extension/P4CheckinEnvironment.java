@@ -190,10 +190,9 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                 }
                 P4CommandRunner.ActionAnswer<AddEditResult> answer =
                         P4ServerComponent.getInstance(project).getCommandRunner()
-                                .perform(root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, null))
-                                .whenCompleted((res) -> {
-                                    P4ChangesViewRefresher.refreshLater(project);
-                                })
+                                .perform(root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, (String) null))
+                                .whenCompleted((res) -> P4ChangesViewRefresher.refreshLater(project))
+                                // TODO report issues
                                 //.whenServerError(asdf)
                                 //.whenOffline(asdf)
                                 ;

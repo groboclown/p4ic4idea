@@ -42,6 +42,11 @@ public class DoneQueryAnswer<S> implements P4CommandRunner.QueryAnswer<S> {
         return this;
     }
 
+    @Override
+    public void after(Runnable r) {
+        r.run();
+    }
+
     @NotNull
     @Override
     public <T> P4CommandRunner.ActionAnswer<T> mapAction(Function<S, T> fun) {

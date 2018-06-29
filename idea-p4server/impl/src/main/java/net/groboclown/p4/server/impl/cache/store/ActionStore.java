@@ -14,8 +14,6 @@
 
 package net.groboclown.p4.server.impl.cache.store;
 
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
@@ -35,13 +33,7 @@ import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4FileType;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class ActionStore {
-
 
     @SuppressWarnings("WeakerAccess")
     public static class PendingAction {
@@ -94,69 +86,73 @@ public class ActionStore {
 
         public String sourceId;
         public String actionId;
-        public Map<String, Object> data;
+
+        // The persistence mechanism for serialization / deserialization means that
+        // we cannot store dynamic class information in the state - all classes must
+        // be defined as concrete without magic polymorphism.
+        public PrimitiveMap data;
     }
 
 
     @NotNull
-    public static PendingAction read(@NotNull State state) {
+    public static PendingAction read(@NotNull State state) throws PrimitiveMap.UnmarshalException {
         if (state.serverActionCmd != null) {
             return new PendingAction(state.sourceId, readServerAction(state));
         }
         if (state.clientActionCmd != null) {
             return new PendingAction(state.sourceId, readClientAction(state));
         }
-        throw new IllegalArgumentException("Unknown action " + state.actionId + ": " + state.data);
+        throw new PrimitiveMap.UnmarshalException("Unknown action " + state.actionId, "ActionStore.State");
     }
 
 
     @NotNull
-    private static P4CommandRunner.ClientAction<?> readClientAction(@NotNull State state) {
+    private static P4CommandRunner.ClientAction<?> readClientAction(@NotNull State state)
+            throws PrimitiveMap.UnmarshalException {
         if (state.clientActionCmd == null) {
             throw new IllegalArgumentException("not a client action");
         }
         switch (state.clientActionCmd) {
             case MOVE_FILE:
                 return new MoveFileAction(state.actionId,
-                        VcsUtil.getFilePath((String) state.data.get("source")),
-                        VcsUtil.getFilePath((String) state.data.get("target")));
+                        state.data.getFilePathNotNull("source"),
+                        state.data.getFilePathNotNull("target"));
             case ADD_EDIT_FILE:
                 return new AddEditAction(state.actionId,
-                        VcsUtil.getFilePath((String) state.data.get("file")),
-                        P4FileType.convertNullable((String) state.data.get("type")),
-                        P4ChangelistIdStore.readNullable((P4ChangelistIdStore.State) state.data.get("cl-id")),
-                        (String) state.data.get("charset"));
+                        state.data.getFilePathNotNull("file"),
+                        P4FileType.convertNullable(state.data.getStringNullable("type", null)),
+                        state.data.getChangelistIdNullable("cl-id"),
+                        state.data.getStringNullable("charset", null));
             case DELETE_FILE:
                 return new DeleteFileAction(state.actionId,
-                        VcsUtil.getFilePath((String) state.data.get("file")),
-                        P4ChangelistIdStore.read((P4ChangelistIdStore.State) state.data.get("cl-id")));
+                        state.data.getFilePathNotNull("file"),
+                        state.data.getChangelistIdNullable("cl-id"));
             case REVERT_FILE:
                 return new RevertFileAction(state.actionId,
-                        VcsUtil.getFilePath((String) state.data.get("file")));
+                        state.data.getFilePathNotNull("file"));
             case MOVE_FILES_TO_CHANGELIST:
-                //noinspection unchecked
                 return new MoveFilesToChangelistAction(state.actionId,
-                        P4ChangelistIdStore.read((P4ChangelistIdStore.State) state.data.get("cl-id")),
-                        getFilePathList((List<String>) state.data.get("files")));
+                        state.data.getChangelistIdNotNull("cl-id"),
+                        state.data.getFilePathList("files"));
             case EDIT_CHANGELIST_DESCRIPTION:
                 return new EditChangelistAction(state.actionId,
-                        P4ChangelistIdStore.read((P4ChangelistIdStore.State) state.data.get("cl-id")),
-                        (String) state.data.get("comment"));
+                        state.data.getChangelistIdNotNull("cl-id"),
+                        state.data.getStringNotNull("comment"));
             case ADD_JOB_TO_CHANGELIST:
                 return new AddJobToChangelistAction(state.actionId,
-                        P4ChangelistIdStore.read((P4ChangelistIdStore.State) state.data.get("cl-id")),
-                        P4JobStore.read((P4JobStore.State) state.data.get("job")));
+                        state.data.getChangelistIdNotNull("cl-id"),
+                        state.data.getP4Job("job"));
             case REMOVE_JOB_FROM_CHANGELIST:
                 return new RemoveJobFromChangelistAction(state.actionId,
-                        P4ChangelistIdStore.read((P4ChangelistIdStore.State) state.data.get("cl-id")),
-                        P4JobStore.read((P4JobStore.State) state.data.get("job")));
+                        state.data.getChangelistIdNotNull("cl-id"),
+                        state.data.getP4Job("job"));
             case CREATE_CHANGELIST:
                 return new CreateChangelistAction(state.actionId,
-                        ClientServerRefStore.read((ClientServerRefStore.State) state.data.get("ref")),
-                        (String) state.data.get("comment"));
+                        state.data.getClientServerRefNotNull("ref"),
+                        state.data.getStringNotNull("comment"));
             case DELETE_CHANGELIST:
                 return new DeleteChangelistAction(state.actionId,
-                        P4ChangelistIdStore.read((P4ChangelistIdStore.State) state.data.get("changelist")));
+                        state.data.getChangelistIdNotNull("cl-id"));
             case FETCH_FILES:
                 throw new IllegalArgumentException("Should not attempt to store a sync action");
             case SUBMIT_CHANGELIST:
@@ -167,17 +163,129 @@ public class ActionStore {
 
 
     @NotNull
-    private static P4CommandRunner.ServerAction<?> readServerAction(@NotNull State state) {
+    static State getState(String sourceId, @NotNull P4CommandRunner.ClientAction<?> action) {
+        State ret = new State();
+        ret.sourceId = sourceId;
+        ret.actionId = action.getActionId();
+        ret.serverActionCmd = null;
+        ret.clientActionCmd = action.getCmd();
+        ret.data = new PrimitiveMap();
+        switch (action.getCmd()) {
+            case MOVE_FILE: {
+                MoveFileAction a = (MoveFileAction) action;
+                ret.data
+                        .putFilePath("source", a.getSourceFile())
+                        .putFilePath("target", a.getTargetFile());
+                break;
+            }
+            case ADD_EDIT_FILE: {
+                AddEditAction a = (AddEditAction) action;
+                ret.data
+                        .putFilePath("file", a.getFile())
+                        .putString("type", a.getFileType() == null
+                            ? null
+                            : a.getFileType().toString())
+                        .putChangelistId("cl-id", a.getChangelistId())
+                        .putString("charset", a.getCharset());
+                break;
+            }
+            case DELETE_FILE: {
+                DeleteFileAction a = (DeleteFileAction) action;
+                ret.data
+                        .putFilePath("file", a.getFile())
+                        .putChangelistId("cl-id", a.getChangelistId());
+                break;
+            }
+            case REVERT_FILE:
+                ret.data
+                        .putFilePath("file", ((RevertFileAction) action).getFile());
+                break;
+            case MOVE_FILES_TO_CHANGELIST: {
+                MoveFilesToChangelistAction a = (MoveFilesToChangelistAction) action;
+                ret.data
+                        .putChangelistId("cl-id", a.getChangelistId())
+                        .putFilePathList("files", a.getFiles());
+                break;
+            }
+            case EDIT_CHANGELIST_DESCRIPTION: {
+                EditChangelistAction a = (EditChangelistAction) action;
+                ret.data
+                        .putChangelistId("cl-id", a.getChangelistId())
+                        .putString("comment", a.getComment());
+                break;
+            }
+            case ADD_JOB_TO_CHANGELIST: {
+                AddJobToChangelistAction a = (AddJobToChangelistAction) action;
+                ret.data
+                        .putChangelistId("cl-id", a.getChangelistId())
+                        .putP4Job("job", a.getJob());
+                break;
+            }
+            case REMOVE_JOB_FROM_CHANGELIST: {
+                RemoveJobFromChangelistAction a = (RemoveJobFromChangelistAction) action;
+                ret.data
+                        .putChangelistId("cl-id", a.getChangelistId())
+                        .putP4Job("job", a.getJob());
+                break;
+            }
+            case CREATE_CHANGELIST: {
+                CreateChangelistAction a = (CreateChangelistAction) action;
+                ret.data
+                        .putClientServerRef("ref", a.getClientServerRef())
+                        .putString("comment", a.getComment());
+                break;
+            }
+            case DELETE_CHANGELIST:
+                ret.data
+                        .putChangelistId("cl-id", ((DeleteChangelistAction) action).getChangelistId());
+                break;
+            case FETCH_FILES:
+                throw new IllegalArgumentException("Should not attempt to store a submit action");
+            case SUBMIT_CHANGELIST:
+                throw new IllegalArgumentException("Should not attempt to store a submit action");
+            default:
+                throw new IllegalArgumentException("Unknown client cmd " + action.getCmd());
+        }
+        return ret;
+    }
+
+
+    @NotNull
+    private static P4CommandRunner.ServerAction<?> readServerAction(@NotNull State state)
+            throws PrimitiveMap.UnmarshalException {
         if (state.serverActionCmd == null) {
             throw new IllegalArgumentException("not a server action");
         }
         switch (state.serverActionCmd) {
             case CREATE_JOB:
-                return new CreateJobAction(state.actionId, P4JobStore.read((P4JobStore.State) state.data.get("job")));
+                return new CreateJobAction(
+                        state.actionId,
+                        state.data.getP4Job("job"));
             case LOGIN:
                 throw new IllegalArgumentException("Should not attempt to store a submit action");
         }
         throw new IllegalArgumentException("Unknown server cmd " + state.serverActionCmd);
+    }
+
+
+    @NotNull
+    static State getState(String sourceId, @NotNull P4CommandRunner.ServerAction<?> action) {
+        State ret = new State();
+        ret.sourceId = sourceId;
+        ret.actionId = action.getActionId();
+        ret.serverActionCmd = action.getCmd();
+        ret.clientActionCmd = null;
+        ret.data = new PrimitiveMap();
+        switch (action.getCmd()) {
+            case CREATE_JOB:
+                ret.data.putP4Job("job", ((CreateJobAction) action).getJob());
+                break;
+            case LOGIN:
+                throw new IllegalArgumentException("Should not attempt to store a submit action");
+            default:
+                throw new IllegalArgumentException("Unknown server cmd " + action.getCmd());
+        }
+        return ret;
     }
 
 
@@ -194,142 +302,23 @@ public class ActionStore {
         return new PendingAction(getSourceId(ref), action);
     }
 
-
-    @NotNull
-    static State getState(String sourceId, @NotNull P4CommandRunner.ServerAction<?> action) {
-        State ret = new State();
-        ret.sourceId = sourceId;
-        ret.actionId = action.getActionId();
-        ret.serverActionCmd = action.getCmd();
-        ret.clientActionCmd = null;
-        ret.data = new HashMap<>();
-        switch (action.getCmd()) {
-            case CREATE_JOB:
-                ret.data.put("job", P4JobStore.getState(((CreateJobAction) action).getJob()));
-                break;
-            case LOGIN:
-                throw new IllegalArgumentException("Should not attempt to store a submit action");
-            default:
-                throw new IllegalArgumentException("Unknown server cmd " + action.getCmd());
-        }
-        return ret;
-    }
-
-
-    @NotNull
-    static State getState(String sourceId, @NotNull P4CommandRunner.ClientAction<?> action) {
-        State ret = new State();
-        ret.sourceId = sourceId;
-        ret.actionId = action.getActionId();
-        ret.serverActionCmd = null;
-        ret.clientActionCmd = action.getCmd();
-        ret.data = new HashMap<>();
-        switch (action.getCmd()) {
-            case MOVE_FILE: {
-                MoveFileAction a = (MoveFileAction) action;
-                ret.data.put("source", a.getSourceFile().getPath());
-                ret.data.put("target", a.getTargetFile().getPath());
-                break;
-            }
-            case ADD_EDIT_FILE: {
-                AddEditAction a = (AddEditAction) action;
-                ret.data.put("file", a.getFile().getPath());
-                ret.data.put("type", a.getFileType() == null
-                        ? null
-                        : a.getFileType().toString());
-                ret.data.put("cl-id", P4ChangelistIdStore.getStateNullable(a.getChangelistId()));
-                ret.data.put("charset", a.getCharset());
-                break;
-            }
-            case DELETE_FILE: {
-                DeleteFileAction a = (DeleteFileAction) action;
-                ret.data.put("file", a.getFile().getPath());
-                ret.data.put("cl-id", P4ChangelistIdStore.getState(a.getChangelistId()));
-                break;
-            }
-            case REVERT_FILE:
-                ret.data.put("file", ((RevertFileAction) action).getFile().getPath());
-                break;
-            case MOVE_FILES_TO_CHANGELIST: {
-                MoveFilesToChangelistAction a = (MoveFilesToChangelistAction) action;
-                ret.data.put("cl-id", P4ChangelistIdStore.getState(a.getChangelistId()));
-                ret.data.put("files", getState(a.getFiles()));
-                break;
-            }
-            case EDIT_CHANGELIST_DESCRIPTION: {
-                EditChangelistAction a = (EditChangelistAction) action;
-                ret.data.put("cl-id", P4ChangelistIdStore.getState(a.getChangelistId()));
-                ret.data.put("comment", a.getComment());
-                break;
-            }
-            case ADD_JOB_TO_CHANGELIST: {
-                AddJobToChangelistAction a = (AddJobToChangelistAction) action;
-                ret.data.put("cl-id", P4ChangelistIdStore.getState(a.getChangelistId()));
-                ret.data.put("job", P4JobStore.getState(a.getJob()));
-                break;
-            }
-            case REMOVE_JOB_FROM_CHANGELIST: {
-                RemoveJobFromChangelistAction a = (RemoveJobFromChangelistAction) action;
-                ret.data.put("cl-id", P4ChangelistIdStore.getState(a.getChangelistId()));
-                ret.data.put("job", P4JobStore.getState(a.getJob()));
-                break;
-            }
-            case CREATE_CHANGELIST: {
-                CreateChangelistAction a = (CreateChangelistAction) action;
-                ret.data.put("ref", ClientServerRefStore.getState(a.getClientServerRef()));
-                ret.data.put("comment", a.getComment());
-                break;
-            }
-            case DELETE_CHANGELIST:
-                ret.data.put("changelist",
-                        P4ChangelistIdStore.getState(((DeleteChangelistAction) action).getChangelistId()));
-                break;
-            case FETCH_FILES:
-                throw new IllegalArgumentException("Should not attempt to store a submit action");
-            case SUBMIT_CHANGELIST:
-                throw new IllegalArgumentException("Should not attempt to store a submit action");
-            default:
-                throw new IllegalArgumentException("Unknown client cmd " + action.getCmd());
-        }
-        return ret;
-    }
-
-    static String getSourceId(ClientConfig config) {
+    public static String getSourceId(ClientConfig config) {
         return getSourceId(config.getClientServerRef());
     }
 
 
-    static String getSourceId(ClientServerRef config) {
+    public static String getSourceId(ClientServerRef config) {
         return "client:" + config.toString();
     }
 
 
-    static String getSourceId(ServerConfig config) {
+    public static String getSourceId(ServerConfig config) {
         return getSourceId(config.getServerName());
     }
 
 
-    static String getSourceId(P4ServerName config) {
+    public static String getSourceId(P4ServerName config) {
         return "server:" + config.getUrl();
-    }
-
-
-    @NotNull
-    private static List<FilePath> getFilePathList(@NotNull List<String> state) {
-        List<FilePath> ret = new ArrayList<>(state.size());
-        for (String name : state) {
-            ret.add(VcsUtil.getFilePath(name));
-        }
-        return ret;
-    }
-
-    @NotNull
-    private static List<String> getState(@NotNull List<FilePath> paths) {
-        List<String> ret = new ArrayList<>(paths.size());
-        for (FilePath path : paths) {
-            ret.add(path.getPath());
-        }
-        return ret;
     }
 
 }

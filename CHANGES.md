@@ -7,8 +7,11 @@
 
 * No longer compatible with versions before 2017.1.
 * Updated code to work with 2017.1 features.
+* Complete rewrite of connection and caching mechanism.
+* Active Connection view.
+* Upgraded p4java dependency to r18-1.
+* Shipping as single Jar file.
 * Updated build.
-* Upgraded p4java dependency to r18-1
 
 ### Details
 
@@ -18,12 +21,30 @@
     * These are broken up into small libraries to reduce their size,
       so we don't need to include the normal gigabyte sized jar.
     * Removed dependency upon the external lib project.
-* Updated build.
-    * Builds now use Gradle.
-    * The `swarm-java-simplified` module renamed to `swarm`
+* Complete rewrite of connection and caching mechanism.
+    * In order to support the 2017.1 per-VCS Root configuration, the
+      plugin now maintains the connection information in the VCS root
+      level.
+    * Relative configuration files are no longer supported.
+    * Offline support is better handled through an integrated caching
+      mechanism.
+    * Connection and caching are now designed for proper multi-threaded
+      operation, so there should be a significant performance boost.
+* Active Connection view.
+    * Rather than using a small status-bar widget, connections are now
+      viewed through a VCS tab called "Active Connections".
+    * Gives a better view of online status.
+    * Permits viewing what changes are cached, ready to be sent to the
+      server.
 * Upgraded p4java dependency to r18-1
     * Requires additional dependent jars.
     * Will allow for more thorough unit testing.
+* Shipping as single Jar file.
+    * Due to unknown issues, the plugin is now distributed as a single
+      jar file with all dependencies unpacked inside it.
+* Updated build.
+    * Builds now use Gradle.
+    * The `swarm-java-simplified` module renamed to `swarm`
 
 
 ## ::v0.9.6::

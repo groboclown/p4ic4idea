@@ -16,6 +16,15 @@ package net.groboclown.p4plugin.ui.connection;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.ActionGroup;
+import com.intellij.openapi.actionSystem.ActionGroupUtil;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionPlaces;
+import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.ex.ActionUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBScrollPane;
@@ -128,20 +137,27 @@ public class ActiveConnectionPanel {
         connectionTree.setCellRenderer(new ConnectionTreeCellRenderer());
         connectionTree.setRootVisible(false);
 
-        // TODO add a proper side-bar toolbar.
-        //      ToolbarPanel ?
-        //      ActionToolbarImpl ?
-        //      ButtonToolbarImpl ? <- called from ActionManager.getInstance().createButtonToolbar()
-
-        // TODO add connect / disconnect buttons.
-        //      These need to be context-sensitive to the selected node in the tree.
-
-        // TODO add button to edit node configuration.
-
-        JPanel sidebar = new JPanel(new FlowLayout());
-        root.add(sidebar, BorderLayout.WEST);
-        JButton refreshButton = SwingUtil.iconOnlyButton(new JButton(), AllIcons.Actions.Refresh, SwingUtil.ButtonType.MAJOR);
-        sidebar.add(refreshButton);
-        refreshButton.addActionListener((e) -> refresh());
+        ActionGroup actionButtons = createActionGroup();
+        ActionToolbar toolbar =
+                ActionManager.getInstance().createActionToolbar("p4.active-connection",
+                        actionButtons, false);
+        root.add(toolbar.getComponent(), BorderLayout.WEST);
     }
+
+    private ActionGroup createActionGroup() {
+        return new DefaultActionGroup(
+                // FIXME use bundle
+                new AnAction("Refresh", "Reload connection contents", AllIcons.Actions.Refresh) {
+                    @Override
+                    public void actionPerformed(AnActionEvent anActionEvent) {
+                        refresh();
+                    }
+                }
+                // TODO add connect / disconnect buttons.
+                //      These need to be context-sensitive to the selected node in the tree.
+
+                // TODO add button to edit node configuration.
+        );
+    }
+
 }

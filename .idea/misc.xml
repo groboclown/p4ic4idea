@@ -84,6 +84,67 @@
             </PrimitiveMap>
           </option>
         </State>
+        <State>
+          <option name="clientActionCmd" value="MOVE_FILES_TO_CHANGELIST" />
+          <option name="sourceId" value="client:albrechtm-logical-entity-data_local-cloud:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction@1644db04098:1" />
+          <option name="data">
+            <PrimitiveMap>
+              <option name="$proxy$">
+                <map>
+                  <entry key="cl-id__id" value="0" />
+                  <entry key="cl-id__ref__clientName" value="albrechtm-logical-entity-data_local-cloud" />
+                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
+                  <entry key="files__0" value="c:/p4/micro-logical-entity-data/local-cloud/service/Dockerfile" />
+                  <entry key="files__1" value="c:/p4/micro-logical-entity-data/local-cloud/buildscripts/dependent-services.gradle" />
+                  <entry key="files__len" value="2" />
+                </map>
+              </option>
+            </PrimitiveMap>
+          </option>
+        </State>
+        <State>
+          <option name="clientActionCmd" value="MOVE_FILES_TO_CHANGELIST" />
+          <option name="sourceId" value="client:albrechtm_micro-tenant-environment_dev:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction@1644db04098:2" />
+          <option name="data">
+            <PrimitiveMap>
+              <option name="$proxy$">
+                <map>
+                  <entry key="cl-id__id" value="0" />
+                  <entry key="cl-id__ref__clientName" value="albrechtm_micro-tenant-environment_dev" />
+                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
+                  <entry key="files__0" value="c:/p4/micro-tenant-environment/dev/contract/build.gradle" />
+                  <entry key="files__1" value="c:/p4/micro-tenant-environment/dev/build.gradle" />
+                  <entry key="files__2" value="c:/p4/micro-tenant-environment/dev/test-support/build.gradle" />
+                  <entry key="files__3" value="c:/p4/micro-tenant-environment/dev/service/build.gradle" />
+                  <entry key="files__len" value="4" />
+                </map>
+              </option>
+            </PrimitiveMap>
+          </option>
+        </State>
+        <State>
+          <option name="clientActionCmd" value="MOVE_FILES_TO_CHANGELIST" />
+          <option name="sourceId" value="client:albrechtm_micro-tenant-environment_dev:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction@16451b54902:2" />
+          <option name="data">
+            <PrimitiveMap>
+              <option name="$proxy$">
+                <map>
+                  <entry key="cl-id__id" value="0" />
+                  <entry key="cl-id__ref__clientName" value="albrechtm_micro-tenant-environment_dev" />
+                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
+                  <entry key="files__0" value="c:/p4/micro-tenant-environment/dev/contract/build.gradle" />
+                  <entry key="files__1" value="c:/p4/micro-tenant-environment/dev/build.gradle" />
+                  <entry key="files__2" value="c:/p4/micro-tenant-environment/dev/test-support/build.gradle" />
+                  <entry key="files__3" value="c:/p4/micro-tenant-environment/dev/service/build.gradle" />
+                  <entry key="files__len" value="4" />
+                </map>
+              </option>
+            </PrimitiveMap>
+          </option>
+        </State>
       </list>
     </option>
     <option name="changelistState">

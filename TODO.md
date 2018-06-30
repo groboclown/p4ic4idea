@@ -1,29 +1,65 @@
 # To Do List
 
-Many of the to-dos are listed in the bug list on Github.
+Many of the to-dos are listed in the bug list on Github.  This list itself should be handled better in the project view of Github.
 
-With 2017.1, many things put into the plugin are using old systems, or aren't doing things the right
-way anymore.
+## Required Missing Functionality
 
+In the 0.10 release, these pieces of old functionality are either broken or disabled.
 
-## idea-cache module
+### Revert Files
 
-This module isn't needed.  The only thing here worth keeping is the ignore stuff.
+Reverting files - revert unchanged and normal revert - still needs to be implemented.
 
+### Error Reporting
 
-## How to implement .p4file like support?
+Need better display for errors, and all promise-like behaviors need on-error catches to report problems.
 
-Currently, the choice was made to eliminate the idea of `.p4file` support.  However, it
-is still incredibly useful for users with joined projects.  This is on the low-priority
-list, but how would it work?
+The Active Connection panel should show errors beside pending actions if there was an error sending it to the server.
 
+### Repository View
 
-## Extended API
+The repository view doesn't create committed changelists (it throws an exception because it's not implemented).
 
-A few classes (*which ones? enumerate them here*) use APIs that were extended or changed from
-one version to the next.  These need to be pushed into the compat APIs.
+### File Annotation
 
+The file annotation needs a lot of work.
 
-## More...
+### Submit Change
 
-There's always more.
+The submit change needs to be implemented correctly.
+
+### Show File History
+
+Just like the repository view, the file history view needs to be implemented (`P4CommittedChangesProvider`).
+
+### Go Offline / Go Online
+
+Add go offline / online buttons in the active connection panel.
+
+### Manage Pending Operations
+
+If there are pending actions that failed to go through due to errors, the user needs a way to manage these operations.  This should be done through the active connection panel.
+
+### Swarm Integration
+
+Swarm integration needs to be re-instated.
+
+## Near-Term Functionality
+
+These pieces of functionality are not requried for the 0.10 release, but should be implemented soon after release.
+
+### Caching File Contents
+
+The cache mechanism should support making a copy of a file when an operation happens, to allow for better offline support.
+
+### Relative P4CONFIG support
+
+The choice was made to eliminate the use of relative P4CONFIG files, and instead managed through the VCS Root mechanism.
+However, without this, the full environment support won't work.  This needs to be re-added, with support of the VSC Root
+mapping mechanism in `P4Vcs`.  However, the user needs to be able to manage it, and that requires new UI support.  This
+is a big feature, and will require some careful planning to handle correctly.
+
+### Load Project from VCS
+
+An old feature request.  Still needs to be added.
+

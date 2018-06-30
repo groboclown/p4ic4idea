@@ -6,6 +6,10 @@ Many of the to-dos are listed in the bug list on Github.  This list itself shoul
 
 In the 0.10 release, these pieces of old functionality are either broken or disabled.
 
+### SSL, SSO, and Manual Passwords
+
+The SSL, SSO, and asking the user for passwords
+
 ### Revert Files
 
 Reverting files - revert unchanged and normal revert - still needs to be implemented.
@@ -63,3 +67,8 @@ is a big feature, and will require some careful planning to handle correctly.
 
 An old feature request.  Still needs to be added.
 
+### Use Windows Registry Passwords
+
+The passwords stored in the Windows Registry (through the `p4 set PASSWD` command and other password commands) is stored
+in an encrypted way.  The code should include handling the encrypted values.  The publicly available p4 cli C code
+contains the implementation for how it's done.  However, that code is non-trivial. 

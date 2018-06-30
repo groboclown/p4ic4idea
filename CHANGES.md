@@ -30,6 +30,9 @@
       mechanism.
     * Connection and caching are now designed for proper multi-threaded
       operation, so there should be a significant performance boost.
+    * Passwords are no longer kept in memory by the plugin, but instead
+      use the IDE's password storage mechanism.  Before, only passwords
+      that the user entered through the dialog were stored by the IDE.
 * Active Connection view.
     * Rather than using a small status-bar widget, connections are now
       viewed through a VCS tab called "Active Connections".

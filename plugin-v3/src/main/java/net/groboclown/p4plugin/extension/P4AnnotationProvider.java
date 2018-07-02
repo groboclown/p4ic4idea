@@ -13,22 +13,12 @@
  */
 package net.groboclown.p4plugin.extension;
 
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.annotate.FileAnnotation;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
-import com.perforce.p4java.core.file.IExtendedFileSpec;
-import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 /**
  *

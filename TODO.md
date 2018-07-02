@@ -8,7 +8,7 @@ In the 0.10 release, these pieces of old functionality are either broken or disa
 
 ### SSL, SSO, and Manual Passwords
 
-The SSL, SSO, and asking the user for passwords
+The SSL, SSO, and asking the user for passwords are not well tested.
 
 ### Revert Files
 
@@ -35,10 +35,6 @@ The submit change needs to be implemented correctly.
 ### Show File History
 
 Just like the repository view, the file history view needs to be implemented (`P4CommittedChangesProvider`).
-
-### Go Offline / Go Online
-
-Add go offline / online buttons in the active connection panel.
 
 ### Manage Pending Operations
 

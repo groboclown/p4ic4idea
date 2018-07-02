@@ -39,7 +39,7 @@ public class P4LocalFileImpl implements P4LocalFile {
     private final P4ChangelistId changelistId;
     private final P4FileAction action;
     private final P4ResolveType resolveType;
-    private final P4FileType fileType;
+    @NotNull private final P4FileType fileType;
     private final P4RemoteFile integrateFrom;
 
 
@@ -188,7 +188,7 @@ public class P4LocalFileImpl implements P4LocalFile {
         this.changelistId = changelistId;
         this.action = action;
         this.resolveType = resolveType;
-        this.fileType = fileType;
+        this.fileType = fileType == null ? P4FileType.convert("unknown") : fileType;
         this.integrateFrom = integrateFrom;
     }
 

@@ -45,9 +45,45 @@
     <option name="pendingActions">
       <list>
         <State>
+          <option name="clientActionCmd" value="ADD_EDIT_FILE" />
+          <option name="sourceId" value="client:albrechtm_micro-lib-aws_dev:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.file.AddEditAction@16451b54902:3" />
+          <option name="data">
+            <PrimitiveMap>
+              <option name="$proxy$">
+                <map>
+                  <entry key="charset" value="UTF-8" />
+                  <entry key="cl-id__id" value="0" />
+                  <entry key="cl-id__ref__clientName" value="albrechtm_micro-lib-aws_dev" />
+                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
+                  <entry key="file" value="C:/p4/micro-lib-aws/dev/zilliant-aws/src/main/java/com/zilliant/aws/AwsHelper.java" />
+                </map>
+              </option>
+            </PrimitiveMap>
+          </option>
+        </State>
+        <State>
+          <option name="clientActionCmd" value="ADD_EDIT_FILE" />
+          <option name="sourceId" value="client:albrechtm_micro-lib-aws_dev:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.file.AddEditAction@16457345bad:4" />
+          <option name="data">
+            <PrimitiveMap>
+              <option name="$proxy$">
+                <map>
+                  <entry key="charset" value="UTF-8" />
+                  <entry key="cl-id__id" value="0" />
+                  <entry key="cl-id__ref__clientName" value="albrechtm_micro-lib-aws_dev" />
+                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
+                  <entry key="file" value="C:/p4/micro-lib-aws/dev/zilliant-aws/src/main/java/com/zilliant/aws/AwsHelper.java" />
+                </map>
+              </option>
+            </PrimitiveMap>
+          </option>
+        </State>
+        <State>
           <option name="clientActionCmd" value="MOVE_FILES_TO_CHANGELIST" />
           <option name="sourceId" value="client:albrechtm-logical-entity-data_local-cloud:prodsc.austx.zilliant.com:1666" />
-          <option name="actionId" value="net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction@1644d9df6e0:1" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction@1645b22e607:1" />
           <option name="data">
             <PrimitiveMap>
               <option name="$proxy$">
@@ -66,7 +102,7 @@
         <State>
           <option name="clientActionCmd" value="MOVE_FILES_TO_CHANGELIST" />
           <option name="sourceId" value="client:albrechtm_micro-tenant-environment_dev:prodsc.austx.zilliant.com:1666" />
-          <option name="actionId" value="net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction@1644d9df6e0:2" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction@1645b22e607:2" />
           <option name="data">
             <PrimitiveMap>
               <option name="$proxy$">
@@ -85,61 +121,30 @@
           </option>
         </State>
         <State>
-          <option name="clientActionCmd" value="MOVE_FILES_TO_CHANGELIST" />
-          <option name="sourceId" value="client:albrechtm-logical-entity-data_local-cloud:prodsc.austx.zilliant.com:1666" />
-          <option name="actionId" value="net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction@1644db04098:1" />
+          <option name="clientActionCmd" value="ADD_EDIT_FILE" />
+          <option name="sourceId" value="client:albrechtm_micro-lib-aws_dev:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.file.AddEditAction@1645b2ade7e:1" />
           <option name="data">
             <PrimitiveMap>
               <option name="$proxy$">
                 <map>
-                  <entry key="cl-id__id" value="0" />
-                  <entry key="cl-id__ref__clientName" value="albrechtm-logical-entity-data_local-cloud" />
-                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
-                  <entry key="files__0" value="c:/p4/micro-logical-entity-data/local-cloud/service/Dockerfile" />
-                  <entry key="files__1" value="c:/p4/micro-logical-entity-data/local-cloud/buildscripts/dependent-services.gradle" />
-                  <entry key="files__len" value="2" />
+                  <entry key="charset" value="UTF-8" />
+                  <entry key="file" value="C:/p4/micro-lib-aws/dev/zilliant-aws/src/main/java/com/zilliant/aws/AwsHelper.java" />
                 </map>
               </option>
             </PrimitiveMap>
           </option>
         </State>
         <State>
-          <option name="clientActionCmd" value="MOVE_FILES_TO_CHANGELIST" />
-          <option name="sourceId" value="client:albrechtm_micro-tenant-environment_dev:prodsc.austx.zilliant.com:1666" />
-          <option name="actionId" value="net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction@1644db04098:2" />
+          <option name="clientActionCmd" value="ADD_EDIT_FILE" />
+          <option name="sourceId" value="client:albrechtm_micro-lib-aws_dev:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.file.AddEditAction@1645b2ade7e:2" />
           <option name="data">
             <PrimitiveMap>
               <option name="$proxy$">
                 <map>
-                  <entry key="cl-id__id" value="0" />
-                  <entry key="cl-id__ref__clientName" value="albrechtm_micro-tenant-environment_dev" />
-                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
-                  <entry key="files__0" value="c:/p4/micro-tenant-environment/dev/contract/build.gradle" />
-                  <entry key="files__1" value="c:/p4/micro-tenant-environment/dev/build.gradle" />
-                  <entry key="files__2" value="c:/p4/micro-tenant-environment/dev/test-support/build.gradle" />
-                  <entry key="files__3" value="c:/p4/micro-tenant-environment/dev/service/build.gradle" />
-                  <entry key="files__len" value="4" />
-                </map>
-              </option>
-            </PrimitiveMap>
-          </option>
-        </State>
-        <State>
-          <option name="clientActionCmd" value="MOVE_FILES_TO_CHANGELIST" />
-          <option name="sourceId" value="client:albrechtm_micro-tenant-environment_dev:prodsc.austx.zilliant.com:1666" />
-          <option name="actionId" value="net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction@16451b54902:2" />
-          <option name="data">
-            <PrimitiveMap>
-              <option name="$proxy$">
-                <map>
-                  <entry key="cl-id__id" value="0" />
-                  <entry key="cl-id__ref__clientName" value="albrechtm_micro-tenant-environment_dev" />
-                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
-                  <entry key="files__0" value="c:/p4/micro-tenant-environment/dev/contract/build.gradle" />
-                  <entry key="files__1" value="c:/p4/micro-tenant-environment/dev/build.gradle" />
-                  <entry key="files__2" value="c:/p4/micro-tenant-environment/dev/test-support/build.gradle" />
-                  <entry key="files__3" value="c:/p4/micro-tenant-environment/dev/service/build.gradle" />
-                  <entry key="files__len" value="4" />
+                  <entry key="charset" value="UTF-8" />
+                  <entry key="file" value="C:/p4/micro-lib-aws/dev/zilliant-aws/src/main/java/com/zilliant/aws/AwsHelper.java" />
                 </map>
               </option>
             </PrimitiveMap>

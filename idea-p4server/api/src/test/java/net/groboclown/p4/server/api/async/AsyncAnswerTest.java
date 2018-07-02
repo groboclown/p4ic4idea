@@ -164,4 +164,6 @@ class AsyncAnswerTest {
     }
 
     // TODO tests for reject errors passed to other promises.
+
+    // TODO tests for "after" call.
 }

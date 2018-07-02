@@ -14,20 +14,31 @@
 package net.groboclown.p4plugin.ui;
 
 import com.intellij.openapi.components.ProjectComponent;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.changes.ChangeListDecorator;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.cache.IdeChangelistMap;
+import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 public class P4ChangeListDecorator implements ChangeListDecorator, ProjectComponent {
+    private static final Logger LOG = Logger.getInstance(P4ChangeListDecorator.class);
+
     private final Project project;
 
     public static class ChangelistConnectionInfo {
@@ -37,27 +48,30 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
         private final List<ClientServerRef> unknowns = new ArrayList<>();
         private final List<ClientServerRef> offline = new ArrayList<>();
         private final boolean hasOneServer;
+        private final int serverCount;
 
-        public ChangelistConnectionInfo(int serverCount) {
+        ChangelistConnectionInfo(int serverCount) {
             this.hasOneServer = serverCount == 1;
+            this.serverCount = serverCount;
         }
 
-        public void addOffline(@NotNull ClientServerRef ref, @NotNull P4ChangelistId p4cl) {
-            offline.add(ref);
+        void addOffline(@NotNull P4ChangelistId p4cl) {
+            offline.add(p4cl.getClientServerRef());
         }
 
-        public void addOnline(@NotNull ClientServerRef ref, @NotNull P4ChangelistId p4cl) {
+        void addOnline(@NotNull P4ChangelistId p4cl) {
             switch (p4cl.getState()) {
                 case NUMBERED:
                     validIds.add(p4cl);
                     break;
                 case PENDING_CREATION:
-                    unsynced.add(ref);
+                    unsynced.add(p4cl.getClientServerRef());
                     break;
                 case DEFAULT:
-                    defaults.add(ref);
+                    defaults.add(p4cl.getClientServerRef());
+                    break;
                 default:
-                    unknowns.add(ref);
+                    unknowns.add(p4cl.getClientServerRef());
             }
         }
     }
@@ -71,33 +85,35 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
         if (isProjectInvalid()) {
             return;
         }
-        final P4Vcs vcs = P4Vcs.getInstance(project);
-        // FIXME implement decorator
-        throw new IllegalStateException("not implemented");
-        /*
-        final P4ChangeListMapping changeListMapping = P4ChangeListMapping.getInstance(project);
-        final List<P4Server> servers = vcs.getP4Servers();
-        ChangelistConnectionInfo info = new ChangelistConnectionInfo(servers.size());
-        for (P4Server server: servers) {
-            final P4ChangeListId p4cl = changeListMapping.getPerforceChangelistFor(server, changeList);
-            if (p4cl != null) {
-                if (server.isWorkingOnline()) {
-                    info.addOnline(server.getClientServerId(), p4cl);
+        CacheComponent cache = CacheComponent.getInstance(project);
+        ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        Pair<IdeChangelistMap, IdeFileMap>
+                openedCache = cache.getServerOpenedCache();
+        try {
+            Collection<P4ChangelistId> p4Changes = openedCache.first.getP4ChangesFor(changeList);
+            ChangelistConnectionInfo info = new ChangelistConnectionInfo(p4Changes.size());
+            for (P4ChangelistId p4Change: p4Changes) {
+                if (registry != null && registry.isOnline(p4Change.getClientServerRef())) {
+                    info.addOnline(p4Change);
                 } else {
-                    info.addOffline(server.getClientServerId(), p4cl);
+                    info.addOffline(p4Change);
                 }
             }
+            decorateInfo(info, cellRenderer);
+        } catch (InterruptedException e) {
+            // TODO error handling
+            LOG.warn(e);
         }
-
-        decorateInfo(info, cellRenderer);
-        */
     }
 
-    public static void decorateInfo(@NotNull ChangelistConnectionInfo info,
+    private static void decorateInfo(@NotNull ChangelistConnectionInfo info,
             @NotNull ColoredTreeCellRenderer cellRenderer) {
         boolean hasOne = false;
+
         if (info.hasOneServer && info.validIds.size() == 1) {
             hasOne = true;
+            // Cannot do all servers here, because each connection's corresponding changelist
+            // is most probably different.
             cellRenderer.append(P4Bundle.message("changelist.render", info.validIds.get(0).getChangelistId()),
                     SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
         } else if (! info.validIds.isEmpty()) {
@@ -114,14 +130,14 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
             cellRenderer.append(sb.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
         }
 
-        if (info.hasOneServer && info.defaults.size() == 1) {
+        if (info.defaults.size() == info.serverCount) {
             String msg = P4Bundle.message("changelist.decorator.default");
             cellRenderer.append(msg, SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
             hasOne = true;
         } else if (! info.defaults.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
             Iterator<ClientServerRef> iter = info.defaults.iterator();
             ClientServerRef next = iter.next();
-            StringBuilder sb = new StringBuilder();
             if (hasOne) {
                 sb.append(P4Bundle.message("changelist.decorator.default.second.first", next.getClientName()));
             } else {
@@ -136,7 +152,7 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
             hasOne = true;
         }
 
-        if (info.hasOneServer && info.unknowns.size() == 1) {
+        if (info.unknowns.size() == info.serverCount) {
             String msg = P4Bundle.message("changelist.decorator.unknowns");
             cellRenderer.append(msg, SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES);
             hasOne = true;
@@ -158,7 +174,7 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
             hasOne = true;
         }
 
-        if (info.hasOneServer && info.unsynced.size() == 1) {
+        if (info.unsynced.size() == info.serverCount) {
             String msg = P4Bundle.message("changelist.decorator.unsynced");
             cellRenderer.append(msg, SimpleTextAttributes.REGULAR_ITALIC_ATTRIBUTES);
         } else if (! info.unsynced.isEmpty()) {
@@ -179,7 +195,7 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
             hasOne = true;
         }
 
-        if (info.hasOneServer && info.offline.size() == 1) {
+        if (info.serverCount == info.offline.size()) {
             String msg = P4Bundle.message("changelist.decorator.offline");
             cellRenderer.append(msg, SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES);
         } else if (!info.offline.isEmpty()) {

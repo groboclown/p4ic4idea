@@ -112,6 +112,17 @@ public abstract class ProjectConfigRegistry
         return closest;
     }
 
+    public boolean isOnline(@Nullable ClientServerRef clientServerRef) {
+        if (clientServerRef == null) {
+            return false;
+        }
+        for (ClientConfigRoot configRoot: getRegisteredStates()) {
+            if (clientServerRef.equals(configRoot.getClientConfig().getClientServerRef())) {
+                return configRoot.isOnline();
+            }
+        }
+        return false;
+    }
 
     @NotNull
     public Collection<ClientConfigRoot> getClientConfigRoots() {

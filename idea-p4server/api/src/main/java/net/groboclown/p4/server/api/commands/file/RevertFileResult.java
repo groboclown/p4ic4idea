@@ -14,14 +14,39 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
+import com.intellij.openapi.vcs.FilePath;
+import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class RevertFileResult implements P4CommandRunner.ClientResult {
+    private final ClientConfig config;
+    private final FilePath revertedFile;
+    private final List<IFileSpec> results;
+
+    // TODO clean up the results so it's not so raw.  Indeed, these should
+    // have lipstick before they're added to this class.
+    public RevertFileResult(@NotNull ClientConfig config, FilePath revertedFile,
+            List<IFileSpec> results) {
+        this.config = config;
+        this.revertedFile = revertedFile;
+        this.results = results;
+    }
+
     @NotNull
     @Override
     public ClientConfig getClientConfig() {
-        return null;
+        return config;
+    }
+
+    public FilePath getRevertedFile() {
+        return revertedFile;
+    }
+
+    public List<IFileSpec> getResults() {
+        return results;
     }
 }

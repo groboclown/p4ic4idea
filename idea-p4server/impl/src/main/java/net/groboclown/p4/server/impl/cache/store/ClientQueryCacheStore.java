@@ -14,7 +14,6 @@
 
 package net.groboclown.p4.server.impl.cache.store;
 
-import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;

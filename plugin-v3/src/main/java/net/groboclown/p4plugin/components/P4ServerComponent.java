@@ -29,6 +29,7 @@ import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
 import net.groboclown.p4.server.impl.connection.ConnectCommandRunner;
 import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4.server.impl.connection.P4RequestErrorHandler;
+import net.groboclown.p4.server.impl.connection.impl.LimitedConnectionManager;
 import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
 import net.groboclown.p4plugin.messages.MessageErrorHandler;
 import net.groboclown.p4plugin.util.TempDirUtil;
@@ -120,12 +121,17 @@ public class P4ServerComponent implements ProjectComponent {
 
     @NotNull
     protected ConnectionManager createConnectionManager() {
-        return new SimpleConnectionManager(
+        ConnectionManager ret = new SimpleConnectionManager(
                 TempDirUtil.getTempDir(project),
                 UserProjectPreferences.getSocketSoTimeoutMillis(project),
                 P4PluginVersion.getPluginVersion(),
                 createErrorHandler()
         );
+        int connectionRestriction = UserProjectPreferences.getMaxServerConnections(project);
+        if (connectionRestriction > 0) {
+            ret = new LimitedConnectionManager(ret, connectionRestriction);
+        }
+        return ret;
     }
 
 

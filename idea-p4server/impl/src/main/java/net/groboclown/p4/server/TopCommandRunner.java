@@ -151,7 +151,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
             // User wants to work offline, regardless of connection status.
             for (ServerConnectionState state : getStatesFor(name)) {
                 state.userOffline = true;
-                server.disconnect(state.config);
+                server.disconnect(state.config.getServerName());
             }
         });
         ReconnectRequestMessage.addListener(projClient, new ReconnectRequestMessage.Listener() {
@@ -473,9 +473,10 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @Override
     protected QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(ServerConfig config,
             ListSubmittedChangelistsQuery query) {
-        // FIXME implement
-        LOG.warn("FIXME implement listSubmittedChangelists");
-        return null;
+        return onlineQuery(config,
+                () -> server.listSubmittedChangelists(config, query),
+                () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError())
+        );
     }
 
 

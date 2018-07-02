@@ -70,6 +70,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
     @Nullable
     @Override
     public RepositoryLocation getLocationFor(FilePath root) {
+
         // FIXME
         throw new IllegalStateException("not implemented");
     }

@@ -37,6 +37,7 @@ import com.perforce.p4java.option.server.GetClientsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.JobCacheMessage;
 import net.groboclown.p4.server.api.commands.changelist.AddJobToChangelistAction;
@@ -52,6 +53,8 @@ import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistResult
 import net.groboclown.p4.server.api.commands.changelist.EditChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.EditChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult;
+import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsQuery;
+import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsResult;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction;
@@ -186,7 +189,7 @@ public class ConnectCommandRunner
     }
 
     @Override
-    public void disconnect(@NotNull ServerConfig config) {
+    public void disconnect(@NotNull P4ServerName config) {
         connectionManager.disconnect(config);
     }
 
@@ -250,6 +253,14 @@ public class ConnectCommandRunner
             @NotNull ListClientsForUserQuery query) {
         return new QueryAnswerImpl<>(connectionManager.withConnection(config,
                 (server) -> listClientsForUser(server, config, query.getUsername(), query.getMaxClients())));
+    }
+
+    @NotNull
+    @Override
+    public P4CommandRunner.QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(
+            @NotNull ServerConfig config, @NotNull ListSubmittedChangelistsQuery query) {
+        // FIXME implement
+        return null;
     }
 
 
@@ -560,10 +571,13 @@ public class ConnectCommandRunner
         return new FetchFilesResult(config, resFiles, info);
     }
 
-    private RevertFileResult revertFile(IClient client, ClientConfig config, RevertFileAction action) {
-        // FIXME implement using P4CommandUtil
-        LOG.warn("FIXME implement and use P4CommandUtil");
-        return null;
+    private RevertFileResult revertFile(IClient client, ClientConfig config, RevertFileAction action)
+            throws P4JavaException {
+        List<IFileSpec> srcFiles = FileSpecBuildUtil.forFilePaths(action.getFile());
+        List<IFileSpec> reverted = cmd.revertFiles(client, srcFiles, false);
+        MessageStatusUtil.throwIfError(reverted);
+        LOG.info("Reverted " + action.getFile() + ": " + MessageStatusUtil.getMessages(reverted, "\n"));
+        return new RevertFileResult(config, action.getFile(), reverted);
     }
 
     private MoveFileResult moveFile(IClient client, ClientConfig config, MoveFileAction action) {

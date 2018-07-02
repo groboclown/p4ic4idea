@@ -16,9 +16,12 @@ package net.groboclown.p4.server.impl;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4CommandRunner.ServerResult;
+import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult;
+import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsQuery;
+import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsResult;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserResult;
 import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesQuery;
@@ -90,7 +93,7 @@ public abstract class AbstractServerCommandRunner {
      *
      * @param config server configuration's connections to close.
      */
-    public abstract void disconnect(@NotNull ServerConfig config);
+    public abstract void disconnect(@NotNull P4ServerName config);
 
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<AnnotateFileResult> getFileAnnotation(
@@ -110,4 +113,8 @@ public abstract class AbstractServerCommandRunner {
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(
             @NotNull ServerConfig config, @NotNull ListClientsForUserQuery query);
+
+    @NotNull
+    public abstract P4CommandRunner.QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(
+            @NotNull ServerConfig config, @NotNull ListSubmittedChangelistsQuery query);
 }

@@ -17,20 +17,24 @@ package net.groboclown.p4plugin.ui.connection;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
-import com.intellij.openapi.actionSystem.ActionGroupUtil;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
-import com.intellij.openapi.actionSystem.ex.ActionUtil;
+import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.perforce.p4java.exception.AuthenticationFailedException;
+import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.cache.ActionChoice;
 import net.groboclown.p4.server.api.cache.messagebus.AbstractCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ServerActionCacheMessage;
@@ -40,23 +44,33 @@ import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
 import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
+import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
+import net.groboclown.p4.server.impl.util.IntervalPeriodExecution;
 import net.groboclown.p4plugin.P4Bundle;
-import net.groboclown.p4plugin.ui.SwingUtil;
+import net.groboclown.p4plugin.components.CacheComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 public class ActiveConnectionPanel {
+    private static final Logger LOG = Logger.getInstance(ActiveConnectionPanel.class);
+
     private final Project project;
-    private final Object refreshSync = new Object();
+    private final IntervalPeriodExecution runner;
     private JPanel root;
     private ConnectionTreeRootNode treeNode = new ConnectionTreeRootNode();
     private DefaultTreeModel connectionTreeModel;
+    private Tree connectionTree;
 
 
     public ActiveConnectionPanel(@NotNull Project project, @Nullable Disposable parentDisposable) {
@@ -64,6 +78,16 @@ public class ActiveConnectionPanel {
         if (parentDisposable == null) {
             parentDisposable = project;
         }
+        runner = new IntervalPeriodExecution(() -> {
+            Collection<TreeNode> needsRefresh = treeNode.refresh(project);
+            ApplicationManager.getApplication().invokeAndWait(() -> {
+                for (TreeNode toRefresh: needsRefresh) {
+                    connectionTreeModel.reload(toRefresh);
+                }
+            });
+        }, 5, TimeUnit.SECONDS);
+
+        // Listeners must be registered after initializing the base data.
         final String cacheId = AbstractCacheMessage.createCacheId();
         MessageBusClient.ApplicationClient appBus = MessageBusClient.forApplication(parentDisposable);
         MessageBusClient.ProjectClient clientBus = MessageBusClient.forProject(project, parentDisposable);
@@ -96,6 +120,9 @@ public class ActiveConnectionPanel {
         // P4WarningMessage
         // P4ServerErrorMessage
         // CancellationMessage
+
+        // Don't listen to reconnect requests; instead, we listen for server connected.
+        // ReconnectRequestMessage.addListener
     }
 
     public JComponent getRoot() {
@@ -108,17 +135,7 @@ public class ActiveConnectionPanel {
 
     public void refresh() {
         if (root != null) {
-            ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                // TODO make this more fine-tuned refreshing.
-                synchronized (refreshSync) {
-                    treeNode.refresh(project);
-                }
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    synchronized (refreshSync) {
-                        connectionTreeModel.reload();
-                    }
-                });
-            });
+            runner.requestRun();
         }
     }
 
@@ -127,7 +144,7 @@ public class ActiveConnectionPanel {
         root = new JPanel(new BorderLayout());
         JScrollPane scroll = new JBScrollPane();
         root.add(scroll, BorderLayout.CENTER);
-        Tree connectionTree = new Tree();
+        connectionTree = new Tree();
         scroll.setViewportView(connectionTree);
 
         connectionTree.getEmptyText().setText(P4Bundle.getString("connection.tree.empty"));
@@ -147,17 +164,148 @@ public class ActiveConnectionPanel {
     private ActionGroup createActionGroup() {
         return new DefaultActionGroup(
                 // FIXME use bundle
-                new AnAction("Refresh", "Reload connection contents", AllIcons.Actions.Refresh) {
+                new DumbAwareAction("Refresh", "Reload connection contents", AllIcons.Actions.Refresh) {
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         refresh();
                     }
-                }
-                // TODO add connect / disconnect buttons.
-                //      These need to be context-sensitive to the selected node in the tree.
+                },
+                new DumbAwareAction("Expand All", "Expand all nodes in the tree", AllIcons.Actions.Expandall) {
+                    @Override
+                    public void actionPerformed(AnActionEvent anActionEvent) {
+                        for (int i = 0; i < connectionTree.getRowCount(); i++) {
+                            connectionTree.expandRow(i);
+                        }
+                    }
+                },
+                new DumbAwareAction("Collapse All", "Collapse all nodes in the tree", AllIcons.Actions.Collapseall) {
+                    @Override
+                    public void actionPerformed(AnActionEvent anActionEvent) {
+                        for (int i = 0; i < connectionTree.getRowCount(); i++) {
+                            connectionTree.collapseRow(i);
+                        }
+                    }
+                },
+                new ConnectionAction("Connect", "Connect to the server", AllIcons.Actions.Download) {
+                    @Override
+                    public void actionPerformed(AnActionEvent anActionEvent) {
+                        final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        if (sel != null && sel.isOnline()) {
+                            ReconnectRequestMessage.requestReconnectToClient(project,
+                                    sel.getClientConfig().getClientServerRef(), true);
+                        }
+                    }
 
-                // TODO add button to edit node configuration.
+                    @Override
+                    boolean isEnabled() {
+                        ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        return sel != null && sel.isOffline();
+                    }
+                },
+                new ConnectionAction("Disconnect", "Disconnect from the server",
+                        AllIcons.Actions.CloseNew) {
+                    @Override
+                    public void actionPerformed(AnActionEvent anActionEvent) {
+                        final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        if (sel != null && sel.isOffline()) {
+                            UserSelectedOfflineMessage.requestOffline(project,
+                                    sel.getClientConfig().getClientServerRef().getServerName());
+                        }
+                    }
+
+                    @Override
+                    boolean isEnabled() {
+                        ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        return sel != null && sel.isOnline();
+                    }
+                },
+                new ConnectionAction("Connection Configuration", "Edit the connection configuration",
+                        AllIcons.General.SmallConfigurableVcs) {
+                    @Override
+                    public void actionPerformed(AnActionEvent anActionEvent) {
+                        final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        if (sel != null) {
+                            // FIXME figure out how to show the connection
+                            LOG.error("Need to figure out how to show the connection information");
+                        }
+                    }
+
+                    @Override
+                    boolean isEnabled() {
+                        // TODO once this is figured out, allow proper enabling.
+                        //ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        //return sel != null;
+                        return false;
+                    }
+                },
+
+                // TODO add an action that allows retrying a pending action.
+
+                new ConnectionAction("Remove Action", "Remove the pending action",
+                        AllIcons.Actions.Cross) {
+                    @Override
+                    public void actionPerformed(AnActionEvent anActionEvent) {
+                        final ClientConfigRoot selRoot = getSelected(ClientConfigRoot.class);
+                        final ActionChoice sel = getSelected(ActionChoice.class);
+                        final CacheComponent cache = CacheComponent.getInstance(project);
+                        if (selRoot != null && sel != null && cache != null) {
+                            try {
+                                cache.getCachePending()
+                                        .writeActions(selRoot.getClientConfig().getClientServerRef(), (c) -> {
+                                            c.removeActionById(sel.getActionId());
+                                        });
+                            } catch (InterruptedException e) {
+                                LOG.warn(e);
+                            }
+                        }
+                    }
+
+                    @Override
+                    boolean isEnabled() {
+                        ActionChoice sel = getSelected(ActionChoice.class);
+                        return sel != null;
+                    }
+                }
         );
     }
 
+    private abstract class ConnectionAction extends DumbAwareAction {
+        ConnectionAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
+            super(text, description, icon);
+        }
+
+        @Nullable
+        <T> T getSelected(@NotNull Class<T> type) {
+            if (connectionTree != null) {
+                TreePath treePath = connectionTree.getSelectionPath();
+                if (treePath != null) {
+                    // Should only be one of each type per path.  So return the first one found.
+                    for (Object o: treePath.getPath()) {
+                        if (o instanceof DefaultMutableTreeNode) {
+                            o = ((DefaultMutableTreeNode) o).getUserObject();
+                        }
+                        if (type.isInstance(o)) {
+                            return type.cast(o);
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        abstract boolean isEnabled();
+
+        @Override
+        public void update(@NotNull AnActionEvent e) {
+            super.update(e);
+            Presentation presentation = e.getPresentation();
+            boolean enabled = isEnabled();
+            presentation.setEnabled(enabled);
+            if (ActionPlaces.isPopupPlace(e.getPlace())) {
+                presentation.setVisible(enabled);
+            } else {
+                presentation.setVisible(true);
+            }
+        }
+    }
 }

@@ -191,7 +191,7 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                    runner.perform(clientConfig, new AddEditAction(newFile, null, null, null))
+                    runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
                         .whenCompleted(sink::resolve)
                         .whenServerError(sink::reject)
                 )
@@ -234,7 +234,7 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, null))
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -278,7 +278,7 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, null))
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -313,13 +313,13 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, null))
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
                                                 null, "add file", null)))
                                 .mapActionAsync((res) -> runner.perform(
-                                        clientConfig, new AddEditAction(newFile, null, null, null)))
+                                        clientConfig, new AddEditAction(newFile, null, null, (String) null)))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -363,7 +363,7 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, null))
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),

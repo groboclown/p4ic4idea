@@ -23,6 +23,9 @@ import net.groboclown.p4plugin.components.CacheComponent;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,13 +33,20 @@ public class ConnectionTreeRootNode
         extends DefaultMutableTreeNode {
     private static final Logger LOG = Logger.getInstance(ConnectionTreeRootNode.class);
 
-    public void refresh(@NotNull Project project) {
+    public Collection<TreeNode> refresh(@NotNull Project project) {
+        int childrenCount = getChildCount();
         removeAllChildren();
         ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
         if (registry == null) {
-            return;
+            if (childrenCount > 0) {
+                return Collections.singleton(this);
+            }
+            return Collections.emptyList();
         }
+
+        // TODO be more precise in discovering which nodes are different.
         registry.getClientConfigRoots().forEach((root) -> addClientConfigRoot(project, root));
+        return Collections.singleton(this);
     }
 
 

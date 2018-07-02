@@ -55,7 +55,6 @@ public class UserProjectPreferences
     // Fields need public access for IDEA state management.
     @SuppressWarnings("WeakerAccess")
     public static class State {
-        @Deprecated
         public int maxServerConnections = DEFAULT_SERVER_CONNECTIONS;
 
         @Deprecated
@@ -155,6 +154,20 @@ public class UserProjectPreferences
     public void setEditInSeparateThread(boolean value) {
         state.editInSeparateThread = value;
     }
+
+
+    public static int getMaxServerConnections(@Nullable Project project) {
+        return getValue(project, DEFAULT_SERVER_CONNECTIONS, (p) -> p.getMaxServerConnections());
+    }
+
+    public int getMaxServerConnections() {
+        return state.maxServerConnections;
+    }
+
+    public void setMaxServerConnections(int count) {
+        state.maxServerConnections = count;
+    }
+
 
     public static boolean getPreferRevisionsForFiles(@Nullable Project project) {
         if (project == null) {

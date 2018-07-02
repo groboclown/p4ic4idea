@@ -61,10 +61,10 @@ public class P4LocalFileStore {
     @NotNull
     public static P4LocalFile read(@NotNull State state) {
         return new P4LocalFileImpl.Builder()
-                .withDepot(P4RemoteFileStore.read(state.depot))
+                .withDepot(P4RemoteFileStore.readNullable(state.depot))
                 .withLocal(VcsUtil.getFilePath(state.local))
                 .withHave(new P4Revision(state.haveRev))
-                .withHead(P4FileRevisionStore.read(state.headRev))
+                .withHead(P4FileRevisionStore.readNullable(state.headRev))
                 .withChangelist(P4ChangelistIdStore.readNullable(state.changelistId))
                 .withAction(state.action)
                 .withResolveType(P4ResolveType.convert(state.resolveType, state.contentResolveType))

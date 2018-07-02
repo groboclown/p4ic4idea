@@ -178,7 +178,7 @@ public class SimpleConnectionManager implements ConnectionManager {
     }
 
     @Override
-    public void disconnect(@NotNull ServerConfig config) {
+    public void disconnect(@NotNull P4ServerName config) {
         // Does nothing, because the underlying implementation does
         // not keep a pool of connections.
     }

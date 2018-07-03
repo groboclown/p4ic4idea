@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.api;
 
 import com.intellij.openapi.vcs.VcsException;
+import net.groboclown.p4.server.api.commands.sync.SyncListFilesDetailsQuery;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.Nls;
@@ -468,7 +469,7 @@ public interface P4CommandRunner {
     // reuse the result type from the non-sync version.
 
     enum SyncServerQueryCmd implements ServerCmd {
-        /* Add items only when absolutely necessary.
+        /* Add items only when absolutely necessary.  These have implications on large cached data.
         SYNC_LIST_CLIENTS_FOR_USER,
         SYNC_LIST_FILES,
         SYNC_LIST_DIRECTORIES,
@@ -477,6 +478,12 @@ public interface P4CommandRunner {
         SYNC_FILE_CHANGE_HISTORY,
         SYNC_LIST_SUBMITTED_CHANGELISTS,
         */
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.sync.SyncListFilesDetailsQuery
+         * @see net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult
+         */
+        SYNC_LIST_FILES_DETAILS
     }
 
     enum SyncClientQueryCmd implements ClientCmd {

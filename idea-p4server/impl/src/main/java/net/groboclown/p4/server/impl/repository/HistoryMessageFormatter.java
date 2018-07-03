@@ -12,19 +12,12 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.values;
+package net.groboclown.p4.server.impl.repository;
 
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.perforce.p4java.core.file.IFileRevisionData;
+import org.jetbrains.annotations.NotNull;
 
-public class P4Revision extends VcsRevisionNumber.Int {
-    public static final P4Revision NOT_ON_SERVER = new P4Revision(-1);
-
-    public P4Revision(int value) {
-        super(value);
-    }
-
-    @Override
-    public String asString() {
-        return '#' + Integer.toString(getValue());
-    }
+public interface HistoryMessageFormatter {
+    @NotNull
+    String format(@NotNull IFileRevisionData data);
 }

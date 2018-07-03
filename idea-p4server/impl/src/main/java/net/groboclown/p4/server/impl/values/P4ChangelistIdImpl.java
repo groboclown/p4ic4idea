@@ -82,7 +82,7 @@ public class P4ChangelistIdImpl implements P4ChangelistId {
 
     @Override
     public String asString() {
-        return Integer.toString(id);
+        return "@" + Integer.toString(id);
     }
 
     @Override
@@ -116,6 +116,6 @@ public class P4ChangelistIdImpl implements P4ChangelistId {
 
     @Override
     public String toString() {
-        return ref + "@" + id;
+        return ref + asString();
     }
 }

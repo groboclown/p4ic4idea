@@ -19,21 +19,28 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
+
+/**
+ * Even though this is a server query, because it doesn't need the client object to run, it
+ * still needs a client name if the user passes in a file, because the server needs to be
+ * able to map from the client spec's file mapping to the server object.
+ */
 public class AnnotateFileQuery implements P4CommandRunner.ServerQuery<AnnotateFileResult> {
+    private final String clientname;
     private final FilePath localFile;
     private final P4RemoteFile remoteFile;
     private final int rev;
 
-    // Eventually, this might be needed.  For now, though, it's not.
-    // private final String changelist;
-
-    public AnnotateFileQuery(@NotNull FilePath localFile, int rev) {
+    public AnnotateFileQuery(@NotNull String clientname, @NotNull FilePath localFile, int rev) {
+        this.clientname = clientname;
         this.localFile = localFile;
         this.remoteFile = null;
         this.rev = rev;
     }
 
     public AnnotateFileQuery(@NotNull P4RemoteFile remoteFile, int rev) {
+        this.clientname = null;
         this.localFile = null;
         this.remoteFile = remoteFile;
         this.rev = rev;
@@ -50,15 +57,26 @@ public class AnnotateFileQuery implements P4CommandRunner.ServerQuery<AnnotateFi
         return P4CommandRunner.ServerQueryCmd.ANNOTATE_FILE;
     }
 
+    /**
+     *
+     * @return null if the remote file is used; if not null, then then clientname is not-null.
+     */
+    @Nullable
     public FilePath getLocalFile() {
         return localFile;
     }
 
+    @Nullable
     public P4RemoteFile getRemoteFile() {
         return remoteFile;
     }
 
     public int getRev() {
         return rev;
+    }
+
+    @Nullable
+    public String getClientname() {
+        return clientname;
     }
 }

@@ -17,6 +17,7 @@ package net.groboclown.p4.server.impl.values;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
+import com.perforce.p4java.core.file.IFileRevisionData;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileAction;
@@ -42,17 +43,28 @@ public class P4FileRevisionImpl
     private final Date date;
     private final String charset;
 
-
     public P4FileRevisionImpl(ClientServerRef ref, IExtendedFileSpec spec) {
         this(ref, new P4RemoteFileImpl(spec), spec);
     }
 
-    P4FileRevisionImpl(ClientServerRef ref, P4RemoteFile depotPath, IExtendedFileSpec spec) {
+    public P4FileRevisionImpl(ClientServerRef ref, P4RemoteFile depotPath, IExtendedFileSpec spec) {
         this(depotPath, new P4ChangelistIdImpl(spec.getChangelistId(), ref),
                 new P4Revision(spec.getHeadRev()),
                 P4FileAction.convert(spec.getHeadAction()),
-                P4FileType.convert(spec.getFileType()), null, new VcsRevisionNumber.Int(spec.getHeadRev()),
+                P4FileType.convert(spec.getFileType()), null, new P4Revision(spec.getHeadRev()),
                 spec.getHeadModTime(), spec.getCharset());
+    }
+
+    public P4FileRevisionImpl(@NotNull ClientServerRef ref, @NotNull IFileRevisionData data) {
+        this(new P4RemoteFileImpl(data.getDepotFileName()),
+                new P4ChangelistIdImpl(data.getChangelistId(), ref),
+                new P4Revision(data.getRevision()),
+                P4FileAction.convert(data.getAction()),
+                P4FileType.convert(data.getFileType()),
+                null,
+                new P4Revision(data.getRevision()),
+                data.getDate(),
+                null);
     }
 
     public P4FileRevisionImpl(@NotNull P4RemoteFile depotPath, @NotNull P4ChangelistId changelistId,

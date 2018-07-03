@@ -50,7 +50,7 @@ public class MessageStatusUtil {
         }
     }
 
-    public static void throwIfMessageOrEmpty(String operation, List<IFileSpec> ret)
+    public static void throwIfMessageOrEmpty(String operation, List<? extends IFileSpec> ret)
             throws P4JavaException {
         if (ret.isEmpty()) {
             throw new P4JavaException("Unexpected error when performing " + operation +

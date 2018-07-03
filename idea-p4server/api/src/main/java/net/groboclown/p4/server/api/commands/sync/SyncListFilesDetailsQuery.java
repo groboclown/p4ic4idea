@@ -12,32 +12,36 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.commands.file;
+package net.groboclown.p4.server.api.commands.sync;
 
+import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.api.values.P4FileRevision;
+import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.List;
 
-public class ListFilesDetailsResult implements P4CommandRunner.ServerResult {
-    private final ServerConfig config;
-    private final List<P4FileRevision> files;
+public class SyncListFilesDetailsQuery implements P4CommandRunner.SyncServerQuery<ListFilesDetailsResult> {
+    private final List<FilePath> files;
 
-    public ListFilesDetailsResult(@NotNull ServerConfig config, @NotNull List<P4FileRevision> files) {
-        this.config = config;
-        this.files = files;
+    public SyncListFilesDetailsQuery(@NotNull FilePath... files) {
+        this.files = Arrays.asList(files);
     }
 
     @NotNull
     @Override
-    public ServerConfig getServerConfig() {
-        return config;
+    public Class<? extends ListFilesDetailsResult> getResultType() {
+        return ListFilesDetailsResult.class;
+    }
+
+    @Override
+    public P4CommandRunner.SyncServerQueryCmd getCmd() {
+        return P4CommandRunner.SyncServerQueryCmd.SYNC_LIST_FILES_DETAILS;
     }
 
     @NotNull
-    public List<P4FileRevision> getFiles() {
+    public List<FilePath> getFiles() {
         return files;
     }
 }

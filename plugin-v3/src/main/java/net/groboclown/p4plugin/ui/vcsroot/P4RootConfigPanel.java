@@ -112,7 +112,7 @@ public class P4RootConfigPanel {
         int warningCount = 0;
         problemListModel.clear();
         Set<String> problemText = new HashSet<>();
-        for (ConfigProblem configProblem : PartValidation.findAllProblems(part)) {
+        for (ConfigProblem configProblem: PartValidation.findAllProblems(part)) {
             if (!problemText.contains(configProblem.getMessage())) {
                 problemText.add(configProblem.getMessage());
                 problemListModel.addElement(configProblem);
@@ -164,7 +164,7 @@ public class P4RootConfigPanel {
         List<String> keys = new ArrayList<>(props.keySet());
         Collections.sort(keys);
         StringBuilder sb = new StringBuilder();
-        for (String key : keys) {
+        for (String key: keys) {
             sb.append(key).append('=').append(props.get(key)).append('\n');
         }
         sb.deleteCharAt(sb.length() - 1);

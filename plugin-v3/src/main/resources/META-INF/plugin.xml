@@ -154,8 +154,6 @@
                     description="Send a review request from the selected changelist"/>
             -->
 
-            <reference ref="P4Connection"/>
-
             <!-- Add the revert unchanged to the changelist menu -->
             <add-to-group group-id="ChangesViewPopupMenu"
                           anchor="after" relative-to-action="ChangesView.Edit"/>
@@ -206,8 +204,6 @@
                     text="Resolve Conflicts..."/>
             <separator/>
             -->
-
-            <reference ref="P4Connection"/>
         </group>
 
         <group id="P4.Menu" class="net.groboclown.p4plugin.actions.P4Menu" popup="true" text="_P4">

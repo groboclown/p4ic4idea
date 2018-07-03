@@ -12,19 +12,15 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.values;
+package net.groboclown.p4.server.impl.repository;
 
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.vcs.VcsException;
 
-public class P4Revision extends VcsRevisionNumber.Int {
-    public static final P4Revision NOT_ON_SERVER = new P4Revision(-1);
+import javax.annotation.Nullable;
+import java.io.IOException;
 
-    public P4Revision(int value) {
-        super(value);
-    }
-
-    @Override
-    public String asString() {
-        return '#' + Integer.toString(getValue());
-    }
+public interface HistoryContentLoader {
+    @Nullable
+    byte[] loadContentForRev(String depotPath, int rev)
+            throws IOException, VcsException;
 }

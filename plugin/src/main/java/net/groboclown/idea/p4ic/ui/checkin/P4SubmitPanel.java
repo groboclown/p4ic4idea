@@ -217,7 +217,7 @@ public class P4SubmitPanel {
                     final Object selectedJob = myJobStatus.getSelectedItem();
                     jobStatusModel.removeAllElements();
                     boolean foundSelected = false;
-                    for (String status : context.getJobStatuses()) {
+                    for (String status: context.getJobStatuses()) {
                         jobStatusModel.addElement(status);
                         if (status.equals(selectedJob)) {
                             foundSelected = true;

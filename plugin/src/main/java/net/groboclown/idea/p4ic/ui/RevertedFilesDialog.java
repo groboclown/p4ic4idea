@@ -38,10 +38,10 @@ public class RevertedFilesDialog
                 P4Bundle.message("reverted.files.title"));
         $$$setupUI$$$();
 
-        for (String el : filePathDisplay(reverted)) {
+        for (String el: filePathDisplay(reverted)) {
             myRevertedFilesModel.addElement(el);
         }
-        for (String el : exceptionDisplay(errors)) {
+        for (String el: exceptionDisplay(errors)) {
             myErrorsModel.addElement(el);
         }
 
@@ -91,7 +91,7 @@ public class RevertedFilesDialog
     @NotNull
     private List<String> filePathDisplay(@NotNull final Collection<FilePath> reverted) {
         List<String> ret = new ArrayList<String>(reverted.size());
-        for (FilePath file : reverted) {
+        for (FilePath file: reverted) {
             ret.add(file.getIOFile().toString());
         }
         return ret;
@@ -100,7 +100,7 @@ public class RevertedFilesDialog
     @NotNull
     private List<String> exceptionDisplay(@NotNull final Collection<P4StatusMessage> errors) {
         List<String> ret = new ArrayList<String>(errors.size());
-        for (P4StatusMessage error : errors) {
+        for (P4StatusMessage error: errors) {
             // TODO the errors should be linked to files; add them to the UI output.
             ret.add(error.getMessage().getLocalizedMessage());
         }

@@ -13,7 +13,10 @@
  */
 package net.groboclown.p4plugin.extension;
 
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.ChangeListColumn;
 import com.intellij.openapi.vcs.CommittedChangesProvider;
@@ -30,24 +33,39 @@ import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import com.intellij.openapi.vcs.versionBrowser.StandardVersionFilterComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.AsynchConsumer;
-import com.perforce.p4java.core.file.IFileSpec;
+import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsQuery;
+import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsResult;
+import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
+import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
+import net.groboclown.p4.server.api.commands.sync.SyncListFilesDetailsQuery;
+import net.groboclown.p4.server.api.repository.P4RepositoryLocation;
 import net.groboclown.p4.server.api.values.P4CommittedChangelist;
+import net.groboclown.p4.server.impl.commands.DoneQueryAnswer;
+import net.groboclown.p4.server.impl.repository.RepositoryLocationFactory;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.components.P4ServerComponent;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.extension.P4CommittedChangesProvider.P4ChangeBrowserSettings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.TimeUnit;
 
 public class P4CommittedChangesProvider implements CommittedChangesProvider<P4CommittedChangelist, P4ChangeBrowserSettings> {
     private static final Logger LOG = Logger.getInstance(P4CommittedChangesProvider.class);
 
-    private final P4Vcs vcs;
+    private final Project project;
 
     public P4CommittedChangesProvider(@NotNull final P4Vcs vcs) {
-        this.vcs = vcs;
+        this.project = vcs.getProject();
     }
 
 
@@ -69,10 +87,36 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
 
     @Nullable
     @Override
-    public RepositoryLocation getLocationFor(FilePath root) {
-
-        // FIXME
-        throw new IllegalStateException("not implemented");
+    public RepositoryLocation getLocationFor(@Nullable FilePath root) {
+        ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        if (registry == null) {
+            return null;
+        }
+        ClientConfigRoot client = registry.getClientFor(root);
+        if (client == null) {
+            return null;
+        }
+        ListFilesDetailsResult details;
+        if (ApplicationManager.getApplication().isDispatchThread()) {
+            // Use the cache
+            details = P4ServerComponent.getInstance(project).getCommandRunner()
+                    .syncCachedQuery(client.getClientConfig().getServerConfig(),
+                            new SyncListFilesDetailsQuery(root));
+        } else {
+            try {
+                details = P4ServerComponent.getInstance(project).getCommandRunner()
+                        .query(client.getClientConfig().getServerConfig(),
+                                new ListFilesDetailsQuery())
+                        // FIXME use real timer settings
+                        .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
+                LOG.warn(e);
+                details = P4ServerComponent.getInstance(project).getCommandRunner()
+                        .syncCachedQuery(client.getClientConfig().getServerConfig(),
+                                new SyncListFilesDetailsQuery(root));
+            }
+        }
+        return RepositoryLocationFactory.getLocationFor(root, client, details);
     }
 
     @Nullable
@@ -90,32 +134,21 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
     /**
      * Called by IDE in a Worker Thread.
      *
-     * @param settings
-     * @param location
-     * @param maxCount
-     * @return
-     * @throws VcsException
+     * @param settings settings
+     * @param location location
+     * @param maxCount count
+     * @return list of changes
+     * @throws VcsException if there was a problem on the server.
      */
     @Override
-    public List<P4CommittedChangelist> getCommittedChanges(P4ChangeBrowserSettings settings, RepositoryLocation
-            location, int maxCount) throws VcsException {
-        final List<P4CommittedChangelist> ret = new ArrayList<P4CommittedChangelist>();
-        loadCommittedChanges(settings, location, maxCount, new AsynchConsumer<CommittedChangeList>() {
-            @Override
-            public void finished() {
-                // do nothing
-            }
-
-            @Override
-            public void consume(CommittedChangeList committedChangeList) {
-                if (committedChangeList instanceof P4CommittedChangelist) {
-                    ret.add((P4CommittedChangelist) committedChangeList);
-                } else {
-                    throw new IllegalArgumentException("Must be P4CommitedChangeList: " + committedChangeList);
-                }
-            }
-        });
-        return ret;
+    public List<P4CommittedChangelist> getCommittedChanges(P4ChangeBrowserSettings settings,
+            RepositoryLocation location, int maxCount) throws VcsException {
+        try {
+            return asyncLoadCommittedChanges(settings, location, maxCount)
+                    .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | CancellationException e) {
+            throw new VcsException(e);
+        }
     }
 
     @Override
@@ -124,35 +157,32 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
         if (consumer == null) {
             return;
         }
-        if (location == null) {
-            consumer.finished();
-            return;
-        }
-        final IFileSpec spec;
-        // FIXME
-        throw new IllegalStateException("not implemented");
-        /*
-        if (location instanceof P4RepositoryLocation) {
-            spec = ((P4RepositoryLocation) location).getP4FileInfo();
-        } else if (location instanceof P4SimpleRepositoryLocation) {
-            spec = ((P4SimpleRepositoryLocation) location).getP4FileInfo();
-        } else {
-            LOG.warn("Must be P4RepositoryLocation or P4SimpleRepositoryLocation: " + location);
-            consumer.finished();
-            return;
-        }
+        asyncLoadCommittedChanges(settings, location, maxCount)
+                .whenCompleted((c) -> c.forEach(consumer::consume))
+                .after(consumer::finished);
+    }
 
-        for (P4Server p4Server : vcs.getP4Servers()) {
-            try {
-                for (P4CommittedChangeList changeList: p4Server.getChangelistsForOnline(spec, maxCount)) {
-                    consumer.consume(changeList);
-                }
-            } catch (InterruptedException e) {
-                LOG.info(e);
-            }
+    @NotNull
+    private P4CommandRunner.QueryAnswer<List<P4CommittedChangelist>> asyncLoadCommittedChanges(
+            P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount) throws VcsException {
+        ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        if (location == null || registry == null) {
+            return new DoneQueryAnswer<>(Collections.emptyList());
         }
-        consumer.finished();
-        */
+        if (location instanceof P4RepositoryLocation) {
+            P4RepositoryLocation repo = (P4RepositoryLocation) location;
+            ClientConfigRoot clientConfig = registry.getRegisteredClientConfigState(repo.getClientServerRef());
+            if (clientConfig == null) {
+                LOG.warn("Could not find configuration for " + repo.getClientServerRef());
+                return new DoneQueryAnswer<>(Collections.emptyList());
+            }
+
+            return P4ServerComponent.getInstance(project).getCommandRunner()
+                    .query(clientConfig.getServerConfig(), new ListSubmittedChangelistsQuery(repo, maxCount))
+                    .mapQuery(ListSubmittedChangelistsResult::getChanges);
+        }
+        LOG.warn("Cannot load changes for non-perforce repository location " + location);
+        return new DoneQueryAnswer<>(Collections.emptyList());
     }
 
     @Override
@@ -169,8 +199,18 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
     @Nullable
     @Override
     public VcsCommittedViewAuxiliary createActions(DecoratorManager manager, RepositoryLocation location) {
-        // FIXME
-        throw new IllegalStateException("not implemented");
+        List<AnAction> allActions =
+                // FIXME add an action to view the description of a changelist.
+                // Collections.<AnAction>singletonList(new ChangelistDescriptionAction());
+                Collections.emptyList();
+        LOG.warn("FIXME add an action to view the description of a changelist.");
+        return new VcsCommittedViewAuxiliary(
+                allActions,
+                () -> {
+                    // on dispose - do nothing
+                },
+                allActions
+        );
     }
 
     /**
@@ -184,47 +224,45 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
     /**
      * Called by IDE in a Worker Thread.
      *
-     * @param file
-     * @param number
+     * @param file file
+     * @param number revision
      * @return required list and path of the target file in that revision (changes when move/rename)
      */
     @Nullable
     @Override
     public Pair<P4CommittedChangelist, FilePath> getOneList(VirtualFile file, VcsRevisionNumber number)
             throws VcsException {
-        // FIXME
-        throw new IllegalStateException("not implemented");
-        /*
-        FilePath fp = FilePathUtil.getFilePath(file);
-        try {
-            final P4Server server = vcs.getP4ServerFor(fp);
-            if (server == null) {
-                return new Pair<P4CommittedChangeList, FilePath>(null, fp);
-            }
-            if (number != null) {
-                String revision = number.asString();
-                if (revision != null && revision.length() > 0 && (revision.charAt(0) == '@' || revision
-                        .charAt(0) == '#')) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Getting changelist for revision " + revision + "; " + fp);
-                    }
-                    P4CommittedChangeList changeList = server.getChangelistForOnline(fp, revision);
-
-                    return Pair.create(changeList, fp);
-                }
-            }
-            if (LOG.isDebugEnabled()) {
-                LOG.info("Getting changelist for head revision; " + fp);
-            }
-            // FIXME use the correct constant string
-            P4CommittedChangeList changeList = server.getChangelistForOnline(fp, "#head");
-            return Pair.create(changeList, fp);
-        } catch (InterruptedException e) {
-            // FIXME use alert manager to report it
-            LOG.warn(e);
+        FilePath fp = VcsUtil.getFilePath(file);
+        if (fp == null) {
             return null;
         }
-        */
+        ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        if (registry == null) {
+            return Pair.create(null, fp);
+        }
+        ClientConfigRoot clientConfig = registry.getClientFor(file);
+        if (clientConfig == null) {
+            return Pair.create(null, fp);
+        }
+
+        String revision;
+        if (number != null) {
+            revision = number.asString();
+
+            if (revision == null || revision.isEmpty()) {
+                revision = "#head";
+            } else if (!(revision.charAt(0) == '@' || revision.charAt(0) == '#')) {
+                revision = '#' + revision;
+            }
+        } else {
+            revision = "#head";
+        }
+
+        LOG.info("Getting changelist for " + file + " " + revision);
+
+        // FIXME pull the revision from the server.  This is in a worker thread, so do a blocking wait.
+        LOG.warn("FIXME pull the revision from the server.  This is in a worker thread, so do a blocking wait.");
+        return Pair.create(null, fp);
     }
 
     @Override
@@ -253,7 +291,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
         }
 
         public boolean isShowOnlyShelvedFilter() {
-            return SHOW_ONLY_SHELVED_FILTER != null && Boolean.parseBoolean(SHOW_ONLY_SHELVED_FILTER);
+            return Boolean.parseBoolean(SHOW_ONLY_SHELVED_FILTER);
         }
 
         @NotNull
@@ -292,7 +330,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
         @Override
         public Object getValue(final P4CommittedChangelist changeList) {
             // committed changelists can't have shelved files... so this is probably the wrong object.
-            // FIXME
+            // FIXME implement correctly
             throw new IllegalStateException("not implemented");
             //return changeList.hasShelved();
         }

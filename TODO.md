@@ -24,10 +24,6 @@ The Active Connection panel should show errors beside pending actions if there w
 
 The repository view doesn't create committed changelists (it throws an exception because it's not implemented).
 
-### File Annotation
-
-The file annotation needs a lot of work.
-
 ### Submit Change
 
 The submit change needs to be implemented correctly.

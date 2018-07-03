@@ -14,6 +14,9 @@
 
 package net.groboclown.p4.server.impl.connection.impl;
 
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.Pair;
+import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.CoreFactory;
 import com.perforce.p4java.core.IChangelist;
@@ -23,6 +26,7 @@ import com.perforce.p4java.core.IJobSpec;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileAnnotation;
+import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -37,6 +41,8 @@ import com.perforce.p4java.option.server.ChangelistOptions;
 import com.perforce.p4java.option.server.GetChangelistsOptions;
 import com.perforce.p4java.option.server.GetExtendedFilesOptions;
 import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
+import com.perforce.p4java.option.server.GetFileContentsOptions;
+import com.perforce.p4java.option.server.GetRevisionHistoryOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
 import net.groboclown.p4.server.api.values.JobStatus;
@@ -44,8 +50,13 @@ import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.api.values.P4Job;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -60,6 +71,11 @@ import java.util.Map;
  * allows for an easier effort to focus on API compatibility and correctness.
  */
 public class P4CommandUtil {
+    private static final Logger LOG = Logger.getInstance(P4CommandUtil.class);
+
+    private static final int BUFFER_SIZE = 4096;
+
+
     public List<IExtendedFileSpec> getFilesOpenInDefaultChangelist(IServer server,
             String clientName, int maxFileResults)
             throws P4JavaException {
@@ -240,5 +256,87 @@ public class P4CommandUtil {
     public IChangelist createChangelist(IClient client, String description)
             throws P4JavaException {
         return CoreFactory.createChangelist(client, description, true);
+    }
+
+    public IExtendedFileSpec getFileDetails(IServer server, String clientname, List<IFileSpec> sources)
+            throws P4JavaException {
+        if (clientname != null) {
+            // For fetching the local File information, we need a client to perform the mapping.
+            IClient client = server.getClient(clientname);
+            server.setCurrentClient(client);
+        }
+        assert sources.size() == 1;
+        GetExtendedFilesOptions options = new GetExtendedFilesOptions();
+        List<IExtendedFileSpec> ret = server.getExtendedFiles(sources, options);
+        MessageStatusUtil.throwIfMessageOrEmpty("get file details", ret);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("File details fetch for " + sources.get(0) + ": count " + ret.size() + ": " + ret);
+        }
+        assert ret.size() == 1;
+        return ret.get(0);
+    }
+
+    public byte[] loadContents(IServer server, IFileSpec spec)
+            throws P4JavaException, IOException {
+        int maxFileSize = VcsUtil.getMaxVcsLoadedFileSize();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        GetFileContentsOptions fileContentsOptions = new GetFileContentsOptions(false, true);
+        // setting "don't annotate files" to true means we ignore the revision
+        fileContentsOptions.setDontAnnotateFiles(false);
+        InputStream inp = server.getFileContents(Collections.singletonList(spec),
+                fileContentsOptions);
+        if (inp == null) {
+            return null;
+        }
+
+        try {
+            byte[] buff = new byte[BUFFER_SIZE];
+            int len;
+            while ((len = inp.read(buff, 0, BUFFER_SIZE)) > 0 && baos.size() < maxFileSize) {
+                baos.write(buff, 0, len);
+            }
+        } finally {
+            // Note: be absolutely sure to close the InputStream that is returned.
+            inp.close();
+        }
+        return baos.toByteArray();
+    }
+
+    public String loadStringContents(IServer server, IFileSpec spec, String charset)
+            throws IOException, P4JavaException {
+        if (charset == null) {
+            charset = Charset.defaultCharset().name();
+        }
+        byte[] ret = loadContents(server, spec);
+        if (ret == null) {
+            return null;
+        }
+        return new String(ret, charset);
+    }
+
+    public List<Pair<IFileSpec, IFileRevisionData>> getExactHistory(IOptionsServer server, List<IFileSpec> specs)
+            throws P4JavaException {
+        GetRevisionHistoryOptions opts = new GetRevisionHistoryOptions()
+                .setMaxRevs(1)
+                .setContentHistory(false)
+                .setIncludeInherited(false)
+                .setLongOutput(true)
+                .setTruncatedLongOutput(false);
+        Map<IFileSpec, List<IFileRevisionData>> res = server.getRevisionHistory(specs, opts);
+        List<Pair<IFileSpec, IFileRevisionData>> ret = new ArrayList<>(res.size());
+        for (Map.Entry<IFileSpec, List<IFileRevisionData>> entry: res.entrySet()) {
+            // it can return empty values for a server message
+            List<IFileRevisionData> value = entry.getValue();
+            if (value != null && !value.isEmpty()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Mapped " + entry.getKey().getDepotPath() + " to " + entry.getValue());
+                }
+                if (entry.getValue().size() != 1) {
+                    throw new IllegalStateException("Unexpected revision count for " + entry.getKey().getDepotPath());
+                }
+                ret.add(Pair.create(entry.getKey(), entry.getValue().get(0)));
+            }
+        }
+        return ret;
     }
 }

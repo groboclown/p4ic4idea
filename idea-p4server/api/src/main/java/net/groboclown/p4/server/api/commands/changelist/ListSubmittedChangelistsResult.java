@@ -16,12 +16,28 @@ package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.values.P4CommittedChangelist;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class ListSubmittedChangelistsResult implements P4CommandRunner.ServerResult {
+    private final ServerConfig config;
+    private final List<P4CommittedChangelist> changes;
+
+    public ListSubmittedChangelistsResult(@NotNull ServerConfig config, @NotNull List<P4CommittedChangelist> changes) {
+        this.config = config;
+        this.changes = changes;
+    }
+
     @NotNull
     @Override
     public ServerConfig getServerConfig() {
-        return null;
+        return config;
+    }
+
+    @NotNull
+    public List<P4CommittedChangelist> getChanges() {
+        return changes;
     }
 }

@@ -484,7 +484,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     @Override
     @Nullable
     public String getRevisionPattern() {
-        return "\\d+";
+        return "#?\\d+";
     }
 
     /**

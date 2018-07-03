@@ -12,19 +12,19 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.values;
+package net.groboclown.p4.server.api.repository;
 
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.vcs.RepositoryLocation;
+import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.p4.server.api.ClientServerRef;
+import org.jetbrains.annotations.NotNull;
 
-public class P4Revision extends VcsRevisionNumber.Int {
-    public static final P4Revision NOT_ON_SERVER = new P4Revision(-1);
+import java.util.List;
 
-    public P4Revision(int value) {
-        super(value);
-    }
+public interface P4RepositoryLocation extends RepositoryLocation {
+    @NotNull
+    ClientServerRef getClientServerRef();
 
-    @Override
-    public String asString() {
-        return '#' + Integer.toString(getValue());
-    }
+    @NotNull
+    List<IFileSpec> getFileSpecs();
 }

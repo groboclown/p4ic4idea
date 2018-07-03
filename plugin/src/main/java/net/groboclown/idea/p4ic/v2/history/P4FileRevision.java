@@ -18,7 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.RepositoryLocation;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.history.VcsFileRevision;
+import com.intellij.openapi.vcs.history.VcsFileRevisionEx;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IRevisionIntegrationData;
@@ -39,7 +39,7 @@ import java.util.List;
  * a client workspace (say, a different branch), which is useful when looking
  * at the revision history across branches.
  */
-public class P4FileRevision implements VcsFileRevision {
+public class P4FileRevision extends VcsFileRevisionEx {
     private static final Logger LOG = Logger.getInstance(P4FileRevision.class);
     private final Project project;
 
@@ -233,5 +233,31 @@ public class P4FileRevision implements VcsFileRevision {
             }
         }
         return comment.toString();
+    }
+
+    @Nullable
+    @Override
+    public String getAuthorEmail() {
+        // This requires getting the user information from the server.
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public String getCommitterName() {
+        return author;
+    }
+
+    @Nullable
+    @Override
+    public String getCommitterEmail() {
+        // This requires getting the user information from the server.
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public FilePath getPath() {
+        return baseFile;
     }
 }

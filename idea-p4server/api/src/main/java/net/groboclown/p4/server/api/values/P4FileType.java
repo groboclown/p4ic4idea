@@ -25,6 +25,7 @@ import java.util.List;
 
 @Immutable
 public class P4FileType {
+    private static final P4FileType UNKNOWN = new P4FileType(BaseType.UNKNOWN, -1, Collections.emptyList(), KeywordExpansion.NONE);
 
     public enum BaseType {
         TEXT,
@@ -116,7 +117,10 @@ public class P4FileType {
     }
 
     @NotNull
-    public static P4FileType convert(@NotNull final String fileType) {
+    public static P4FileType convert(@Nullable final String fileType) {
+        if (fileType == null) {
+            return UNKNOWN;
+        }
         List<Modifier> modifiers = new ArrayList<>();
         KeywordExpansion keywordExpansion = KeywordExpansion.NONE;
         int revsStored = -1;

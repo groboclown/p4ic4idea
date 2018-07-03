@@ -15,9 +15,18 @@
 package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.repository.P4RepositoryLocation;
 import org.jetbrains.annotations.NotNull;
 
 public class ListSubmittedChangelistsQuery implements P4CommandRunner.ServerQuery<ListSubmittedChangelistsResult> {
+    private final P4RepositoryLocation location;
+    private final int maxCount;
+
+    public ListSubmittedChangelistsQuery(@NotNull P4RepositoryLocation location, int maxCount) {
+        this.location = location;
+        this.maxCount = maxCount;
+    }
+
     @NotNull
     @Override
     public Class<? extends ListSubmittedChangelistsResult> getResultType() {
@@ -27,5 +36,10 @@ public class ListSubmittedChangelistsQuery implements P4CommandRunner.ServerQuer
     @Override
     public P4CommandRunner.ServerQueryCmd getCmd() {
         return P4CommandRunner.ServerQueryCmd.LIST_SUBMITTED_CHANGELISTS;
+    }
+
+    @NotNull
+    public P4RepositoryLocation getLocation() {
+        return location;
     }
 }

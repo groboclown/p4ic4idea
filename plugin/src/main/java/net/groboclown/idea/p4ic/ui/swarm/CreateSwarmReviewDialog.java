@@ -202,7 +202,7 @@ public class CreateSwarmReviewDialog
             throws InterruptedException {
         List<P4Server> servers = P4ServerManager.getInstance(project).getOnlineServers();
         List<Pair<SwarmClient, P4ChangeListId>> shelvedChanges = new ArrayList<Pair<SwarmClient, P4ChangeListId>>();
-        for (Pair<SwarmClient, P4ChangeListId> pair : changeLists) {
+        for (Pair<SwarmClient, P4ChangeListId> pair: changeLists) {
             P4Server server = getServerForChangelist(pair.second, servers);
             if (server != null) {
                 try {
@@ -229,11 +229,11 @@ public class CreateSwarmReviewDialog
             @NotNull List<Pair<SwarmClient, P4ChangeListId>> shelvedChangelists) {
         LOG.info("Creating review for " + shelvedChangelists);
         List<String> loginIds = new ArrayList<String>();
-        for (UserSummaryState user : users) {
+        for (UserSummaryState user: users) {
             loginIds.add(user.getLoginId());
         }
         List<Pair<SwarmClient, Review>> ret = new ArrayList<Pair<SwarmClient, Review>>(shelvedChangelists.size());
-        for (Pair<SwarmClient, P4ChangeListId> shelvedChangelist : shelvedChangelists) {
+        for (Pair<SwarmClient, P4ChangeListId> shelvedChangelist: shelvedChangelists) {
             try {
                 Review res = shelvedChangelist.first.createReview(
                         text, shelvedChangelist.second.getChangeListId(),
@@ -264,7 +264,7 @@ public class CreateSwarmReviewDialog
     private void showSuccess(List<Pair<SwarmClient, Review>> reviews) {
         StringBuilder content = new StringBuilder();
         String next = "";
-        for (Pair<SwarmClient, Review> review : reviews) {
+        for (Pair<SwarmClient, Review> review: reviews) {
             content.append(next)
                     .append("<a href='")
                     .append(review.first.getConfig().getUri())
@@ -295,7 +295,7 @@ public class CreateSwarmReviewDialog
 
     @Nullable
     private P4Server getServerForChangelist(@NotNull P4ChangeListId cl, @NotNull List<P4Server> servers) {
-        for (P4Server server : servers) {
+        for (P4Server server: servers) {
             if (server.getClientServerId().equals(cl.getClientServerRef())) {
                 return server;
             }
@@ -307,7 +307,7 @@ public class CreateSwarmReviewDialog
     @NotNull
     private Collection<ClientServerRef> getServerIdsFor(List<Pair<SwarmClient, P4ChangeListId>> changes) {
         Set<ClientServerRef> ret = new HashSet<ClientServerRef>();
-        for (Pair<SwarmClient, P4ChangeListId> change : changes) {
+        for (Pair<SwarmClient, P4ChangeListId> change: changes) {
             ret.add(change.second.getClientServerRef());
         }
         return ret;

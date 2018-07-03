@@ -220,7 +220,7 @@ public class ActiveConnectionPanel {
                     }
                 },
                 new ConnectionAction("Connection Configuration", "Edit the connection configuration",
-                        AllIcons.General.SmallConfigurableVcs) {
+                        AllIcons.General.GearPlain) { // SmallConfigurableVcs ?
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
@@ -242,7 +242,7 @@ public class ActiveConnectionPanel {
                 // TODO add an action that allows retrying a pending action.
 
                 new ConnectionAction("Remove Action", "Remove the pending action",
-                        AllIcons.Actions.Cross) {
+                        AllIcons.Actions.Clear) {
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         final ClientConfigRoot selRoot = getSelected(ClientConfigRoot.class);

@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.impl.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.Pair;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.ChangelistStatus;
@@ -25,6 +26,7 @@ import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileAnnotation;
+import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -36,6 +38,7 @@ import com.perforce.p4java.option.server.FixJobsOptions;
 import com.perforce.p4java.option.server.GetClientsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
+import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheMessage;
@@ -78,6 +81,7 @@ import net.groboclown.p4.server.api.commands.file.RevertFileResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.api.values.P4FileRevision;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
@@ -92,6 +96,7 @@ import net.groboclown.p4.server.impl.connection.impl.OpenFileStatus;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
+import net.groboclown.p4.server.impl.values.P4FileRevisionImpl;
 import net.groboclown.p4.server.impl.values.P4JobImpl;
 import net.groboclown.p4.server.impl.values.P4JobSpecImpl;
 import net.groboclown.p4.server.impl.values.P4LocalFileImpl;
@@ -201,11 +206,24 @@ public class ConnectCommandRunner
             List<IFileSpec> specs;
             if (query.getLocalFile() != null) {
                 specs = FileSpecBuildUtil.escapedForFilePathRev(query.getLocalFile(), query.getRev());
+            } else if (query.getRemoteFile() != null) {
+                // FIXME the getFileAnnotation requires a FilePath.
+                // specs = FileSpecBuildUtil.escapedForRemoteFileRev(query.getRemoteFile(), query.getRev());
+                throw new IllegalStateException("Not implemented");
             } else {
-                specs = FileSpecBuildUtil.escapedForRemoteFileRev(query.getRemoteFile(), query.getRev());
+                throw new IllegalStateException("both local file and remote file are null");
             }
+            ClientServerRef ref = new ClientServerRef(config.getServerName(), query.getClientname());
+            IExtendedFileSpec headSpec = cmd.getFileDetails(server, query.getClientname(), specs);
+            P4FileRevision headRevision = new P4FileRevisionImpl(ref, headSpec);
+            String content = cmd.loadStringContents(server, headSpec, headSpec.getHeadCharset());
             List<IFileAnnotation> annotations = cmd.getAnnotations(server, specs);
-            return new AnnotateFileResult(config, FileAnnotationParser.getFileAnnotation(annotations));
+            List<IFileSpec> requiredHistory = FileAnnotationParser.getRequiredHistorySpecs(annotations);
+            List<Pair<IFileSpec, IFileRevisionData>> history = cmd.getExactHistory(server, requiredHistory);
+            return new AnnotateFileResult(config,
+                    FileAnnotationParser.getFileAnnotation(
+                            ref, server.getUserName(), headSpec, query.getLocalFile(), annotations, history),
+                    headRevision, content);
         }));
     }
 

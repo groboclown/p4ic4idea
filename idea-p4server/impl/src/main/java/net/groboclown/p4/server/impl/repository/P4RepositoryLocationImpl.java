@@ -12,18 +12,31 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4plugin.history;
+package net.groboclown.p4.server.impl.repository;
 
-import com.intellij.openapi.vcs.RepositoryLocation;
 import com.intellij.openapi.vcs.VcsException;
+import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.repository.P4RepositoryLocation;
+import net.groboclown.p4.server.api.values.P4FileRevision;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
+import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import org.jetbrains.annotations.NotNull;
 
-public class P4RepositoryLocation implements RepositoryLocation {
+import java.util.List;
+
+class P4RepositoryLocationImpl implements P4RepositoryLocation {
+    private final ClientServerRef ref;
     private final P4RemoteFile depotPath;
 
-    public P4RepositoryLocation(@NotNull P4RemoteFile depotPath) {
+    public P4RepositoryLocationImpl(@NotNull ClientServerRef ref, @NotNull P4RemoteFile depotPath) {
+        this.ref = ref;
         this.depotPath = depotPath;
+    }
+
+    public P4RepositoryLocationImpl(@NotNull ClientServerRef ref, @NotNull P4FileRevision p4FileRevision) {
+        this.ref = ref;
+        this.depotPath = p4FileRevision.getFile();
     }
 
     @Override
@@ -45,5 +58,17 @@ public class P4RepositoryLocation implements RepositoryLocation {
     @Override
     public void onAfterBatch() {
         // Do nothing
+    }
+
+    @NotNull
+    @Override
+    public ClientServerRef getClientServerRef() {
+        return ref;
+    }
+
+    @NotNull
+    @Override
+    public List<IFileSpec> getFileSpecs() {
+        return FileSpecBuildUtil.escapedForRemoteFileRev(depotPath, -1);
     }
 }

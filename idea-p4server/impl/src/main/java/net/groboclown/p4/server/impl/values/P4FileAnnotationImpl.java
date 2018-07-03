@@ -12,37 +12,25 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.values;
+package net.groboclown.p4.server.impl.values;
 
-import com.perforce.p4java.core.file.IFileRevisionData;
+import net.groboclown.p4.server.api.values.P4AnnotatedLine;
+import net.groboclown.p4.server.api.values.P4FileAnnotation;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Date;
+import java.util.Collections;
+import java.util.List;
 
-public interface P4AnnotatedLine {
-    @Nullable
-    P4ChangelistId getChangelist();
+public class P4FileAnnotationImpl implements P4FileAnnotation {
+    private final List<P4AnnotatedLine> annotations;
 
-    @Nullable
-    String getAuthor();
-
-    @Nullable
-    Date getDate();
-
-    @Nullable
-    String getComment();
+    public P4FileAnnotationImpl(@NotNull List<P4AnnotatedLine> annotations) {
+        this.annotations = Collections.unmodifiableList(annotations);
+    }
 
     @NotNull
-    IFileRevisionData getRevisionData();
-
-    @NotNull
-    P4RemoteFile getDepotPath();
-
-    int getLineNumber();
-
-    @NotNull
-    P4FileRevision getRev();
-
-    int getRevNumber();
+    @Override
+    public List<P4AnnotatedLine> getAnnotatedLines() {
+        return annotations;
+    }
 }

@@ -1,0 +1,128 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package net.groboclown.p4.server.impl.repository;
+
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.RepositoryLocation;
+import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.history.VcsFileRevisionEx;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.perforce.p4java.core.file.IFileRevisionData;
+import net.groboclown.p4.server.api.values.P4Revision;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+import java.util.Date;
+
+public class P4HistoryVcsFileRevision
+        extends VcsFileRevisionEx {
+    private final FilePath file;
+    private final IFileRevisionData data;
+    private final HistoryMessageFormatter formatter;
+    private final HistoryContentLoader loader;
+    private boolean loadedContent;
+    private byte[] content;
+
+    public P4HistoryVcsFileRevision(@NotNull FilePath file, @NotNull IFileRevisionData data,
+            @Nullable HistoryMessageFormatter formatter,
+            @Nullable HistoryContentLoader loader) {
+        this.loader = loader;
+        this.file = file;
+        this.data = data;
+        this.formatter = formatter;
+    }
+
+    @Nullable
+    @Override
+    public String getAuthorEmail() {
+        // TODO Requires fetching user data...
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public String getCommitterName() {
+        return data.getUserName();
+    }
+
+    @Nullable
+    @Override
+    public String getCommitterEmail() {
+        // TODO Requires fetching user data...
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public FilePath getPath() {
+        return file;
+    }
+
+    @Nullable
+    @Override
+    public String getBranchName() {
+        // TODO Could get the stream name, but that's a lot of guess work.
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public RepositoryLocation getChangedRepositoryPath() {
+        return null;
+    }
+
+    @Override
+    public byte[] loadContent()
+            throws IOException, VcsException {
+        return getContent();
+    }
+
+    @Nullable
+    @Override
+    public byte[] getContent()
+            throws IOException, VcsException {
+        if (!loadedContent && loader != null) {
+            loadedContent = true;
+            content = loader.loadContentForRev(data.getDepotFileName(), data.getRevision());
+        }
+        return content;
+    }
+
+    @NotNull
+    @Override
+    public VcsRevisionNumber getRevisionNumber() {
+        return new P4Revision(data.getRevision());
+    }
+
+    @Override
+    public Date getRevisionDate() {
+        return data.getDate();
+    }
+
+    @Nullable
+    @Override
+    public String getAuthor() {
+        return data.getUserName();
+    }
+
+    @Nullable
+    @Override
+    public String getCommitMessage() {
+        return formatter == null
+                ? data.getDescription()
+                : formatter.format(data);
+    }
+}

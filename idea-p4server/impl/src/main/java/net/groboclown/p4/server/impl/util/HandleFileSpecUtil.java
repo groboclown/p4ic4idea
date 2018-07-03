@@ -37,6 +37,15 @@ public class HandleFileSpecUtil {
 
 
     @NotNull
+    public static String getRawDepot(IFileSpec spec, boolean stripAnnotations) {
+        if (stripAnnotations) {
+            return PathAnnotations.stripAnnotations(spec.getDepotPath().getPathString());
+        }
+        return spec.getDepotPath().getPathString();
+    }
+
+
+    @NotNull
     private static String unescapeP4Path(@NotNull String path) {
         StringBuilder sb = new StringBuilder(path.length());
         char[] buff = path.toCharArray();

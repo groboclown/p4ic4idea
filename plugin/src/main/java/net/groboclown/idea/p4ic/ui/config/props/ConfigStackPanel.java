@@ -298,7 +298,7 @@ public class ConfigStackPanel
         if (ApplicationManager.getApplication().isDispatchThread()) {
             componentList.removeAllChildren();
 
-            for (ConfigPart part : parts) {
+            for (ConfigPart part: parts) {
                 addConfigPart(part);
             }
         } else {
@@ -307,7 +307,7 @@ public class ConfigStackPanel
                 public void run() {
                     componentList.removeAllChildren();
 
-                    for (ConfigPart part : parts) {
+                    for (ConfigPart part: parts) {
                         addConfigPart(part);
                     }
                 }
@@ -319,7 +319,7 @@ public class ConfigStackPanel
         updateConfigPartFromUI();
         final List<ConfigPartPanel<?>> partPanels = componentList.getChildren();
         ArrayList<ConfigPart> parts = new ArrayList<ConfigPart>(partPanels.size());
-        for (ConfigPartPanel<?> cmp : partPanels) {
+        for (ConfigPartPanel<?> cmp: partPanels) {
             cmp.updateConfigPartFromUI();
             parts.add(cmp.copyPart());
         }
@@ -365,7 +365,7 @@ public class ConfigStackPanel
     public P4ProjectConfig updateConfigPartFromUI() {
         final List<ConfigPartPanel<?>> partPanels = componentList.getChildren();
         ArrayList<ConfigPart> parts = new ArrayList<ConfigPart>(partPanels.size());
-        for (ConfigPartPanel<?> configPartPanel : componentList.getChildren()) {
+        for (ConfigPartPanel<?> configPartPanel: componentList.getChildren()) {
             configPartPanel.updateConfigPartFromUI();
             configPartPanel.getConfigPart().reload();
             parts.add(configPartPanel.copyPart());
@@ -386,7 +386,7 @@ public class ConfigStackPanel
      */
     private void addConfigPart(@NotNull ConfigPart part) {
         final Class<? extends ConfigPart> partClass = part.getClass();
-        for (ConfigPartType configPartType : ConfigPartType.values()) {
+        for (ConfigPartType configPartType: ConfigPartType.values()) {
             if (configPartType.partClass.equals(partClass)) {
                 addConfigPartPanel(configPartType.createPanel(project, part));
                 return;
@@ -421,7 +421,7 @@ public class ConfigStackPanel
                         public P4ProjectConfig runBackgroundProcess() {
                             final List<ConfigPartPanel<?>> partComponents = componentList.getChildren();
                             ArrayList<ConfigPart> parts = new ArrayList<ConfigPart>(partComponents.size());
-                            for (ConfigPartPanel<?> configPartPanel : partComponents) {
+                            for (ConfigPartPanel<?> configPartPanel: partComponents) {
                                 parts.add(configPartPanel.getConfigPart());
                             }
 
@@ -450,7 +450,7 @@ public class ConfigStackPanel
                                     Disposer.dispose(config);
                                 } else {
                                     Disposer.register(ConfigStackPanel.this, config);
-                                    for (ConfigurationUpdatedListener changeListener : changeListeners) {
+                                    for (ConfigurationUpdatedListener changeListener: changeListeners) {
                                         changeListener.onConfigurationUpdated(config);
                                     }
                                     tempConfig = config;

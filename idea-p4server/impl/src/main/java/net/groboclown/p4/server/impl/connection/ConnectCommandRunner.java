@@ -569,7 +569,7 @@ public class ConnectCommandRunner
         LOG.warn("FIXME use P4CommandUtil");
 
         List<IFileSpec> files = FileSpecBuilder.makeFileSpecList(action.getSyncPath());
-        SyncOptions options = new SyncOptions(false, false, false, false);
+        SyncOptions options = new SyncOptions(action.isForce(), false, false, false);
         List<IFileSpec> res = client.sync(files, options);
         List<P4LocalFile> resFiles = new ArrayList<>(res.size());
         String info = null;

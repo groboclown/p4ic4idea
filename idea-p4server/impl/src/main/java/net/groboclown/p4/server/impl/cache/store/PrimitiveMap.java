@@ -81,6 +81,17 @@ public final class PrimitiveMap {
         return this;
     }
 
+    public boolean getBooleanNullable(@NotNull String key, boolean defaultValue)
+            throws UnmarshalException {
+        return getNotNull(key, defaultValue, "boolean", Boolean::parseBoolean);
+    }
+
+    @NotNull
+    public PrimitiveMap putBoolean(@NotNull String key, boolean value) {
+        $proxy$.put(key, Boolean.toString(value));
+        return this;
+    }
+
     @Nullable
     public String getStringNullable(String key, @Nullable String defaultValue)
             throws UnmarshalException {

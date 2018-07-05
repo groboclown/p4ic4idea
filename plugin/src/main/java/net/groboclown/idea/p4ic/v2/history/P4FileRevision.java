@@ -162,6 +162,9 @@ public class P4FileRevision extends VcsFileRevisionEx {
         return author;
     }
 
+    //@Override
+    public Date getAuthorDate() { return date; }
+
     @Nullable
     @Override
     public String getCommitMessage() {

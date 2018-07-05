@@ -22,14 +22,16 @@ import org.jetbrains.annotations.NotNull;
 public class RevertFileAction implements P4CommandRunner.ClientAction<RevertFileResult> {
     private final String actionId;
     private final FilePath file;
+    private final boolean ifUnchanged;
 
-    public RevertFileAction(@NotNull FilePath file) {
-        this(ActionUtil.createActionId(RevertFileAction.class), file);
+    public RevertFileAction(@NotNull FilePath file, boolean ifUnchanged) {
+        this(ActionUtil.createActionId(RevertFileAction.class), file, ifUnchanged);
     }
 
-    public RevertFileAction(@NotNull String actionId, @NotNull FilePath file) {
+    public RevertFileAction(@NotNull String actionId, @NotNull FilePath file, boolean ifUnchanged) {
         this.actionId = actionId;
         this.file = file;
+        this.ifUnchanged = ifUnchanged;
     }
 
     @NotNull
@@ -51,5 +53,9 @@ public class RevertFileAction implements P4CommandRunner.ClientAction<RevertFile
 
     public FilePath getFile() {
         return file;
+    }
+
+    public boolean isRevertOnlyIfUnchanged() {
+        return ifUnchanged;
     }
 }

@@ -13,37 +13,48 @@
  */
 package net.groboclown.p4plugin.extension;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.async.BlockingAnswer;
+import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
+import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
+import net.groboclown.p4.server.api.commands.file.RevertFileAction;
+import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
+import net.groboclown.p4.server.impl.util.ErrorCollectors;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.components.P4ServerComponent;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class P4RollbackEnvironment implements RollbackEnvironment {
     private static final Logger LOG = Logger.getInstance(P4RollbackEnvironment.class);
 
-    private final P4Vcs vcs;
+    private final Project project;
 
     P4RollbackEnvironment(@NotNull P4Vcs vcs) {
-        this.vcs = vcs;
+        this.project = vcs.getProject();
     }
 
     @Override
@@ -53,11 +64,19 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
 
     @Override
     public void rollbackChanges(List<Change> changes, List<VcsException> vcsExceptions, @NotNull RollbackProgressListener listener) {
-        if (changes == null || changes.isEmpty()) {
+        if (changes == null || changes.isEmpty() || project.isDisposed()) {
+            return;
+        }
+        ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        if (registry == null || registry.isDisposed()) {
+            return;
+        }
+        if (ApplicationManager.getApplication().isDispatchThread()) {
+            vcsExceptions.add(new VcsException("Can only be run in a background thread"));
             return;
         }
 
-        Set<FilePath> paths = new HashSet<FilePath>();
+        Set<FilePath> paths = new HashSet<>();
         for (Change change: changes) {
             if (change != null) {
                 if (change.getAfterRevision() != null) {
@@ -72,59 +91,40 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             return;
         }
 
-        boolean hasRefreshedFiles = false;
-        // FIXME
-        throw new IllegalStateException("not implemented");
-        /*
-        final Map<P4Server, List<FilePath>> mapping;
+        List<VirtualFile> needsRefresh = new ArrayList<>();
         try {
-            mapping = vcs.mapFilePathsToP4Server(paths);
+            BlockingAnswer.createBlockFor(paths.stream()
+                    .map((f) -> Pair.create(registry.getClientFor(f), f))
+                    .filter((p) -> p.first != null)
+                    .map((p) -> P4ServerComponent.getInstance(project)
+                            .getCommandRunner()
+                            .perform(p.first.getClientConfig(), new RevertFileAction(p.second, false))
+                            .whenCompleted((r) -> {
+                                LOG.info("Reverted " + p.second);
+                                listener.accept(p.second);
+                                VirtualFile vf = p.second.getVirtualFile();
+                                if (vf != null) {
+                                    needsRefresh.add(vf);
+                                }
+                            })
+                            .whenServerError((ex) -> listener.accept(p.second))
+                            .whenOffline(() -> listener.accept(p.second))
+                    )
+                    .collect(ErrorCollectors.collectActionErrors(vcsExceptions)))
+            .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            LOG.warn(e);
-            return;
-        }
-        vfsLock.lock();
-        try {
-            for (Entry<P4Server, List<FilePath>> entry : mapping.entrySet()) {
-                final P4Server server = entry.getKey();
-                final List<FilePath> files = entry.getValue();
-                if (server != null && ! files.isEmpty()) {
-                    hasRefreshedFiles = true;
-                    LOG.info("Reverting in client " + server + ": " + files);
-
-                    server.revertFiles(files, vcsExceptions);
-               }
-            }
-        } finally {
-            vfsLock.unlock();
+            // TODO better exception?
+            vcsExceptions.add(new VcsException(e));
+        } catch (P4CommandRunner.ServerResultException e) {
+            // This should never be reached, because of the collector.
+            vcsExceptions.add(e);
         }
 
-        if (hasRefreshedFiles) {
-            // tell the LocalFileSystem to refresh files
-
-            HashSet<File> filesToRefresh = new HashSet<File>();
-            for (Change c : changes) {
-                ContentRevision before = c.getBeforeRevision();
-                if (before != null) {
-                    // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
-                    // use this instead: getIOFile().getAbsolutePath()
-                    filesToRefresh.add(new File(before.getFile().getIOFile().getAbsolutePath()));
-                }
-                ContentRevision after = c.getAfterRevision();
-                if (after != null) {
-                    // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
-                    // use this instead: getIOFile().getAbsolutePath()
-                    filesToRefresh.add(new File(after.getFile().getIOFile().getAbsolutePath()));
-                }
-            }
-
-            LocalFileSystem lfs = LocalFileSystem.getInstance();
-            lfs.refreshIoFiles(filesToRefresh);
-        }
+        LocalFileSystem lfs = LocalFileSystem.getInstance();
+        lfs.refreshFiles(needsRefresh);
 
         // A refresh of the changes is sometimes needed.
-        P4ChangesViewRefresher.refreshLater(vcs.getProject());
-        */
+        P4ChangesViewRefresher.refreshLater(project);
     }
 
     @Override
@@ -134,92 +134,71 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
 
     @Override
     public void rollbackModifiedWithoutCheckout(List<VirtualFile> files, List<VcsException> exceptions, RollbackProgressListener listener) {
-        List<FilePath> paths = new ArrayList<FilePath>(files.size());
+        List<FilePath> paths = new ArrayList<>(files.size());
         for (VirtualFile vf: files) {
             paths.add(VcsUtil.getFilePath(vf));
         }
         forceSync(paths, exceptions, listener);
     }
 
-    private void forceSync(List<FilePath> files, List<VcsException> exceptions, RollbackProgressListener listener) {
-        if (vcs.getProject().isDisposed()) {
-            return;
-        }
-        // FIXME
-        throw new IllegalStateException("not implemented");
-        /*
-
-        final Map<P4Server, List<FilePath>> mapping;
-        try {
-            mapping = vcs.mapFilePathsToP4Server(files);
-        } catch (InterruptedException e) {
-            LOG.warn(e);
-            exceptions.add(new VcsInterruptedException(e));
-            return;
-        }
-        for (Entry<P4Server, List<FilePath>> entry : mapping.entrySet()) {
-            listener.checkCanceled();
-            listener.accept(entry.getValue());
-            final MessageResult<Collection<FileSyncResult>> results;
-            try {
-                results = entry.getKey().synchronizeFilesOnline(entry.getValue(), -1, null, true);
-                exceptions.addAll(results.messagesAsExceptions());
-            } catch (P4DisconnectedException e) {
-                LOG.warn(e);
-                exceptions.add(e);
-            } catch (InterruptedException e) {
-                LOG.warn(e);
-                exceptions.add(new VcsInterruptedException(e));
-            }
-        }
-        */
-    }
-
 
     @Override
     public void rollbackIfUnchanged(VirtualFile file) {
-        if (file == null || vcs.getProject().isDisposed()) {
+        if (file == null || project.isDisposed()) {
             return;
         }
-        // FIXME
-        throw new IllegalStateException("not implemented");
-
-        /*
-        FilePath fp = FilePathUtil.getFilePath(file);
-        final P4Server server;
-        try {
-            server = vcs.getP4ServerFor(fp);
-        } catch (InterruptedException e) {
-            LOG.warn(e);
+        ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        if (registry == null || registry.isDisposed()) {
+            LOG.info("Skipping revert for " + file + ": plugin not in a valid state");
             return;
         }
-        if (server == null) {
-            LOG.debug("No client for file " + file);
+        FilePath fp = VcsUtil.getFilePath(file);
+        if (fp == null) {
+            LOG.info("Skipping revert for " + file + ": no FilePath found");
             return;
         }
-        boolean reverted = true;
-        vfsLock.lock();
-        try {
-            try {
-                // The changelist doesn't matter, so pass in a
-                // negative number which will mean it doesn't use
-                // the "-c" argument.
-                server.revertUnchangedFilesOnline(Collections.singletonList(fp),
-                        P4ChangeListId.P4_UNKNOWN);
-            } catch (InterruptedException e) {
-                LOG.warn(e);
-                reverted = false;
-            } catch (P4DisconnectedException e) {
-                LOG.warn(e);
-                reverted = false;
-            }
-        } finally {
-            vfsLock.unlock();
+        ClientConfigRoot root = registry.getClientFor(file);
+        if (root == null) {
+            LOG.info("SKipping revert for " + file + ": no P4 root found");
+            return;
         }
 
-        if (reverted) {
-            P4ChangesViewRefresher.refreshLater(vcs.getProject());
+        P4ServerComponent.getInstance(project)
+                .getCommandRunner()
+                .perform(root.getClientConfig(), new RevertFileAction(fp, true))
+                .whenCompleted((r) -> P4ChangesViewRefresher.refreshLater(project));
+    }
+
+
+    /**
+     * Force a sync from server operation to overwrite local changes.
+     * @param files files to sync
+     * @param exceptions exceptions encountered
+     * @param listener listener on progress
+     */
+    private void forceSync(List<FilePath> files, List<VcsException> exceptions, RollbackProgressListener listener) {
+        if (files.isEmpty() || project.isDisposed()) {
+            return;
         }
-        */
+        ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        if (registry == null || registry.isDisposed()) {
+            return;
+        }
+
+        files.stream().collect(Collectors.groupingBy(registry::getClientFor)).entrySet().stream()
+                .map((Function<Map.Entry<ClientConfigRoot, List<FilePath>>, P4CommandRunner.ActionAnswer<FetchFilesResult>>) e -> {
+                    if (e.getKey() == null) {
+                        LOG.info("Skipping revert for " + e.getValue() + ": not in a Perforce root");
+                        return new DoneActionAnswer<>(null);
+                    }
+                    return P4ServerComponent.getInstance(project)
+                            .getCommandRunner()
+                            .perform(e.getKey().getClientConfig(), new FetchFilesAction(e.getValue(), true))
+                            .whenCompleted((c) -> listener.accept(e.getValue()))
+                            .whenServerError((ex) -> listener.accept(e.getValue()))
+                            .whenOffline(() -> listener.accept(e.getValue()));
+                })
+                .collect(ErrorCollectors.collectActionErrors(exceptions))
+                .after(() -> LOG.info("Completed sync of files"));
     }
 }

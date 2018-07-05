@@ -696,7 +696,7 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new RevertFileAction(newFile))
+                        runner.perform(clientConfig, new RevertFileAction(newFile, false))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -730,7 +730,8 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.getFileAnnotation(serverConfig, new AnnotateFileQuery(newFile, 1))
+                        runner.getFileAnnotation(serverConfig,
+                                    new AnnotateFileQuery(clientConfig.getClientname(), newFile, 1))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )

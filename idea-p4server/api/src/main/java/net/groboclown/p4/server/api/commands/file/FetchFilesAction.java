@@ -20,29 +20,41 @@ import net.groboclown.p4.server.api.commands.ActionUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public class FetchFilesAction implements P4CommandRunner.ClientAction<FetchFilesResult> {
     private final String actionId = ActionUtil.createActionId(FetchFilesAction.class);
-    private final String syncPath;
+    private final List<String> syncPath;
+    private final boolean force;
 
     public FetchFilesAction(String syncPath) {
-        this.syncPath = syncPath;
+        this.syncPath = Collections.singletonList(syncPath);
+        this.force = false;
     }
 
     public FetchFilesAction(File syncPath) {
         if (syncPath.isDirectory()) {
-            this.syncPath = syncPath.getAbsolutePath() + "/...";
+            this.syncPath = Collections.singletonList(syncPath.getAbsolutePath() + "/...");
         } else {
-            this.syncPath = syncPath.getAbsolutePath();
+            this.syncPath = Collections.singletonList(syncPath.getAbsolutePath());
         }
+        this.force = false;
     }
 
-    public FetchFilesAction(FilePath syncPath) {
-        if (syncPath.isDirectory()) {
-            this.syncPath = syncPath.getPath() + "/...";
-        } else {
-            this.syncPath = syncPath.getPath();
+    public FetchFilesAction(Collection<FilePath> syncPaths, boolean force) {
+        List<String> paths = new ArrayList<>(syncPaths.size());
+        for (FilePath path : syncPaths) {
+            if (path.isDirectory()) {
+                paths.add(path.getPath() + "/...");
+            } else {
+                paths.add(path.getPath());
+            }
         }
+        this.syncPath = paths;
+        this.force = force;
     }
 
     @NotNull
@@ -62,7 +74,11 @@ public class FetchFilesAction implements P4CommandRunner.ClientAction<FetchFiles
         return actionId;
     }
 
-    public String getSyncPath() {
+    public List<String> getSyncPath() {
         return syncPath;
+    }
+
+    public boolean isForce() {
+        return force;
     }
 }

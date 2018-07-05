@@ -10,10 +10,6 @@ In the 0.10 release, these pieces of old functionality are either broken or disa
 
 The SSL, SSO, and asking the user for passwords are not well tested.
 
-### Revert Files
-
-Reverting files - revert unchanged and normal revert - still needs to be implemented.
-
 ### Error Reporting
 
 Need better display for errors, and all promise-like behaviors need on-error catches to report problems.
@@ -40,9 +36,17 @@ If there are pending actions that failed to go through due to errors, the user n
 
 Swarm integration needs to be re-instated.
 
+### Connection State
+
+The connection state, as the events are passed around, are not properly represented in the Active Connection panel.  Either the panel isn't showing the right state, or the events are wrong.
+
+### Pending Action Consolidation
+
+When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or duplicates existing pending actions.  The pending action list must be altered to reflect the new action. 
+
 ## Near-Term Functionality
 
-These pieces of functionality are not requried for the 0.10 release, but should be implemented soon after release.
+These pieces of functionality are not required for the 0.10 release, but should be implemented soon after release.
 
 ### Caching File Contents
 

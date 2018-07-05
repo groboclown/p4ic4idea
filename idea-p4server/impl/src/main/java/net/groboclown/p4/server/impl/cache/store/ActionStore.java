@@ -129,7 +129,8 @@ public class ActionStore {
                         state.data.getChangelistIdNullable("cl-id"));
             case REVERT_FILE:
                 return new RevertFileAction(state.actionId,
-                        state.data.getFilePathNotNull("file"));
+                        state.data.getFilePathNotNull("file"),
+                        state.data.getBooleanNullable("unchanged", false));
             case MOVE_FILES_TO_CHANGELIST:
                 return new MoveFilesToChangelistAction(state.actionId,
                         state.data.getChangelistIdNotNull("cl-id"),
@@ -196,10 +197,13 @@ public class ActionStore {
                         .putChangelistId("cl-id", a.getChangelistId());
                 break;
             }
-            case REVERT_FILE:
+            case REVERT_FILE: {
+                RevertFileAction a = (RevertFileAction) action;
                 ret.data
-                        .putFilePath("file", ((RevertFileAction) action).getFile());
+                        .putFilePath("file", a.getFile())
+                        .putBoolean("unchanged", a.isRevertOnlyIfUnchanged());
                 break;
+            }
             case MOVE_FILES_TO_CHANGELIST: {
                 MoveFilesToChangelistAction a = (MoveFilesToChangelistAction) action;
                 ret.data

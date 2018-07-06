@@ -149,7 +149,7 @@ public class P4LocalFileImpl implements P4LocalFile {
         depot = new P4RemoteFileImpl(spec);
         local = VcsUtil.getFilePath(spec.getLocalPath().getPathString(), false);
         haveRev = new P4Revision(spec.getHaveRev());
-        headRev = new P4FileRevisionImpl(ref, depot, spec);
+        headRev = P4FileRevisionImpl.getHead(ref, spec);
         changelistId = new P4ChangelistIdImpl(spec.getOpenChangelistId(), ref);
 
         // note: use Action, not OpenAction

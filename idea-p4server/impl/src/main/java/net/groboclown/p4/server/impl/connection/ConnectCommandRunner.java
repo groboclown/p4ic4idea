@@ -102,8 +102,6 @@ import net.groboclown.p4.server.impl.connection.impl.FileAnnotationParser;
 import net.groboclown.p4.server.impl.connection.impl.MessageStatusUtil;
 import net.groboclown.p4.server.impl.connection.impl.OpenFileStatus;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
-import net.groboclown.p4.server.api.commands.HistoryContentLoader;
-import net.groboclown.p4.server.api.commands.HistoryMessageFormatter;
 import net.groboclown.p4.server.impl.repository.P4HistoryVcsFileRevision;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
@@ -116,6 +114,7 @@ import net.groboclown.p4.server.impl.values.P4RemoteFileImpl;
 import net.groboclown.p4.server.impl.values.P4WorkspaceSummaryImpl;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -227,8 +226,11 @@ public class ConnectCommandRunner
             }
             ClientServerRef ref = new ClientServerRef(config.getServerName(), query.getClientname());
             IExtendedFileSpec headSpec = cmd.getFileDetails(server, query.getClientname(), specs);
-            P4FileRevision headRevision = new P4FileRevisionImpl(ref, headSpec);
-            String content = cmd.loadStringContents(server, headSpec, headSpec.getHeadCharset());
+            P4FileRevision headRevision = P4FileRevisionImpl.getHead(ref, headSpec);
+            String content = new String(cmd.loadContents(server, headSpec, null),
+                    headSpec.getHeadCharset() == null
+                        ? Charset.defaultCharset().name()
+                        : headSpec.getHeadCharset());
             List<IFileAnnotation> annotations = cmd.getAnnotations(server, specs);
             List<IFileSpec> requiredHistory = FileAnnotationParser.getRequiredHistorySpecs(annotations);
             List<Pair<IFileSpec, IFileRevisionData>> history = cmd.getExactHistory(server, requiredHistory);
@@ -297,9 +299,24 @@ public class ConnectCommandRunner
     @Override
     public P4CommandRunner.QueryAnswer<GetFileContentsResult> getFileContents(@NotNull ServerConfig config,
             @NotNull GetFileContentsQuery query) {
-        final List<IFileSpec> fileSpec = FileSpecBuilder.makeFileSpecList(query.getDepotPath());
-        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) ->
-                new GetFileContentsResult(config, query.getDepotPath(), cmd.loadContents(server, fileSpec.get(0)))));
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
+            final byte[] contents = query.when(
+                    (depot) -> {
+                        List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(depot);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("get file contents for " + depot + ": " + specs);
+                        }
+                        return cmd.loadContents(server, specs.get(0), null);
+                    },
+                    (clientname, localFile, rev) -> cmd.loadContents(server,
+                            FileSpecBuildUtil.escapedForFilePathRev(localFile, rev).get(0), clientname)
+            );
+            return query.when(
+                    // TODO find correct charset
+                    (depot) -> new GetFileContentsResult(config, depot, contents, null),
+                    (clientname, localFile, rev) -> new GetFileContentsResult(config, localFile, contents, null)
+            );
+        }));
     }
 
     @NotNull
@@ -322,7 +339,11 @@ public class ConnectCommandRunner
         return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) ->
             new ListFilesDetailsResult(config,
                 cmd.getFilesDetails(server, query.getClientServerRef().getClientName(), fileSpecs).entrySet().stream()
-                    .map((e) -> new P4FileRevisionImpl(query.getClientServerRef(), e.getValue()))
+                    .map((e) ->
+                        query.getRevState() == ListFilesDetailsQuery.RevState.HEAD
+                            ? P4FileRevisionImpl.getHead(query.getClientServerRef(), e.getValue())
+                            : P4FileRevisionImpl.getHave(query.getClientServerRef(), e.getValue())
+                    )
                     .collect(Collectors.toList()))));
     }
 

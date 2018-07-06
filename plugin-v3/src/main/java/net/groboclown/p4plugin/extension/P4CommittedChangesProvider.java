@@ -107,7 +107,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
                 details = P4ServerComponent.getInstance(project).getCommandRunner()
                         .query(client.getClientConfig().getServerConfig(),
                                 new ListFilesDetailsQuery(client.getClientConfig().getClientServerRef(),
-                                        Collections.singletonList(root), 1))
+                                        Collections.singletonList(root),  ListFilesDetailsQuery.RevState.HAVE, 1))
                         .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
             } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
                 LOG.warn(e);

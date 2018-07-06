@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.api.commands;
 
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
@@ -24,5 +25,18 @@ import java.io.IOException;
 public interface HistoryContentLoader {
     @Nullable
     byte[] loadContentForRev(@NotNull ServerConfig config, @NotNull String depotPath, int rev)
+            throws IOException, VcsException;
+    @Nullable
+    String loadStringContentForRev(@NotNull ServerConfig config, @NotNull String depotPath, int rev)
+            throws IOException, VcsException;
+
+    @Nullable
+    byte[] loadContentForLocal(@NotNull ServerConfig config, @NotNull String clientname, @NotNull FilePath localFile,
+            int rev)
+            throws IOException, VcsException;
+
+    @Nullable
+    String loadStringContentForLocal(@NotNull ServerConfig config, @NotNull String clientname,
+            @NotNull FilePath localFile, int rev)
             throws IOException, VcsException;
 }

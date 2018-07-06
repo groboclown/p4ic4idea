@@ -14,19 +14,40 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
+import com.intellij.openapi.vcs.FilePath;
+import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.server.IServer;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+
 public class GetFileContentsResult implements P4CommandRunner.ServerResult {
     private final ServerConfig config;
     private final String depotPath;
+    private final FilePath localFile;
     private final byte[] data;
+    private final String charset;
 
-    public GetFileContentsResult(ServerConfig config, String depotPath, byte[] data) {
+    public GetFileContentsResult(ServerConfig config, String depotPath, byte[] data, String charset) {
         this.config = config;
         this.depotPath = depotPath;
+        this.localFile = null;
         this.data = data;
+        this.charset = charset == null ? Charset.defaultCharset().name() : charset;
+    }
+
+    public GetFileContentsResult(ServerConfig config, FilePath localFile, byte[] data, String charset) {
+        this.config = config;
+        this.depotPath = null;
+        this.localFile = localFile;
+        this.data = data;
+        this.charset = charset == null ? Charset.defaultCharset().name() : charset;
     }
 
     @NotNull
@@ -41,5 +62,14 @@ public class GetFileContentsResult implements P4CommandRunner.ServerResult {
 
     public byte[] getData() {
         return data;
+    }
+
+    @Nullable
+    public String getStringData()
+            throws UnsupportedEncodingException {
+        if (data == null) {
+            return null;
+        }
+        return new String(data, charset);
     }
 }

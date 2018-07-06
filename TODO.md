@@ -2,13 +2,10 @@
 
 Many of the to-dos are listed in the bug list on Github.  This list itself should be handled better in the project view of Github.
 
+
 ## Required Missing Functionality
 
 In the 0.10 release, these pieces of old functionality are either broken or disabled.
-
-### File History
-
-Needs to finish up.
 
 ### SSO and Manual Passwords
 
@@ -20,6 +17,9 @@ Need better display for errors, and all promise-like behaviors need on-error cat
 
 The Active Connection panel should show errors beside pending actions if there was an error sending it to the server.
 
+Many of the errors are simply logged.  The main ones to look for are the server error messages returned as messages,
+which should be notified to the user.
+
 ### Repository View
 
 The repository view doesn't create committed changelists (it throws an exception because it's not implemented).
@@ -27,10 +27,6 @@ The repository view doesn't create committed changelists (it throws an exception
 ### Submit Change
 
 The submit change needs to be implemented correctly.
-
-### Show File History
-
-Just like the repository view, the file history view needs to be implemented (`P4CommittedChangesProvider`).
 
 ### Manage Pending Operations
 
@@ -52,13 +48,10 @@ The connection state, as the events are passed around, are not properly represen
 
 When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or duplicates existing pending actions.  The pending action list must be altered to reflect the new action. 
 
-### Diff Files
-
-View file differences.
-
 ### View changelist details
 
 Context menu on net.groboclown.p4plugin.extension.P4CommittedChangesProvider to view changelist details.
+
 
 ## Near-Term Functionality
 

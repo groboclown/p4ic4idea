@@ -263,7 +263,8 @@ public class P4HistoryProvider
                     ListFilesDetailsResult result = P4ServerComponent.getInstance(project)
                             .getCommandRunner()
                             .query(root.getClientConfig().getServerConfig(), new ListFilesDetailsQuery(
-                                    root.getClientConfig().getClientServerRef(), Collections.singletonList(path), 1))
+                                    root.getClientConfig().getClientServerRef(), Collections.singletonList(path),
+                                    ListFilesDetailsQuery.RevState.HEAD,  1))
                             .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project),
                                     TimeUnit.MILLISECONDS);
                     if (result.getFiles().isEmpty()) {

@@ -54,7 +54,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -289,6 +288,9 @@ public class P4CommandUtil {
         }
         GetExtendedFilesOptions options = new GetExtendedFilesOptions();
         List<IExtendedFileSpec> res = server.getExtendedFiles(sources, options);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("File details for " + sources + ": " + res);
+        }
         MessageStatusUtil.throwIfMessageOrEmpty("get file details", res);
         Map<IFileSpec, IExtendedFileSpec> ret = new HashMap<>();
         Iterator<IFileSpec> sourceIter = sources.iterator();
@@ -300,14 +302,17 @@ public class P4CommandUtil {
                             String.join(" ",
                                     sources.stream().map(IFileSpec::toString).collect(Collectors.toList())));
                 }
-                ret.put(sourceIter.next(), extendedFileSpec);
             }
+            ret.put(sourceIter.next(), extendedFileSpec);
         }
         return ret;
     }
 
-    public byte[] loadContents(IServer server, IFileSpec spec)
+    public byte[] loadContents(IServer server, IFileSpec spec, String clientname)
             throws P4JavaException, IOException {
+        if (clientname != null) {
+            server.setCurrentClient(server.getClient(clientname));
+        }
         int maxFileSize = VcsUtil.getMaxVcsLoadedFileSize();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         GetFileContentsOptions fileContentsOptions = new GetFileContentsOptions(false, true);
@@ -330,18 +335,6 @@ public class P4CommandUtil {
             inp.close();
         }
         return baos.toByteArray();
-    }
-
-    public String loadStringContents(IServer server, IFileSpec spec, String charset)
-            throws IOException, P4JavaException {
-        if (charset == null) {
-            charset = Charset.defaultCharset().name();
-        }
-        byte[] ret = loadContents(server, spec);
-        if (ret == null) {
-            return null;
-        }
-        return new String(ret, charset);
     }
 
     public List<Pair<IFileSpec, IFileRevisionData>> getExactHistory(IOptionsServer server, List<IFileSpec> specs)

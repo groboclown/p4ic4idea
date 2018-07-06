@@ -14,14 +14,32 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
+import com.intellij.openapi.vcs.FilePath;
+import com.perforce.p4java.exception.P4JavaException;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+import java.util.function.BiFunction;
+
 public class GetFileContentsQuery implements P4CommandRunner.ServerQuery<GetFileContentsResult> {
     private final String depotPath;
+    private final FilePath localPath;
+    private final String clientname;
+    private final int rev;
 
     public GetFileContentsQuery(@NotNull String depotPath) {
         this.depotPath = depotPath;
+        this.localPath = null;
+        this.clientname = null;
+        this.rev = -1;
+    }
+
+    public GetFileContentsQuery(@NotNull FilePath localPath, @NotNull String clientname, int rev) {
+        this.depotPath = null;
+        this.localPath = localPath;
+        this.clientname = clientname;
+        this.rev = rev;
     }
 
     @NotNull
@@ -35,7 +53,22 @@ public class GetFileContentsQuery implements P4CommandRunner.ServerQuery<GetFile
         return P4CommandRunner.ServerQueryCmd.GET_FILE_CONTENTS;
     }
 
-    public String getDepotPath() {
-        return depotPath;
+    public <R> R when(
+            DepotFunction<R> depotFile,
+            LocalFunction<R> localFile)
+            throws P4JavaException, IOException {
+        if (depotPath != null) {
+            return depotFile.apply(depotPath);
+        }
+        return localFile.apply(clientname, localPath, rev);
+    }
+
+
+    public interface DepotFunction<R> {
+        R apply(String s) throws P4JavaException, IOException;
+    }
+
+    public interface LocalFunction<R> {
+        R apply(String clientname, FilePath local, int rev) throws P4JavaException, IOException;
     }
 }

@@ -21,32 +21,41 @@ import com.intellij.openapi.vcs.RemoteFilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class P4RemoteFileContentRevision implements ContentRevision {
-    private static final Logger LOG = Logger.getInstance(P4RemoteFileContentRevision.class);
+import java.io.IOException;
 
+public class P4RemoteFileContentRevision implements ContentRevision {
     private final Project project;
     private final P4RemoteFile file;
     private final FilePath filePath;
-    private final VcsRevisionNumber rev;
+    private final VcsRevisionNumber.Int rev;
     private final ServerConfig serverConfig;
+    private final HistoryContentLoader loader;
+    private final String charset;
 
 
     public P4RemoteFileContentRevision(
             @Nullable Project project,
             @NotNull P4RemoteFile file,
-            @Nullable VcsRevisionNumber rev,
-            @Nullable ServerConfig serverConfig) {
+            @Nullable VcsRevisionNumber.Int rev,
+            @Nullable ServerConfig serverConfig,
+            @Nullable HistoryContentLoader loader,
+            @Nullable String charset) {
         this.project = project;
         this.file = file;
         this.filePath = new RemoteFilePath(file.getDisplayName(), false);
         this.serverConfig = serverConfig;
+        this.loader = loader;
+        this.charset = charset;
         if (rev == null) {
-            this.rev = new VcsRevisionNumber.Int(-1);
+            // TODO use a better source for the constant.
+            this.rev = new VcsRevisionNumber.Int(IFileSpec.HEAD_REVISION);
         } else {
             this.rev = rev;
         }
@@ -56,17 +65,18 @@ public class P4RemoteFileContentRevision implements ContentRevision {
     @Override
     public String getContent()
             throws VcsException {
-        if (serverConfig == null || project == null) {
+        if (serverConfig == null || project == null || loader == null) {
             return null;
         }
-        // FIXME implement get file contents from server
-        LOG.warn("FIXME implement get file contents from server");
-        return null;
-        /* Include the revision.
-        return P4ServerComponent.getInstance(project)
-                .getCommandRunner()
-                .query()
-        */
+        try {
+            byte[] ret = loader.loadContentForRev(serverConfig, file.getDepotPath(), rev.getValue());
+            if (ret == null) {
+                return null;
+            }
+            return new String(ret, charset);
+        } catch (IOException e) {
+            throw new VcsException(e);
+        }
     }
 
     @NotNull

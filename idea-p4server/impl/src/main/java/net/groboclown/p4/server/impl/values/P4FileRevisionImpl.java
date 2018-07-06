@@ -43,16 +43,20 @@ public class P4FileRevisionImpl
     private final Date date;
     private final String charset;
 
-    public P4FileRevisionImpl(ClientServerRef ref, IExtendedFileSpec spec) {
-        this(ref, new P4RemoteFileImpl(spec), spec);
-    }
-
-    public P4FileRevisionImpl(ClientServerRef ref, P4RemoteFile depotPath, IExtendedFileSpec spec) {
-        this(depotPath, new P4ChangelistIdImpl(spec.getChangelistId(), ref),
+    public static P4FileRevision getHead(ClientServerRef ref, IExtendedFileSpec spec) {
+        return new P4FileRevisionImpl(new P4RemoteFileImpl(spec), new P4ChangelistIdImpl(spec.getChangelistId(), ref),
                 new P4Revision(spec.getHeadRev()),
                 P4FileAction.convert(spec.getHeadAction()),
                 P4FileType.convert(spec.getFileType()), null, new P4Revision(spec.getHeadRev()),
                 spec.getHeadModTime(), spec.getCharset());
+    }
+
+    public static P4FileRevision getHave(ClientServerRef ref, IExtendedFileSpec spec) {
+        return new P4FileRevisionImpl(new P4RemoteFileImpl(spec), new P4ChangelistIdImpl(spec.getChangelistId(), ref),
+                new P4Revision(spec.getHaveRev()),
+                P4FileAction.convert(spec.getAction()),
+                P4FileType.convert(spec.getFileType()), null, new P4Revision(spec.getHeadRev()),
+                spec.getDate(), spec.getCharset());
     }
 
     public P4FileRevisionImpl(@NotNull ClientServerRef ref, @NotNull IFileRevisionData data) {

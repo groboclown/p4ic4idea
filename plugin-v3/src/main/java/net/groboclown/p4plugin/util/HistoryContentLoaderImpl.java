@@ -15,8 +15,10 @@
 package net.groboclown.p4plugin.util;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.p4.server.api.commands.file.GetFileContentsQuery;
+import net.groboclown.p4.server.api.commands.file.GetFileContentsResult;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4plugin.components.P4ServerComponent;
@@ -24,6 +26,7 @@ import net.groboclown.p4plugin.components.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class HistoryContentLoaderImpl implements HistoryContentLoader {
@@ -37,12 +40,44 @@ public class HistoryContentLoaderImpl implements HistoryContentLoader {
     @Override
     public byte[] loadContentForRev(@NotNull ServerConfig config, @NotNull String depotPath, int rev)
             throws VcsException {
+        return loadContent(config, new GetFileContentsQuery(depotPath + '#' + rev))
+                .getData();
+    }
+
+    @Nullable
+    @Override
+    public String loadStringContentForRev(@NotNull ServerConfig config, @NotNull String depotPath, int rev)
+            throws IOException, VcsException {
+        return loadContent(config, new GetFileContentsQuery(depotPath + '#' + rev))
+                .getStringData();
+    }
+
+    @Nullable
+    @Override
+    public byte[] loadContentForLocal(@NotNull ServerConfig config, @NotNull String clientname,
+            @NotNull FilePath localFile, int rev)
+            throws VcsException {
+        return loadContent(config, new GetFileContentsQuery(localFile, clientname, rev))
+                .getData();
+    }
+
+    @Nullable
+    @Override
+    public String loadStringContentForLocal(@NotNull ServerConfig config, @NotNull String clientname,
+            @NotNull FilePath localFile, int rev)
+            throws IOException, VcsException {
+        return loadContent(config, new GetFileContentsQuery(localFile, clientname, rev))
+                .getStringData();
+    }
+
+
+    private GetFileContentsResult loadContent(@NotNull ServerConfig config, @NotNull GetFileContentsQuery query)
+            throws VcsException {
         try {
             return P4ServerComponent.getInstance(project)
                     .getCommandRunner()
-                    .query(config, new GetFileContentsQuery(depotPath + '#' + rev))
-                    .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS)
-                    .getData();
+                    .query(config, query)
+                    .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             // TODO better exception?
             throw new VcsException(e);

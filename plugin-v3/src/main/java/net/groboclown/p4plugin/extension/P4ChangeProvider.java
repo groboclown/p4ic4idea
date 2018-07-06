@@ -38,6 +38,7 @@ import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.cache.messagebus.AbstractCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
+import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction;
@@ -52,6 +53,7 @@ import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.revision.P4LocalFileContentRevision;
 import net.groboclown.p4plugin.revision.P4RemoteFileContentRevision;
+import net.groboclown.p4plugin.util.HistoryContentLoaderImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -87,10 +89,12 @@ public class P4ChangeProvider
     private final Project project;
     private final P4Vcs vcs;
     private final String cacheId = AbstractCacheMessage.createCacheId();
+    private final HistoryContentLoader loader;
 
     P4ChangeProvider(@NotNull P4Vcs vcs) {
         this.project = vcs.getProject();
         this.vcs = vcs;
+        this.loader = new HistoryContentLoaderImpl(project);
 
         MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(project);
         ClientActionMessage.addListener(mbClient, cacheId, event -> {
@@ -565,12 +569,13 @@ public class P4ChangeProvider
             case INTEGRATE:
                 after = new P4LocalFileContentRevision(file);
                 if (file.getIntegrateFrom() != null) {
+                    // TODO find the right charset
                     before = new P4RemoteFileContentRevision(project,
-                            file.getIntegrateFrom(),
-                            null, config.getServerConfig());
+                            file.getIntegrateFrom(), null, config.getServerConfig(), loader, null);
                 } else if (file.getDepotPath() != null) {
+                    // TODO find the right charset
                     before = new P4RemoteFileContentRevision(project,
-                            file.getDepotPath(), file.getHaveRevision(), config.getServerConfig());
+                            file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
                 } else {
                     before = after;
                 }
@@ -587,23 +592,26 @@ public class P4ChangeProvider
                 break;
             case EDIT_RESOLVED:
                 assert file.getDepotPath() != null;
+                // TODO find the right charset
                 before = new P4RemoteFileContentRevision(project,
-                        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig());
+                        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
                 after = new P4LocalFileContentRevision(file);
                 status = FileStatus.MERGE;
                 break;
             case MOVE_DELETE:
                 assert file.getDepotPath() != null;
+                // TODO find the right charset
                 before = new P4RemoteFileContentRevision(project,
-                        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig());
+                        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
                 status = FileStatus.DELETED;
                 break;
             case MOVE_ADD:
             case MOVE_ADD_EDIT:
             case MOVE_EDIT:
                 assert file.getDepotPath() != null;
+                // TODO find the right charset
                 before = new P4RemoteFileContentRevision(project,
-                        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig());
+                        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
                 after = new P4LocalFileContentRevision(file);
                 // Even though the status is "ADD", the UI will notice the different before/after
                 // and show the files as moved.

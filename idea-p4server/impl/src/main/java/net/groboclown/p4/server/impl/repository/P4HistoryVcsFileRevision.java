@@ -20,6 +20,8 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevisionEx;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.IFileRevisionData;
+import net.groboclown.p4.server.api.commands.HistoryContentLoader;
+import net.groboclown.p4.server.api.commands.HistoryMessageFormatter;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4Revision;
 import org.jetbrains.annotations.NotNull;

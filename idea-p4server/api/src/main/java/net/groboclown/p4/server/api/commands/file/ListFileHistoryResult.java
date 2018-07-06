@@ -16,20 +16,23 @@ package net.groboclown.p4.server.api.commands.file;
 
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.commands.HistoryContentLoader;
+import net.groboclown.p4.server.api.commands.HistoryMessageFormatter;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class ListFileHistoryResult
         implements P4CommandRunner.ServerResult {
     private final ServerConfig config;
-    private final List<VcsFileRevision> revisions;
+    private final VcsFileRevisionFactory factory;
 
     public ListFileHistoryResult(@NotNull ServerConfig config,
-            @NotNull List<VcsFileRevision> revisions) {
+            @NotNull VcsFileRevisionFactory factory) {
         this.config = config;
-        this.revisions = revisions;
+        this.factory = factory;
     }
 
     @NotNull
@@ -38,7 +41,14 @@ public class ListFileHistoryResult
         return config;
     }
 
-    public List<VcsFileRevision> getRevisions() {
-        return revisions;
+    public List<VcsFileRevision> getRevisions(@Nullable HistoryMessageFormatter formatter,
+            @Nullable HistoryContentLoader loader) {
+        return factory.create(formatter, loader);
+    }
+
+
+    public interface VcsFileRevisionFactory {
+        List<VcsFileRevision> create(@Nullable HistoryMessageFormatter formatter,
+                @Nullable HistoryContentLoader loader);
     }
 }

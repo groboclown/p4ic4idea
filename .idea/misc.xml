@@ -169,25 +169,6 @@
             </PrimitiveMap>
           </option>
         </State>
-        <State>
-          <option name="clientActionCmd" value="MOVE_FILES_TO_CHANGELIST" />
-          <option name="sourceId" value="client:albrechtm_micro-sync-registry_dev:prodsc.austx.zilliant.com:1666" />
-          <option name="actionId" value="net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction@1646fc08d38:1" />
-          <option name="data">
-            <PrimitiveMap>
-              <option name="$proxy$">
-                <map>
-                  <entry key="cl-id__id" value="0" />
-                  <entry key="cl-id__ref__clientName" value="albrechtm_micro-sync-registry_dev" />
-                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
-                  <entry key="files__0" value="C:/p4/micro-sync-registry/dev/gradlew" />
-                  <entry key="files__1" value="C:/p4/micro-sync-registry/dev/sync-registry-service/src/test-contract/java/com/zilliant/mini/srs/v1/MappingGetPactGenerator.java" />
-                  <entry key="files__len" value="2" />
-                </map>
-              </option>
-            </PrimitiveMap>
-          </option>
-        </State>
       </list>
     </option>
     <option name="changelistState">

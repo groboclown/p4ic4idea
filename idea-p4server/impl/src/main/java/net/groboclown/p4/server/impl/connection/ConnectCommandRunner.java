@@ -16,8 +16,8 @@ package net.groboclown.p4.server.impl.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
-import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.util.io.IOUtil;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.ChangelistStatus;
@@ -38,7 +38,6 @@ import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.FixJobsOptions;
 import com.perforce.p4java.option.server.GetClientsOptions;
-import com.perforce.p4java.option.server.GetFileContentsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.p4.server.api.ClientServerRef;
@@ -79,6 +78,10 @@ import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
 import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
 import net.groboclown.p4.server.api.commands.file.GetFileContentsQuery;
 import net.groboclown.p4.server.api.commands.file.GetFileContentsResult;
+import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
+import net.groboclown.p4.server.api.commands.file.ListFileHistoryResult;
+import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
+import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileResult;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
@@ -99,6 +102,9 @@ import net.groboclown.p4.server.impl.connection.impl.FileAnnotationParser;
 import net.groboclown.p4.server.impl.connection.impl.MessageStatusUtil;
 import net.groboclown.p4.server.impl.connection.impl.OpenFileStatus;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
+import net.groboclown.p4.server.api.commands.HistoryContentLoader;
+import net.groboclown.p4.server.api.commands.HistoryMessageFormatter;
+import net.groboclown.p4.server.impl.repository.P4HistoryVcsFileRevision;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4.server.impl.values.P4FileRevisionImpl;
@@ -110,13 +116,13 @@ import net.groboclown.p4.server.impl.values.P4RemoteFileImpl;
 import net.groboclown.p4.server.impl.values.P4WorkspaceSummaryImpl;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A simple version of the {@link net.groboclown.p4.server.api.P4CommandRunner}
@@ -134,8 +140,8 @@ public class ConnectCommandRunner
     private final ConnectionManager connectionManager;
     private final P4CommandUtil cmd = new P4CommandUtil();
 
-    public ConnectCommandRunner(
-            @NotNull ConnectionManager connectionManager) {
+
+    public ConnectCommandRunner(@NotNull ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
 
         register(P4CommandRunner.ServerActionCmd.CREATE_JOB,
@@ -296,6 +302,43 @@ public class ConnectCommandRunner
                 new GetFileContentsResult(config, query.getDepotPath(), cmd.loadContents(server, fileSpec.get(0)))));
     }
 
+    @NotNull
+    @Override
+    public P4CommandRunner.QueryAnswer<ListFileHistoryResult> listFilesHistory(ServerConfig config,
+            ListFileHistoryQuery query) {
+        final List<IFileSpec> fileSpec = FileSpecBuildUtil.escapedForFilePaths(query.getFile());
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) ->
+                new ListFileHistoryResult(config, createFileHistoryList(
+                    config, query.getFile(), cmd.getHistory(server,
+                            query.getClientServerRef().getClientName(), fileSpec,
+                            query.getMaxResults())))));
+    }
+
+    @NotNull
+    @Override
+    public P4CommandRunner.QueryAnswer<ListFilesDetailsResult> listFilesDetails(ServerConfig config,
+            ListFilesDetailsQuery query) {
+        final List<IFileSpec> fileSpecs = FileSpecBuildUtil.escapedForFilePaths(query.getFiles());
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) ->
+            new ListFilesDetailsResult(config,
+                cmd.getFilesDetails(server, query.getClientServerRef().getClientName(), fileSpecs).entrySet().stream()
+                    .map((e) -> new P4FileRevisionImpl(query.getClientServerRef(), e.getValue()))
+                    .collect(Collectors.toList()))));
+    }
+
+    @NotNull
+    private ListFileHistoryResult.VcsFileRevisionFactory createFileHistoryList(
+            @NotNull final ServerConfig config, @NotNull final FilePath file,
+            @NotNull final List<IFileRevisionData> history) {
+        return (formatter, loader) -> {
+            List<VcsFileRevision> ret = new ArrayList<>(history.size());
+            history.forEach((d) -> {
+                P4HistoryVcsFileRevision rev = new P4HistoryVcsFileRevision(file, config, d, formatter, loader);
+                ret.add(rev);
+            });
+            return ret;
+        };
+    }
 
     private CreateJobResult createJob(IOptionsServer server, ServerConfig cfg, CreateJobAction action)
             throws ConnectionException, AccessException, RequestException {

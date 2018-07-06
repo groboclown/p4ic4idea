@@ -456,18 +456,18 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @NotNull
     @Override
     protected QueryAnswer<ListFilesDetailsResult> listFilesDetails(ServerConfig config, ListFilesDetailsQuery query) {
-        // FIXME implement
-        LOG.warn("FIXME implement listFilesDetails");
-        return null;
+        return onlineQuery(config,
+                () -> server.listFilesDetails(config, query),
+                () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError()));
     }
 
 
     @NotNull
     @Override
     protected QueryAnswer<ListFileHistoryResult> listFilesHistory(ServerConfig config, ListFileHistoryQuery query) {
-        // FIXME implement
-        LOG.warn("FIXME implement listFilesHistory");
-        return null;
+        return onlineQuery(config,
+                () -> server.listFilesHistory(config, query),
+                () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError()));
     }
 
 

@@ -18,7 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.p4.server.api.commands.file.GetFileContentsQuery;
 import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.impl.repository.HistoryContentLoader;
+import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;

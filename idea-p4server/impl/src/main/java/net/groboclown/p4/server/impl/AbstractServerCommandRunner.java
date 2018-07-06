@@ -30,6 +30,10 @@ import net.groboclown.p4.server.api.commands.file.AnnotateFileQuery;
 import net.groboclown.p4.server.api.commands.file.AnnotateFileResult;
 import net.groboclown.p4.server.api.commands.file.GetFileContentsQuery;
 import net.groboclown.p4.server.api.commands.file.GetFileContentsResult;
+import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
+import net.groboclown.p4.server.api.commands.file.ListFileHistoryResult;
+import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
+import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +46,7 @@ import java.util.Map;
  * server, without needing to deal with a cache.
  */
 public abstract class AbstractServerCommandRunner {
+
 
     public interface ServerActionRunner<R extends ServerResult> {
         P4CommandRunner.ActionAnswer<R> perform(@NotNull ServerConfig config, @NotNull P4CommandRunner.ServerAction<R>
@@ -123,4 +128,10 @@ public abstract class AbstractServerCommandRunner {
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<GetFileContentsResult> getFileContents(
             @NotNull ServerConfig config, @NotNull GetFileContentsQuery query);
+
+    @NotNull
+    public abstract P4CommandRunner.QueryAnswer<ListFileHistoryResult> listFilesHistory(ServerConfig config, ListFileHistoryQuery query);
+
+    @NotNull
+    public abstract P4CommandRunner.QueryAnswer<ListFilesDetailsResult> listFilesDetails(ServerConfig config, ListFilesDetailsQuery query);
 }

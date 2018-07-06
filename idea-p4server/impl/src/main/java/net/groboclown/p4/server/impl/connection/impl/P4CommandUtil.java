@@ -49,6 +49,7 @@ import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.api.values.P4Job;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -57,8 +58,11 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Keeps all the different server commands that need to be run in one place.  Allows for
@@ -276,6 +280,32 @@ public class P4CommandUtil {
         return ret.get(0);
     }
 
+    public Map<IFileSpec, IExtendedFileSpec> getFilesDetails(IServer server, String clientname, List<IFileSpec> sources)
+            throws P4JavaException {
+        if (clientname != null) {
+            // For fetching the local File information, we need a client to perform the mapping.
+            IClient client = server.getClient(clientname);
+            server.setCurrentClient(client);
+        }
+        GetExtendedFilesOptions options = new GetExtendedFilesOptions();
+        List<IExtendedFileSpec> res = server.getExtendedFiles(sources, options);
+        MessageStatusUtil.throwIfMessageOrEmpty("get file details", res);
+        Map<IFileSpec, IExtendedFileSpec> ret = new HashMap<>();
+        Iterator<IFileSpec> sourceIter = sources.iterator();
+        for (IExtendedFileSpec extendedFileSpec : res) {
+            if (extendedFileSpec.getStatusMessage() != null) {
+                if (!sourceIter.hasNext()) {
+                    throw new P4JavaException("Incorrect Perforce server result: too many responses for fstat; "
+                            + "invoked p4 fstat " +
+                            String.join(" ",
+                                    sources.stream().map(IFileSpec::toString).collect(Collectors.toList())));
+                }
+                ret.put(sourceIter.next(), extendedFileSpec);
+            }
+        }
+        return ret;
+    }
+
     public byte[] loadContents(IServer server, IFileSpec spec)
             throws P4JavaException, IOException {
         int maxFileSize = VcsUtil.getMaxVcsLoadedFileSize();
@@ -335,6 +365,45 @@ public class P4CommandUtil {
                     throw new IllegalStateException("Unexpected revision count for " + entry.getKey().getDepotPath());
                 }
                 ret.add(Pair.create(entry.getKey(), entry.getValue().get(0)));
+            }
+        }
+        return ret;
+    }
+
+    @NotNull
+    public List<IFileRevisionData> getHistory(IOptionsServer server, String clientname,
+            List<IFileSpec> singleSpec, int maxRevCount)
+            throws P4JavaException {
+        // Even though we expect only 1 spec, the List is used by the server.getRevisionHistory, and the builders
+        // all return lists.
+        if (singleSpec.size() != 1) {
+            throw new IllegalArgumentException("Expected exactly 1 file spec argument.");
+        }
+        // Because the spec can be a reference to the local filesystem, it must have a workspace
+        // associated with it in order to map from the local filesystem to the depot path.
+        server.setCurrentClient(server.getClient(clientname));
+
+        GetRevisionHistoryOptions opts = new GetRevisionHistoryOptions()
+                .setMaxRevs(maxRevCount)
+                .setContentHistory(false)
+                .setIncludeInherited(true)
+                .setLongOutput(true)
+                .setTruncatedLongOutput(false);
+        Map<IFileSpec, List<IFileRevisionData>> res = server.getRevisionHistory(singleSpec, opts);
+        List<IFileRevisionData> ret = new ArrayList<>();
+        for (Map.Entry<IFileSpec, List<IFileRevisionData>> entry: res.entrySet()) {
+            // it can return empty values for a server message
+            List<IFileRevisionData> value = entry.getValue();
+            if (value != null && !value.isEmpty()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Mapped " + entry.getKey().getDepotPath() + " to " + entry.getValue());
+                }
+                // There can be multiple entries returned for the single file.  This is due to renaming and
+                // following the include inherited path.
+                ret.addAll(value);
+            } else {
+                // TODO should be an error.
+                LOG.warn(singleSpec.get(0) + ": Encountered server remark for fetching file history: " + entry.getKey());
             }
         }
         return ret;

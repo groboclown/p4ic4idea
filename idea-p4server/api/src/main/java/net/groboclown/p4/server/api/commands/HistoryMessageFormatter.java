@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.impl.repository;
+package net.groboclown.p4.server.api.commands;
 
 import com.perforce.p4java.core.file.IFileRevisionData;
 import org.jetbrains.annotations.NotNull;

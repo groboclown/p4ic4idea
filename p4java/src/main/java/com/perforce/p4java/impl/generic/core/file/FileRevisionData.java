@@ -194,6 +194,12 @@ public class FileRevisionData implements IFileRevisionData {
     return changeListId;
   }
 
+  // p4ic4idea: better debugging support
+  @Override
+  public String toString() {
+    return depotFileName + '#' + revision + "/@" + changeListId;
+  }
+
   private class RevisionIntegrationData implements IRevisionIntegrationData {
     private int startFromRev = 0;
     private int endFromRev = 0;

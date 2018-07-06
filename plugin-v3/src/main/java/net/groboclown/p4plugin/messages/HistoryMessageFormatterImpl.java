@@ -16,7 +16,7 @@ package net.groboclown.p4plugin.messages;
 
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IRevisionIntegrationData;
-import net.groboclown.p4.server.impl.repository.HistoryMessageFormatter;
+import net.groboclown.p4.server.api.commands.HistoryMessageFormatter;
 import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 

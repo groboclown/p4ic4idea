@@ -35,12 +35,16 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.commands.HistoryContentLoader;
+import net.groboclown.p4.server.api.commands.HistoryMessageFormatter;
 import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
 import net.groboclown.p4.server.api.commands.file.ListFileHistoryResult;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
+import net.groboclown.p4plugin.messages.HistoryMessageFormatterImpl;
+import net.groboclown.p4plugin.util.HistoryContentLoaderImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,9 +59,12 @@ public class P4HistoryProvider
 
     private final Project project;
     private final DiffFromHistoryHandler diffHandler = new P4DiffFromHistoryHandler();
+    private final HistoryMessageFormatter formatter = new HistoryMessageFormatterImpl();
+    private final HistoryContentLoader loader;
 
     P4HistoryProvider(@NotNull Project project) {
         this.project = project;
+        this.loader = new HistoryContentLoaderImpl(project);
     }
 
     @Override
@@ -122,7 +129,7 @@ public class P4HistoryProvider
                     .query(root.getClientConfig().getServerConfig(),
                             new ListFileHistoryQuery(root.getClientConfig().getClientServerRef(), filePath, -1))
                     .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS)
-                    .getRevisions();
+                    .getRevisions(formatter, loader);
             return createAppendableSession(filePath, revisions, null);
         } catch (InterruptedException e) {
             // TODO better exception?
@@ -132,9 +139,11 @@ public class P4HistoryProvider
 
     @Override
     public void reportAppendableHistory(FilePath path, VcsAppendableHistorySessionPartner partner) {
-        // TODO make async
+        partner.reportCreatedEmptySession(createAppendableSession(
+                path, Collections.emptyList(), null));
         ClientConfigRoot root = getRootFor(path);
         if (root == null) {
+            LOG.info("File not under VCS: " + path);
             // TODO bundle message
             partner.reportException(new VcsException("File not under VCS: " + path));
             partner.finished();
@@ -144,13 +153,14 @@ public class P4HistoryProvider
         // Async operation.
         getHistory(root, path, -1)
                 .whenCompleted((r) -> {
-                    final VcsAbstractHistorySession emptySession = createAppendableSession(
-                            path, Collections.emptyList(), null);
-                    partner.reportCreatedEmptySession(emptySession);
-                    r.getRevisions().forEach(partner::acceptRevision);
+                    r.getRevisions(formatter, loader).forEach(partner::acceptRevision);
+                    partner.finished();
                 })
-                .whenServerError(partner::reportException)
-                .after(partner::finished);
+                .whenServerError((e) -> {
+                    LOG.warn(e);
+                    partner.reportException(e);
+                    partner.finished();
+                });
     }
 
     @Override
@@ -159,14 +169,18 @@ public class P4HistoryProvider
             throws VcsException {
         ClientConfigRoot root = getRootFor(filePath);
         if (root == null) {
+            LOG.info("File not under vcs: " + filePath);
             return null;
         }
 
         try {
             List<VcsFileRevision> revisions = getHistory(root, filePath, 1)
                     .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS)
-                    .getRevisions();
+                    .getRevisions(formatter, loader);
             if (revisions.isEmpty()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("no revisions found for " + filePath);
+                }
                 return null;
             }
             return revisions.get(0);
@@ -179,9 +193,11 @@ public class P4HistoryProvider
     @Override
     public void reportAppendableHistory(@NotNull FilePath path, @Nullable VcsRevisionNumber startingRevision,
             @NotNull VcsAppendableHistorySessionPartner partner) {
-        // Async!
+        partner.reportCreatedEmptySession(createAppendableSession(
+                path, Collections.emptyList(), null));
         ClientConfigRoot root = getRootFor(path);
         if (root == null) {
+            LOG.warn("File not under vcs: " + path);
             // TODO bundle message
             partner.reportException(new VcsException("File not under VCS: " + path));
             partner.finished();
@@ -201,7 +217,7 @@ public class P4HistoryProvider
         // Async operation
         getHistory(root, path, -1)
                 .whenCompleted((r) ->
-                    r.getRevisions().forEach((rev) -> {
+                    r.getRevisions(formatter, loader).forEach((rev) -> {
                         VcsRevisionNumber rn = rev.getRevisionNumber();
                         if (rn instanceof VcsRevisionNumber.Int) {
                             VcsRevisionNumber.Int rni = (VcsRevisionNumber.Int) rn;

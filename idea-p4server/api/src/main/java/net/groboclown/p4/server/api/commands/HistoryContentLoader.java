@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.impl.repository;
+package net.groboclown.p4.server.api.commands;
 
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.p4.server.api.config.ServerConfig;

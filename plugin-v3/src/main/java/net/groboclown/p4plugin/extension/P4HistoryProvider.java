@@ -14,6 +14,7 @@
 package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
@@ -25,12 +26,12 @@ import com.intellij.openapi.vcs.history.VcsAppendableHistorySessionPartner;
 import com.intellij.openapi.vcs.history.VcsDependentHistoryComponents;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsHistorySession;
+import com.intellij.openapi.vcs.history.VcsHistoryUtil;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.ColumnInfo;
 import com.intellij.vcs.history.VcsHistoryProviderEx;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.idea.p4ic.compat.HistoryCompat;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
@@ -53,11 +54,10 @@ public class P4HistoryProvider
     private static final Logger LOG = Logger.getInstance(P4HistoryProvider.class);
 
     private final Project project;
-    private final DiffFromHistoryHandler diffHandler;
+    private final DiffFromHistoryHandler diffHandler = new P4DiffFromHistoryHandler();
 
     P4HistoryProvider(@NotNull Project project) {
         this.project = project;
-        this.diffHandler = HistoryCompat.getInstance().createDiffFromHistoryHandler();
     }
 
     @Override
@@ -278,5 +278,21 @@ public class P4HistoryProvider
                 .getCommandRunner()
                 .query(root.getClientConfig().getServerConfig(), new ListFileHistoryQuery(
                         root.getClientConfig().getClientServerRef(), file, revisionCount));
+    }
+
+    private static class P4DiffFromHistoryHandler implements DiffFromHistoryHandler {
+        @Override
+        public void showDiffForOne(@NotNull AnActionEvent e, @NotNull Project project, @NotNull FilePath filePath,
+                @NotNull VcsFileRevision previousRevision, @NotNull VcsFileRevision revision) {
+            VcsHistoryUtil.showDifferencesInBackground(project, filePath, previousRevision, revision);
+        }
+
+        @Override
+        public void showDiffForTwo(@NotNull Project project,
+                @NotNull FilePath filePath,
+                @NotNull VcsFileRevision revision1,
+                @NotNull VcsFileRevision revision2) {
+            VcsHistoryUtil.showDifferencesInBackground(project, filePath, revision1, revision2);
+        }
     }
 }

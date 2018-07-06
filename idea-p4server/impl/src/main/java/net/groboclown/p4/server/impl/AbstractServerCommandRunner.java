@@ -28,6 +28,8 @@ import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesQuery;
 import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult;
 import net.groboclown.p4.server.api.commands.file.AnnotateFileQuery;
 import net.groboclown.p4.server.api.commands.file.AnnotateFileResult;
+import net.groboclown.p4.server.api.commands.file.GetFileContentsQuery;
+import net.groboclown.p4.server.api.commands.file.GetFileContentsResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
@@ -117,4 +119,8 @@ public abstract class AbstractServerCommandRunner {
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(
             @NotNull ServerConfig config, @NotNull ListSubmittedChangelistsQuery query);
+
+    @NotNull
+    public abstract P4CommandRunner.QueryAnswer<GetFileContentsResult> getFileContents(
+            @NotNull ServerConfig config, @NotNull GetFileContentsQuery query);
 }

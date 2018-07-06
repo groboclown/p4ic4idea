@@ -29,9 +29,13 @@ import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.file.AnnotateFileQuery;
 import net.groboclown.p4.server.api.values.P4FileRevision;
+import net.groboclown.p4.server.impl.repository.HistoryContentLoader;
+import net.groboclown.p4.server.impl.repository.HistoryMessageFormatter;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
+import net.groboclown.p4plugin.messages.HistoryMessageFormatterImpl;
 import net.groboclown.p4plugin.revision.P4AnnotatedFileImpl;
+import net.groboclown.p4plugin.util.HistoryContentLoaderImpl;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.TimeUnit;
@@ -44,9 +48,12 @@ public class P4AnnotationProvider
     private static final Logger LOG = Logger.getInstance(P4AnnotationProvider.class);
 
     private final Project project;
+    private final HistoryMessageFormatter messageFormatter = new HistoryMessageFormatterImpl();
+    private final HistoryContentLoader contentLoader;
 
     P4AnnotationProvider(@NotNull P4Vcs vcs) {
         this.project = vcs.getProject();
+        this.contentLoader = new HistoryContentLoaderImpl(project);
     }
 
     @NotNull
@@ -94,8 +101,8 @@ public class P4AnnotationProvider
             throw new VcsException("No workspace name set for Perforce connection for " + file);
         }
         try {
-            // FIXME use non-null loader and formatter
-            return new P4AnnotatedFileImpl(project, fp, null, null,
+            return new P4AnnotatedFileImpl(project, fp,
+                    messageFormatter, contentLoader,
                     P4ServerComponent.getInstance(project).getCommandRunner()
                         .query(client.getServerConfig(), new AnnotateFileQuery(clientname, fp, rev))
                         .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS));

@@ -32,7 +32,6 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsDirectoryMapping;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsKey;
-import com.intellij.openapi.vcs.VcsListener;
 import com.intellij.openapi.vcs.VcsRootSettings;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
@@ -47,8 +46,6 @@ import com.intellij.openapi.vcs.merge.MergeProvider;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.StatusBar;
-import com.intellij.openapi.wm.WindowManager;
 import com.intellij.util.ThreeState;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.vcsUtil.VcsUtil;
@@ -237,7 +234,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
         this.changelistListener = new P4ChangelistListener(project, this);
         this.changeProvider = new P4ChangeProvider(this);
-        this.historyProvider = new P4HistoryProvider(project, this);
+        this.historyProvider = new P4HistoryProvider(project);
         this.diffProvider = new P4DiffProvider(project);
         this.statusUpdateEnvironment = new P4StatusUpdateEnvironment(project);
         this.annotationProvider = new P4AnnotationProvider(this);
@@ -302,25 +299,21 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     @Override
     protected void start() throws VcsException {
         if (!CompatFactoryLoader.isSupported()) {
-            ApplicationManager.getApplication().invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    UserMessage.showNotification(myProject,
-                            P4Bundle.message("ide.not.supported.message",
-                                    ApplicationInfo.getInstance().getApiVersion(),
-                                    P4Bundle.getString("p4ic.name"),
-                                    P4Bundle.getString("p4ic.bug.url")),
-                            P4Bundle.message("ide.not.supported.title"),
-                            NotificationType.ERROR);
-                }
-            });
+            ApplicationManager.getApplication().invokeLater(() ->
+                UserMessage.showNotification(myProject,
+                    P4Bundle.message("ide.not.supported.message",
+                            ApplicationInfo.getInstance().getApiVersion(),
+                            P4Bundle.getString("p4ic.name"),
+                            P4Bundle.getString("p4ic.bug.url")),
+                    P4Bundle.message("ide.not.supported.title"),
+                    NotificationType.ERROR));
             // Exception Ok: Tell the IDE that the plugin isn't supported with this version of the IDE>
             throw new VcsException(P4Bundle.message("ide.not.supported.title"));
         }
     }
 
     @Override
-    protected void shutdown() throws VcsException {
+    protected void shutdown() {
         deactivate();
     }
 
@@ -346,41 +339,17 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
         // TODO is this cache still used here?
         // Keep our cache up-to-date
-        projectMessageBusConnection.subscribe(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED, new VcsListener() {
-            @Override
-            public void directoryMappingChanged() {
-                final VirtualFile[] cache = ProjectLevelVcsManager.getInstance(myProject).getRootsUnderVcs(P4Vcs.this);
-                synchronized (vcsRootsCache) {
-                    vcsRootsCache.clear();
-                    vcsRootsCache.addAll(Arrays.asList(cache));
-                }
+        projectMessageBusConnection.subscribe(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED, () -> {
+            final VirtualFile[] cache = ProjectLevelVcsManager.getInstance(myProject).getRootsUnderVcs(P4Vcs.this);
+            synchronized (vcsRootsCache) {
+                vcsRootsCache.clear();
+                vcsRootsCache.addAll(Arrays.asList(cache));
             }
         });
 
 
-        if (!ApplicationManager.getApplication().isHeadlessEnvironment()) {
-            final StatusBar statusBar = WindowManager.getInstance().getStatusBar(myProject);
-            if (statusBar != null) {
-                // FIXME
-                /*
-                connectionWidget = new P4MultipleConnectionWidget(this, myProject);
-                ApplicationManager.getApplication().invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                        statusBar.addWidget(connectionWidget,
-                                "after " + (SystemInfo.isMac ? "Encoding" : "InsertOverwrite"), myProject);
-                    }
-                }, ModalityState.NON_MODAL);
-                // Initialize the widget separately.
-                */
-            }
-        }
-
-
-
         /*
-
-        // Look at adding file annotations (locally checked out or open for delete).
+        // TODO Look at adding file annotations (locally checked out or open for delete).
         if (myRepositoryForAnnotationsListener == null) {
             myRepositoryForAnnotationsListener = new P4RepositoryForAnnotationsListener(myProject);
         }
@@ -405,22 +374,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
                 panel.refresh();
             });
 
-            // FIXME
-            /*
-            refreshServerConnectivity();
-
-            if (connectionWidget != null) {
-                // This widget needs to be initialized outside the activation thread.
-                // Do not block on running this, as it can indirectly run the password
-                // store, and cause a deadlock (bug #110).
-                ApplicationManager.getApplication().invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        connectionWidget.setValues();
-                    }
-                });
-            }
-            */
+            // TODO check connection state?
         });
 
     }

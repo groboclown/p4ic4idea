@@ -15,12 +15,14 @@
 package net.groboclown.p4.server.impl.repository;
 
 import com.intellij.openapi.vcs.VcsException;
+import net.groboclown.p4.server.api.config.ServerConfig;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 
 public interface HistoryContentLoader {
     @Nullable
-    byte[] loadContentForRev(String depotPath, int rev)
+    byte[] loadContentForRev(@NotNull ServerConfig config, @NotNull String depotPath, int rev)
             throws IOException, VcsException;
 }

@@ -20,6 +20,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevisionEx;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.IFileRevisionData;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4Revision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,19 +31,23 @@ import java.util.Date;
 public class P4HistoryVcsFileRevision
         extends VcsFileRevisionEx {
     private final FilePath file;
+    private final ServerConfig config;
     private final IFileRevisionData data;
     private final HistoryMessageFormatter formatter;
     private final HistoryContentLoader loader;
     private boolean loadedContent;
     private byte[] content;
 
-    public P4HistoryVcsFileRevision(@NotNull FilePath file, @NotNull IFileRevisionData data,
+    public P4HistoryVcsFileRevision(@NotNull FilePath file,
+            @NotNull ServerConfig config,
+            @NotNull IFileRevisionData data,
             @Nullable HistoryMessageFormatter formatter,
             @Nullable HistoryContentLoader loader) {
         this.loader = loader;
         this.file = file;
         this.data = data;
         this.formatter = formatter;
+        this.config = config;
     }
 
     @Nullable
@@ -96,7 +101,7 @@ public class P4HistoryVcsFileRevision
             throws IOException, VcsException {
         if (!loadedContent && loader != null) {
             loadedContent = true;
-            content = loader.loadContentForRev(data.getDepotFileName(), data.getRevision());
+            content = loader.loadContentForRev(config, data.getDepotFileName(), data.getRevision());
         }
         return content;
     }
@@ -116,6 +121,12 @@ public class P4HistoryVcsFileRevision
     @Override
     public String getAuthor() {
         return data.getUserName();
+    }
+
+    @Nullable
+    //@Override TODO 2018 capability
+    public Date getAuthorDate() {
+        return data.getDate();
     }
 
     @Nullable

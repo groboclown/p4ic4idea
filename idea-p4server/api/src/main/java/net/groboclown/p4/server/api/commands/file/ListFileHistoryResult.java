@@ -14,15 +14,31 @@
 
 package net.groboclown.p4.server.api.commands.file;
 
+import com.intellij.openapi.vcs.history.VcsFileRevision;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 
-public class ListFilesHistoryResult
+import java.util.List;
+
+public class ListFileHistoryResult
         implements P4CommandRunner.ServerResult {
+    private final ServerConfig config;
+    private final List<VcsFileRevision> revisions;
+
+    public ListFileHistoryResult(@NotNull ServerConfig config,
+            @NotNull List<VcsFileRevision> revisions) {
+        this.config = config;
+        this.revisions = revisions;
+    }
+
     @NotNull
     @Override
     public ServerConfig getServerConfig() {
-        return null;
+        return config;
+    }
+
+    public List<VcsFileRevision> getRevisions() {
+        return revisions;
     }
 }

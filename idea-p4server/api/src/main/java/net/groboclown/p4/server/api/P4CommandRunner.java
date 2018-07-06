@@ -15,7 +15,8 @@
 package net.groboclown.p4.server.api;
 
 import com.intellij.openapi.vcs.VcsException;
-import net.groboclown.p4.server.api.commands.sync.SyncListFilesDetailsQuery;
+import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
+import net.groboclown.p4.server.api.commands.file.ListFileHistoryResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.Nls;
@@ -367,6 +368,11 @@ public interface P4CommandRunner {
         // LIST_STREAM_INTEGRATION_STATUS, // istat
 
         /**
+         * @see net.groboclown.p4.server.api.commands.file.GetFileContentsResult
+         */
+        GET_FILE_CONTENTS,
+
+        /**
          * @see net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery
          * @see net.groboclown.p4.server.api.commands.client.ListClientsForUserResult
          */
@@ -405,10 +411,10 @@ public interface P4CommandRunner {
         DESCRIBE_CHANGELIST,
 
         /**
-         * @see net.groboclown.p4.server.api.commands.file.ListFilesHistoryQuery
-         * @see net.groboclown.p4.server.api.commands.file.ListFilesHistoryResult
+         * @see ListFileHistoryQuery
+         * @see ListFileHistoryResult
          */
-        LIST_FILES_HISTORY,
+        LIST_FILE_HISTORY,
 
         /**
          * @see net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsQuery

@@ -20,7 +20,8 @@
     * Included major release libraries from IDEA, built from source.
     * These are broken up into small libraries to reduce their size,
       so we don't need to include the normal gigabyte sized jar.
-    * Removed dependency upon the external lib project.
+    * Removed dependency upon the external lib project.  Pulling the project
+      gets everything.
 * Complete rewrite of connection and caching mechanism.
     * In order to support the 2017.1 per-VCS Root configuration, the
       plugin now maintains the connection information in the VCS root
@@ -44,10 +45,11 @@
     * Requires additional dependent jars.
     * Will allow for more thorough unit testing.
 * Shipping as single Jar file.
-    * Due to unknown issues, the plugin is now distributed as a single
-      jar file with all dependencies unpacked inside it.
+    * Due to unknown issues with IDEA loading a zip file, the plugin is
+      now distributed as a single jar file with all dependencies unpacked inside it.
 * Updated build.
     * Builds now use Gradle.
+    * Project split into smaller pieces, to hopefully make the project easier to comprehend.
     * The `swarm-java-simplified` module renamed to `swarm`
 
 

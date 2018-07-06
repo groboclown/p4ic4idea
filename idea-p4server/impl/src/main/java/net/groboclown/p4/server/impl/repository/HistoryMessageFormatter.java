@@ -17,6 +17,9 @@ package net.groboclown.p4.server.impl.repository;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Allows for creating a user-friendly message describing a committed file revision..
+ */
 public interface HistoryMessageFormatter {
     @NotNull
     String format(@NotNull IFileRevisionData data);

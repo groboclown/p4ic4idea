@@ -42,12 +42,14 @@ import net.groboclown.p4.server.api.commands.file.AnnotateFileResult;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
 import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
+import net.groboclown.p4.server.api.commands.file.GetFileContentsQuery;
+import net.groboclown.p4.server.api.commands.file.GetFileContentsResult;
 import net.groboclown.p4.server.api.commands.file.ListDirectoriesQuery;
 import net.groboclown.p4.server.api.commands.file.ListDirectoriesResult;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
-import net.groboclown.p4.server.api.commands.file.ListFilesHistoryQuery;
-import net.groboclown.p4.server.api.commands.file.ListFilesHistoryResult;
+import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
+import net.groboclown.p4.server.api.commands.file.ListFileHistoryResult;
 import net.groboclown.p4.server.api.commands.file.ListFilesQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesResult;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
@@ -158,6 +160,8 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
         switch (query.getCmd()) {
             case ANNOTATE_FILE:
                 return (QueryAnswer<R>) getAnnotatedFile(config, (AnnotateFileQuery) query);
+            case GET_FILE_CONTENTS:
+                return (QueryAnswer<R>) getFileContents(config, (GetFileContentsQuery) query);
             case DESCRIBE_CHANGELIST:
                 return (QueryAnswer<R>) describeChangelist(config, (DescribeChangelistQuery) query);
             case GET_JOB_SPEC:
@@ -172,8 +176,8 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
                 return (QueryAnswer<R>) listFiles(config, (ListFilesQuery) query);
             case LIST_FILES_DETAILS:
                 return (QueryAnswer<R>) listFilesDetails(config, (ListFilesDetailsQuery) query);
-            case LIST_FILES_HISTORY:
-                return (QueryAnswer<R>) listFilesHistory(config, (ListFilesHistoryQuery) query);
+            case LIST_FILE_HISTORY:
+                return (QueryAnswer<R>) listFilesHistory(config, (ListFileHistoryQuery) query);
             case LIST_JOBS:
                 return (QueryAnswer<R>) listJobs(config, (ListJobsQuery) query);
             case LIST_SUBMITTED_CHANGELISTS:
@@ -184,6 +188,9 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
                 throw new IllegalStateException("Incompatible class: should match " + ServerQueryCmd.class);
         }
     }
+
+    @NotNull
+    protected abstract QueryAnswer<GetFileContentsResult> getFileContents(ServerConfig config, GetFileContentsQuery query);
 
     @NotNull
     protected abstract QueryAnswer<AnnotateFileResult> getAnnotatedFile(
@@ -218,8 +225,8 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
             ServerConfig config, ListFilesDetailsQuery query);
 
     @NotNull
-    protected abstract QueryAnswer<ListFilesHistoryResult> listFilesHistory(
-            ServerConfig config, ListFilesHistoryQuery query);
+    protected abstract QueryAnswer<ListFileHistoryResult> listFilesHistory(
+            ServerConfig config, ListFileHistoryQuery query);
 
     @NotNull
     protected abstract QueryAnswer<ListJobsResult> listJobs(

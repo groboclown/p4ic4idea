@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.api.async;
 
+import com.intellij.openapi.application.ApplicationManager;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -72,6 +73,10 @@ public class BlockingAnswer<S> {
     @Nullable
     public S blockingGet(int timeout, @NotNull TimeUnit unit) throws InterruptedException, CancellationException,
             P4CommandRunner.ServerResultException {
+        if (ApplicationManager.getApplication().isDispatchThread()) {
+            throw new IllegalStateException("Cannot call blocking get from within the EDT.");
+        }
+
         if (! latch.await(timeout, unit)) {
             throw new CancellationException();
         }

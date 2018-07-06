@@ -26,8 +26,8 @@ import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.text.DateFormatUtil;
-import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.commands.file.AnnotateFileResult;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4AnnotatedLine;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileAnnotation;
@@ -52,6 +52,7 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
     private static final Logger LOG = Logger.getInstance(P4AnnotatedFileImpl.class);
 
     private final FilePath file;
+    private final ServerConfig config;
     private final P4FileAnnotation annotatedFile;
     private final P4FileRevision head;
     private final String content;
@@ -75,7 +76,6 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
             new P4LineAnnotationAspect(LineAnnotationAspect.REVISION, true) {
                 @Override
                 String getValue(@NotNull P4AnnotatedLine ann) {
-                    // TODO this needs to use the project setting.
                     P4ChangelistId changelist = ann.getChangelist();
                     if (changelist == null || UserProjectPreferences.getPreferRevisionsForFiles(null)) {
                         return '#' + Integer.toString(ann.getRevNumber());
@@ -92,6 +92,7 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
             @NotNull AnnotateFileResult annotatedFileResult) {
         super(project);
         this.file = file;
+        this.config = annotatedFileResult.getServerConfig();
         this.annotatedFile = annotatedFileResult.getAnnotatedFile();
         this.head = annotatedFileResult.getHeadRevision();
         this.content = annotatedFileResult.getContent();
@@ -221,7 +222,7 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
         for (P4AnnotatedLine line : annotatedFile.getAnnotatedLines()) {
             if (line != null) {
                 P4HistoryVcsFileRevision fileRev = new P4HistoryVcsFileRevision(
-                        file, line.getRevisionData(), formatter, loader);
+                        file, config, line.getRevisionData(), formatter, loader);
                 revs.add(fileRev);
             }
         }

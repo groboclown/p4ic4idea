@@ -58,12 +58,14 @@ import net.groboclown.p4.server.api.commands.file.AnnotateFileQuery;
 import net.groboclown.p4.server.api.commands.file.AnnotateFileResult;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
 import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
+import net.groboclown.p4.server.api.commands.file.GetFileContentsQuery;
+import net.groboclown.p4.server.api.commands.file.GetFileContentsResult;
 import net.groboclown.p4.server.api.commands.file.ListDirectoriesQuery;
 import net.groboclown.p4.server.api.commands.file.ListDirectoriesResult;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
-import net.groboclown.p4.server.api.commands.file.ListFilesHistoryQuery;
-import net.groboclown.p4.server.api.commands.file.ListFilesHistoryResult;
+import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
+import net.groboclown.p4.server.api.commands.file.ListFileHistoryResult;
 import net.groboclown.p4.server.api.commands.file.ListFilesQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesResult;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
@@ -382,6 +384,15 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         );
     }
 
+    @NotNull
+    protected QueryAnswer<GetFileContentsResult> getFileContents(ServerConfig config,
+            GetFileContentsQuery query) {
+        return onlineQuery(config,
+                () -> server.getFileContents(config, query),
+                () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError())
+        );
+    }
+
 
     @NotNull
     @Override
@@ -453,7 +464,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListFilesHistoryResult> listFilesHistory(ServerConfig config, ListFilesHistoryQuery query) {
+    protected QueryAnswer<ListFileHistoryResult> listFilesHistory(ServerConfig config, ListFileHistoryQuery query) {
         // FIXME implement
         LOG.warn("FIXME implement listFilesHistory");
         return null;

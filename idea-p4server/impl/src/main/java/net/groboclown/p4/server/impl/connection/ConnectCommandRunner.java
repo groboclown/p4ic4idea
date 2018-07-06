@@ -16,6 +16,8 @@ package net.groboclown.p4.server.impl.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.util.io.IOUtil;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.ChangelistStatus;
@@ -36,6 +38,7 @@ import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.FixJobsOptions;
 import com.perforce.p4java.option.server.GetClientsOptions;
+import com.perforce.p4java.option.server.GetFileContentsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.p4.server.api.ClientServerRef;
@@ -74,6 +77,8 @@ import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileResult;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
 import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
+import net.groboclown.p4.server.api.commands.file.GetFileContentsQuery;
+import net.groboclown.p4.server.api.commands.file.GetFileContentsResult;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileResult;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
@@ -105,6 +110,7 @@ import net.groboclown.p4.server.impl.values.P4RemoteFileImpl;
 import net.groboclown.p4.server.impl.values.P4WorkspaceSummaryImpl;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -279,6 +285,15 @@ public class ConnectCommandRunner
             @NotNull ServerConfig config, @NotNull ListSubmittedChangelistsQuery query) {
         // FIXME implement
         return null;
+    }
+
+    @NotNull
+    @Override
+    public P4CommandRunner.QueryAnswer<GetFileContentsResult> getFileContents(@NotNull ServerConfig config,
+            @NotNull GetFileContentsQuery query) {
+        final List<IFileSpec> fileSpec = FileSpecBuilder.makeFileSpecList(query.getDepotPath());
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) ->
+                new GetFileContentsResult(config, query.getDepotPath(), cmd.loadContents(server, fileSpec.get(0)))));
     }
 
 

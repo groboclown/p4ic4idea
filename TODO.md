@@ -6,9 +6,13 @@ Many of the to-dos are listed in the bug list on Github.  This list itself shoul
 
 In the 0.10 release, these pieces of old functionality are either broken or disabled.
 
-### SSL, SSO, and Manual Passwords
+### File History
 
-The SSL, SSO, and asking the user for passwords are not well tested.
+Needs to finish up.
+
+### SSO and Manual Passwords
+
+The SSO and asking the user for passwords are not well tested.
 
 ### Error Reporting
 
@@ -36,6 +40,10 @@ If there are pending actions that failed to go through due to errors, the user n
 
 Swarm integration needs to be re-instated.
 
+### Files move to default changelist on refresh
+
+When the changelist view is refreshed, the opened files in all the changelists can be moved to the default changelist.
+
 ### Connection State
 
 The connection state, as the events are passed around, are not properly represented in the Active Connection panel.  Either the panel isn't showing the right state, or the events are wrong.
@@ -43,6 +51,14 @@ The connection state, as the events are passed around, are not properly represen
 ### Pending Action Consolidation
 
 When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or duplicates existing pending actions.  The pending action list must be altered to reflect the new action. 
+
+### Diff Files
+
+View file differences.
+
+### View changelist details
+
+Context menu on net.groboclown.p4plugin.extension.P4CommittedChangesProvider to view changelist details.
 
 ## Near-Term Functionality
 
@@ -62,6 +78,10 @@ is a big feature, and will require some careful planning to handle correctly.
 ### Load Project from VCS
 
 An old feature request.  Still needs to be added.
+
+### Shelved file support
+
+Re-add support for showing shelved files and managing shelved files.
 
 ### Use Windows Registry Passwords
 

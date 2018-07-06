@@ -64,7 +64,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
 
     private final Project project;
 
-    public P4CommittedChangesProvider(@NotNull final P4Vcs vcs) {
+    P4CommittedChangesProvider(@NotNull final P4Vcs vcs) {
         this.project = vcs.getProject();
     }
 
@@ -89,7 +89,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
     @Override
     public RepositoryLocation getLocationFor(@Nullable FilePath root) {
         ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
-        if (registry == null) {
+        if (registry == null || root == null) {
             return null;
         }
         ClientConfigRoot client = registry.getClientFor(root);
@@ -106,8 +106,8 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
             try {
                 details = P4ServerComponent.getInstance(project).getCommandRunner()
                         .query(client.getClientConfig().getServerConfig(),
-                                new ListFilesDetailsQuery())
-                        // FIXME use real timer settings
+                                new ListFilesDetailsQuery(client.getClientConfig().getClientServerRef(),
+                                        Collections.singletonList(root), 1))
                         .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
             } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
                 LOG.warn(e);
@@ -165,6 +165,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
     @NotNull
     private P4CommandRunner.QueryAnswer<List<P4CommittedChangelist>> asyncLoadCommittedChanges(
             P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount) throws VcsException {
+        // TODO use settings to determine if shelved changes should be returned.
         ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
         if (location == null || registry == null) {
             return new DoneQueryAnswer<>(Collections.emptyList());
@@ -230,8 +231,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
      */
     @Nullable
     @Override
-    public Pair<P4CommittedChangelist, FilePath> getOneList(VirtualFile file, VcsRevisionNumber number)
-            throws VcsException {
+    public Pair<P4CommittedChangelist, FilePath> getOneList(VirtualFile file, VcsRevisionNumber number) {
         FilePath fp = VcsUtil.getFilePath(file);
         if (fp == null) {
             return null;
@@ -283,14 +283,14 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
 
 
     public static class P4ChangeBrowserSettings extends ChangeBrowserSettings {
-        public String SHOW_ONLY_SHELVED_FILTER = "false";
+        String SHOW_ONLY_SHELVED_FILTER = "false";
 
         public void setShowOnlyShelvedFilter(@Nullable String showFilter) {
             SHOW_ONLY_SHELVED_FILTER = showFilter == null ? "false" :
                     Boolean.valueOf(Boolean.parseBoolean(showFilter)).toString();
         }
 
-        public boolean isShowOnlyShelvedFilter() {
+        boolean isShowOnlyShelvedFilter() {
             return Boolean.parseBoolean(SHOW_ONLY_SHELVED_FILTER);
         }
 
@@ -329,10 +329,10 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
 
         @Override
         public Object getValue(final P4CommittedChangelist changeList) {
-            // committed changelists can't have shelved files... so this is probably the wrong object.
             // FIXME implement correctly
-            throw new IllegalStateException("not implemented");
-            //return changeList.hasShelved();
+            // committed changelists can't have shelved files... so this is probably the wrong object.
+            LOG.warn("FIXME implement HAS_SHELVED getValue correctly");
+            return false;
         }
     };
 }

@@ -19,40 +19,41 @@ import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-
-public class ListFilesDetailsQuery implements P4CommandRunner.ServerQuery<ListFilesDetailsResult> {
+public class ListFileHistoryQuery
+        implements P4CommandRunner.ServerQuery<ListFileHistoryResult> {
+    // Because this is a server query, but it uses a file input, it means we need a
+    // client to perform local location to depot path conversion.
     private final ClientServerRef ref;
-    private final List<FilePath> files;
-    private final int maxResultCount;
+    private final FilePath file;
+    private final int maxResults;
 
-    public ListFilesDetailsQuery(ClientServerRef ref,
-            List<FilePath> files, int maxResultCount) {
+    public ListFileHistoryQuery(@NotNull ClientServerRef ref, @NotNull FilePath file, int maxResults) {
         this.ref = ref;
-        this.files = files;
-        this.maxResultCount = maxResultCount;
+        this.file = file;
+        this.maxResults = maxResults;
     }
 
     @NotNull
     @Override
-    public Class<? extends ListFilesDetailsResult> getResultType() {
-        return ListFilesDetailsResult.class;
+    public Class<? extends ListFileHistoryResult> getResultType() {
+        return ListFileHistoryResult.class;
     }
 
     @Override
     public P4CommandRunner.ServerQueryCmd getCmd() {
-        return P4CommandRunner.ServerQueryCmd.LIST_FILES_DETAILS;
+        return P4CommandRunner.ServerQueryCmd.LIST_FILE_HISTORY;
+    }
+
+    @NotNull
+    public FilePath getFile() {
+        return file;
+    }
+
+    public int getMaxResults() {
+        return maxResults;
     }
 
     public ClientServerRef getClientServerRef() {
         return ref;
-    }
-
-    public List<FilePath> getFiles() {
-        return files;
-    }
-
-    public int getMaxResultCount() {
-        return maxResultCount;
     }
 }

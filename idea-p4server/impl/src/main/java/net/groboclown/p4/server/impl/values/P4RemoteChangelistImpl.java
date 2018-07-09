@@ -19,12 +19,12 @@ import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.p4.server.api.ClientServerRef;
-import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4ChangelistSummary;
 import net.groboclown.p4.server.api.values.P4ChangelistType;
+import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4RemoteChangelist;
@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class P4RemoteChangelistImpl implements P4RemoteChangelist {
     private final P4ChangelistId changelistId;
@@ -50,7 +51,7 @@ public class P4RemoteChangelistImpl implements P4RemoteChangelist {
     private final String username;
     private final List<P4Job> attachedJobs;
     private final JobStatus jobStatus;
-    private final List<P4RemoteFile> files;
+    private final List<CommittedFile> files;
 
     public static class Builder {
         private P4ChangelistId changelistId;
@@ -65,7 +66,7 @@ public class P4RemoteChangelistImpl implements P4RemoteChangelist {
         private String username;
         private List<P4Job> attachedJobs;
         private JobStatus jobStatus;
-        private List<P4RemoteFile> files;
+        private List<CommittedFile> files;
 
         public Builder withChangelistId(P4ChangelistId id) {
             this.changelistId = id;
@@ -128,7 +129,9 @@ public class P4RemoteChangelistImpl implements P4RemoteChangelist {
         }
 
         public Builder withFiles(List<IFileSpec> files) {
-            this.files = P4RemoteFileImpl.createFor(files);
+            this.files = files.stream()
+                    .map(Committed::new)
+                    .collect(Collectors.toList());
             return this;
         }
 
@@ -144,7 +147,7 @@ public class P4RemoteChangelistImpl implements P4RemoteChangelist {
             P4ChangelistSummary summary, String comment, boolean deleted, boolean onServer, boolean shelved,
             Date submittedDate, P4ChangelistType changelistType, String clientname, String username,
             List<P4Job> attachedJobs, JobStatus jobStatus,
-            List<P4RemoteFile> files) {
+            List<CommittedFile> files) {
         this.changelistId = changelistId;
         this.summary = summary;
         this.comment = comment;
@@ -256,7 +259,51 @@ public class P4RemoteChangelistImpl implements P4RemoteChangelist {
 
     @NotNull
     @Override
-    public List<P4RemoteFile> getFiles() {
+    public List<CommittedFile> getFiles() {
         return files;
+    }
+
+    private static class Committed implements CommittedFile {
+        private final P4RemoteFile file;
+        private final int rev;
+        private final P4FileAction action;
+        private final P4RemoteFile from;
+        private final int fromRev;
+
+        Committed(@NotNull IFileSpec f) {
+            this.file = new P4RemoteFileImpl(f);
+            this.action = P4FileAction.convert(f.getAction());
+            this.rev = f.getWorkRev();
+            this.from = f.getFromFile() == null ? null : new P4RemoteFileImpl(f.getFromFile());
+            this.fromRev = f.getFromFile() == null ? -1 : f.getEndFromRev();
+        }
+
+        @NotNull
+        @Override
+        public P4RemoteFile getDepotPath() {
+            return file;
+        }
+
+        @Override
+        public int getRevision() {
+            return rev;
+        }
+
+        @NotNull
+        @Override
+        public P4FileAction getAction() {
+            return action;
+        }
+
+        @Nullable
+        @Override
+        public P4RemoteFile getIntegratedFrom() {
+            return from;
+        }
+
+        @Override
+        public int getFromRevision() {
+            return fromRev;
+        }
     }
 }

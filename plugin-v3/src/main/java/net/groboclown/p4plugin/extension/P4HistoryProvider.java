@@ -41,6 +41,7 @@ import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
 import net.groboclown.p4.server.api.commands.file.ListFileHistoryResult;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
+import net.groboclown.p4plugin.actions.ChangelistDescriptionAction;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.messages.HistoryMessageFormatterImpl;
@@ -74,10 +75,8 @@ public class P4HistoryProvider
 
     @Override
     public AnAction[] getAdditionalActions(Runnable refresher) {
-        LOG.warn("FIXME add an action to view the description of a changelist.");
         return new AnAction[] {
-                // FIXME add an action to view the description of a changelist.
-                //new ChangelistDescriptionAction()
+                new ChangelistDescriptionAction()
         };
     }
 

@@ -74,4 +74,9 @@ public class P4JobImpl implements P4Job {
     public String getDescription() {
         return description;
     }
+
+    @Override
+    public String toString() {
+        return jobId;
+    }
 }

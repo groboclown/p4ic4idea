@@ -20,10 +20,13 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevisionEx;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.IFileRevisionData;
+import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4.server.api.commands.HistoryMessageFormatter;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4Revision;
+import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,6 +53,20 @@ public class P4HistoryVcsFileRevision
         this.data = data;
         this.formatter = formatter;
         this.config = config;
+    }
+
+    /**
+     *
+     * @return a changelist ID with a client name used to submit the changelist.
+     */
+    public P4ChangelistId getChangelistId() {
+        ClientServerRef ref = new ClientServerRef(config.getServerName(), data.getClientName());
+        return new P4ChangelistIdImpl(data.getChangelistId(), ref);
+    }
+
+    @NotNull
+    public ServerConfig getServerConfig() {
+        return config;
     }
 
     @Nullable

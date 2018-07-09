@@ -47,6 +47,7 @@ import net.groboclown.p4.server.api.values.P4CommittedChangelist;
 import net.groboclown.p4.server.impl.commands.DoneQueryAnswer;
 import net.groboclown.p4.server.impl.repository.RepositoryLocationFactory;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.actions.ChangelistDescriptionAction;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.extension.P4CommittedChangesProvider.P4ChangeBrowserSettings;
@@ -164,7 +165,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
 
     @NotNull
     private P4CommandRunner.QueryAnswer<List<P4CommittedChangelist>> asyncLoadCommittedChanges(
-            P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount) throws VcsException {
+            P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount) {
         // TODO use settings to determine if shelved changes should be returned.
         ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
         if (location == null || registry == null) {
@@ -201,9 +202,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
     @Override
     public VcsCommittedViewAuxiliary createActions(DecoratorManager manager, RepositoryLocation location) {
         List<AnAction> allActions =
-                // FIXME add an action to view the description of a changelist.
-                // Collections.<AnAction>singletonList(new ChangelistDescriptionAction());
-                Collections.emptyList();
+                Collections.singletonList(new ChangelistDescriptionAction());
         LOG.warn("FIXME add an action to view the description of a changelist.");
         return new VcsCommittedViewAuxiliary(
                 allActions,

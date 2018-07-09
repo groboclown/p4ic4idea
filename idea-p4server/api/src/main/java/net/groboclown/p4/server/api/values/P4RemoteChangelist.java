@@ -77,5 +77,22 @@ public interface P4RemoteChangelist {
     JobStatus getJobStatus();
 
     @NotNull
-    List<P4RemoteFile> getFiles();
+    List<CommittedFile> getFiles();
+
+
+
+    interface CommittedFile {
+        @NotNull
+        P4RemoteFile getDepotPath();
+
+        int getRevision();
+
+        @NotNull
+        P4FileAction getAction();
+
+        @Nullable
+        P4RemoteFile getIntegratedFrom();
+
+        int getFromRevision();
+    }
 }

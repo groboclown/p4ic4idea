@@ -20,10 +20,6 @@ The Active Connection panel should show errors beside pending actions if there w
 Many of the errors are simply logged.  The main ones to look for are the server error messages returned as messages,
 which should be notified to the user.
 
-### Repository View
-
-The repository view doesn't create committed changelists (it throws an exception because it's not implemented).
-
 ### Submit Change
 
 The submit change needs to be implemented correctly.
@@ -48,9 +44,6 @@ The connection state, as the events are passed around, are not properly represen
 
 When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or duplicates existing pending actions.  The pending action list must be altered to reflect the new action. 
 
-### View changelist details
-
-Context menu on net.groboclown.p4plugin.extension.P4CommittedChangesProvider to view changelist details.
 
 
 ## Near-Term Functionality
@@ -72,9 +65,17 @@ is a big feature, and will require some careful planning to handle correctly.
 
 An old feature request.  Still needs to be added.
 
+### Repository View
+
+The repository view doesn't show any commits.
+
 ### Shelved file support
 
 Re-add support for showing shelved files and managing shelved files.
+
+### Additional History Browsing Support
+
+Context menus or sidebar actions for viewing additional history for existing items, such as the history of files from within the changelist details panel. 
 
 ### Use Windows Registry Passwords
 

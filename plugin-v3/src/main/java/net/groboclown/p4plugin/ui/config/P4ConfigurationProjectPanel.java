@@ -17,6 +17,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
+import net.groboclown.p4plugin.ui.WrapperPanel;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -77,78 +78,5 @@ public class P4ConfigurationProjectPanel implements Disposable {
         myMainPanel = null;
         wrappedPanel = null;
         isInitialized = false;
-    }
-
-
-    // The scrolling outer panel can cause the inner tabs to get sized all wrong,
-    // because of the scrollpanes in scrollpane.
-    // This helps keep the tabs sized right so we essentially ignore the outer scroll pane.
-    private class WrapperPanel extends JPanel implements Scrollable {
-        private final JPanel wrapped;
-        private Dimension size;
-
-        private WrapperPanel(JPanel wrapped) {
-            this.wrapped = wrapped;
-
-            setLayout(new BorderLayout());
-            add(wrapped, BorderLayout.CENTER);
-
-            updateSize();
-
-            addAncestorListener(new AncestorListener() {
-                @Override
-                public void ancestorAdded(AncestorEvent event) {
-                    updateSize();
-                }
-
-                @Override
-                public void ancestorRemoved(AncestorEvent event) {
-                    updateSize();
-                }
-
-                @Override
-                public void ancestorMoved(AncestorEvent event) {
-                    updateSize();
-                }
-            });
-        }
-
-        @Override
-        public Dimension getPreferredScrollableViewportSize() {
-            return size;
-        }
-
-        @Override
-        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
-            return 0;
-        }
-
-        @Override
-        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
-            return 0;
-        }
-
-        @Override
-        public boolean getScrollableTracksViewportWidth() {
-            return false;
-        }
-
-        @Override
-        public boolean getScrollableTracksViewportHeight() {
-            return false;
-        }
-
-        private void updateSize() {
-            final Dimension prevSize = this.size;
-            final Container parent = getParent();
-            if (parent != null) {
-                size = new Dimension(parent.getPreferredSize());
-            } else {
-                size = new Dimension(wrapped.getPreferredSize());
-            }
-            if (! size.equals(prevSize)) {
-                setPreferredSize(size);
-            }
-        }
     }
 }

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="net.groboclown.p4plugin.ui.submit.SubmitPanel">
+  <grid id="27dc6" binding="myRoot" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="true" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="0"/>
+    <constraints>
+      <xy x="20" y="20" width="604" height="400"/>
+    </constraints>
+    <properties/>
+    <border type="none" title-resource-bundle="net/groboclown/p4plugin/P4Bundle" title-key="submit.job.title"/>
+    <children>
+      <scrollpane id="5f382">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <horizontalScrollBarPolicy value="31"/>
+        </properties>
+        <border type="none"/>
+        <children>
+          <component id="15eac" class="javax.swing.JTable" binding="myJobTable" custom-create="true">
+            <constraints/>
+            <properties>
+              <autoResizeMode value="3"/>
+              <fillsViewportHeight value="false"/>
+            </properties>
+          </component>
+        </children>
+      </scrollpane>
+      <grid id="46539" layout-manager="FormLayout">
+        <rowspec value="center:d:grow"/>
+        <rowspec value="top:4dlu:noGrow"/>
+        <rowspec value="center:d:grow"/>
+        <rowspec value="top:4dlu:noGrow"/>
+        <rowspec value="center:max(d;4px):noGrow"/>
+        <colspec value="fill:d:noGrow"/>
+        <colspec value="left:4dlu:noGrow"/>
+        <colspec value="fill:d:grow"/>
+        <colspec value="left:4dlu:noGrow"/>
+        <colspec value="fill:max(d;4px):noGrow"/>
+        <colspec value="left:4dlu:noGrow"/>
+        <colspec value="fill:max(d;4px):noGrow"/>
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="1" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="ca0a" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
+              <forms defaultalign-horz="false"/>
+            </constraints>
+            <properties>
+              <labelFor value="18e70"/>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="job.panel.id"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="job.panel.id.tooltip"/>
+            </properties>
+          </component>
+          <component id="18e70" class="javax.swing.JTextField" binding="myJobIdField">
+            <constraints>
+              <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+              <forms defaultalign-horz="false"/>
+            </constraints>
+            <properties>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="job.panel.id.tooltip"/>
+            </properties>
+          </component>
+          <component id="30af3" class="javax.swing.JButton" binding="myAddButton">
+            <constraints>
+              <grid row="2" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <forms/>
+            </constraints>
+            <properties>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="job.panel.add"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="job.panel.add.tooltip"/>
+            </properties>
+          </component>
+          <component id="b6dc1" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <forms/>
+            </constraints>
+            <properties>
+              <labelFor value="aab08"/>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="job.panel.resolve"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="job.panel.resolve.tooltip"/>
+            </properties>
+          </component>
+          <component id="aab08" class="javax.swing.JComboBox" binding="myResolveState">
+            <constraints>
+              <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+              <forms/>
+            </constraints>
+            <properties>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="job.panel.resolve.tooltip"/>
+            </properties>
+          </component>
+          <component id="2239c" class="javax.swing.JButton" binding="myBrowseButton">
+            <constraints>
+              <grid row="2" column="6" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <forms/>
+            </constraints>
+            <properties>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="job.panel.browse"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="job.panel.browse.tooltip"/>
+            </properties>
+          </component>
+          <component id="f6d26" class="javax.swing.JButton" binding="myRemoveButton">
+            <constraints>
+              <grid row="4" column="6" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <forms/>
+            </constraints>
+            <properties>
+              <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="job.panel.remove"/>
+              <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="job.panel.remove.tooltip"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <vspacer id="3b63a">
+        <constraints>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+        </constraints>
+      </vspacer>
+    </children>
+  </grid>
+</form>

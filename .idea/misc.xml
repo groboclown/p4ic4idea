@@ -37,7 +37,139 @@
   </component>
   <component name="P4ProjectCache">
     <option name="serverState">
-      <list />
+      <list>
+        <State>
+          <option name="serverName" value="prodsc.austx.zilliant.com:1666" />
+          <option name="jobSpec">
+            <State>
+              <option name="comment" value="# DO NOT CREATE YOUR OWN JOBS!!!!!!!&#10;# ALWAYS USE JIRA TO CREATE THE JOB IN PERFORCE!!!!!!&#10;&#10;# STANDARD PERFORCE FIELDS&#10;#  Job:         The job name.  Matches the JIRA issue key.&#10;#  Status:      The status of the job = equates to resolved/unresolved in JIRA.&#10;#  Description: The summary of the job (required).&#10;#  User:        The reporter of the issue.&#10;#  Date:        The date this specification was last modified.&#10;&#10;# ATLASSIAN (Jira) FIELDS&#10;#  IssueStatus:&#9;The current workflow status of the issue in JIRA.&#10;#  URL:&#9;&#9;The URL of the issue online.&#10;#  Assignee:&#9;The assignee of the issue (if any).&#10;#  Project:&#9;The issue's project key.&#10;#  Priority: &#9;The priority of the issue.&#10;#  Type:&#9;The issue type.&#10;" />
+              <option name="fields">
+                <list>
+                  <FieldState>
+                    <option name="code" value="101" />
+                    <option name="name" value="Job" />
+                    <option name="dataType" value="word" />
+                    <option name="length" value="32" />
+                    <option name="fieldType" value="required" />
+                    <option name="selectValues">
+                      <list />
+                    </option>
+                  </FieldState>
+                  <FieldState>
+                    <option name="code" value="102" />
+                    <option name="name" value="Status" />
+                    <option name="dataType" value="select" />
+                    <option name="length" value="10" />
+                    <option name="fieldType" value="required" />
+                    <option name="preset" value="open" />
+                    <option name="selectValues">
+                      <list>
+                        <option value="open" />
+                        <option value="closed" />
+                      </list>
+                    </option>
+                  </FieldState>
+                  <FieldState>
+                    <option name="code" value="103" />
+                    <option name="name" value="User" />
+                    <option name="dataType" value="word" />
+                    <option name="length" value="32" />
+                    <option name="fieldType" value="required" />
+                    <option name="preset" value="$user" />
+                    <option name="selectValues">
+                      <list />
+                    </option>
+                  </FieldState>
+                  <FieldState>
+                    <option name="code" value="104" />
+                    <option name="name" value="Date" />
+                    <option name="dataType" value="date" />
+                    <option name="length" value="20" />
+                    <option name="fieldType" value="always" />
+                    <option name="preset" value="$now" />
+                    <option name="selectValues">
+                      <list />
+                    </option>
+                  </FieldState>
+                  <FieldState>
+                    <option name="code" value="105" />
+                    <option name="name" value="Description" />
+                    <option name="dataType" value="text" />
+                    <option name="fieldType" value="required" />
+                    <option name="preset" value="$blank" />
+                    <option name="selectValues">
+                      <list />
+                    </option>
+                  </FieldState>
+                  <FieldState>
+                    <option name="code" value="110" />
+                    <option name="name" value="IssueStatus" />
+                    <option name="dataType" value="line" />
+                    <option name="length" value="32" />
+                    <option name="fieldType" value="required" />
+                    <option name="selectValues">
+                      <list />
+                    </option>
+                  </FieldState>
+                  <FieldState>
+                    <option name="code" value="111" />
+                    <option name="name" value="URL" />
+                    <option name="dataType" value="line" />
+                    <option name="length" value="60" />
+                    <option name="fieldType" value="required" />
+                    <option name="selectValues">
+                      <list />
+                    </option>
+                  </FieldState>
+                  <FieldState>
+                    <option name="code" value="112" />
+                    <option name="name" value="Assignee" />
+                    <option name="dataType" value="word" />
+                    <option name="length" value="32" />
+                    <option name="fieldType" value="optional" />
+                    <option name="selectValues">
+                      <list />
+                    </option>
+                  </FieldState>
+                  <FieldState>
+                    <option name="code" value="113" />
+                    <option name="name" value="Project" />
+                    <option name="dataType" value="word" />
+                    <option name="length" value="32" />
+                    <option name="fieldType" value="required" />
+                    <option name="selectValues">
+                      <list />
+                    </option>
+                  </FieldState>
+                  <FieldState>
+                    <option name="code" value="114" />
+                    <option name="name" value="Priority" />
+                    <option name="dataType" value="line" />
+                    <option name="length" value="32" />
+                    <option name="fieldType" value="optional" />
+                    <option name="selectValues">
+                      <list />
+                    </option>
+                  </FieldState>
+                  <FieldState>
+                    <option name="code" value="115" />
+                    <option name="name" value="Type" />
+                    <option name="dataType" value="line" />
+                    <option name="length" value="32" />
+                    <option name="fieldType" value="required" />
+                    <option name="selectValues">
+                      <list />
+                    </option>
+                  </FieldState>
+                </list>
+              </option>
+            </State>
+          </option>
+          <option name="userClients">
+            <map />
+          </option>
+        </State>
+      </list>
     </option>
     <option name="clientState">
       <list />

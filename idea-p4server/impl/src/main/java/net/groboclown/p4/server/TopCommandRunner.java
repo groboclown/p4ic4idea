@@ -86,6 +86,7 @@ import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
+import net.groboclown.p4.server.api.values.JobStatusNames;
 import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
@@ -94,6 +95,8 @@ import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
 import net.groboclown.p4.server.impl.commands.DoneQueryAnswer;
 import net.groboclown.p4.server.impl.commands.ErrorQueryAnswerImpl;
 import net.groboclown.p4.server.impl.commands.OfflineActionAnswerImpl;
+import net.groboclown.p4.server.impl.values.JobStatusImpl;
+import net.groboclown.p4.server.impl.values.JobStatusNamesImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -474,9 +477,10 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @NotNull
     @Override
     protected QueryAnswer<ListJobsResult> listJobs(ServerConfig config, ListJobsQuery query) {
-        // FIXME implement
-        LOG.warn("FIXMDE implement listJobs");
-        return null;
+        return onlineQuery(config,
+                () -> server.listJobs(config, query),
+                // TODO cache jobs?
+                () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError()));
     }
 
 

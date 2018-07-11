@@ -31,8 +31,11 @@ import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAct
 import net.groboclown.p4.server.api.util.FileTreeUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
+import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
+import net.groboclown.p4plugin.util.ChangelistDescriptionGenerator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -48,11 +51,9 @@ public class P4ChangelistListener
     private final static Logger LOG = Logger.getInstance(P4ChangelistListener.class);
 
     private final Project myProject;
-    private final P4Vcs myVcs;
 
     P4ChangelistListener(@NotNull final Project project, @NotNull final P4Vcs vcs) {
         myProject = project;
-        myVcs = vcs;
     }
 
     @Override
@@ -219,7 +220,7 @@ public class P4ChangelistListener
     }
 
     private List<FilePath> getPathsFromChanges(final Collection<Change> changes) {
-        final List<FilePath> paths = new ArrayList<FilePath>();
+        final List<FilePath> paths = new ArrayList<>();
         for (Change change : changes) {
             if ((change.getBeforeRevision() != null) && (isUnderVcs(change.getBeforeRevision().getFile()))) {
                 FilePath path = change.getBeforeRevision().getFile();
@@ -239,9 +240,7 @@ public class P4ChangelistListener
 
 
     private String toDescription(@NotNull ChangeList changeList) {
-        // FIXME implement description
-        throw new IllegalStateException("not implemented");
-        // return ChangelistDescriptionGenerator.getDescription(project, changeList);
+        return ChangelistDescriptionGenerator.getDescription(myProject, changeList);
     }
 
     private Collection<FilePath> getAffectedFiles(ClientConfigRoot clientConfigRoot, Collection<Change> changes) {

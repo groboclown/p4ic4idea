@@ -189,6 +189,7 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
         }
     }
 
+
     @NotNull
     protected abstract QueryAnswer<GetFileContentsResult> getFileContents(ServerConfig config, GetFileContentsQuery query);
 

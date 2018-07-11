@@ -20,16 +20,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ListJobsQuery implements P4CommandRunner.ServerQuery<ListJobsResult> {
-    private final P4ChangelistId changelistId;
+    private final String jobId;
     private final String username;
     private final String description;
     private final int maxResults;
 
-    public ListJobsQuery(
-            @Nullable P4ChangelistId changelistId,
-            @Nullable String username,
+    public ListJobsQuery(@Nullable String jobId, @Nullable String username,
             @Nullable String description, int maxResults) {
-        this.changelistId = changelistId;
+        this.jobId = jobId;
         this.username = username;
         this.description = description;
         this.maxResults = maxResults;
@@ -44,5 +42,21 @@ public class ListJobsQuery implements P4CommandRunner.ServerQuery<ListJobsResult
     @Override
     public P4CommandRunner.ServerQueryCmd getCmd() {
         return P4CommandRunner.ServerQueryCmd.LIST_JOBS;
+    }
+
+    public String getJobId() {
+        return jobId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public int getMaxResults() {
+        return maxResults;
     }
 }

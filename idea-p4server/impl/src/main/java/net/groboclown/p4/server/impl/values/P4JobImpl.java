@@ -79,4 +79,20 @@ public class P4JobImpl implements P4Job {
     public String toString() {
         return jobId;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (o instanceof P4Job) {
+            return jobId.equals(((P4Job) o).getJobId());
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return jobId.hashCode();
+    }
 }

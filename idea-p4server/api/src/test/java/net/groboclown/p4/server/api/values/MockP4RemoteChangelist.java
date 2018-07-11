@@ -15,12 +15,12 @@
 package net.groboclown.p4.server.api.values;
 
 import net.groboclown.p4.server.api.ClientServerRef;
-import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -42,7 +42,7 @@ public class MockP4RemoteChangelist implements P4RemoteChangelist {
     private P4ChangelistType type = P4ChangelistType.PUBLIC;
     private List<P4Job> jobs = Collections.emptyList();
     private JobStatus jobStatus = new MockJobStatus("closed");
-    private List<P4RemoteFile> files = Collections.emptyList();
+    private List<CommittedFile> files = Collections.emptyList();
     private MockP4ChangelistSummary summary;
 
 
@@ -206,13 +206,54 @@ public class MockP4RemoteChangelist implements P4RemoteChangelist {
 
     @NotNull
     @Override
-    public List<P4RemoteFile> getFiles() {
+    public List<CommittedFile> getFiles() {
         return files;
     }
 
     public MockP4RemoteChangelist withFiles(P4RemoteFile... f) {
-        files = Arrays.asList(f);
+        files = new ArrayList<>(f.length);
+        for (P4RemoteFile p4RemoteFile : f) {
+            files.add(new CommittedFileImpl(p4RemoteFile));
+        }
         summary = null;
         return this;
+    }
+
+    private static class CommittedFileImpl implements CommittedFile {
+        final P4RemoteFile f;
+        final P4FileAction a;
+
+        private CommittedFileImpl(P4RemoteFile f) {
+            this.f = f;
+            this.a = P4FileAction.ADD;
+        }
+
+        @NotNull
+        @Override
+        public P4RemoteFile getDepotPath() {
+            return f;
+        }
+
+        @Override
+        public int getRevision() {
+            return 1;
+        }
+
+        @NotNull
+        @Override
+        public P4FileAction getAction() {
+            return a;
+        }
+
+        @Nullable
+        @Override
+        public P4RemoteFile getIntegratedFrom() {
+            return null;
+        }
+
+        @Override
+        public int getFromRevision() {
+            return 0;
+        }
     }
 }

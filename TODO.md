@@ -3,34 +3,13 @@
 Many of the to-dos are listed in the bug list on Github.  This list itself should be handled better in the project view of Github.
 
 
-## Required Missing Functionality
+## Bugs
 
-In the 0.10 release, these pieces of old functionality are either broken or disabled.
+### Creating a changelist can cause an error
 
-### SSO and Manual Passwords
+The plugin will attempt to create a new changelist in some cases when it already exists in Perforce (say, after a failed submit).
 
-The SSO and asking the user for passwords are not well tested.
-
-### Error Reporting
-
-Need better display for errors, and all promise-like behaviors need on-error catches to report problems.
-
-The Active Connection panel should show errors beside pending actions if there was an error sending it to the server.
-
-Many of the errors are simply logged.  The main ones to look for are the server error messages returned as messages,
-which should be notified to the user.
-
-### Submit Change
-
-The submit change needs to be implemented correctly.
-
-### Manage Pending Operations
-
-If there are pending actions that failed to go through due to errors, the user needs a way to manage these operations.  This should be done through the active connection panel.
-
-### Swarm Integration
-
-Swarm integration needs to be re-instated.
+Additionally, if Perforce contains multiple changelists with the same name, the creation of these will fail due to a colliding name. ("Attempt to create duplicate changelist")
 
 ### Files move to default changelist on refresh
 
@@ -43,6 +22,23 @@ The connection state, as the events are passed around, are not properly represen
 ### Pending Action Consolidation
 
 When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or duplicates existing pending actions.  The pending action list must be altered to reflect the new action. 
+
+
+## Required Missing Functionality
+
+In the 0.10 release, these pieces of old functionality are either broken or disabled.
+
+### SSO and Manual Passwords
+
+The SSO and asking the user for passwords are not well tested.
+
+### Manage Pending Operations
+
+If there are pending actions that failed to go through due to errors, the user needs a way to manage these operations.  This should be done through the active connection panel.
+
+### Swarm Integration
+
+Swarm integration needs to be re-instated.
 
 
 

@@ -32,4 +32,26 @@ public class JobStatusImpl implements JobStatus {
     public String getName() {
         return name;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (o instanceof JobStatus) {
+            JobStatus that = (JobStatus) o;
+            return getName().equals(that.getName());
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

@@ -295,6 +295,8 @@ public class P4ChangeProvider
                             ChangeListManager.getInstance(project).getDefaultChangeList());
                     } else {
                         // Create a new IDE changelist and link to that.
+                        // FIXME this can cause an error if a changelist with the same name already existing
+                        // in the IDE.  Need to protect against this.
                         ideChangeList = addGate.addChangeList(
                                 createUniqueChangelistName(changelist, existingLocalChangeLists),
                                 changelist.getComment());

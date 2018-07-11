@@ -13,6 +13,7 @@
  */
 package net.groboclown.p4plugin.extension;
 
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileTypes.FileType;
@@ -23,7 +24,10 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vcs.changes.CommitExecutor;
+import com.intellij.openapi.vcs.changes.CommitSession;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
+import com.intellij.openapi.vcs.checkin.CheckinChangeListSpecificComponent;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -38,17 +42,28 @@ import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.commands.file.AddEditResult;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileResult;
+import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
+import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
+import net.groboclown.p4plugin.messages.UserMessage;
+import net.groboclown.p4plugin.ui.WrapperPanel;
+import net.groboclown.p4plugin.ui.submit.SubmitModel;
+import net.groboclown.p4plugin.ui.submit.SubmitPanel;
+import net.groboclown.p4plugin.util.CommitUtil;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -56,10 +71,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-// TODO look at switching to a CommitExecutor and CommitSession, CommitSessionContextAware
-// to fix the long standing issue where changelists must have comments.
-public class P4CheckinEnvironment implements CheckinEnvironment {
+public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor {
     private static final Logger LOG = Logger.getInstance(P4CheckinEnvironment.class);
+    private static final String HELP_ID = null;
 
     private final Project project;
 
@@ -82,8 +96,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         // All of this means that this isn't a very good idea.
         // The panel has a "setWarning" method, but that doesn't do anything.
 
-        // FIXME
-        throw new IllegalStateException("not implemented");
+        return new P4OnCheckinPanel(project, panel, additionalDataConsumer);
     }
 
     @Nullable
@@ -95,7 +108,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     @Nullable
     @Override
     public String getHelpId() {
-        return null;
+        return HELP_ID;
     }
 
     @Override
@@ -114,8 +127,8 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
     @Override
     public List<VcsException> commit(List<Change> changes, final String preparedComment,
             @NotNull NullableFunction<Object, Object> parametersHolder, Set<String> feedback) {
-        // FIXME
-        throw new IllegalStateException("not implemented");
+        return CommitUtil.commit(project, changes, preparedComment, SubmitModel.getJobs(parametersHolder),
+                SubmitModel.getSubmitStatus(parametersHolder));
     }
 
     @Nullable
@@ -145,9 +158,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                 P4CommandRunner.ActionAnswer<DeleteFileResult> answer =
                         P4ServerComponent.getInstance(project).getCommandRunner()
                                 .perform(root.getClientConfig(), new DeleteFileAction(file, id))
-                                .whenCompleted((res) -> {
-                                    P4ChangesViewRefresher.refreshLater(project);
-                                });
+                                .whenCompleted((res) -> P4ChangesViewRefresher.refreshLater(project));
                 if (ApplicationManager.getApplication().isDispatchThread()) {
                     LOG.info("Running delete file command in EDT; will not wait for server errors.");
                 } else {
@@ -155,6 +166,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
                         answer.blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project),
                                 TimeUnit.MILLISECONDS);
                     } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
+                        // TODO better InterruptedException?
                         ret.add(new VcsException(e));
                     }
                 }
@@ -218,11 +230,10 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
 
     @Override
     public boolean isRefreshAfterCommitNeeded() {
-        // File status (read-only state) may have changed, or CVS substitution
+        // File status (read-only state) may have changed, or CVS-style substitution
         // may have happened.
         return true;
     }
-
 
     // TODO this is shared with P4VFSListener.  Look at making shared utility.
     private Map<ClientServerRef, P4ChangelistId> getActiveChangelistIds() {
@@ -258,4 +269,135 @@ public class P4CheckinEnvironment implements CheckinEnvironment {
         }
         return P4FileType.convert("text");
     }
+
+    @Nls
+    @Override
+    public String getActionText() {
+        return P4Bundle.getString("commit.operation.name");
+    }
+
+    @NotNull
+    @Override
+    public CommitSession createCommitSession() {
+        final SubmitModel model = new SubmitModel(project);
+        return new CommitSession() {
+            @Nullable
+            @Override
+            public JComponent getAdditionalConfigurationUI() {
+                return getAdditionalConfigurationUI(Collections.emptyList(), "");
+            }
+
+            @Nullable
+            @Override
+            public JComponent getAdditionalConfigurationUI(Collection<Change> changes, String commitMessage) {
+                model.setSelectedCurrentChanges(changes);
+                return new SubmitPanel(model).getRoot();
+            }
+
+            @Override
+            public boolean canExecute(Collection<Change> changes, String commitMessage) {
+                // TODO set the ok action as enabled/disabled depending upon
+                // whether the comment is empty or not (bug #52).  Probably
+                // should just set a warning, though, but that doesn't do anything.
+                // We will also need a notification for when the comment is changed,
+                // which will require a poll thread, which isn't ideal.
+
+                return !changes.isEmpty() && commitMessage != null && !commitMessage.isEmpty();
+            }
+
+            @Override
+            public void execute(Collection<Change> changes, String commitMessage) {
+                List<Change> changeList;
+                if (changes instanceof List) {
+                    changeList = (List<Change>) changes;
+                } else {
+                    changeList = new ArrayList<>(changes);
+                }
+                List<VcsException> problems = CommitUtil.commit(project,
+                        changeList, commitMessage, model.getJobs(), model.getJobStatus());
+                if (problems != null && !problems.isEmpty()) {
+                    StringBuilder exMessages = new StringBuilder();
+                    boolean first = true;
+                    for (VcsException problem : problems) {
+                        LOG.warn(problem);
+                        if (first) {
+                            first = false;
+                        } else {
+                            // FIXME bundle
+                            exMessages.append("\n");
+                        }
+                        exMessages.append(String.join(", ", problem.getMessages()));
+                    }
+                    UserMessage.showNotification(project, exMessages.toString(),
+                            // FIXME bundle
+                            "Submit Errors",
+                            NotificationType.ERROR);
+                }
+            }
+
+            @Override
+            public void executionCanceled() {
+                UserMessage.showNotification(project,
+                        // FIXME bundle
+                        "Submit changelist was cancelled",
+                        "Submit Cancelled",
+                        NotificationType.INFORMATION);
+            }
+
+            @Override
+            public String getHelpId() {
+                return HELP_ID;
+            }
+        };
+    }
+
+
+
+    private static class P4OnCheckinPanel implements CheckinChangeListSpecificComponent {
+        private final CheckinProjectPanel parentPanel;
+        private final PairConsumer<Object, Object> dataConsumer;
+        private final SubmitModel model;
+        private final SubmitPanel panel;
+        private final JComponent root;
+
+
+        P4OnCheckinPanel(@NotNull Project project, @NotNull CheckinProjectPanel panel,
+                final PairConsumer<Object, Object> additionalDataConsumer) {
+            this.parentPanel = panel;
+            this.dataConsumer = additionalDataConsumer;
+            this.model = new SubmitModel(project);
+            this.panel = new SubmitPanel(model);
+            //this.root = new JBScrollPane(this.panel.getRoot());
+            this.root = new WrapperPanel(this.panel.getRoot(), false, false);
+            model.setSelectedCurrentChanges(panel.getSelectedChanges());
+        }
+
+        @Override
+        public void onChangeListSelected(LocalChangeList list) {
+            model.setSelectedCurrentChanges(list.getChanges());
+        }
+
+        @Override
+        public JComponent getComponent() {
+            return root;
+        }
+
+        @Override
+        public void refresh() {
+            restoreState();
+        }
+
+        @Override
+        public void saveState() {
+            // load from context into the data consumer
+            model.saveState(dataConsumer);
+        }
+
+        @Override
+        public void restoreState() {
+            model.resetState();
+        }
+    }
+
+
 }

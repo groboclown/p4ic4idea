@@ -69,4 +69,8 @@ public class InternalErrorMessage extends ProjectMessage<InternalErrorMessage.Li
     public static Listener send(@NotNull Project project) {
         return getListener(project, TOPIC, DEFAULT_LISTENER);
     }
+
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
+        addListener(client, TOPIC, listener);
+    }
 }

@@ -33,16 +33,12 @@ import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
 import net.groboclown.p4.server.impl.util.DirectoryMappingUtil;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
+import net.groboclown.p4plugin.ui.WrapperPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.event.AncestorEvent;
-import javax.swing.event.AncestorListener;
-import java.awt.*;
-import java.awt.event.HierarchyBoundsListener;
-import java.awt.event.HierarchyEvent;
 import java.util.Collection;
 import java.util.List;
 
@@ -262,104 +258,6 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
                 }
                 fireConfigConnectionRefreshed(parentPart, clientConfig, serverConfig);
             });
-        }
-    }
-
-
-    // The scrolling outer panel can cause the inner tabs to get sized all wrong,
-    // because of the scrollpanes in scrollpane.
-    // This helps keep the tabs sized right so we essentially ignore the outer scroll pane.
-    private class WrapperPanel
-            extends JPanel
-            implements Scrollable {
-        private final JPanel wrapped;
-        private Dimension size;
-
-        private WrapperPanel(JPanel wrapped) {
-            this.wrapped = wrapped;
-
-            setLayout(new BorderLayout());
-            add(wrapped, BorderLayout.CENTER);
-
-            updateSize();
-
-            addAncestorListener(new AncestorListener() {
-                @Override
-                public void ancestorAdded(AncestorEvent event) {
-                    updateSize();
-                }
-
-                @Override
-                public void ancestorRemoved(AncestorEvent event) {
-                    updateSize();
-                }
-
-                @Override
-                public void ancestorMoved(AncestorEvent event) {
-                    updateSize();
-                }
-            });
-
-            addHierarchyBoundsListener(new HierarchyBoundsListener() {
-                @Override
-                public void ancestorMoved(HierarchyEvent e) {
-                    updateSize();
-                }
-
-                @Override
-                public void ancestorResized(HierarchyEvent e) {
-                    updateSize();
-                }
-            });
-        }
-
-        @Override
-        public Dimension getPreferredScrollableViewportSize() {
-            return size;
-        }
-
-        @Override
-        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
-            return 0;
-        }
-
-        @Override
-        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
-            return 0;
-        }
-
-        @Override
-        public boolean getScrollableTracksViewportWidth() {
-            return false;
-        }
-
-        @Override
-        public boolean getScrollableTracksViewportHeight() {
-            return false;
-        }
-
-        private void updateSize() {
-            final Dimension prevSize = this.size;
-            final Container parent = getParent();
-            if (parent != null) {
-                final Container parent2 = parent.getParent();
-                if (parent2 != null) {
-                    size = new Dimension(parent2.getPreferredSize());
-                } else {
-                    size = new Dimension(parent.getPreferredSize());
-                }
-            } else {
-                size = new Dimension(wrapped.getPreferredSize());
-            }
-            if (!size.equals(prevSize)) {
-                setPreferredSize(size);
-                wrapped.revalidate();
-                wrapped.doLayout();
-                wrapped.repaint();
-            }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Changed P4 VCS root panel size from " + prevSize + " to " + size);
-            }
         }
     }
 }

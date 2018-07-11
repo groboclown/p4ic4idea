@@ -20,6 +20,8 @@ import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult;
+import net.groboclown.p4.server.api.commands.changelist.ListJobsQuery;
+import net.groboclown.p4.server.api.commands.changelist.ListJobsResult;
 import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsQuery;
 import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsResult;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
@@ -46,7 +48,6 @@ import java.util.Map;
  * server, without needing to deal with a cache.
  */
 public abstract class AbstractServerCommandRunner {
-
 
     public interface ServerActionRunner<R extends ServerResult> {
         P4CommandRunner.ActionAnswer<R> perform(@NotNull ServerConfig config, @NotNull P4CommandRunner.ServerAction<R>
@@ -134,4 +135,7 @@ public abstract class AbstractServerCommandRunner {
 
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<ListFilesDetailsResult> listFilesDetails(ServerConfig config, ListFilesDetailsQuery query);
+
+    @NotNull
+    public abstract P4CommandRunner.QueryAnswer<ListJobsResult> listJobs(ServerConfig config, ListJobsQuery query);
 }

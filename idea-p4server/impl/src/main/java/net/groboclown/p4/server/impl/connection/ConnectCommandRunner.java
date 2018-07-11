@@ -38,6 +38,7 @@ import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.FixJobsOptions;
 import com.perforce.p4java.option.server.GetClientsOptions;
+import com.perforce.p4java.option.server.GetJobsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.p4.server.api.ClientServerRef;
@@ -58,6 +59,8 @@ import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistResult
 import net.groboclown.p4.server.api.commands.changelist.EditChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.EditChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult;
+import net.groboclown.p4.server.api.commands.changelist.ListJobsQuery;
+import net.groboclown.p4.server.api.commands.changelist.ListJobsResult;
 import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsQuery;
 import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsResult;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
@@ -91,6 +94,7 @@ import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileRevision;
 import net.groboclown.p4.server.api.values.P4FileType;
+import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
 import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
@@ -345,6 +349,33 @@ public class ConnectCommandRunner
                             : P4FileRevisionImpl.getHave(query.getClientServerRef(), e.getValue())
                     )
                     .collect(Collectors.toList()))));
+    }
+
+    @NotNull
+    @Override
+    public P4CommandRunner.QueryAnswer<ListJobsResult> listJobs(ServerConfig config, ListJobsQuery query) {
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
+            List<P4Job> jobs = new ArrayList<>();
+            if (query.getJobId() != null) {
+                IJob job = server.getJob(query.getJobId());
+                if (job != null) {
+                    jobs.add(new P4JobImpl(job));
+                }
+            }
+            // TODO Finding the assigned-to user requires additional knowledge of the job spec that we don't have.
+            // So for now, we only have job ID exact search and description search
+            if (query.getDescription() != null) {
+                GetJobsOptions options = new GetJobsOptions()
+                        .setJobView(query.getDescription())
+                        .setLongDescriptions(true)
+                        .setMaxJobs(query.getMaxResults());
+                List<IJob> jobsFound = server.getJobs(null, options);
+                if (jobsFound != null) {
+                    jobsFound.forEach((j) -> jobs.add(new P4JobImpl(j)));
+                }
+            }
+            return new ListJobsResult(config, jobs);
+        }));
     }
 
     @NotNull

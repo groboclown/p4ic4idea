@@ -36,6 +36,7 @@ import com.intellij.openapi.vcs.VcsRootSettings;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
+import com.intellij.openapi.vcs.changes.CommitExecutor;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.diff.DiffProvider;
@@ -71,6 +72,7 @@ import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
@@ -458,11 +460,20 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     }
 
 
-    // Use the standard commit instead
-    //@Override
-    //public List<CommitExecutor> getCommitExecutors() {
-    //    return Collections.singletonList(commitExecutor);
-    //}
+    /*
+    Executors are an attempt to regain control over whether the "submit" button is enabled or not (bug #52).
+    Unfortunately, the checkin executors are ignored for the purpose of UI and button state.
+    private P4CheckinEnvironment checkinEnvironment;
+
+    @Override
+    public List<CommitExecutor> getCommitExecutors() {
+        if (checkinEnvironment == null) {
+            checkinEnvironment = (P4CheckinEnvironment) createCheckinEnvironment();
+        }
+        return Collections.singletonList(checkinEnvironment);
+    }
+    */
+
 
     /**
      * creates the object for performing checkin / commit / submit operations.

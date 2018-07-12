@@ -149,6 +149,13 @@ public class OpenFileStatus {
         return !messages.isEmpty();
     }
 
+    public boolean isNotOnServer() {
+        // TODO this isn't 100% accurate, but a message is usually "blah - no such file(s)."
+        // It takes the form of no skipped (means known by the server, but has no open status)
+        // and no open files.
+        return !hasOpen() && !hasSkipped() && hasMessages();
+    }
+
     /**
      *
      * @return files not categorized because they had an info/warning/error associated with them.

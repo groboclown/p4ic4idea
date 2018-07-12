@@ -43,6 +43,7 @@ import com.perforce.p4java.option.server.GetExtendedFilesOptions;
 import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
 import com.perforce.p4java.option.server.GetFileContentsOptions;
 import com.perforce.p4java.option.server.GetRevisionHistoryOptions;
+import com.perforce.p4java.option.server.MoveFileOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
 import net.groboclown.p4.server.api.values.JobStatus;
@@ -400,5 +401,12 @@ public class P4CommandUtil {
             }
         }
         return ret;
+    }
+
+    public List<IFileSpec> moveFile(IClient client, IFileSpec source, IFileSpec target, P4ChangelistId changelistId)
+            throws P4JavaException {
+        MoveFileOptions options = new MoveFileOptions()
+                .setChangelistId(changelistId.getChangelistId());
+        return client.getServer().moveFile(source, target, options);
     }
 }

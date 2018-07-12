@@ -24,6 +24,7 @@ The connection state, as the events are passed around, are not properly represen
 When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or duplicates existing pending actions.  The pending action list must be altered to reflect the new action. 
 
 
+
 ## Required Missing Functionality
 
 In the 0.10 release, these pieces of old functionality are either broken or disabled.

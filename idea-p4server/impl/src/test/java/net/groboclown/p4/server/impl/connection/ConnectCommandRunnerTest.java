@@ -27,16 +27,20 @@ import net.groboclown.idea.extensions.TemporaryFolderExtension;
 import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.changelist.AddJobToChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.AddJobToChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.CreateJobAction;
 import net.groboclown.p4.server.api.commands.changelist.CreateJobResult;
 import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.EditChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.EditChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserResult;
@@ -407,19 +411,31 @@ class ConnectCommandRunnerTest {
         final File clientRoot = tmpDir.newFile("clientRoot");
         final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
+        final Map<String, Object> jobDetails = new HashMap<>();
+        jobDetails.put("Status", "closed");
+        jobDetails.put("User", serverConfig.getUsername());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddJobToChangelistAction(
-                                    new P4ChangelistIdImpl(2, clientConfig.getClientServerRef()),
-                                    new P4JobImpl("a", "a job", null)))
-                                .whenCompleted(sink::resolve)
-                                .whenServerError(sink::reject)
+                        runner.perform(clientConfig.getServerConfig(),
+                                new CreateJobAction(new P4JobImpl("j1", "x", jobDetails)))
+                        .mapActionAsync((res) ->
+                                runner.perform(clientConfig,
+                                    new CreateChangelistAction(clientConfig.getClientServerRef(), "a change")))
+                        .mapActionAsync((res) ->
+                                runner.perform(clientConfig, new AddJobToChangelistAction(
+                                    new P4ChangelistIdImpl(res.getChangelistId(), clientConfig.getClientServerRef()),
+                                    new P4JobImpl("j1", "a job", null)))
+                                )
+                        .whenCompleted(sink::resolve)
+                        .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    // FIXME
-                    fail("Add tests");
+                    assertThat(r, instanceOf(AddJobToChangelistResult.class));
+                    AddJobToChangelistResult res = (AddJobToChangelistResult) r;
+
+                    assertSame(clientConfig, res.getClientConfig());
                 })
                 .whenFailed(Assertions::fail);
     }
@@ -484,14 +500,22 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new DeleteChangelistAction(new P4ChangelistIdImpl(2,
-                                    clientConfig.getClientServerRef())))
-                                .whenCompleted(sink::resolve)
-                                .whenServerError(sink::reject)
+                        runner.perform(clientConfig,
+                                new CreateChangelistAction(clientConfig.getClientServerRef(), "new change"))
+                            .mapActionAsync((res) ->
+                                runner.perform(clientConfig, new DeleteChangelistAction(new P4ChangelistIdImpl(res.getChangelistId(),
+                                        clientConfig.getClientServerRef())))
+                            )
+                            .whenCompleted(sink::resolve)
+                            .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    // FIXME
-                    fail("Add tests");
+                    assertThat(r, instanceOf(DeleteChangelistResult.class));
+                    DeleteChangelistResult res = (DeleteChangelistResult) r;
+
+                    assertSame(clientConfig, res.getClientConfig());
+                    // TODO remove language-dependent fragility
+                    assertEquals("Change 1 deleted.", res.getMessage());
                 })
                 .whenFailed(Assertions::fail);
     }
@@ -574,14 +598,19 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new EditChangelistAction(
-                                    new P4ChangelistIdImpl(2, clientConfig.getClientServerRef()), "new comment"))
-                                .whenCompleted(sink::resolve)
-                                .whenServerError(sink::reject)
+                        runner.perform(clientConfig,
+                                new CreateChangelistAction(clientConfig.getClientServerRef(),"old comment"))
+                        .mapActionAsync((res) ->
+                                runner.perform(clientConfig, new EditChangelistAction(
+                                    new P4ChangelistIdImpl(res.getChangelistId(), clientConfig.getClientServerRef()), "new comment")))
+                        .whenCompleted(sink::resolve)
+                        .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    // FIXME
-                    fail("Add tests");
+                    assertThat(r, instanceOf(EditChangelistResult.class));
+                    EditChangelistResult res = (EditChangelistResult) r;
+
+                    assertSame(clientConfig, res.getClientConfig());
                 })
                 .whenFailed(Assertions::fail);
     }
@@ -626,7 +655,7 @@ class ConnectCommandRunnerTest {
 
     @ExtendWith(TemporaryFolderExtension.class)
     @Test
-    void moveFile(TemporaryFolder tmpDir) throws IOException {
+    void moveFile_notOnServer(TemporaryFolder tmpDir) throws IOException {
         idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
@@ -646,18 +675,20 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new MoveFileAction(newFile, newFile))
+                        runner.perform(clientConfig, new MoveFileAction(newFile, newFile,
+                                new P4ChangelistIdImpl(0, clientConfig.getClientServerRef())))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    assertThat(r, instanceOf(MoveFileResult.class));
-                    MoveFileResult res = (MoveFileResult) r;
-
-                    // FIXME
-                    fail("Add tests");
+                    fail("Should have thrown an error");
                 })
-                .whenFailed(Assertions::fail);
+                .whenFailed((e) -> {
+                    assertThat(e.getCause(), instanceOf(RequestException.class));
+                    // TODO remove language-dependent fragility.
+                    assertEquals(clientRoot + File.separator + "a%40b.txt - no such file(s).",
+                            e.getCause().getMessage());
+                });
     }
 
 
@@ -683,15 +714,27 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new MoveFilesToChangelistAction(
-                                    new P4ChangelistIdImpl(4, clientConfig.getClientServerRef()),
-                                    Collections.emptyList()))
-                                .whenCompleted(sink::resolve)
-                                .whenServerError(sink::reject)
+                                runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
+                                        .mapActionAsync((res) -> runner.perform(clientConfig,
+                                                new CreateChangelistAction(clientConfig.getClientServerRef(),
+                                                        "Destination change")))
+                                        .mapActionAsync((res) -> runner.perform(clientConfig,
+                                                new MoveFilesToChangelistAction(
+                                                    new P4ChangelistIdImpl(res.getChangelistId(), clientConfig.getClientServerRef()),
+                                                    Collections.singletonList(newFile))))
+                                        .whenCompleted(sink::resolve)
+                                        .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    // FIXME
-                    fail("Add tests");
+                    assertThat(r, instanceOf(MoveFilesToChangelistResult.class));
+                    MoveFilesToChangelistResult res = (MoveFilesToChangelistResult) r;
+
+                    assertSame(clientConfig, res.getClientConfig());
+                    assertNull(res.getMessage());
+                    assertSize(1, res.getFiles());
+                    P4RemoteFile remote = res.getFiles().get(0);
+                    assertEquals("//depot/a@b.txt", remote.getDisplayName());
+                    assertEquals("//depot/a%40b.txt", remote.getDepotPath());
                 })
                 .whenFailed(Assertions::fail);
     }

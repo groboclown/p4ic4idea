@@ -18,10 +18,25 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
+
 public class MoveFileResult implements P4CommandRunner.ClientResult {
+    private final ClientConfig config;
+    private final String messages;
+
+    public MoveFileResult(@NotNull ClientConfig config, @Nullable String messages) {
+        this.config = config;
+        this.messages = messages;
+    }
+
     @NotNull
     @Override
     public ClientConfig getClientConfig() {
-        return null;
+        return config;
+    }
+
+    @Nullable
+    public String getMessages() {
+        return messages;
     }
 }

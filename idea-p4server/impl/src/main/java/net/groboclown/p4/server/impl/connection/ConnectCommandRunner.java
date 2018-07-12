@@ -423,17 +423,14 @@ public class ConnectCommandRunner
         }
 
         boolean addFile = false;
-        if (!status.hasOpen() && !status.hasSkipped() && status.hasMessages()) {
-            // TODO this isn't 100% accurate, but a message is usually "blah - no such file(s)."
-            // It takes the form of no skipped (means known by the server, but has no open status)
-            // and no open files.
+        if (status.isNotOnServer()) {
             addFile = true;
         } else if (status.hasDelete()) {
-                // Revert the file
-                List<IFileSpec> reverted = cmd.revertFiles(client, srcFiles, false);
-                MessageStatusUtil.throwIfError(reverted);
-                LOG.info("Reverted " + action.getFile() + ": " + MessageStatusUtil.getMessages(reverted, "\n"));
-                addFile = true;
+            // Revert the file
+            List<IFileSpec> reverted = cmd.revertFiles(client, srcFiles, false);
+            MessageStatusUtil.throwIfError(reverted);
+            LOG.info("Reverted " + action.getFile() + ": " + MessageStatusUtil.getMessages(reverted, "\n"));
+            addFile = true;
         } else if (LOG.isDebugEnabled() && !status.hasOpen()) {
             LOG.debug("Unexpected status message for " + status + "; assuming 'edit'");
             for (IExtendedFileSpec spec : status.getSkipped()) {
@@ -539,6 +536,9 @@ public class ConnectCommandRunner
     private MoveFilesToChangelistResult moveFilesToChangelist(IClient client, ClientConfig config,
             MoveFilesToChangelistAction action)
             throws ConnectionException, AccessException, RequestException {
+        if (action.getFiles().isEmpty()) {
+            throw new IllegalArgumentException("must provide at least one file to move");
+        }
         if (LOG.isDebugEnabled()) {
             LOG.debug("Running move files to changelist against the server for " + action.getChangelistId() + " / " +
                     action.getFiles());
@@ -547,7 +547,7 @@ public class ConnectCommandRunner
         // FIXME use P4CommandUtil
         LOG.warn("FIXME use P4CommandUtil");
 
-        List<IFileSpec> fileSpecs = FileSpecBuildUtil.forFilePaths(action.getFiles());
+        List<IFileSpec> fileSpecs = FileSpecBuildUtil.escapedForFilePaths(action.getFiles());
         List<IFileSpec> res = client.reopenFiles(fileSpecs, action.getChangelistId().getChangelistId(), null);
         String info = null;
         List<P4RemoteFile> files = new ArrayList<>(res.size());
@@ -708,17 +708,70 @@ public class ConnectCommandRunner
 
     private RevertFileResult revertFile(IClient client, ClientConfig config, RevertFileAction action)
             throws P4JavaException {
-        List<IFileSpec> srcFiles = FileSpecBuildUtil.forFilePaths(action.getFile());
+        List<IFileSpec> srcFiles = FileSpecBuildUtil.escapedForFilePaths(action.getFile());
         List<IFileSpec> reverted = cmd.revertFiles(client, srcFiles, false);
         MessageStatusUtil.throwIfError(reverted);
         LOG.info("Reverted " + action.getFile() + ": " + MessageStatusUtil.getMessages(reverted, "\n"));
         return new RevertFileResult(config, action.getFile(), reverted);
     }
 
-    private MoveFileResult moveFile(IClient client, ClientConfig config, MoveFileAction action) {
-        // FIXME implement using P4CommandUtil
-        LOG.warn("FIXME implement and use P4CommandUtil");
-        return null;
+    private MoveFileResult moveFile(IClient client, ClientConfig config, MoveFileAction action)
+            throws P4JavaException {
+        List<IFileSpec> srcFile = FileSpecBuildUtil.escapedForFilePaths(action.getSourceFile());
+        List<IFileSpec> tgtFile = FileSpecBuildUtil.escapedForFilePaths(action.getTargetFile());
+        if (srcFile.size() != 1 || tgtFile.size() != 1) {
+            throw new IllegalStateException("Must have 1 source and 1 target, have " + srcFile + "; " + tgtFile);
+        }
+        List<IExtendedFileSpec> srcStatusResponse = cmd.getFileDetailsForOpenedSpecs(client.getServer(), srcFile, 1);
+        OpenFileStatus srcStatus = new OpenFileStatus(srcStatusResponse);
+        OpenFileStatus tgtStatus =
+                new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(), tgtFile, 1));
+        if (srcStatus.hasAdd()) {
+            // source is open for add.  Revert it and mark the target as open for edit/add.
+            List<IFileSpec> reverted = cmd.revertFiles(client, srcFile, false);
+            MessageStatusUtil.throwIfError(reverted);
+            // TODO bundle message for separator
+            if (tgtStatus.hasDelete()) {
+                // Currently marked as deleted, so it exists on the server.  Revert the delete then edit it.
+                reverted = cmd.revertFiles(client, tgtFile, false);
+                MessageStatusUtil.throwIfError(reverted);
+                List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
+                MessageStatusUtil.throwIfError(edited);
+                return new MoveFileResult(config, MessageStatusUtil.getMessages(edited, "\n"));
+            } else if (srcStatus.isNotOnServer()) {
+                // Target not on server
+                List<IFileSpec> added = cmd.addFiles(client, tgtFile, null, action.getChangelistId(), null);
+                MessageStatusUtil.throwIfError(added);
+                return new MoveFileResult(config, MessageStatusUtil.getMessages(added, "\n"));
+            } else if (!srcStatus.hasOpen()) {
+                // On server and not open
+                List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
+                MessageStatusUtil.throwIfError(edited);
+                return new MoveFileResult(config, MessageStatusUtil.getMessages(edited, "\n"));
+            } else {
+                // Nothing to do
+                // TODO bundle message
+                return new MoveFileResult(config, "Already open");
+            }
+        } else if (srcStatus.hasDelete()) {
+            // source is already open for delete.  Revert it and continue with normal move.
+            List<IFileSpec> reverted = cmd.revertFiles(client, srcFile, false);
+            MessageStatusUtil.throwIfError(reverted);
+        } else if (srcStatus.isNotOnServer()) {
+            // Forces an error, because the messages exist.
+            MessageStatusUtil.throwIfMessageOrEmpty("move file", srcStatusResponse);
+        }
+
+        // Check target status, to see what we need to do there.
+        if (tgtStatus.hasOpen()) {
+            List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
+            MessageStatusUtil.throwIfError(reverted);
+        }
+
+        // Standard move operation.
+        List<IFileSpec> results = cmd.moveFile(client, srcFile.get(0), tgtFile.get(0), action.getChangelistId());
+        MessageStatusUtil.throwIfError(results);
+        return new MoveFileResult(config, MessageStatusUtil.getMessages(results, "\n"));
     }
 
     private ListOpenedFilesChangesResult listOpenedFilesChanges(IClient client, ClientConfig config,

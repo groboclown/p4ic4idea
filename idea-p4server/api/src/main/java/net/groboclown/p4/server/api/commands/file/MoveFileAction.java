@@ -17,21 +17,26 @@ package net.groboclown.p4.server.api.commands.file;
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.ActionUtil;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
 import org.jetbrains.annotations.NotNull;
 
 public class MoveFileAction implements P4CommandRunner.ClientAction<MoveFileResult> {
     private final String actionId;
     private final FilePath source;
     private final FilePath target;
+    private final P4ChangelistId changelistId;
 
-    public MoveFileAction(@NotNull FilePath source, @NotNull FilePath target) {
-        this(ActionUtil.createActionId(MoveFileAction.class), source, target);
+    public MoveFileAction(@NotNull FilePath source, @NotNull FilePath target,
+            P4ChangelistId changelistId) {
+        this(ActionUtil.createActionId(MoveFileAction.class), source, target, changelistId);
     }
 
-    public MoveFileAction(@NotNull String actionId, @NotNull FilePath source, @NotNull FilePath target) {
+    public MoveFileAction(@NotNull String actionId, @NotNull FilePath source, @NotNull FilePath target,
+            P4ChangelistId changelistId) {
         this.actionId = actionId;
         this.source = source;
         this.target = target;
+        this.changelistId = changelistId;
     }
 
     @NotNull
@@ -59,5 +64,9 @@ public class MoveFileAction implements P4CommandRunner.ClientAction<MoveFileResu
     @NotNull
     public FilePath getTargetFile() {
         return target;
+    }
+
+    public P4ChangelistId getChangelistId() {
+        return changelistId;
     }
 }

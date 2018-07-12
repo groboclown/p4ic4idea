@@ -116,7 +116,8 @@ public class ActionStore {
             case MOVE_FILE:
                 return new MoveFileAction(state.actionId,
                         state.data.getFilePathNotNull("source"),
-                        state.data.getFilePathNotNull("target"));
+                        state.data.getFilePathNotNull("target"),
+                        state.data.getChangelistIdNotNull("cl-id"));
             case ADD_EDIT_FILE:
                 return new AddEditAction(state.actionId,
                         state.data.getFilePathNotNull("file"),
@@ -176,7 +177,8 @@ public class ActionStore {
                 MoveFileAction a = (MoveFileAction) action;
                 ret.data
                         .putFilePath("source", a.getSourceFile())
-                        .putFilePath("target", a.getTargetFile());
+                        .putFilePath("target", a.getTargetFile())
+                        .putChangelistId("cl-id", a.getChangelistId());
                 break;
             }
             case ADD_EDIT_FILE: {

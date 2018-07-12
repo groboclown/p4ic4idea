@@ -250,6 +250,8 @@ public class ConnectCommandRunner
     public P4CommandRunner.QueryAnswer<DescribeChangelistResult> describeChangelist(@NotNull ServerConfig config,
             @NotNull DescribeChangelistQuery query) {
         return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
+            // TODO is this the right client name, or do we need an explicit client name given?
+            server.setCurrentClient(server.getClient(query.getChangelistId().getClientname()));
             IChangelist changelist = cmd.getChangelistDetails(server,
                     query.getChangelistId().getChangelistId());
             return new DescribeChangelistResult(config, query.getChangelistId(),
@@ -459,7 +461,12 @@ public class ConnectCommandRunner
         P4ChangelistId retChange;
         if (action.getChangelistId() == null ||
                 action.getChangelistId().getChangelistId() != ret.get(0).getChangelistId()) {
-            retChange = new P4ChangelistIdImpl(ret.get(0).getChangelistId(), config.getClientServerRef());
+            int retChangeId = ret.get(0).getChangelistId();
+            if (retChangeId == IChangelist.UNKNOWN) {
+                // Use the default changelist.
+                retChangeId = IChangelist.DEFAULT;
+            }
+            retChange = new P4ChangelistIdImpl(retChangeId, config.getClientServerRef());
         } else {
             retChange = action.getChangelistId();
         }
@@ -654,7 +661,7 @@ public class ConnectCommandRunner
             return false;
         });
         return new DeleteFileResult(config, P4RemoteFileImpl.createFor(res),
-                // TODO use P4Bundle
+                // TODO use P4Bundle, or allow the result to contain the messages as a list.
                 MessageStatusUtil.getMessages(res, "\n"));
     }
 

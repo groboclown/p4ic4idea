@@ -14,11 +14,13 @@
 
 package net.groboclown.p4.server.impl.util;
 
+import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.impl.generic.core.file.FilePath;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.impl.generic.core.file.PathAnnotations;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class HandleFileSpecUtil {
     @NotNull
@@ -42,6 +44,12 @@ public class HandleFileSpecUtil {
             return PathAnnotations.stripAnnotations(spec.getDepotPath().getPathString());
         }
         return spec.getDepotPath().getPathString();
+    }
+
+    @NotNull
+    public static String getDepotDisplayName(@NotNull IFileAnnotation spec) {
+        // May be null in very rare situations
+        return spec.getDepotPath() == null ? "<unknown>" : unescapeP4Path(spec.getDepotPath());
     }
 
 

@@ -95,6 +95,7 @@ public class SimpleConnectionManager implements ConnectionManager {
                             if (LOG.isDebugEnabled()) {
                                 LOG.debug("Connected to client " + client.getName());
                             }
+                            server.setCurrentClient(client);
                             return fun.func(client);
                         } finally {
                             close(server);
@@ -117,6 +118,7 @@ public class SimpleConnectionManager implements ConnectionManager {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Connected to client " + client.getName());
                         }
+                        server.setCurrentClient(client);
                         return fun.func(server.getClient(config.getClientname()));
                     } finally {
                         close(server);

@@ -40,6 +40,18 @@ If there are pending actions that failed to go through due to errors, the user n
 
 Swarm integration needs to be re-instated.
 
+### Sync files
+
+Need to allow for pulling latest or other revisions.
+
+### Revert Unchanged
+
+Re-add implementation.
+
+### Move Files
+
+Finish implementing move files capability.
+
 
 
 ## Near-Term Functionality

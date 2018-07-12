@@ -47,6 +47,13 @@ public class RpcPerforceFile extends File {
 
 		if (tmpDirName != null) {
 			tmpDir = new File(tmpDirName);
+			if (!tmpDir.exists()) {
+				if (!tmpDir.mkdirs()) {
+					tmpDir = null;
+				}
+			} else if (!tmpDir.isDirectory()) {
+				tmpDir = null;
+			}
 		}
 
 		File tmpFile = File.createTempFile(TMP_FILE_PFX, TMP_FILE_SFX,

@@ -16,8 +16,10 @@ package net.groboclown.p4.server.impl.connection;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.RequestException;
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.test.P4ServerExtension;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.extensions.TemporaryFolder;
@@ -26,26 +28,36 @@ import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.changelist.AddJobToChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.CreateChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.CreateJobAction;
 import net.groboclown.p4.server.api.commands.changelist.CreateJobResult;
 import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery;
+import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.EditChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
+import net.groboclown.p4.server.api.commands.client.ListClientsForUserResult;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.commands.file.AddEditResult;
 import net.groboclown.p4.server.api.commands.file.AnnotateFileQuery;
+import net.groboclown.p4.server.api.commands.file.AnnotateFileResult;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
+import net.groboclown.p4.server.api.commands.file.DeleteFileResult;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
+import net.groboclown.p4.server.api.commands.file.MoveFileResult;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
+import net.groboclown.p4.server.api.commands.file.RevertFileResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.values.P4AnnotatedLine;
 import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4JobField;
+import net.groboclown.p4.server.api.values.P4RemoteChangelist;
+import net.groboclown.p4.server.api.values.P4RemoteFile;
 import net.groboclown.p4.server.impl.connection.impl.MessageStatusUtil;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
 import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
@@ -72,12 +84,7 @@ import static net.groboclown.p4.server.impl.ClientTestUtil.touchFile;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 class ConnectCommandRunnerTest {
@@ -332,6 +339,7 @@ class ConnectCommandRunnerTest {
                     assertTrue(res.isEdit());
                     assertNotNull(res.getFileType());
                     assertEquals("text", res.getFileType().toString());
+                    assertEquals(IChangelist.DEFAULT, res.getChangelistId().getChangelistId());
                     assertTrue(res.getChangelistId().isDefaultChangelist());
                     assertSame(clientConfig, res.getClientConfig());
                     assertEquals("//depot/a%40b.txt", res.getDepotPath().getDepotPath());
@@ -445,8 +453,10 @@ class ConnectCommandRunnerTest {
                         .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    // FIXME
-                    fail("Add tests");
+                    assertThat(r, instanceOf(CreateChangelistResult.class));
+                    CreateChangelistResult res = (CreateChangelistResult) r;
+                    assertSame(clientConfig, res.getClientConfig());
+                    assertEquals(1, res.getChangelistId());
                 })
                 .whenFailed(Assertions::fail);
     }
@@ -528,8 +538,15 @@ class ConnectCommandRunnerTest {
                                 .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    // FIXME
-                    fail("Add tests");
+                    assertThat(r, instanceOf(DeleteFileResult.class));
+                    DeleteFileResult res = (DeleteFileResult) r;
+
+                    assertSame(clientConfig, res.getClientConfig());
+                    assertEquals("", res.getMessage());
+                    assertSize(1, res.getFiles());
+                    P4RemoteFile remote = res.getFiles().get(0);
+                    assertEquals("//depot/a@b.txt", remote.getDisplayName());
+                    assertEquals("//depot/a%40b.txt", remote.getDepotPath());
                 })
                 .whenFailed(Assertions::fail);
     }
@@ -572,7 +589,7 @@ class ConnectCommandRunnerTest {
 
     @ExtendWith(TemporaryFolderExtension.class)
     @Test
-    void fetchFiles(TemporaryFolder tmpDir) throws IOException {
+    void fetchFiles_noFiles(TemporaryFolder tmpDir) throws IOException {
         idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
@@ -597,10 +614,13 @@ class ConnectCommandRunnerTest {
                                 .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    // FIXME
-                    fail("Add tests");
+                    fail("Should have thrown a error that no files exist.");
                 })
-                .whenFailed(Assertions::fail);
+                .whenFailed((e) -> {
+                    assertThat(e.getCause(), instanceOf(RequestException.class));
+                    // TODO make this less fragile (not language dependent)
+                    assertEquals(clientRoot + "/... - no such file(s).", e.getCause().getMessage());
+                });
     }
 
 
@@ -631,6 +651,9 @@ class ConnectCommandRunnerTest {
                                 .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
+                    assertThat(r, instanceOf(MoveFileResult.class));
+                    MoveFileResult res = (MoveFileResult) r;
+
                     // FIXME
                     fail("Add tests");
                 })
@@ -701,8 +724,18 @@ class ConnectCommandRunnerTest {
                                 .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    // FIXME
-                    fail("Add tests");
+                    assertThat(r, instanceOf(RevertFileResult.class));
+                    RevertFileResult res = (RevertFileResult) r;
+
+                    assertSame(clientConfig, res.getClientConfig());
+                    assertEquals(newFile, res.getRevertedFile());
+                    assertSize(1, res.getResults());
+
+                    IFileSpec message = res.getResults().get(0);
+                    assertEquals(FileSpecOpStatus.INFO, message.getOpStatus());
+                    IServerMessage msg = message.getStatusMessage();
+                    assertNotNull(msg);
+                    assertEquals(6526, msg.getUniqueCode());
                 })
                 .whenFailed(Assertions::fail);
     }
@@ -730,14 +763,31 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.getFileAnnotation(serverConfig,
-                                    new AnnotateFileQuery(clientConfig.getClientname(), newFile, 1))
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
+                                .mapActionAsync((res) -> runner.perform(
+                                        clientConfig, new SubmitChangelistAction(
+                                                new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
+                                                null, "add file", null)))
+                                .mapActionAsync((res) -> runner.perform(
+                                        clientConfig, new AddEditAction(newFile, null, null, (String) null)))
+                                .mapQueryAsync((res) ->
+                                        runner.getFileAnnotation(serverConfig,
+                                            new AnnotateFileQuery(clientConfig.getClientname(), newFile, 1)))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    // FIXME
-                    fail("Add tests");
+                    assertThat(r, instanceOf(AnnotateFileResult.class));
+                    AnnotateFileResult res = (AnnotateFileResult) r;
+
+                    assertSame(serverConfig, res.getServerConfig());
+                    assertEquals("x", res.getContent());
+                    assertEquals(1, res.getHeadRevision().getRevision().getValue());
+                    assertSize(1, res.getAnnotatedFile().getAnnotatedLines());
+                    P4AnnotatedLine line = res.getAnnotatedFile().getAnnotatedLines().get(0);
+                    assertEquals("//depot/a@b.txt", line.getDepotPath().getDisplayName());
+                    assertEquals("//depot/a%40b.txt", line.getDepotPath().getDepotPath());
+                    assertEquals(1, line.getRevNumber());
                 })
                 .whenFailed(Assertions::fail);
     }
@@ -745,7 +795,7 @@ class ConnectCommandRunnerTest {
 
     @ExtendWith(TemporaryFolderExtension.class)
     @Test
-    void describeChangelist(TemporaryFolder tmpDir) throws IOException {
+    void describeChangelist_defaultEmpty(TemporaryFolder tmpDir) throws IOException {
         idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
@@ -771,8 +821,25 @@ class ConnectCommandRunnerTest {
                                 .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    // FIXME
-                    fail("Add tests");
+                    assertThat(r, instanceOf(DescribeChangelistResult.class));
+                    DescribeChangelistResult res = (DescribeChangelistResult) r;
+
+                    assertSame(serverConfig, res.getServerConfig());
+                    assertEquals(clientConfig.getClientServerRef(), res.getRequestedChangelist().getClientServerRef());
+                    assertEquals(0, res.getRequestedChangelist().getChangelistId());
+                    assertFalse(res.isFromCache());
+
+                    P4RemoteChangelist remote = res.getRemoteChangelist();
+                    assertNotNull(remote);
+                    assertEquals(res.getRequestedChangelist(), remote.getChangelistId());
+                    assertEmpty(remote.getAttachedJobs());
+                    assertEmpty(remote.getFiles());
+                    assertNotNull(remote.getSubmittedDate());
+                    assertEquals(clientConfig.getClientname(), remote.getClientname());
+                    assertEquals(serverConfig.getUsername(), remote.getUsername());
+
+                    // TODO not very good check.  Too dependent on language.
+                    assertEquals("<enter description here>\n", remote.getComment());
                 })
                 .whenFailed(Assertions::fail);
     }
@@ -780,7 +847,7 @@ class ConnectCommandRunnerTest {
 
     @ExtendWith(TemporaryFolderExtension.class)
     @Test
-    void getClientsForUser(TemporaryFolder tmpDir) throws IOException {
+    void getClientsForUser_nonExistant(TemporaryFolder tmpDir) throws IOException {
         idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
@@ -805,8 +872,11 @@ class ConnectCommandRunnerTest {
                                 .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    // FIXME
-                    fail("Add tests");
+                    assertThat(r, instanceOf(ListClientsForUserResult.class));
+                    ListClientsForUserResult res = (ListClientsForUserResult) r;
+                    assertSame(serverConfig, res.getServerConfig());
+                    assertEquals("not-a-user", res.getRequestedUser());
+                    assertEmpty(res.getClients());
                 })
                 .whenFailed(Assertions::fail);
     }

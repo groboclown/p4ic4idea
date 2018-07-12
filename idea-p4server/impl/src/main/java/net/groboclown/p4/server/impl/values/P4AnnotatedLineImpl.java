@@ -13,7 +13,6 @@
  */
 package net.groboclown.p4.server.impl.values;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileRevisionData;
@@ -28,9 +27,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Date;
 
 public class P4AnnotatedLineImpl implements P4AnnotatedLine {
-    private static final Logger LOG = Logger.getInstance(P4AnnotatedLineImpl.class);
-
-
     private final FilePath baseFile;
     private final P4RemoteFile depotPath;
     private final IFileAnnotation ann;
@@ -43,7 +39,7 @@ public class P4AnnotatedLineImpl implements P4AnnotatedLine {
             @NotNull IFileAnnotation ann,
             @NotNull IFileRevisionData data) {
         this.baseFile = baseFile;
-        this.depotPath = new P4RemoteFileImpl(ann.getDepotPath());
+        this.depotPath = new P4RemoteFileImpl(ann);
         this.ann = ann;
         this.revisionData = data;
         this.lineNumber = lineNumber;

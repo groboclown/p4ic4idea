@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.impl.values;
 
 import com.perforce.p4java.core.file.IExtendedFileSpec;
+import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
 import net.groboclown.p4.server.impl.util.HandleFileSpecUtil;
@@ -48,9 +49,15 @@ public class P4RemoteFileImpl implements P4RemoteFile {
         this.displayName = HandleFileSpecUtil.getDepotDisplayName(spec);
     }
 
-    public P4RemoteFileImpl(@NotNull String path) {
+    P4RemoteFileImpl(@NotNull String path) {
         this.path = path;
         this.displayName = path;
+    }
+
+    P4RemoteFileImpl(@NotNull IFileAnnotation ann) {
+        // Note: depotPath may be null in very rare circumstances.
+        this.path = ann.getDepotPath() == null ? "<unknown>" : ann.getDepotPath();
+        this.displayName = HandleFileSpecUtil.getDepotDisplayName(ann);
     }
 
     public P4RemoteFileImpl(@NotNull String path, @NotNull String displayName) {

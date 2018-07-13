@@ -70,6 +70,8 @@ import net.groboclown.p4.server.api.commands.file.ListFilesQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesResult;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileResult;
+import net.groboclown.p4.server.api.commands.server.ListLabelsQuery;
+import net.groboclown.p4.server.api.commands.server.ListLabelsResult;
 import net.groboclown.p4.server.api.commands.server.LoginAction;
 import net.groboclown.p4.server.api.commands.server.LoginResult;
 import net.groboclown.p4.server.api.commands.server.ServerInfoResult;
@@ -501,6 +503,14 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         // FIXME implement
         LOG.warn("FIXME implement listUsers");
         return null;
+    }
+
+    @NotNull
+    @Override
+    protected QueryAnswer<ListLabelsResult> listLabels(ServerConfig config, ListLabelsQuery query) {
+        return onlineQuery(config,
+                () -> server.listLabels(config, query),
+                () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError()));
     }
 
 

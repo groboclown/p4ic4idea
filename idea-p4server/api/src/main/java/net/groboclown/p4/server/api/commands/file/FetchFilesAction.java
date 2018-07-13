@@ -18,6 +18,7 @@ import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.ActionUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -27,33 +28,13 @@ import java.util.List;
 
 public class FetchFilesAction implements P4CommandRunner.ClientAction<FetchFilesResult> {
     private final String actionId = ActionUtil.createActionId(FetchFilesAction.class);
-    private final List<String> syncPath;
+    private final List<FilePath> syncPaths;
+    private final String pathAnnotation;
     private final boolean force;
 
-    public FetchFilesAction(String syncPath) {
-        this.syncPath = Collections.singletonList(syncPath);
-        this.force = false;
-    }
-
-    public FetchFilesAction(File syncPath) {
-        if (syncPath.isDirectory()) {
-            this.syncPath = Collections.singletonList(syncPath.getAbsolutePath() + "/...");
-        } else {
-            this.syncPath = Collections.singletonList(syncPath.getAbsolutePath());
-        }
-        this.force = false;
-    }
-
-    public FetchFilesAction(Collection<FilePath> syncPaths, boolean force) {
-        List<String> paths = new ArrayList<>(syncPaths.size());
-        for (FilePath path : syncPaths) {
-            if (path.isDirectory()) {
-                paths.add(path.getPath() + "/...");
-            } else {
-                paths.add(path.getPath());
-            }
-        }
-        this.syncPath = paths;
+    public FetchFilesAction(@NotNull List<FilePath> syncPaths, @Nullable String pathAnnotation, boolean force) {
+        this.syncPaths = syncPaths;
+        this.pathAnnotation = pathAnnotation;
         this.force = force;
     }
 
@@ -74,11 +55,15 @@ public class FetchFilesAction implements P4CommandRunner.ClientAction<FetchFiles
         return actionId;
     }
 
-    public List<String> getSyncPath() {
-        return syncPath;
-    }
-
     public boolean isForce() {
         return force;
+    }
+
+    public List<FilePath> getSyncPaths() {
+        return syncPaths;
+    }
+
+    public String getPathAnnotation() {
+        return pathAnnotation;
     }
 }

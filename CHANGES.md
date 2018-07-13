@@ -9,6 +9,7 @@
 * Updated code to work with 2017.1 features.
 * Complete rewrite of connection and caching mechanism.
 * Active Connection view.
+* New Browsing Features.
 * Upgraded p4java dependency to r18-1.
 * Shipping as single Jar file.
 * Updated build.
@@ -41,6 +42,9 @@
     * Gives a better view of online status.
     * Permits viewing what changes are cached, ready to be sent to the
       server.
+* New Browsing Features.
+    * You can browse for jobs when submitting a file.
+    * You can browse for labels when synchronizing a directory.
 * Upgraded p4java dependency to r18-1
     * Requires additional dependent jars.
     * Will allow for more thorough unit testing.

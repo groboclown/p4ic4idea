@@ -168,7 +168,7 @@ public class P4LocalFileImpl implements P4LocalFile {
 
     public P4LocalFileImpl(@NotNull ClientServerRef ref, @NotNull IFileSpec spec) {
         this(new P4RemoteFileImpl(spec),
-            VcsUtil.getFilePath(spec.getLocalPath().getPathString(), false),
+            getLocalFile(spec),
             new P4Revision(IFileSpec.HEAD_REVISION),
             null, null,
             P4FileAction.NONE,
@@ -267,5 +267,17 @@ public class P4LocalFileImpl implements P4LocalFile {
         }
         sb.append(')');
         return sb.toString();
+    }
+
+    private static FilePath getLocalFile(IFileSpec spec) {
+        String path;
+        if (spec.getLocalPath() != null) {
+            path = spec.getLocalPath().getPathString();
+        } else if (spec.getClientPath() != null) {
+            path = spec.getClientPath().getPathString();
+        } else {
+            throw new IllegalArgumentException("FileSpec does not have a local component: " + spec);
+        }
+        return VcsUtil.getFilePath(path, false);
     }
 }

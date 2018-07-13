@@ -55,6 +55,8 @@ import net.groboclown.p4.server.api.commands.file.ListFilesResult;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileResult;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
+import net.groboclown.p4.server.api.commands.server.ListLabelsQuery;
+import net.groboclown.p4.server.api.commands.server.ListLabelsResult;
 import net.groboclown.p4.server.api.commands.server.LoginAction;
 import net.groboclown.p4.server.api.commands.server.LoginResult;
 import net.groboclown.p4.server.api.commands.server.ServerInfoResult;
@@ -184,6 +186,8 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
                 return (QueryAnswer<R>) listSubmittedChangelists(config, (ListSubmittedChangelistsQuery) query);
             case LIST_USERS:
                 return (QueryAnswer<R>) listUsers(config, (ListUsersQuery) query);
+            case LIST_LABELS:
+                return (QueryAnswer<R>) listLabels(config, (ListLabelsQuery) query);
             default:
                 throw new IllegalStateException("Incompatible class: should match " + ServerQueryCmd.class);
         }
@@ -240,6 +244,9 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
     @NotNull
     protected abstract QueryAnswer<ListUsersResult> listUsers(
             ServerConfig config, ListUsersQuery query);
+
+    @NotNull
+    protected abstract QueryAnswer<ListLabelsResult> listLabels(ServerConfig config, ListLabelsQuery query);
 
     @SuppressWarnings("unchecked")
     @NotNull

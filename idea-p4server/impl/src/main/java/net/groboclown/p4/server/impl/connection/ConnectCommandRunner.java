@@ -25,6 +25,7 @@ import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IFix;
 import com.perforce.p4java.core.IJob;
+import com.perforce.p4java.core.ILabelSummary;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileAnnotation;
@@ -32,6 +33,7 @@ import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
+import com.perforce.p4java.exception.MessageGenericCode;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.option.client.DeleteFilesOptions;
@@ -39,6 +41,7 @@ import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.FixJobsOptions;
 import com.perforce.p4java.option.server.GetClientsOptions;
 import com.perforce.p4java.option.server.GetJobsOptions;
+import com.perforce.p4java.option.server.GetLabelsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.p4.server.api.ClientServerRef;
@@ -89,6 +92,8 @@ import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileResult;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
 import net.groboclown.p4.server.api.commands.file.RevertFileResult;
+import net.groboclown.p4.server.api.commands.server.ListLabelsQuery;
+import net.groboclown.p4.server.api.commands.server.ListLabelsResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
@@ -112,6 +117,7 @@ import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4.server.impl.values.P4FileRevisionImpl;
 import net.groboclown.p4.server.impl.values.P4JobImpl;
 import net.groboclown.p4.server.impl.values.P4JobSpecImpl;
+import net.groboclown.p4.server.impl.values.P4LabelImpl;
 import net.groboclown.p4.server.impl.values.P4LocalFileImpl;
 import net.groboclown.p4.server.impl.values.P4RemoteChangelistImpl;
 import net.groboclown.p4.server.impl.values.P4RemoteFileImpl;
@@ -357,6 +363,9 @@ public class ConnectCommandRunner
     @Override
     public P4CommandRunner.QueryAnswer<ListJobsResult> listJobs(ServerConfig config, ListJobsQuery query) {
         return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
+            // FIXME use P4CommandUtil
+            LOG.warn("FIXME use P4CommandUtil");
+
             List<P4Job> jobs = new ArrayList<>();
             if (query.getJobId() != null) {
                 IJob job = server.getJob(query.getJobId());
@@ -377,6 +386,24 @@ public class ConnectCommandRunner
                 }
             }
             return new ListJobsResult(config, jobs);
+        }));
+    }
+
+    @NotNull
+    @Override
+    public P4CommandRunner.QueryAnswer<ListLabelsResult> listLabels(ServerConfig config, ListLabelsQuery query) {
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
+            // FIXME use P4CommandUtil
+            LOG.warn("FIXME use P4CommandUtil");
+
+            GetLabelsOptions options = new GetLabelsOptions()
+                    .setMaxResults(query.getMaxResults());
+            if (query.hasNameFilter()) {
+                options.setCaseInsensitiveNameFilter(query.getNameFilter());
+            }
+            // TODO allow for a list of files to trim down the query.
+            List<ILabelSummary> labels = server.getLabels(null, options);
+            return new ListLabelsResult(config, labels.stream().map(P4LabelImpl::new).collect(Collectors.toList()));
         }));
     }
 
@@ -685,25 +712,29 @@ public class ConnectCommandRunner
         // FIXME use P4CommandUtil
         LOG.warn("FIXME use P4CommandUtil");
 
-        List<IFileSpec> files = FileSpecBuilder.makeFileSpecList(action.getSyncPath());
+        List<IFileSpec> files = FileSpecBuildUtil.escapedForFilePathsAnnotated(
+                action.getSyncPaths(), action.getPathAnnotation(), true);
         SyncOptions options = new SyncOptions(action.isForce(), false, false, false);
         List<IFileSpec> res = client.sync(files, options);
         List<P4LocalFile> resFiles = new ArrayList<>(res.size());
-        String info = null;
+        StringBuilder info = new StringBuilder();
         for (IFileSpec spec : res) {
             IServerMessage msg = spec.getStatusMessage();
             if (msg != null) {
                 if (msg.isInfo()) {
-                    info = msg.getLocalizedMessage();
+                    info.append("\n").append(msg.getLocalizedMessage());
                 }
-                if (msg.isWarning() || msg.isError()) {
+                // 17 (x11) = "file(s) up-to-date"
+                if (msg.getGeneric() != MessageGenericCode.EV_EMPTY) {
                     throw new RequestException(msg);
+                } else if (LOG.isDebugEnabled()) {
+                    LOG.debug("Ignoring message " + msg);
                 }
             } else {
                 resFiles.add(new P4LocalFileImpl(config.getClientServerRef(), spec));
             }
         }
-        return new FetchFilesResult(config, resFiles, info);
+        return new FetchFilesResult(config, resFiles, info.toString());
     }
 
     private RevertFileResult revertFile(IClient client, ClientConfig config, RevertFileAction action)

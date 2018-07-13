@@ -193,7 +193,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
                     }
                     return P4ServerComponent.getInstance(project)
                             .getCommandRunner()
-                            .perform(e.getKey().getClientConfig(), new FetchFilesAction(e.getValue(), true))
+                            .perform(e.getKey().getClientConfig(), new FetchFilesAction(e.getValue(), "", true))
                             .whenCompleted((c) -> listener.accept(e.getValue()))
                             .whenServerError((ex) -> listener.accept(e.getValue()))
                             .whenOffline(() -> listener.accept(e.getValue()));

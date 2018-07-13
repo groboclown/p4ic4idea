@@ -29,6 +29,10 @@ When a user performs an action, the internal mechanisms must first check the pen
 
 In the 0.10 release, these pieces of old functionality are either broken or disabled.
 
+### Move Files
+
+Finish implementing move files capability.
+
 ### SSO and Manual Passwords
 
 The SSO and asking the user for passwords are not well tested.
@@ -41,17 +45,9 @@ If there are pending actions that failed to go through due to errors, the user n
 
 Swarm integration needs to be re-instated.
 
-### Sync files
-
-Need to allow for pulling latest or other revisions.
-
 ### Revert Unchanged
 
 Re-add implementation.
-
-### Move Files
-
-Finish implementing move files capability.
 
 
 

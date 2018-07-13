@@ -75,6 +75,22 @@ public class FileSpecBuildUtil {
         return FileSpecBuilder.makeFileSpecList(depotPath);
     }
 
+    public static List<IFileSpec> escapedForFilePathsAnnotated(Collection<FilePath> files, String annotation,
+            boolean allowDirectories) {
+        if (annotation == null) {
+            annotation = "";
+        }
+        List<String> src = new ArrayList<>(files.size());
+        for (FilePath file : files) {
+            String path = escapeToP4Path(file.getPath());
+            if (allowDirectories && file.isDirectory()) {
+                path += "/...";
+            }
+            src.add(path + annotation);
+        }
+        return FileSpecBuilder.makeFileSpecList(src);
+    }
+
     public static List<IFileSpec> escapedForRemoteFileRev(P4RemoteFile file, int revision) {
         // Guaranteed way to ensure that the underlying path is properly escaped.
         String depotPath = escapeToP4Path(file.getDisplayName());

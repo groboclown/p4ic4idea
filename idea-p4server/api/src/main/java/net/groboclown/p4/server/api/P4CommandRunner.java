@@ -445,6 +445,8 @@ public interface P4CommandRunner {
          * @see net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult
          */
         GET_JOB_SPEC,
+
+        LIST_LABELS,
     }
 
 

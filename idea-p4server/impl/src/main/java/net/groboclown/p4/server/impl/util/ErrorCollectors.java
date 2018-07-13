@@ -30,6 +30,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 
 public class ErrorCollectors {
+    private ErrorCollectors() {
+        // Should never be instantiated.
+    }
+
     public static <R>
     Collector<P4CommandRunner.ActionAnswer<R>, Answer<R>, Answer<R>>
     collectActionErrors(@NotNull final List<VcsException> errors) {
@@ -41,17 +45,15 @@ public class ErrorCollectors {
 
             @Override
             public BiConsumer<Answer<R>, P4CommandRunner.ActionAnswer<R>> accumulator() {
-                return (answer, action) -> {
-                    answer.futureMap((r, sink) -> {
-                        action
-                                .whenCompleted(sink::resolve)
-                                .whenServerError((e) -> {
-                                    errors.add(e);
-                                    sink.resolve(r);
-                                })
-                                .whenOffline(() -> sink.resolve(r));
-                    });
-                };
+                return (answer, action) -> answer.futureMap((r, sink) -> {
+                    action
+                            .whenCompleted(sink::resolve)
+                            .whenServerError((e) -> {
+                                errors.add(e);
+                                sink.resolve(r);
+                            })
+                            .whenOffline(() -> sink.resolve(r));
+                });
             }
 
             @Override

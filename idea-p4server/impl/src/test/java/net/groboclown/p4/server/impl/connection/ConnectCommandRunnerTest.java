@@ -638,7 +638,7 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new FetchFilesAction(clientRoot))
+                        runner.perform(clientConfig, new FetchFilesAction(CollectionsclientRoot))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )

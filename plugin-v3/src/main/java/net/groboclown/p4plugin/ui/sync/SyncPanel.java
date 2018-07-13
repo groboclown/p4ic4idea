@@ -15,23 +15,28 @@
 package net.groboclown.p4plugin.ui.sync;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.jgoodies.forms.layout.CellConstraints;
+import com.jgoodies.forms.layout.FormLayout;
+import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.ui.TextFieldListener;
 import net.groboclown.p4plugin.ui.TextFieldUtil;
+import net.groboclown.p4plugin.ui.history.ChooseLabelDialog;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.text.NumberFormat;
+import java.util.List;
 import java.util.ResourceBundle;
 
 
@@ -53,40 +58,50 @@ public class SyncPanel {
     private JTextField myOther;
     private JPanel myRootPane;
     private JCheckBox myForce;
+    private JButton myFindLabelButton;
     private ButtonGroup syncTypeGroup;
 
 
-    SyncPanel(@NotNull final SyncOptionConfigurable parent) {
+    SyncPanel(@NotNull Project project, @NotNull final SyncOptions parent,
+            @NotNull List<ServerConfig> configs) {
         syncTypeGroup = new ButtonGroup();
         $$$setupUI$$$();
         syncTypeGroup.add(mySyncHead);
         mySyncHead.addActionListener(e -> {
             setPairState(false, myRevLabel, myRevision);
             setPairState(false, myOtherLabel, myOther);
+            myFindLabelButton.setEnabled(false);
             updateValues(parent);
         });
         syncTypeGroup.add(mySyncRev);
-        mySyncRev.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                setPairState(true, myRevLabel, myRevision);
-                setPairState(false, myOtherLabel, myOther);
-                updateValues(parent);
-            }
+        mySyncRev.addActionListener(e -> {
+            setPairState(true, myRevLabel, myRevision);
+            setPairState(false, myOtherLabel, myOther);
+            myFindLabelButton.setEnabled(false);
+            updateValues(parent);
         });
         syncTypeGroup.add(mySyncChangelist);
-        mySyncChangelist.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                setPairState(false, myRevLabel, myRevision);
-                setPairState(true, myOtherLabel, myOther);
+        mySyncChangelist.addActionListener(e -> {
+            setPairState(false, myRevLabel, myRevision);
+            setPairState(true, myOtherLabel, myOther);
+            myFindLabelButton.setEnabled(!configs.isEmpty());
+            updateValues(parent);
+        });
+        myFindLabelButton.addActionListener(e -> {
+            ChooseLabelDialog.show(project, configs, (label) -> {
+                if (label == null) {
+                    myOther.setText("");
+                } else {
+                    myOther.setText(label.getName());
+                }
+                // These should trigger the other actions, but just in case...
                 updateValues(parent);
-            }
+            });
         });
         TextFieldUtil.addTo(myRevision, new TextFieldListener() {
             @Override
             public void textUpdated(@NotNull DocumentEvent e, @Nullable String text) {
-                if (getSelectedSyncType() == SyncOptionConfigurable.SyncType.REV && getRevValue() == null) {
+                if (getSelectedSyncType() == SyncOptions.SyncType.REV && getRevValue() < 0) {
                     Messages.showMessageDialog(
                             P4Bundle.message("sync.options.rev.error"),
                             P4Bundle.message("sync.options.rev.error.title"),
@@ -112,9 +127,30 @@ public class SyncPanel {
                 updateValues(parent);
             }
         });
-
-        // initialize the parent values to the current settings.
-        updateValues(parent);
+        switch (parent.getSyncType()) {
+            case HEAD:
+                syncTypeGroup.setSelected(mySyncHead.getModel(), true);
+                setPairState(false, myRevLabel, myRevision);
+                setPairState(false, myOtherLabel, myOther);
+                myFindLabelButton.setEnabled(false);
+                break;
+            case REV:
+                syncTypeGroup.setSelected(mySyncRev.getModel(), true);
+                myRevision.setText(Integer.toString(parent.getRev()));
+                setPairState(true, myRevLabel, myRevision);
+                setPairState(false, myOtherLabel, myOther);
+                myFindLabelButton.setEnabled(false);
+                break;
+            case OTHER:
+                syncTypeGroup.setSelected(mySyncChangelist.getModel(), true);
+                myOther.setText(parent.getOther());
+                setPairState(false, myRevLabel, myRevision);
+                setPairState(true, myOtherLabel, myOther);
+                myFindLabelButton.setEnabled(!configs.isEmpty());
+                break;
+            default:
+                throw new IllegalStateException("unknown sync type " + parent.getSyncType());
+        }
     }
 
 
@@ -124,8 +160,8 @@ public class SyncPanel {
 
 
     @NotNull
-    SyncOptionConfigurable.SyncOptions getState() {
-        return new SyncOptionConfigurable.SyncOptions(
+    SyncOptions getState() {
+        return new SyncOptions(
                 getSelectedSyncType(),
                 getRevValue(),
                 getOtherValue(),
@@ -133,34 +169,49 @@ public class SyncPanel {
         );
     }
 
-    private void updateValues(@NotNull final SyncOptionConfigurable parent) {
-        final SyncOptionConfigurable.SyncOptions options = getState();
-        if (options.hasError()) {
-            parent.onOptionChange(null);
-        } else {
-            parent.onOptionChange(options);
+    private void updateValues(@NotNull final SyncOptions options) {
+        int rev = getRevValue();
+        String other = getOtherValue();
+        switch (getSelectedSyncType()) {
+            case HEAD:
+                options.setHead();
+                break;
+            case REV:
+                if (rev >= 0) {
+                    options.setRevision(getRevValue());
+                } else {
+                    options.setHead();
+                }
+                break;
+            case OTHER:
+                if (other != null) {
+                    options.setOther(other);
+                } else {
+                    options.setHead();
+                }
+                break;
         }
     }
 
 
     @NotNull
-    private SyncOptionConfigurable.SyncType getSelectedSyncType() {
+    private SyncOptions.SyncType getSelectedSyncType() {
         final ButtonModel selected = syncTypeGroup.getSelection();
         if (selected == null) {
             LOG.warn("No synchronization option button selected");
-            return SyncOptionConfigurable.SyncType.HEAD;
+            return SyncOptions.SyncType.HEAD;
         }
         if (selected.equals(mySyncHead.getModel())) {
-            return SyncOptionConfigurable.SyncType.HEAD;
+            return SyncOptions.SyncType.HEAD;
         }
         if (selected.equals(mySyncRev.getModel())) {
-            return SyncOptionConfigurable.SyncType.REV;
+            return SyncOptions.SyncType.REV;
         }
         if (selected.equals(mySyncChangelist.getModel())) {
-            return SyncOptionConfigurable.SyncType.OTHER;
+            return SyncOptions.SyncType.OTHER;
         }
         LOG.warn("Unknown synch option button selection");
-        return SyncOptionConfigurable.SyncType.HEAD;
+        return SyncOptions.SyncType.HEAD;
     }
 
     @Nullable
@@ -173,8 +224,7 @@ public class SyncPanel {
         return null;
     }
 
-    @Nullable
-    private Integer getRevValue() {
+    private int getRevValue() {
         if (myRevision.isEnabled()) {
             final String text = myRevision.getText();
             if (text != null && text.length() > 0) {
@@ -185,13 +235,13 @@ public class SyncPanel {
                     }
                     return value;
                 } catch (NumberFormatException e) {
-                    return null;
+                    return IFileSpec.NO_FILE_REVISION;
                 }
             }
             // allow an empty value; it's the same as "head"
-            return -1;
+            return IFileSpec.HEAD_REVISION;
         }
-        return null;
+        return IFileSpec.NO_FILE_REVISION;
     }
 
 
@@ -225,7 +275,7 @@ public class SyncPanel {
         myRootPane = new JPanel();
         myRootPane.setLayout(new BorderLayout(0, 0));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(3, 2, new Insets(4, 4, 4, 4), -1, -1));
+        panel1.setLayout(new GridLayoutManager(4, 2, new Insets(4, 4, 4, 4), -1, -1));
         myRootPane.add(panel1, BorderLayout.NORTH);
         panel1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.to.title")));
@@ -302,19 +352,33 @@ public class SyncPanel {
         panel3.add(myOtherLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
-        panel4.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        myRootPane.add(panel4, BorderLayout.CENTER);
-        panel4.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), null));
+        panel4.setLayout(new FormLayout("fill:d:noGrow,left:4dlu:noGrow,fill:d:grow", "center:d:grow"));
+        panel1.add(panel4, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+                false));
+        myFindLabelButton = new JButton();
+        myFindLabelButton.setEnabled(false);
+        this.$$$loadButtonText$$$(myFindLabelButton,
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.find-label"));
+        CellConstraints cc = new CellConstraints();
+        panel4.add(myFindLabelButton, cc.xy(1, 1, CellConstraints.LEFT, CellConstraints.DEFAULT));
+        final Spacer spacer2 = new Spacer();
+        panel4.add(spacer2, cc.xy(3, 1, CellConstraints.FILL, CellConstraints.DEFAULT));
+        final JPanel panel5 = new JPanel();
+        panel5.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        myRootPane.add(panel5, BorderLayout.CENTER);
+        panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), null));
         myForce = new JCheckBox();
         this.$$$loadButtonText$$$(myForce,
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.force"));
         myForce.setToolTipText(
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.force.tooltip"));
-        panel4.add(myForce, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+        panel5.add(myForce, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                 GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer2 = new Spacer();
-        panel4.add(spacer2,
+        final Spacer spacer3 = new Spacer();
+        panel5.add(spacer3,
                 new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
                         GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         myRevLabel.setLabelFor(myRevision);

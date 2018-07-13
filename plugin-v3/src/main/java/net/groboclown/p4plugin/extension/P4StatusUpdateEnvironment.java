@@ -27,6 +27,7 @@ import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
+import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -92,102 +93,4 @@ public class P4StatusUpdateEnvironment
         return false;
     }
 
-    @NotNull
-    static String getGroupId(@NotNull IExtendedFileSpec spec) {
-        final FileAction mainAction = spec.getAction();
-        final FileAction openAction = spec.getOpenAction();
-        final FileAction headAction = spec.getHeadAction();
-
-        if (openAction == null && mainAction == null) {
-            if (headAction == null) {
-                return FileGroup.LOCALLY_ADDED_ID;
-            }
-            return getGroupId(headAction);
-        }
-        if (mainAction == null) {
-            return getGroupId(openAction);
-        }
-        return getGroupId(mainAction);
-    }
-
-
-    @NotNull
-    static String getGroupId(@NotNull FileAction action) {
-        // TODO test out these statuses, to make sure they map right.
-
-        switch (action) {
-            case ADD:
-            case ADD_EDIT:
-                return FileGroup.LOCALLY_ADDED_ID;
-
-            case ADDED:
-            case BRANCH:
-                return FileGroup.CREATED_ID;
-
-            case EDIT:
-            case INTEGRATE:
-            case REPLACED:
-            case UPDATED:
-            case EDIT_FROM:
-                return FileGroup.CHANGED_ON_SERVER_ID;
-
-            case DELETE:
-                return FileGroup.LOCALLY_REMOVED_ID;
-
-            case DELETED:
-            case MOVE_DELETE:
-                return FileGroup.REMOVED_FROM_REPOSITORY_ID;
-
-            case SYNC:
-            case REFRESHED:
-                return FileGroup.CHANGED_ON_SERVER_ID;
-
-            case IGNORED:
-            case ABANDONED:
-            case EDIT_IGNORED:
-                return FileGroup.SKIPPED_ID;
-
-            case MOVE:
-            case MOVE_ADD:
-            case COPY_FROM:
-            case MERGE_FROM:
-                return FileGroup.MERGED_ID;
-
-            case RESOLVED:
-                return FileGroup.MERGED_ID;
-
-            case UNRESOLVED:
-                return FileGroup.MERGED_WITH_CONFLICT_ID;
-
-            case PURGE:
-            case IMPORT:
-            case ARCHIVE:
-            case UNKNOWN:
-            default:
-                return FileGroup.UNKNOWN_ID;
-
-        }
-    }
-
-
-    static class StatusUpdateSession implements UpdateSession {
-        private boolean cancelled = false;
-        private List<VcsException> exceptions = new ArrayList<VcsException>();
-
-        @NotNull
-        @Override
-        public List<VcsException> getExceptions() {
-            return exceptions;
-        }
-
-        @Override
-        public void onRefreshFilesCompleted() {
-
-        }
-
-        @Override
-        public boolean isCanceled() {
-            return cancelled;
-        }
-    }
 }

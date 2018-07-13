@@ -18,12 +18,14 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.Consumer;
 import com.intellij.util.ui.AsyncProcessIcon;
+import net.groboclown.p4.server.api.async.Answer;
 import org.jetbrains.annotations.NotNull;
 import com.intellij.openapi.progress.ProgressIndicator;
 import org.jetbrains.concurrency.Promise;
 
 import javax.annotation.Nullable;
 import javax.swing.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -176,7 +178,7 @@ public class EdtSinkProcessor<E> {
     public void processSingle(@NotNull Callable<E> producer, boolean runEdtAsync) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             onStart(runEdtAsync);
-            E value = null;
+            E value;
             try {
                 value = producer.call();
                 consumeOne(value, runEdtAsync);
@@ -197,18 +199,17 @@ public class EdtSinkProcessor<E> {
      * @param runEdtAsync true if all the EDT actions should run as a "invoke later", false if they should run
      *                    as "invoke and wait".
      */
-    public void processPromise(@NotNull Callable<Promise<E>> producer, boolean runEdtAsync) {
+    public void processBatchAnswer(@NotNull Callable<Answer<List<E>>> producer, boolean runEdtAsync) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             onStart(runEdtAsync);
             try {
                 producer.call()
-                .then((value) -> {
-                    consumeOne(value, runEdtAsync);
-                    consumeBatch(Collections.singletonList(value), runEdtAsync);
+                .whenCompleted((values) -> {
+                    values.forEach((value) -> consumeOne(value, runEdtAsync));
+                    consumeBatch(values, runEdtAsync);
                     onEnd(runEdtAsync);
-                    return null;
                 })
-                .rejected((t) -> {
+                .whenFailed((t) -> {
                     onError(t, runEdtAsync);
                     onEnd(runEdtAsync);
                 });
@@ -279,9 +280,17 @@ public class EdtSinkProcessor<E> {
 
     private void runEdt(Runnable runner, boolean runEdtAsync) {
         if (runEdtAsync) {
-            ApplicationManager.getApplication().invokeLater(runner);
+            // Note: invokeLater waits until all dialogs are finished running.  Instead, we need to
+            // use the real edt.
+            SwingUtilities.invokeLater(runner);
         } else {
-            ApplicationManager.getApplication().invokeAndWait(runner);
+            // Note: invokeLater waits until all dialogs are finished running.  Instead, we need to
+            // use the real edt.
+            try {
+                SwingUtilities.invokeAndWait(runner);
+            } catch (InterruptedException | InvocationTargetException e) {
+                LOG.warn(e);
+            }
         }
     }
 

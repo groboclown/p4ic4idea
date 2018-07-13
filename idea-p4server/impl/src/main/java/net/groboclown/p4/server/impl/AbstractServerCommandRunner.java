@@ -36,6 +36,8 @@ import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
 import net.groboclown.p4.server.api.commands.file.ListFileHistoryResult;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
+import net.groboclown.p4.server.api.commands.server.ListLabelsQuery;
+import net.groboclown.p4.server.api.commands.server.ListLabelsResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
@@ -138,4 +140,7 @@ public abstract class AbstractServerCommandRunner {
 
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<ListJobsResult> listJobs(ServerConfig config, ListJobsQuery query);
+
+    @NotNull
+    public abstract P4CommandRunner.QueryAnswer<ListLabelsResult> listLabels(ServerConfig config, ListLabelsQuery query);
 }

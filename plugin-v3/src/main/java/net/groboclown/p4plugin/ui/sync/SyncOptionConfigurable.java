@@ -17,27 +17,40 @@ package net.groboclown.p4plugin.ui.sync;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
-import com.intellij.openapi.util.Comparing;
+import com.intellij.openapi.project.Project;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public final class SyncOptionConfigurable implements Configurable {
     private static final Logger LOG = Logger.getInstance(SyncOptionConfigurable.class);
 
-    @NotNull
-    private SyncOptions currentOptions = createDefaultSyncOptions();
-
-    @Nullable
-    private SyncOptions pendingOptions = null;
-
+    private final Project project;
+    private final SyncOptions baseOptions;
+    private final SyncOptions pendingOptions;
+    private final List<ServerConfig> configs;
 
     // TODO allow for changelist browsing.
     // For changelist browsing, we can limit the number of changes returned, and have a paging
     // mechanism - "p4 changes -m 10 ...@<(last changelist number)"
+    // This, however, requires access to all the source ServerConfig instances.
+
+    public SyncOptionConfigurable(@NotNull Project project, @NotNull SyncOptions baseOptions,
+            @NotNull Collection<ServerConfig> configs) {
+        this.project = project;
+        this.baseOptions = baseOptions;
+        this.pendingOptions = new SyncOptions(baseOptions);
+        this.configs = new ArrayList<>(configs);
+    }
+
 
 
     @Nls
@@ -55,30 +68,26 @@ public final class SyncOptionConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        currentOptions = createDefaultSyncOptions();
-        pendingOptions = null;
-        return new SyncPanel(this).getPanel();
+        reset();
+        return new SyncPanel(project, pendingOptions, configs).getPanel();
     }
 
     @Override
     public boolean isModified() {
-        return pendingOptions != null && pendingOptions.equals(currentOptions);
+        return pendingOptions.equals(baseOptions);
     }
 
     @Override
     public void apply() throws ConfigurationException {
-        if (pendingOptions == null) {
-            pendingOptions = currentOptions;
-        }
-        currentOptions = pendingOptions;
+        baseOptions.copyFrom(pendingOptions);
         if (LOG.isDebugEnabled()) {
-            LOG.debug("SyncOptions set to " + currentOptions);
+            LOG.debug("SyncOptions set to " + pendingOptions);
         }
     }
 
     @Override
     public void reset() {
-        pendingOptions = null;
+        pendingOptions.copyFrom(baseOptions);
     }
 
     @Override
@@ -86,104 +95,6 @@ public final class SyncOptionConfigurable implements Configurable {
         // should dispose of the panel
         // however, we don't keep references to it, so it is
         // automatically cleaned up.
-    }
-
-
-    void onOptionChange(SyncOptions options) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("SyncOptions pending to " + options);
-        }
-        pendingOptions = options;
-    }
-
-
-    public int getRevision() {
-        if (currentOptions.type != SyncType.REV || currentOptions.rev == null) {
-            return -1;
-        }
-        return currentOptions.rev;
-    }
-
-
-    @Nullable
-    public String getChangelist() {
-        if (currentOptions.type != SyncType.OTHER) {
-            return null;
-        }
-        return currentOptions.other;
-    }
-
-
-    public boolean isForceSync() {
-        return currentOptions.force;
-    }
-
-
-    @NotNull
-    public SyncOptions getCurrentOptions() {
-        return currentOptions;
-    }
-
-
-    private static SyncOptions createDefaultSyncOptions() {
-        return new SyncOptions(SyncType.HEAD, null, null, false);
-    }
-
-    enum SyncType {
-        HEAD, REV, OTHER
-    }
-
-    static class SyncOptions {
-        @NotNull final SyncType type;
-        @Nullable final Integer rev;
-        @Nullable final String other;
-        final boolean force;
-
-        SyncOptions(final @NotNull SyncType type, @Nullable final Integer rev, @Nullable final String other,
-                final boolean force) {
-            this.type = type;
-            this.rev = rev;
-            this.other = other;
-            this.force = force;
-        }
-
-        boolean hasError() {
-            return type == SyncType.REV && rev == null;
-        }
-
-        @Nullable
-        String getError() {
-            if (hasError()) {
-                return P4Bundle.message("sync.options.rev.error");
-            }
-            return null;
-        }
-
-        @Override
-        public int hashCode() {
-            return type.hashCode() + (rev == null ? 0 : rev.hashCode()) +
-                    (other == null ? 0 : other.hashCode()) +
-                    (force ? 200 : 100);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-            if (obj == null || ! obj.getClass().equals(SyncOptions.class)) {
-                return false;
-            }
-            SyncOptions that = (SyncOptions) obj;
-            return this.type == that.type &&
-                    Comparing.equal(this.rev, that.rev) &&
-                    Comparing.equal(this.other, that.other) &&
-                    this.force == that.force;
-        }
-
-        @Override
-        public String toString() {
-            return "(" + type + ": " + rev + ", " + other + " f? " + force + ")";
-        }
+        // TODO is this assumption correct?
     }
 }

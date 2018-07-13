@@ -36,7 +36,6 @@ import com.intellij.openapi.vcs.VcsRootSettings;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
-import com.intellij.openapi.vcs.changes.CommitExecutor;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.diff.DiffProvider;
@@ -72,7 +71,6 @@ import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
@@ -604,7 +602,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     @Override
     @Nullable
     protected UpdateEnvironment createUpdateEnvironment() {
-        return new P4SyncUpdateEnvironment();
+        return new P4SyncUpdateEnvironment(myProject);
     }
 
 

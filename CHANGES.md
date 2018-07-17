@@ -10,6 +10,7 @@
 * Complete rewrite of connection and caching mechanism.
 * Active Connection view.
 * New Browsing Features.
+* Project from Version Control support added.
 * Upgraded p4java dependency to r18-1.
 * Shipping as single Jar file.
 * Updated build.
@@ -45,6 +46,11 @@
 * New Browsing Features.
     * You can browse for jobs when submitting a file.
     * You can browse for labels when synchronizing a directory.
+* New Project from Version Control support.
+    * The plugin now supports **File** -> **New** -> **Project from Version Control**
+    * The new project will need to be configured after the synchronize; the settings used
+       to synchronize the project directory, unfortunately, cannot be put into the new
+       project settings.
 * Upgraded p4java dependency to r18-1
     * Requires additional dependent jars.
     * Will allow for more thorough unit testing.

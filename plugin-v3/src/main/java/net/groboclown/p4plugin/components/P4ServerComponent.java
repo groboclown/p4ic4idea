@@ -26,6 +26,7 @@ import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
+import net.groboclown.p4.server.impl.commands.ErrorQueryAnswerImpl;
 import net.groboclown.p4.server.impl.connection.ConnectCommandRunner;
 import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4.server.impl.connection.P4RequestErrorHandler;
@@ -33,7 +34,12 @@ import net.groboclown.p4.server.impl.connection.impl.LimitedConnectionManager;
 import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
 import net.groboclown.p4plugin.messages.MessageErrorHandler;
 import net.groboclown.p4plugin.util.TempDirUtil;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nullable;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 public class P4ServerComponent implements ProjectComponent {
     private static final String COMPONENT_NAME = "Perforce Server Primary Connection";
@@ -60,23 +66,32 @@ public class P4ServerComponent implements ProjectComponent {
     }
 
     public P4CommandRunner getCommandRunner() {
+        // This is necessary for loading a project from version control when the project isn't setup yet.
+        initComponent();
         return commandRunner;
     }
 
     // For Configuration UI.  Avoids cache hits.
     public P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(ServerConfig config) {
+        // This is necessary for loading a project from version control when the project isn't setup yet.
+        initComponent();
         return connectRunner.getClientsForUser(config, new ListClientsForUserQuery(config.getUsername(),
                 UserProjectPreferences.getMaxClientRetrieveCount(project)));
     }
 
     // For Configuration UI.  Avoids cache hits.
     public P4CommandRunner.QueryAnswer<ListClientsForUserResult> checkServerConnection(ServerConfig config) {
-        return connectRunner.getClientsForUser(config, new ListClientsForUserQuery(config.getUsername(), 1));
+        // This is necessary for loading a project from version control when the project isn't setup yet.
+        initComponent();
+        return connectRunner.getClientsForUser(config,
+                new ListClientsForUserQuery(config.getUsername(), 1));
     }
 
 
     // For Configuration UI.  Avoids cache hits.
     public P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> checkClientConnection(ClientConfig clientConfig) {
+        // This is necessary for loading a project from version control when the project isn't setup yet.
+        initComponent();
         return connectRunner.listOpenedFilesChanges(
                 clientConfig, new ListOpenedFilesChangesQuery(1, 1));
     }

@@ -50,7 +50,7 @@ public class P4QuickListContentProvider implements VcsQuickListContentProvider {
         add("Compare.SameVersion", manager, actions);
         add("Compare.Selected", manager, actions);
 
-        /*
+        /* FIXME add shelve/unshelve capability.
         addSeparator(actions);
         add("P4.Shelve", manager, actions);
         add("P4.Unshelve", manager, actions);
@@ -59,11 +59,6 @@ public class P4QuickListContentProvider implements VcsQuickListContentProvider {
         /*
         add("P4.ResolveConflicts", manager, actions);
         */
-
-        addSeparator(actions);
-        add("P4.WorkOnline", manager, actions);
-        add("P4.WorkOffline", manager, actions);
-        add("P4.ReloadConfiguration", manager, actions);
 
         return actions;
     }

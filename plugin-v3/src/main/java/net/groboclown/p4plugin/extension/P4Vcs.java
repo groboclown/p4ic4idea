@@ -163,18 +163,11 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
     private MessageBusConnection appMessageBusConnection;
 
-    // FIXME add the connection widget.
-    //private P4ConnectionWidget connectionWidget;
-    //private P4MultipleConnectionWidget connectionWidget;
-
     private P4VFSListener myVFSListener;
 
     private P4EditFileProvider editProvider;
 
     private P4ProjectConfigurable myConfigurable;
-
-    // Not used
-    //private final CommitExecutor commitExecutor;
 
     private final P4ChangelistListener changelistListener;
 
@@ -216,22 +209,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     public P4Vcs(@NotNull Project project) {
         super(project, VCS_NAME);
 
-        // there is a situation where project can be null: when the config panel
-        // is loaded without a project loaded (e.g. "cancel" the loading screen,
-        // and Configure -> Settings).
-        // TODO Need to see if this is still the case.
-        /*
-        if (project == null) {
-            project = new MockProject(new EmptyPicoContainer(), new Disposable() {
-                @Override
-                public void dispose() {
-                    // ignore
-                }
-            });
-        }
-        */
-
-
         this.changelistListener = new P4ChangelistListener(project, this);
         this.changeProvider = new P4ChangeProvider(this);
         this.historyProvider = new P4HistoryProvider(project);
@@ -264,6 +241,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
      * @param mapping the mapping being configured
      * @return the configurable instance, or null if no configuration is required.
      */
+    @Override
     public UnnamedConfigurable getRootConfigurable(VcsDirectoryMapping mapping) {
         if (mapping.getRootSettings() == null) {
             mapping.setRootSettings(new P4VcsRootSettingsImpl(VcsUtil.getFilePath(mapping.getDirectory()).getVirtualFile()));
@@ -383,27 +361,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     public void deactivate() {
         myConfigurable.disposeUIResources();
 
-        ChangeListManager.getInstance(myProject).removeChangeListListener(changelistListener);
-
         tempFileWatchDog.stop();
         tempFileWatchDog.cleanUpTempDir();
-
-        // FIXME
-        /*
-        if (connectionWidget != null && !ApplicationManager.getApplication().isHeadlessEnvironment()) {
-            final StatusBar statusBar = WindowManager.getInstance().getStatusBar(myProject);
-            if (statusBar != null) {
-                connectionWidget = new P4MultipleConnectionWidget(this, myProject);
-                ApplicationManager.getApplication().invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                        statusBar.removeWidget(connectionWidget.ID());
-                        connectionWidget.deactivate();
-                    }
-                }, ModalityState.NON_MODAL);
-            }
-        }
-        */
 
         if (myVFSListener != null) {
             Disposer.dispose(myVFSListener);
@@ -417,6 +376,11 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         if (appMessageBusConnection != null) {
             appMessageBusConnection.disconnect();
             appMessageBusConnection = null;
+        }
+
+        // This can cause an error if the project isn't setup.  So put it at the end.
+        if (!myProject.isDisposed()) {
+            ChangeListManager.getInstance(myProject).removeChangeListListener(changelistListener);
         }
 
         super.deactivate();

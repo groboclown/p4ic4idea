@@ -133,19 +133,14 @@
 
     <actions>
         <group id="P4ExtendedActions">
-            <!-- FIXME
+            <!-- FIXME re-add behavior
             <action id="P4.RevertUnchanged" class="net.groboclown.p4plugin.actions.P4RevertUnchanged"
                 text="Revert unchanged"
                 description="Revert files that are checked out but not different from the server version."
                 />
             -->
 
-
-            <!--
-            We want to change the shelve behavior, but we can't replace an action id.
-            <action id="ChangesView.Shelve" class="net.groboclown.p4plugin.actions.P4ShelveChangesAction"/>
-            -->
-            <!-- FIXME
+            <!-- FIXME re-add behavior
             <action id="P4.Shelve" class="net.groboclown.p4plugin.actions.P4ShelveChangesAction"
                     description="Preserve work to the Perforce server without committing them"/>
 
@@ -159,9 +154,9 @@
                           anchor="after" relative-to-action="ChangesView.Edit"/>
         </group>
 
-        <!-- FIXME
+        <!-- TODO do we need this?
         <group id="P4RollbackHistory">
-            <action id="P4.RollbackHistory" class="net.groboclown.p4plugin.actions.P4RollbackHistoryAction"
+            <action id="P4.RollbackHistory" class="net.groboclown.idea.p4ic.actions.P4RollbackHistoryAction"
                 text="Revert to version..." icon="AllIcons.Actions.Rollback"/>
 
             <add-to-group group-id="CommittedChangesToolbar"/>
@@ -182,7 +177,7 @@
                     use-shortcut-of="ChangesView.AddUnversioned"/>
             <reference ref="ChangesView.Revert"/>
             <reference ref="UpdateFiles" />
-            <!-- FIXME
+            <!-- FIXME re-add behavior
             <reference ref="P4.RevertUnchanged"/>
             <reference ref="P4.Shelve"/>
             -->
@@ -229,29 +224,20 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <vcs name="p4ic" vcsClass="net.groboclown.p4plugin.extension.P4Vcs" displayName="Perforce"/>
-        <!-- FIXME
+
+        <vcsChangesViewRefresher implementation="net.groboclown.p4plugin.extension.P4ChangesViewRefresher" />
+
+        <!-- FIXME do we need this?
         <vcsPopupProvider implementation="net.groboclown.p4plugin.extension.P4QuickListContentProvider"/>
-
-        <vcsChangesViewRefresher implementation="net.groboclown.p4plugin.changes.P4ChangesViewRefresher" />
-
-        <vcs.fileStatusProvider
-                implementation="com.intellij.openapi.vcs.impl.VcsFileStatusProvider"/>
-
-
-        <projectService
-                serviceInterface="net.groboclown.p4plugin.config.P4ConfigProject"
-                serviceImplementation="net.groboclown.p4plugin.config.P4ConfigProject"/>
-
-        <projectService
-                serviceInterface="net.groboclown.p4plugin.changes.P4ChangeListMapping"
-                serviceImplementation="net.groboclown.p4plugin.changes.P4ChangeListMapping"/>
-
         -->
 
         <!-- User settings, independent of the connection configuration; per-project -->
         <projectService
                 serviceInterface="net.groboclown.p4plugin.components.UserProjectPreferences"
                 serviceImplementation="net.groboclown.p4plugin.components.UserProjectPreferences"/>
+
+        <!-- Populate a project with the contents from Perforce -->
+        <checkoutProvider implementation="net.groboclown.p4plugin.extension.P4CheckoutProvider"/>
     </extensions>
 
     <project-components>
@@ -288,11 +274,7 @@
             <implementation-class>net.groboclown.p4plugin.components.UserErrorComponent</implementation-class>
         </component>
 
-        <!-- FIXME
-        <component>
-            <implementation-class>net.groboclown.idea.p4ci.extension.P4FileUrlMappingImpl</implementation-class>
-            <option name="workspace" value="true"/>
-        </component>
+        <!-- FIXME re-add this
         <component>
             <implementation-class>net.groboclown.p4plugin.ui.pending.PendingChangesView</implementation-class>
         </component>
@@ -314,20 +296,5 @@
             <interface-class>net.groboclown.p4plugin.components.InvalidPasswordMonitorComponent</interface-class>
             <implementation-class>net.groboclown.p4plugin.components.InvalidPasswordMonitorComponent</implementation-class>
         </component>
-
-        <!-- FIXME
-        <component>
-            <implementation-class>net.groboclown.p4plugin.server.connection.AlertManager</implementation-class>
-        </component>
-        <component>
-            <implementation-class>net.groboclown.p4plugin.server.connection.ServerConnectionManager</implementation-class>
-        </component>
-        <component>
-            <implementation-class>net.groboclown.p4plugin.server.cache.state.AllClientsState</implementation-class>
-        </component>
-        <component>
-            <implementation-class>net.groboclown.p4plugin.swarm.SwarmConnectionComponent</implementation-class>
-        </component>
-        -->
     </application-components>
 </idea-plugin>

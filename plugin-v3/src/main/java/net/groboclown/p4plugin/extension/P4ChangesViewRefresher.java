@@ -30,7 +30,7 @@ public class P4ChangesViewRefresher
     }
 
 
-    public static void refreshLater(@NotNull final Project project) {
+    static void refreshLater(@NotNull final Project project) {
         LOG.debug("Refreshing changelist view", new Throwable());
 
         ChangeListManager.getInstance(project).scheduleUpdate(true);

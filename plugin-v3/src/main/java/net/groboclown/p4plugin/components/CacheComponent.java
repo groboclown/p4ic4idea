@@ -74,11 +74,15 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
         this.project = project;
     }
 
+    @NotNull
     public CacheQueryHandler getCacheQuery() {
+        // This can happen when creating a project from version control when the project isn't configured yet.
+        initComponent();
         return queryHandler;
     }
 
     public CachePendingActionHandler getCachePending() {
+        initComponent();
         return pendingHandler;
     }
 
@@ -152,11 +156,21 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
 
     @Override
     public void initComponent() {
-        queryHandler = new CacheQueryHandlerImpl(projectCache);
-        pendingHandler = new CachePendingActionHandlerImpl(projectCache);
-        changelistMap = new IdeChangelistMapImpl(project, queryHandler, projectCache.getChangelistCacheStore());
-        fileMap = new IdeFileMapImpl(project, queryHandler);
-        updateListener = new CacheStoreUpdateListener(project, projectCache);
+        if (queryHandler == null) {
+            queryHandler = new CacheQueryHandlerImpl(projectCache);
+        }
+        if (pendingHandler == null) {
+            pendingHandler = new CachePendingActionHandlerImpl(projectCache);
+        }
+        if (changelistMap == null) {
+            changelistMap = new IdeChangelistMapImpl(project, queryHandler, projectCache.getChangelistCacheStore());
+        }
+        if (fileMap == null) {
+            fileMap = new IdeFileMapImpl(project, queryHandler);
+        }
+        if (updateListener == null) {
+            updateListener = new CacheStoreUpdateListener(project, projectCache);
+        }
     }
 
     @Override

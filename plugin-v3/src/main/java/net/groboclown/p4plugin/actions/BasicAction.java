@@ -229,7 +229,7 @@ public abstract class BasicAction extends DumbAwareAction {
     /**
      * Save all files in the application (the operation creates write action)
      */
-    protected static void saveAll() {
+    public static void saveAll() {
         ApplicationManager.getApplication().runWriteAction(() -> FileDocumentManager.getInstance().saveAllDocuments());
     }
 }

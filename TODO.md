@@ -1,6 +1,7 @@
 # To Do List
 
-Many of the to-dos are listed in the bug list on Github.  This list itself should be handled better in the project view of Github.
+Some of the to-dos are listed in the bug list on Github.  This list itself should be handled better in the project view of Github.
+
 
 
 ## Bugs
@@ -22,6 +23,12 @@ The connection state, as the events are passed around, are not properly represen
 ### Pending Action Consolidation
 
 When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or duplicates existing pending actions.  The pending action list must be altered to reflect the new action. 
+
+### Check Connection from VCS Root Directory Configuration memory leak
+
+If you check the connection from the VCS root directory configuration dialog, a serious memory leak happens that puts the breaks on the IDE.
+
+This definitely occurs during the  New Project from Version Control.
 
 
 
@@ -59,17 +66,6 @@ These pieces of functionality are not required for the 0.10 release, but should 
 
 The cache mechanism should support making a copy of a file when an operation happens, to allow for better offline support.
 
-### Relative P4CONFIG support
-
-The choice was made to eliminate the use of relative P4CONFIG files, and instead managed through the VCS Root mechanism.
-However, without this, the full environment support won't work.  This needs to be re-added, with support of the VSC Root
-mapping mechanism in `P4Vcs`.  However, the user needs to be able to manage it, and that requires new UI support.  This
-is a big feature, and will require some careful planning to handle correctly.
-
-### Load Project from VCS
-
-An old feature request.  Still needs to be added.
-
 ### Repository View
 
 The repository view doesn't show any commits.
@@ -82,8 +78,19 @@ Re-add support for showing shelved files and managing shelved files.
 
 Context menus or sidebar actions for viewing additional history for existing items, such as the history of files from within the changelist details panel. 
 
+### Pending Changes View
+
+Re-add the pending changes view, for job and shelved file inspection.
+
 ### Use Windows Registry Passwords
 
 The passwords stored in the Windows Registry (through the `p4 set PASSWD` command and other password commands) is stored
 in an encrypted way.  The code should include handling the encrypted values.  The publicly available p4 cli C code
 contains the implementation for how it's done.  However, that code is non-trivial. 
+
+### Relative P4CONFIG support
+
+The choice was made to eliminate the use of relative P4CONFIG files, and instead managed through the VCS Root mechanism.
+However, without this, the full environment support won't work.  This needs to be re-added, with support of the VSC Root
+mapping mechanism in `P4Vcs`.  However, the user needs to be able to manage it, and that requires new UI support.  This
+is a big feature, and will require some careful planning to handle correctly.

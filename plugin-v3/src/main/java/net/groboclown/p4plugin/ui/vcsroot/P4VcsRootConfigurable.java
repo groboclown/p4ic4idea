@@ -128,7 +128,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
     }
 
     @Nullable
-    private ClientConfig loadConfigFromSettings() {
+    public ClientConfig loadConfigFromSettings() {
         ConfigPart parentPart = loadParentPartFromSettings();
         if (!parentPart.hasError() && ServerConfig.isValidServerConfig(parentPart)) {
             try {

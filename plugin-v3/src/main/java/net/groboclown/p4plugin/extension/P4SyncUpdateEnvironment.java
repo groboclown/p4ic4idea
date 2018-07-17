@@ -37,6 +37,7 @@ import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
+import net.groboclown.p4plugin.ui.DummyProgressIndicator;
 import net.groboclown.p4plugin.ui.sync.SyncOptionConfigurable;
 import net.groboclown.p4plugin.ui.sync.SyncOptions;
 import org.jetbrains.annotations.NotNull;
@@ -68,8 +69,9 @@ public class P4SyncUpdateEnvironment
     @NotNull
     @Override
     public UpdateSession updateDirectories(@NotNull FilePath[] filePaths, UpdatedFiles updatedFiles,
-            ProgressIndicator progressIndicator, @NotNull Ref<SequentialUpdatesContext> ref)
+            ProgressIndicator pi, @NotNull Ref<SequentialUpdatesContext> ref)
             throws ProcessCanceledException {
+        ProgressIndicator progressIndicator = DummyProgressIndicator.nullSafe(pi);
         progressIndicator.setFraction(0.0);
         final SyncUpdateSession ret = new SyncUpdateSession();
         ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);

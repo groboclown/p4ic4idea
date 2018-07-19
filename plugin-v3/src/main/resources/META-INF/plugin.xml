@@ -225,8 +225,6 @@
     <extensions defaultExtensionNs="com.intellij">
         <vcs name="p4ic" vcsClass="net.groboclown.p4plugin.extension.P4Vcs" displayName="Perforce"/>
 
-        <vcsChangesViewRefresher implementation="net.groboclown.p4plugin.extension.P4ChangesViewRefresher" />
-
         <!-- FIXME do we need this?
         <vcsPopupProvider implementation="net.groboclown.p4plugin.extension.P4QuickListContentProvider"/>
         -->

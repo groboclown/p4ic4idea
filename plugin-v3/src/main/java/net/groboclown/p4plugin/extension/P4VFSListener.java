@@ -16,6 +16,7 @@ package net.groboclown.p4plugin.extension;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsVFSListener;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
@@ -28,6 +29,7 @@ import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
+import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
@@ -39,8 +41,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class P4VFSListener extends VcsVFSListener {
     private static final Logger LOG = Logger.getInstance(VcsVFSListener.class);
@@ -109,7 +113,56 @@ public class P4VFSListener extends VcsVFSListener {
 
     @Override
     protected void performMoveRename(List<MovedFileInfo> movedFiles) {
-        throw new IllegalStateException("not implemented");
+        Set<FilePath> allFiles = new HashSet<>(movedFiles.size());
+        Map<ClientServerRef, P4ChangelistId> activeChangelistIds = getActiveChangelistIds();
+        for (MovedFileInfo movedFile : movedFiles) {
+            FilePath src = VcsUtil.getFilePath(movedFile.myOldPath);
+            FilePath tgt = VcsUtil.getFilePath(movedFile.myNewPath);
+            allFiles.add(src);
+            allFiles.add(tgt);
+            ClientConfigRoot srcRoot = getClientFor(src);
+            ClientConfigRoot tgtRoot = getClientFor(tgt);
+            if (srcRoot != null && tgtRoot != null &&
+                    srcRoot.getClientConfig().getClientServerRef().equals(tgtRoot.getClientConfig().getClientServerRef())) {
+                // A real P4 move operation.
+                P4ChangelistId id = getActiveChangelistFor(srcRoot, activeChangelistIds);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Opening for move: " + src + " -> " + tgt + " (@" + id + ")");
+                }
+                P4ServerComponent.getInstance(myProject).getCommandRunner()
+                        .perform(srcRoot.getClientConfig(), new MoveFileAction(src, tgt, id));
+            } else {
+                // Not a move operation, because they aren't in the same perforce client.
+
+                if (srcRoot != null) {
+                    // Source is in P4, so delete it.
+                    P4ChangelistId id = getActiveChangelistFor(srcRoot, activeChangelistIds);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Opening for move/delete: " + src + " (@" + id + ")");
+                    }
+                    P4ServerComponent.getInstance(myProject).getCommandRunner()
+                            .perform(srcRoot.getClientConfig(), new DeleteFileAction(src, id));
+                }
+
+                if (tgtRoot != null) {
+                    if (srcRoot != null &&
+                            srcRoot.getServerConfig().getServerName().equals(tgtRoot.getServerConfig().getServerName())) {
+                        // Source and target are on the same server.  We can perform an integrate here.
+                        // TODO perform an integrate
+                    }
+                    // Just a regular Perforce add
+                    P4ChangelistId id = getActiveChangelistFor(tgtRoot, activeChangelistIds);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Opening for move/add-edit: " + tgt + " (@" + id + ")");
+                    }
+                    P4ServerComponent.getInstance(myProject).getCommandRunner()
+                            .perform(tgtRoot.getClientConfig(), new AddEditAction(tgt, null, id, (String) null));
+                }
+            }
+        }
+        // Make sure any potential null isn't in the set.
+        allFiles.remove(null);
+        VcsFileUtil.markFilesDirty(myProject, new ArrayList<>(allFiles));
     }
 
     @Override

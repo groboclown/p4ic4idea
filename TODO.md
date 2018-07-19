@@ -16,6 +16,10 @@ Additionally, if Perforce contains multiple changelists with the same name, the 
 
 When the changelist view is refreshed, the opened files in all the changelists can be moved to the default changelist.
 
+### Files open for edit outside IDE do not show up in IDE changelist
+
+If you open a file for edit outside the IDE, and refresh the changelist view in the IDE, the outside edited files do not show up.
+
 ### Connection State
 
 The connection state, as the events are passed around, are not properly represented in the Active Connection panel.  Either the panel isn't showing the right state, or the events are wrong.
@@ -28,7 +32,11 @@ When a user performs an action, the internal mechanisms must first check the pen
 
 If you check the connection from the VCS root directory configuration dialog, a serious memory leak happens that puts the breaks on the IDE.
 
-This definitely occurs during the  New Project from Version Control.
+This definitely occurs during the New Project from Version Control.
+
+### Duplicate event log entries
+
+Notifications are showing up x4 in the event log.
 
 
 

@@ -158,7 +158,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
                 P4CommandRunner.ActionAnswer<DeleteFileResult> answer =
                         P4ServerComponent.getInstance(project).getCommandRunner()
                                 .perform(root.getClientConfig(), new DeleteFileAction(file, id))
-                                .whenCompleted((res) -> P4ChangesViewRefresher.refreshLater(project));
+                                .whenCompleted((res) -> ChangeListManager.getInstance(project).scheduleUpdate(true));
                 if (ApplicationManager.getApplication().isDispatchThread()) {
                     LOG.info("Running delete file command in EDT; will not wait for server errors.");
                 } else {
@@ -203,7 +203,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
                 P4CommandRunner.ActionAnswer<AddEditResult> answer =
                         P4ServerComponent.getInstance(project).getCommandRunner()
                                 .perform(root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, (String) null))
-                                .whenCompleted((res) -> P4ChangesViewRefresher.refreshLater(project))
+                                .whenCompleted((res) -> ChangeListManager.getInstance(project).scheduleUpdate(true))
                                 // TODO report issues
                                 //.whenServerError(asdf)
                                 //.whenOffline(asdf)

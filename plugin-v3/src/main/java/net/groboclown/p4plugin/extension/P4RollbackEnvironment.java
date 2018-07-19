@@ -20,6 +20,7 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import com.intellij.openapi.vfs.LocalFileSystem;
@@ -124,7 +125,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
         lfs.refreshFiles(needsRefresh);
 
         // A refresh of the changes is sometimes needed.
-        P4ChangesViewRefresher.refreshLater(project);
+        ChangeListManager.getInstance(project).scheduleUpdate(true);
     }
 
     @Override
@@ -166,7 +167,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
         P4ServerComponent.getInstance(project)
                 .getCommandRunner()
                 .perform(root.getClientConfig(), new RevertFileAction(fp, true))
-                .whenCompleted((r) -> P4ChangesViewRefresher.refreshLater(project));
+                .whenCompleted((r) -> ChangeListManager.getInstance(project).scheduleUpdate(true));
     }
 
 

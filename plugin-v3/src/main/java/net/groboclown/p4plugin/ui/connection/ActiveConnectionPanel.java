@@ -188,7 +188,7 @@ public class ActiveConnectionPanel {
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
-                        if (sel != null && sel.isOnline()) {
+                        if (sel != null && sel.isOffline()) {
                             ReconnectRequestMessage.requestReconnectToClient(project,
                                     sel.getClientConfig().getClientServerRef(), true);
                         }
@@ -205,7 +205,7 @@ public class ActiveConnectionPanel {
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
-                        if (sel != null && sel.isOffline()) {
+                        if (sel != null && sel.isOnline()) {
                             UserSelectedOfflineMessage.requestOffline(project,
                                     sel.getClientConfig().getClientServerRef().getServerName());
                         }
@@ -237,7 +237,8 @@ public class ActiveConnectionPanel {
                     }
                 },
 
-                // TODO add an action that allows retrying a pending action.
+                // TODO add an action that allows retrying the pending actions.
+                // (these cannot be done in isolation - they are strictly ordered).
 
                 new ConnectionAction("Remove Action", "Remove the pending action",
                         AllIcons.Actions.Clear) {

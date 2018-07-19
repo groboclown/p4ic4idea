@@ -24,10 +24,6 @@ If you open a file for edit outside the IDE, and refresh the changelist view in 
 
 This might be another cache issue.  The cached list of files may not be loaded correctly.  Alternatively, the files may not be marked as dirty in `P4ChangeProvider`.
 
-### Connection State
-
-The connection state, as the events are passed around, are not properly represented in the Active Connection panel.  Either the panel isn't showing the right state, or the events are wrong.
-
 ### Pending Action Consolidation
 
 When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or duplicates existing pending actions.  The pending action list must be altered to reflect the new action. 

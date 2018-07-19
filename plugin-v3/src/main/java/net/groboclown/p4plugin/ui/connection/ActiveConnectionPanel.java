@@ -20,7 +20,6 @@ import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.ActionToolbar;
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.Presentation;
@@ -28,7 +27,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.perforce.p4java.exception.AuthenticationFailedException;
@@ -251,9 +249,12 @@ public class ActiveConnectionPanel {
                         if (selRoot != null && sel != null && cache != null) {
                             try {
                                 cache.getCachePending()
-                                        .writeActions(selRoot.getClientConfig().getClientServerRef(), (c) -> {
-                                            c.removeActionById(sel.getActionId());
-                                        });
+                                        .writeActions(selRoot.getClientConfig().getClientServerRef(),
+                                                (c) -> c.removeActionById(sel.getActionId()));
+                                // Updating the cache to remove actions doesn't send out events, so we must
+                                // manually refresh the view.
+                                // TODO This could be done more elegantly.
+                                refresh();
                             } catch (InterruptedException e) {
                                 LOG.warn(e);
                             }

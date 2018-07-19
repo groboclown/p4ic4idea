@@ -16,9 +16,13 @@ Additionally, if Perforce contains multiple changelists with the same name, the 
 
 When the changelist view is refreshed, the opened files in all the changelists can be moved to the default changelist.
 
+Looks like a potential caching issue.  The cache is queried to discover which changelist the file belongs.  If the cache isn't updated with the new changelist (or is ordered incorrectly), then the plugin will think the file is in the wrong changelist, and move it.
+
 ### Files open for edit outside IDE do not show up in IDE changelist
 
 If you open a file for edit outside the IDE, and refresh the changelist view in the IDE, the outside edited files do not show up.
+
+This might be another cache issue.  The cached list of files may not be loaded correctly.  Alternatively, the files may not be marked as dirty in `P4ChangeProvider`.
 
 ### Connection State
 
@@ -28,25 +32,33 @@ The connection state, as the events are passed around, are not properly represen
 
 When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or duplicates existing pending actions.  The pending action list must be altered to reflect the new action. 
 
+### Remove Pending Action Refresh
+
+When the pending actions in the Active Connection panel are removed, the UI does not refresh.  A forced refresh shows it removed. 
+
 ### Check Connection from VCS Root Directory Configuration memory leak
 
 If you check the connection from the VCS root directory configuration dialog, a serious memory leak happens that puts the breaks on the IDE.
 
-This definitely occurs during the New Project from Version Control.
+This occurs during the New Project from Version Control, and might occur under normal circumstances.
+
+Source: `P4VcsRootConfigurable`
+
+Note that, under New Project from Version Control, the Vcs Root in the `P4RootConfigPanel` can change, but the panel won't be updated with the new root.  This could be the source of at least one issue.
 
 ### Duplicate event log entries
 
-Notifications are showing up x4 in the event log.
+Notifications are showing up x4 in the event log.  Could be a sign of excessive event generation.
+
+### Open for Edit doesn't move a file to a changelist.
+
+If a file is writable, the connection is offline, and the "Automatically open for edit..." option is not selected, then expliticly checking out the file will not cause the pending action to be reflected in the UI changelists.  It will be shown in the cached list of actions.
 
 
 
 ## Required Missing Functionality
 
 In the 0.10 release, these pieces of old functionality are either broken or disabled.
-
-### Move Files
-
-Finish implementing move files capability.
 
 ### SSO and Manual Passwords
 

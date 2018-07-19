@@ -69,6 +69,7 @@ public class P4RootConfigPanel {
         $$$setupUI$$$();
 
         myDetailsTitle.setText("");
+        // TODO look at switching to the EdtSinkProcessor
         myCheckConnectionSpinner.suspend();
         myCheckConnectionSpinner.setVisible(false);
         configConnectionController.addConfigConnectionListener(this::updateConfigPanel);

@@ -15,7 +15,6 @@
 package net.groboclown.p4plugin.ui.vcsroot;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
@@ -28,8 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class ConfigConnectionController {
-    private static final Logger LOG = Logger.getInstance(ConfigConnectionController.class);
-
     private final Project project;
     private final List<ConfigConnectionListener> listeners = new ArrayList<>();
 

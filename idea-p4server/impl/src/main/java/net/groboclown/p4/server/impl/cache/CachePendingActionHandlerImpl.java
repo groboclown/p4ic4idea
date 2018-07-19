@@ -128,6 +128,8 @@ public class CachePendingActionHandlerImpl implements CachePendingActionHandler 
                             : action.serverAction != null
                                 ? action.serverAction.getActionId()
                                 : null)) {
+                    // FIXME should this send out an event?
+                    // This would affect the ActionConnectionPanel.
                     iter.remove();
                     return true;
                 }

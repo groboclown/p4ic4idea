@@ -191,18 +191,24 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
             parentPart.reload();
             if (!parentPart.hasError()) {
                 if (ServerConfig.isValidServerConfig(parentPart)) {
+                    LOG.debug("No errors in server configuration");
                     try {
                         tServerConfig = ServerConfig.createFrom(parentPart);
                     } catch (IllegalArgumentException e) {
                         LOG.info("Should have not caused an error due to previous error check", e);
                     }
+                } else {
+                    LOG.debug("Errors found in server configuration");
                 }
                 if (ClientConfig.isValidClientConfig(tServerConfig, parentPart)) {
+                    LOG.debug("No errors in client configuration");
                     try {
                         tClientConfig = ClientConfig.createFrom(tServerConfig, parentPart);
                     } catch (IllegalArgumentException e) {
                         LOG.info("Should have not caused an error due to previous error check", e);
                     }
+                } else {
+                    LOG.debug("Errors found in client configuration");
                 }
             }
 
@@ -231,7 +237,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
                 if (result != null && clientConfig != null) {
                     // Check the opened files, because that requires the client to be
                     // valid for the current user.
-                    LOG.debug("Attempting to get the list of opened files for the client");
+                    LOG.debug("Checking client connection");
                     P4ServerComponent.getInstance(project).checkClientConnection(clientConfig)
                             .whenCompleted(sink::resolve)
                             .whenServerError(sink::reject);

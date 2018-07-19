@@ -432,7 +432,6 @@ public class P4ChangeProvider
      * Everything is marked as dirty.  Just look at the state of files on the server,
      * and move files into the right changelist.
      *
-     *
      * @param config config for the root.
      * @param changes changelist mapping
      * @param files file mapping, which has already been loaded from the server.

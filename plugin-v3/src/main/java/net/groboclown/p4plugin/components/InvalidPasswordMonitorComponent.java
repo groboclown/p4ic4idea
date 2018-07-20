@@ -20,6 +20,7 @@ import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.project.ProjectManagerListener;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.perforce.p4java.exception.AuthenticationFailedException;
@@ -182,7 +183,10 @@ public class InvalidPasswordMonitorComponent
 
     @Override
     public void dispose() {
-        disposed = true;
+        if (!disposed) {
+            disposed = true;
+            Disposer.dispose(this);
+        }
     }
 
     public boolean isDisposed() {
@@ -209,6 +213,7 @@ public class InvalidPasswordMonitorComponent
 
     @NotNull
     private static Project findBestProject() {
+        // FIXME guessing at a project.
         for (Project openProject : ProjectManager.getInstance().getOpenProjects()) {
             AbstractVcs vcs =
                     ProjectLevelVcsManager.getInstance(openProject).findVcsByName(P4Vcs.VCS_NAME);

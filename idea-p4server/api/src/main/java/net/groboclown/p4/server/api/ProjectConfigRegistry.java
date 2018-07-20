@@ -18,6 +18,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -65,6 +66,7 @@ public abstract class ProjectConfigRegistry
         this.project = project;
         this.projectBusClient = MessageBusClient.forProject(project, this);
         this.applicationBusClient = MessageBusClient.forApplication(this);
+        Disposer.register(project, this);
     }
 
 
@@ -229,7 +231,10 @@ public abstract class ProjectConfigRegistry
 
     @Override
     public void dispose() {
-        disposed = true;
+        if (!disposed) {
+            disposed = true;
+            Disposer.dispose(this);
+        }
     }
 
     @Override

@@ -161,7 +161,7 @@ public class ActiveConnectionPanel {
 
     private ActionGroup createActionGroup() {
         return new DefaultActionGroup(
-                // FIXME use bundle
+                // FIXME use bundle for strings
                 new DumbAwareAction("Refresh", "Reload connection contents", AllIcons.Actions.Refresh) {
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {

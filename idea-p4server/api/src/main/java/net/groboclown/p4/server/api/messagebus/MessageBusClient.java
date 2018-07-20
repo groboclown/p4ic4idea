@@ -31,6 +31,10 @@ public class MessageBusClient {
         public <L> void add(@NotNull Topic<L> topic, @NotNull L listener) {
             connection.subscribe(topic, listener);
         }
+
+        public void close() {
+            connection.disconnect();
+        }
     }
 
     public static class ApplicationClient {
@@ -41,6 +45,10 @@ public class MessageBusClient {
 
         public <L> void add(@NotNull Topic<L> topic, @NotNull L listener) {
             connection.subscribe(topic, listener);
+        }
+
+        public void close() {
+            connection.disconnect();
         }
     }
 

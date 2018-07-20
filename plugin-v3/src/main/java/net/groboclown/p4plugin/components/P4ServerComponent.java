@@ -14,11 +14,16 @@
 
 package net.groboclown.p4plugin.components;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ProjectComponent;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.util.Pair;
 import net.groboclown.p4.server.TopCommandRunner;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4PluginVersion;
+import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserResult;
 import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesQuery;
@@ -26,7 +31,6 @@ import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
-import net.groboclown.p4.server.impl.commands.ErrorQueryAnswerImpl;
 import net.groboclown.p4.server.impl.connection.ConnectCommandRunner;
 import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4.server.impl.connection.P4RequestErrorHandler;
@@ -34,47 +38,209 @@ import net.groboclown.p4.server.impl.connection.impl.LimitedConnectionManager;
 import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
 import net.groboclown.p4plugin.messages.MessageErrorHandler;
 import net.groboclown.p4plugin.util.TempDirUtil;
-import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.util.Optional;
-import java.util.function.Supplier;
 
-public class P4ServerComponent implements ProjectComponent {
+public class P4ServerComponent implements ProjectComponent, Disposable {
+    private static final Logger LOG = Logger.getInstance(P4ServerComponent.class);
+
     private static final String COMPONENT_NAME = "Perforce Server Primary Connection";
     private final Project project;
     private P4CommandRunner commandRunner;
     private AbstractServerCommandRunner connectRunner;
+    private boolean disposed = false;
 
-    public static P4ServerComponent getInstance(Project project) {
+    /**/
+    public static P4ServerComponent getInstance(@Nullable Project project) {
         // a non-registered component can happen when the config is loaded outside a project.
         P4ServerComponent ret = null;
         if (project != null) {
             ret = project.getComponent(P4ServerComponent.class);
         }
         if (ret == null) {
+            // FIXME should not happen, but it does.
+            LOG.warn("Creating a new P4ServerComponent explicitly.  Note it probably won't be cleaned up right.");
             ret = new P4ServerComponent(project);
+            ret.initComponent();
+            if (project != null) {
+                Disposer.register(project, ret);
+            }
+        }
+        return ret;
+    }
+    /**/
+
+    // An attempt to prevent some potential memory leaks.
+    private static Pair<P4ServerComponent, Boolean> findInstance(@Nullable Project project) {
+        // a non-registered component can happen when the config is loaded outside a project.
+        P4ServerComponent ret = null;
+        boolean mustBeDisposed = false;
+        if (project != null) {
+            ret = project.getComponent(P4ServerComponent.class);
+        }
+        if (ret == null) {
+            ret = new P4ServerComponent(project);
+            ret.initComponent();
+            mustBeDisposed = true;
+        }
+        return Pair.create(ret, mustBeDisposed);
+    }
+
+    @NotNull
+    public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.ActionAnswer<R> perform(@Nullable Project project,
+            @NotNull ServerConfig config, @NotNull P4CommandRunner.ServerAction<R> action) {
+        final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
+        P4CommandRunner.ActionAnswer<R> ret = instance.first.getCommandRunner().perform(config, action);
+        if (instance.second) {
+            ret.after(instance.first::dispose);
         }
         return ret;
     }
 
 
+    @NotNull
+    public static <R extends P4CommandRunner.ClientResult> P4CommandRunner.ActionAnswer<R> perform(@Nullable Project project,
+            @NotNull ClientConfig config, @NotNull P4CommandRunner.ClientAction<R> action) {
+        final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
+        P4CommandRunner.ActionAnswer<R> ret = instance.first.getCommandRunner().perform(config, action);
+        if (instance.second) {
+            ret.after(instance.first::dispose);
+        }
+        return ret;
+    }
+
+    @NotNull
+    public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.QueryAnswer<R> query(@Nullable Project project,
+            @NotNull ServerConfig config, @NotNull P4CommandRunner.ServerQuery<R> query) {
+        final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
+        P4CommandRunner.QueryAnswer<R> ret = instance.first.getCommandRunner().query(config, query);
+        if (instance.second) {
+            ret.after(instance.first::dispose);
+        }
+        return ret;
+    }
+
+    @NotNull
+    public static <R extends P4CommandRunner.ClientResult> P4CommandRunner.QueryAnswer<R> query(@Nullable Project project,
+            @NotNull ClientConfig config, @NotNull P4CommandRunner.ClientQuery<R> query) {
+        final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
+        P4CommandRunner.QueryAnswer<R> ret = instance.first.getCommandRunner().query(config, query);
+        if (instance.second) {
+            ret.after(instance.first::dispose);
+        }
+        return ret;
+    }
+
+    @NotNull
+    public static <R extends P4CommandRunner.ServerNameResult> P4CommandRunner.QueryAnswer<R> query(@Nullable Project project,
+            @NotNull P4ServerName name, @NotNull P4CommandRunner.ServerNameQuery<R> query) {
+        final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
+        P4CommandRunner.QueryAnswer<R> ret = instance.first.getCommandRunner().query(name, query);
+        if (instance.second) {
+            ret.after(instance.first::dispose);
+        }
+        return ret;
+    }
+
+    @NotNull
+    public static <R extends P4CommandRunner.ServerResult> R syncCachedQuery(@Nullable Project project,
+            @NotNull ServerConfig config, @NotNull P4CommandRunner.SyncServerQuery<R> query) {
+        final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
+        R ret = instance.first.getCommandRunner().syncCachedQuery(config, query);
+        if (instance.second) {
+            instance.first.dispose();
+        }
+        return ret;
+    }
+
+    @NotNull
+    public static <R extends P4CommandRunner.ClientResult> R syncCachedQuery(@Nullable Project project,
+            @NotNull ClientConfig config, @NotNull P4CommandRunner.SyncClientQuery<R> query) {
+        final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
+        R ret = instance.first.getCommandRunner().syncCachedQuery(config, query);
+        if (instance.second) {
+            instance.first.dispose();
+        }
+        return ret;
+    }
+
+    @NotNull
+    public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.FutureResult<R> syncQuery(@Nullable Project project, @NotNull ServerConfig config, @NotNull P4CommandRunner.SyncServerQuery<R> query) {
+        final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
+        P4CommandRunner.FutureResult<R> ret = instance.first.getCommandRunner().syncQuery(config, query);
+        if (instance.second) {
+            ret.getPromise().after(instance.first::dispose);
+        }
+        return ret;
+    }
+
+    @NotNull
+    public static <R extends P4CommandRunner.ClientResult> P4CommandRunner.FutureResult<R> syncQuery(@Nullable Project project, @NotNull ClientConfig config, @NotNull P4CommandRunner.SyncClientQuery<R> query) {
+        final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
+        P4CommandRunner.FutureResult<R> ret = instance.first.getCommandRunner().syncQuery(config, query);
+        if (instance.second) {
+            ret.getPromise().after(instance.first::dispose);
+        }
+        return ret;
+    }
+
+    public static P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(@Nullable Project project,
+            @NotNull ServerConfig config) {
+        final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
+        P4CommandRunner.QueryAnswer<ListClientsForUserResult> ret = instance.first.getClientsForUser(config);
+        if (instance.second) {
+            ret.after(instance.first::dispose);
+        }
+        return ret;
+    }
+
+    public static P4CommandRunner.QueryAnswer<ListClientsForUserResult> checkServerConnection(@Nullable Project project,
+            ServerConfig config) {
+        final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
+        P4CommandRunner.QueryAnswer<ListClientsForUserResult> ret = instance.first.checkServerConnection(config);
+        if (instance.second) {
+            ret.after(instance.first::dispose);
+        }
+        return ret;
+    }
+
+    public static P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> checkClientConnection(@Nullable Project project, ClientConfig clientConfig) {
+        final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
+        P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> ret = instance.first.checkClientConnection(clientConfig);
+        if (instance.second) {
+            ret.after(instance.first::dispose);
+        }
+        return ret;
+    }
+
+
+
+
+
+
+
+
+
+
+
     @SuppressWarnings("WeakerAccess")
-    public P4ServerComponent(Project project) {
+    public P4ServerComponent(@Nullable Project project) {
         this.project = project;
     }
 
     public P4CommandRunner getCommandRunner() {
         // This is necessary for loading a project from version control when the project isn't setup yet.
-        initComponent();
+        // Init is happening earlier now
+        // initComponent();
         return commandRunner;
     }
 
     // For Configuration UI.  Avoids cache hits.
     public P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(ServerConfig config) {
         // This is necessary for loading a project from version control when the project isn't setup yet.
-        initComponent();
+        // Init is happening earlier now
+        // initComponent();
         return connectRunner.getClientsForUser(config, new ListClientsForUserQuery(config.getUsername(),
                 UserProjectPreferences.getMaxClientRetrieveCount(project)));
     }
@@ -82,7 +248,8 @@ public class P4ServerComponent implements ProjectComponent {
     // For Configuration UI.  Avoids cache hits.
     public P4CommandRunner.QueryAnswer<ListClientsForUserResult> checkServerConnection(ServerConfig config) {
         // This is necessary for loading a project from version control when the project isn't setup yet.
-        initComponent();
+        // Init is happening earlier now
+        // initComponent();
         return connectRunner.getClientsForUser(config,
                 new ListClientsForUserQuery(config.getUsername(), 1));
     }
@@ -91,7 +258,8 @@ public class P4ServerComponent implements ProjectComponent {
     // For Configuration UI.  Avoids cache hits.
     public P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> checkClientConnection(ClientConfig clientConfig) {
         // This is necessary for loading a project from version control when the project isn't setup yet.
-        initComponent();
+        // Init is happening earlier now
+        // initComponent();
         return connectRunner.listOpenedFilesChanges(
                 clientConfig, new ListOpenedFilesChangesQuery(1, 1));
     }
@@ -115,6 +283,9 @@ public class P4ServerComponent implements ProjectComponent {
 
     @Override
     public void initComponent() {
+        if (disposed) {
+            throw new IllegalStateException("disposed");
+        }
         if (connectRunner == null) {
             connectRunner = new ConnectCommandRunner(createConnectionManager());
         }
@@ -123,13 +294,27 @@ public class P4ServerComponent implements ProjectComponent {
                     CacheComponent.getInstance(project).getCacheQuery(),
                     CacheComponent.getInstance(project).getCachePending(),
                     connectRunner);
+            Disposer.register(project, (TopCommandRunner) commandRunner);
         }
     }
 
     @Override
     public void disposeComponent() {
+        dispose();
+    }
+
+    @Override
+    public void dispose() {
         if (commandRunner != null) {
+            Disposer.dispose((TopCommandRunner) commandRunner);
             commandRunner = null;
+        }
+        if (connectRunner != null) {
+            connectRunner = null;
+        }
+        if (!disposed) {
+            disposed = true;
+            Disposer.dispose(this);
         }
     }
 

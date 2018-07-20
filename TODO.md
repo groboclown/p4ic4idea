@@ -6,6 +6,15 @@ Some of the to-dos are listed in the bug list on Github.  This list itself shoul
 
 ## Bugs
 
+### Memory Leak
+
+There's a gradual memory leak in the implementation.  The leak appears to happen without explicit use of the plugin.  This indicates the source comes from at least one of:
+
+* `P4EditFileProvider` - any edit to a file might cause a Perforce call.
+* `P4ChangeProvider` - new file edits can trigger refreshing the change display, which can trigger Perforce calls.
+* `MessageBusClient` - Perhaps use of the message system, if the listeners are never properly cleaned up.
+
+
 ### Creating a changelist can cause an error
 
 The plugin will attempt to create a new changelist in some cases when it already exists in Perforce (say, after a failed submit).

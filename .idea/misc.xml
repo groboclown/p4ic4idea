@@ -453,6 +453,98 @@
             </PrimitiveMap>
           </option>
         </State>
+        <State>
+          <option name="clientActionCmd" value="MOVE_FILES_TO_CHANGELIST" />
+          <option name="sourceId" value="client:albrechtm_micro-sync-registry_dev:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction@164b2cf56e1:4a" />
+          <option name="data">
+            <PrimitiveMap>
+              <option name="$proxy$">
+                <map>
+                  <entry key="cl-id__id" value="0" />
+                  <entry key="cl-id__ref__clientName" value="albrechtm_micro-sync-registry_dev" />
+                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
+                  <entry key="files__0" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_github_rholder_guava_retrying_1_0_6.xml" />
+                  <entry key="files__1" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__net_sf_json_lib_json_lib_jdk15_2_3.xml" />
+                  <entry key="files__10" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_zilliant_lib_zilliant_micro_lib_app_1_0_0.xml" />
+                  <entry key="files__11" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_zilliant_service_tenant_environment2_client_1_0_0.xml" />
+                  <entry key="files__12" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__net_databinder_unfiltered_netty_2_11_0_8_2.xml" />
+                  <entry key="files__13" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__net_bytebuddy_byte_buddy_1_8_13.xml" />
+                  <entry key="files__14" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__org_scala_lang_modules_scala_xml_2_11_1_0_4.xml" />
+                  <entry key="files__15" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__io_netty_netty_codec_4_0_23_Final.xml" />
+                  <entry key="files__16" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__net_sourceforge_nekohtml_nekohtml_1_9_16.xml" />
+                  <entry key="files__17" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__au_com_dius_pact_jvm_model_2_11_3_2_6.xml" />
+                  <entry key="files__18" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__ch_qos_logback_logback_classic_1_1_2.xml" />
+                  <entry key="files__19" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_typesafe_scala_logging_scala_logging_2_11_3_1_0.xml" />
+                  <entry key="files__2" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_google_guava_guava_18_0.xml" />
+                  <entry key="files__20" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_github_scopt_scopt_2_11_3_3_0.xml" />
+                  <entry key="files__21" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_zilliant_lib_zilliant_micro_lib_apiclient_1_0_0.xml" />
+                  <entry key="files__22" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__net_databinder_unfiltered_util_2_11_0_8_2.xml" />
+                  <entry key="files__23" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__org_codehaus_groovy_groovy_all_indy_2_4_6.xml" />
+                  <entry key="files__24" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__org_reflections_reflections_0_9_10.xml" />
+                  <entry key="files__25" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__au_com_dius_pact_jvm_provider_2_11_3_2_6.xml" />
+                  <entry key="files__26" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__org_json_json_20140107.xml" />
+                  <entry key="files__27" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__org_fusesource_jansi_jansi_1_11.xml" />
+                  <entry key="files__28" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__au_com_dius_pact_jvm_consumer_junit_2_11_3_2_6.xml" />
+                  <entry key="files__29" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__net_databinder_unfiltered_2_11_0_8_2.xml" />
+                  <entry key="files__3" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__io_netty_netty_codec_http_4_0_23_Final.xml" />
+                  <entry key="files__30" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__net_databinder_dispatch_dispatch_core_2_11_0_11_3.xml" />
+                  <entry key="files__31" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__au_com_dius_pact_jvm_matchers_2_11_3_2_6.xml" />
+                  <entry key="files__32" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__org_mockito_mockito_core_2_19_1.xml" />
+                  <entry key="files__33" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_google_code_findbugs_jsr305_2_0_2.xml" />
+                  <entry key="files__34" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_ning_async_http_client_1_9_11.xml" />
+                  <entry key="files__35" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__io_netty_netty_handler_4_0_23_Final.xml" />
+                  <entry key="files__36" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__org_scalatest_scalatest_2_11_2_2_1.xml" />
+                  <entry key="files__37" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__xml_apis_xml_apis_1_3_04.xml" />
+                  <entry key="files__38" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__ch_qos_logback_logback_core_1_1_2.xml" />
+                  <entry key="files__39" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__org_objenesis_objenesis_2_6.xml" />
+                  <entry key="files__4" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__dk_brics_automaton_automaton_1_11_8.xml" />
+                  <entry key="files__40" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__io_netty_netty_common_4_0_23_Final.xml" />
+                  <entry key="files__41" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_github_zafarkhaja_java_semver_0_9_0.xml" />
+                  <entry key="files__42" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__io_netty_netty_3_10_0_Final.xml" />
+                  <entry key="files__43" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_zilliant_lib_zilliant_micro_lib_security2_1_0_0.xml" />
+                  <entry key="files__44" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__net_sf_ezmorph_ezmorph_1_0_6.xml" />
+                  <entry key="files__45" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__org_scala_lang_scala_compiler_2_11_7.xml" />
+                  <entry key="files__46" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_zilliant_lib_zilliant_shared_lib_db_1_0_0.xml" />
+                  <entry key="files__47" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__au_com_dius_pact_jvm_consumer_2_11_3_2_6.xml" />
+                  <entry key="files__48" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__xerces_xercesImpl_2_9_1.xml" />
+                  <entry key="files__49" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_zilliant_lib_zilliant_shared_lib_base_1_0_0.xml" />
+                  <entry key="files__5" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__xml_resolver_xml_resolver_1_2.xml" />
+                  <entry key="files__50" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__org_scala_lang_scala_reflect_2_11_7.xml" />
+                  <entry key="files__51" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__org_codehaus_groovy_groovy_all_2_4_6.xml" />
+                  <entry key="files__52" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__au_com_dius_pact_jvm_provider_junit_2_11_3_2_6.xml" />
+                  <entry key="files__53" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__net_databinder_unfiltered_netty_server_2_11_0_8_2.xml" />
+                  <entry key="files__54" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__org_codehaus_groovy_modules_http_builder_http_builder_0_7_1.xml" />
+                  <entry key="files__55" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_googlecode_java_diff_utils_diffutils_1_3_0.xml" />
+                  <entry key="files__56" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_zilliant_lib_zilliant_micro_lib_webserver_1_0_0.xml" />
+                  <entry key="files__57" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__au_com_dius_pact_jvm_server_2_11_3_2_6.xml" />
+                  <entry key="files__58" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_zilliant_lib_zilliant_micro_lib_base_1_0_0.xml" />
+                  <entry key="files__59" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__net_bytebuddy_byte_buddy_agent_1_8_13.xml" />
+                  <entry key="files__6" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__io_netty_netty_buffer_4_0_23_Final.xml" />
+                  <entry key="files__7" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__io_netty_netty_transport_4_0_23_Final.xml" />
+                  <entry key="files__8" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__org_apache_httpcomponents_fluent_hc_4_5_1.xml" />
+                  <entry key="files__9" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__com_google_code_findbugs_annotations_2_0_1.xml" />
+                  <entry key="files__len" value="60" />
+                </map>
+              </option>
+            </PrimitiveMap>
+          </option>
+        </State>
+        <State>
+          <option name="clientActionCmd" value="REVERT_FILE" />
+          <option name="sourceId" value="client:albrechtm_micro-sync-registry_dev:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.file.RevertFileAction@164b46a9aca:5" />
+          <option name="data">
+            <PrimitiveMap>
+              <option name="$proxy$">
+                <map>
+                  <entry key="file" value="c:/p4/micro-sync-registry/dev/.idea/libraries/Gradle__dk_brics_automaton_automaton_1_11_8.xml" />
+                  <entry key="unchanged" value="false" />
+                </map>
+              </option>
+            </PrimitiveMap>
+          </option>
+        </State>
       </list>
     </option>
     <option name="changelistState">

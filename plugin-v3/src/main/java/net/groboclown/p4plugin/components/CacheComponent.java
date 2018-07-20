@@ -92,6 +92,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
      * @return the pending answer.
      */
     private Answer<Pair<IdeChangelistMap, IdeFileMap>> refreshServerOpenedCache(Collection<ClientConfig> clients) {
+        initComponent();
         Answer<?> ret = Answer.resolve(null);
 
         for (ClientConfig client : clients) {

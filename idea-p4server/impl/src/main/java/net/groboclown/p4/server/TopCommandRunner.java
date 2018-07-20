@@ -23,7 +23,6 @@ import com.perforce.p4java.exception.AuthenticationFailedException;
 import com.perforce.p4java.impl.mapbased.server.ServerInfo;
 import net.groboclown.p4.server.api.AbstractP4CommandRunner;
 import net.groboclown.p4.server.api.ClientServerRef;
-import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.cache.ActionChoice;
 import net.groboclown.p4.server.api.cache.CachePendingActionHandler;
@@ -62,10 +61,10 @@ import net.groboclown.p4.server.api.commands.file.GetFileContentsQuery;
 import net.groboclown.p4.server.api.commands.file.GetFileContentsResult;
 import net.groboclown.p4.server.api.commands.file.ListDirectoriesQuery;
 import net.groboclown.p4.server.api.commands.file.ListDirectoriesResult;
-import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
-import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
 import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
 import net.groboclown.p4.server.api.commands.file.ListFileHistoryResult;
+import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
+import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
 import net.groboclown.p4.server.api.commands.file.ListFilesQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesResult;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
@@ -88,7 +87,6 @@ import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
-import net.groboclown.p4.server.api.values.JobStatusNames;
 import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
@@ -97,8 +95,6 @@ import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
 import net.groboclown.p4.server.impl.commands.DoneQueryAnswer;
 import net.groboclown.p4.server.impl.commands.ErrorQueryAnswerImpl;
 import net.groboclown.p4.server.impl.commands.OfflineActionAnswerImpl;
-import net.groboclown.p4.server.impl.values.JobStatusImpl;
-import net.groboclown.p4.server.impl.values.JobStatusNamesImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -125,6 +121,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     private boolean disposed;
 
 
+    /** NOTE: callers must properly register the dispose chain. */
     public TopCommandRunner(@NotNull Project project,
             @NotNull CacheQueryHandler queryCache, @NotNull CachePendingActionHandler pendingActionCache,
             @NotNull AbstractServerCommandRunner server) {
@@ -675,10 +672,6 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     interface Exec<R> {
         R exec();
-    }
-
-    interface ExecThrows<R> {
-        R exec() throws P4CommandRunner.ServerResultException;
     }
 
     private static class ServerConnectionState {

@@ -100,20 +100,20 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
         ListFilesDetailsResult details;
         if (ApplicationManager.getApplication().isDispatchThread()) {
             // Use the cache
-            details = P4ServerComponent.getInstance(project).getCommandRunner()
-                    .syncCachedQuery(client.getClientConfig().getServerConfig(),
+            details = P4ServerComponent
+                    .syncCachedQuery(project, client.getClientConfig().getServerConfig(),
                             new SyncListFilesDetailsQuery(root));
         } else {
             try {
-                details = P4ServerComponent.getInstance(project).getCommandRunner()
-                        .query(client.getClientConfig().getServerConfig(),
+                details = P4ServerComponent
+                        .query(project, client.getClientConfig().getServerConfig(),
                                 new ListFilesDetailsQuery(client.getClientConfig().getClientServerRef(),
                                         Collections.singletonList(root),  ListFilesDetailsQuery.RevState.HAVE, 1))
                         .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
             } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
                 LOG.warn(e);
-                details = P4ServerComponent.getInstance(project).getCommandRunner()
-                        .syncCachedQuery(client.getClientConfig().getServerConfig(),
+                details = P4ServerComponent
+                        .syncCachedQuery(project, client.getClientConfig().getServerConfig(),
                                 new SyncListFilesDetailsQuery(root));
             }
         }
@@ -179,8 +179,8 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
                 return new DoneQueryAnswer<>(Collections.emptyList());
             }
 
-            return P4ServerComponent.getInstance(project).getCommandRunner()
-                    .query(clientConfig.getServerConfig(), new ListSubmittedChangelistsQuery(repo, maxCount))
+            return P4ServerComponent
+                    .query(project, clientConfig.getServerConfig(), new ListSubmittedChangelistsQuery(repo, maxCount))
                     .mapQuery(ListSubmittedChangelistsResult::getChanges);
         }
         LOG.warn("Cannot load changes for non-perforce repository location " + location);

@@ -87,9 +87,8 @@ public class P4EditFileProvider implements EditFileProvider {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Opening for add/edit: " + fp + " (@" + id + ")");
                     }
-                    P4ServerComponent.getInstance(project)
-                            .getCommandRunner()
-                            .perform(root.getClientConfig(),
+                    P4ServerComponent
+                            .perform(project, root.getClientConfig(),
                                     new AddEditAction(fp, getFileType(fp), id, (String) null))
                     .whenCompleted((res) -> {
                         LOG.info("Opened for add/edit: " + fp + ": add? " + res.isAdd() + "; cl: " + res.getChangelistId());

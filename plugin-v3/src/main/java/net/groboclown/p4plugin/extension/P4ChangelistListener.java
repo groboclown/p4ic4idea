@@ -31,10 +31,8 @@ import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAct
 import net.groboclown.p4.server.api.util.FileTreeUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
-import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
-import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.util.ChangelistDescriptionGenerator;
 import org.jetbrains.annotations.NotNull;
 
@@ -125,13 +123,11 @@ public class P4ChangelistListener
                             CacheComponent.getInstance(myProject).getServerOpenedCache().first
                                     .getMappedChangelist(action);
                     p4change = cl.getChangelistId();
-                    P4ServerComponent.getInstance(myProject)
-                            .getCommandRunner()
-                            .perform(clientConfigRoot.getClientConfig(), action);
+                    P4ServerComponent
+                            .perform(myProject, clientConfigRoot.getClientConfig(), action);
                 }
-                P4ServerComponent.getInstance(myProject)
-                        .getCommandRunner()
-                        .perform(clientConfigRoot.getClientConfig(),
+                P4ServerComponent
+                        .perform(myProject, clientConfigRoot.getClientConfig(),
                                 new MoveFilesToChangelistAction(p4change, affectedFiles));
             } catch (InterruptedException e) {
                 LOG.warn(e);
@@ -165,9 +161,8 @@ public class P4ChangelistListener
                                 clientConfigRoot.getClientConfig().getClientServerRef(),
                                 local);
                 if (change != null) {
-                    P4ServerComponent.getInstance(myProject)
-                            .getCommandRunner()
-                            .perform(clientConfigRoot.getClientConfig(),
+                    P4ServerComponent
+                            .perform(myProject, clientConfigRoot.getClientConfig(),
                                     new EditChangelistAction(change, toDescription(local)));
                 }
             } catch (InterruptedException e) {

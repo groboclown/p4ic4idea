@@ -19,23 +19,17 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.AsyncProcessIcon;
-import com.perforce.p4java.client.IClientSummary;
-import com.perforce.p4java.option.server.GetClientsOptions;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
 import net.groboclown.p4.server.impl.config.part.ClientNameConfigPart;
-import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
-import net.groboclown.p4plugin.components.UserProjectPreferences;
-import net.groboclown.p4plugin.messages.MessageErrorHandler;
 import net.groboclown.p4plugin.ui.SwingUtil;
 import net.groboclown.p4plugin.ui.vcsroot.ConfigConnectionController;
 import net.groboclown.p4plugin.ui.vcsroot.ConfigPartUI;
 import net.groboclown.p4plugin.ui.vcsroot.ConfigPartUIFactory;
-import net.groboclown.p4plugin.util.TempDirUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -157,8 +151,8 @@ public class ClientNamePartUI extends ConfigPartUI<ClientNameConfigPart> {
             // FIXME if there's a login issue, such as a bad password, the user is not notified.
             // Specifically, the user isn't given an opportunity to enter the correct password.
 
-            P4ServerComponent.getInstance(project)
-            .getClientsForUser(serverConfig)
+            P4ServerComponent
+            .getClientsForUser(project, serverConfig)
             .whenCompleted((clients) -> {
                 synchronized (sync) {
                     for (P4WorkspaceSummary client : clients.getClients()) {

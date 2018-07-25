@@ -76,22 +76,19 @@ public class CommitUtil {
             boolean completed = filesByRoot.entrySet().stream()
                     .map((entry) -> new Pair<>(entry.getKey(), getFileChangelists(project,
                             entry.getKey().getClientConfig(), entry.getValue())))
-                    .map((pair) -> {
-                        return getJobsIn(project, pair.first.getServerConfig(), jobs)
-                                .mapActionAsync((associatedJobs) -> {
-                                    // FIXME have a better message report.
-                                    P4CommandRunner.ActionAnswer<SubmitChangelistResult> ret =
-                                            new DoneActionAnswer<>(null);
-                                    for (P4ChangelistId changelistId : pair.second) {
-                                        ret = ret.mapActionAsync((r) -> P4ServerComponent.getInstance(project)
-                                                .getCommandRunner()
-                                                .perform(pair.first.getClientConfig(),
-                                                        new SubmitChangelistAction(changelistId,
-                                                                associatedJobs, preparedComment, submitStatus)));
-                                    }
-                                    return ret;
-                                });
-                    })
+                    .map((pair) -> getJobsIn(project, pair.first.getServerConfig(), jobs)
+                            .mapActionAsync((associatedJobs) -> {
+                                // FIXME have a better message report.
+                                P4CommandRunner.ActionAnswer<SubmitChangelistResult> ret =
+                                        new DoneActionAnswer<>(null);
+                                for (P4ChangelistId changelistId : pair.second) {
+                                    ret = ret.mapActionAsync((r) -> P4ServerComponent
+                                            .perform(project, pair.first.getClientConfig(),
+                                                    new SubmitChangelistAction(changelistId,
+                                                            associatedJobs, preparedComment, submitStatus)));
+                                }
+                                return ret;
+                            }))
                     .collect(ErrorCollectors.collectActionErrors(errors))
                     .blockingWait(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
             if (!completed) {
@@ -162,9 +159,8 @@ public class CommitUtil {
             @NotNull ServerConfig config, List<P4Job> jobs) {
         P4CommandRunner.QueryAnswer<Set<P4Job>> ret = new DoneQueryAnswer<>(new HashSet<>());
         for (P4Job job : jobs) {
-            ret = ret.mapQueryAsync((associatedJobs) -> P4ServerComponent.getInstance(project)
-                    .getCommandRunner()
-                    .query(config, new ListJobsQuery(job.getJobId(), null, null, 1))
+            ret = ret.mapQueryAsync((associatedJobs) -> P4ServerComponent
+                    .query(project, config, new ListJobsQuery(job.getJobId(), null, null, 1))
                     .mapQuery((result) -> {
                         associatedJobs.addAll(result.getJobs());
                         return associatedJobs;

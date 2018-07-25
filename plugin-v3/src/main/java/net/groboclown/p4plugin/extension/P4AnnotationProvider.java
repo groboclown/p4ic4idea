@@ -103,8 +103,8 @@ public class P4AnnotationProvider
         try {
             return new P4AnnotatedFileImpl(project, fp,
                     messageFormatter, contentLoader,
-                    P4ServerComponent.getInstance(project).getCommandRunner()
-                        .query(client.getServerConfig(), new AnnotateFileQuery(clientname, fp, rev))
+                    P4ServerComponent
+                        .query(project, client.getServerConfig(), new AnnotateFileQuery(clientname, fp, rev))
                         .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS));
         } catch (InterruptedException e) {
             throw new VcsException(e);

@@ -91,8 +91,8 @@ public class P4SyncUpdateEnvironment
         filesByRoot.entrySet().forEach((entry) -> {
             try {
                 FetchFilesResult res =
-                        P4ServerComponent.getInstance(project).getCommandRunner()
-                                .perform(entry.getKey().getClientConfig(),
+                        P4ServerComponent
+                                .perform(project, entry.getKey().getClientConfig(),
                                         new FetchFilesAction(entry.getValue(), options.getSpecAnnotation(),
                                                 options.isForce()))
                                 .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);

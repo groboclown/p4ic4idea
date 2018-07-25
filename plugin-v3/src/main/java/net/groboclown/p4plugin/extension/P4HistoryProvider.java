@@ -123,9 +123,8 @@ public class P4HistoryProvider
         }
 
         try {
-            List<VcsFileRevision> revisions = P4ServerComponent.getInstance(project)
-                    .getCommandRunner()
-                    .query(root.getClientConfig().getServerConfig(),
+            List<VcsFileRevision> revisions = P4ServerComponent
+                    .query(project, root.getClientConfig().getServerConfig(),
                             new ListFileHistoryQuery(root.getClientConfig().getClientServerRef(), filePath, -1))
                     .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS)
                     .getRevisions(formatter, loader);
@@ -259,9 +258,8 @@ public class P4HistoryProvider
                     return null;
                 }
                 try {
-                    ListFilesDetailsResult result = P4ServerComponent.getInstance(project)
-                            .getCommandRunner()
-                            .query(root.getClientConfig().getServerConfig(), new ListFilesDetailsQuery(
+                    ListFilesDetailsResult result = P4ServerComponent
+                            .query(project, root.getClientConfig().getServerConfig(), new ListFilesDetailsQuery(
                                     root.getClientConfig().getClientServerRef(), Collections.singletonList(path),
                                     ListFilesDetailsQuery.RevState.HEAD,  1))
                             .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project),
@@ -290,9 +288,8 @@ public class P4HistoryProvider
 
     private P4CommandRunner.QueryAnswer<ListFileHistoryResult> getHistory(
             @NotNull ClientConfigRoot root, FilePath file, int revisionCount) {
-        return P4ServerComponent.getInstance(project)
-                .getCommandRunner()
-                .query(root.getClientConfig().getServerConfig(), new ListFileHistoryQuery(
+        return P4ServerComponent
+                .query(project, root.getClientConfig().getServerConfig(), new ListFileHistoryQuery(
                         root.getClientConfig().getClientServerRef(), file, revisionCount));
     }
 

@@ -76,9 +76,8 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
 
         P4ChangelistId changelistId = p4Rev.getChangelistId();
 
-        P4ServerComponent.getInstance(project)
-                .getCommandRunner()
-                .query(serverConfig, new DescribeChangelistQuery(changelistId))
+        P4ServerComponent
+                .query(project, serverConfig, new DescribeChangelistQuery(changelistId))
                 .whenCompleted((r) -> {
                     if (r.getRemoteChangelist() != null) {
                         ChangelistDetails.showDocked(project, r.getRemoteChangelist());

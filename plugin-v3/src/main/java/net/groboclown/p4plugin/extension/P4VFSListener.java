@@ -16,7 +16,6 @@ package net.groboclown.p4plugin.extension;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsVFSListener;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
@@ -83,8 +82,8 @@ public class P4VFSListener extends VcsVFSListener {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Opening for add/edit: " + fp + " (@" + id + ")");
                 }
-                P4ServerComponent.getInstance(myProject).getCommandRunner()
-                        .perform(root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, (String) null));
+                P4ServerComponent.perform(myProject,
+                        root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, (String) null));
             } else {
                 LOG.info("Skipped adding " + file + "; not under known P4 client");
             }
@@ -103,8 +102,7 @@ public class P4VFSListener extends VcsVFSListener {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Opening for delete: " + filePath + " (@" + id + ")");
                 }
-                P4ServerComponent.getInstance(myProject).getCommandRunner()
-                        .perform(root.getClientConfig(), new DeleteFileAction(filePath, id));
+                P4ServerComponent.perform(myProject, root.getClientConfig(), new DeleteFileAction(filePath, id));
             } else {
                 LOG.info("Skipped deleting " + filePath + "; not under known P4 client");
             }
@@ -129,8 +127,7 @@ public class P4VFSListener extends VcsVFSListener {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Opening for move: " + src + " -> " + tgt + " (@" + id + ")");
                 }
-                P4ServerComponent.getInstance(myProject).getCommandRunner()
-                        .perform(srcRoot.getClientConfig(), new MoveFileAction(src, tgt, id));
+                P4ServerComponent.perform(myProject, srcRoot.getClientConfig(), new MoveFileAction(src, tgt, id));
             } else {
                 // Not a move operation, because they aren't in the same perforce client.
 
@@ -140,8 +137,7 @@ public class P4VFSListener extends VcsVFSListener {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Opening for move/delete: " + src + " (@" + id + ")");
                     }
-                    P4ServerComponent.getInstance(myProject).getCommandRunner()
-                            .perform(srcRoot.getClientConfig(), new DeleteFileAction(src, id));
+                    P4ServerComponent.perform(myProject, srcRoot.getClientConfig(), new DeleteFileAction(src, id));
                 }
 
                 if (tgtRoot != null) {
@@ -155,8 +151,8 @@ public class P4VFSListener extends VcsVFSListener {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Opening for move/add-edit: " + tgt + " (@" + id + ")");
                     }
-                    P4ServerComponent.getInstance(myProject).getCommandRunner()
-                            .perform(tgtRoot.getClientConfig(), new AddEditAction(tgt, null, id, (String) null));
+                    P4ServerComponent.perform(myProject,
+                            tgtRoot.getClientConfig(), new AddEditAction(tgt, null, id, (String) null));
                 }
             }
         }

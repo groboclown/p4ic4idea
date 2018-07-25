@@ -4,8 +4,6 @@
       <root url="jar://$PROJECT_DIR$/lib/main/guava-19.0.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="jar://$PROJECT_DIR$/lib/main/guava-19.0.jar!/" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>

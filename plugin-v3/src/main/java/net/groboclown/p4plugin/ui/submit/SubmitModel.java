@@ -147,9 +147,8 @@ public class SubmitModel {
         }
         for (ServerConfig config : configs) {
             try {
-                ListJobsResult res = P4ServerComponent.getInstance(project)
-                        .getCommandRunner()
-                        .query(config, new ListJobsQuery(jobId, null, null, 1))
+                ListJobsResult res = P4ServerComponent
+                        .query(project, config, new ListJobsQuery(jobId, null, null, 1))
                         .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
                 for (P4Job job : res.getJobs()) {
                     if (jobId.equalsIgnoreCase(job.getJobId())) {
@@ -172,9 +171,8 @@ public class SubmitModel {
         }
         P4CommandRunner.QueryAnswer<List<P4Job>> ret = new DoneQueryAnswer<>(new ArrayList<>());
         for (ServerConfig config : configs) {
-            ret = ret.mapQueryAsync((jobs) -> P4ServerComponent.getInstance(project)
-                    .getCommandRunner()
-                    .query(config, new ListJobsQuery(null, null, queryPart, maxResultsPerServer))
+            ret = ret.mapQueryAsync((jobs) -> P4ServerComponent
+                    .query(project, config, new ListJobsQuery(null, null, queryPart, maxResultsPerServer))
                     .mapQuery((r) -> {
                         jobs.addAll(r.getJobs());
                         return jobs;
@@ -191,9 +189,8 @@ public class SubmitModel {
         }
         P4CommandRunner.QueryAnswer<Set<JobStatus>> res = new DoneQueryAnswer<>(new HashSet<>());
         for (ServerConfig config : configs) {
-            res = res.mapQueryAsync((statuses) -> P4ServerComponent.getInstance(project)
-                    .getCommandRunner()
-                    .query(config, new GetJobSpecQuery())
+            res = res.mapQueryAsync((statuses) -> P4ServerComponent
+                    .query(project, config, new GetJobSpecQuery())
                     .mapQuery((r) -> {
                         P4JobSpec jobSpec = r.getJobSpec();
                         if (jobSpec != null) {

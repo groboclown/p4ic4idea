@@ -78,7 +78,7 @@ public class BlockingAnswer<S> {
         }
 
         if (! latch.await(timeout, unit)) {
-            throw new CancellationException();
+            throw new CancellationException("Timed out after " + timeout + " " + unit.toString().toLowerCase());
         }
         if (error != null) {
             throw error;

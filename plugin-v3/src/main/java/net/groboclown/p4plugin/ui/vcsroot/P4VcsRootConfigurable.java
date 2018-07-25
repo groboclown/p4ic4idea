@@ -226,7 +226,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
                     // An error here will cause the client config check to fail, because of
                     // the rejection.
                     LOG.debug("Attempting to get the list of clients");
-                    P4ServerComponent.getInstance(project).checkServerConnection(serverConfig)
+                    P4ServerComponent.checkServerConnection(project, serverConfig)
                             .whenCompleted(sink::resolve)
                             .whenServerError(sink::reject);
                 } else {
@@ -238,7 +238,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
                     // Check the opened files, because that requires the client to be
                     // valid for the current user.
                     LOG.debug("Checking client connection");
-                    P4ServerComponent.getInstance(project).checkClientConnection(clientConfig)
+                    P4ServerComponent.checkClientConnection(project, clientConfig)
                             .whenCompleted(sink::resolve)
                             .whenServerError(sink::reject);
                 } else {

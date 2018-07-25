@@ -74,9 +74,8 @@ public class HistoryContentLoaderImpl implements HistoryContentLoader {
     private GetFileContentsResult loadContent(@NotNull ServerConfig config, @NotNull GetFileContentsQuery query)
             throws VcsException {
         try {
-            return P4ServerComponent.getInstance(project)
-                    .getCommandRunner()
-                    .query(config, query)
+            return P4ServerComponent
+                    .query(project, config, query)
                     .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             // TODO better exception?

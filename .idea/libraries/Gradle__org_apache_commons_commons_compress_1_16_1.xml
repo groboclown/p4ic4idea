@@ -4,8 +4,6 @@
       <root url="jar://$PROJECT_DIR$/lib/main/commons-compress-1.16.1.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="jar://$PROJECT_DIR$/lib/main/commons-compress-1.16.1.jar!/" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>

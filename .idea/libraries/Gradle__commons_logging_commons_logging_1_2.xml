@@ -4,8 +4,6 @@
       <root url="jar://$PROJECT_DIR$/lib/main/commons-logging-1.2.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="jar://$PROJECT_DIR$/lib/main/commons-logging-1.2.jar!/" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>

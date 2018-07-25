@@ -97,7 +97,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
 
         for (ClientConfig client : clients) {
             ret = ret.mapAsync((x) ->
-            Answer.background((sink) -> P4ServerComponent.getInstance(project).getCommandRunner().syncQuery(
+            Answer.background((sink) -> P4ServerComponent.syncQuery(project,
                     client,
                     new SyncListOpenedFilesChangesQuery(
                             UserProjectPreferences.getMaxChangelistRetrieveCount(project),

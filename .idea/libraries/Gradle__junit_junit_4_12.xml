@@ -4,8 +4,6 @@
       <root url="jar://$PROJECT_DIR$/lib/test/junit-4.12.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="jar://$PROJECT_DIR$/lib/test/junit-4.12.jar!/" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>

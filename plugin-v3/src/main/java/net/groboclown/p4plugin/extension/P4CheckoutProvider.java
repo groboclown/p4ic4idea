@@ -85,8 +85,8 @@ public class P4CheckoutProvider extends CheckoutProviderEx {
         });
         LOG.info("Fetching tiles into " + rootPath);
         processor.processBatchAnswer(() -> Answer.background(sink ->
-            P4ServerComponent.getInstance(project).getCommandRunner()
-                .perform(clientConfig,
+            P4ServerComponent
+                .perform(project, clientConfig,
                         new FetchFilesAction(Collections.singletonList(rootPath), null, false))
                 .whenCompleted(r -> sink.resolve(Collections.singletonList(r)))
                 .whenServerError(sink::reject)

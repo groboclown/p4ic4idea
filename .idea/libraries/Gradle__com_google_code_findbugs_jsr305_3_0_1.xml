@@ -4,8 +4,6 @@
       <root url="jar://$PROJECT_DIR$/lib/main/jsr305-3.0.1.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="jar://$PROJECT_DIR$/lib/main/jsr305-3.0.1.jar!/" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>

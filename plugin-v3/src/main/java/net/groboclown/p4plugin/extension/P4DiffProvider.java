@@ -82,9 +82,8 @@ public class P4DiffProvider extends DiffProviderEx
         }
         try {
             ListFilesDetailsResult result =
-                    P4ServerComponent.getInstance(project)
-                            .getCommandRunner()
-                            .query(root.getClientConfig().getServerConfig(),
+                    P4ServerComponent
+                            .query(project, root.getClientConfig().getServerConfig(),
                                     new ListFilesDetailsQuery(root.getClientConfig().getClientServerRef(),
                                             Collections.singletonList(fp), ListFilesDetailsQuery.RevState.HAVE, 1))
                             .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
@@ -125,9 +124,8 @@ public class P4DiffProvider extends DiffProviderEx
             return null;
         }
         try {
-            ListFilesDetailsResult result = P4ServerComponent.getInstance(project)
-                    .getCommandRunner()
-                    .query(root.getClientConfig().getServerConfig(),
+            ListFilesDetailsResult result = P4ServerComponent
+                    .query(project, root.getClientConfig().getServerConfig(),
                             new ListFilesDetailsQuery(root.getClientConfig().getClientServerRef(),
                                     Collections.singletonList(filePath), ListFilesDetailsQuery.RevState.HEAD, 1))
                     .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
@@ -234,9 +232,8 @@ public class P4DiffProvider extends DiffProviderEx
             return null;
         }
         try {
-            List<VcsFileRevision> revisions = P4ServerComponent.getInstance(project)
-                    .getCommandRunner()
-                    .query(root.getClientConfig().getServerConfig(),
+            List<VcsFileRevision> revisions = P4ServerComponent
+                    .query(project, root.getClientConfig().getServerConfig(),
                             new ListFileHistoryQuery(root.getClientConfig().getClientServerRef(), local, 1))
                     .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS)
                     .getRevisions(formatter, loader);

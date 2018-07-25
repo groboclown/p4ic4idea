@@ -40,7 +40,7 @@ import net.groboclown.p4plugin.messages.MessageErrorHandler;
 import net.groboclown.p4plugin.util.TempDirUtil;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nullable;
+import java.util.concurrent.TimeUnit;
 
 public class P4ServerComponent implements ProjectComponent, Disposable {
     private static final Logger LOG = Logger.getInstance(P4ServerComponent.class);
@@ -51,34 +51,11 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     private AbstractServerCommandRunner connectRunner;
     private boolean disposed = false;
 
-    /**/
-    public static P4ServerComponent getInstance(@Nullable Project project) {
-        // a non-registered component can happen when the config is loaded outside a project.
-        P4ServerComponent ret = null;
-        if (project != null) {
-            ret = project.getComponent(P4ServerComponent.class);
-        }
-        if (ret == null) {
-            // FIXME should not happen, but it does.
-            LOG.warn("Creating a new P4ServerComponent explicitly.  Note it probably won't be cleaned up right.");
-            ret = new P4ServerComponent(project);
-            ret.initComponent();
-            if (project != null) {
-                Disposer.register(project, ret);
-            }
-        }
-        return ret;
-    }
-    /**/
-
     // An attempt to prevent some potential memory leaks.
-    private static Pair<P4ServerComponent, Boolean> findInstance(@Nullable Project project) {
+    private static Pair<P4ServerComponent, Boolean> findInstance(@NotNull Project project) {
         // a non-registered component can happen when the config is loaded outside a project.
-        P4ServerComponent ret = null;
+        P4ServerComponent ret = project.getComponent(P4ServerComponent.class);
         boolean mustBeDisposed = false;
-        if (project != null) {
-            ret = project.getComponent(P4ServerComponent.class);
-        }
         if (ret == null) {
             ret = new P4ServerComponent(project);
             ret.initComponent();
@@ -87,8 +64,9 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         return Pair.create(ret, mustBeDisposed);
     }
 
+
     @NotNull
-    public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.ActionAnswer<R> perform(@Nullable Project project,
+    public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.ActionAnswer<R> perform(@NotNull Project project,
             @NotNull ServerConfig config, @NotNull P4CommandRunner.ServerAction<R> action) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.ActionAnswer<R> ret = instance.first.getCommandRunner().perform(config, action);
@@ -100,7 +78,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
 
 
     @NotNull
-    public static <R extends P4CommandRunner.ClientResult> P4CommandRunner.ActionAnswer<R> perform(@Nullable Project project,
+    public static <R extends P4CommandRunner.ClientResult> P4CommandRunner.ActionAnswer<R> perform(@NotNull Project project,
             @NotNull ClientConfig config, @NotNull P4CommandRunner.ClientAction<R> action) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.ActionAnswer<R> ret = instance.first.getCommandRunner().perform(config, action);
@@ -111,7 +89,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     }
 
     @NotNull
-    public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.QueryAnswer<R> query(@Nullable Project project,
+    public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.QueryAnswer<R> query(@NotNull Project project,
             @NotNull ServerConfig config, @NotNull P4CommandRunner.ServerQuery<R> query) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<R> ret = instance.first.getCommandRunner().query(config, query);
@@ -122,7 +100,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     }
 
     @NotNull
-    public static <R extends P4CommandRunner.ClientResult> P4CommandRunner.QueryAnswer<R> query(@Nullable Project project,
+    public static <R extends P4CommandRunner.ClientResult> P4CommandRunner.QueryAnswer<R> query(@NotNull Project project,
             @NotNull ClientConfig config, @NotNull P4CommandRunner.ClientQuery<R> query) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<R> ret = instance.first.getCommandRunner().query(config, query);
@@ -133,7 +111,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     }
 
     @NotNull
-    public static <R extends P4CommandRunner.ServerNameResult> P4CommandRunner.QueryAnswer<R> query(@Nullable Project project,
+    public static <R extends P4CommandRunner.ServerNameResult> P4CommandRunner.QueryAnswer<R> query(@NotNull Project project,
             @NotNull P4ServerName name, @NotNull P4CommandRunner.ServerNameQuery<R> query) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<R> ret = instance.first.getCommandRunner().query(name, query);
@@ -144,7 +122,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     }
 
     @NotNull
-    public static <R extends P4CommandRunner.ServerResult> R syncCachedQuery(@Nullable Project project,
+    public static <R extends P4CommandRunner.ServerResult> R syncCachedQuery(@NotNull Project project,
             @NotNull ServerConfig config, @NotNull P4CommandRunner.SyncServerQuery<R> query) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         R ret = instance.first.getCommandRunner().syncCachedQuery(config, query);
@@ -155,7 +133,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     }
 
     @NotNull
-    public static <R extends P4CommandRunner.ClientResult> R syncCachedQuery(@Nullable Project project,
+    public static <R extends P4CommandRunner.ClientResult> R syncCachedQuery(@NotNull Project project,
             @NotNull ClientConfig config, @NotNull P4CommandRunner.SyncClientQuery<R> query) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         R ret = instance.first.getCommandRunner().syncCachedQuery(config, query);
@@ -166,7 +144,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     }
 
     @NotNull
-    public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.FutureResult<R> syncQuery(@Nullable Project project, @NotNull ServerConfig config, @NotNull P4CommandRunner.SyncServerQuery<R> query) {
+    public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.FutureResult<R> syncQuery(@NotNull Project project, @NotNull ServerConfig config, @NotNull P4CommandRunner.SyncServerQuery<R> query) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.FutureResult<R> ret = instance.first.getCommandRunner().syncQuery(config, query);
         if (instance.second) {
@@ -176,7 +154,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     }
 
     @NotNull
-    public static <R extends P4CommandRunner.ClientResult> P4CommandRunner.FutureResult<R> syncQuery(@Nullable Project project, @NotNull ClientConfig config, @NotNull P4CommandRunner.SyncClientQuery<R> query) {
+    public static <R extends P4CommandRunner.ClientResult> P4CommandRunner.FutureResult<R> syncQuery(@NotNull Project project, @NotNull ClientConfig config, @NotNull P4CommandRunner.SyncClientQuery<R> query) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.FutureResult<R> ret = instance.first.getCommandRunner().syncQuery(config, query);
         if (instance.second) {
@@ -185,7 +163,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         return ret;
     }
 
-    public static P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(@Nullable Project project,
+    public static P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(@NotNull Project project,
             @NotNull ServerConfig config) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<ListClientsForUserResult> ret = instance.first.getClientsForUser(config);
@@ -195,7 +173,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         return ret;
     }
 
-    public static P4CommandRunner.QueryAnswer<ListClientsForUserResult> checkServerConnection(@Nullable Project project,
+    public static P4CommandRunner.QueryAnswer<ListClientsForUserResult> checkServerConnection(@NotNull Project project,
             ServerConfig config) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<ListClientsForUserResult> ret = instance.first.checkServerConnection(config);
@@ -205,7 +183,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         return ret;
     }
 
-    public static P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> checkClientConnection(@Nullable Project project, ClientConfig clientConfig) {
+    public static P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> checkClientConnection(@NotNull Project project, ClientConfig clientConfig) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> ret = instance.first.checkClientConnection(clientConfig);
         if (instance.second) {
@@ -225,7 +203,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
 
 
     @SuppressWarnings("WeakerAccess")
-    public P4ServerComponent(@Nullable Project project) {
+    public P4ServerComponent(@NotNull Project project) {
         this.project = project;
     }
 
@@ -329,7 +307,8 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         );
         int connectionRestriction = UserProjectPreferences.getMaxServerConnections(project);
         if (connectionRestriction > 0) {
-            ret = new LimitedConnectionManager(ret, connectionRestriction);
+            ret = new LimitedConnectionManager(ret, connectionRestriction,
+                    UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
         }
         return ret;
     }

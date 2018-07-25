@@ -89,7 +89,7 @@ public class InvalidPasswordMonitorComponent
             public void sessionExpired(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
                 // Force a log-in.  If this fails, another message will be handled.
                 if (shouldHandleProblem(config, FailureType.SESSION_EXPIRED)) {
-                    P4ServerComponent.getInstance(findBestProject()).getCommandRunner().perform(config,
+                    P4ServerComponent.perform(findBestProject(), config,
                             new LoginAction());
                 }
             }

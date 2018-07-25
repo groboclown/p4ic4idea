@@ -4,8 +4,6 @@
       <root url="jar://$PROJECT_DIR$/lib/test/junit-platform-runner-1.1.0.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="jar://$PROJECT_DIR$/lib/test/junit-platform-runner-1.1.0.jar!/" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>

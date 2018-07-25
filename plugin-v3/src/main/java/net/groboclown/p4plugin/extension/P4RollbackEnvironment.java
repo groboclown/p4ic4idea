@@ -97,9 +97,8 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             BlockingAnswer.createBlockFor(paths.stream()
                     .map((f) -> Pair.create(registry.getClientFor(f), f))
                     .filter((p) -> p.first != null)
-                    .map((p) -> P4ServerComponent.getInstance(project)
-                            .getCommandRunner()
-                            .perform(p.first.getClientConfig(), new RevertFileAction(p.second, false))
+                    .map((p) -> P4ServerComponent
+                            .perform(project, p.first.getClientConfig(), new RevertFileAction(p.second, false))
                             .whenCompleted((r) -> {
                                 LOG.info("Reverted " + p.second);
                                 listener.accept(p.second);
@@ -164,9 +163,8 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             return;
         }
 
-        P4ServerComponent.getInstance(project)
-                .getCommandRunner()
-                .perform(root.getClientConfig(), new RevertFileAction(fp, true))
+        P4ServerComponent
+                .perform(project, root.getClientConfig(), new RevertFileAction(fp, true))
                 .whenCompleted((r) -> ChangeListManager.getInstance(project).scheduleUpdate(true));
     }
 
@@ -192,9 +190,8 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
                         LOG.info("Skipping revert for " + e.getValue() + ": not in a Perforce root");
                         return new DoneActionAnswer<>(null);
                     }
-                    return P4ServerComponent.getInstance(project)
-                            .getCommandRunner()
-                            .perform(e.getKey().getClientConfig(), new FetchFilesAction(e.getValue(), "", true))
+                    return P4ServerComponent
+                            .perform(project, e.getKey().getClientConfig(), new FetchFilesAction(e.getValue(), "", true))
                             .whenCompleted((c) -> listener.accept(e.getValue()))
                             .whenServerError((ex) -> listener.accept(e.getValue()))
                             .whenOffline(() -> listener.accept(e.getValue()));

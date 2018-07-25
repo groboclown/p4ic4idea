@@ -109,13 +109,10 @@ public class P4EditAction
             }
             return entity.second.stream().map((file) -> {
                 FilePath path = VcsUtil.getFilePath(file);
-                return P4ServerComponent.getInstance(project)
-                        .getCommandRunner()
-                        .perform(entity.first, new AddEditAction(path, null, p4cl, path.getCharset(project)))
-                .whenServerError((Consumer<P4CommandRunner.ServerResultException>) (err) -> exceptions.add(new VcsException(err)))
-                .whenCompleted((r) -> {
-                    VcsDirtyScopeManager.getInstance(project).filesDirty(Collections.singleton(file), null);
-                })
+                return P4ServerComponent
+                        .perform(project, entity.first, new AddEditAction(path, null, p4cl, path.getCharset(project)))
+                .whenServerError((err) -> exceptions.add(new VcsException(err)))
+                .whenCompleted((r) -> VcsDirtyScopeManager.getInstance(project).filesDirty(Collections.singleton(file), null))
                 ;
             });
         })

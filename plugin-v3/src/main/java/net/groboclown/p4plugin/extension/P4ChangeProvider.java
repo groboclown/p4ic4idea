@@ -338,7 +338,7 @@ public class P4ChangeProvider
                                             createP4ChangelistDescription(ideChangeList));
                             CacheComponent.getInstance(project).getServerOpenedCache().first.setMapping(
                                     action, ideChangeList);
-                            P4ServerComponent.getInstance(project).getCommandRunner().perform(clientConfig, action);
+                            P4ServerComponent.perform(project, clientConfig, action);
                         } else {
                             LOG.warn("IDE changelist " + ideChangeList +
                                     " file " + file + " -> " + p4file +

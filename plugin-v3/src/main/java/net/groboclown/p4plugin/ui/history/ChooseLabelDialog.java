@@ -103,8 +103,8 @@ public class ChooseLabelDialog
             LOG.info("Loading labels from " + configs.size() + " configs with filter [" + filter + "]");
             searchResultProcessor.processBatchAnswer(() -> configs.stream()
                     .map((serverConfig) ->
-                            P4ServerComponent.getInstance(project).getCommandRunner()
-                                    .query(serverConfig, new ListLabelsQuery(filter,
+                            P4ServerComponent
+                                    .query(project, serverConfig, new ListLabelsQuery(filter,
                                             MAX_LABEL_RESULTS)))
                     .reduce(Answer.resolve(Collections.emptyList()),
                             (listAnswer, queryResult) -> listAnswer.futureMap((src, sink) -> {

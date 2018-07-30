@@ -54,8 +54,10 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -151,12 +153,18 @@ public class ActiveConnectionPanel {
         connectionTree.setModel(connectionTreeModel);
         connectionTree.setCellRenderer(new ConnectionTreeCellRenderer());
         connectionTree.setRootVisible(false);
+        DefaultTreeSelectionModel selectionModel = new DefaultTreeSelectionModel();
+        selectionModel.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        connectionTree.setSelectionModel(selectionModel);
 
         ActionGroup actionButtons = createActionGroup();
         ActionToolbar toolbar =
                 ActionManager.getInstance().createActionToolbar("p4.active-connection",
                         actionButtons, false);
         root.add(toolbar.getComponent(), BorderLayout.WEST);
+
+        // FIXME add context menu support for each selected node type.
+        // FIXME add support for navigating to a file if a FilePath is selected.
     }
 
     private ActionGroup createActionGroup() {

@@ -15,9 +15,18 @@
 package net.groboclown.p4plugin.ui.connection;
 
 class PendingParentNode {
-    final int pendingCount;
+    private int pendingCount;
 
-    PendingParentNode(int pendingCount) {
-        this.pendingCount = pendingCount;
+    public int getPendingCount() {
+        return pendingCount;
+    }
+
+    public boolean isEmpty() {
+        return pendingCount <= 0;
+    }
+
+    public void setPendingCount(int count) {
+        assert count >= 0;
+        this.pendingCount = count;
     }
 }

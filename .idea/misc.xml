@@ -563,6 +563,78 @@
             </PrimitiveMap>
           </option>
         </State>
+        <State>
+          <option name="clientActionCmd" value="ADD_EDIT_FILE" />
+          <option name="sourceId" value="client:albrechtm_zaas2-release-testing_main:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.file.AddEditAction@164d393759d:22" />
+          <option name="data">
+            <PrimitiveMap>
+              <option name="$proxy$">
+                <map>
+                  <entry key="cl-id__id" value="0" />
+                  <entry key="cl-id__ref__clientName" value="albrechtm_zaas2-release-testing_main" />
+                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
+                  <entry key="file" value="C:/p4/zaas2-release-testing/main/ui-lib/src/main/java/com/zilliant/release/ui/Env.java" />
+                  <entry key="type" value="text" />
+                </map>
+              </option>
+            </PrimitiveMap>
+          </option>
+        </State>
+        <State>
+          <option name="clientActionCmd" value="ADD_EDIT_FILE" />
+          <option name="sourceId" value="client:albrechtm_zaas2-release-testing_main:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.file.AddEditAction@164d393759d:25" />
+          <option name="data">
+            <PrimitiveMap>
+              <option name="$proxy$">
+                <map>
+                  <entry key="cl-id__id" value="0" />
+                  <entry key="cl-id__ref__clientName" value="albrechtm_zaas2-release-testing_main" />
+                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
+                  <entry key="file" value="C:/p4/zaas2-release-testing/main/.idea/codeStyles/codeStyleConfig.xml" />
+                  <entry key="type" value="text" />
+                </map>
+              </option>
+            </PrimitiveMap>
+          </option>
+        </State>
+        <State>
+          <option name="clientActionCmd" value="ADD_EDIT_FILE" />
+          <option name="sourceId" value="client:albrechtm_zaas2-release-testing_main:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.file.AddEditAction@164d393759d:1b" />
+          <option name="data">
+            <PrimitiveMap>
+              <option name="$proxy$">
+                <map>
+                  <entry key="cl-id__id" value="0" />
+                  <entry key="cl-id__ref__clientName" value="albrechtm_zaas2-release-testing_main" />
+                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
+                  <entry key="file" value="C:/p4/zaas2-release-testing/main/.idea/libraries/Gradle__com_force_api_force_wsc_41_0_0.xml" />
+                  <entry key="type" value="text" />
+                </map>
+              </option>
+            </PrimitiveMap>
+          </option>
+        </State>
+        <State>
+          <option name="clientActionCmd" value="ADD_EDIT_FILE" />
+          <option name="sourceId" value="client:albrechtm_zaas2-release-testing_main:prodsc.austx.zilliant.com:1666" />
+          <option name="actionId" value="net.groboclown.p4.server.api.commands.file.AddEditAction@164d393759d:21" />
+          <option name="data">
+            <PrimitiveMap>
+              <option name="$proxy$">
+                <map>
+                  <entry key="cl-id__id" value="0" />
+                  <entry key="cl-id__ref__clientName" value="albrechtm_zaas2-release-testing_main" />
+                  <entry key="cl-id__ref__serverPort" value="prodsc.austx.zilliant.com:1666" />
+                  <entry key="file" value="C:/p4/zaas2-release-testing/main/ui-lib/src/main/java/com/zilliant/release/ui/sfdc/SfdcLogin.java" />
+                  <entry key="type" value="text" />
+                </map>
+              </option>
+            </PrimitiveMap>
+          </option>
+        </State>
       </list>
     </option>
     <option name="changelistState">

@@ -16,6 +16,7 @@ package net.groboclown.p4.server.api.commands.file;
 
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.commands.AbstractNonCachedClientAction;
 import net.groboclown.p4.server.api.commands.ActionUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,8 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class FetchFilesAction implements P4CommandRunner.ClientAction<FetchFilesResult> {
-    private final String actionId = ActionUtil.createActionId(FetchFilesAction.class);
+public class FetchFilesAction extends AbstractNonCachedClientAction<FetchFilesResult> {
     private final List<FilePath> syncPaths;
     private final String pathAnnotation;
     private final boolean force;
@@ -47,12 +47,6 @@ public class FetchFilesAction implements P4CommandRunner.ClientAction<FetchFiles
     @Override
     public P4CommandRunner.ClientActionCmd getCmd() {
         return P4CommandRunner.ClientActionCmd.FETCH_FILES;
-    }
-
-    @NotNull
-    @Override
-    public String getActionId() {
-        return actionId;
     }
 
     public boolean isForce() {

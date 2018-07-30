@@ -14,12 +14,14 @@
 
 package net.groboclown.p4plugin.ui.connection;
 
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.speedSearch.SpeedSearchUtil;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.cache.ActionChoice;
 import net.groboclown.p4plugin.P4Bundle;
@@ -46,6 +48,14 @@ public class ConnectionTreeCellRenderer extends ColoredTreeCellRenderer {
             SimpleTextAttributes.REGULAR_ATTRIBUTES;
     private static final SimpleTextAttributes PENDING_ACTION_STYLE =
             SimpleTextAttributes.REGULAR_ATTRIBUTES;
+    private static final SimpleTextAttributes PENDING_ACTION_SEPARATOR_STYLE =
+            SimpleTextAttributes.GRAYED_ATTRIBUTES;
+    private static final SimpleTextAttributes PENDING_ACTION_PARAMETER_STYLE =
+            SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
+    private static final SimpleTextAttributes FILENAME_STYLE =
+            SimpleTextAttributes.SYNTHETIC_ATTRIBUTES;
+    private static final SimpleTextAttributes FILEPATH_STYLE =
+            SimpleTextAttributes.REGULAR_ITALIC_ATTRIBUTES;
     private static final SimpleTextAttributes ERROR_STYLE =
             SimpleTextAttributes.ERROR_ATTRIBUTES;
 
@@ -68,12 +78,17 @@ public class ConnectionTreeCellRenderer extends ColoredTreeCellRenderer {
             renderPendingParentNode((PendingParentNode) value);
         } else if (value instanceof ActionChoice) {
             renderActionChoice((ActionChoice) value);
+        } else if (value instanceof FilePath) {
+            renderFilePath((FilePath) value);
+        } else if (value instanceof P4CommandRunner.ResultError) {
+            renderResultError((P4CommandRunner.ResultError) value);
         } else {
             renderError(value);
         }
 
         SpeedSearchUtil.applySpeedSearchHighlighting(tree, this, true, selected);
     }
+
 
     private void renderClientConfigRoot(ClientConfigRoot value) {
         append(P4Bundle.message("connection.tree.root.name", value.getProjectVcsRootDir().getPresentableName()),
@@ -108,7 +123,7 @@ public class ConnectionTreeCellRenderer extends ColoredTreeCellRenderer {
     }
 
     private void renderPendingParentNode(PendingParentNode value) {
-        append(P4Bundle.message("connection.tree.pending-parent", value.pendingCount),
+        append(P4Bundle.message("connection.tree.pending-parent", value.getPendingCount()),
                 PENDING_PARENT_STYLE);
 
     }
@@ -119,6 +134,35 @@ public class ConnectionTreeCellRenderer extends ColoredTreeCellRenderer {
                 (s) -> s.getCmd().name().toLowerCase().replace('_', ' ')
         );
         append(text, PENDING_ACTION_STYLE);
+        String[] params = value.getDisplayParameters();
+        if (params.length > 0) {
+            boolean first = true;
+            for (String param : params) {
+                if (first) {
+                    append(" (", PENDING_ACTION_SEPARATOR_STYLE);
+                    first = false;
+                } else {
+                    append(", ", PENDING_ACTION_SEPARATOR_STYLE);
+                }
+                append(param, PENDING_ACTION_PARAMETER_STYLE);
+            }
+            append(")", PENDING_ACTION_SEPARATOR_STYLE);
+        }
+    }
+
+    private void renderFilePath(FilePath value) {
+        // FIXME make this look and act like the display for the changelist files.
+        // You should be able to navigate to the file from here.
+        append(value.getName(), FILENAME_STYLE);
+        FilePath parent = value.getParentPath();
+        if (parent != null) {
+            append("  ", PENDING_ACTION_SEPARATOR_STYLE);
+            append(parent.getPath(), FILEPATH_STYLE);
+        }
+    }
+
+    private void renderResultError(P4CommandRunner.ResultError value) {
+        append(value.getCategory() + ": " + value.getMessage(), ERROR_STYLE);
     }
 
     private void renderError(Object value) {

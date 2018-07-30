@@ -171,14 +171,13 @@ public abstract class BasicAction extends DumbAwareAction {
         final Map<ClientConfigRoot, List<VirtualFile>> mapping = new HashMap<>();
         files.forEach((file) -> {
             ClientConfigRoot config = registry.getClientFor(file);
-            List<VirtualFile> mappedFiles = mapping.computeIfAbsent(config, k -> new ArrayList<>());
-            mappedFiles.add(file);
+            if (config != null) {
+                List<VirtualFile> mappedFiles = mapping.computeIfAbsent(config, k -> new ArrayList<>());
+                mappedFiles.add(file);
+            }
         });
-        Stream.Builder<Pair<ClientConfig, List<VirtualFile>>> builder = Stream.builder();
-        for (Map.Entry<ClientConfigRoot, List<VirtualFile>> entry: mapping.entrySet()) {
-            builder.accept(Pair.create(entry.getKey().getClientConfig(), entry.getValue()));
-        }
-        return builder.build();
+        return mapping.entrySet().stream()
+                .map((entry) -> Pair.create(entry.getKey().getClientConfig(), entry.getValue()));
     }
 
     /**

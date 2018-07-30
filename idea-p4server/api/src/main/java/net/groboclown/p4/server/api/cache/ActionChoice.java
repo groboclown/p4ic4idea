@@ -14,14 +14,19 @@
 
 package net.groboclown.p4.server.api.cache;
 
+import com.intellij.openapi.vcs.FilePath;
+import net.groboclown.p4.server.api.Displayable;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.PreviousExecutionProblems;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class ActionChoice {
+public class ActionChoice implements Displayable, PreviousExecutionProblems {
     private final P4CommandRunner.ClientAction<?> client;
     private final P4CommandRunner.ServerAction<?> server;
 
@@ -109,5 +114,62 @@ public class ActionChoice {
         return client != null
                 ? ("ClientAction(" + client.getCmd() + ")")
                 : ("ServerAction(" + server.getCmd() + ")");
+    }
+
+    @Override
+    public int hashCode() {
+        return (client == null ? 0 : client.hashCode()) + (server == null ? 0 : server.hashCode());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (o instanceof ActionChoice) {
+            ActionChoice that = (ActionChoice) o;
+            return that.client == this.client && that.server == this.server;
+        }
+        return false;
+    }
+
+    @NotNull
+    @Override
+    public String[] getDisplayParameters() {
+        return client != null
+                ? client.getDisplayParameters()
+                : (server != null
+                    ? server.getDisplayParameters()
+                    : EMPTY);
+    }
+
+    @NotNull
+    @Override
+    public List<FilePath> getAffectedFiles() {
+        return client != null
+                ? client.getAffectedFiles()
+                : (server != null
+                    ? server.getAffectedFiles()
+                    : Collections.emptyList());
+    }
+
+    @Override
+    @NotNull
+    public List<P4CommandRunner.ResultError> getPreviousExecutionProblems() {
+        return client != null
+                ? client.getPreviousExecutionProblems()
+                : (server != null
+                        ? server.getPreviousExecutionProblems()
+                        : Collections.emptyList());
+    }
+
+    @Override
+    public void addExecutionProblem(@NotNull P4CommandRunner.ResultError error) {
+        if (client != null) {
+            client.addExecutionProblem(error);
+        }
+        if (server != null) {
+            server.addExecutionProblem(error);
+        }
     }
 }

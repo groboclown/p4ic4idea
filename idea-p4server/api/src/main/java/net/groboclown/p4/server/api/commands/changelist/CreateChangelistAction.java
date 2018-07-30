@@ -16,16 +16,17 @@ package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.commands.ActionUtil;
+import net.groboclown.p4.server.api.commands.AbstractAction;
 import org.jetbrains.annotations.NotNull;
 
-public class CreateChangelistAction implements P4CommandRunner.ClientAction<CreateChangelistResult> {
+public class CreateChangelistAction extends AbstractAction
+        implements P4CommandRunner.ClientAction<CreateChangelistResult> {
     private final String actionId;
     private final ClientServerRef ref;
     private final String comment;
 
     public CreateChangelistAction(@NotNull ClientServerRef ref, @NotNull String comment) {
-        this(ActionUtil.createActionId(CreateChangelistAction.class), ref, comment);
+        this(createActionId(CreateChangelistAction.class), ref, comment);
     }
 
     public CreateChangelistAction(@NotNull String actionId, @NotNull ClientServerRef ref, @NotNull String comment) {
@@ -59,5 +60,15 @@ public class CreateChangelistAction implements P4CommandRunner.ClientAction<Crea
     @NotNull
     public ClientServerRef getClientServerRef() {
         return ref;
+    }
+
+    @NotNull
+    @Override
+    public String[] getDisplayParameters() {
+        String p = comment;
+        if (comment.length() > 25) {
+            p = comment.substring(0, 22) + "...";
+        }
+        return new String[] { p };
     }
 }

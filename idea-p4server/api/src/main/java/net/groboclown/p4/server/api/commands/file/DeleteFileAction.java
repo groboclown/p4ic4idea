@@ -16,19 +16,22 @@ package net.groboclown.p4.server.api.commands.file;
 
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.commands.ActionUtil;
+import net.groboclown.p4.server.api.commands.AbstractAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class DeleteFileAction implements P4CommandRunner.ClientAction<DeleteFileResult> {
+import java.util.Collections;
+import java.util.List;
+
+public class DeleteFileAction extends AbstractAction implements P4CommandRunner.ClientAction<DeleteFileResult> {
     private final String actionId;
     private final FilePath file;
     private final P4ChangelistId changelistId;
 
 
     public DeleteFileAction(@NotNull FilePath file, P4ChangelistId changelistId) {
-        this(ActionUtil.createActionId(DeleteFileAction.class), file, changelistId);
+        this(createActionId(DeleteFileAction.class), file, changelistId);
     }
 
     public DeleteFileAction(@NotNull String actionId, @NotNull FilePath file,
@@ -62,5 +65,20 @@ public class DeleteFileAction implements P4CommandRunner.ClientAction<DeleteFile
 
     public P4ChangelistId getChangelistId() {
         return changelistId;
+    }
+
+    @NotNull
+    @Override
+    public String[] getDisplayParameters() {
+        if (changelistId != null) {
+            return new String[] { changeId(changelistId) };
+        }
+        return EMPTY;
+    }
+
+    @NotNull
+    @Override
+    public List<FilePath> getAffectedFiles() {
+        return Collections.singletonList(file);
     }
 }

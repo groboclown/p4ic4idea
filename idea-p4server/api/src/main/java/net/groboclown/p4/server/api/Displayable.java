@@ -12,22 +12,19 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.commands.server;
+package net.groboclown.p4.server.api;
 
-import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.commands.AbstractNonCachedServerAction;
+import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 
-public class LoginAction extends AbstractNonCachedServerAction<LoginResult> {
+import java.util.List;
+
+public interface Displayable {
+    String[] EMPTY = new String[0];
+
     @NotNull
-    @Override
-    public Class<? extends LoginResult> getResultType() {
-        return LoginResult.class;
-    }
+    String[] getDisplayParameters();
 
-    @Override
-    public P4CommandRunner.ServerActionCmd getCmd() {
-        return P4CommandRunner.ServerActionCmd.LOGIN;
-    }
+    @NotNull
+    List<FilePath> getAffectedFiles();
 }
-

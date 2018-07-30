@@ -315,7 +315,8 @@ public interface P4CommandRunner {
      * @param <R> type of result returned by this action.
      */
     @Immutable
-    interface ServerAction<R extends ServerResult> extends ServerRequest<R, ServerActionCmd> {
+    interface ServerAction<R extends ServerResult>
+            extends ServerRequest<R, ServerActionCmd>, Displayable, PreviousExecutionProblems {
         // The action should be persistable, indeed on par with a LocalHistory
         // action object.
         // Internally, the action will be wrapped in a description that
@@ -331,11 +332,13 @@ public interface P4CommandRunner {
          *
          * @return ID for the action.
          */
+        @NotNull
         String getActionId();
     }
 
     @Immutable
-    interface ClientAction<R extends ClientResult> extends ClientRequest<R, ClientActionCmd> {
+    interface ClientAction<R extends ClientResult>
+            extends ClientRequest<R, ClientActionCmd>, Displayable, PreviousExecutionProblems {
 
         /**
          * A unique ID for the action, so that pending vs. completed cached states can be

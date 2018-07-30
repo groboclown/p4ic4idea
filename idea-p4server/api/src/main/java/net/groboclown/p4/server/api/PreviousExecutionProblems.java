@@ -12,22 +12,15 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.commands.server;
+package net.groboclown.p4.server.api;
 
-import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.commands.AbstractNonCachedServerAction;
 import org.jetbrains.annotations.NotNull;
 
-public class LoginAction extends AbstractNonCachedServerAction<LoginResult> {
+import java.util.List;
+
+public interface PreviousExecutionProblems {
     @NotNull
-    @Override
-    public Class<? extends LoginResult> getResultType() {
-        return LoginResult.class;
-    }
+    List<P4CommandRunner.ResultError> getPreviousExecutionProblems();
 
-    @Override
-    public P4CommandRunner.ServerActionCmd getCmd() {
-        return P4CommandRunner.ServerActionCmd.LOGIN;
-    }
+    void addExecutionProblem(@NotNull P4CommandRunner.ResultError error);
 }
-

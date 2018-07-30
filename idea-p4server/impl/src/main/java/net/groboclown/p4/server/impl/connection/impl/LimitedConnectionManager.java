@@ -24,37 +24,26 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4.server.impl.connection.P4Func;
+import net.groboclown.p4.server.impl.util.TraceableSemaphore;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 public class LimitedConnectionManager implements ConnectionManager {
     private static final Logger LOG = Logger.getInstance(LimitedConnectionManager.class);
-    private static final AtomicInteger REQUEST_COUNT = new AtomicInteger(0);
 
-    private final Semaphore restriction;
+    private final TraceableSemaphore restriction;
     private final ConnectionManager proxy;
-    private final long timeout;
-    private final TimeUnit timeoutUnit;
 
-    // TODO THIS IS DEBUGGING STUFF
-    private final Set<Integer> waitingIds = Collections.synchronizedSet(new HashSet<>());
 
     public LimitedConnectionManager(@NotNull ConnectionManager proxy, int maximumConcurrentCount, long timeout,
             TimeUnit timeoutUnit) {
-        this.restriction = new Semaphore(maximumConcurrentCount);
+        this.restriction = new TraceableSemaphore("connections", maximumConcurrentCount, timeout, timeoutUnit);
         this.proxy = proxy;
-        this.timeout = timeout;
-        this.timeoutUnit = timeoutUnit;
     }
 
     @NotNull
@@ -81,42 +70,30 @@ public class LimitedConnectionManager implements ConnectionManager {
     }
 
     private <R> Answer<R> get(@NotNull Supplier<Answer<R>> fun) {
-        final int getIndex = REQUEST_COUNT.incrementAndGet();
-        final boolean[] captureSuccess = { true };
+        final TraceableSemaphore.Requestor requestor = TraceableSemaphore.createRequest();
         Answer<R> ret = Answer.background((sink) -> {
             try {
-                // TODO rethink adding in the maximum wait time.
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Waiting on index " + getIndex + "; current waiters: " + waitingIds);
-                    waitingIds.add(getIndex);
-                }
-                captureSuccess[0] = restriction.tryAcquire(timeout, timeoutUnit);
-                if (!captureSuccess[0]) {
-                    throw new CancellationException("Request timed out after " + timeout + " " + timeoutUnit.toString().toLowerCase());
-                }
+                restriction.acquire(requestor);
                 sink.resolve(null);
             } catch (InterruptedException | CancellationException e) {
-                LOG.debug("Failed to acquire lock on " + getIndex);
-                captureSuccess[0] = false;
                 sink.reject(createServerError(e));
             }
         })
-        .mapAsync((x) -> fun.get());
+        .mapAsync((x) -> {
+            LOG.debug("Start execution for " + requestor);
+            Answer<R> r = fun.get();
+            LOG.debug("End execution for " + requestor);
+            return r;
+        });
         ret.after(() -> {
-            if (LOG.isDebugEnabled()) {
-                waitingIds.remove(getIndex);
-            }
-            if (captureSuccess[0]) {
-                restriction.release();
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Released wait index for " + getIndex + "; remaining waiters: " + waitingIds);
-                }
-            }
+            // Will only release if the requestor acquired the lock.
+            LOG.debug("Finalizing execution for " + requestor);
+            restriction.release(requestor);
         });
         return ret;
     }
 
-    private P4CommandRunner.ServerResultException createServerError(Exception e) {
+    private P4CommandRunner.ServerResultException createServerError(final Exception e) {
         // TODO use a different way to get the interrupted exception.
         return new P4CommandRunner.ServerResultException(
                 new P4CommandRunner.ResultError() {

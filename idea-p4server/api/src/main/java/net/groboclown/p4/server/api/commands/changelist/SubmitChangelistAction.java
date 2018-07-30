@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.commands.AbstractNonCachedClientAction;
 import net.groboclown.p4.server.api.commands.ActionUtil;
 import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
@@ -24,8 +25,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
-public class SubmitChangelistAction implements P4CommandRunner.ClientAction<SubmitChangelistResult> {
-    private final String actionId = ActionUtil.createActionId(SubmitChangelistAction.class);
+public class SubmitChangelistAction extends AbstractNonCachedClientAction<SubmitChangelistResult> {
     private final P4ChangelistId changelistId;
     private final Collection<P4Job> updatedJobs;
     private final String updatedDescription;
@@ -49,12 +49,6 @@ public class SubmitChangelistAction implements P4CommandRunner.ClientAction<Subm
     @Override
     public P4CommandRunner.ClientActionCmd getCmd() {
         return P4CommandRunner.ClientActionCmd.SUBMIT_CHANGELIST;
-    }
-
-    @NotNull
-    @Override
-    public String getActionId() {
-        return actionId;
     }
 
     @NotNull

@@ -1,0 +1,178 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package net.groboclown.p4.server.impl.util;
+
+import com.intellij.openapi.diagnostic.Logger;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * A semaphore that includes tracing the list of who's waiting and who has a lock.
+ */
+public class TraceableSemaphore {
+    private static final Logger LOG = Logger.getInstance(TraceableSemaphore.class);
+
+    private static final AtomicInteger ID_GEN = new AtomicInteger();
+    private final String name;
+    private final long timeout;
+    private final TimeUnit timeoutUnit;
+    private final Semaphore sem;
+    private final List<Requestor> pending = new ArrayList<>();
+    private final List<Requestor> active = new ArrayList<>();
+
+    public TraceableSemaphore(String name, int maximumConcurrentCount, long timeout, TimeUnit timeoutUnit) {
+        this.name = name;
+        this.timeout = timeout;
+        this.timeoutUnit = timeoutUnit;
+        this.sem = new Semaphore(maximumConcurrentCount);
+    }
+
+    public static Requestor createRequest() {
+        int id = ID_GEN.incrementAndGet();
+        String name = getRequestName();
+        return new Requestor(id, name);
+    }
+
+    public static class Requestor {
+        private final int id;
+        private final String name;
+        private Date active = null;
+        private String str;
+
+        private Requestor(int id, String name) {
+            this.id = id;
+            this.name = name;
+            this.str = Integer.toString(id) + ':' + name + " (pending since " + (new Date()) + ')';
+        }
+
+        private void activate() {
+            this.active = new Date();
+            this.str = Integer.toString(id) + ':' + name + " (active since " + active + ')';
+        }
+
+        boolean isActive() {
+            return active != null;
+        }
+
+        @Override
+        public String toString() {
+            return str;
+        }
+    }
+
+
+    public void acquire(@NotNull Requestor req) throws InterruptedException, CancellationException {
+        if (LOG.isDebugEnabled()) {
+            pending.add(req);
+            LOG.debug(name + ": WAIT - wait queue = " + pending + "; active = " + active);
+        }
+        try {
+            boolean captured = sem.tryAcquire(timeout, timeoutUnit);
+            if (LOG.isDebugEnabled()) {
+                pending.remove(req);
+            }
+            if (!captured) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(name + ": TIMEOUT - wait queue = " + pending + "; active = " + active);
+                }
+                throw new CancellationException("Waiting for lock timed out: exceeded " + timeout + " " + timeoutUnit.toString().toLowerCase());
+            }
+            req.activate();
+            active.add(req);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(name + ": ACQUIRE - wait queue = " + pending + "; active = " + active);
+            }
+        } catch (InterruptedException e) {
+            if (LOG.isDebugEnabled()) {
+                pending.remove(req);
+                LOG.debug(name + ": INTERRUPT - wait queue = " + pending + "; active = " + active);
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Releases an active request, allowing another to run.
+     *
+     * @param req requested item to release
+     */
+    public void release(@NotNull Requestor req) {
+        if (LOG.isDebugEnabled()) {
+            pending.remove(req);
+        }
+        if (req.isActive()) {
+            sem.release();
+            if (active.remove(req)) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(name + ": RELEASE - wait queue = " + pending + "; active = " + active);
+                }
+            } else {
+                LOG.warn("Did not store active request in the active list");
+            }
+        } else if (LOG.isDebugEnabled()) {
+            LOG.debug(name + ": RELEASE a timed out request - wait queue = " + pending + "; active = " + active);
+        }
+    }
+
+
+    private static String getRequestName() {
+        // Only perform the deep inspection if logging is enabled.
+        if (!LOG.isDebugEnabled()) {
+            return "<debug not enabled>";
+        }
+
+        Exception e = new Exception();
+        e.fillInStackTrace();
+        StackTraceElement[] stack = e.getStackTrace();
+
+        // This method is index 0, the caller (createRequest) is 1,
+        // the requestor is 2, and its root is 3.
+        if (stack.length < 4) {
+            return "<unknown>";
+        }
+
+        for (int i = 3; i < stack.length; i++) {
+            String cz = stack[i].getClassName();
+
+            if (cz.contains("lambda$") || cz.contains("ConnectionManager") || cz.contains("Answer")) {
+                // Class names that have "lambda" in them are going to be lambda functions
+                // that have no information for us.
+                continue;
+            }
+
+            String method = stack[i].getMethodName();
+            if (method.startsWith("perform") || method.startsWith("lambda$") || method.equals("withConnection") ||
+                    method.equals("onlineExec")) {
+                // One of the generic methods that doesn't give any interesting information.
+                continue;
+            }
+
+            int p = cz.lastIndexOf('.');
+            if (p >= 0) {
+               cz = cz.substring(p + 1);
+            }
+
+            return cz + ":" + method + "@" + stack[i].getLineNumber();
+        }
+        return "<unknown>";
+    }
+}

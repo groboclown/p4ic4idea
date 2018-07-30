@@ -127,6 +127,7 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -808,96 +809,108 @@ public class ConnectCommandRunner
     private ListOpenedFilesChangesResult listOpenedFilesChanges(IClient client, ClientConfig config,
             int maxChangelistResults, int maxFileResults)
             throws P4JavaException {
-        // This is a complex call, because we perform all the open requests in a single method.
+        final Date startDate = new Date();
+        LOG.info("Starting listOpenedFilesChanges at " + startDate);
+        try {
+            // This is a complex call, because we perform all the open requests in a single method.
 
-        // First, find all the pending changelists for the client.
-        List<IChangelistSummary> summaries = cmd.getPendingChangelists(client, maxChangelistResults);
+            // First, find all the pending changelists for the client.
+            List<IChangelistSummary> summaries = cmd.getPendingChangelists(client, maxChangelistResults);
 
-        // Then get details about the changelists.
-        List<IChangelist> changes = new ArrayList<>(summaries.size());
-        List<IFileSpec> pendingChangelistFileSummaries = new ArrayList<>();
-        Map<Integer, List<IFileSpec>> shelvedFiles = new HashMap<>();
-        for (IChangelistSummary summary : summaries) {
-            IChangelist cl = cmd.getChangelistDetails(client.getServer(), summary.getId());
-            changes.add(cl);
-            pendingChangelistFileSummaries.addAll(cl.getFiles(false));
+            // Then get details about the changelists.
+            List<IChangelist> changes = new ArrayList<>(summaries.size());
+            List<IFileSpec> pendingChangelistFileSummaries = new ArrayList<>();
+            Map<Integer, List<IFileSpec>> shelvedFiles = new HashMap<>();
+            for (IChangelistSummary summary : summaries) {
+                IChangelist cl = cmd.getChangelistDetails(client.getServer(), summary.getId());
+                changes.add(cl);
+                pendingChangelistFileSummaries.addAll(cl.getFiles(false));
 
-            // Get the list of shelved files, if any
-            if (cl.isShelved()) {
-                shelvedFiles.put(summary.getId(), cmd.getShelvedFiles(
-                        client.getServer(), summary.getId(), maxFileResults));
-            }
-        }
-
-        // Then find details on all the opened files
-        List<IExtendedFileSpec> pendingChangelistFiles = cmd.getFileDetailsForOpenedSpecs(
-                client.getServer(), pendingChangelistFileSummaries, maxFileResults);
-        Iterator<IExtendedFileSpec> pendingIter = pendingChangelistFiles.iterator();
-        // TODO DEBUG variable
-        boolean foundNonOpened = false;
-        while (pendingIter.hasNext()) {
-            IExtendedFileSpec next = pendingIter.next();
-            if (next.getStatusMessage() != null) {
-                LOG.info("Opened File Spec message: " + next.getStatusMessage().getAllInfoStrings());
-                pendingIter.remove();
-            } else if (next.getAction() == null) {
-                // TODO better understand why this situation happens; when it does, the CL is always -1.
-                if (LOG.isDebugEnabled()) {
-                    if (!foundNonOpened) {
-                        LOG.debug(
-                                "Found non-opened file spec for request of just opened file specs in opened change.  " +
-                                        next.getDepotPathString() + " :: open:" + next.getOpenChangelistId() + ", cl:" +
-                                        next.getChangelistId() + ", owner:" + next.getOpenActionOwner());
-                        foundNonOpened = true;
-                    }
+                // Get the list of shelved files, if any
+                if (cl.isShelved()) {
+                    shelvedFiles.put(summary.getId(), cmd.getShelvedFiles(
+                            client.getServer(), summary.getId(), maxFileResults));
                 }
-                pendingIter.remove();
-            } else if (LOG.isDebugEnabled()) {
-                LOG.debug("Pending changelist file" +
-                        ": " + next.getDepotPathString() +
-                        "; change " + next.getOpenChangelistId() +
-                        "; action " + next.getAction());
             }
-        }
 
-        // Then get opened files in the default changelist.
-        List<IExtendedFileSpec> openedDefaultChangelistFiles =
-                cmd.getFilesOpenInDefaultChangelist(client.getServer(), client.getName(), maxFileResults);
-        Iterator<IExtendedFileSpec> defaultIter = openedDefaultChangelistFiles.iterator();
-        while (defaultIter.hasNext()) {
-            IExtendedFileSpec next = defaultIter.next();
-            if (next.getStatusMessage() != null) {
-                LOG.info("Default File Spec message: " + next.getStatusMessage().getAllInfoStrings());
-                defaultIter.remove();
-            } else if (next.getAction() == null) {
-                // This seems to happen when there's a double entry in the returned list.
-                // TODO better understand why this situation happens; when it does, the CL is always -1.
-                if (LOG.isDebugEnabled()) {
-                    if (!foundNonOpened) {
-                        LOG.debug(
-                                "Found non-opened file spec for request of just opened file specs in default change.  "
-                                        +
-                                        next.getDepotPathString() + " :: open:" + next.getOpenChangelistId() + ", cl:" +
-                                        next.getChangelistId() + ", owner:" + next.getOpenActionOwner());
-                        foundNonOpened = true;
+            // Then find details on all the opened files
+            LOG.info("listOpenedFilesChanges@" + startDate + ": getting file details"); // FIXME DEBUG
+            List<IExtendedFileSpec> pendingChangelistFiles = cmd.getFileDetailsForOpenedSpecs(
+                    client.getServer(), pendingChangelistFileSummaries, maxFileResults);
+            Iterator<IExtendedFileSpec> pendingIter = pendingChangelistFiles.iterator();
+            // TODO DEBUG variable
+            boolean foundNonOpened = false;
+            while (pendingIter.hasNext()) {
+                IExtendedFileSpec next = pendingIter.next();
+                if (next.getStatusMessage() != null) {
+                    LOG.info("Opened File Spec message: " + next.getStatusMessage().getAllInfoStrings());
+                    pendingIter.remove();
+                } else if (next.getAction() == null) {
+                    // TODO better understand why this situation happens; when it does, the CL is always -1.
+                    if (LOG.isDebugEnabled()) {
+                        if (!foundNonOpened) {
+                            LOG.debug(
+                                    "Found non-opened file spec for request of just opened file specs in opened change.  "
+                                            +
+                                            next.getDepotPathString() + " :: open:" + next.getOpenChangelistId()
+                                            + ", cl:" +
+                                            next.getChangelistId() + ", owner:" + next.getOpenActionOwner());
+                            foundNonOpened = true;
+                        }
                     }
+                    pendingIter.remove();
+                } else if (LOG.isDebugEnabled()) {
+                    LOG.debug("Pending changelist file" +
+                            ": " + next.getDepotPathString() +
+                            "; change " + next.getOpenChangelistId() +
+                            "; action " + next.getAction());
                 }
-                defaultIter.remove();
-            } else if (LOG.isDebugEnabled()) {
-                LOG.debug("Pending Default changelist file" +
-                        ": " + next.getDepotPathString() +
-                        "; change " + next.getOpenChangelistId() +
-                        "; action " + next.getAction());
             }
-        }
 
-        // Then join all the information together.
-        ListOpenedFilesChangesResult ret = OpenedFilesChangesFactory.createListOpenedFilesChangesResult(
-                config, changes, pendingChangelistFiles, shelvedFiles, openedDefaultChangelistFiles);
-        ClientOpenCacheMessage.sendEvent(new ClientOpenCacheMessage.Event(
-                config.getClientServerRef(), ret.getOpenedFiles(), ret.getPendingChangelists()
-        ));
-        return ret;
+            // Then get opened files in the default changelist.
+            LOG.info("listOpenedFilesChanges@" + startDate + ": getting file details for default changelist"); // FIXME DEBUG
+            List<IExtendedFileSpec> openedDefaultChangelistFiles =
+                    cmd.getFilesOpenInDefaultChangelist(client.getServer(), client.getName(), maxFileResults);
+            Iterator<IExtendedFileSpec> defaultIter = openedDefaultChangelistFiles.iterator();
+            while (defaultIter.hasNext()) {
+                IExtendedFileSpec next = defaultIter.next();
+                if (next.getStatusMessage() != null) {
+                    LOG.info("Default File Spec message: " + next.getStatusMessage().getAllInfoStrings());
+                    defaultIter.remove();
+                } else if (next.getAction() == null) {
+                    // This seems to happen when there's a double entry in the returned list.
+                    // TODO better understand why this situation happens; when it does, the CL is always -1.
+                    if (LOG.isDebugEnabled()) {
+                        if (!foundNonOpened) {
+                            LOG.debug(
+                                    "Found non-opened file spec for request of just opened file specs in default change.  "
+                                            +
+                                            next.getDepotPathString() + " :: open:" + next.getOpenChangelistId()
+                                            + ", cl:" +
+                                            next.getChangelistId() + ", owner:" + next.getOpenActionOwner());
+                            foundNonOpened = true;
+                        }
+                    }
+                    defaultIter.remove();
+                } else if (LOG.isDebugEnabled()) {
+                    LOG.debug("Pending Default changelist file" +
+                            ": " + next.getDepotPathString() +
+                            "; change " + next.getOpenChangelistId() +
+                            "; action " + next.getAction());
+                }
+            }
+
+            // Then join all the information together.
+            LOG.info("listOpenedFilesChanges@" + startDate + ": generating result"); // FIXME DEBUG
+            ListOpenedFilesChangesResult ret = OpenedFilesChangesFactory.createListOpenedFilesChangesResult(
+                    config, changes, pendingChangelistFiles, shelvedFiles, openedDefaultChangelistFiles);
+            ClientOpenCacheMessage.sendEvent(new ClientOpenCacheMessage.Event(
+                    config.getClientServerRef(), ret.getOpenedFiles(), ret.getPendingChangelists()
+            ));
+            return ret;
+        } finally {
+            LOG.info("Finished listOpenedFilesChanges; started at " + startDate + ", ended at " + (new Date()));
+        }
     }
 
     private ListClientsForUserResult listClientsForUser(IOptionsServer server, ServerConfig config, String username,

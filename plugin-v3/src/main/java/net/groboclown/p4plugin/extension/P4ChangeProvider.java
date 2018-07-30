@@ -88,7 +88,6 @@ public class P4ChangeProvider
 
     private final Project project;
     private final P4Vcs vcs;
-    private final String cacheId = AbstractCacheMessage.createCacheId();
     private final HistoryContentLoader loader;
 
     P4ChangeProvider(@NotNull P4Vcs vcs) {
@@ -96,7 +95,8 @@ public class P4ChangeProvider
         this.vcs = vcs;
         this.loader = new HistoryContentLoaderImpl(project);
 
-        MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(project);
+        final MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(project);
+        final String cacheId = AbstractCacheMessage.createCacheId();
         ClientActionMessage.addListener(mbClient, cacheId, event -> {
             P4CommandRunner.ClientActionCmd cmd = (P4CommandRunner.ClientActionCmd) event.getAction().getCmd();
             try {
@@ -182,7 +182,6 @@ public class P4ChangeProvider
                         allClientRoots.stream()
                             .map(ClientConfigRoot::getClientConfig)
                         .collect(Collectors.toList()),
-                        // TODO maybe use a different timeout setting?
                         UserProjectPreferences.getLockWaitTimeoutMillis(project),
                         TimeUnit.MILLISECONDS
                 );
@@ -295,10 +294,8 @@ public class P4ChangeProvider
                             ChangeListManager.getInstance(project).getDefaultChangeList());
                     } else {
                         // Create a new IDE changelist and link to that.
-                        // FIXME this can cause an error if a changelist with the same name already existing
-                        // in the IDE.  Need to protect against this.
                         ideChangeList = addGate.addChangeList(
-                                createUniqueChangelistName(changelist, existingLocalChangeLists),
+                                createUniqueChangelistName(changelist, existingLocalChangeLists, null),
                                 changelist.getComment());
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Attaching " + changelist + " to IDE change " + ideChangeList);
@@ -306,10 +303,14 @@ public class P4ChangeProvider
                         changelistMap.setMapping(changelist.getChangelistId(), ideChangeList);
                     }
                 } else {
-                    // TODO possibly rename the changelist with the server's comment and ID.
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Already attached " + changelist + " to IDE change " + ideChangeList);
                     }
+                    String newName = createUniqueChangelistName(changelist, existingLocalChangeLists, ideChangeList);
+                    if (!newName.equals(ideChangeList.getName())) {
+                        addGate.editName(ideChangeList.getName(), newName);
+                    }
+                    addGate.editComment(ideChangeList.getName(), changelist.getComment());
                     unvisitedLocalChangeLists.remove(ideChangeList);
                 }
             }
@@ -355,32 +356,33 @@ public class P4ChangeProvider
             }
         }
 
-
         if (!unvisitedLocalChangeLists.isEmpty()) {
-            // FIXME any remaining unvisited local changelist but is associated to a
-            // changelist in the map needs to be removed.
-            LOG.warn("FIXME remove all unvisited local changelists: " + unvisitedLocalChangeLists);
+            // This means there are local changelists that don't have a Perforce mapping.
+            // TODO check a new user prefrence to see if the changelist should be removed.
+            LOG.debug("TODO check a new user prefrence to see if the changelist should be removed: " +
+                    unvisitedLocalChangeLists);
         }
     }
 
     @NotNull
     private String createUniqueChangelistName(P4LocalChangelist changelist,
-            List<LocalChangeList> existingLocalChangeLists) {
-        String baseName = getPrefix(changelist, CHANGELIST_NAME_LENGTH);
-        boolean match = true;
+            List<LocalChangeList> existingLocalChangeLists,
+            @Nullable LocalChangeList currentChangeList) {
+        String newName = getPrefix(changelist, CHANGELIST_NAME_LENGTH);
         int index = -1;
-        while (match) {
-            match = false;
+
+        match_outer_loop:
+        while (true) {
             for (LocalChangeList lcl : existingLocalChangeLists) {
-                if (baseName.equals(lcl.getName())) {
-                    // TODO use the messaging API
+                if (!lcl.equals(currentChangeList) && newName.equals(lcl.getName())) {
                     index++;
                     String count = " (" + index + ')';
-                    baseName = getPrefix(changelist, CHANGELIST_NAME_LENGTH - count.length());
+                    newName = getPrefix(changelist, CHANGELIST_NAME_LENGTH - count.length()) + count;
+                    continue match_outer_loop;
                 }
             }
+            return newName;
         }
-        return baseName;
     }
 
     private String getPrefix(P4LocalChangelist changelist, int characterCount) {
@@ -397,6 +399,13 @@ public class P4ChangeProvider
     private String createP4ChangelistDescription(LocalChangeList ideChangeList) {
         String name = ideChangeList.getName();
         String desc = ideChangeList.getComment();
+        if (desc != null) {
+            desc = desc.trim();
+            if (!UserProjectPreferences.getConcatenateChangelistNameComment(project) &&
+                    !desc.isEmpty()) {
+                return desc;
+            }
+        }
         Matcher m1 = CL_INDEX_SUFFIX.matcher(name);
         if (m1.matches()) {
             name = m1.group(1);
@@ -405,9 +414,10 @@ public class P4ChangeProvider
             name = name.substring(0, name.length() - 3);
         }
         name = name.trim();
-        if (desc == null || desc.trim().length() <= 0) {
+        if (desc == null || desc.isEmpty()) {
             return name;
         }
+        desc = desc.trim();
         if (desc.startsWith(name)) {
             return desc;
         }
@@ -452,6 +462,10 @@ public class P4ChangeProvider
      */
     private void updateFileCache(ClientConfig config, Set<FilePath> dirty,
             IdeChangelistMap changes, IdeFileMap files, ChangelistBuilder builder) {
+
+        // FIXME find move-pairs, and join them into a single change.
+        LOG.warn("FIXME find move-pairs, and join them into a single change.");
+
         List<P4LocalFile> localFiles = new ArrayList<>(dirty.size());
         for (FilePath filePath : dirty) {
             P4LocalFile local = files.forIdeFile(filePath);
@@ -501,16 +515,8 @@ public class P4ChangeProvider
                             LOG.debug("Adding change " + file + " to IDE changelist " + localChangeList);
                         }
 
-                        // TODO the IDE reports a warning from ChangeListWorker when this change is added.
-                        // This happens when multiple change objects are added into the builder.
-                        // The check for "equals" happens on the Change object, which checks the
-                        // before and after FilePath objects, if both are equal.  This warning
-                        // indicates that this class should ensure that the FilePath combo is only in
-                        // this one changelist: if it's already in the changelist, then skip it; if it's
-                        // in another changelist, then move it; if it's not in a changelist, then add it.
-
                         Change change = createChange(file, config);
-                        builder.processChangeInList(change, localChangeList, P4Vcs.getKey());
+                        associateChangeWithList(builder, change, localChangeList);
                     }
                 } catch (InterruptedException e) {
                     LOG.warn("Lock timed out for " + file);
@@ -544,6 +550,39 @@ public class P4ChangeProvider
                 builder.processUnversionedFile(dirtyFile.getVirtualFile());
             }
         }
+    }
+
+
+    private void associateChangeWithList(ChangelistBuilder builder, Change change, LocalChangeList localChangeList) {
+        // The IDE reports a warning from ChangeListWorker when this change is just straight-up added.
+        // This happens when multiple change objects are added into the builder.
+        // The check for "equals" happens on the Change object, which checks the
+        // before and after FilePath objects, if both are equal.  This warning
+        // indicates that this class should ensure that the FilePath combo is only in
+        // this one changelist: if it's already in the changelist, then skip it; if it's
+        // in another changelist, then move it; if it's not in a changelist, then add it.
+
+        // Until the move operations are encapsulated into a single change, this can have an unexpected side-effect for
+        // move operations!
+        if (change.getBeforeRevision() != null) {
+            VirtualFile vf = change.getBeforeRevision().getFile().getVirtualFile();
+            if (vf != null) {
+                LocalChangeList before = ChangeListManager.getInstance(project).getChangeList(vf);
+                if (before != null) {
+                    builder.removeRegisteredChangeFor(change.getBeforeRevision().getFile());
+                }
+            }
+        }
+        if (change.getAfterRevision() != null) {
+            VirtualFile vf = change.getAfterRevision().getFile().getVirtualFile();
+            if (vf != null) {
+                LocalChangeList after = ChangeListManager.getInstance(project).getChangeList(vf);
+                if (after != null) {
+                    builder.removeRegisteredChangeFor(change.getAfterRevision().getFile());
+                }
+            }
+        }
+        builder.processChangeInList(change, localChangeList, P4Vcs.getKey());
     }
 
 

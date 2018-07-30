@@ -16,16 +16,20 @@ package net.groboclown.p4.server.api.commands.file;
 
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.commands.AbstractAction;
 import net.groboclown.p4.server.api.commands.ActionUtil;
 import org.jetbrains.annotations.NotNull;
 
-public class RevertFileAction implements P4CommandRunner.ClientAction<RevertFileResult> {
+import java.util.Collections;
+import java.util.List;
+
+public class RevertFileAction extends AbstractAction implements P4CommandRunner.ClientAction<RevertFileResult> {
     private final String actionId;
     private final FilePath file;
     private final boolean ifUnchanged;
 
     public RevertFileAction(@NotNull FilePath file, boolean ifUnchanged) {
-        this(ActionUtil.createActionId(RevertFileAction.class), file, ifUnchanged);
+        this(createActionId(RevertFileAction.class), file, ifUnchanged);
     }
 
     public RevertFileAction(@NotNull String actionId, @NotNull FilePath file, boolean ifUnchanged) {
@@ -57,5 +61,21 @@ public class RevertFileAction implements P4CommandRunner.ClientAction<RevertFile
 
     public boolean isRevertOnlyIfUnchanged() {
         return ifUnchanged;
+    }
+
+    @NotNull
+    @Override
+    public String[] getDisplayParameters() {
+        if (isRevertOnlyIfUnchanged()) {
+            // FIXME message catalog
+            return new String[] { "unchanged" };
+        }
+        return EMPTY;
+    }
+
+    @NotNull
+    @Override
+    public List<FilePath> getAffectedFiles() {
+        return Collections.singletonList(file);
     }
 }

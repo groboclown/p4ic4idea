@@ -16,15 +16,17 @@ package net.groboclown.p4.server.api.commands.file;
 
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.commands.ActionUtil;
+import net.groboclown.p4.server.api.commands.AbstractAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.List;
 
-public class AddEditAction implements P4CommandRunner.ClientAction<AddEditResult> {
+public class AddEditAction extends AbstractAction implements P4CommandRunner.ClientAction<AddEditResult> {
     private final String actionId;
     private final FilePath file;
     private final P4FileType type;
@@ -33,7 +35,7 @@ public class AddEditAction implements P4CommandRunner.ClientAction<AddEditResult
 
     public AddEditAction(@NotNull FilePath file, @Nullable P4FileType type,
             @Nullable P4ChangelistId changelistId, String charset) {
-        this(ActionUtil.createActionId(AddEditAction.class), file, type, changelistId, charset);
+        this(createActionId(AddEditAction.class), file, type, changelistId, charset);
     }
 
     public AddEditAction(@NotNull String actionId, @NotNull FilePath file, @Nullable P4FileType type,
@@ -85,5 +87,20 @@ public class AddEditAction implements P4CommandRunner.ClientAction<AddEditResult
     @Nullable
     public String getCharset() {
         return charset;
+    }
+
+    @NotNull
+    @Override
+    public String[] getDisplayParameters() {
+        if (changelistId != null) {
+            return new String[] { changeId(changelistId) };
+        }
+        return new String[0];
+    }
+
+    @NotNull
+    @Override
+    public List<FilePath> getAffectedFiles() {
+        return Collections.singletonList(file);
     }
 }

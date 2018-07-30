@@ -15,17 +15,17 @@
 package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.commands.ActionUtil;
+import net.groboclown.p4.server.api.commands.AbstractAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import org.jetbrains.annotations.NotNull;
 
-public class EditChangelistAction implements P4CommandRunner.ClientAction<EditChangelistResult> {
+public class EditChangelistAction extends AbstractAction implements P4CommandRunner.ClientAction<EditChangelistResult> {
     private final String actionId;
     private final P4ChangelistId changelistId;
     private final String comment;
 
     public EditChangelistAction(@NotNull P4ChangelistId changelistId, @NotNull String comment) {
-        this(ActionUtil.createActionId(EditChangelistAction.class), changelistId, comment);
+        this(createActionId(EditChangelistAction.class), changelistId, comment);
     }
 
     public EditChangelistAction(@NotNull String actionId, @NotNull P4ChangelistId changelistId,
@@ -58,5 +58,11 @@ public class EditChangelistAction implements P4CommandRunner.ClientAction<EditCh
 
     public String getComment() {
         return comment;
+    }
+
+    @NotNull
+    @Override
+    public String[] getDisplayParameters() {
+        return new String[] { changeId(changelistId) };
     }
 }

@@ -70,25 +70,25 @@ public class LimitedConnectionManager implements ConnectionManager {
     }
 
     private <R> Answer<R> get(@NotNull Supplier<Answer<R>> fun) {
-        final TraceableSemaphore.Requestor requestor = TraceableSemaphore.createRequest();
+        final TraceableSemaphore.Requester requester = TraceableSemaphore.createRequest();
         Answer<R> ret = Answer.background((sink) -> {
             try {
-                restriction.acquire(requestor);
+                restriction.acquire(requester);
                 sink.resolve(null);
             } catch (InterruptedException | CancellationException e) {
                 sink.reject(createServerError(e));
             }
         })
         .mapAsync((x) -> {
-            LOG.debug("Start execution for " + requestor);
+            LOG.debug("Start execution for " + requester);
             Answer<R> r = fun.get();
-            LOG.debug("End execution for " + requestor);
+            LOG.debug("End execution for " + requester);
             return r;
         });
         ret.after(() -> {
-            // Will only release if the requestor acquired the lock.
-            LOG.debug("Finalizing execution for " + requestor);
-            restriction.release(requestor);
+            // Will only release if the requester acquired the lock.
+            LOG.debug("Finalizing execution for " + requester);
+            restriction.release(requester);
         });
         return ret;
     }

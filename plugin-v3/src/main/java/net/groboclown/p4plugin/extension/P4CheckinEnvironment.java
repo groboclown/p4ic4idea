@@ -251,6 +251,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
     }
 
     // TODO this is shared with P4VFSListener.  Look at making shared utility.
+    @NotNull
     private P4ChangelistId getActiveChangelistFor(ClientConfigRoot root, Map<ClientServerRef, P4ChangelistId> ids) {
         ClientServerRef ref = root.getClientConfig().getClientServerRef();
         P4ChangelistId ret = ids.get(ref);
@@ -281,6 +282,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
     public CommitSession createCommitSession() {
         final SubmitModel model = new SubmitModel(project);
         return new CommitSession() {
+            @Deprecated
             @Nullable
             @Override
             public JComponent getAdditionalConfigurationUI() {

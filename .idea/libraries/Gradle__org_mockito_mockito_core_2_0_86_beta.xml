@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="Gradle: org.mockito:mockito-core:2.0.86-beta">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/test/mockito-core-2.0.86-beta.jar!/" />
+      <root url="jar:///mnt/c/dev/p4ic4idea/p4ic4idea/lib/test/mockito-core-2.0.86-beta.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

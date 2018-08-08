@@ -1,9 +1,11 @@
 <component name="libraryTable">
   <library name="Gradle: org.junit.platform:junit-platform-commons:1.1.0">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/test/junit-platform-commons-1.1.0.jar!/" />
+      <root url="jar:///mnt/c/dev/p4ic4idea/p4ic4idea/lib/test/junit-platform-commons-1.1.0.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar:///mnt/c/dev/p4ic4idea/p4ic4idea/lib/test/junit-platform-commons-1.1.0-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>

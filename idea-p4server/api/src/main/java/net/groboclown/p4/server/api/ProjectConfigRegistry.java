@@ -267,7 +267,7 @@ public abstract class ProjectConfigRegistry
 
     protected final void sendClientAdded(@Nullable ClientConfigRoot state) {
         if (state != null) {
-            ClientConfigAddedMessage.send(getProject()).clientConfigurationAdded(
+            ClientConfigAddedMessage.sendClientConfigurationAdded(getProject(),
                     state.getClientRootDir(),
                     state.getClientConfig());
         }

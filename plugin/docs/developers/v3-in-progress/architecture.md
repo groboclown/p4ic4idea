@@ -43,7 +43,7 @@ commands which can potentially take a while.  Some commands also clearly referen
 potential cached values, allowing for more immediate responses.  This forces
 conformity to the [threading model](threading.md).
 
-The runner sends the requestor very simple errors.  The majority of the errors
+The runner sends the requester very simple errors.  The majority of the errors
 are passed as messages through the [error handlers](#error-handlers).  Code that
 directly runs the connection runners only need to deal with simplified errors
 to understand that an error happened, and react accordingly.  The real work

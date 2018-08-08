@@ -18,6 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.Topic;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,6 +28,13 @@ public class ClientConfigAddedMessage extends ProjectMessage<ClientConfigAddedMe
             DISPLAY_NAME, Listener.class, Topic.BroadcastDirection.TO_CHILDREN
     );
     private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
+
+    // This pattern is a little different.  Sending a client added message means sending a
+    // server added to the application message bus.
+    private static final String SERVER_DISPLAY_NAME = "p4ic4idea:server configuration registration added";
+    private static final Topic<ServerListener> SERVER_TOPIC = new Topic<>(
+            SERVER_DISPLAY_NAME, ServerListener.class, Topic.BroadcastDirection.TO_CHILDREN
+    );
 
     public interface Listener {
         void clientConfigurationAdded(@Nullable VirtualFile root, @NotNull ClientConfig clientConfig);
@@ -39,18 +47,31 @@ public class ClientConfigAddedMessage extends ProjectMessage<ClientConfigAddedMe
         }
     }
 
+    public interface ServerListener {
+        void serverConfigAdded(@NotNull ServerConfig serverConfig);
+    }
+
     /**
      * Should only be called by {@link net.groboclown.p4.server.api.ProjectConfigRegistry}.
      *
      * @param project project to send the message on.
      * @return the listener proxy for this message
      */
-    public static Listener send(@NotNull Project project) {
-        return getListener(project, TOPIC, DEFAULT_LISTENER);
+    public static void sendClientConfigurationAdded(@NotNull Project project,
+            @Nullable VirtualFile root, @NotNull ClientConfig clientConfig) {
+        ServerListener serverListener = ApplicationMessage.getListener(SERVER_TOPIC);
+        if (serverListener != null) {
+            serverListener.serverConfigAdded(clientConfig.getServerConfig());
+        }
+        getListener(project, TOPIC, DEFAULT_LISTENER).clientConfigurationAdded(root, clientConfig);
     }
 
     public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
         addListener(client, TOPIC, listener);
     }
 
+    public static void addServerListener(@NotNull MessageBusClient.ApplicationClient client,
+            @NotNull ServerListener listener) {
+        client.add(SERVER_TOPIC, listener);
+    }
 }

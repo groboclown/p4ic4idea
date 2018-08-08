@@ -18,6 +18,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -36,8 +37,8 @@ public class TraceableSemaphore {
     private final long timeout;
     private final TimeUnit timeoutUnit;
     private final Semaphore sem;
-    private final List<Requestor> pending = new ArrayList<>();
-    private final List<Requestor> active = new ArrayList<>();
+    private final List<Requester> pending = Collections.synchronizedList(new ArrayList<>());
+    private final List<Requester> active = Collections.synchronizedList(new ArrayList<>());
 
     public TraceableSemaphore(String name, int maximumConcurrentCount, long timeout, TimeUnit timeoutUnit) {
         this.name = name;
@@ -46,31 +47,31 @@ public class TraceableSemaphore {
         this.sem = new Semaphore(maximumConcurrentCount);
     }
 
-    public static Requestor createRequest() {
+    public static Requester createRequest() {
         int id = ID_GEN.incrementAndGet();
         String name = getRequestName();
-        return new Requestor(id, name);
+        return new Requester(id, name);
     }
 
-    public static class Requestor {
+    public static class Requester {
         private final int id;
         private final String name;
-        private Date active = null;
+        private volatile boolean active = false;
         private String str;
 
-        private Requestor(int id, String name) {
+        private Requester(int id, String name) {
             this.id = id;
             this.name = name;
             this.str = Integer.toString(id) + ':' + name + " (pending since " + (new Date()) + ')';
         }
 
         private void activate() {
-            this.active = new Date();
-            this.str = Integer.toString(id) + ':' + name + " (active since " + active + ')';
+            this.active = true;
+            this.str = Integer.toString(id) + ':' + name + " (active since " + (new Date()) + ')';
         }
 
         boolean isActive() {
-            return active != null;
+            return active;
         }
 
         @Override
@@ -80,7 +81,7 @@ public class TraceableSemaphore {
     }
 
 
-    public void acquire(@NotNull Requestor req) throws InterruptedException, CancellationException {
+    public void acquire(@NotNull Requester req) throws InterruptedException, CancellationException {
         if (LOG.isDebugEnabled()) {
             pending.add(req);
             LOG.debug(name + ": WAIT - wait queue = " + pending + "; active = " + active);
@@ -115,7 +116,7 @@ public class TraceableSemaphore {
      *
      * @param req requested item to release
      */
-    public void release(@NotNull Requestor req) {
+    public void release(@NotNull Requester req) {
         if (LOG.isDebugEnabled()) {
             pending.remove(req);
         }
@@ -147,7 +148,7 @@ public class TraceableSemaphore {
         // This method is index 0, the caller (createRequest) is 1,
         // the requestor is 2, and its root is 3.
         if (stack.length < 4) {
-            return "<unknown>";
+            return "<unknown - shallow>";
         }
 
         for (int i = 3; i < stack.length; i++) {
@@ -173,6 +174,6 @@ public class TraceableSemaphore {
 
             return cz + ":" + method + "@" + stack[i].getLineNumber();
         }
-        return "<unknown>";
+        return "<unknown - " + stack.length + ">";
     }
 }

@@ -23,6 +23,7 @@ import java.util.Collection;
 
 public class MockLocalChangeList extends LocalChangeList {
     private String name ="cl";
+    private String comment = null;
     private boolean isDefault = false;
 
     @Override
@@ -49,12 +50,17 @@ public class MockLocalChangeList extends LocalChangeList {
     @Nullable
     @Override
     public String getComment() {
-        return null;
+        return comment;
     }
 
     @Override
     public void setComment(@Nullable String s) {
+        this.comment = s;
+    }
 
+    public MockLocalChangeList withComment(@Nullable String s) {
+        setComment(s);
+        return this;
     }
 
     @Override

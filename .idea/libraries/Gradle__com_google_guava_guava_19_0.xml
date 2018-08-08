@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="Gradle: com.google.guava:guava:19.0">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/main/guava-19.0.jar!/" />
+      <root url="jar:///mnt/c/dev/p4ic4idea/p4ic4idea/lib/main/guava-19.0.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

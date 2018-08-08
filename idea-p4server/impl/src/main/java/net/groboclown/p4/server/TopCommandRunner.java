@@ -135,6 +135,11 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         MessageBusClient.ProjectClient projClient = MessageBusClient.forProject(project, this);
         ClientConfigAddedMessage.addListener(projClient, clientConfigs::put);
         ClientConfigRemovedMessage.addListener(projClient, (event) -> clientConfigs.remove(event.getVcsRootDir()));
+        ClientConfigAddedMessage.addServerListener(appClient,
+                // Creates the state for the server config, if it doesn't already exist.
+                // This prevents issues with the user going offline before any action on the
+                // server happens.
+                this::getStateFor);
         ServerConnectedMessage.addListener(appClient, (serverConfig, loggedIn) -> {
             ServerConnectionState state = getStateFor(serverConfig);
             state.badConnection = false;

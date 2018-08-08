@@ -53,8 +53,11 @@ public class IdeFileMapImpl implements IdeFileMap {
         if (file == null) {
             return null;
         }
-        ClientConfigRoot clientConfig =
-                ProjectConfigRegistry.getInstance(project).getClientFor(file);
+        ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        if (registry == null) {
+            return null;
+        }
+        ClientConfigRoot clientConfig = registry.getClientFor(file);
         if (clientConfig == null) {
             return null;
         }

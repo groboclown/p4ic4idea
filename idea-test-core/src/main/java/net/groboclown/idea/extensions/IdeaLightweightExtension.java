@@ -18,6 +18,7 @@ import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.components.ApplicationComponent;
@@ -97,6 +98,11 @@ public class IdeaLightweightExtension
         when(application.getComponent(name)).thenReturn(component);
     }
 
+    public <T> void registerApplicationComponent(@NotNull Class<? super T> name, @NotNull T component) {
+        Application application = getMockApplication();
+        when(application.getComponent(name)).thenReturn(component);
+    }
+
     public <I> void registerApplicationService(@NotNull Class<? super I> interfaceClass, @NotNull I service) {
         ((DefaultPicoContainer) getMockApplication().getPicoContainer()).
                 registerComponent(service(interfaceClass, service));
@@ -104,6 +110,15 @@ public class IdeaLightweightExtension
 
     public void registerProjectComponent(@NotNull String name, @NotNull ProjectComponent component) {
         when(getMockProject().getComponent(name)).thenReturn(component);
+    }
+
+    public <T> void registerProjectComponent(@NotNull Class<? super T> interfaceClass, @NotNull T component) {
+        when(getMockProject().getComponent(interfaceClass)).thenReturn(component);
+    }
+
+    public <T> void registerProjectService(@NotNull Class<? super T> serviceClass, @NotNull T service) {
+        ((DefaultPicoContainer) getMockProject().getPicoContainer()).
+                registerComponent(service(serviceClass, service));
     }
 
     public void useInlineThreading(@Nullable List<Throwable> caughtErrors) {
@@ -163,6 +178,10 @@ public class IdeaLightweightExtension
 
         AccessToken readToken = mock(AccessToken.class);
         when(application.acquireReadActionLock()).thenReturn(readToken);
+
+        ApplicationInfo appInfo = mock(ApplicationInfo.class);
+        when(appInfo.getApiVersion()).thenReturn("IC-182.1.1");
+        registerApplicationService(ApplicationInfo.class, appInfo);
     }
 
     private void setupLocalFileSystem(LocalFileSystem lfs) {
@@ -192,6 +211,9 @@ public class IdeaLightweightExtension
     private void initializeProject(Project project) {
         MessageBus projectBus = new SingleThreadedMessageBus(null);
         when(project.getMessageBus()).thenReturn(projectBus);
+
+        DefaultPicoContainer pico = new DefaultPicoContainer();
+        when(project.getPicoContainer()).thenReturn(pico);
     }
 
     @Override

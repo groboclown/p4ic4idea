@@ -331,6 +331,7 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
         switch (query.getCmd()) {
             case SYNC_LIST_OPENED_FILES_CHANGES: {
                 SyncListOpenedFilesChangesQuery q = (SyncListOpenedFilesChangesQuery) query;
+                // TODO this looks like a double query on the cache, when it should really be just a single one.
                 return (FutureResult<R>) new FutureResult<>(
                         listOpenedFilesChanges(config, new ListOpenedFilesChangesQuery(
                                 q.getMaxFileResults(), q.getMaxChangelistResults()

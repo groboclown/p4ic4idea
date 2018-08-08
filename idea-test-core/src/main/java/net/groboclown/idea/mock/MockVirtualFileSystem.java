@@ -21,6 +21,7 @@ import com.intellij.openapi.vfs.VirtualFileSystem;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.FileAlreadyExistsException;
@@ -181,6 +182,8 @@ public class MockVirtualFileSystem
                 }
                 return child;
             }
+        } else if (vDir instanceof IOVirtualFile) {
+            return new IOVirtualFile(new File(((IOVirtualFile) vDir).getIOFile(), fileName), false);
         }
         throw new NoSuchFileException(vDir.getCanonicalPath());
     }

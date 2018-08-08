@@ -50,6 +50,8 @@ repositories {
     }
 }
 
+// Required in order to have the source set build output be discovered.
+project.evaluationDependsOn(':idea-p4server:api')
 
 dependencies {
     //compatApi ()
@@ -70,6 +72,8 @@ dependencies {
             'org.mockito:mockito-core:2.0.86-beta',
             project(':p4d-test-core'),
             project(':idea-test-core'),
+            project(path: ':idea-p4server:api', configuration: 'testArtifacts'),
+            //project(':idea-p4server:api:test').sourceSets.test.output,
     )
 
     // Need to be really careful here.  This must only be
@@ -114,6 +118,20 @@ jar.dependsOn packageVersion
 // top-level version identifier.
 jar.version = version
 
+task showDeps {
+    doFirst {
+        configurations.all {
+            logger.lifecycle("Configuration " + it)
+            try {
+                it.resolvedConfiguration.files.forEach { next ->
+                    logger.lifecycle(" -> " + next.getAbsolutePath())
+                }
+            } catch (Exception e) {
+                logger.lifecycle("  - could not resolve directly")
+            }
+        }
+    }
+}
 
 task assembleDepends {
     dependsOn ':p4java:jar'

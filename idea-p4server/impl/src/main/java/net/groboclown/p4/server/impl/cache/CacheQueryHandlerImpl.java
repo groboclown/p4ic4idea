@@ -160,7 +160,8 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         }
                         srcBuilder
                                 .withAction(P4FileAction.MOVE_DELETE)
-                                .withResolveType(P4ResolveType.NO_RESOLVE);
+                                .withResolveType(P4ResolveType.NO_RESOLVE)
+                                .withChangelist(a.getChangelistId());
                         if (tgtBuilder == null) {
                             tgtBuilder = new P4LocalFileImpl.Builder()
                                     .withLocal(a.getTargetFile())
@@ -170,7 +171,8 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         tgtBuilder
                                 .withAction(P4FileAction.MOVE_ADD_EDIT)
                                 .withIntegrateFrom(srcBuilder.getDepot())
-                                .withResolveType(P4ResolveType.NO_RESOLVE);
+                                .withResolveType(P4ResolveType.NO_RESOLVE)
+                                .withChangelist(a.getChangelistId());
                         break;
                     }
                     case ADD_EDIT_FILE: {
@@ -184,7 +186,8 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         }
                         builder
                                 .withAction(P4FileAction.ADD_EDIT)
-                                .withResolveType(P4ResolveType.NO_RESOLVE);
+                                .withResolveType(P4ResolveType.NO_RESOLVE)
+                                .withChangelist(a.getChangelistId());
                         break;
                     }
                     case DELETE_FILE: {
@@ -198,7 +201,8 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         }
                         builder
                                 .withAction(P4FileAction.DELETE)
-                                .withResolveType(P4ResolveType.NO_RESOLVE);
+                                .withResolveType(P4ResolveType.NO_RESOLVE)
+                                .withChangelist(a.getChangelistId());
                         break;
                     }
                     case REVERT_FILE: {

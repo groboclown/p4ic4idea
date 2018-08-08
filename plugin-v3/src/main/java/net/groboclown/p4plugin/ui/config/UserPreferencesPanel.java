@@ -524,7 +524,7 @@ public class UserPreferencesPanel {
             if (newValue != this.value) {
                 this.value = newValue;
                 synchronized (listeners) {
-                    for (ChangeListener listener: listeners) {
+                    for (ChangeListener listener : listeners) {
                         listener.stateChanged(new ChangeEvent(this));
                     }
                 }

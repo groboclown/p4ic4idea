@@ -72,9 +72,9 @@ public class ConfigPartStack {
     void setParts(List<ConfigPart> configParts) {
         synchronized (parts) {
             parts.clear();
-            for (ConfigPart part: configParts) {
+            for (ConfigPart part : configParts) {
                 boolean matched = false;
-                for (ConfigPartUIFactory partFactory: partFactories) {
+                for (ConfigPartUIFactory partFactory : partFactories) {
                     ConfigPartUI partUI = partFactory.createForPart(part, connectionController);
                     if (partUI != null) {
                         WrapListener listener = new WrapListener();
@@ -98,7 +98,7 @@ public class ConfigPartStack {
         List<ConfigPart> ret;
         synchronized (parts) {
             ret = new ArrayList<>(parts.size());
-            for (ConfigPartWrapper part: parts) {
+            for (ConfigPartWrapper part : parts) {
                 ret.add(part.updateConfigPart());
             }
         }

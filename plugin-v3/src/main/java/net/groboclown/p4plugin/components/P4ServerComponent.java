@@ -45,25 +45,13 @@ import java.util.concurrent.TimeUnit;
 public class P4ServerComponent implements ProjectComponent, Disposable {
     private static final Logger LOG = Logger.getInstance(P4ServerComponent.class);
 
-    private static final String COMPONENT_NAME = "Perforce Server Primary Connection";
+    public static final String COMPONENT_NAME = "Perforce Server Primary Connection";
     private final Project project;
     private P4CommandRunner commandRunner;
     private AbstractServerCommandRunner connectRunner;
     private boolean disposed = false;
 
     // An attempt to prevent some potential memory leaks.
-    private static Pair<P4ServerComponent, Boolean> findInstance(@NotNull Project project) {
-        // a non-registered component can happen when the config is loaded outside a project.
-        P4ServerComponent ret = project.getComponent(P4ServerComponent.class);
-        boolean mustBeDisposed = false;
-        if (ret == null) {
-            ret = new P4ServerComponent(project);
-            ret.initComponent();
-            mustBeDisposed = true;
-        }
-        return Pair.create(ret, mustBeDisposed);
-    }
-
 
     @NotNull
     public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.ActionAnswer<R> perform(@NotNull Project project,
@@ -190,6 +178,18 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
             ret.after(instance.first::dispose);
         }
         return ret;
+    }
+
+    private static Pair<P4ServerComponent, Boolean> findInstance(@NotNull Project project) {
+        // a non-registered component can happen when the config is loaded outside a project.
+        P4ServerComponent ret = project.getComponent(P4ServerComponent.class);
+        boolean mustBeDisposed = false;
+        if (ret == null) {
+            ret = new P4ServerComponent(project);
+            ret.initComponent();
+            mustBeDisposed = true;
+        }
+        return Pair.create(ret, mustBeDisposed);
     }
 
 

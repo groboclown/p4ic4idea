@@ -58,6 +58,7 @@ import net.groboclown.p4.server.api.commands.file.RevertFileResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4AnnotatedLine;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4JobField;
 import net.groboclown.p4.server.api.values.P4RemoteChangelist;
@@ -198,11 +199,12 @@ class ConnectCommandRunnerTest {
         final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
         final File clientRoot = tmpDir.newFile("clientRoot");
         final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "abc.txt"));
+        final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
 
         setupClient(clientConfig, tmpDir, clientRoot)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                    runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
+                    runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                         .whenCompleted(sink::resolve)
                         .whenServerError(sink::reject)
                 )
@@ -241,11 +243,12 @@ class ConnectCommandRunnerTest {
         final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
         final File clientRoot = tmpDir.newFile("clientRoot");
         final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
-
+        final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
+d
         setupClient(clientConfig, tmpDir, clientRoot)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -285,11 +288,12 @@ class ConnectCommandRunnerTest {
         final File clientRoot = tmpDir.newFile("clientRoot");
         final FilePath newFile = VcsUtil.getFilePath(touchFile(tmpDir.newFile("outsideRoot"), "abc.txt"));
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
+        final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -320,17 +324,18 @@ class ConnectCommandRunnerTest {
         final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
         final File clientRoot = tmpDir.newFile("clientRoot");
         final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
+        final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
 
         setupClient(clientConfig, tmpDir, clientRoot)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
                                                 null, "add file", null)))
                                 .mapActionAsync((res) -> runner.perform(
-                                        clientConfig, new AddEditAction(newFile, null, null, (String) null)))
+                                        clientConfig, new AddEditAction(newFile, null, defaultId, (String) null)))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -371,11 +376,12 @@ class ConnectCommandRunnerTest {
         final File clientRoot = tmpDir.newFile("clientRoot");
         final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
+        final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
@@ -712,11 +718,12 @@ class ConnectCommandRunnerTest {
         final File clientRoot = tmpDir.newFile("clientRoot");
         final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
+        final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                                runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
+                                runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                                         .mapActionAsync((res) -> runner.perform(clientConfig,
                                                 new CreateChangelistAction(clientConfig.getClientServerRef(),
                                                         "Destination change")))
@@ -804,17 +811,18 @@ class ConnectCommandRunnerTest {
         final File clientRoot = tmpDir.newFile("clientRoot");
         final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
+        final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, null, (String) null))
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
                                                 null, "add file", null)))
                                 .mapActionAsync((res) -> runner.perform(
-                                        clientConfig, new AddEditAction(newFile, null, null, (String) null)))
+                                        clientConfig, new AddEditAction(newFile, null, defaultId, (String) null)))
                                 .mapQueryAsync((res) ->
                                         runner.getFileAnnotation(serverConfig,
                                             new AnnotateFileQuery(clientConfig.getClientname(), newFile, 1)))

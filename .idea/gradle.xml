@@ -8,21 +8,21 @@
         <option name="gradleJvm" value="1.8" />
         <option name="modules">
           <set>
-            <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/buildSrc" />
-            <option value="$PROJECT_DIR$/idea-compat" />
-            <option value="$PROJECT_DIR$/idea-compat/compat-api" />
-            <option value="$PROJECT_DIR$/idea-compat/v171" />
-            <option value="$PROJECT_DIR$/idea-p4server" />
-            <option value="$PROJECT_DIR$/idea-p4server/api" />
-            <option value="$PROJECT_DIR$/idea-p4server/impl" />
-            <option value="$PROJECT_DIR$/idea-test-core" />
-            <option value="$PROJECT_DIR$/integration-test" />
-            <option value="$PROJECT_DIR$/p4d-test-core" />
-            <option value="$PROJECT_DIR$/p4java" />
-            <option value="$PROJECT_DIR$/plugin" />
-            <option value="$PROJECT_DIR$/plugin-v3" />
-            <option value="$PROJECT_DIR$/swarm" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/buildSrc" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/idea-compat" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/idea-compat/compat-api" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/idea-compat/v171" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/idea-p4server" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/idea-p4server/api" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/idea-p4server/impl" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/idea-test-core" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/integration-test" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/p4d-test-core" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/p4java" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/plugin" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/plugin-v3" />
+            <option value="/mnt/c/dev/p4ic4idea/p4ic4idea/swarm" />
           </set>
         </option>
       </GradleProjectSettings>

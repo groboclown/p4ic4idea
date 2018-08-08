@@ -372,7 +372,8 @@ public class IgnoreFilePattern {
 
 
     private static boolean isFileSystemCaseSensitive() {
-        return SystemInfo.isWindows;
+        // This isn't 100% true - you can configure windows file system to be case sensitive.
+        return !SystemInfo.isWindows;
     }
 
     static class PathNameMatchResult {

@@ -302,7 +302,8 @@ public class P4ChangeProvider
                         }
                         changelistMap.setMapping(changelist.getChangelistId(), ideChangeList);
                     }
-                } else {
+                } else if (!changelist.getChangelistId().isDefaultChangelist()) {
+                    // Don't create a separate named changelist for the default changelist.
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Already attached " + changelist + " to IDE change " + ideChangeList);
                     }
@@ -499,6 +500,7 @@ public class P4ChangeProvider
     private void updateLocalFileCache(ClientConfig config, Stream<P4LocalFile> files,
             IdeChangelistMap changes, ChangelistBuilder builder) {
         files.forEach((file) -> {
+            // FIXME the file can have a null changelist here if "open for edit" didn't assign one.
             if (file.getChangelistId() != null) {
                 try {
                     LocalChangeList localChangeList = changes.getIdeChangeFor(file.getChangelistId());

@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="Gradle: com.google.code.gson:gson:2.8.2">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/main/gson-2.8.2.jar!/" />
+      <root url="jar:///mnt/c/dev/p4ic4idea/p4ic4idea/lib/main/gson-2.8.2.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

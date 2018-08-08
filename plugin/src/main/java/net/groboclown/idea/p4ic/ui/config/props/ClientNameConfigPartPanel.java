@@ -141,7 +141,7 @@ public class ClientNameConfigPartPanel
                     public void runAwtProcess(@Nullable final Collection<String> clientList) {
                         if (clientList != null) {
                             clientDropdownList.removeAllItems();
-                            for (String client: clientList) {
+                            for (String client : clientList) {
                                 clientDropdownList.addItem(client);
                             }
                             if (selected != null) {
@@ -179,7 +179,7 @@ public class ClientNameConfigPartPanel
             LOG.debug("Loading clients with configs " + configs + " from " + config);
         }
         Set<String> ret = new HashSet<String>();
-        for (ConnectionUIConfiguration.ClientResult result: ClientNameDataPart.loadClientNames(configs).values()) {
+        for (ConnectionUIConfiguration.ClientResult result : ClientNameDataPart.loadClientNames(configs).values()) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Loaded clients " + result.getClientNames() + "; problem " + result.getConnectionProblem());
             }

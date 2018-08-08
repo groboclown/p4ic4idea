@@ -127,6 +127,10 @@ Re-add support for showing shelved files and managing shelved files.
 Context menus or sidebar actions for viewing additional history for existing items, such as the history of files from
 within the changelist details panel. 
 
+### Active Connection Actions
+
+The Active Connection view should provide interactivity with the files the same as other views.
+
 ### Pending Changes View
 
 Re-add the pending changes view, for job and shelved file inspection.

@@ -34,7 +34,7 @@ public class AddEditAction extends AbstractAction implements P4CommandRunner.Cli
     private final String charset;
 
     public AddEditAction(@NotNull FilePath file, @Nullable P4FileType type,
-            @Nullable P4ChangelistId changelistId, String charset) {
+            @NotNull P4ChangelistId changelistId, @Nullable String charset) {
         this(createActionId(AddEditAction.class), file, type, changelistId, charset);
     }
 

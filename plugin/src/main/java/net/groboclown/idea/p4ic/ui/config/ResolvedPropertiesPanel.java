@@ -204,7 +204,7 @@ public class ResolvedPropertiesPanel {
                         } else {
                             rootDirDropdownBox.setEnabled(true);
                             rootDirDropdownBoxModel.removeAllElements();
-                            for (ConfigPath config: results.configs) {
+                            for (ConfigPath config : results.configs) {
                                 rootDirDropdownBoxModel.addElement(config);
                             }
                             if (results.selectedConfigIndex < 0) {
@@ -302,7 +302,7 @@ public class ResolvedPropertiesPanel {
         List<String> keys = new ArrayList<String>(props.keySet());
         Collections.sort(keys);
         StringBuilder sb = new StringBuilder();
-        for (String key: keys) {
+        for (String key : keys) {
             sb.append(key).append('=').append(props.get(key)).append('\n');
         }
         return sb;
@@ -327,7 +327,7 @@ public class ResolvedPropertiesPanel {
             problemMessages.add(createNoClientConfigProblem());
             results.configs.add(new ConfigPath(null, projectConfig.getProject().getBaseDir(), problemMessages));
         }
-        for (ClientConfigSetup configSetup: configs) {
+        for (ClientConfigSetup configSetup : configs) {
             final ClientConfig config = configSetup.getClientConfig();
             // Don't try a connection if there are flagrant errors in the setup.
             if (!configSetup.hasErrors() && config != null) {
@@ -358,7 +358,7 @@ public class ResolvedPropertiesPanel {
             Collection<VirtualFile> sourceDirs = config == null
                     ? Collections.singleton(configSetup.getSource().getRootPath())
                     : config.getProjectSourceDirs();
-            for (VirtualFile virtualFile: sourceDirs) {
+            for (VirtualFile virtualFile : sourceDirs) {
                 if (virtualFile != null) {
                     results.configs.add(new ConfigPath(configSetup.getSource(), virtualFile, problemMessages));
                 }
@@ -375,7 +375,7 @@ public class ResolvedPropertiesPanel {
     private static List<ConfigProblem> toProblemMessages(
             @Nullable VirtualFile root, @NotNull List<ConfigProblem> problemMessages) {
         List<ConfigProblem> ret = new ArrayList<ConfigProblem>(problemMessages.size());
-        for (ConfigProblem problem: problemMessages) {
+        for (ConfigProblem problem : problemMessages) {
             if ((problem.getRootPath() == null || problem.getRootPath().equals(root))
                     && !containsDuplicate(problem, ret)) {
                 ret.add(problem);
@@ -389,7 +389,7 @@ public class ResolvedPropertiesPanel {
     }
 
     private static boolean containsDuplicate(ConfigProblem c, List<ConfigProblem> problems) {
-        for (ConfigProblem problem: problems) {
+        for (ConfigProblem problem : problems) {
             if (problem.isSameMessage(c)) {
                 return true;
             }

@@ -46,6 +46,11 @@ public class IOVirtualFile
     }
 
     @NotNull
+    File getIOFile() {
+        return f;
+    }
+
+    @NotNull
     @Override
     public String getName() {
         return f.getName();
@@ -54,7 +59,7 @@ public class IOVirtualFile
     @NotNull
     @Override
     public VirtualFileSystem getFileSystem() {
-        throw new IllegalStateException("not implemented");
+        return MockVirtualFileSystem.DEFAULT_INSTANCE;
     }
 
     @NotNull
@@ -152,5 +157,22 @@ public class IOVirtualFile
     public InputStream getInputStream()
             throws IOException {
         return new FileInputStream(f);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof VirtualFile)) {
+            return false;
+        }
+        // TODO this ignores file system case sensitivity.
+        return getPath().equals(((VirtualFile) o).getPath());
+    }
+
+    @Override
+    public int hashCode() {
+        return getPath().hashCode();
     }
 }

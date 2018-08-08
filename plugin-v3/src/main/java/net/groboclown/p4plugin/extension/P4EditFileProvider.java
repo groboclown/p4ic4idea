@@ -140,6 +140,7 @@ public class P4EditFileProvider implements EditFileProvider {
         return ret;
     }
 
+    @NotNull
     private P4ChangelistId getActiveChangelistFor(ClientConfigRoot root, Map<ClientServerRef, P4ChangelistId> ids) {
         ClientServerRef ref = root.getClientConfig().getClientServerRef();
         P4ChangelistId ret = ids.get(ref);

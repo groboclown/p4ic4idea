@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="Gradle: org.apache.commons:commons-lang3:3.7">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/main/commons-lang3-3.7.jar!/" />
+      <root url="jar:///mnt/c/dev/p4ic4idea/p4ic4idea/lib/main/commons-lang3-3.7.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

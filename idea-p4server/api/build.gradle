@@ -81,14 +81,14 @@ project.tasks.check.dependsOn 'jacocoTestReport'
 
 // allow the test artifacts to be used by other projects
 configurations {
-    testArtifacts
+    testArtifacts.extendsFrom testCompile
 }
 task testArtifactsJar(type: Jar) {
-    //from(files(sourceSets.findByName('test').java.outputDir, sourceSets.findByName('test').resources.outputDir))
-    from "$buildDir/classes/java/test", "$projectDir/src/test/resources"
+    group 'build'
+
+    from sourceSets.test.output
     destinationDir = file("$buildDir/libs")
     classifier = 'test'
-
 }
 artifacts {
     testArtifacts testArtifactsJar

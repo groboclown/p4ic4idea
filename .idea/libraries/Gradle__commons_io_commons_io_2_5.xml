@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="Gradle: commons-io:commons-io:2.5">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/main/commons-io-2.5.jar!/" />
+      <root url="jar:///mnt/c/dev/p4ic4idea/p4ic4idea/lib/main/commons-io-2.5.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

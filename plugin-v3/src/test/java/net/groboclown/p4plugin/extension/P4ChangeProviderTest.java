@@ -16,7 +16,7 @@ package net.groboclown.p4plugin.extension;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -25,7 +25,6 @@ import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.extensions.TemporaryFolderExtension;
 import net.groboclown.idea.mock.MockChangeListManagerGate;
 import net.groboclown.idea.mock.MockChangelistBuilder;
-import net.groboclown.idea.mock.MockLocalChangeList;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
@@ -38,6 +37,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static net.groboclown.idea.ExtAsserts.assertContainsExactly;
 import static net.groboclown.idea.ExtAsserts.assertSize;
@@ -56,7 +56,7 @@ class P4ChangeProviderTest {
     /**
      * Ensure that, when offline, one file change is correctly reported.
      *
-     * @param tmp
+     * @param tmp temp folder
      */
     @ExtendWith(TemporaryFolderExtension.class)
     @Test
@@ -98,7 +98,22 @@ class P4ChangeProviderTest {
         P4ChangeProvider provider = new P4ChangeProvider(vcs.vcs);
         provider.getChanges(dirtyScope, changeBuilder, progressIndicator, addGate);
 
+        // Validations
         assertContainsExactly(changeBuilder.addedChangedFiles.values(),
                 addedFile);
+        assertSize(1, changeBuilder.addedChanges.keySet());
+        Map.Entry<String, Change> change =
+                changeBuilder.addedChanges.entrySet().iterator().next();
+        // TODO add in checks for the change.
+
+        assertSize(0, changeBuilder.ignored);
+        assertSize(0, changeBuilder.locallyDeleted);
+        assertSize(0, changeBuilder.lockedFolder);
+        assertSize(0, changeBuilder.modifiedWithoutCheckout);
+        assertSize(0, changeBuilder.removedChanges);
+        assertSize(0, changeBuilder.unversioned);
+
+        assertSize(0, addGate.removed);
+        assertSize(0, addGate.added);
     }
 }

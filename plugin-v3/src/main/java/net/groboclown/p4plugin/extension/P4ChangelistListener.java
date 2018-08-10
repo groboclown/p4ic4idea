@@ -13,6 +13,7 @@
  */
 package net.groboclown.p4plugin.extension;
 
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcs;
@@ -31,8 +32,10 @@ import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAct
 import net.groboclown.p4.server.api.util.FileTreeUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
+import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
+import net.groboclown.p4plugin.messages.UserMessage;
 import net.groboclown.p4plugin.util.ChangelistDescriptionGenerator;
 import org.jetbrains.annotations.NotNull;
 
@@ -50,7 +53,7 @@ public class P4ChangelistListener
 
     private final Project myProject;
 
-    P4ChangelistListener(@NotNull final Project project, @NotNull final P4Vcs vcs) {
+    P4ChangelistListener(@NotNull final Project project) {
         myProject = project;
     }
 
@@ -96,6 +99,7 @@ public class P4ChangelistListener
 
         // TODO if a file in a "move" operation is included, but not the
         // other side, then ensure the other side is also moved along with this one.
+        // That can be easily solved if the move operation is contained in a single Change object.
 
 
         LocalChangeList local = (LocalChangeList) toList;
@@ -119,12 +123,19 @@ public class P4ChangelistListener
                     CreateChangelistAction action =
                             new CreateChangelistAction(clientConfigRoot.getClientConfig().getClientServerRef(),
                                     toDescription(local));
+                    P4ServerComponent
+                            .perform(myProject, clientConfigRoot.getClientConfig(), action);
                     P4LocalChangelist cl =
                             CacheComponent.getInstance(myProject).getServerOpenedCache().first
                                     .getMappedChangelist(action);
+                    if (cl == null) {
+                        UserMessage.showNotification(myProject,
+                                P4Bundle.message("error.create-changelist", local.getName()),
+                                P4Bundle.message("error.create-changelist.title"),
+                                NotificationType.ERROR);
+                        continue;
+                    }
                     p4change = cl.getChangelistId();
-                    P4ServerComponent
-                            .perform(myProject, clientConfigRoot.getClientConfig(), action);
                 }
                 P4ServerComponent
                         .perform(myProject, clientConfigRoot.getClientConfig(),

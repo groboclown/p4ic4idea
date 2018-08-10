@@ -82,6 +82,9 @@ public class IdeChangelistCacheStore {
             List<P4ChangelistId> ret = new ArrayList<>();
             for (Map.Entry<P4ChangelistId, String> entry : linkedChangelistIds.entrySet()) {
                 if (entry.getValue().equals(ideId)) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Matched IDE change list ID " + ideId + " to p4 changelist " + entry.getKey());
+                    }
                     ret.add(entry.getKey());
                 }
             }

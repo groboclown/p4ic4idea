@@ -37,6 +37,7 @@ import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -75,6 +76,10 @@ public class P4VFSListener extends VcsVFSListener {
         // changed.
         Map<ClientServerRef, P4ChangelistId> activeChangelistIds = getActiveChangelistIds();
         for (VirtualFile file : addedFiles) {
+            if (file.isDirectory()) {
+                LOG.warn("Attempted to add a directory " + file);
+                continue;
+            }
             ClientConfigRoot root = getClientFor(file);
             if (root != null) {
                 FilePath fp = VcsUtil.getFilePath(file);
@@ -115,7 +120,15 @@ public class P4VFSListener extends VcsVFSListener {
         Map<ClientServerRef, P4ChangelistId> activeChangelistIds = getActiveChangelistIds();
         for (MovedFileInfo movedFile : movedFiles) {
             FilePath src = VcsUtil.getFilePath(movedFile.myOldPath);
+            if (src.isDirectory()) {
+                LOG.warn("Attempted to move directory " + src + "; refusing move.");
+                continue;
+            }
             FilePath tgt = VcsUtil.getFilePath(movedFile.myNewPath);
+            if (tgt.isDirectory()) {
+                LOG.info("Moving file into directory " + tgt);
+                tgt = VcsUtil.getFilePath(new File(tgt.getIOFile(), src.getName()));
+            }
             allFiles.add(src);
             allFiles.add(tgt);
             ClientConfigRoot srcRoot = getClientFor(src);

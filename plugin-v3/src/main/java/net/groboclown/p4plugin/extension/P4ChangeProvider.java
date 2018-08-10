@@ -297,6 +297,9 @@ public class P4ChangeProvider
                         ideChangeList = addGate.addChangeList(
                                 createUniqueChangelistName(changelist, existingLocalChangeLists, null),
                                 changelist.getComment());
+                        // Mark the just-created changelist as added, so that we don't attempt to use the name a
+                        // second time.
+                        existingLocalChangeLists.add(ideChangeList);
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Attaching " + changelist + " to IDE change " + ideChangeList);
                         }

@@ -209,7 +209,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     public P4Vcs(@NotNull Project project) {
         super(project, VCS_NAME);
 
-        this.changelistListener = new P4ChangelistListener(project, this);
+        this.changelistListener = new P4ChangelistListener(project);
         this.changeProvider = new P4ChangeProvider(this);
         this.historyProvider = new P4HistoryProvider(project);
         this.diffProvider = new P4DiffProvider(project);

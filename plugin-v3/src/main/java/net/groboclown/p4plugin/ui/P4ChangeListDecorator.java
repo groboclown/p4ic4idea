@@ -76,6 +76,7 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
     public P4ChangeListDecorator(@NotNull Project project) {
         this.project = project;
     }
@@ -91,6 +92,13 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
                 openedCache = cache.getServerOpenedCache();
         try {
             Collection<P4ChangelistId> p4Changes = openedCache.first.getP4ChangesFor(changeList);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Change " + changeList + " has p4 changes " + p4Changes);
+            }
+            if (p4Changes.isEmpty()) {
+                // Early exit
+                return;
+            }
             ChangelistConnectionInfo info = new ChangelistConnectionInfo(p4Changes.size());
             for (P4ChangelistId p4Change: p4Changes) {
                 if (registry != null && registry.isOnline(p4Change.getClientServerRef())) {
@@ -101,13 +109,17 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
             }
             decorateInfo(info, cellRenderer);
         } catch (InterruptedException e) {
-            // TODO error handling
+            // TODO better error handling?
             LOG.warn(e);
         }
     }
 
     private static void decorateInfo(@NotNull ChangelistConnectionInfo info,
             @NotNull ColoredTreeCellRenderer cellRenderer) {
+        if (info.serverCount <= 0) {
+            return;
+        }
+
         boolean hasOne = false;
 
         if (info.hasOneServer && info.validIds.size() == 1) {

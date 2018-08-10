@@ -45,6 +45,7 @@ import static net.groboclown.p4.server.api.P4CommandRunner.ClientActionCmd.ADD_E
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -104,7 +105,64 @@ class P4ChangeProviderTest {
         assertSize(1, changeBuilder.addedChanges.keySet());
         Map.Entry<String, Change> change =
                 changeBuilder.addedChanges.entrySet().iterator().next();
-        // TODO add in checks for the change.
+        assertEquals(LocalChangeList.DEFAULT_NAME, change.getKey());
+        assertNull(change.getValue().getBeforeRevision());
+        assertNotNull(change.getValue().getAfterRevision());
+        assertEquals(addedFile, change.getValue().getAfterRevision().getFile());
+
+        assertSize(0, changeBuilder.ignored);
+        assertSize(0, changeBuilder.locallyDeleted);
+        assertSize(0, changeBuilder.lockedFolder);
+        assertSize(0, changeBuilder.modifiedWithoutCheckout);
+        assertSize(0, changeBuilder.removedChanges);
+        assertSize(0, changeBuilder.unversioned);
+
+        assertSize(0, addGate.removed);
+        assertSize(0, addGate.added);
+    }
+
+    /**
+     * Ensure that, when offline, adding a new IDE change list does not cause the plugin to create a
+     * new Perforce changelist, or some other unexpected side effect.
+     *
+     * @param tmp temp folder
+     */
+    @ExtendWith(TemporaryFolderExtension.class)
+    @Test
+    void offlineNewIdeChangelist(TemporaryFolder tmp)
+            throws IOException, VcsException {
+        List<Throwable> errors = new ArrayList<>();
+        vcs.idea.useInlineThreading(errors);
+        VcsDirtyScope dirtyScope = mock(VcsDirtyScope.class);
+        MockChangeListManagerGate addGate = new MockChangeListManagerGate(vcs.getMockChangelistManager());
+        MockChangelistBuilder changeBuilder = new MockChangelistBuilder(addGate, vcs.vcs);
+        ProgressIndicator progressIndicator = DummyProgressIndicator.nullSafe(null);
+
+        when(dirtyScope.getVcs()).thenReturn(vcs.vcs);
+        when(dirtyScope.wasEveryThingDirty()).thenReturn(true);
+
+        // Setup offline mode
+        ClientConfigRoot root = vcs.addClientConfigRoot(tmp, "client");
+        assertNotNull(root.getClientRootDir());
+        vcs.goOffline(root);
+        assertFalse(vcs.registry.isOnline(root.getClientConfig().getClientServerRef()));
+
+        // Ensure the default changelist is in our cache.
+        // Should the test be run with no default changelist?  That implies that the server has never been
+        // synchronized, so I'm guessing no.
+        P4ChangelistId defaultChangeId =
+                vcs.addDefaultChangelist(root, LocalChangeList.DEFAULT_NAME);
+
+        // Add the pending add action.
+        vcs.addIdeChangelist("Test change", "A test change", false);
+
+        // Run the test.
+        P4ChangeProvider provider = new P4ChangeProvider(vcs.vcs);
+        provider.getChanges(dirtyScope, changeBuilder, progressIndicator, addGate);
+
+        // Validations
+        assertSize(0, changeBuilder.addedChangedFiles.values());
+        assertSize(0, changeBuilder.addedChanges.keySet());
 
         assertSize(0, changeBuilder.ignored);
         assertSize(0, changeBuilder.locallyDeleted);

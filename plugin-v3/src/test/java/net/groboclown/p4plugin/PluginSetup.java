@@ -19,6 +19,7 @@ import com.intellij.mock.MockCommandProcessor;
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorColorsScheme;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsFileListenerContextHelper;
@@ -96,6 +97,7 @@ public class PluginSetup
 
         ProjectLevelVcsManager mockVcsMgr = ProjectLevelVcsManager.getInstance(idea.getMockProject());
         when(mockVcsMgr.findVcsByName(VCS_NAME)).thenReturn(vcs);
+        when(mockVcsMgr.checkVcsIsActive(VCS_NAME)).thenReturn(true);
 
         vcs.doStart();
         registry.initComponent();
@@ -118,6 +120,10 @@ public class PluginSetup
 
         cacheComponent.disposeComponent();
         cacheComponent = null;
+    }
+
+    public Project getMockProject() {
+        return idea.getMockProject();
     }
 
     public ClientConfigRoot addClientConfigRoot(TemporaryFolder tmp, String clientRootDir) {
@@ -179,19 +185,36 @@ public class PluginSetup
         state.changelistState.linkedChangelistMap.add(linkedState);
         cc.loadState(state);
 
-        MockLocalChangeList defaultIdeChangeList = new MockLocalChangeList()
-                .withName(LocalChangeList.DEFAULT_NAME)
-                .withIsDefault(true);
-        ChangeListManager cm = getMockChangelistManager();
-        when(cm.getDefaultChangeList()).thenReturn(defaultIdeChangeList);
-        when(cm.getChangeList(LocalChangeList.DEFAULT_NAME)).thenReturn(defaultIdeChangeList);
-        when(cm.findChangeList(LocalChangeList.DEFAULT_NAME)).thenReturn(defaultIdeChangeList);
+        addIdeChangelist(LocalChangeList.DEFAULT_NAME, null, true);
 
         return P4ChangelistIdStore.read(defaultChangelist.changelistId);
     }
 
     public ChangeListManager getMockChangelistManager() {
         return ChangeListManager.getInstance(idea.getMockProject());
+    }
+
+    public MockLocalChangeList addIdeChangelist(String name, String comment, boolean isDefault) {
+        MockLocalChangeList ideChangeList = new MockLocalChangeList()
+                .withName(name)
+                .withComment(comment)
+                .withIsDefault(isDefault);
+        ChangeListManager cm = getMockChangelistManager();
+        if (isDefault) {
+            when(cm.getDefaultChangeList()).thenReturn(ideChangeList);
+        }
+        when(cm.getChangeList(name)).thenReturn(ideChangeList);
+        when(cm.findChangeList(name)).thenReturn(ideChangeList);
+        List<LocalChangeList> currentChanges = cm.getChangeLists();
+        if (currentChanges == null) {
+            currentChanges = new ArrayList<>();
+        } else {
+            currentChanges = new ArrayList<>(currentChanges);
+        }
+        currentChanges.add(ideChangeList);
+        when(cm.getChangeLists()).thenReturn(currentChanges);
+        when(cm.getChangeListsCopy()).thenReturn(currentChanges);
+        return ideChangeList;
     }
 
     private void setupIdeRequirements(IdeaLightweightExtension idea) {

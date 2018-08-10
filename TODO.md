@@ -32,6 +32,8 @@ submit).
 Additionally, if Perforce contains multiple changelists with the same name, the creation of these will fail due to a
 colliding name. ("Attempt to create duplicate changelist")
 
+This might be fixed now.
+
 ### Files move to default changelist on refresh
 
 When the changelist view is refreshed, the opened files in all the changelists can be moved to the default changelist.

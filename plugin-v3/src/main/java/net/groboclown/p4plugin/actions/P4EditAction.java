@@ -107,14 +107,17 @@ public class P4EditAction
                 exceptions.add(new VcsException(e));
                 return Stream.empty();
             }
-            return entity.second.stream().map((file) -> {
-                FilePath path = VcsUtil.getFilePath(file);
-                return P4ServerComponent
-                        .perform(project, entity.first, new AddEditAction(path, null, p4cl, path.getCharset(project)))
-                .whenServerError((err) -> exceptions.add(new VcsException(err)))
-                .whenCompleted((r) -> VcsDirtyScopeManager.getInstance(project).filesDirty(Collections.singleton(file), null))
-                ;
-            });
+            return entity.second.stream()
+                // Make sure we don't try to add a directory.
+                .filter(f -> !f.isDirectory())
+                .map((file) -> {
+                    FilePath path = VcsUtil.getFilePath(file);
+                    return P4ServerComponent
+                            .perform(project, entity.first, new AddEditAction(path, null, p4cl, path.getCharset(project)))
+                    .whenServerError((err) -> exceptions.add(new VcsException(err)))
+                    .whenCompleted((r) -> VcsDirtyScopeManager.getInstance(project).filesDirty(Collections.singleton(file), null))
+                    ;
+                });
         })
         .reduce((P4CommandRunner.ActionAnswer<?>) new DoneActionAnswer(null),
                 (base, next) -> base.mapActionAsync((x) -> next))

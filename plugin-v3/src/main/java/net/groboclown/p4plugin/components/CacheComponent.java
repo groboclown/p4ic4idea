@@ -164,7 +164,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
             pendingHandler = new CachePendingActionHandlerImpl(projectCache);
         }
         if (changelistMap == null) {
-            changelistMap = new IdeChangelistMapImpl(project, queryHandler, projectCache.getChangelistCacheStore());
+            changelistMap = new IdeChangelistMapImpl(project, projectCache.getChangelistCacheStore());
         }
         if (fileMap == null) {
             fileMap = new IdeFileMapImpl(project, queryHandler);

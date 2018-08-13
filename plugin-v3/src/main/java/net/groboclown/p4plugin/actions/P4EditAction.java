@@ -17,6 +17,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.VcsConnectionProblem;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
@@ -38,7 +39,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -86,6 +86,7 @@ public class P4EditAction
 
 
 
+    @NotNull
     @SuppressWarnings("unchecked")
     @Override
     protected P4CommandRunner.ActionAnswer<?> perform(@NotNull final Project project, @NotNull final P4Vcs vcs,
@@ -114,8 +115,10 @@ public class P4EditAction
                     FilePath path = VcsUtil.getFilePath(file);
                     return P4ServerComponent
                             .perform(project, entity.first, new AddEditAction(path, null, p4cl, path.getCharset(project)))
-                    .whenServerError((err) -> exceptions.add(new VcsException(err)))
                     .whenCompleted((r) -> VcsDirtyScopeManager.getInstance(project).filesDirty(Collections.singleton(file), null))
+                    .whenServerError((err) -> exceptions.add(new VcsException(err)))
+                            // TODO use message bundle
+                    .whenOffline(() -> exceptions.add(new VcsConnectionProblem("went offline while editing " + file)))
                     ;
                 });
         })

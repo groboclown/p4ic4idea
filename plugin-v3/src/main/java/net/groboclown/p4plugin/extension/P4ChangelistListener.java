@@ -26,15 +26,20 @@ import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.async.Answer;
+import net.groboclown.p4.server.api.async.AnswerSink;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.EditChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
 import net.groboclown.p4.server.api.util.FileTreeUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
+import net.groboclown.p4.server.impl.commands.AnswerUtil;
+import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.messages.UserMessage;
 import net.groboclown.p4plugin.util.ChangelistDescriptionGenerator;
 import org.jetbrains.annotations.NotNull;
@@ -46,6 +51,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 public class P4ChangelistListener
         implements ChangeListListener {
@@ -114,32 +121,57 @@ public class P4ChangelistListener
             }
 
             try {
-                P4ChangelistId p4change =
+                Answer.resolve(
                         CacheComponent.getInstance(myProject).getServerOpenedCache().first.getP4ChangeFor(
                                 clientConfigRoot.getClientConfig().getClientServerRef(),
-                                local);
-                if (p4change == null) {
+                                local))
+                .futureMap((BiConsumer<P4ChangelistId, AnswerSink<P4ChangelistId>>) (p4change, sink) -> {
+                    if (p4change != null) {
+                        sink.resolve(p4change);
+                        return;
+                    }
                     // No server changelist associated with this ide change.  Create one.
                     CreateChangelistAction action =
                             new CreateChangelistAction(clientConfigRoot.getClientConfig().getClientServerRef(),
                                     toDescription(local));
-                    P4ServerComponent
-                            .perform(myProject, clientConfigRoot.getClientConfig(), action);
-                    P4LocalChangelist cl =
-                            CacheComponent.getInstance(myProject).getServerOpenedCache().first
-                                    .getMappedChangelist(action);
+                    P4ServerComponent.perform(myProject, clientConfigRoot.getClientConfig(), action)
+                            .whenCompleted((res) -> {
+                                sink.resolve(new P4ChangelistIdImpl(
+                                        res.getChangelistId(),
+                                        clientConfigRoot.getClientConfig().getClientServerRef()));
+                            })
+                            .whenServerError(sink::reject)
+                            .whenOffline(() -> {
+                                try {
+                                    CacheComponent.getInstance(myProject).getServerOpenedCache().first
+                                                    .setMapping(action, local);
+                                    P4LocalChangelist v = CacheComponent.getInstance(myProject).getServerOpenedCache()
+                                            .first.getMappedChangelist(action);
+                                    sink.resolve(v == null ? null : v.getChangelistId());
+                                } catch (InterruptedException e) {
+                                    sink.reject(AnswerUtil.createFor(e));
+                                }
+                            });
+                })
+                .futureMap((cl, sink) -> {
                     if (cl == null) {
                         UserMessage.showNotification(myProject,
                                 P4Bundle.message("error.create-changelist", local.getName()),
                                 P4Bundle.message("error.create-changelist.title"),
                                 NotificationType.ERROR);
-                        continue;
+                        sink.resolve(null);
+                        return;
                     }
-                    p4change = cl.getChangelistId();
-                }
-                P4ServerComponent
-                        .perform(myProject, clientConfigRoot.getClientConfig(),
-                                new MoveFilesToChangelistAction(p4change, affectedFiles));
+                    P4ServerComponent
+                            .perform(myProject, clientConfigRoot.getClientConfig(),
+                                    new MoveFilesToChangelistAction(cl, affectedFiles))
+                    .whenCompleted(sink::resolve)
+                    .whenServerError(sink::reject)
+
+                    // Offline is not an error for this particular request..
+                    .whenOffline(() -> sink.resolve(null));
+                })
+                .blockingWait(UserProjectPreferences.getLockWaitTimeoutMillis(myProject), TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 LOG.warn(e);
             }

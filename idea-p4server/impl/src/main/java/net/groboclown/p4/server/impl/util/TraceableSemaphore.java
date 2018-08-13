@@ -154,9 +154,10 @@ public class TraceableSemaphore {
         for (int i = 3; i < stack.length; i++) {
             String cz = stack[i].getClassName();
 
-            if (cz.contains("lambda$") || cz.contains("ConnectionManager") || cz.contains("Answer")) {
+            if (cz.contains("lambda$") || cz.contains("ConnectionManager") || cz.contains("Answer") ||
+                    cz.endsWith("ActionChoice")) {
                 // Class names that have "lambda" in them are going to be lambda functions
-                // that have no information for us.
+                // that have no information for us.  Same goes for the other classes.
                 continue;
             }
 

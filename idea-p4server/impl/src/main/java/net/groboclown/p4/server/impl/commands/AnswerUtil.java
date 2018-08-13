@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 
 public class AnswerUtil {
     private static final Logger LOG = Logger.getInstance(AnswerUtil.class);
@@ -43,7 +44,36 @@ public class AnswerUtil {
         }
     }
 
+    private static class TimeoutResultError implements P4CommandRunner.ResultError {
+        private final Exception e;
+
+        private TimeoutResultError(Exception e) {
+            this.e = e;
+        }
+
+        @NotNull
+        @Override
+        public P4CommandRunner.ErrorCategory getCategory() {
+            return P4CommandRunner.ErrorCategory.TIMEOUT;
+        }
+
+        @Nls
+        @NotNull
+        @Override
+        public Optional<String> getMessage() {
+            return Optional.ofNullable(e.getLocalizedMessage());
+        }
+    }
+
     public static P4CommandRunner.ServerResultException createOfflineError() {
         return new P4CommandRunner.ServerResultException(OFFLINE_RESULT_ERROR);
+    }
+
+    public static P4CommandRunner.ServerResultException createFor(InterruptedException e) {
+        return new P4CommandRunner.ServerResultException(new TimeoutResultError(e));
+    }
+
+    public static P4CommandRunner.ServerResultException createFor(CancellationException e) {
+        return new P4CommandRunner.ServerResultException(new TimeoutResultError(e));
     }
 }

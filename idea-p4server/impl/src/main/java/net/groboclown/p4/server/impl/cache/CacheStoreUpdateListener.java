@@ -19,6 +19,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.cache.CachePendingActionHandler;
 import net.groboclown.p4.server.api.cache.messagebus.AbstractCacheMessage;
@@ -30,6 +31,7 @@ import net.groboclown.p4.server.api.cache.messagebus.JobCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.JobSpecCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ListClientsForUserCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ServerActionCacheMessage;
+import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.util.FileTreeUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
@@ -63,7 +65,6 @@ public class CacheStoreUpdateListener implements Disposable {
         this.project = project;
         this.cache = cache;
 
-        // TODO don't create our own cache, instead use the project one.
         this.pendingCache = new CachePendingActionHandlerImpl(cache);
 
         MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(this);
@@ -166,10 +167,11 @@ public class CacheStoreUpdateListener implements Disposable {
     private void handleClientAction(@NotNull ClientActionMessage.Event event)
             throws InterruptedException {
         switch (event.getState()) {
-            case PENDING:
+            case PENDING: {
                 pendingCache.writeActions(event.getClientRef(), (cache) ->
                         cache.addAction(event.getAction()));
                 break;
+            }
             case COMPLETED:
             case FAILED:
                 // For the purposes of this cache class, all we care about for the

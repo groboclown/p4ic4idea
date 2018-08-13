@@ -165,8 +165,8 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
                     try {
                         answer.blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project),
                                 TimeUnit.MILLISECONDS);
-                    } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
-                        // TODO better InterruptedException?
+                    } catch (P4CommandRunner.ServerResultException | InterruptedException e) {
+                        // TODO better InterruptedException handler?
                         ret.add(new VcsException(e));
                     }
                 }

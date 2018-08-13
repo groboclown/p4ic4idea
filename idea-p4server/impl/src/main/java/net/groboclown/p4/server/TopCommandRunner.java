@@ -619,10 +619,15 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                                 }
                             }).whenServerError((ex) -> {
                                 LOG.warn("Problem committing pending action " + action, ex);
+                            }).whenOffline(() -> {
+                                LOG.warn("Went offline while committing pending action " + action);
                             })),
                     (actionLeft, actionRight) -> actionLeft.mapActionAsync((x) -> actionRight))
                 .whenServerError((e) -> {
                     LOG.warn("Encountered unexpected error: " + e);
+                })
+                .whenOffline(() -> {
+                    LOG.warn("Went offline while sending pending actions");
                 });
         } catch (InterruptedException e) {
             LOG.warn(e);

@@ -128,8 +128,9 @@ public class CachePendingActionHandlerImpl implements CachePendingActionHandler 
                             : action.serverAction != null
                                 ? action.serverAction.getActionId()
                                 : null)) {
-                    // FIXME should this send out an event?
-                    // This would affect the ActionConnectionPanel.
+                    // TODO should this send out an event?
+                    // This would affect the ActionConnectionPanel.  Right now ActionConnectionPanel
+                    // just refreshes on its own, rather than waiting for these events.
                     iter.remove();
                     return true;
                 }
@@ -150,6 +151,7 @@ public class CachePendingActionHandlerImpl implements CachePendingActionHandler 
                 }
             }
             actions.add(ActionStore.createPendingAction(clientServerRef, action));
+
         }
 
         @Override
@@ -181,7 +183,7 @@ public class CachePendingActionHandlerImpl implements CachePendingActionHandler 
             private final Iterator<ActionStore.PendingAction> proxy;
             private  ActionChoice next;
 
-            public ActionChoiceIterator(Iterator<ActionStore.PendingAction> proxy) {
+            ActionChoiceIterator(Iterator<ActionStore.PendingAction> proxy) {
                 this.proxy = proxy;
                 findNext();
             }

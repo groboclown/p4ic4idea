@@ -81,7 +81,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
 
             pendingClientActions(config, (action) -> {
                 switch (action.getCmd()) {
-
+                    
                     // case CREATE_CHANGELIST:
                     // create changelist action should already have been handled by the
                     // IdeChangelistCacheStore and P4ChangeProvider.

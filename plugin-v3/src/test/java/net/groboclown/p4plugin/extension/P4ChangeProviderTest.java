@@ -174,4 +174,12 @@ class P4ChangeProviderTest {
         assertSize(0, addGate.removed);
         assertSize(0, addGate.added);
     }
+
+    /**
+     * Verify that a file open for add in a non-default changelist is not moved.
+     */
+    @Test
+    void offlineFileInNonDefaultChangelist() {
+        // FIXME implement
+    }
 }

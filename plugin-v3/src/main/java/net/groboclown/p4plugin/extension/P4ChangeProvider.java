@@ -691,8 +691,7 @@ public class P4ChangeProvider
             throws InterruptedException {
         IdeChangelistMap cache = CacheComponent.getInstance(project).getServerOpenedCache().first;
         switch (state) {
-            // pending is ignored, because it's handled exclusively within this class
-            // later.
+            // pending is ignored, because it's handled within this class later, and by IdeChangelistCacheStore.
 
             case COMPLETED:
                 cache.setMapping(new P4ChangelistIdImpl(

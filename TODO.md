@@ -9,10 +9,8 @@ of Github.
 
 ### Long Queue of Pending Operations
 
-At times, something causes the `LimitedConnectionManager` to have a large block of waiting items.  Either there's a bug
-in the "after" syntax where it never is called, or some other logic is missing.
-
-Additional debugging has been added by creating the `TraceableSemaphore` to better understand the blockage.
+Need to keep an eye out for all the promise-like objects.  Make sure the "when" clauses are all covered, especially for
+AsyncSink usages.
 
 ### Move Files fails horribly
 
@@ -53,12 +51,17 @@ not be marked as dirty in `P4ChangeProvider`.
 ### Pending Action Consolidation
 
 When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or
-duplicates existing pending actions.  The pending action list must be altered to reflect the new action. 
+duplicates existing pending actions.  The pending action list must be altered to reflect the new action.
+
+This needs to be handled by the `CacheQueryHandler`.  `CacheStoreUpdateListener` seems like the better place, but,
+as it notes, it really shouldn't be messing with that queue due to possible in-flight server requests.
 
 ### Remove Pending Action Refresh
 
 When the pending actions in the Active Connection panel are removed, the UI does not refresh.  A forced refresh shows it
-removed. 
+removed.   `CachePendingActionHandlerImpl` will need to send out an event on remove.
+
+This will need to be done in order to have IdeChangelistCacheStore remove action links if the action is deleted.
 
 ### Check Connection from VCS Root Directory Configuration memory leak
 

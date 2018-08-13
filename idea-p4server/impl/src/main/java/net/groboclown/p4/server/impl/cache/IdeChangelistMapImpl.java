@@ -18,7 +18,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.p4.server.api.ClientServerRef;
-import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
@@ -34,13 +33,10 @@ import java.util.Map;
 
 public class IdeChangelistMapImpl implements IdeChangelistMap {
     private final Project project;
-    private final CacheQueryHandler queryHandler;
     private final IdeChangelistCacheStore cache;
 
-    public IdeChangelistMapImpl(@NotNull Project project, @NotNull CacheQueryHandler queryHandler,
-            @NotNull IdeChangelistCacheStore cache) {
+    public IdeChangelistMapImpl(@NotNull Project project, @NotNull IdeChangelistCacheStore cache) {
         this.project = project;
-        this.queryHandler = queryHandler;
         this.cache = cache;
     }
 

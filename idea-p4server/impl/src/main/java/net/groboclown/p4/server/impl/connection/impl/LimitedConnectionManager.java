@@ -22,6 +22,7 @@ import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.impl.commands.AnswerUtil;
 import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4.server.impl.connection.P4Func;
 import net.groboclown.p4.server.impl.util.TraceableSemaphore;
@@ -75,8 +76,10 @@ public class LimitedConnectionManager implements ConnectionManager {
             try {
                 restriction.acquire(requester);
                 sink.resolve(null);
-            } catch (InterruptedException | CancellationException e) {
-                sink.reject(createServerError(e));
+            } catch (InterruptedException e) {
+                sink.reject(AnswerUtil.createFor(e));
+            } catch (CancellationException e) {
+                sink.reject(AnswerUtil.createFor(e));
             }
         })
         .mapAsync((x) -> {
@@ -91,25 +94,5 @@ public class LimitedConnectionManager implements ConnectionManager {
             restriction.release(requester);
         });
         return ret;
-    }
-
-    private P4CommandRunner.ServerResultException createServerError(final Exception e) {
-        // TODO use a different way to get the interrupted exception.
-        return new P4CommandRunner.ServerResultException(
-                new P4CommandRunner.ResultError() {
-                    @NotNull
-                    @Override
-                    public P4CommandRunner.ErrorCategory getCategory() {
-                        return P4CommandRunner.ErrorCategory.TIMEOUT;
-                    }
-
-                    @Nls
-                    @NotNull
-                    @Override
-                    public Optional<String> getMessage() {
-                        return Optional.ofNullable(e.getLocalizedMessage());
-                    }
-                },
-                e);
     }
 }

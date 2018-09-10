@@ -155,7 +155,7 @@ public class TraceableSemaphore {
             String cz = stack[i].getClassName();
 
             if (cz.contains("lambda$") || cz.contains("ConnectionManager") || cz.contains("Answer") ||
-                    cz.endsWith("ActionChoice")) {
+                    cz.endsWith("ActionChoice") || cz.endsWith("ApplicationImpl") || cz.contains("ReduceOps")) {
                 // Class names that have "lambda" in them are going to be lambda functions
                 // that have no information for us.  Same goes for the other classes.
                 continue;
@@ -163,7 +163,7 @@ public class TraceableSemaphore {
 
             String method = stack[i].getMethodName();
             if (method.startsWith("perform") || method.startsWith("lambda$") || method.equals("withConnection") ||
-                    method.equals("onlineExec")) {
+                    method.equals("onlineExec") || method.equals("run")) {
                 // One of the generic methods that doesn't give any interesting information.
                 continue;
             }

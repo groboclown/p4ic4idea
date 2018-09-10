@@ -60,4 +60,24 @@ public class FetchFilesAction extends AbstractNonCachedClientAction<FetchFilesRe
     public String getPathAnnotation() {
         return pathAnnotation;
     }
+
+    /**
+     * Intended to find a directory to use as the "working directory" for the path.  The returned path
+     * is just a parent directory to one of the files in the sync request.  The primary idea is finding
+     * a base directory for the server to use as the root of the client workspace; with an AltRoot definition,
+     * the server needs this, or it will generate error messages if the given files are not under the client
+     * root used by the current working directory.
+     *
+     * @return a directory for the files.
+     */
+    @NotNull
+    public File getCommonDir() {
+        for (FilePath file : syncPaths) {
+            FilePath parent = file.getParentPath();
+            if (parent != null) {
+                return parent.getIOFile();
+            }
+        }
+        throw new RuntimeException("Unable to find a parent directory for " + syncPaths);
+    }
 }

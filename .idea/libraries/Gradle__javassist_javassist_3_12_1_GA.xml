@@ -2,6 +2,7 @@
   <library name="Gradle: javassist:javassist:3.12.1.GA">
     <CLASSES>
       <root url="jar:///mnt/c/dev/p4ic4idea/p4ic4idea/lib/test/javassist-3.12.1.GA.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/test/javassist-3.12.1.GA.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

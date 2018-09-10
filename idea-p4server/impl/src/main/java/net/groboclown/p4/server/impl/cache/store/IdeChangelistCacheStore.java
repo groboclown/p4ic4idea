@@ -140,14 +140,20 @@ public class IdeChangelistCacheStore {
 
         // Should always be non-null, because of create=true, but just to be sure...
         if (changelist != null) {
-            lockTimeout.withWriteLock(lock, () -> {
-                linkedChangelistIds.put(changelist.getChangelistId(), localId);
-            });
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Mapping " + action);
+            }
+            setLink(changelist.getChangelistId(), localId);
+        } else {
+            LOG.error("getPendingChangelist for create==true generated null");
         }
     }
 
     public void setLink(@NotNull P4ChangelistId p4ChangelistId, @NotNull String localId)
             throws InterruptedException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Mapping @" + p4ChangelistId + " to [" + localId + "]");
+        }
         lockTimeout.withWriteLock(lock, () -> {
             linkedChangelistIds.put(p4ChangelistId, localId);
         });

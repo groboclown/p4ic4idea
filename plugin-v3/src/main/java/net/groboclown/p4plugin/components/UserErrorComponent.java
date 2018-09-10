@@ -77,6 +77,7 @@ public class UserErrorComponent implements ProjectComponent {
 
     // FIXME these are placeholder messages.
 
+    @SuppressWarnings("Convert2Lambda")
     @Override
     public void initComponent() {
         MessageBusClient.ApplicationClient appClient = MessageBusClient.forApplication(project);
@@ -328,22 +329,22 @@ public class UserErrorComponent implements ProjectComponent {
 
     private void simpleError(@NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String message,
             @NotNull @Nls(capitalization = Nls.Capitalization.Title) String title) {
-        simpleMessage(message, title, NotificationType.ERROR);
+        simpleMessage(message, UserMessage.ERROR, title, NotificationType.ERROR);
     }
 
     private void simpleWarning(@NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String message,
             @NotNull @Nls(capitalization = Nls.Capitalization.Title) String title) {
-        simpleMessage(message, title, NotificationType.WARNING);
+        simpleMessage(message, UserMessage.WARNING, title, NotificationType.WARNING);
     }
 
     private void simpleInfo(@NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String message,
             @NotNull @Nls(capitalization = Nls.Capitalization.Title) String title) {
-        simpleMessage(message, title, NotificationType.INFORMATION);
+        simpleMessage(message, UserMessage.INFO, title, NotificationType.INFORMATION);
     }
 
-    private void simpleMessage(@NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String message,
+    private void simpleMessage(@NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String message, int level,
             @NotNull @Nls(capitalization = Nls.Capitalization.Title) String title,
             @NotNull NotificationType icon) {
-        UserMessage.showNotification(project, message, title, icon);
+        UserMessage.showNotification(project, level, message, title, icon);
     }
 }

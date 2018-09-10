@@ -215,11 +215,15 @@ public class UsageOptions {
 	 * @return non-null working directory.
 	 */
 	protected String getWorkingDirectoryDefault(Properties props) {
-		String cwd = System.getProperty(WORKING_DIRECTORY_PROPNAME);
+		// p4ic4idea: allow for explicitly overriding the working directory.
+		String cwd = props.getProperty(WORKING_DIRECTORY_PROPNAME);
 		if (cwd == null) {
-			// Oh dear. This should never happen...
-			throw new P4JavaError(
-					"Unable to retrieve current working directory from JVM system properties");
+			cwd = System.getProperty(WORKING_DIRECTORY_PROPNAME);
+			if (cwd == null) {
+				// Oh dear. This should never happen...
+				throw new P4JavaError(
+						"Unable to retrieve current working directory from JVM system properties");
+			}
 		}
 			
 		return cwd;

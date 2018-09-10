@@ -16,6 +16,7 @@ package net.groboclown.p4plugin.extension;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
@@ -28,12 +29,17 @@ import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.async.AnswerSink;
+import net.groboclown.p4.server.api.cache.IdeChangelistMap;
+import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.EditChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistResult;
 import net.groboclown.p4.server.api.util.FileTreeUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
+import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.impl.commands.AnswerUtil;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4plugin.P4Bundle;
@@ -41,7 +47,7 @@ import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.messages.UserMessage;
-import net.groboclown.p4plugin.util.ChangelistDescriptionGenerator;
+import net.groboclown.p4plugin.util.ChangelistUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -49,6 +55,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -77,28 +84,63 @@ public class P4ChangelistListener
     public void changeListRemoved(@NotNull final ChangeList list) {
         LOG.debug("changeListRemoved: " + list.getName() + "; [" + list.getComment() + "]; " + list.getClass()
                 .getSimpleName());
-        // TODO will removing a changelist force the pending changelist delete?
+        if (!(list instanceof LocalChangeList) || !UserProjectPreferences.getRemoveP4Changelist(myProject)) {
+            return;
+        }
+        LocalChangeList local = (LocalChangeList) list;
+
+        IdeChangelistMap changelistMap =
+                CacheComponent.getInstance(myProject).getServerOpenedCache().first;
+        try {
+            final List<P4ChangelistId> changelists = new ArrayList<>(changelistMap.getP4ChangesFor(local));
+            for (ClientConfigRoot clientConfigRoot : getClientConfigRoots()) {
+                final Iterator<P4ChangelistId> iter = changelists.iterator();
+                while (iter.hasNext()) {
+                    final P4ChangelistId p4change = iter.next();
+                    if (p4change.isIn(clientConfigRoot.getServerConfig())) {
+                        iter.remove();
+                        P4ServerComponent.perform(myProject, clientConfigRoot.getClientConfig(),
+                                new DeleteChangelistAction(p4change))
+                        .whenCompleted((r) -> {
+                            UserMessage.showNotification(myProject, UserMessage.INFO,
+                                    P4Bundle.message("changelist.removed.text", p4change.getClientname(), p4change),
+                                    P4Bundle.message("changelist.removed.title", p4change.getChangelistId()),
+                                    NotificationType.INFORMATION);
+                        })
+                        .whenServerError((err) -> {
+                            UserMessage.showNotification(myProject, UserMessage.ERROR,
+                                    err.getLocalizedMessage(),
+                                    P4Bundle.message("error.remove-changelist.title", p4change.getChangelistId()),
+                                    NotificationType.ERROR);
+                        });
+                    }
+                }
+            }
+        } catch (InterruptedException e) {
+            LOG.warn("Interrupted while performing changelist removal", e);
+        }
     }
 
     @Override
     public void changesRemoved(@NotNull final Collection<Change> changes, @NotNull final ChangeList fromList) {
-        LOG.debug("changesRemoved: changes " + changes);
-        LOG.debug("changesRemoved: changelist " + fromList.getName() + "; [" + fromList.getComment() + "]; " + fromList
-                .getClass().getSimpleName());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("changesRemoved: changes " + changes);
+            LOG.debug("changesRemoved: changelist " + fromList.getName() + "; [" + fromList.getComment() + "]; "
+                    + fromList.getClass().getSimpleName());
+        }
 
-        // This method doesn't do what it seems to say it does.
-        // It is called when part of a change is removed.  Only
-        // changeListRemoved will perform the move to default
-        // changelist.  A revert will move it out of the changelist.
+        // This is called when a file change is removed from a changelist, not when a changelist is deleted.
+        // A revert will move the file it out of the changelist.
         // Note that if a change is removed, it is usually added or
         // moved, so we can ignore this call.
     }
 
-
     @Override
     public void changesAdded(@NotNull final Collection<Change> changes, @NotNull final ChangeList toList) {
-        LOG.debug("changesAdded: changes " + changes);
-        LOG.debug("changesAdded: changelist " + toList.getName() + "; [" + toList.getComment() + "]");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("changesAdded: changes " + changes);
+            LOG.debug("changesAdded: changelist " + toList.getName() + "; [" + toList.getComment() + "]");
+        }
 
         if (! (toList instanceof LocalChangeList)) {
             return;
@@ -121,14 +163,39 @@ public class P4ChangelistListener
             }
 
             try {
-                Answer.resolve(
-                        CacheComponent.getInstance(myProject).getServerOpenedCache().first.getP4ChangeFor(
-                                clientConfigRoot.getClientConfig().getClientServerRef(),
-                                local))
+                // The file may already be associated with the correct change; this can happen on
+                // the first invocation from the changelist view refresh.
+                final Pair<IdeChangelistMap, IdeFileMap> cache =
+                        CacheComponent.getInstance(myProject).getServerOpenedCache();
+                final P4ChangelistId p4changeSrc = cache.first.getP4ChangeFor(
+                        clientConfigRoot.getClientConfig().getClientServerRef(),
+                        local);
+                if (p4changeSrc != null) {
+                    final Iterator<FilePath> iter = affectedFiles.iterator();
+                    while (iter.hasNext()) {
+                        final P4LocalFile p4file = cache.second.forIdeFile(iter.next());
+                        if (p4file != null && p4file.getChangelistId() != null &&
+                                p4changeSrc.getChangelistId() == p4file.getChangelistId().getChangelistId()) {
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Skipping " + p4file + " from changelist move; it's already in changelist " +
+                                        p4changeSrc);
+                            }
+                            iter.remove();
+                        }
+                    }
+                }
+                if (affectedFiles.isEmpty()) {
+                    continue;
+                }
+
+                Answer.resolve(p4changeSrc)
                 .futureMap((BiConsumer<P4ChangelistId, AnswerSink<P4ChangelistId>>) (p4change, sink) -> {
                     if (p4change != null) {
                         sink.resolve(p4change);
                         return;
+                    }
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Forcing the creation of a changelist due to moving p4 file into IDE change");
                     }
                     // No server changelist associated with this ide change.  Create one.
                     CreateChangelistAction action =
@@ -155,21 +222,41 @@ public class P4ChangelistListener
                 })
                 .futureMap((cl, sink) -> {
                     if (cl == null) {
-                        UserMessage.showNotification(myProject,
+                        UserMessage.showNotification(myProject, UserMessage.ERROR,
                                 P4Bundle.message("error.create-changelist", local.getName()),
                                 P4Bundle.message("error.create-changelist.title"),
                                 NotificationType.ERROR);
                         sink.resolve(null);
                         return;
                     }
+                    UserMessage.showNotification(myProject, UserMessage.VERBOSE,
+                            P4Bundle.message("changelist.created", cl.getChangelistId()),
+                            P4Bundle.message("changelist.created.title"),
+                            NotificationType.INFORMATION);
                     P4ServerComponent
                             .perform(myProject, clientConfigRoot.getClientConfig(),
                                     new MoveFilesToChangelistAction(cl, affectedFiles))
                     .whenCompleted(sink::resolve)
                     .whenServerError(sink::reject)
 
-                    // Offline is not an error for this particular request..
+                    // Offline is not an error for this particular request.
                     .whenOffline(() -> sink.resolve(null));
+                })
+                .whenCompleted((r) -> {
+                    if (r != null) {
+                        MoveFilesToChangelistResult res = (MoveFilesToChangelistResult) r;
+                        UserMessage.showNotification(myProject, UserMessage.VERBOSE,
+                                P4Bundle.message("changelist.file.moved", res.getFiles().size(), res.getMessage()),
+                                P4Bundle.message("changelist.file.moved.title",
+                                        res.getChangelistId().getChangelistId()),
+                                NotificationType.INFORMATION);
+                    }
+                })
+                .whenFailed(err -> {
+                    UserMessage.showNotification(myProject, UserMessage.ERROR,
+                            P4Bundle.message("error.changelist-file-move", err.getLocalizedMessage()),
+                            P4Bundle.message("error.changelist-file-move.title"),
+                            NotificationType.ERROR);
                 })
                 .blockingWait(UserProjectPreferences.getLockWaitTimeoutMillis(myProject), TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
@@ -276,9 +363,8 @@ public class P4ChangelistListener
         return paths;
     }
 
-
     private String toDescription(@NotNull ChangeList changeList) {
-        return ChangelistDescriptionGenerator.getDescription(myProject, changeList);
+        return ChangelistUtil.createP4ChangelistDescription(myProject, changeList);
     }
 
     private Collection<FilePath> getAffectedFiles(ClientConfigRoot clientConfigRoot, Collection<Change> changes) {

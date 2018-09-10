@@ -139,4 +139,9 @@ public class P4FileRevisionImpl
     public String getCharset() {
         return charset;
     }
+
+    @Override
+    public String toString() {
+        return remoteFile.toString() + '@' + changelistId + ";#" + revisionNumber;
+    }
 }

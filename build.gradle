@@ -6,6 +6,6 @@ allprojects {
 
     wrapper {
         description 'Modifies the gradle binary distribution location used by gradle wrapper'
-        distributionUrl = uri('http://services.gradle.org/distributions/gradle-4.8.1-bin.zip')
+        distributionUrl = uri('http://services.gradle.org/distributions/gradle-4.10-bin.zip')
     }
 }

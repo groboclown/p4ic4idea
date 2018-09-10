@@ -32,8 +32,11 @@ public class ResultErrorUtil {
         if (t == null) {
             t = new RuntimeException("blah");
         }
-        if (t.getMessage() == null) {
-            throw new IllegalArgumentException("Better add in a message, or you'll be sorry.");
+        if (message == null) {
+            if (t.getMessage() == null) {
+                throw new IllegalArgumentException("Better add in a message, or you'll be sorry.");
+            }
+            message = t.getMessage();
         }
         return new P4CommandRunner.ServerResultException(createResultError(category, message), t);
     }

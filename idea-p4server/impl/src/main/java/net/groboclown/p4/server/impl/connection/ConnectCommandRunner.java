@@ -36,6 +36,7 @@ import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.MessageGenericCode;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
+import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.FixJobsOptions;
@@ -162,6 +163,7 @@ public class ConnectCommandRunner
         register(P4CommandRunner.ClientActionCmd.ADD_EDIT_FILE,
             (ClientActionRunner<AddEditResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
+                    ((AddEditAction) action).getFile().getIOFile().getParentFile(),
                     (client) -> addEditFile(client, config, (AddEditAction) action))));
 
         register(P4CommandRunner.ClientActionCmd.CREATE_CHANGELIST,
@@ -172,6 +174,7 @@ public class ConnectCommandRunner
         register(P4CommandRunner.ClientActionCmd.MOVE_FILES_TO_CHANGELIST,
             (ClientActionRunner<MoveFilesToChangelistResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
+                    ((MoveFilesToChangelistAction) action).getCommonDir(),
                     (client) -> moveFilesToChangelist(client, config, (MoveFilesToChangelistAction) action))));
 
         register(P4CommandRunner.ClientActionCmd.ADD_JOB_TO_CHANGELIST,
@@ -187,6 +190,7 @@ public class ConnectCommandRunner
         register(P4CommandRunner.ClientActionCmd.DELETE_FILE,
             (ClientActionRunner<DeleteFileResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
+                    ((DeleteFileAction) action).getFile().getIOFile().getParentFile(),
                     (client) -> deleteFile(client, config, (DeleteFileAction) action))));
 
         register(P4CommandRunner.ClientActionCmd.EDIT_CHANGELIST_DESCRIPTION,
@@ -197,21 +201,25 @@ public class ConnectCommandRunner
         register(P4CommandRunner.ClientActionCmd.FETCH_FILES,
             (ClientActionRunner<FetchFilesResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
+                    ((FetchFilesAction) action).getCommonDir(),
                     (client) -> fetchFiles(client, config, (FetchFilesAction) action))));
 
         register(P4CommandRunner.ClientActionCmd.MOVE_FILE,
             (ClientActionRunner<MoveFileResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
+                    ((MoveFileAction) action).getTargetFile().getIOFile().getParentFile(),
                     (client) -> moveFile(client, config, (MoveFileAction) action))));
 
         register(P4CommandRunner.ClientActionCmd.REVERT_FILE,
             (ClientActionRunner<RevertFileResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
+                    ((RevertFileAction) action).getFile().getIOFile().getParentFile(),
                     (client) -> revertFile(client, config, (RevertFileAction) action))));
 
         register(P4CommandRunner.ClientActionCmd.SUBMIT_CHANGELIST,
             (ClientActionRunner<SubmitChangelistResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
+                    // TODO does this need a directory for AltRoot purposes?  Probably.
                     (client) -> submitChangelist(client, config, (SubmitChangelistAction) action))));
     }
 
@@ -287,6 +295,7 @@ public class ConnectCommandRunner
     public P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> listOpenedFilesChanges(@NotNull ClientConfig config,
             @NotNull ListOpenedFilesChangesQuery query) {
         return new QueryAnswerImpl<>(connectionManager.withConnection(config,
+                query.getRoot(),
                 (client) -> listOpenedFilesChanges(client, config,
                         query.getMaxChangelistResults(), query.getMaxFileResults())
         ));
@@ -434,6 +443,7 @@ public class ConnectCommandRunner
             throws P4JavaException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Running add/edit against the server for " + action.getFile());
+            LOG.debug("Working directory: " + ((Server)client.getServer()).getUsageOptions().getWorkingDirectory());
         }
 
         // First, discover if the file is known by the server.
@@ -592,7 +602,7 @@ public class ConnectCommandRunner
                 files.add(new P4RemoteFileImpl(spec));
             }
         }
-        return new MoveFilesToChangelistResult(config, info, files);
+        return new MoveFilesToChangelistResult(config, action.getChangelistId(), info, files);
     }
 
     private AddJobToChangelistResult addJobToChangelist(IClient client, ClientConfig config,
@@ -821,10 +831,15 @@ public class ConnectCommandRunner
             List<IChangelist> changes = new ArrayList<>(summaries.size());
             List<IFileSpec> pendingChangelistFileSummaries = new ArrayList<>();
             Map<Integer, List<IFileSpec>> shelvedFiles = new HashMap<>();
+            // Calling
+            Map<String, Integer> openedDepotToChange = new HashMap<>();
             for (IChangelistSummary summary : summaries) {
                 IChangelist cl = cmd.getChangelistDetails(client.getServer(), summary.getId());
                 changes.add(cl);
                 pendingChangelistFileSummaries.addAll(cl.getFiles(false));
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("listOpenedFilesChanges: Fetched @" + cl.getId() + " files " + cl.getFiles(false));
+                }
 
                 // Get the list of shelved files, if any
                 if (cl.isShelved()) {
@@ -834,7 +849,9 @@ public class ConnectCommandRunner
             }
 
             // Then find details on all the opened files
-            LOG.info("listOpenedFilesChanges@" + startDate + ": getting file details"); // FIXME DEBUG
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("listOpenedFilesChanges@" + startDate + ": getting file details");
+            }
             List<IExtendedFileSpec> pendingChangelistFiles = cmd.getFileDetailsForOpenedSpecs(
                     client.getServer(), pendingChangelistFileSummaries, maxFileResults);
             Iterator<IExtendedFileSpec> pendingIter = pendingChangelistFiles.iterator();
@@ -851,19 +868,24 @@ public class ConnectCommandRunner
                         if (!foundNonOpened) {
                             LOG.debug(
                                     "Found non-opened file spec for request of just opened file specs in opened change.  "
-                                            +
-                                            next.getDepotPathString() + " :: open:" + next.getOpenChangelistId()
-                                            + ", cl:" +
-                                            next.getChangelistId() + ", owner:" + next.getOpenActionOwner());
+                                            + next.getDepotPathString() + " :: open:" + next.getOpenChangelistId()
+                                            + ", cl:" + next.getChangelistId() + ", owner:" + next.getOpenActionOwner());
                             foundNonOpened = true;
                         }
                     }
                     pendingIter.remove();
-                } else if (LOG.isDebugEnabled()) {
-                    LOG.debug("Pending changelist file" +
-                            ": " + next.getDepotPathString() +
-                            "; change " + next.getOpenChangelistId() +
-                            "; action " + next.getAction());
+                } else {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Pending changelist file" +
+                                ": " + next.getDepotPathString() +
+                                "; opened change " + next.getOpenChangelistId() +
+                                "; change " + next.getChangelistId() +
+                                "; action " + next.getAction());
+                    }
+                    // Ensure the changelist is as expected
+                    if (next.getOpenChangelistId() <= IChangelist.DEFAULT) {
+                        next.setOpenChangelistId(next.getChangelistId());
+                    }
                 }
             }
 
@@ -892,11 +914,21 @@ public class ConnectCommandRunner
                         }
                     }
                     defaultIter.remove();
-                } else if (LOG.isDebugEnabled()) {
-                    LOG.debug("Pending Default changelist file" +
-                            ": " + next.getDepotPathString() +
-                            "; change " + next.getOpenChangelistId() +
-                            "; action " + next.getAction());
+                } else {
+                    // Ensure the changelist ID is correct - we know that these are in the default changelist.
+                    next.setChangelistId(IChangelist.DEFAULT);
+                    next.setOpenChangelistId(IChangelist.DEFAULT);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Pending Default changelist file" +
+                                ": depot:" + next.getDepotPathString() +
+                                "; local:" + next.getLocalPathString() +
+                                "; client:" + next.getClientPathString() +
+                                "; original:" + next.getOriginalPathString() +
+                                "; preferred:" + next.getPreferredPathString() +
+                                "; annotated:" + next.getAnnotatedPreferredPathString() +
+                                "; change " + next.getOpenChangelistId() +
+                                "; action " + next.getAction());
+                    }
                 }
             }
 

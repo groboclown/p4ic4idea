@@ -26,6 +26,12 @@ import java.util.function.Function;
 @State(name = "UserProjectPreferences")
 public class UserProjectPreferences
         implements PersistentStateComponent<UserProjectPreferences.State> {
+    public static final int USER_MESSAGE_LEVEL_VERBOSE = 2;
+    public static final int USER_MESSAGE_LEVEL_INFO = 3;
+    public static final int USER_MESSAGE_LEVEL_WARNING = 4;
+    public static final int USER_MESSAGE_LEVEL_ERROR = 5;
+
+
     public static final int DEFAULT_SERVER_CONNECTIONS = 2;
     public static final boolean DEFAULT_INTEGRATE_ON_COPY = false;
     public static final boolean DEFAULT_EDIT_IN_SEPARATE_THREAD = false;
@@ -48,6 +54,8 @@ public class UserProjectPreferences
     public static final int DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT = 500;
     public static final int DEFAULT_MAX_FILE_RETRIEVE_COUNT = 5000;
     public static final boolean DEFAULT_AUTO_CHECKOUT_MODIFIED_FILES = false;
+    public static final boolean DEFAULT_REMOVE_P4_CHANGELISTS = true;
+    public static final int DEFAULT_USER_MESSAGE_LEVEL = USER_MESSAGE_LEVEL_WARNING;
 
     @NotNull
     private State state = new State();
@@ -93,6 +101,10 @@ public class UserProjectPreferences
         public int maxFileRetrieveCount = DEFAULT_MAX_FILE_RETRIEVE_COUNT;
 
         public boolean autoCheckoutModifiedFiles = DEFAULT_AUTO_CHECKOUT_MODIFIED_FILES;
+
+        public boolean removeP4Changelists = DEFAULT_REMOVE_P4_CHANGELISTS;
+
+        public int userMessageLevel = DEFAULT_USER_MESSAGE_LEVEL;
     }
 
     @Nullable
@@ -410,6 +422,38 @@ public class UserProjectPreferences
 
     public void setAutoCheckoutModifiedFiles(final boolean value) {
         state.autoCheckoutModifiedFiles = value;
+    }
+
+
+    public static boolean getRemoveP4Changelist(@Nullable final Project project) {
+        return getValue(project, DEFAULT_REMOVE_P4_CHANGELISTS,
+                (prefs) -> prefs.getRemoveP4Changelist());
+    }
+
+    public boolean getRemoveP4Changelist() {
+        return state.removeP4Changelists;
+    }
+
+    public void setRemoveP4Changelist(final boolean value) {
+        state.removeP4Changelists = value;
+    }
+
+
+    public static boolean isUserMessageLevel(@Nullable final Project project, int level) {
+        return level >= getUserMessageLevel(project);
+    }
+
+    public static int getUserMessageLevel(@Nullable final Project project) {
+        return getValue(project, DEFAULT_USER_MESSAGE_LEVEL,
+                (prefs) -> prefs.getUserMessageLevel());
+    }
+
+    public int getUserMessageLevel() {
+        return state.userMessageLevel;
+    }
+
+    public void setUserMessageLevel(final int value) {
+        state.userMessageLevel = value;
     }
 
 

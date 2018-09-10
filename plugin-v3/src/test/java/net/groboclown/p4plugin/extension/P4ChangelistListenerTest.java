@@ -17,8 +17,6 @@ import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.CurrentContentRevision;
-import com.intellij.openapi.vcs.changes.LocalChangeList;
-import com.intellij.openapi.vcs.changes.SimpleContentRevision;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.extensions.ErrorCollectorExtension;
@@ -39,7 +37,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import java.io.IOException;
 import java.util.Collections;
 
-import static net.groboclown.idea.ExtAsserts.assertContainsExactly;
 import static net.groboclown.idea.ExtAsserts.assertEmpty;
 import static net.groboclown.idea.ExtAsserts.assertSize;
 import static net.groboclown.p4.server.api.P4CommandRunner.ClientActionCmd.ADD_EDIT_FILE;
@@ -90,7 +87,7 @@ class P4ChangelistListenerTest {
      */
     @ExtendWith({ TemporaryFolderExtension.class, ErrorCollectorExtension.class })
     @Test
-    void moveFileToNewChangelist(TemporaryFolder tmp, Errors errors)
+    void offlineMoveFileToNewChangelist(TemporaryFolder tmp, Errors errors)
             throws InterruptedException, IOException {
         vcs.idea.useInlineThreading(errors.get());
 
@@ -100,8 +97,7 @@ class P4ChangelistListenerTest {
         vcs.goOffline(root);
         assertFalse(vcs.registry.isOnline(root.getClientConfig().getClientServerRef()));
 
-        P4ChangelistId defaultChangeId =
-                vcs.addDefaultChangelist(root, LocalChangeList.DEFAULT_NAME);
+        P4ChangelistId defaultChangeId = vcs.addDefaultChangelist(root);
 
         // Add the pending add action.
         VirtualFile addedVirtualFile = root.getClientRootDir().createChildData(this, "added.txt");

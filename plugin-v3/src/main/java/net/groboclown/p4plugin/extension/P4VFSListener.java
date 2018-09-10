@@ -35,6 +35,7 @@ import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
+import net.groboclown.p4plugin.util.ChangelistUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -209,31 +210,17 @@ public class P4VFSListener extends VcsVFSListener {
         return false;
     }
 
+
     private Map<ClientServerRef, P4ChangelistId> getActiveChangelistIds() {
-        LocalChangeList defaultIdeChangeList =
-                ChangeListManager.getInstance(myProject).getDefaultChangeList();
-        Map<ClientServerRef, P4ChangelistId> ret = new HashMap<>();
-        try {
-            CacheComponent.getInstance(myProject).getServerOpenedCache().first
-                    .getP4ChangesFor(defaultIdeChangeList)
-                    .forEach((id) -> ret.put(id.getClientServerRef(), id));
-        } catch (InterruptedException e) {
-            LOG.warn(e);
-        }
-        return ret;
+        return ChangelistUtil.getActiveChangelistIds(myProject);
     }
 
     @NotNull
     private P4ChangelistId getActiveChangelistFor(ClientConfigRoot root, Map<ClientServerRef, P4ChangelistId> ids) {
-        ClientServerRef ref = root.getClientConfig().getClientServerRef();
-        P4ChangelistId ret = ids.get(ref);
-        if (ret == null) {
-            ret = P4ChangelistIdImpl.createDefaultChangelistId(ref);
-            ids.put(ref, ret);
-        }
-        return ret;
+        return ChangelistUtil.getActiveChangelistFor(root, ids);
     }
 
+    // TODO this is shared with P4CheckinEnvironment
     private P4FileType getFileType(FilePath fp) {
         FileType ft = fp.getFileType();
         if (ft.isBinary()) {

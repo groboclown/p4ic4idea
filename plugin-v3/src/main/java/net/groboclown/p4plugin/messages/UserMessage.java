@@ -20,12 +20,18 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.project.Project;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.extension.P4Vcs;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class UserMessage {
+    public static final int VERBOSE = UserProjectPreferences.USER_MESSAGE_LEVEL_VERBOSE;
+    public static final int INFO = UserProjectPreferences.USER_MESSAGE_LEVEL_INFO;
+    public static final int WARNING = UserProjectPreferences.USER_MESSAGE_LEVEL_WARNING;
+    public static final int ERROR = UserProjectPreferences.USER_MESSAGE_LEVEL_ERROR;
+
     /**
      * Shows a notification.  Can be invoked from any thread.
      *
@@ -34,21 +40,25 @@ public class UserMessage {
      * @param title
      * @param icon
      */
-    public static void showNotification(@Nullable Project project,
+    public static void showNotification(@Nullable Project project, int level,
             @NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String message,
             @NotNull @Nls(capitalization = Nls.Capitalization.Title) String title,
             @NotNull NotificationType icon) {
-        Notification notification = createNotification(P4Vcs.VCS_NAME, title, message, icon, null, null);
-        Notifications.Bus.notify(notification, project);
+        if (UserProjectPreferences.isUserMessageLevel(project, level)) {
+            Notification notification = createNotification(P4Vcs.VCS_NAME, title, message, icon, null, null);
+            Notifications.Bus.notify(notification, project);
+        }
     }
 
-    public static void showNotification(@Nullable Project project,
+    public static void showNotification(@Nullable Project project, int level,
             @NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String message,
             @NotNull @Nls(capitalization = Nls.Capitalization.Title) String title,
             @NotNull NotificationType icon, @Nullable NotificationListener question,
             @Nullable Runnable onMessageExpired) {
-        Notification notification = createNotification(P4Vcs.VCS_NAME, title, message, icon, question, onMessageExpired);
-        Notifications.Bus.notify(notification, project);
+        if (UserProjectPreferences.isUserMessageLevel(project, level)) {
+            Notification notification = createNotification(P4Vcs.VCS_NAME, title, message, icon, question, onMessageExpired);
+            Notifications.Bus.notify(notification, project);
+        }
     }
 
     @NotNull

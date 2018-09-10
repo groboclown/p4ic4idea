@@ -42,7 +42,7 @@ public class GetExtendedFilesOptions extends Options {
 	
 	/** -m */
 	protected int maxResults = 0;
-	
+
 	/** -r */
 	protected boolean reverseSort = false;
 	
@@ -82,7 +82,8 @@ public class GetExtendedFilesOptions extends Options {
 	 * Default constructor.
 	 */
 	public GetExtendedFilesOptions() {
-		super();	}
+		super();
+	}
 
 	/**
 	 * Strings-based constructor; see 'p4 help [command]' for possible options.

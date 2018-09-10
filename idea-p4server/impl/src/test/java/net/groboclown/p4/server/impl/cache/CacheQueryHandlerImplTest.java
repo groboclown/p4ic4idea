@@ -126,7 +126,7 @@ class CacheQueryHandlerImplTest {
         // Simulated P4ChangeProvider action.
         MockLocalChangeList ideChangeList = new MockLocalChangeList();
         ideChangeList.setName("id:123");
-        IdeChangelistMap ideChangelistMap = new IdeChangelistMapImpl(idea.getMockProject(), query,
+        IdeChangelistMap ideChangelistMap = new IdeChangelistMapImpl(idea.getMockProject(),
                 projectStore.getChangelistCacheStore());
         ideChangelistMap.setMapping(addChangelistAction, ideChangeList);
 
@@ -145,7 +145,9 @@ class CacheQueryHandlerImplTest {
 
         assertEqualChangelists(cl1, res1);
 
-        assertEquals(projectStore.getChangelistCacheStore().getPendingChangelist(addChangelistAction, false).getChangelistId().getChangelistId(),
+        assertEquals(
+                projectStore.getChangelistCacheStore()
+                        .getPendingChangelist(addChangelistAction, false).getChangelistId().getChangelistId(),
                 res2.getChangelistId().getChangelistId());
         assertEquals("my comment", res2.getComment());
         assertEquals(clientConfig.getClientname(), res2.getClientname());

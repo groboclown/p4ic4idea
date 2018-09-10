@@ -2,10 +2,9 @@
   <library name="Gradle: org.junit.jupiter:junit-jupiter-api:5.1.0">
     <CLASSES>
       <root url="jar:///mnt/c/dev/p4ic4idea/p4ic4idea/lib/test/junit-jupiter-api-5.1.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/test/junit-jupiter-api-5.1.0.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="jar:///mnt/c/dev/p4ic4idea/p4ic4idea/lib/test/junit-jupiter-api-5.1.0-sources.jar!/" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>

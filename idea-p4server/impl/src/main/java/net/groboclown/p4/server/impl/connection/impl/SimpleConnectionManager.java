@@ -77,6 +77,12 @@ public class SimpleConnectionManager implements ConnectionManager {
     @NotNull
     @Override
     public <R> Answer<R> withConnection(@NotNull ClientConfig config, @Nonnull P4Func<IClient, R> fun) {
+        return withConnection(config, null, fun);
+    }
+
+    @NotNull
+    @Override
+    public <R> Answer<R> withConnection(@NotNull ClientConfig config, @Nullable File cwd, @Nonnull P4Func<IClient, R> fun) {
         if (config.getServerConfig().usesStoredPassword()) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Using password stored in registry.");
@@ -86,7 +92,7 @@ public class SimpleConnectionManager implements ConnectionManager {
                         final IOptionsServer server = connect(
                                 config.getServerConfig(),
                                 password.toString(false),
-                                createProperties(config));
+                                createProperties(config, cwd));
                         try {
                             IClient client = server.getClient(config.getClientname());
                             if (client == null) {
@@ -109,7 +115,7 @@ public class SimpleConnectionManager implements ConnectionManager {
                     final IOptionsServer server = connect(
                             config.getServerConfig(),
                             null,
-                            createProperties(config));
+                            createProperties(config, cwd));
                     try {
                         IClient client = server.getClient(config.getClientname());
                         if (client == null) {
@@ -386,7 +392,7 @@ public class SimpleConnectionManager implements ConnectionManager {
     }
 
     @NotNull
-    private Properties createProperties(@NotNull ClientConfig clientConfig) {
+    private Properties createProperties(@NotNull ClientConfig clientConfig, @Nullable File cwd) {
         final Properties props = createProperties(clientConfig.getServerConfig());
 
         if (clientConfig.getDefaultCharSet() != null) {
@@ -410,6 +416,17 @@ public class SimpleConnectionManager implements ConnectionManager {
         //   server configuration `init` method.
         if (clientConfig.getClientHostName() != null) {
             props.setProperty(PLUGIN_P4HOST_KEY, clientConfig.getClientHostName());
+        }
+
+        // Strange as it may sound, but for fstat and other file-based commands to work right, we need to set the
+        // current working directory.
+        if (cwd != null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Setting working directory for command to " + cwd.getAbsolutePath());
+            }
+            props.setProperty(UsageOptions.WORKING_DIRECTORY_PROPNAME, cwd.getAbsolutePath());
+        } else if (LOG.isDebugEnabled()) {
+            LOG.debug("No working directory set for connection.");
         }
 
         return props;

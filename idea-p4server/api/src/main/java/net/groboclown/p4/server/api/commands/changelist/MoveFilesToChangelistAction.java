@@ -20,6 +20,7 @@ import net.groboclown.p4.server.api.commands.AbstractAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,6 +37,7 @@ public class MoveFilesToChangelistAction extends AbstractAction implements P4Com
 
     public MoveFilesToChangelistAction(@NotNull String actionId, @NotNull P4ChangelistId changelistId,
             @NotNull Collection<FilePath> files) {
+        assert !files.isEmpty(): "list of files to move is empty";
         this.actionId = actionId;
         this.changelistId = changelistId;
         this.files = new ArrayList<>(files);
@@ -77,5 +79,25 @@ public class MoveFilesToChangelistAction extends AbstractAction implements P4Com
     @Override
     public List<FilePath> getAffectedFiles() {
         return Collections.unmodifiableList(files);
+    }
+
+    /**
+     * Intended to find a directory to use as the "working directory" for the path.  The returned path
+     * is just a parent directory to one of the files in the move request.  The primary idea is finding
+     * a base directory for the server to use as the root of the client workspace; with an AltRoot definition,
+     * the server needs this, or it will generate error messages if the given files are not under the client
+     * root used by the current working directory.
+     *
+     * @return a directory for the files.
+     */
+    @NotNull
+    public File getCommonDir() {
+        for (FilePath file : files) {
+            FilePath parent = file.getParentPath();
+            if (parent != null) {
+                return parent.getIOFile();
+            }
+        }
+        throw new RuntimeException("Unable to find a parent directory for " + files);
     }
 }

@@ -62,7 +62,7 @@ public class InvalidPasswordMonitorComponent
             public void singleSignOnFailed(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
                 if (shouldHandleProblem(config, FailureType.SSO)) {
                     // No explicit action to take
-                    UserMessage.showNotification(null,
+                    UserMessage.showNotification(null, UserMessage.ERROR,
                             P4Bundle.message("error.loginsso.exec-failed",
                                     config.getLoginSso(), e.getLocalizedMessage()),
                             P4Bundle.message("error.loginsso.exec-failed.title"),
@@ -76,7 +76,7 @@ public class InvalidPasswordMonitorComponent
             public void singleSignOnExecutionFailed(@NotNull ServerConfig config,
                     @NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
                 // No explicit action to take
-                UserMessage.showNotification(null,
+                UserMessage.showNotification(null, UserMessage.ERROR,
                         P4Bundle.message("error.loginsso.exec-failed.long",
                                 config.getLoginSso(), e.getExitCode(), e.getStdout(), e.getStderr()),
                         P4Bundle.message("error.loginsso.exec-failed.title"),
@@ -99,7 +99,7 @@ public class InvalidPasswordMonitorComponent
                 // Remove the stored password.
                 if (shouldHandleProblem(config, FailureType.PASSWORD_INVALID)) {
                     // Ask for the password.  Use the fancy notification stuff.
-                    UserMessage.showNotification(null,
+                    UserMessage.showNotification(null, UserMessage.ERROR,
                             P4Bundle.message("login.password.error", config.getServerName().getDisplayName()),
                             P4Bundle.getString("login.password.error.title"),
                             NotificationType.ERROR,
@@ -121,7 +121,7 @@ public class InvalidPasswordMonitorComponent
             public void passwordUnnecessary(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
                 // Inform the user about the unnecessary password.
                 if (shouldHandleProblem(config, FailureType.PASSWORD_UNNECESSARY)) {
-                    UserMessage.showNotification(null,
+                    UserMessage.showNotification(null, UserMessage.WARNING,
                             P4Bundle.message("connection.password.unnecessary.details",
                                     config.getServerName().getDisplayName()),
                             P4Bundle.message("connection.password.unnecessary.title"),

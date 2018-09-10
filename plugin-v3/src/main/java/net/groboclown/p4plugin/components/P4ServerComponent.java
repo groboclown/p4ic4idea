@@ -239,7 +239,8 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         // Init is happening earlier now
         // initComponent();
         return connectRunner.listOpenedFilesChanges(
-                clientConfig, new ListOpenedFilesChangesQuery(1, 1));
+                // Checking the connection doesn't require a root; we don't care about the files returned.
+                clientConfig, new ListOpenedFilesChangesQuery(null, 1, 1));
     }
 
     @NotNull

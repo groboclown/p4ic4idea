@@ -278,7 +278,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     protected void start() throws VcsException {
         if (!CompatFactoryLoader.isSupported()) {
             ApplicationManager.getApplication().invokeLater(() ->
-                UserMessage.showNotification(myProject,
+                UserMessage.showNotification(myProject, UserMessage.ERROR,
                     P4Bundle.message("ide.not.supported.message",
                             ApplicationInfo.getInstance().getApiVersion(),
                             P4Bundle.getString("p4ic.name"),

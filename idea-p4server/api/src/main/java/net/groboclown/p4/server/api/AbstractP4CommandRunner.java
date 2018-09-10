@@ -334,7 +334,7 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
                 // TODO this looks like a double query on the cache, when it should really be just a single one.
                 return (FutureResult<R>) new FutureResult<>(
                         listOpenedFilesChanges(config, new ListOpenedFilesChangesQuery(
-                                q.getMaxFileResults(), q.getMaxChangelistResults()
+                                q.getRoot(), q.getMaxFileResults(), q.getMaxChangelistResults()
                         )), cachedListOpenedFilesChanges(config, q));
             }
             default:

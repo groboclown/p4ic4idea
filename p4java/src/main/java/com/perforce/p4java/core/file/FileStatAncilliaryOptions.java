@@ -24,6 +24,16 @@ public class FileStatAncilliaryOptions {
         private boolean showAttributes = false;			// -Oa
         private boolean showHexAttributes = false;		// -Oae
 
+        // p4ic4idea: See "p4 undoc" under fstat for these extra options:
+        // The -Oc flag outputs the path, revision and type of the server archive file (requires 'admin' privilege).
+        // The -OC flag is the same as -Oc, but includes archived revisions. The -Oz flag outputs the path and
+        // revision of any lazy copies (requires 'admin' privilege).  The -Oh flag outputs the size, digest and any
+        // selected attributes of the synced revision rather than the head revision. The -Oi flag  outputs extra
+        // (debugging) information about the attributes.
+
+        private boolean sizeDigestAttributes = false; // -Oh
+
+
         public FileStatAncilliaryOptions() {
         }
 
@@ -64,6 +74,10 @@ public class FileStatAncilliaryOptions {
                         retVal.add("-Oae");
                 } else if (this.isShowAttributes()) {
                         retVal.add("-Oa");
+                }
+                // p4ic4idea:
+                if (this.isSizeDigestAttributes()) {
+                        retVal.add("-Oh");
                 }
 
                 return retVal;
@@ -123,5 +137,13 @@ public class FileStatAncilliaryOptions {
          */
         public void setShowHexAttributes(boolean showHexAttributes) {
                 this.showHexAttributes = showHexAttributes;
+        }
+
+        // p4ic4idea: undoc
+        public void setSizeDigestAttributes(boolean sizeDigestAttributes) {
+                this.sizeDigestAttributes = sizeDigestAttributes;
+        }
+        public boolean isSizeDigestAttributes() {
+                return sizeDigestAttributes;
         }
 }

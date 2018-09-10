@@ -35,6 +35,7 @@ import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
+import net.groboclown.p4plugin.util.ChangelistUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -127,17 +128,7 @@ public class P4EditFileProvider implements EditFileProvider {
     }
 
     private Map<ClientServerRef, P4ChangelistId> getActiveChangelistIds() {
-        LocalChangeList defaultIdeChangeList =
-                ChangeListManager.getInstance(project).getDefaultChangeList();
-        Map<ClientServerRef, P4ChangelistId> ret = new HashMap<>();
-        try {
-            CacheComponent.getInstance(project).getServerOpenedCache().first
-                    .getP4ChangesFor(defaultIdeChangeList)
-                    .forEach((id) -> ret.put(id.getClientServerRef(), id));
-        } catch (InterruptedException e) {
-            LOG.warn(e);
-        }
-        return ret;
+        return ChangelistUtil.getActiveChangelistIds(project);
     }
 
     @NotNull

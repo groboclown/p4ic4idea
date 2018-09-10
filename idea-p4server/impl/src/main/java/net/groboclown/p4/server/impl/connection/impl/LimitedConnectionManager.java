@@ -28,7 +28,9 @@ import net.groboclown.p4.server.impl.connection.P4Func;
 import net.groboclown.p4.server.impl.util.TraceableSemaphore;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +53,12 @@ public class LimitedConnectionManager implements ConnectionManager {
     @Override
     public <R> Answer<R> withConnection(@NotNull ClientConfig config, @NotNull P4Func<IClient, R> fun) {
         return get(() -> proxy.withConnection(config, fun));
+    }
+
+    @NotNull
+    @Override
+    public <R> Answer<R> withConnection(@NotNull ClientConfig config, @Nullable File cwd, @NotNull P4Func<IClient, R> fun) {
+        return get(() -> proxy.withConnection(config, cwd, fun));
     }
 
     @NotNull

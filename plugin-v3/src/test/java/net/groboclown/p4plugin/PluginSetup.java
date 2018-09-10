@@ -38,6 +38,8 @@ import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
+import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4ChangelistType;
@@ -48,9 +50,12 @@ import net.groboclown.p4.server.impl.cache.store.IdeChangelistCacheStore;
 import net.groboclown.p4.server.impl.cache.store.P4ChangelistIdStore;
 import net.groboclown.p4.server.impl.cache.store.P4LocalChangelistStore;
 import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
+import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.extension.P4Vcs;
+import net.groboclown.p4plugin.mock.MockConnectionManager;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -74,6 +79,7 @@ public class PluginSetup
     public ProjectConfigRegistry registry;
     public P4ServerComponent server;
     public CacheComponent cacheComponent;
+    public MockConnectionManager connectionManager;
     private List<VirtualFile> roots = new ArrayList<>();
 
     @Override
@@ -86,7 +92,8 @@ public class PluginSetup
 
         vcs = new P4Vcs(idea.getMockProject());
         registry = new ProjectConfigRegistryImpl(idea.getMockProject());
-        server = new P4ServerComponent(idea.getMockProject());
+        connectionManager = new MockConnectionManager();
+        server = new CustomP4ServerComponent(idea.getMockProject(), connectionManager);
         cacheComponent = new CacheComponent(idea.getMockProject());
 
         idea.registerProjectComponent(ProjectConfigRegistry.COMPONENT_NAME, registry);
@@ -149,45 +156,75 @@ public class PluginSetup
                 root.getClientConfig().getClientServerRef().getServerName());
     }
 
-    public P4ChangelistId addDefaultChangelist(ClientConfigRoot root, String name) {
+    public void goOnline(ClientConfigRoot root) {
+        ClientConfigAddedMessage.sendClientConfigurationAdded(idea.getMockProject(),
+                root.getClientRootDir(), root.getClientConfig());
+        ServerConnectedMessage.send().serverConnected(root.getServerConfig(), true);
+    }
+
+    public P4ChangelistId addNewChangelist(ClientConfigRoot root, int p4ChangelistId, String description) {
         CacheComponent cc = CacheComponent.getInstance(idea.getMockProject());
         // Use the state object to avoid all the work to populate the cache.
         ProjectCacheStore.State state = cc.getState();
         assertNotNull(state);
-        P4LocalChangelistStore.State defaultChangelist = new P4LocalChangelistStore.State();
-        defaultChangelist.changelistId = new P4ChangelistIdStore.State();
-        defaultChangelist.changelistId.id = 0;
-        defaultChangelist.changelistId.ref = new ClientServerRefStore.State();
-        defaultChangelist.changelistId.ref.clientName = root.getClientConfig().getClientname();
-        defaultChangelist.changelistId.ref.serverPort = root.getServerConfig().getServerName().getFullPort();
-        defaultChangelist.type = P4ChangelistType.PUBLIC;
-        defaultChangelist.deleted = false;
-        defaultChangelist.username = root.getServerConfig().getUsername();
-        defaultChangelist.clientname = root.getClientConfig().getClientname();
-        defaultChangelist.shelvedFiles = new ArrayList<>();
-        defaultChangelist.containedFiles = new ArrayList<>();
-        defaultChangelist.jobs = new ArrayList<>();
+        P4LocalChangelistStore.State changelist = new P4LocalChangelistStore.State();
+        changelist.changelistId = new P4ChangelistIdStore.State();
+        changelist.changelistId.id = p4ChangelistId;
+        changelist.changelistId.ref = new ClientServerRefStore.State();
+        changelist.changelistId.ref.clientName = root.getClientConfig().getClientname();
+        changelist.changelistId.ref.serverPort = root.getServerConfig().getServerName().getFullPort();
+        changelist.type = P4ChangelistType.PUBLIC;
+        changelist.deleted = false;
+        changelist.username = root.getServerConfig().getUsername();
+        changelist.clientname = root.getClientConfig().getClientname();
+        changelist.shelvedFiles = new ArrayList<>();
+        changelist.containedFiles = new ArrayList<>();
+        changelist.jobs = new ArrayList<>();
 
-        ClientQueryCacheStore.State clientQueryCacheStore = new ClientQueryCacheStore.State();
-        clientQueryCacheStore.changelists = new ArrayList<>();
-        clientQueryCacheStore.files = new ArrayList<>();
-        clientQueryCacheStore.source = defaultChangelist.changelistId.ref;
-        clientQueryCacheStore.changelists.add(defaultChangelist);
-        state.clientState = state.clientState == null ? new ArrayList<>() : state.clientState;
-        state.clientState.add(clientQueryCacheStore);
+        if (state.clientState == null) {
+            state.clientState = new ArrayList<>();
+        }
+        if (state.clientState.isEmpty()) {
+            ClientQueryCacheStore.State clientQueryCacheStore = new ClientQueryCacheStore.State();
+            clientQueryCacheStore.changelists = new ArrayList<>();
+            clientQueryCacheStore.files = new ArrayList<>();
+            clientQueryCacheStore.source = changelist.changelistId.ref;
+            state.clientState.add(clientQueryCacheStore);
+            clientQueryCacheStore.changelists.add(changelist);
+        } else {
+            ClientQueryCacheStore.State clientQueryCacheStore = state.clientState.get(0);
+            clientQueryCacheStore.changelists.add(changelist);
+        }
 
         state.changelistState = state.changelistState == null ? new IdeChangelistCacheStore.State() : state.changelistState;
-        state.changelistState.linkedChangelistMap = state.changelistState.linkedChangelistMap  == null
-            ? new ArrayList<>() : state.changelistState.linkedChangelistMap;
-        IdeChangelistCacheStore.LinkedChangelistState linkedState = new IdeChangelistCacheStore.LinkedChangelistState();
-        linkedState.changelistId = defaultChangelist.changelistId;
-        linkedState.linkedLocalChangeId = name;
-        state.changelistState.linkedChangelistMap.add(linkedState);
+        state.changelistState.linkedChangelistMap = state.changelistState.linkedChangelistMap == null
+                ? new ArrayList<>() : state.changelistState.linkedChangelistMap;
         cc.loadState(state);
 
-        addIdeChangelist(LocalChangeList.DEFAULT_NAME, null, true);
+        return P4ChangelistIdStore.read(changelist.changelistId);
+    }
 
-        return P4ChangelistIdStore.read(defaultChangelist.changelistId);
+    public void linkP4ChangelistToIdeChangelist(ClientConfigRoot root, P4ChangelistId p4cl, LocalChangeList ide) {
+        CacheComponent cc = CacheComponent.getInstance(idea.getMockProject());
+        // Use the state object to avoid all the work to populate the cache.
+        ProjectCacheStore.State state = cc.getState();
+        assertNotNull(state);
+        IdeChangelistCacheStore.LinkedChangelistState linkedState = new IdeChangelistCacheStore.LinkedChangelistState();
+        linkedState.changelistId = new P4ChangelistIdStore.State();
+        linkedState.changelistId.id = p4cl.getChangelistId();
+        linkedState.changelistId.ref = new ClientServerRefStore.State();
+        linkedState.changelistId.ref.clientName = root.getClientConfig().getClientname();
+        linkedState.changelistId.ref.serverPort = root.getServerConfig().getServerName().getFullPort();
+        linkedState.linkedLocalChangeId = ide.getId();
+        state.changelistState.linkedChangelistMap.add(linkedState);
+        cc.loadState(state);
+    }
+
+    public P4ChangelistId addDefaultChangelist(ClientConfigRoot root) {
+        P4ChangelistId p4cl = addNewChangelist(root, 0, LocalChangeList.DEFAULT_NAME);
+        MockLocalChangeList ideCl = addIdeChangelist(LocalChangeList.DEFAULT_NAME, null, true);
+        linkP4ChangelistToIdeChangelist(root, p4cl, ideCl);
+        return p4cl;
     }
 
     public ChangeListManager getMockChangelistManager() {
@@ -244,5 +281,20 @@ public class PluginSetup
 
         VcsFileListenerContextHelper fileListenerHelper = mock(VcsFileListenerContextHelper.class);
         idea.registerProjectService(VcsFileListenerContextHelper.class, fileListenerHelper);
+    }
+
+
+    class CustomP4ServerComponent extends P4ServerComponent {
+        private final ConnectionManager mgr;
+
+        CustomP4ServerComponent(@NotNull Project project, @NotNull ConnectionManager mgr) {
+            super(project);
+            this.mgr = mgr;
+        }
+
+        @NotNull
+        protected ConnectionManager createConnectionManager() {
+            return mgr;
+        }
     }
 }

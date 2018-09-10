@@ -73,11 +73,17 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
         try {
             cache.getChangelistCacheStore().getPendingChangelists().forEach(
                     (cl) -> changelists.put(cl.getChangelistId(), new P4LocalChangelistImpl.Builder().withSrc(cl)));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("cached pending changelists: " + changelists.keySet());
+            }
 
             cache.read(config, (store) ->
                     store.getChangelists().forEach(
                             (cl) -> changelists
                                     .put(cl.getChangelistId(), new P4LocalChangelistImpl.Builder().withSrc(cl))));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("cached pending + cached queried changelists: " + changelists.keySet());
+            }
 
             pendingClientActions(config, (action) -> {
                 switch (action.getCmd()) {
@@ -132,6 +138,10 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
             LOG.error("Spent too long waiting for a read cache; Something is spending too much time writing to the cache.", e);
         }
 
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("final evaluated cached changelists: " + changelists.keySet());
+        }
+
         return changelists.values().stream().map(P4LocalChangelistImpl.Builder::build).collect(Collectors.toList());
     }
 
@@ -142,6 +152,9 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
         try {
             cache.read(config, (store) -> store.getFiles()
                     .forEach((file) -> files.put(file.getFilePath(), new P4LocalFileImpl.Builder().withLocalFile(file))));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("cached opened files: " + files.keySet());
+            }
 
             // Because we read the pending actions in order of their behavior,
             // this will (should?) update each file with the correct status.
@@ -210,8 +223,28 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                         files.remove(a.getFile());
                         break;
                     }
+                    case MOVE_FILES_TO_CHANGELIST: {
+                        MoveFilesToChangelistAction a = toMoveFilesToChangelistAction(action);
+                        for (FilePath affectedFile : a.getAffectedFiles()) {
+                            P4LocalFileImpl.Builder builder = files.get(affectedFile);
+                            if (builder != null) {
+                                builder.withChangelist(a.getChangelistId());
+                            } else {
+                                // If the builder is null, then that means that the file isn't marked as open.
+                                // This is a potential bug.
+                                // TODO Is a warning sufficient?  May need a notify
+                                // LOG.error here will stop us in our tracks and make the plugin unusable.
+                                LOG.warn("Encountered Move Files to Changelist pending action with not open file: " +
+                                        affectedFile);
+                            }
+                        }
+                    }
                 }
             });
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("final evaluated cached opened files: " + files.keySet());
+            }
         } catch (InterruptedException e) {
             LOG.error("Spent too long waiting for a read cache; Something is spending too much time writing to the cache.", e);
         }

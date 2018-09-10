@@ -244,7 +244,7 @@ class ConnectCommandRunnerTest {
         final File clientRoot = tmpDir.newFile("clientRoot");
         final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
         final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
-d
+
         setupClient(clientConfig, tmpDir, clientRoot)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
@@ -676,6 +676,7 @@ d
                 .withClientname("client1");
         final ServerConfig serverConfig = ServerConfig.createFrom(part);
         final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
+        assertNotNull(clientConfig);
         final File clientRoot = tmpDir.newFile("clientRoot");
         final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());

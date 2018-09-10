@@ -16,6 +16,7 @@ package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,12 +25,15 @@ import java.util.List;
 
 public class MoveFilesToChangelistResult implements P4CommandRunner.ClientResult {
     private final ClientConfig config;
+    private final P4ChangelistId changelistId;
     private final String message;
     private final List<P4RemoteFile> files;
 
-    public MoveFilesToChangelistResult(@NotNull ClientConfig config, @Nullable String message,
+    public MoveFilesToChangelistResult(@NotNull ClientConfig config,
+            @NotNull P4ChangelistId changelistId, @Nullable String message,
             @NotNull List<P4RemoteFile> files) {
         this.config = config;
+        this.changelistId = changelistId;
         this.message = message;
         this.files = files;
     }
@@ -48,5 +52,10 @@ public class MoveFilesToChangelistResult implements P4CommandRunner.ClientResult
     @NotNull
     public List<P4RemoteFile> getFiles() {
         return files;
+    }
+
+    @NotNull
+    public P4ChangelistId getChangelistId() {
+        return changelistId;
     }
 }

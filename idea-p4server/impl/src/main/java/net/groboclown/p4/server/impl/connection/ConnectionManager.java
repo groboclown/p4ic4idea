@@ -21,8 +21,14 @@ import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.File;
 
 public interface ConnectionManager {
+    @NotNull
+    <R> Answer<R> withConnection(@NotNull ClientConfig config, @Nullable File cwd, @NotNull P4Func<IClient, R> fun);
+
     @NotNull
     <R> Answer<R> withConnection(@NotNull ClientConfig config, @NotNull P4Func<IClient, R> fun);
 

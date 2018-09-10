@@ -16,17 +16,18 @@ package net.groboclown.p4.server.api.commands.client;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.File;
 
 public class ListOpenedFilesChangesQuery
         implements P4CommandRunner.ClientQuery<ListOpenedFilesChangesResult> {
+    private final File root;
     private final int maxChangelistResults;
     private final int maxFileResults;
 
-    public ListOpenedFilesChangesQuery() {
-        this(-1, -1);
-    }
-
-    public ListOpenedFilesChangesQuery(int maxFileResults, int maxChangelistResults) {
+    public ListOpenedFilesChangesQuery(@Nullable File root, int maxFileResults, int maxChangelistResults) {
+        this.root = root;
         this.maxFileResults = maxFileResults;
         this.maxChangelistResults = maxChangelistResults;
     }
@@ -48,5 +49,10 @@ public class ListOpenedFilesChangesQuery
 
     public int getMaxFileResults() {
         return maxFileResults;
+    }
+
+    @Nullable
+    public File getRoot() {
+        return root;
     }
 }

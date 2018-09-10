@@ -24,6 +24,8 @@ import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.core.IJobSpec;
 import com.perforce.p4java.core.file.FileSpecBuilder;
+import com.perforce.p4java.core.file.FileStatAncilliaryOptions;
+import com.perforce.p4java.core.file.FileStatOutputOptions;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileRevisionData;
@@ -83,8 +85,22 @@ public class P4CommandUtil {
     public List<IExtendedFileSpec> getFilesOpenInDefaultChangelist(IServer server,
             String clientName, int maxFileResults)
             throws P4JavaException {
-        GetExtendedFilesOptions options = new GetExtendedFilesOptions("-Olhp -Rco -e default");
+        //GetExtendedFilesOptions options = new GetExtendedFilesOptions("-Olhp -Rco -e default");
+        GetExtendedFilesOptions options = new GetExtendedFilesOptions();
         options.setMaxResults(maxFileResults);
+        options.setAffectedByChangelist(IChangelist.DEFAULT); // -e default
+
+        FileStatAncilliaryOptions ancillaryOptions = new FileStatAncilliaryOptions();
+        ancillaryOptions.setFileSizeDigest(true); // -Ol
+        ancillaryOptions.setBothPathTypes(true); // -Op
+        ancillaryOptions.setSizeDigestAttributes(true); // -Oh, undoc
+        options.setAncilliaryOptions(ancillaryOptions);
+
+        FileStatOutputOptions outputOptions = new FileStatOutputOptions();
+        outputOptions.setMappedFiles(true); // -Rc
+        outputOptions.setOpenedFiles(true); // -Ro
+        options.setOutputOptions(outputOptions);
+
         return server.getExtendedFiles(
                 FileSpecBuilder.makeFileSpecList("//" + clientName + "/..."),
                 options

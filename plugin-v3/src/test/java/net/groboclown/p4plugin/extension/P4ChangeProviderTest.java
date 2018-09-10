@@ -21,21 +21,38 @@ import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import com.perforce.p4java.core.ChangelistStatus;
+import com.perforce.p4java.core.file.FileAction;
+import com.perforce.p4java.core.file.FileSpecBuilder;
+import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.impl.generic.core.Changelist;
+import com.perforce.p4java.impl.generic.core.ChangelistSummary;
+import com.perforce.p4java.impl.generic.core.file.ExtendedFileSpec;
+import com.perforce.p4java.impl.mapbased.server.Server;
+import net.groboclown.idea.extensions.ErrorCollectorExtension;
+import net.groboclown.idea.extensions.Errors;
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.extensions.TemporaryFolderExtension;
 import net.groboclown.idea.mock.MockChangeListManagerGate;
 import net.groboclown.idea.mock.MockChangelistBuilder;
+import net.groboclown.idea.mock.MockLocalChangeList;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import net.groboclown.p4plugin.PluginSetup;
 import net.groboclown.p4plugin.ui.DummyProgressIndicator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.mockito.ArgumentMatcher;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +63,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -82,8 +102,7 @@ class P4ChangeProviderTest {
         // Ensure the default changelist is in our cache.
         // Should the test be run with no default changelist?  That implies that the server has never been
         // synchronized, so I'm guessing no.
-        P4ChangelistId defaultChangeId =
-                vcs.addDefaultChangelist(root, LocalChangeList.DEFAULT_NAME);
+        P4ChangelistId defaultChangeId = vcs.addDefaultChangelist(root);
 
         // Add the pending add action.
         VirtualFile addedVirtualFile = root.getClientRootDir().createChildData(this, "added.txt");
@@ -150,10 +169,9 @@ class P4ChangeProviderTest {
         // Ensure the default changelist is in our cache.
         // Should the test be run with no default changelist?  That implies that the server has never been
         // synchronized, so I'm guessing no.
-        P4ChangelistId defaultChangeId =
-                vcs.addDefaultChangelist(root, LocalChangeList.DEFAULT_NAME);
+        P4ChangelistId defaultChangeId = vcs.addDefaultChangelist(root);
 
-        // Add the pending add action.
+        // Add the IDE changelist.
         vcs.addIdeChangelist("Test change", "A test change", false);
 
         // Run the test.
@@ -178,8 +196,143 @@ class P4ChangeProviderTest {
     /**
      * Verify that a file open for add in a non-default changelist is not moved.
      */
+    @ExtendWith(TemporaryFolderExtension.class)
     @Test
-    void offlineFileInNonDefaultChangelist() {
-        // FIXME implement
+    void offlineFileInNonDefaultChangelist(TemporaryFolder tmp)
+            throws IOException {
+        List<Throwable> errors = new ArrayList<>();
+        vcs.idea.useInlineThreading(errors);
+        VcsDirtyScope dirtyScope = mock(VcsDirtyScope.class);
+        MockChangeListManagerGate addGate = new MockChangeListManagerGate(vcs.getMockChangelistManager());
+        MockChangelistBuilder changeBuilder = new MockChangelistBuilder(addGate, vcs.vcs);
+        ProgressIndicator progressIndicator = DummyProgressIndicator.nullSafe(null);
+
+        when(dirtyScope.getVcs()).thenReturn(vcs.vcs);
+        when(dirtyScope.wasEveryThingDirty()).thenReturn(true);
+
+        // Setup offline mode
+        ClientConfigRoot root = vcs.addClientConfigRoot(tmp, "client");
+        assertNotNull(root.getClientRootDir());
+        vcs.goOffline(root);
+        assertFalse(vcs.registry.isOnline(root.getClientConfig().getClientServerRef()));
+
+        // Ensure the default changelist is in our cache.
+        // Should the test be run with no default changelist?  That implies that the server has never been
+        // synchronized, so I'm guessing no.
+        P4ChangelistId defaultChangeId = vcs.addDefaultChangelist(root);
+
+        // Add the IDE changelist.
+        MockLocalChangeList newIdeChange = vcs.addIdeChangelist("Test change", "A test", false);
+        // Link the IDE changelist to a Perforce change.
+        P4ChangelistId newP4Change = vcs.addNewChangelist(root, 1, "Test change");
+        vcs.linkP4ChangelistToIdeChangelist(root, newP4Change, newIdeChange);
+
+        // Add the pending add action.
+        VirtualFile addedVirtualFile = root.getClientRootDir().createChildData(this, "added.txt");
+        FilePath addedFile = VcsUtil.getFilePath(addedVirtualFile);
+        // Inline threading, so no need to block.
+        vcs.server.getCommandRunner()
+                .perform(root.getClientConfig(), new AddEditAction(addedFile, null, newP4Change, "UTF-8"));
+        assertSize(0, errors);
+        assertSize(1, vcs.cacheComponent.getState().pendingActions);
+        assertEquals(ADD_EDIT_FILE, vcs.cacheComponent.getState().pendingActions.get(0).clientActionCmd);
+    }
+
+
+    /**
+     * The bug this tests: A file is open for edit in the default changelist, and there is another changelist
+     * linked to an IDE changelist.  Then the user moves the file to another changelist, and then refreshes the
+     * change view.  The bug was where the refresh would loop because the provider would not correctly adjust
+     * the file change.
+     *
+     * @param tmp
+     * @param errors
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    @ExtendWith({ TemporaryFolderExtension.class, ErrorCollectorExtension.class })
+    @Test
+    void refreshAfterFileMoved(TemporaryFolder tmp, Errors errors)
+            throws InterruptedException, IOException, VcsException {
+        vcs.idea.useInlineThreading(errors.get());
+        final VcsDirtyScope dirtyScope = mock(VcsDirtyScope.class);
+        final MockChangeListManagerGate addGate = new MockChangeListManagerGate(vcs.getMockChangelistManager());
+        final MockChangelistBuilder changeBuilder = new MockChangelistBuilder(addGate, vcs.vcs);
+        final ProgressIndicator progressIndicator = DummyProgressIndicator.nullSafe(null);
+
+        when(dirtyScope.getVcs()).thenReturn(vcs.vcs);
+        when(dirtyScope.wasEveryThingDirty()).thenReturn(true);
+
+        // Simulate online mode
+        ClientConfigRoot root = vcs.addClientConfigRoot(tmp, "client");
+        assertNotNull(root.getClientRootDir());
+        vcs.goOnline(root);
+
+        // The IDE should have a default changelist.
+        MockLocalChangeList ideDefaultCl = vcs.addIdeChangelist(LocalChangeList.DEFAULT_NAME, null, true);
+
+        // Setup the server: 2 changelists, 1 file in default changelist.
+        final File openedFile = tmp.newFile("test.txt");
+        final IFileSpec openedFileSpec = FileSpecBuildUtil.forFiles(openedFile).get(0);
+        /* Default changelist is implicit, so we don't need to explicitly construct it.
+        final Changelist defCl = new Changelist(
+                0, root.getClientConfig().getClientname(),
+                root.getClientConfig().getServerConfig().getUsername(),
+                ChangelistStatus.PENDING, new Date(), "<default>", false, null
+        );
+        defCl.setFileSpecs(Collections.singletonList(openedFileSpec));
+        */
+        final Changelist secondCl = new Changelist(
+                2, root.getClientConfig().getClientname(),
+                root.getClientConfig().getServerConfig().getUsername(),
+                ChangelistStatus.PENDING, new Date(), "new cl", false, null
+        );
+        secondCl.setFileSpecs(Collections.emptyList());
+        vcs.connectionManager
+                .withErrors(errors)
+                .withServerSetup((config, base) -> {
+                    //defCl.setServerImpl(base);
+                    secondCl.setServerImpl(base);
+                    when(base.getChangelists(eq(null), any())).thenReturn(Arrays.asList(
+                            //defCl,
+                            secondCl
+                    ));
+                    //when(base.getChangelist(eq(0), any())).thenReturn(defCl);
+                    when(base.getChangelist(eq(2), any())).thenReturn(secondCl);
+                    // Get the files opened in the default list.
+                    ExtendedFileSpec spec = new ExtendedFileSpec("//depot/test.txt");
+                    spec.setAction(FileAction.ADD);
+                    when(base.getExtendedFiles(
+                            argThat(t -> t.size() == 1 && t.get(0)
+                                    .getOriginalPathString().equals("//" + root.getClientConfig().getClientname() + "/...")),
+                            argThat(t -> t.getAffectedByChangelist() == 0))).thenReturn(Collections.singletonList(
+                                    spec
+                    ));
+                    return base;
+                })
+                .withClientSetup((config, base) -> {
+                    when(base.openedFiles(any(), any())).then((args) -> {
+                        return args.getArguments()[0];
+                    });
+                    return base;
+                });
+
+        // Update the cache.
+        P4ChangeProvider provider = new P4ChangeProvider(vcs.vcs);
+        provider.getChanges(dirtyScope, changeBuilder, progressIndicator, addGate);
+
+        // Initial validations that refresh worked.
+        assertSize(1, changeBuilder.addedChangedFiles.values());
+        assertSize(1, changeBuilder.addedChanges.keySet());
+
+        assertSize(0, changeBuilder.ignored);
+        assertSize(0, changeBuilder.locallyDeleted);
+        assertSize(0, changeBuilder.lockedFolder);
+        assertSize(0, changeBuilder.modifiedWithoutCheckout);
+        assertSize(0, changeBuilder.removedChanges);
+        assertSize(0, changeBuilder.unversioned);
+
+        assertSize(0, addGate.removed);
+        assertSize(1, addGate.added);
     }
 }

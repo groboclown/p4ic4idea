@@ -64,7 +64,7 @@ class P4ChangeListDecoratorTest {
         vcs.goOffline(root);
         assertFalse(vcs.registry.isOnline(root.getClientConfig().getClientServerRef()));
 
-        P4ChangelistId defaultP4Changelist = vcs.addDefaultChangelist(root, LocalChangeList.DEFAULT_NAME);
+        P4ChangelistId defaultP4Changelist = vcs.addDefaultChangelist(root);
         MockLocalChangeList changeList =
                 vcs.addIdeChangelist("new change", "a test change", false);
         P4ChangeListDecorator decorator = new P4ChangeListDecorator(vcs.getMockProject());

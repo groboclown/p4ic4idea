@@ -7,11 +7,6 @@ of Github.
 
 ## Bugs
 
-### Long Queue of Pending Operations
-
-Need to keep an eye out for all the promise-like objects.  Make sure the "when" clauses are all covered, especially for
-AsyncSink usages.
-
 ### Move Files fails horribly
 
 Due to several other bugs and missing functionality, moving a file that's marked for edit will cause big failures.  The
@@ -22,31 +17,18 @@ operation to barf up in the event logs.
 
 The plugin incorrectly recognizes directories as files, and attempts to add them.
 
-### Creating a changelist can cause an error
-
-The plugin will attempt to create a new changelist in some cases when it already exists in Perforce (say, after a failed
-submit).
-
-Additionally, if Perforce contains multiple changelists with the same name, the creation of these will fail due to a
-colliding name. ("Attempt to create duplicate changelist")
-
-This might be fixed now.
-
-### Files move to default changelist on refresh
-
-When the changelist view is refreshed, the opened files in all the changelists can be moved to the default changelist.
-
-Looks like a potential caching issue.  The cache is queried to discover which changelist the file belongs.  If the cache
-isn't updated with the new changelist (or is ordered incorrectly), then the plugin will think the file is in the wrong
-changelist, and move it.
-
 ### Files open for edit outside IDE do not show up in IDE changelist
 
 If you open a file for edit outside the IDE, and refresh the changelist view in the IDE, the outside edited files do not
 show up.
 
-This might be another cache issue.  The cached list of files may not be loaded correctly.  Alternatively, the files may
-not be marked as dirty in `P4ChangeProvider`.
+### Files moved to another changelist outside IDE do not show up in IDE changelist
+
+If you move a file from one changelist to another outside the IDE, the file is removed from the old changelist, but is
+not added to the new changelist, and is instead "lost" (no longer in the changelist view).
+
+This is happening from `P4ChangeProvider`.  It looks like the provider removes the change from the original, but it
+is never correctly added to the new changelist.
 
 ### Pending Action Consolidation
 
@@ -56,7 +38,7 @@ duplicates existing pending actions.  The pending action list must be altered to
 This needs to be handled by the `CacheQueryHandler`.  `CacheStoreUpdateListener` seems like the better place, but,
 as it notes, it really shouldn't be messing with that queue due to possible in-flight server requests.
 
-### Remove Pending Action Refresh
+### Remove Pending Action requires Refresh
 
 When the pending actions in the Active Connection panel are removed, the UI does not refresh.  A forced refresh shows it
 removed.   `CachePendingActionHandlerImpl` will need to send out an event on remove.
@@ -74,6 +56,8 @@ Source: `P4VcsRootConfigurable`
 
 Note that, under New Project from Version Control, the Vcs Root in the `P4RootConfigPanel` can change, but the panel
 won't be updated with the new root.  This could be the source of at least one issue.
+
+This might be fixed now.  The API has changed to force usage that prevents serious memory leaks from spreading.
 
 ### Duplicate event log entries
 

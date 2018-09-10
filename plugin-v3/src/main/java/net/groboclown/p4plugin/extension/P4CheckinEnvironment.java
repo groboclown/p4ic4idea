@@ -42,19 +42,16 @@ import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.commands.file.AddEditResult;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileResult;
-import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
-import net.groboclown.p4.server.api.values.P4Job;
-import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4plugin.P4Bundle;
-import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.messages.UserMessage;
 import net.groboclown.p4plugin.ui.WrapperPanel;
 import net.groboclown.p4plugin.ui.submit.SubmitModel;
 import net.groboclown.p4plugin.ui.submit.SubmitPanel;
+import net.groboclown.p4plugin.util.ChangelistUtil;
 import net.groboclown.p4plugin.util.CommitUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -64,7 +61,6 @@ import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -235,31 +231,13 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
         return true;
     }
 
-    // TODO this is shared with P4VFSListener.  Look at making shared utility.
     private Map<ClientServerRef, P4ChangelistId> getActiveChangelistIds() {
-        LocalChangeList defaultIdeChangeList =
-                ChangeListManager.getInstance(project).getDefaultChangeList();
-        Map<ClientServerRef, P4ChangelistId> ret = new HashMap<>();
-        try {
-            CacheComponent.getInstance(project).getServerOpenedCache().first
-                    .getP4ChangesFor(defaultIdeChangeList)
-                    .forEach((id) -> ret.put(id.getClientServerRef(), id));
-        } catch (InterruptedException e) {
-            LOG.warn(e);
-        }
-        return ret;
+        return ChangelistUtil.getActiveChangelistIds(project);
     }
 
-    // TODO this is shared with P4VFSListener.  Look at making shared utility.
     @NotNull
     private P4ChangelistId getActiveChangelistFor(ClientConfigRoot root, Map<ClientServerRef, P4ChangelistId> ids) {
-        ClientServerRef ref = root.getClientConfig().getClientServerRef();
-        P4ChangelistId ret = ids.get(ref);
-        if (ret == null) {
-            ret = P4ChangelistIdImpl.createDefaultChangelistId(ref);
-            ids.put(ref, ret);
-        }
-        return ret;
+        return ChangelistUtil.getActiveChangelistFor(root, ids);
     }
 
     // TODO this is shared with P4VFSListener.  Look at making shared utility.
@@ -330,19 +308,18 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
                         }
                         exMessages.append(String.join(", ", problem.getMessages()));
                     }
-                    UserMessage.showNotification(project, exMessages.toString(),
-                            // FIXME bundle
-                            "Submit Errors",
+                    UserMessage.showNotification(project, UserMessage.ERROR,
+                            exMessages.toString(),
+                            P4Bundle.message("error.submit"),
                             NotificationType.ERROR);
                 }
             }
 
             @Override
             public void executionCanceled() {
-                UserMessage.showNotification(project,
-                        // FIXME bundle
-                        "Submit changelist was cancelled",
-                        "Submit Cancelled",
+                UserMessage.showNotification(project, UserMessage.WARNING,
+                        P4Bundle.message("submit.cancelled"),
+                        P4Bundle.message("submit.cancelled.title"),
                         NotificationType.INFORMATION);
             }
 

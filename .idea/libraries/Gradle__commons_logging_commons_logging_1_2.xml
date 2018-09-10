@@ -2,6 +2,7 @@
   <library name="Gradle: commons-logging:commons-logging:1.2">
     <CLASSES>
       <root url="jar:///mnt/c/dev/p4ic4idea/p4ic4idea/lib/main/commons-logging-1.2.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/main/commons-logging-1.2.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

@@ -90,4 +90,9 @@ public class P4RemoteFileImpl implements P4RemoteFile {
     public int hashCode() {
         return path.hashCode() + 1;
     }
+
+    @Override
+    public String toString() {
+        return path;
+    }
 }

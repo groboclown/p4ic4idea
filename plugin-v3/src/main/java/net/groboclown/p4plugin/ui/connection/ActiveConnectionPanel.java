@@ -25,13 +25,17 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.options.UnnamedConfigurable;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.vcs.VcsDirectoryMapping;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.perforce.p4java.exception.AuthenticationFailedException;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.cache.ActionChoice;
 import net.groboclown.p4.server.api.cache.messagebus.AbstractCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
@@ -48,6 +52,7 @@ import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.impl.util.IntervalPeriodExecution;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
+import net.groboclown.p4plugin.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -79,12 +84,24 @@ public class ActiveConnectionPanel {
             parentDisposable = project;
         }
         runner = new IntervalPeriodExecution(() -> {
+            // FIXME the tree is collapsed every time it's refreshed.
+            // There's a bit of code here to attempt to maintain the
+            // expanded row set, but it doesn't work.
+            connectionTree.setPaintBusy(true);
             Collection<TreeNode> needsRefresh = treeNode.refresh(project);
+            Collection<Integer> expanded = connectionTree.getExpandableItemsHandler().getExpandedItems();
             ApplicationManager.getApplication().invokeAndWait(() -> {
                 for (TreeNode toRefresh: needsRefresh) {
                     connectionTreeModel.reload(toRefresh);
                 }
+                // Is this accurate?  Probably not, but it at least attempts to keep the expansion.
+                for (Integer nodeIndex : expanded) {
+                    if (nodeIndex < connectionTree.getRowCount()) {
+                        connectionTree.expandRow(nodeIndex);
+                    }
+                }
             });
+            connectionTree.setPaintBusy(false);
         }, 5, TimeUnit.SECONDS);
 
         // Listeners must be registered after initializing the base data.
@@ -169,14 +186,19 @@ public class ActiveConnectionPanel {
 
     private ActionGroup createActionGroup() {
         return new DefaultActionGroup(
-                // FIXME use bundle for strings
-                new DumbAwareAction("Refresh", "Reload connection contents", AllIcons.Actions.Refresh) {
+                new DumbAwareAction(
+                        P4Bundle.getString("active-connection.toolbar.refresh.name"),
+                        P4Bundle.getString("active-connection.toolbar.refresh.tooltip"),
+                        AllIcons.Actions.Refresh) {
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         refresh();
                     }
                 },
-                new DumbAwareAction("Expand All", "Expand all nodes in the tree", AllIcons.Actions.Expandall) {
+                new DumbAwareAction(
+                        P4Bundle.getString("active-connection.toolbar.expand.name"),
+                        P4Bundle.getString("active-connection.toolbar.expand.tooltip"),
+                        AllIcons.Actions.Expandall) {
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         for (int i = 0; i < connectionTree.getRowCount(); i++) {
@@ -184,7 +206,10 @@ public class ActiveConnectionPanel {
                         }
                     }
                 },
-                new DumbAwareAction("Collapse All", "Collapse all nodes in the tree", AllIcons.Actions.Collapseall) {
+                new DumbAwareAction(
+                        P4Bundle.getString("active-connection.toolbar.collapse.name"),
+                        P4Bundle.getString("active-connection.toolbar.collapse.tooltip"),
+                        AllIcons.Actions.Collapseall) {
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         for (int i = 0; i < connectionTree.getRowCount(); i++) {
@@ -192,7 +217,10 @@ public class ActiveConnectionPanel {
                         }
                     }
                 },
-                new ConnectionAction("Connect", "Connect to the server", AllIcons.Actions.Download) {
+                new ConnectionAction(
+                        P4Bundle.getString("active-connection.toolbar.connect.name"),
+                        P4Bundle.getString("active-connection.toolbar.connect.tooltip"),
+                        AllIcons.Actions.Upload) { // Lightning?
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
@@ -208,8 +236,11 @@ public class ActiveConnectionPanel {
                         return sel != null && sel.isOffline();
                     }
                 },
-                new ConnectionAction("Disconnect", "Disconnect from the server",
-                        AllIcons.Actions.CloseNew) {
+                new ConnectionAction(
+                        P4Bundle.getString("active-connection.toolbar.disconnect.name"),
+                        P4Bundle.getString("active-connection.toolbar.disconnect.tooltip"),
+                        // TODO choose a better icon
+                        AllIcons.Actions.Pause) {
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
@@ -225,30 +256,44 @@ public class ActiveConnectionPanel {
                         return sel != null && sel.isOnline();
                     }
                 },
-                new ConnectionAction("Connection Configuration", "Edit the connection configuration",
-                        AllIcons.General.GearPlain) { // SmallConfigurableVcs ?
+                new ConnectionAction(
+                        P4Bundle.getString("active-connection.toolbar.configure.name"),
+                        P4Bundle.getString("active-connection.toolbar.configure.tooltip"),
+                        AllIcons.General.GearPlain) {
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
-                        if (sel != null) {
-                            // FIXME figure out how to show the connection
-                            LOG.error("Need to figure out how to show the connection information");
+                        boolean shown = false;
+                        if (sel != null && sel.getClientRootDir() != null) {
+                            String dirName = sel.getClientRootDir().getPath();
+                            // TODO this is not accurate.  It does not supply the correct VcsDirectoryMapping instance.
+                            UnnamedConfigurable configurable = P4Vcs.getInstance(project).getRootConfigurable(
+                                    new VcsDirectoryMapping(dirName, P4VcsKey.VCS_NAME)
+                            );
+                            if (configurable != null) {
+                                new ConfigDialog(project, dirName, configurable)
+                                        .show();
+                                shown = true;
+                            }
+                        }
+                        if (!shown) {
+                            LOG.error("No root directory information from " + sel);
                         }
                     }
 
                     @Override
                     boolean isEnabled() {
-                        // TODO once this is figured out, allow proper enabling.
-                        //ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
-                        //return sel != null;
-                        return false;
+                        ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        return sel != null && sel.getClientRootDir() != null;
                     }
                 },
 
                 // TODO add an action that allows retrying the pending actions.
                 // (these cannot be done in isolation - they are strictly ordered).
 
-                new ConnectionAction("Remove Action", "Remove the pending action",
+                new ConnectionAction(
+                        P4Bundle.getString("active-connection.toolbar.remove-action.name"),
+                        P4Bundle.getString("active-connection.toolbar.remove-action.tooltip"),
                         AllIcons.Actions.Clear) {
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
@@ -316,6 +361,34 @@ public class ActiveConnectionPanel {
             } else {
                 presentation.setVisible(true);
             }
+        }
+    }
+
+    private static class ConfigDialog extends DialogWrapper {
+        private final UnnamedConfigurable config;
+        private JComponent ui;
+
+        ConfigDialog(Project project, String dir, UnnamedConfigurable config) {
+            super(project, false, IdeModalityType.MODELESS);
+            this.config = config;
+            init();
+            setTitle(P4Bundle.message("vcsroot.dialog.title", dir));
+            pack();
+            centerRelativeToParent();
+        }
+
+        protected JComponent createCenterPanel() {
+            if (ui == null) {
+                ui = config.createComponent();
+            }
+            return ui;
+        }
+
+        @Override
+        protected void dispose() {
+            super.dispose();
+            ui = null;
+            config.disposeUIResources();
         }
     }
 }

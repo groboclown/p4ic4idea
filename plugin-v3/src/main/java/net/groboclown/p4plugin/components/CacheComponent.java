@@ -20,6 +20,9 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.async.BlockingAnswer;
@@ -38,6 +41,7 @@ import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
@@ -91,18 +95,24 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
      *
      * @return the pending answer.
      */
-    private Answer<Pair<IdeChangelistMap, IdeFileMap>> refreshServerOpenedCache(Collection<ClientConfig> clients) {
+    private Answer<Pair<IdeChangelistMap, IdeFileMap>> refreshServerOpenedCache(Collection<ClientConfigRoot> clients) {
         initComponent();
         Answer<?> ret = Answer.resolve(null);
 
-        for (ClientConfig client : clients) {
+        for (ClientConfigRoot clientRoot : clients) {
+            final File root = clientRoot.getClientRootDir() != null
+                    ? VcsUtil.getFilePath(clientRoot.getClientRootDir()).getIOFile()
+                    : null;
+
             ret = ret.mapAsync((x) ->
             Answer.background((sink) -> P4ServerComponent.syncQuery(project,
-                    client,
+                    clientRoot.getClientConfig(),
                     new SyncListOpenedFilesChangesQuery(
+                            root,
                             UserProjectPreferences.getMaxChangelistRetrieveCount(project),
                             UserProjectPreferences.getMaxFileRetrieveCount(project))).getPromise()
             .whenCompleted((changesResult) -> {
+                // TODO is this a duplicate call for the updateListener's CacheListener?
                 updateListener.setOpenedChanges(
                         changesResult.getClientConfig().getClientServerRef(),
                         changesResult.getPendingChangelists(), changesResult.getOpenedFiles());
@@ -127,12 +137,13 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
      *
      * @return the opened cache pair.  The values can be null if the cache has not yet been initialized.
      */
-    public Pair<IdeChangelistMap, IdeFileMap> blockingRefreshServerOpenedCache(Collection<ClientConfig> clients,
+    public Pair<IdeChangelistMap, IdeFileMap> blockingRefreshServerOpenedCache(Collection<ClientConfigRoot> clients,
             int timeout, TimeUnit timeoutUnit) {
         try {
             return BlockingAnswer.defaultBlockingGet(refreshServerOpenedCache(clients), timeout, timeoutUnit,
                     this::getServerOpenedCache);
         } catch (P4CommandRunner.ServerResultException e) {
+            // TODO better error handling!
             LOG.info(e);
             return getServerOpenedCache();
         }

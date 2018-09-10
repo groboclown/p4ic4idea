@@ -82,6 +82,9 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
                 "forms_rt"
         )
 
+        logger.info("Setting up instrumentation with classpath " +
+            classpath.asPath)
+
         ant.taskdef(name: 'instrumentIdeaExtensions',
                 classpath: classpath.asPath,
                 loaderref: LOADER_REF,
@@ -108,7 +111,7 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
         } catch (BuildException e) {
             def cause = e.getCause()
             if (cause instanceof ClassNotFoundException && FILTER_ANNOTATION_REGEXP_CLASS == cause.getMessage()) {
-                logger.info("Old version of Javac2 is used, " +
+                logger.warn("Old version of Javac2 is used, " +
                         "instrumenting code with nullability will be skipped. Use IDEA >14 SDK (139.*) to fix this")
                 return false
             } else {
@@ -121,6 +124,7 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
     private void instrumentCode(@Nonnull FileCollection srcDirs, @Nonnull File outputDir, boolean instrumentNotNull) {
         def headlessOldValue = System.setProperty('java.awt.headless', 'true')
         FileCollection cp = classPath.call()
+        // TODO this fails on JDK 10
         ant.instrumentIdeaExtensions(srcdir: srcDirs.asPath,
                 destdir: outputDir, classpath: cp.asPath,
                 includeantruntime: false, instrumentNotNull: instrumentNotNull) {

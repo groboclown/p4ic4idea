@@ -51,8 +51,8 @@ import net.groboclown.p4.server.api.commands.file.AnnotateFileResult;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileResult;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
+import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
-import net.groboclown.p4.server.api.commands.file.MoveFileResult;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
 import net.groboclown.p4.server.api.commands.file.RevertFileResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
@@ -651,12 +651,13 @@ class ConnectCommandRunnerTest {
                                 .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    fail("Should have thrown a error that no files exist.");
+                    // Special code is present to handle an empty sync.
+                    FetchFilesResult res = (FetchFilesResult) r;
+                    assertEquals("", res.getMessage());
+                    assertEmpty(res.getFiles());
                 })
                 .whenFailed((e) -> {
-                    assertThat(e.getCause(), instanceOf(RequestException.class));
-                    // TODO make this less fragile (not language dependent)
-                    assertEquals(clientRoot + "/... - no such file(s).", e.getCause().getMessage());
+                    fail("Should have returned a result with an empty message");
                 });
     }
 

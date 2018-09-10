@@ -14,12 +14,19 @@
 package net.groboclown.p4.server.impl.cache.store;
 
 import com.intellij.util.xmlb.XmlSerializer;
+import net.groboclown.idea.extensions.IdeaLightweightExtension;
+import net.groboclown.idea.extensions.TemporaryFolder;
+import net.groboclown.idea.extensions.TemporaryFolderExtension;
+import net.groboclown.idea.mock.MockVirtualFileSystem;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
+import net.groboclown.p4.server.todo.util.mock.MockFilePath;
 import org.jdom.Element;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.Collections;
 
@@ -29,9 +36,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class ProjectCacheStoreTest {
+    @SuppressWarnings("WeakerAccess")
+    @RegisterExtension
+    IdeaLightweightExtension idea = new IdeaLightweightExtension();
 
+    @ExtendWith(TemporaryFolderExtension.class)
     @Test
-    void getSetState()
+    void getSetState(TemporaryFolder tmpDir)
             throws PrimitiveMap.UnmarshalException {
         ProjectCacheStore.State state = new ProjectCacheStore.State();
         ClientServerRef ref = new ClientServerRef(
@@ -40,9 +51,11 @@ class ProjectCacheStoreTest {
         );
         state.clientState = Collections.singletonList(new ClientQueryCacheStore(ref).getState());
         state.serverState = Collections.singletonList(new ServerQueryCacheStore(ref.getServerName()).getState());
+        MockFilePath fp = new MockFilePath(tmpDir.newFile("test-file.txt"));
         ActionStore.State actionState = ActionStore.getState(
                 ActionStore.getSourceId(ref),
-                new MoveFilesToChangelistAction(new P4ChangelistIdImpl(1, ref), Collections.emptyList()));
+                new MoveFilesToChangelistAction(new P4ChangelistIdImpl(1, ref),
+                        Collections.singletonList(fp)));
         state.pendingActions = Collections.singletonList(actionState);
 
         Element serialized = XmlSerializer.serialize(state);

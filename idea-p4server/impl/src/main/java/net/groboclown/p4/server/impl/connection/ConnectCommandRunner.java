@@ -627,8 +627,7 @@ public class ConnectCommandRunner
         List<IFix> res = client.getServer().fixJobs(Collections.singletonList(action.getJob().getJobId()),
                         action.getChangelistId().getChangelistId(),
                         new FixJobsOptions(null, false));
-        // TODO report the results.
-        return new AddJobToChangelistResult(config);
+        return new AddJobToChangelistResult(config, res);
     }
 
     private DeleteChangelistResult deleteChangelist(IClient client, ClientConfig config,
@@ -764,6 +763,9 @@ public class ConnectCommandRunner
         if (srcFile.size() != 1 || tgtFile.size() != 1) {
             throw new IllegalStateException("Must have 1 source and 1 target, have " + srcFile + "; " + tgtFile);
         }
+        LOG.info("Running move command for `" + srcFile + "` to `" + tgtFile + "`");
+        // Note the two separate fstat calls.  These are limited, and are okay, but it might
+        // be better to join them together into a single call.
         List<IExtendedFileSpec> srcStatusResponse = cmd.getFileDetailsForOpenedSpecs(client.getServer(), srcFile, 1);
         OpenFileStatus srcStatus = new OpenFileStatus(srcStatusResponse);
         OpenFileStatus tgtStatus =
@@ -832,7 +834,6 @@ public class ConnectCommandRunner
             List<IFileSpec> pendingChangelistFileSummaries = new ArrayList<>();
             Map<Integer, List<IFileSpec>> shelvedFiles = new HashMap<>();
             // Calling
-            Map<String, Integer> openedDepotToChange = new HashMap<>();
             for (IChangelistSummary summary : summaries) {
                 IChangelist cl = cmd.getChangelistDetails(client.getServer(), summary.getId());
                 changes.add(cl);
@@ -890,7 +891,7 @@ public class ConnectCommandRunner
             }
 
             // Then get opened files in the default changelist.
-            LOG.info("listOpenedFilesChanges@" + startDate + ": getting file details for default changelist"); // FIXME DEBUG
+            LOG.debug("listOpenedFilesChanges@" + startDate + ": getting file details for default changelist");
             List<IExtendedFileSpec> openedDefaultChangelistFiles =
                     cmd.getFilesOpenInDefaultChangelist(client.getServer(), client.getName(), maxFileResults);
             Iterator<IExtendedFileSpec> defaultIter = openedDefaultChangelistFiles.iterator();
@@ -933,7 +934,7 @@ public class ConnectCommandRunner
             }
 
             // Then join all the information together.
-            LOG.info("listOpenedFilesChanges@" + startDate + ": generating result"); // FIXME DEBUG
+            LOG.debug("listOpenedFilesChanges@" + startDate + ": generating result");
             ListOpenedFilesChangesResult ret = OpenedFilesChangesFactory.createListOpenedFilesChangesResult(
                     config, changes, pendingChangelistFiles, shelvedFiles, openedDefaultChangelistFiles);
             ClientOpenCacheMessage.sendEvent(new ClientOpenCacheMessage.Event(

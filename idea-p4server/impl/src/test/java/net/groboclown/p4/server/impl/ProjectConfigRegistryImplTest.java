@@ -55,8 +55,8 @@ class ProjectConfigRegistryImplTest {
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient.ProjectClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
-        ClientConfigAddedMessage.addListener(client, (root, config) -> added.add(config));
-        ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
+        ClientConfigAddedMessage.addListener(client, this, e -> added.add(e.getClientConfig()));
+        ClientConfigRemovedMessage.addListener(client, this, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
         VirtualFile root = MockVirtualFileSystem.createRoot();
 
@@ -84,8 +84,8 @@ class ProjectConfigRegistryImplTest {
         ProjectConfigRegistry registry = new ProjectConfigRegistryImpl(idea.getMockProject());
         final List<ClientConfig> added = new ArrayList<>();
         MessageBusClient.ProjectClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
-        ClientConfigAddedMessage.addListener(client, (root, config) -> added.add(config));
-        ClientConfigRemovedMessage.addListener(client, (event) -> fail("incorrectly called remove"));
+        ClientConfigAddedMessage.addListener(client, this, e -> added.add(e.getClientConfig()));
+        ClientConfigRemovedMessage.addListener(client, this, (event) -> fail("incorrectly called remove"));
         ClientConfig config = createClientConfig();
         VirtualFile root = MockVirtualFileSystem.createRoot();
 
@@ -104,8 +104,9 @@ class ProjectConfigRegistryImplTest {
         ProjectConfigRegistry registry = new ProjectConfigRegistryImpl(idea.getMockProject());
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient.ProjectClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
-        ClientConfigAddedMessage.addListener(client, (root, clientConfig) -> fail("should not have added anything"));
-        ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
+        ClientConfigAddedMessage.addListener(client, this,
+                e -> fail("should not have added anything"));
+        ClientConfigRemovedMessage.addListener(client, this, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
 
         registry.removeClientConfig(config.getClientServerRef());
@@ -122,8 +123,8 @@ class ProjectConfigRegistryImplTest {
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient.ProjectClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
-        ClientConfigAddedMessage.addListener(client, (root, config) -> added.add(config));
-        ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
+        ClientConfigAddedMessage.addListener(client, this, e -> added.add(e.getClientConfig()));
+        ClientConfigRemovedMessage.addListener(client, this, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
         VirtualFile root = MockVirtualFileSystem.createRoot();
         registry.addClientConfig(config, root);
@@ -149,8 +150,8 @@ class ProjectConfigRegistryImplTest {
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient.ProjectClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
-        ClientConfigAddedMessage.addListener(client, (root, config) -> added.add(config));
-        ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
+        ClientConfigAddedMessage.addListener(client, this, e -> added.add(e.getClientConfig()));
+        ClientConfigRemovedMessage.addListener(client, this, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
         VirtualFile root = MockVirtualFileSystem.createRoot();
         registry.addClientConfig(config, root);
@@ -181,8 +182,8 @@ class ProjectConfigRegistryImplTest {
         final List<ClientConfig> added = new ArrayList<>();
         final List<ClientConfig> removed = new ArrayList<>();
         MessageBusClient.ProjectClient client = MessageBusClient.forProject(idea.getMockProject(), idea.getMockProject());
-        ClientConfigAddedMessage.addListener(client, (root, config) -> added.add(config));
-        ClientConfigRemovedMessage.addListener(client, (e) -> removed.add(e.getClientConfig()));
+        ClientConfigAddedMessage.addListener(client, this, e -> added.add(e.getClientConfig()));
+        ClientConfigRemovedMessage.addListener(client, this, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
         VirtualFile root = MockVirtualFileSystem.createRoot();
         registry.addClientConfig(config, root);

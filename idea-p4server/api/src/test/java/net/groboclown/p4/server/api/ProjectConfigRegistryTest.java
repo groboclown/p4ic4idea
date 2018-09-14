@@ -20,6 +20,7 @@ import net.groboclown.idea.mock.MockVirtualFile;
 import net.groboclown.idea.mock.MockVirtualFileSystem;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -131,7 +132,7 @@ class ProjectConfigRegistryTest {
         }
 
         @Override
-        protected void onUserSelectedOffline(@NotNull P4ServerName serverName) {
+        protected void onUserSelectedOffline(@NotNull UserSelectedOfflineMessage.OfflineEvent e) {
             throw new IllegalStateException();
         }
 

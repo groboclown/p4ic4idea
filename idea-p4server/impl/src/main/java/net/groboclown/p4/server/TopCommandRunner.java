@@ -86,6 +86,7 @@ import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
+import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4.server.api.values.P4FileType;
@@ -133,14 +134,15 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
         MessageBusClient.ApplicationClient appClient = MessageBusClient.forApplication(this);
         MessageBusClient.ProjectClient projClient = MessageBusClient.forProject(project, this);
-        ClientConfigAddedMessage.addListener(projClient, clientConfigs::put);
-        ClientConfigRemovedMessage.addListener(projClient, (event) -> clientConfigs.remove(event.getVcsRootDir()));
-        ClientConfigAddedMessage.addServerListener(appClient,
+        ClientConfigAddedMessage.addListener(projClient, this, (e) -> clientConfigs.put(e.getRoot(), e.getClientConfig()));
+        ClientConfigRemovedMessage.addListener(projClient, this,
+                (event) -> clientConfigs.remove(event.getVcsRootDir()));
+        ClientConfigAddedMessage.addServerListener(appClient, this,
                 // Creates the state for the server config, if it doesn't already exist.
                 // This prevents issues with the user going offline before any action on the
                 // server happens.
-                this::getStateFor);
-        ServerConnectedMessage.addListener(appClient, (serverConfig, loggedIn) -> {
+                (e) -> this.getStateFor(e.getServerConfig()));
+        ServerConnectedMessage.addListener(appClient, this, (serverConfig, loggedIn) -> {
             ServerConnectionState state = getStateFor(serverConfig);
             state.badConnection = false;
             state.userOffline = false;
@@ -156,18 +158,18 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                 }
             }
         });
-        UserSelectedOfflineMessage.addListener(projClient, name -> {
+        UserSelectedOfflineMessage.addListener(projClient, this, e -> {
             // User wants to work offline, regardless of connection status.
-            for (ServerConnectionState state : getStatesFor(name)) {
+            for (ServerConnectionState state : getStatesFor(e.getName())) {
                 state.userOffline = true;
                 server.disconnect(state.config.getServerName());
             }
         });
-        ReconnectRequestMessage.addListener(projClient, new ReconnectRequestMessage.Listener() {
+        ReconnectRequestMessage.addListener(projClient, this, new ReconnectRequestMessage.Listener() {
             // The user requested to go online, so clear out the states
             // that might cause a request to not be fulfilled.
             @Override
-            public void reconnectToAllClients(boolean mayDisplayDialogs) {
+            public void reconnectToAllClients(@NotNull ReconnectRequestMessage.ReconnectAllEvent e) {
                 for (ServerConnectionState state : getAllStates()) {
                     state.userOffline = false;
                     state.badConnection = false;
@@ -180,57 +182,55 @@ public class TopCommandRunner extends AbstractP4CommandRunner
             }
 
             @Override
-            public void reconnectToClient(@NotNull ClientServerRef ref, boolean mayDisplayDialogs) {
-                for (ServerConnectionState state : getStatesFor(ref.getServerName())) {
+            public void reconnectToClient(@NotNull ReconnectRequestMessage.ReconnectEvent e) {
+                for (ServerConnectionState state : getStatesFor(e.getRef().getServerName())) {
                     state.userOffline = false;
                     state.badConnection = false;
                     state.badLogin = false;
                     state.needsLogin = false;
                 }
                 for (ClientConfig clientConfig: clientConfigs.values()) {
-                    if (clientConfig.getClientServerRef().equals(ref)) {
+                    if (clientConfig.getClientServerRef().equals(e.getRef())) {
                         sendCachedPendingRequests(clientConfig);
                     }
                 }
             }
         });
-        LoginFailureMessage.addListener(appClient, new LoginFailureMessage.Listener() {
+        LoginFailureMessage.addListener(appClient, this, new LoginFailureMessage.Listener() {
             @Override
-            public void singleSignOnFailed(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
-                getStateFor(config).badLogin = true;
+            public void singleSignOnFailed(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                getStateFor(e.getConfig()).badLogin = true;
             }
 
             @Override
-            public void singleSignOnExecutionFailed(@NotNull ServerConfig config,
-                    @NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
-                getStateFor(config).badLogin = true;
+            public void singleSignOnExecutionFailed(@NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
+                getStateFor(e.getConfig()).badLogin = true;
             }
 
             @Override
-            public void sessionExpired(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
-                getStateFor(config).badLogin = false;
-                getStateFor(config).needsLogin = true;
+            public void sessionExpired(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                getStateFor(e.getConfig()).badLogin = false;
+                getStateFor(e.getConfig()).needsLogin = true;
             }
 
             @Override
-            public void passwordInvalid(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
-                getStateFor(config).badLogin = true;
+            public void passwordInvalid(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                getStateFor(e.getConfig()).badLogin = true;
             }
 
             @Override
-            public void passwordUnnecessary(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
-                getStateFor(config).badLogin = false;
-                getStateFor(config).passwordUnnecessary = true;
+            public void passwordUnnecessary(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                getStateFor(e.getConfig()).badLogin = false;
+                getStateFor(e.getConfig()).passwordUnnecessary = true;
             }
         });
-        ConnectionErrorMessage.addListener(appClient, new ConnectionErrorMessage.AllErrorListener() {
+        ConnectionErrorMessage.addListener(appClient, this, new ConnectionErrorMessage.AllErrorListener() {
             @Override
-            public void onHostConnectionError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                    @Nullable Exception e) {
-                if (serverConfig != null) {
-                    getStateFor(serverConfig).badConnection = true;
+            public <E extends Exception> void onHostConnectionError(@NotNull ServerErrorEvent<E> event) {
+                if (event.getConfig() != null) {
+                    getStateFor(event.getConfig()).badConnection = true;
                 } else {
-                    for (ServerConnectionState state : getStatesFor(serverName)) {
+                    for (ServerConnectionState state : getStatesFor(event.getName())) {
                         state.badConnection = true;
                     }
                 }

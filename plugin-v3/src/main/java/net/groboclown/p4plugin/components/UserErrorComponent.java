@@ -23,18 +23,17 @@ import com.perforce.p4java.exception.ClientError;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.FileSaveException;
 import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.exception.ResourceException;
 import com.perforce.p4java.exception.SslException;
 import com.perforce.p4java.exception.SslHandshakeException;
 import com.perforce.p4java.exception.TrustException;
 import com.perforce.p4java.exception.ZeroconfException;
-import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.CancellationMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
 import net.groboclown.p4.server.api.messagebus.FileErrorMessage;
 import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
@@ -43,11 +42,11 @@ import net.groboclown.p4.server.api.messagebus.P4ServerErrorMessage;
 import net.groboclown.p4.server.api.messagebus.P4WarningMessage;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
+import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4plugin.messages.UserMessage;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
@@ -82,207 +81,195 @@ public class UserErrorComponent implements ProjectComponent {
     public void initComponent() {
         MessageBusClient.ApplicationClient appClient = MessageBusClient.forApplication(project);
         MessageBusClient.ProjectClient projClient = MessageBusClient.forProject(project, project);
-        CancellationMessage.addListener(projClient, new CancellationMessage.Listener() {
+        CancellationMessage.addListener(projClient, this, new CancellationMessage.Listener() {
             @Override
-            public void cancelled(@NotNull CancellationException e) {
+            public void cancelled(@NotNull ErrorEvent<CancellationException> e) {
                 simpleInfo("Cancelled operation", "Operation Cancelled");
-                LOG.info(e);
+                LOG.info(e.getError());
             }
         });
-        ConnectionErrorMessage.addListener(appClient, new ConnectionErrorMessage.Listener() {
+        ConnectionErrorMessage.addListener(appClient, this, new ConnectionErrorMessage.Listener() {
             @Override
-            public void unknownServer(@NotNull P4ServerName name, @Nullable ServerConfig config, @NotNull Exception e) {
-                simpleError("Unknown server " + name, "Could Not Connect to Server");
-                LOG.warn(e);
+            public void unknownServer(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> event) {
+                simpleError("Unknown server " + event.getName(), "Could Not Connect to Server");
+                LOG.warn(event.getError());
             }
 
             @Override
-            public void couldNotWrite(@NotNull ServerConfig config, @NotNull FileSaveException e) {
-                simpleError("Could not write " + config.getServerName(), "Could Not Write to Server");
-                LOG.warn(e);
+            public void couldNotWrite(@NotNull ServerErrorEvent.ServerConfigErrorEvent<FileSaveException> event) {
+                simpleError("Could not write " + event.getConfig().getServerName(), "Could Not Write to Server");
+                LOG.warn(event.getError());
             }
 
             @Override
-            public void zeroconfProblem(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                    @NotNull ZeroconfException e) {
-                simpleError("zeroconf problem for " + name, "Zeroconf Problem");
-                LOG.warn(e);
+            public void zeroconfProblem(@NotNull ServerErrorEvent.ServerNameErrorEvent<ZeroconfException> event) {
+                simpleError("zeroconf problem for " + event.getName(), "Zeroconf Problem");
+                LOG.warn(event.getError());
             }
 
             @Override
-            public void sslHostTrustNotEstablished(@NotNull ServerConfig serverConfig) {
-                simpleError("SSL Host trust not established to " + serverConfig.getServerName(),
+            public void sslHostTrustNotEstablished(@NotNull ServerErrorEvent.ServerConfigProblemEvent event) {
+                simpleError("SSL Host trust not established to " + event.getName(),
                         "SSL Host Trust Issue");
             }
 
             @Override
-            public void sslHostFingerprintMismatch(@NotNull ServerConfig serverConfig, @NotNull TrustException e) {
-                simpleError("SSL host fingerprint did not match known value for " + serverConfig.getServerName(),
+            public void sslHostFingerprintMismatch(@NotNull ServerErrorEvent.ServerConfigErrorEvent<TrustException> event) {
+                simpleError("SSL host fingerprint did not match known value for " + event.getName(),
                         "SSL Host Fingerprint Mismatch");
-                LOG.warn(e);
+                LOG.warn(event.getError());
             }
 
             @Override
-            public void sslAlgorithmNotSupported(@NotNull P4ServerName name, @Nullable ServerConfig serverConfig) {
+            public void sslAlgorithmNotSupported(@NotNull ServerErrorEvent.ServerNameProblemEvent event) {
                 simpleError("Did you install the extended cryptography package?", "SSL Algorithm Not Supported");
             }
 
             @Override
-            public void sslPeerUnverified(@NotNull P4ServerName name, @Nullable ServerConfig serverConfig,
-                    @NotNull SslHandshakeException e) {
-                simpleError("SSL peer unverified for " + name, "SSL Error");
-                LOG.warn(e);
+            public void sslPeerUnverified(@NotNull ServerErrorEvent.ServerNameErrorEvent<SslHandshakeException> event) {
+                simpleError("SSL peer unverified for " + event.getName(), "SSL Error");
+                LOG.warn(event.getError());
             }
 
             @Override
-            public void sslCertificateIssue(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                    @NotNull SslException e) {
-                simpleError("SSL certificate error for " + serverName, "SSL Certificate Error");
-                LOG.warn(e);
+            public void sslCertificateIssue(@NotNull ServerErrorEvent.ServerNameErrorEvent<SslException> event) {
+                simpleError("SSL certificate error for " + event.getName(), "SSL Certificate Error");
+                LOG.warn(event.getError());
             }
 
             @Override
-            public void connectionError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                    @NotNull ConnectionException e) {
-                simpleError("Connection to Perforce server " + serverName + " failed: " + e.getMessage(),
+            public void connectionError(@NotNull ServerErrorEvent.ServerNameErrorEvent<ConnectionException> event) {
+                simpleError("Connection to Perforce server " + event.getName() + " failed: " +
+                                event.getError().getMessage(),
                         "Perforce Connection Error");
-                LOG.warn(e);
+                LOG.warn(event.getError());
             }
 
             @Override
-            public void resourcesUnavailable(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                    @NotNull ResourceException e) {
-                simpleError("Resources were unavailable for " + serverName, "Perforce Resources Unavailable");
-                LOG.warn(e);
+            public void resourcesUnavailable(@NotNull ServerErrorEvent.ServerNameErrorEvent<ResourceException> event) {
+                simpleError("Resources were unavailable for " + event.getName(), "Perforce Resources Unavailable");
+                LOG.warn(event.getError());
             }
         });
-        FileErrorMessage.addListener(projClient, new FileErrorMessage.Listener() {
+        FileErrorMessage.addListener(projClient, this, new FileErrorMessage.Listener() {
             @Override
-            public void fileReceiveError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                    @NotNull Exception e) {
-                simpleError("Failed to receive files from " + serverName, "Perforce File Receive Error");
-                LOG.warn(e);
+            public void fileReceiveError(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> e) {
+                simpleError("Failed to receive files from " + e.getName(), "Perforce File Receive Error");
+                LOG.warn(e.getError());
             }
 
             @Override
-            public void fileSendError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                    @NotNull Exception e) {
-                simpleError("Failed to send a file to server " + serverName, "Perforce File Send Error");
-                LOG.warn(e);
+            public void fileSendError(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> e) {
+                simpleError("Failed to send a file to server " + e.getName(), "Perforce File Send Error");
+                LOG.warn(e.getError());
             }
 
             @Override
-            public void localFileError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                    @NotNull IOException e) {
-                simpleError("Problem with local file for " + serverName, "Local File Issue");
-                LOG.warn(e);
+            public void localFileError(@NotNull ServerErrorEvent.ServerNameErrorEvent<IOException> e) {
+                simpleError("Problem with local file for " + e.getName(), "Local File Issue");
+                LOG.warn(e.getError());
             }
         });
-        InternalErrorMessage.addListener(projClient, new InternalErrorMessage.Listener() {
+        InternalErrorMessage.addListener(projClient, this, new InternalErrorMessage.Listener() {
             @Override
-            public void internalError(@NotNull Throwable t) {
+            public void internalError(@NotNull ErrorEvent<Throwable> t) {
                 simpleError("Internal error: " + t.getMessage(), "P4 Plugin Error");
-                LOG.warn(t);
+                LOG.warn(t.getError());
             }
 
             @Override
-            public void p4ApiInternalError(@NotNull Throwable t) {
+            public void p4ApiInternalError(@NotNull ErrorEvent<Throwable> t) {
                 simpleError("Internal error: " + t.getMessage(), "P4 Plugin Error");
-                LOG.warn(t);
+                LOG.warn(t.getError());
             }
 
             @Override
-            public void unexpectedError(@NotNull Throwable t) {
+            public void unexpectedError(@NotNull ErrorEvent<Throwable> t) {
                 simpleError("Internal error: " + t.getMessage(), "P4 Plugin Error");
-                LOG.warn(t);
+                LOG.warn(t.getError());
             }
         });
-        LoginFailureMessage.addListener(appClient, new LoginFailureMessage.Listener() {
+        LoginFailureMessage.addListener(appClient, this, new LoginFailureMessage.Listener() {
             @Override
-            public void singleSignOnFailed(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
-                simpleError("Single sign on failed for " + config.getServerName(), "Login Failure");
-                LOG.warn(e);
+            public void singleSignOnFailed(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                simpleError("Single sign on failed for " + e.getName(), "Login Failure");
+                LOG.warn(e.getError());
             }
 
             @Override
-            public void singleSignOnExecutionFailed(@NotNull ServerConfig config,
-                    @NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
-                simpleError("Single sign on execution failed for " + config.getServerName(), "Login Failure");
+            public void singleSignOnExecutionFailed(@NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
+                simpleError("Single sign on execution failed for " + e.getConfig().getServerName(),
+                        "Login Failure");
                 LOG.warn("SSO error for cmd: " + e.getCmd());
                 LOG.warn("Stdout: " + e.getStdout());
                 LOG.warn("StdErr: " + e.getStderr());
             }
 
             @Override
-            public void sessionExpired(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
-                simpleError("Session expired for " + config.getServerName(), "Login Failure");
-                LOG.warn(e);
+            public void sessionExpired(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                simpleError("Session expired for " + e.getName(), "Login Failure");
+                LOG.warn(e.getError());
             }
 
             @Override
-            public void passwordInvalid(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
-                simpleError("Password invalid for " + config.getServerName(), "Login Failure");
-                LOG.warn(e);
+            public void passwordInvalid(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                simpleError("Password invalid for " + e.getName(), "Login Failure");
+                LOG.warn(e.getError());
             }
 
             @Override
-            public void passwordUnnecessary(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
-                simpleError("Password unnecessary for " + config.getServerName(), "Login Failure");
-                LOG.warn(e);
+            public void passwordUnnecessary(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                simpleError("Password unnecessary for " + e.getName(), "Login Failure");
+                LOG.warn(e.getError());
             }
         });
-        P4ServerErrorMessage.addListener(projClient, new P4ServerErrorMessage.Listener() {
+        P4ServerErrorMessage.addListener(projClient, this, new P4ServerErrorMessage.Listener() {
             @Override
-            public void requestCausedError(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                    @NotNull IServerMessage msg, @NotNull RequestException re) {
-                simpleError("Request error: " + msg.getAllMessages(), "Perforce Server Error");
-                LOG.warn(re);
+            public void requestCausedError(@NotNull ServerErrorEvent.ServerMessageEvent e) {
+                simpleError("Request error: " + e.getMsg().getAllMessages(), "Perforce Server Error");
+                LOG.warn(e.getError());
             }
 
             @Override
-            public void requestCausedWarning(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                    @NotNull IServerMessage msg, @NotNull RequestException re) {
-                simpleWarning(msg.getAllMessages().toString(), "Perforce Server Warning");
-                LOG.warn(re);
+            public void requestCausedWarning(@NotNull ServerErrorEvent.ServerMessageEvent e) {
+                simpleWarning(e.getMsg().getAllMessages().toString(), "Perforce Server Warning");
+                LOG.warn(e.getError());
             }
 
             @Override
-            public void requestCausedInfoMsg(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                    @NotNull IServerMessage msg, @NotNull RequestException re) {
-                simpleInfo(msg.getAllMessages().toString(), "Perforce Server Information");
-                LOG.warn(re);
+            public void requestCausedInfoMsg(@NotNull ServerErrorEvent.ServerMessageEvent e) {
+                simpleInfo(e.getMsg().getAllMessages().toString(), "Perforce Server Information");
+                LOG.warn(e.getError());
             }
 
             @Override
-            public void requestException(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                    @NotNull RequestException re) {
-                simpleError("Request error: " + re.getMessage(), "Perforce Server Error");
-                LOG.warn(re);
+            public void requestException(@NotNull ServerErrorEvent.ServerMessageEvent e) {
+                simpleError("Request error: " + e.getError().getMessage(), "Perforce Server Error");
+                LOG.warn(e.getError());
             }
 
             @Override
-            public void requestException(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                    @NotNull P4JavaException e) {
-                simpleError("Request error: " + e.getMessage(), "Perforce Server Error");
-                LOG.warn(e);
+            public void requestException(@NotNull ServerErrorEvent.ServerNameErrorEvent<P4JavaException> e) {
+                simpleError("Request error: " + e.getError().getMessage(), "Perforce Server Error");
+                LOG.warn(e.getError());
             }
         });
-        P4WarningMessage.addListener(projClient, new P4WarningMessage.Listener() {
+        P4WarningMessage.addListener(projClient, this, new P4WarningMessage.Listener() {
             @Override
-            public void disconnectCausedError(@NotNull Exception e) {
-                simpleWarning("Disconnection from server caused problem: " + e.getLocalizedMessage(),
+            public void disconnectCausedError(@NotNull ErrorEvent<Exception> e) {
+                simpleWarning("Disconnection from server caused problem: " + e.getMessage(),
                         "Disconnected from Perforce Server Error");
-                LOG.warn(e);
+                LOG.warn(e.getError());
             }
 
             @Override
-            public void charsetTranslationError(@NotNull ClientError e) {
-                simpleWarning("Problem : " + e.getLocalizedMessage(),
+            public void charsetTranslationError(@NotNull ErrorEvent<ClientError> e) {
+                simpleWarning("Problem : " + e.getMessage(),
                         "Disconnected from Perforce Server Error");
-                LOG.warn(e);
+                LOG.warn(e.getError());
             }
         });
-        ServerConnectedMessage.addListener(appClient, new ServerConnectedMessage.Listener() {
+        ServerConnectedMessage.addListener(appClient, this, new ServerConnectedMessage.Listener() {
             @Override
             public void serverConnected(@NotNull ServerConfig serverConfig, boolean loggedIn) {
                 // This can be spammy.
@@ -294,23 +281,23 @@ public class UserErrorComponent implements ProjectComponent {
                 }
             }
         });
-        UserSelectedOfflineMessage.addListener(projClient, new UserSelectedOfflineMessage.Listener() {
+        UserSelectedOfflineMessage.addListener(projClient, this, new UserSelectedOfflineMessage.Listener() {
             @Override
-            public void userSelectedServerOffline(@NotNull P4ServerName name) {
-                simpleInfo("You selected to go offline for " + name,
+            public void userSelectedServerOffline(@NotNull UserSelectedOfflineMessage.OfflineEvent e) {
+                simpleInfo("You selected to go offline for " + e.getName(),
                         "Perforce Server Disconnect");
             }
         });
-        ReconnectRequestMessage.addListener(projClient, new ReconnectRequestMessage.Listener() {
+        ReconnectRequestMessage.addListener(projClient, this, new ReconnectRequestMessage.Listener() {
             @Override
-            public void reconnectToAllClients(boolean mayDisplayDialogs) {
+            public void reconnectToAllClients(@NotNull ReconnectRequestMessage.ReconnectAllEvent e) {
                 simpleInfo("Requested to go online for all connections.",
                         "Perforce Server Connect");
             }
 
             @Override
-            public void reconnectToClient(@NotNull ClientServerRef ref, boolean mayDisplayDialogs) {
-                simpleInfo("Requested to go online for " + ref  + ".",
+            public void reconnectToClient(@NotNull ReconnectRequestMessage.ReconnectEvent e) {
+                simpleInfo("Requested to go online for " + e.getRef()  + ".",
                         "Perforce Server Connect");
             }
         });

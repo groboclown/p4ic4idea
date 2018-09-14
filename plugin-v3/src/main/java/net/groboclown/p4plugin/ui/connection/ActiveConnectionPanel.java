@@ -34,13 +34,11 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.perforce.p4java.exception.AuthenticationFailedException;
 import net.groboclown.p4.server.api.ClientConfigRoot;
-import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.cache.ActionChoice;
 import net.groboclown.p4.server.api.cache.messagebus.AbstractCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ServerActionCacheMessage;
-import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
@@ -48,6 +46,7 @@ import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
+import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.impl.util.IntervalPeriodExecution;
 import net.groboclown.p4plugin.P4Bundle;
@@ -105,27 +104,27 @@ public class ActiveConnectionPanel {
         }, 5, TimeUnit.SECONDS);
 
         // Listeners must be registered after initializing the base data.
-        final String cacheId = AbstractCacheMessage.createCacheId();
+        final String cacheId = AbstractCacheMessage.createCacheId(ActiveConnectionPanel.class);
         MessageBusClient.ApplicationClient appBus = MessageBusClient.forApplication(parentDisposable);
         MessageBusClient.ProjectClient clientBus = MessageBusClient.forProject(project, parentDisposable);
 
-        ClientConfigAddedMessage.addListener(clientBus, (root, clientConfig) -> refresh());
-        ClientConfigRemovedMessage.addListener(clientBus, event -> refresh());
-        ServerConnectedMessage.addListener(appBus, (serverConfig, loggedIn) -> refresh());
-        UserSelectedOfflineMessage.addListener(clientBus, name -> refresh());
+        ClientConfigAddedMessage.addListener(clientBus, cacheId, e -> refresh());
+        ClientConfigRemovedMessage.addListener(clientBus, cacheId, event -> refresh());
+        ServerConnectedMessage.addListener(appBus, cacheId, (serverConfig, loggedIn) -> refresh());
+        UserSelectedOfflineMessage.addListener(clientBus, cacheId, name -> refresh());
         ClientActionMessage.addListener(appBus, cacheId, event -> refresh());
         ServerActionCacheMessage.addListener(appBus, cacheId, event -> refresh());
-        ConnectionErrorMessage.addListener(appBus, new ConnectionErrorMessage.AllErrorListener() {
+        ConnectionErrorMessage.addListener(appBus, cacheId, new ConnectionErrorMessage.AllErrorListener() {
             @Override
-            public void onHostConnectionError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                    @Nullable Exception e) {
+            public <E extends Exception> void onHostConnectionError(@NotNull ServerErrorEvent<E> event) {
                 // TODO add in a list of errors per server?
                 refresh();
             }
         });
-        LoginFailureMessage.addListener(appBus, new LoginFailureMessage.AllErrorListener() {
+        LoginFailureMessage.addListener(appBus, cacheId, new LoginFailureMessage.AllErrorListener() {
             @Override
-            public void onLoginFailure(@NotNull ServerConfig serverConfig, @NotNull AuthenticationFailedException e) {
+            protected void onLoginFailure(
+                    @NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
                 // TODO add in a list of errors per server?
                 refresh();
             }
@@ -245,8 +244,9 @@ public class ActiveConnectionPanel {
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
                         if (sel != null && sel.isOnline()) {
-                            UserSelectedOfflineMessage.requestOffline(project,
-                                    sel.getClientConfig().getClientServerRef().getServerName());
+                            UserSelectedOfflineMessage.send(project).userSelectedServerOffline(
+                                    new UserSelectedOfflineMessage.OfflineEvent(
+                                        sel.getClientConfig().getClientServerRef().getServerName()));
                         }
                     }
 

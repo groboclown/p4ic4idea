@@ -172,8 +172,10 @@ public class ServerConnection {
             // dispose in the background.
             if (clientExecLock.tryLock()) {
                 try {
-                    clientExec.dispose();
-                    clientExec = null;
+                    if (clientExec != null) {
+                        clientExec.dispose();
+                        clientExec = null;
+                    }
                 } finally {
                     clientExecLock.unlock();
                 }
@@ -184,8 +186,10 @@ public class ServerConnection {
                     public void run() {
                         clientExecLock.lock();
                         try {
-                            clientExec.dispose();
-                            clientExec = null;
+                            if (clientExec != null) {
+                                clientExec.dispose();
+                                clientExec = null;
+                            }
                         } finally {
                             clientExecLock.unlock();
                         }

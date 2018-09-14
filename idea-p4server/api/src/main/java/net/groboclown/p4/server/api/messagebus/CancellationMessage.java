@@ -29,13 +29,13 @@ public class CancellationMessage extends ProjectMessage<CancellationMessage.List
     public static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
     public interface Listener {
-        void cancelled(@NotNull CancellationException e);
+        void cancelled(@NotNull ErrorEvent<CancellationException> e);
     }
 
     public static class ListenerAdapter implements Listener {
 
         @Override
-        public void cancelled(@NotNull CancellationException e) {
+        public void cancelled(@NotNull ErrorEvent<CancellationException> e) {
             // do nothing
         }
     }
@@ -44,7 +44,9 @@ public class CancellationMessage extends ProjectMessage<CancellationMessage.List
         return getListener(project, TOPIC, DEFAULT_LISTENER);
     }
 
-    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
-        addListener(client, TOPIC, listener);
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client,
+            @NotNull Object listenerOwner,
+            @NotNull Listener listener) {
+        addListener(client, TOPIC, listener, Listener.class, listenerOwner);
     }
 }

@@ -58,6 +58,7 @@ public class P4PluginVersion {
                 byte[] buff = new byte[4096];
                 int len;
                 while ((len = res.read(buff)) > 0) {
+                    // TODO encoding
                     sb.append(new String(buff, 0, len));
                 }
                 return sb.toString().trim();

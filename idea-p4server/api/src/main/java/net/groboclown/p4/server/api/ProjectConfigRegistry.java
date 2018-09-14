@@ -32,6 +32,7 @@ import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
+import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.util.FileTreeUtil;
 import org.jetbrains.annotations.NotNull;
@@ -173,21 +174,20 @@ public abstract class ProjectConfigRegistry
 
     @Override
     public void initComponent() {
-        LoginFailureMessage.addListener(applicationBusClient, new LoginFailureMessage.AllErrorListener() {
+        LoginFailureMessage.addListener(applicationBusClient, this, new LoginFailureMessage.AllErrorListener() {
             @Override
-            public void onLoginFailure(@NotNull ServerConfig serverConfig, @NotNull AuthenticationFailedException e) {
-                ProjectConfigRegistry.this.onLoginError(serverConfig);
+            public void onLoginFailure(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                ProjectConfigRegistry.this.onLoginError(e.getConfig());
             }
         });
-        ConnectionErrorMessage.addListener(applicationBusClient, new ConnectionErrorMessage.AllErrorListener() {
+        ConnectionErrorMessage.addListener(applicationBusClient, this, new ConnectionErrorMessage.AllErrorListener() {
             @Override
-            public void onHostConnectionError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                    @Nullable Exception e) {
-                ProjectConfigRegistry.this.onHostConnectionError(serverName);
+            public <E extends Exception> void onHostConnectionError(@NotNull ServerErrorEvent<E> event) {
+                ProjectConfigRegistry.this.onHostConnectionError(event.getName());
             }
         });
-        ServerConnectedMessage.addListener(applicationBusClient, this::onServerConnected);
-        ClientConfigRemovedMessage.addListener(projectBusClient, event -> {
+        ServerConnectedMessage.addListener(applicationBusClient, this, this::onServerConnected);
+        ClientConfigRemovedMessage.addListener(projectBusClient, this, event -> {
             if (! ProjectConfigRegistry.this.equals(event.getEventSource())) {
                 onClientRemoved(event.getClientConfig(), event.getVcsRootDir());
             }
@@ -206,23 +206,23 @@ public abstract class ProjectConfigRegistry
         //    }
         //});
 
-        UserSelectedOfflineMessage.addListener(projectBusClient, this::onUserSelectedOffline);
-        ReconnectRequestMessage.addListener(projectBusClient, new ReconnectRequestMessage.Listener() {
+        UserSelectedOfflineMessage.addListener(projectBusClient, this, this::onUserSelectedOffline);
+        ReconnectRequestMessage.addListener(projectBusClient, this, new ReconnectRequestMessage.Listener() {
             @Override
-            public void reconnectToAllClients(boolean mayDisplayDialogs) {
+            public void reconnectToAllClients(@NotNull ReconnectRequestMessage.ReconnectAllEvent e) {
                 onUserSelectedAllOnline();
             }
 
             @Override
-            public void reconnectToClient(@NotNull ClientServerRef ref, boolean mayDisplayDialogs) {
-                onUserSelectedOnline(ref);
+            public void reconnectToClient(@NotNull ReconnectRequestMessage.ReconnectEvent e) {
+                onUserSelectedOnline(e.getRef());
             }
         });
 
 
+        // Explicitly avoid the ProjectMessage, because this is an event owned by the IDE.
         projectBusClient.add(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED, this::updateVcsRoots);
         projectBusClient.add(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED_IN_PLUGIN, this::updateVcsRoots);
-
     }
 
     public boolean isDisposed() {
@@ -284,7 +284,7 @@ public abstract class ProjectConfigRegistry
 
     protected abstract void onClientRemoved(@NotNull ClientConfig config, @Nullable VirtualFile vcsRootDir);
 
-    protected abstract void onUserSelectedOffline(@NotNull P4ServerName serverName);
+    protected abstract void onUserSelectedOffline(@NotNull UserSelectedOfflineMessage.OfflineEvent event);
 
     protected abstract void onUserSelectedOnline(@NotNull ClientServerRef clientServerRef);
 

@@ -58,7 +58,7 @@ public class AbstractCacheMessage<E extends AbstractCacheUpdateEvent<E>>
         private final String cacheId;
         private final AbstractCacheUpdateEvent.Visitor<E> visitor;
 
-        protected VisitEventListener(@NotNull String cacheId, @NotNull AbstractCacheUpdateEvent.Visitor<E> visitor) {
+        VisitEventListener(@NotNull String cacheId, @NotNull AbstractCacheUpdateEvent.Visitor<E> visitor) {
             this.cacheId = cacheId;
             this.visitor = visitor;
         }
@@ -69,14 +69,17 @@ public class AbstractCacheMessage<E extends AbstractCacheUpdateEvent<E>>
         }
     }
 
-    protected static <E extends AbstractCacheUpdateEvent<E>> void abstractAddListener(
+    static <E extends AbstractCacheUpdateEvent<E>> void abstractAddListener(
             @NotNull MessageBusClient.ApplicationClient client, @NotNull Topic<TopicListener<E>> topic,
             @NotNull String cacheId,
             @NotNull AbstractCacheUpdateEvent.Visitor<E> visitor) {
-        addTopicListener(client, topic, new VisitEventListener<>(cacheId, visitor));
+        VisitEventListener<E> wrapped = new VisitEventListener<>(cacheId, visitor);
+        Class<? extends TopicListener<E>> cz = getTopicListenerClass();
+
+        addTopicListener(client, topic, wrapped, cz, cacheId);
     }
 
-    protected static <E extends AbstractCacheUpdateEvent<E>> void abstractSendEvent(
+    static <E extends AbstractCacheUpdateEvent<E>> void abstractSendEvent(
             @NotNull Topic<? extends TopicListener<E>> topic, @NotNull E event) {
         if (canSendMessage()) {
             ApplicationManager.getApplication().getMessageBus().syncPublisher(topic).onEvent(event);
@@ -84,7 +87,7 @@ public class AbstractCacheMessage<E extends AbstractCacheUpdateEvent<E>>
     }
 
     @SuppressWarnings("unchecked")
-    protected static <E extends AbstractCacheUpdateEvent<E>> Topic<TopicListener<E>> createTopic(@NonNls @NotNull String displayName) {
+    static <E extends AbstractCacheUpdateEvent<E>> Topic<TopicListener<E>> createTopic(@NonNls @NotNull String displayName) {
         return new Topic(displayName,
                 TopicListener.class,
                 Topic.BroadcastDirection.TO_CHILDREN);
@@ -110,7 +113,12 @@ public class AbstractCacheMessage<E extends AbstractCacheUpdateEvent<E>>
         }, t);
     }
 
-    public static String createCacheId() {
-        return Integer.toHexString((int) (Math.random() * 100000));
+    public static String createCacheId(Class<?> cacheClass) {
+        // This helps protect the cache against multiple registration
+        return cacheClass.getCanonicalName();
+    }
+
+    private static <E> Class<E> getTopicListenerClass() {
+        return (Class<E>) TopicListener.class;
     }
 }

@@ -428,6 +428,8 @@ public class FileSpecUtil {
                 case IFileSpec.HEAD_REVISION:
                     path = path + '#' + IFileSpec.HEAD_REVISION_STRING;
                     break;
+
+                // default; ignore
             }
         }
         return path;

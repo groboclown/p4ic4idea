@@ -26,10 +26,10 @@ public class PerforceEnvironment {
 
 	// p4ic4idea: custom setting for an explicit fingerprint key.
 	// Not used by the connection.
-	public static String P4SERVER_FINGERPRINT = "P4FINGERPRINT";
+	public static final String P4SERVER_FINGERPRINT = "P4FINGERPRINT";
 
 	// p4ic4idea: SSO login script.  Not used by the connection.
-	public static String P4LOGINSSO = "P4LOGINSSO";
+	public static final String P4LOGINSSO = "P4LOGINSSO";
 
 
 	// Default P4ENVIRO file path

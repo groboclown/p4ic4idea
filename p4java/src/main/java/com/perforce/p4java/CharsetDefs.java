@@ -32,12 +32,14 @@ public class CharsetDefs {
 	 * Note that despite being tagged a constant, it's actually set dynamically in the
 	 * static constructor below.
 	 */
-	public static Charset DEFAULT = Charset.defaultCharset();
+	// p4ic4idea: final
+	public static final Charset DEFAULT;
 
 	/**
 	 * The canonical name of the default charset. Actually set in the static class constructor.
 	 */
-	public static String DEFAULT_NAME = DEFAULT.name();
+	// p4ic4idea: final
+	public static final String DEFAULT_NAME;
 
 	/**
 	 * UTF-8 charset. Used for Unicode encodings between the Perforce server and
@@ -74,19 +76,21 @@ public class CharsetDefs {
 	
 	static {
 		String defaultCharsetName = System.getProperty(PropertyDefs.DEFAULT_CHARSET_KEY);
-		
+		// p4ic4idea: assign values
+		Charset defaultCharset = Charset.defaultCharset();
 		if (defaultCharsetName != null) {
 			try {
-				DEFAULT = Charset.forName(defaultCharsetName);
+				defaultCharset = Charset.forName(defaultCharsetName);
 			} catch (Exception exc) {
 				Log.warn("Unable to set P4Java default character set to " + defaultCharsetName
-								+ "; using JVM default charset " + Charset.defaultCharset().name()
-								+ " instead");
+						+ "; using JVM default charset " + Charset.defaultCharset().name()
+						+ " instead");
 				Log.exception(exc);
-				DEFAULT = Charset.defaultCharset();
+				defaultCharset = Charset.defaultCharset();
 			}
-			DEFAULT_NAME = DEFAULT.name();
 		}
+		DEFAULT = defaultCharset;
+		DEFAULT_NAME = DEFAULT.name();
 	}
 
 }

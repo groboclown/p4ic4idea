@@ -17,7 +17,6 @@ package net.groboclown.p4.server.impl.cache.store;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.config.part.MultipleConfigPart;
 import net.groboclown.p4.server.impl.config.part.ConfigStateProvider;
@@ -32,7 +31,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Central storage for all VCS roots.
+ * Central storage for all VCS roots.  Persistence is handled by
+ * {@link net.groboclown.p4.server.api.config.PersistentRootConfigComponent}.
  */
 public class VcsRootCacheStore {
     private static final Logger LOG = Logger.getInstance(VcsRootCacheStore.class);
@@ -64,7 +64,7 @@ public class VcsRootCacheStore {
 
 
     public VcsRootCacheStore(@NotNull State root, @Nullable ClassLoader classLoader) {
-        this.rootDirectory = VcsUtil.getVirtualFile(root.rootDirectory);
+        this.rootDirectory = root.rootDirectory == null ? null : VcsUtil.getVirtualFile(root.rootDirectory);
         if (root.configParts == null) {
             this.configParts = new ArrayList<>();
         } else {
@@ -93,7 +93,7 @@ public class VcsRootCacheStore {
     }
 
     @NotNull
-    VirtualFile getRootDirectory() {
+    public VirtualFile getRootDirectory() {
         return rootDirectory;
     }
 

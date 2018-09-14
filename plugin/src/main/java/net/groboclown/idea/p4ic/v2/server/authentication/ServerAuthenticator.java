@@ -49,9 +49,9 @@ import java.net.URISyntaxException;
 public class ServerAuthenticator {
     private static final Logger LOG = Logger.getInstance(ServerAuthenticator.class);
 
-    public static AuthenticationStatus DISPOSED = new AuthenticationStatus(
+    public static final AuthenticationStatus DISPOSED = new AuthenticationStatus(
             null, true, false, false, false, false, false, false);
-    public static AuthenticationStatus REQUIRES_PASSWORD = new AuthenticationStatus(
+    public static final AuthenticationStatus REQUIRES_PASSWORD = new AuthenticationStatus(
             null, true, false, false, false, true, true, false);
 
     private static class AuthStatBuilder {

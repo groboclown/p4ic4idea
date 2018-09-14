@@ -14,7 +14,6 @@
 
 package net.groboclown.p4.server.api.messagebus;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.Topic;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.FileSaveException;
@@ -23,10 +22,7 @@ import com.perforce.p4java.exception.SslException;
 import com.perforce.p4java.exception.SslHandshakeException;
 import com.perforce.p4java.exception.TrustException;
 import com.perforce.p4java.exception.ZeroconfException;
-import net.groboclown.p4.server.api.P4ServerName;
-import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class ConnectionErrorMessage extends ApplicationMessage<ConnectionErrorMessage.Listener> {
     private static final String DISPLAY_NAME = "p4ic4idea:reconnect to server";
@@ -36,38 +32,39 @@ public class ConnectionErrorMessage extends ApplicationMessage<ConnectionErrorMe
             Topic.BroadcastDirection.TO_CHILDREN);
     public static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
+
     public interface Listener {
         /**
          * The server host could not be found.
          *
-         * @param e source
+         * @param event source
          */
-        void unknownServer(@NotNull P4ServerName name, @Nullable ServerConfig config, @NotNull Exception e);
+        void unknownServer(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> event);
 
         /**
          * One of the files in the configuration could not be written to.
          *
-         * @param e source
+         * @param event source
          */
-        void couldNotWrite(@NotNull ServerConfig config, @NotNull FileSaveException e);
+        void couldNotWrite(@NotNull ServerErrorEvent.ServerConfigErrorEvent<FileSaveException> event);
 
         /**
          * A problem with the zerconf setup.
          *
-         * @param e source
+         * @param event source
          */
-        void zeroconfProblem(@NotNull P4ServerName name, @Nullable ServerConfig config, @NotNull ZeroconfException e);
+        void zeroconfProblem(@NotNull ServerErrorEvent.ServerNameErrorEvent<ZeroconfException> event);
 
-        void sslHostTrustNotEstablished(@NotNull ServerConfig serverConfig);
+        void sslHostTrustNotEstablished(@NotNull ServerErrorEvent.ServerConfigProblemEvent event);
 
-        void sslHostFingerprintMismatch(@NotNull ServerConfig serverConfig, @NotNull TrustException e);
+        void sslHostFingerprintMismatch(@NotNull ServerErrorEvent.ServerConfigErrorEvent<TrustException> event);
 
         /**
          * The user needs to install the unlimited strength encryption libraries.
          *
-         * @param serverConfig source
+         * @param event source
          */
-        void sslAlgorithmNotSupported(@NotNull P4ServerName name, @Nullable ServerConfig serverConfig);
+        void sslAlgorithmNotSupported(@NotNull ServerErrorEvent.ServerNameProblemEvent event);
 
         /**
          * The SSL peer (server) couldn't be connected due one of several potential issues.
@@ -81,167 +78,136 @@ public class ConnectionErrorMessage extends ApplicationMessage<ConnectionErrorMe
          *     <li>Server didn't send complete certificate chain</li>
          * </ol>
          *
-         * @param serverConfig source
-         * @param e exception source
+         * @param event exception source
          */
-        void sslPeerUnverified(@NotNull P4ServerName name, @Nullable ServerConfig serverConfig,
-                @NotNull SslHandshakeException e);
+        void sslPeerUnverified(@NotNull ServerErrorEvent.ServerNameErrorEvent<SslHandshakeException> event);
 
         /**
          * A general certificate issue from the server.
          *
-         * @param serverName source name
-         * @param serverConfig source config
-         * @param e exception source
+         * @param event exception source
          */
-        void sslCertificateIssue(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull SslException e);
+        void sslCertificateIssue(@NotNull ServerErrorEvent.ServerNameErrorEvent<SslException> event);
 
         /**
          * General problem with connection, such as socket disconnected mid-stream,
          * the server version is incompatible with the plugin, the server sends
          * garbled information, and so on.
          *
-         * @param serverName   name
-         * @param serverConfig config
-         * @param e            source
+         * @param event source
          */
-        void connectionError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull ConnectionException e);
+        void connectionError(@NotNull ServerErrorEvent.ServerNameErrorEvent<ConnectionException> event);
 
         /**
          * Client doesn't have the resources necessary to open the connection to the server.
          *
-         * @param serverName   name
-         * @param serverConfig config
-         * @param e            source
+         * @param event source
          */
-        void resourcesUnavailable(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull ResourceException e);
+        void resourcesUnavailable(@NotNull ServerErrorEvent.ServerNameErrorEvent<ResourceException> event);
     }
 
     public static class ListenerAdapter implements Listener {
         @Override
-        public void unknownServer(@NotNull P4ServerName name, @Nullable ServerConfig config, @NotNull Exception e) {
-
+        public void unknownServer(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> event) {
         }
 
         @Override
-        public void couldNotWrite(@NotNull ServerConfig config, @NotNull FileSaveException e) {
-
+        public void couldNotWrite(@NotNull ServerErrorEvent.ServerConfigErrorEvent<FileSaveException> event) {
         }
 
         @Override
-        public void zeroconfProblem(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                @NotNull ZeroconfException e) {
-
+        public void zeroconfProblem(@NotNull ServerErrorEvent.ServerNameErrorEvent<ZeroconfException> event) {
         }
 
         @Override
-        public void sslHostTrustNotEstablished(@NotNull ServerConfig serverConfig) {
-
+        public void sslHostTrustNotEstablished(@NotNull ServerErrorEvent.ServerConfigProblemEvent event) {
         }
 
         @Override
-        public void sslHostFingerprintMismatch(@NotNull ServerConfig serverConfig, @NotNull TrustException e) {
-
+        public void sslHostFingerprintMismatch(@NotNull ServerErrorEvent.ServerConfigErrorEvent<TrustException> event) {
         }
 
         @Override
-        public void sslAlgorithmNotSupported(@NotNull P4ServerName name, @Nullable ServerConfig serverConfig) {
-
+        public void sslAlgorithmNotSupported(@NotNull ServerErrorEvent.ServerNameProblemEvent event) {
         }
 
         @Override
-        public void sslPeerUnverified(@NotNull P4ServerName name, @Nullable ServerConfig serverConfig,
-                @NotNull SslHandshakeException e) {
-
+        public void sslPeerUnverified(@NotNull ServerErrorEvent.ServerNameErrorEvent<SslHandshakeException> event) {
         }
 
         @Override
-        public void sslCertificateIssue(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull SslException e) {
-
+        public void sslCertificateIssue(@NotNull ServerErrorEvent.ServerNameErrorEvent<SslException> event) {
         }
 
         @Override
-        public void connectionError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull ConnectionException e) {
-
+        public void connectionError(@NotNull ServerErrorEvent.ServerNameErrorEvent<ConnectionException> event) {
         }
 
         @Override
-        public void resourcesUnavailable(@NotNull P4ServerName serverName, ServerConfig serverConfig, @NotNull ResourceException e) {
-
+        public void resourcesUnavailable(@NotNull ServerErrorEvent.ServerNameErrorEvent<ResourceException> e) {
         }
     }
 
     public static abstract class AllErrorListener implements Listener {
         @Override
-        public void unknownServer(@NotNull P4ServerName name, @Nullable ServerConfig config, @NotNull Exception e) {
-            onHostConnectionError(name, config, e);
+        public void unknownServer(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> event) {
+            onHostConnectionError(event);
         }
 
         @Override
-        public void couldNotWrite(@NotNull ServerConfig config, @NotNull FileSaveException e) {
-            onHostConnectionError(config.getServerName(), config, e);
+        public void couldNotWrite(@NotNull ServerErrorEvent.ServerConfigErrorEvent<FileSaveException> event) {
+            onHostConnectionError(event);
         }
 
         @Override
-        public void zeroconfProblem(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                @NotNull ZeroconfException e) {
-            onHostConnectionError(name, config, e);
-
+        public void zeroconfProblem(@NotNull ServerErrorEvent.ServerNameErrorEvent<ZeroconfException> event) {
+            onHostConnectionError(event);
         }
 
         @Override
-        public void sslHostTrustNotEstablished(@NotNull ServerConfig serverConfig) {
-            onHostConnectionError(serverConfig.getServerName(), serverConfig, null);
+        public void sslHostTrustNotEstablished(@NotNull ServerErrorEvent.ServerConfigProblemEvent event) {
+            onHostConnectionError(event);
         }
 
         @Override
-        public void sslHostFingerprintMismatch(@NotNull ServerConfig serverConfig, @NotNull TrustException e) {
-            onHostConnectionError(serverConfig.getServerName(), serverConfig, e);
+        public void sslHostFingerprintMismatch(@NotNull ServerErrorEvent.ServerConfigErrorEvent<TrustException> event) {
+            onHostConnectionError(event);
         }
 
         @Override
-        public void sslAlgorithmNotSupported(@NotNull P4ServerName name, @Nullable ServerConfig serverConfig) {
-            onHostConnectionError(name, serverConfig, null);
+        public void sslAlgorithmNotSupported(@NotNull ServerErrorEvent.ServerNameProblemEvent event) {
+            onHostConnectionError(event);
         }
 
         @Override
-        public void sslPeerUnverified(@NotNull P4ServerName name, @Nullable ServerConfig serverConfig,
-                @NotNull SslHandshakeException e) {
-            onHostConnectionError(name, serverConfig, e);
+        public void sslPeerUnverified(@NotNull ServerErrorEvent.ServerNameErrorEvent<SslHandshakeException> event) {
+            onHostConnectionError(event);
         }
 
         @Override
-        public void sslCertificateIssue(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull SslException e) {
-            onHostConnectionError(serverName, serverConfig, e);
+        public void sslCertificateIssue(@NotNull ServerErrorEvent.ServerNameErrorEvent<SslException> event) {
+            onHostConnectionError(event);
         }
 
         @Override
-        public void connectionError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull ConnectionException e) {
-            onHostConnectionError(serverName, serverConfig, e);
+        public void connectionError(@NotNull ServerErrorEvent.ServerNameErrorEvent<ConnectionException> event) {
+            onHostConnectionError(event);
         }
 
         @Override
-        public void resourcesUnavailable(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull ResourceException e) {
-            onHostConnectionError(serverName, serverConfig, e);
+        public void resourcesUnavailable(@NotNull ServerErrorEvent.ServerNameErrorEvent<ResourceException> event) {
+            onHostConnectionError(event);
         }
 
-        public abstract void onHostConnectionError(@NotNull P4ServerName serverName,
-                @Nullable ServerConfig serverConfig, @Nullable Exception e);
+        public abstract <E extends Exception> void onHostConnectionError(@NotNull ServerErrorEvent<E> event);
     }
 
     public static Listener send() {
         return getListener(TOPIC, DEFAULT_LISTENER);
     }
 
-    public static void addListener(@NotNull MessageBusClient.ApplicationClient client, @NotNull Listener listener) {
-        addTopicListener(client, TOPIC, listener);
+    public static void addListener(@NotNull MessageBusClient.ApplicationClient client,
+            @NotNull Object listenerOwner, @NotNull Listener listener) {
+        addTopicListener(client, TOPIC, listener, Listener.class, listenerOwner);
     }
 }

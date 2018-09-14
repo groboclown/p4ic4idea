@@ -21,13 +21,28 @@ import p4ic.util.IdeaVersionUtil
 import p4ic.util.P4icUtil
 
 import javax.annotation.Nonnull
-import javax.security.auth.login.Configuration
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 class IdeaVersion {
     private static final String[] VERSION_TYPE_SUFFIXES = [
         "-SNAPSHOT", "-patched"
+    ]
+    private static final String[] INTELLIJ_181_PREFIXES = [
+        "intellij.platform.", "intellij."
+    ]
+    private static final Map<String, String> INTELLIJ_181_SPECIAL_MAPPINGS = [
+        // Oddball mappings with no direct rename schemes
+        "intellij.platform.vcs.core" : "vcs-api-core",
+        "intellij.platform.ide" : "platform-api",
+        "intellij.platform.ide.impl" : "platform-impl",
+        "intellij.java" : "openapi",
+        "intellij.platform.editor" : "editor-ui-api",
+        "intellij.java.guiForms.rt" : "forms_rt",
+        "intellij.java.rt" : "java-runtime",
+        "intellij.java.compiler.instrumentationUtil" : "instrumentation-util",
+        "intellij.java.compiler.antTasks" : "javac2",
+        "intellij.java.guiForms.compiler" : "forms-compiler",
     ]
     private static final Pattern VERSION_NUMBER = Pattern.compile("-\\d+(\\.\\d+)*\$")
 
@@ -74,15 +89,20 @@ class IdeaVersion {
         if (!libDir.isDirectory()) {
             throw new GradleException("Unsupported IDEA version " + version)
         }
-        Set<String> unfound = new HashSet<>(names)
+        // This may need to pull multiple files with the same base name.
+        Set<String> notFound = new HashSet<>(names)
         List<File> ret = new ArrayList<>()
         project.fileTree(libDir).forEach {
-            if (it.isFile() && it.name.endsWith(".jar") && matches(it.name, unfound)) {
-                ret.add(it)
+            if (it.isFile() && it.name.endsWith(".jar")) {
+                def match = matches(it.name, names)
+                if (match != null) {
+                    notFound.remove(match)
+                    ret.add(it)
+                }
             }
         }
-        if (mustFindAll && !unfound.isEmpty()) {
-            throw new GradleException("Failed to find IDEA version " + version + " jars for " + unfound)
+        if (mustFindAll && !notFound.isEmpty()) {
+            throw new GradleException("Failed to find IDEA version " + version + " jars for " + notFound)
         }
         return ret
     }
@@ -95,28 +115,28 @@ class IdeaVersion {
      * @param remaining
      * @return
      */
-    protected static boolean matches(final String filename, @Nonnull final Set<String> remaining) {
+    protected static String matches(final String filename, @Nonnull final Collection<String> choices) {
         if (filename == null) {
-            return false
+            return null
         }
 
         // Check fully qualified name
-        if (remaining.remove(filename)) {
-            return true
+        if (choices.contains(filename)) {
+            return filename
         }
 
         // Check without .jar
         def shortName = strip(filename, ".jar")
-        if (remaining.remove(shortName)) {
-            return true
+        if (choices.contains(shortName)) {
+            return shortName
         }
 
         // Check without some version suffixes
         for (String vs: VERSION_TYPE_SUFFIXES) {
             if (shortName.endsWith(vs)) {
                 shortName = strip(shortName, vs)
-                if (remaining.remove(shortName)) {
-                    return true
+                if (choices.contains(shortName)) {
+                    return shortName
                 }
             }
         }
@@ -125,12 +145,31 @@ class IdeaVersion {
         Matcher m = VERSION_NUMBER.matcher(shortName)
         if (m.find()) {
             shortName = shortName.substring(0, m.start())
-            if (remaining.remove(shortName)) {
-                return true
+            if (choices.contains(shortName)) {
+                return shortName
             }
         }
 
-        return false
+        // Check for Idea 18x naming convention
+        def idea18Name = INTELLIJ_181_SPECIAL_MAPPINGS[shortName]
+        if (choices.contains(idea18Name)) {
+            return idea18Name
+        }
+        for (String ip: INTELLIJ_181_PREFIXES) {
+            if (shortName.startsWith(ip)) {
+                idea18Name = shortName.substring(ip.length()).replace('.', '-')
+                if (choices.contains(idea18Name)) {
+                    return idea18Name
+                }
+                // API can be hidden...
+                idea18Name += '-api'
+                if (choices.contains(idea18Name)) {
+                    return idea18Name
+                }
+            }
+        }
+
+        return null
     }
 
 

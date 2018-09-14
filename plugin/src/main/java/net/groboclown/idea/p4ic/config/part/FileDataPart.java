@@ -381,6 +381,7 @@ public class FileDataPart implements DataPart {
     private static Properties loadProps(@Nullable File filePath) throws IOException {
         Properties props = new Properties();
         if (filePath != null) {
+            // TODO use correct locale
             FileReader reader = new FileReader(filePath);
             try {
                 // The Perforce config file is NOT the same as a Java

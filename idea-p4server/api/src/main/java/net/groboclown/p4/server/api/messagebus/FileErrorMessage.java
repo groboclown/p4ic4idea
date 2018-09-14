@@ -33,34 +33,24 @@ public class FileErrorMessage extends ProjectMessage<FileErrorMessage.Listener> 
 
     public interface Listener {
 
-        void fileReceiveError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull Exception e);
+        void fileReceiveError(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> e);
 
-        void fileSendError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull Exception e);
+        void fileSendError(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> e);
 
-        void localFileError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull IOException e);
+        void localFileError(@NotNull ServerErrorEvent.ServerNameErrorEvent<IOException> e);
     }
 
     public static class ListenerAdapter implements Listener {
-
         @Override
-        public void fileReceiveError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull Exception e) {
-
+        public void fileReceiveError(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> e) {
         }
 
         @Override
-        public void fileSendError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull Exception e) {
-
+        public void fileSendError(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> e) {
         }
 
         @Override
-        public void localFileError(@NotNull P4ServerName serverName, @Nullable ServerConfig serverConfig,
-                @NotNull IOException e) {
-
+        public void localFileError(@NotNull ServerErrorEvent.ServerNameErrorEvent<IOException> e) {
         }
     }
 
@@ -68,7 +58,8 @@ public class FileErrorMessage extends ProjectMessage<FileErrorMessage.Listener> 
         return getListener(project, TOPIC, DEFAULT_LISTENER);
     }
 
-    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
-        addListener(client, TOPIC, listener);
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client,
+            @NotNull Object listenerOwner, @NotNull Listener listener) {
+        addListener(client, TOPIC, listener, Listener.class, listenerOwner);
     }
 }

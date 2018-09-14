@@ -57,7 +57,8 @@ public class ServerConnectedMessage
         return getListener(TOPIC, DEFAULT_LISTENER);
     }
 
-    public static void addListener(@NotNull MessageBusClient.ApplicationClient client, @NotNull Listener listener) {
-        addTopicListener(client, TOPIC, listener);
+    public static void addListener(@NotNull MessageBusClient.ApplicationClient client,
+            @NotNull Object listenerOwner, @NotNull Listener listener) {
+        addTopicListener(client, TOPIC, listener, Listener.class, listenerOwner);
     }
 }

@@ -61,9 +61,9 @@ public class LoginSsoCallbackHandler
                 LOG.info("stderr: " + output.getStderr());
                 //final ExecutionException ex = new ExecutionException("Exit code " + output.getExitCode());
 
-                LoginFailureMessage.send().singleSignOnExecutionFailed(serverConfig,
+                LoginFailureMessage.send().singleSignOnExecutionFailed(
                         new LoginFailureMessage.SingleSignOnExecutionFailureEvent(
-                                loginSsoCmd,
+                                serverConfig, loginSsoCmd,
                                 output.getExitCode(), output.getStdout(), output.getStderr()
                         ));
 
@@ -73,9 +73,9 @@ public class LoginSsoCallbackHandler
             return Status.PASS;
         } catch (ExecutionException e) {
             LOG.warn("Failed to run single sign in command [" + loginSsoCmd + "]", e);
-            LoginFailureMessage.send().singleSignOnExecutionFailed(serverConfig,
+            LoginFailureMessage.send().singleSignOnExecutionFailed(
                     new LoginFailureMessage.SingleSignOnExecutionFailureEvent(
-                            loginSsoCmd,
+                            serverConfig, loginSsoCmd,
                             -1, "", e.getLocalizedMessage()
                     ));
             return Status.FAIL;

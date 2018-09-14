@@ -25,7 +25,8 @@ public class Job extends ServerResource implements IJob {
     /**
      * The max description length for "short" or summary descriptions
      */
-    public static int SHORT_DESCR_LENGTH = 128;
+    // p4ic4idea: final
+    public static final int SHORT_DESCR_LENGTH = 128;
 
     /* it's read only */
     private String jobName = null;

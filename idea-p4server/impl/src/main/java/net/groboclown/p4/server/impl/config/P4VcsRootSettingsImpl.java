@@ -15,28 +15,38 @@
 package net.groboclown.p4.server.impl.config;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.WriteExternalException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.xmlb.XmlSerializer;
 import net.groboclown.p4.server.api.config.P4VcsRootSettings;
+import net.groboclown.p4.server.api.config.PersistentRootConfigComponent;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.impl.cache.store.VcsRootCacheStore;
 import net.groboclown.p4.server.impl.config.part.EnvCompositePart;
 import org.jdom.Element;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * The internal state of this object is stored in the vcs.xml file.  Because of that, we cannot store
+ * per-user data.  Instead, we must delegate that storage to a second class which is stored in
+ * workspace.xml.
+ */
 public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
     private static final Logger LOG = Logger.getInstance(P4VcsRootSettingsImpl.class);
 
-    private VirtualFile rootDir;
-    private List<ConfigPart> parts = new ArrayList<>();
+    private final Project project;
+    private final VirtualFile rootDir;
     private boolean partsSet = false;
 
-    public P4VcsRootSettingsImpl(VirtualFile rootDir) {
+    public P4VcsRootSettingsImpl(@NotNull Project project, @Nullable VirtualFile rootDir) {
+        this.project = project;
         this.rootDir = rootDir;
     }
 
@@ -46,19 +56,21 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
         if (!partsSet) {
             return getDefaultConfigParts();
         }
-        return new ArrayList<>(parts);
+        List<ConfigPart> ret = PersistentRootConfigComponent.getInstance(project).getConfigPartsForRoot(rootDir);
+        if (ret == null) {
+            return getDefaultConfigParts();
+        }
+        return ret;
     }
 
     @Override
     public void setConfigParts(List<ConfigPart> parts) {
-        this.parts = new ArrayList<>(parts.size());
         for (ConfigPart part : parts) {
             if (part == null) {
                 LOG.warn("Added null part" + parts);
-            } else {
-                this.parts.add(part);
             }
         }
+        PersistentRootConfigComponent.getInstance(project).setConfigPartsForRoot(rootDir, parts);
         partsSet = true;
     }
 
@@ -69,27 +81,20 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
         if (configElement == null || configElement.getChildren().isEmpty()) {
             // not set.
             LOG.debug("No configuration settings in the external store.");
-            setConfigParts(Collections.emptyList());
+            //setConfigParts(Collections.emptyList());
             partsSet = false;
             return;
         }
-        Element rootElement = configElement.getChildren().get(0);
-        VcsRootCacheStore.State state = XmlSerializer.deserialize(rootElement, VcsRootCacheStore.State.class);
-        VcsRootCacheStore store = new VcsRootCacheStore(state, null);
-        setConfigParts(store.getConfigParts());
+        if (!PersistentRootConfigComponent.getInstance(project).hasConfigPartsForRoot(rootDir)) {
+            LOG.warn("Loaded persistent root directory " + rootDir + ", but has no persistent config parts loaded");
+        }
+        partsSet = true;
     }
 
     @Override
     public void writeExternal(Element element)
             throws WriteExternalException {
-        if (partsSet) {
-            VcsRootCacheStore store = new VcsRootCacheStore(rootDir);
-            store.setConfigParts(parts);
-            Element rootElement = XmlSerializer.serialize(store.getState());
-            Element configElement = new Element("p4-config");
-            configElement.addContent(rootElement);
-            element.addContent(configElement);
-        } else {
+        if (!partsSet) {
             LOG.debug("Write external data: no parts set.");
         }
     }

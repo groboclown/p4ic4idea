@@ -162,7 +162,8 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	protected static final String UNKNOWN_SERVER_HOST = null;
 	protected static final int UNKNOWN_SERVER_PORT = -1;
 
-	protected static boolean runningOnWindows = SystemInfo.isWindows();
+	// p4ic4idea: final
+	protected static final boolean runningOnWindows = SystemInfo.isWindows();
 
 	protected UsageOptions usageOptions = null;
 

@@ -48,9 +48,25 @@ public class P4SimpleRevisionNumber implements VcsRevisionNumber {
             return rev.compareTo(((P4SimpleRevisionNumber) o).rev);
         }
         if (o instanceof P4RevisionNumber) {
-            return rev.compareTo((P4RevisionNumber) o);
+            return rev.compareTo(o);
         }
         // Don't know what to do with this
         return -1;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof P4SimpleRevisionNumber)) {
+            return false;
+        }
+        return ((P4SimpleRevisionNumber) o).rev.equals(rev);
+    }
+
+    @Override
+    public int hashCode() {
+        return rev.hashCode();
     }
 }

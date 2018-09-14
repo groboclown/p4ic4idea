@@ -16,7 +16,6 @@ package net.groboclown.p4.server.api.messagebus;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.Topic;
-import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,20 +25,38 @@ public class UserSelectedOfflineMessage extends ProjectMessage<UserSelectedOffli
             DISPLAY_NAME,
             Listener.class,
             Topic.BroadcastDirection.TO_CHILDREN);
+    private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
+    public static class OfflineEvent extends AbstractMessageEvent {
+        private final P4ServerName name;
 
-    public interface Listener {
-        void userSelectedServerOffline(@NotNull P4ServerName name);
-    }
+        public OfflineEvent(@NotNull P4ServerName name) {
+            this.name = name;
+        }
 
-
-    public static void requestOffline(@NotNull Project project, @NotNull P4ServerName name) {
-        if (canSendMessage(project)) {
-            getListener(project, TOPIC).userSelectedServerOffline(name);
+        @NotNull
+        public P4ServerName getName() {
+            return name;
         }
     }
 
-    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
-        addListener(client, TOPIC, listener);
+    public interface Listener {
+        void userSelectedServerOffline(@NotNull OfflineEvent e);
+    }
+
+    public static class ListenerAdapter implements Listener {
+        @Override
+        public void userSelectedServerOffline(@NotNull OfflineEvent e) {
+        }
+    }
+
+
+    public static Listener send(@NotNull Project project) {
+        return getListener(project, TOPIC, DEFAULT_LISTENER);
+    }
+
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client,
+            @NotNull Object listenerOwner, @NotNull Listener listener) {
+        addListener(client, TOPIC, listener, Listener.class, listenerOwner);
     }
 }

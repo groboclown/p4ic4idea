@@ -154,7 +154,7 @@ public class P4RemoteChangelistImpl implements P4RemoteChangelist {
         this.deleted = deleted;
         this.onServer = onServer;
         this.shelved = shelved;
-        this.submittedDate = submittedDate;
+        this.submittedDate = submittedDate == null ? null : new Date(submittedDate.getTime());
         this.changelistType = changelistType;
         this.clientname = clientname;
         this.username = username;

@@ -47,12 +47,13 @@ public abstract class ProjectMessage<L> {
 
 
 
-    protected static boolean canSendMessage(@NotNull Project project) {
+    static boolean canSendMessage(@NotNull Project project) {
         return project.isInitialized() && !project.isDisposed();
     }
 
     protected static <L> void addListener(@NotNull MessageBusClient.ProjectClient client,
-            @NotNull Topic<L> topic, @NotNull L listener) {
-        client.add(topic, listener);
+            @NotNull Topic<L> topic, @NotNull L listener, @NotNull Class<? extends L> listenerClass,
+            @NotNull Object listenerOwner) {
+        client.add(topic, ListenerProxy.createProxy(listener, listenerClass, listenerOwner));
     }
 }

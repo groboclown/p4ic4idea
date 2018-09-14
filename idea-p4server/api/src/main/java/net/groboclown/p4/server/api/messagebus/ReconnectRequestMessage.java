@@ -18,6 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.Topic;
 import net.groboclown.p4.server.api.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Application-scoped request, because the client-server connections are shared between
@@ -30,18 +31,59 @@ public class ReconnectRequestMessage
             DISPLAY_NAME,
             Listener.class,
             Topic.BroadcastDirection.TO_CHILDREN);
+    private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
+    public static class ReconnectAllEvent extends AbstractMessageEvent {
+        private final boolean mayDisplayDialogs;
+
+        public ReconnectAllEvent(boolean mayDisplayDialogs) {
+            this.mayDisplayDialogs = mayDisplayDialogs;
+        }
+
+        public boolean mayDisplayDialogs() {
+            return mayDisplayDialogs;
+        }
+    }
+
+    public static class ReconnectEvent extends AbstractMessageEvent {
+        private final ClientServerRef ref;
+        private final boolean mayDisplayDialogs;
+
+        public ReconnectEvent(@NotNull ClientServerRef ref, boolean mayDisplayDialogs) {
+            this.ref = ref;
+            this.mayDisplayDialogs = mayDisplayDialogs;
+        }
+
+        public boolean mayDisplayDialogs() {
+            return mayDisplayDialogs;
+        }
+
+        @NotNull
+        public ClientServerRef getRef() {
+            return ref;
+        }
+    }
 
     public interface Listener {
-        void reconnectToAllClients(boolean mayDisplayDialogs);
+        void reconnectToAllClients(@NotNull ReconnectAllEvent e);
 
-        void reconnectToClient(@NotNull ClientServerRef ref, boolean mayDisplayDialogs);
+        void reconnectToClient(@NotNull ReconnectEvent e);
+    }
+
+    public static class ListenerAdapter implements Listener {
+        @Override
+        public void reconnectToAllClients(@NotNull ReconnectAllEvent e) {
+        }
+
+        @Override
+        public void reconnectToClient(@NotNull ReconnectEvent e) {
+        }
     }
 
 
     public static void requestReconnectToAllClients(@NotNull Project project, boolean mayDisplayDialogs) {
         if (canSendMessage(project)) {
-            getListener(project, TOPIC).reconnectToAllClients(mayDisplayDialogs);
+            getListener(project, TOPIC, DEFAULT_LISTENER).reconnectToAllClients(new ReconnectAllEvent(mayDisplayDialogs));
         }
     }
 
@@ -49,11 +91,12 @@ public class ReconnectRequestMessage
     public static void requestReconnectToClient(@NotNull Project project,
             @NotNull ClientServerRef ref, boolean mayDisplayDialogs) {
         if (canSendMessage(project)) {
-            getListener(project, TOPIC).reconnectToClient(ref, mayDisplayDialogs);
+            getListener(project, TOPIC, DEFAULT_LISTENER).reconnectToClient(new ReconnectEvent(ref, mayDisplayDialogs));
         }
     }
 
-    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
-        addListener(client, TOPIC, listener);
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client,
+            @NotNull Object listenerOwner, @NotNull Listener listener) {
+        addListener(client, TOPIC, listener, Listener.class, listenerOwner);
     }
 }

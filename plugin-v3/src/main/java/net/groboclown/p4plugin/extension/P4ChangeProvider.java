@@ -50,9 +50,11 @@ import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
+import net.groboclown.p4.server.impl.values.P4LocalFileImpl;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
+import net.groboclown.p4plugin.revision.P4DeletedLocalFileRevision;
 import net.groboclown.p4plugin.revision.P4LocalFileContentRevision;
 import net.groboclown.p4plugin.revision.P4RemoteFileContentRevision;
 import net.groboclown.p4plugin.util.ChangelistUtil;
@@ -94,7 +96,7 @@ public class P4ChangeProvider
         this.loader = new HistoryContentLoaderImpl(project);
 
         final MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(project);
-        final String cacheId = AbstractCacheMessage.createCacheId();
+        final String cacheId = AbstractCacheMessage.createCacheId(P4ChangeProvider.class);
         ClientActionMessage.addListener(mbClient, cacheId, event -> {
             P4CommandRunner.ClientActionCmd cmd = (P4CommandRunner.ClientActionCmd) event.getAction().getCmd();
             try {
@@ -563,18 +565,24 @@ public class P4ChangeProvider
                 status = FileStatus.NOT_CHANGED;
                 break;
             case EDIT_RESOLVED:
-                assert file.getDepotPath() != null;
-                // TODO find the right charset
-                before = new P4RemoteFileContentRevision(project,
-                        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
+                if (file.getDepotPath() == null) {
+                    before = null;
+                } else {
+                    before = new P4RemoteFileContentRevision(project,
+                            file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
+                }
                 after = new P4LocalFileContentRevision(file);
                 status = FileStatus.MERGE;
                 break;
             case MOVE_DELETE:
-                assert file.getDepotPath() != null;
-                // TODO find the right charset
-                before = new P4RemoteFileContentRevision(project,
-                        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
+                if (file.getDepotPath() == null) {
+                    // TODO needs to reference the source file.
+                    before = new P4DeletedLocalFileRevision(file);
+                } else {
+                    // TODO find the right charset
+                    before = new P4RemoteFileContentRevision(project,
+                            file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
+                }
                 status = FileStatus.DELETED;
                 break;
             case MOVE_ADD:

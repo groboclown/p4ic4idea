@@ -23,8 +23,8 @@ import org.jetbrains.annotations.Nullable;
     name = "UserProjectPreferences",
     storages = {
         @Storage(
-                // FIXME 2017.1
-                id = "default",
+                // removed in 181
+                // id = "default",
                 file = StoragePathMacros.PROJECT_FILE
         )
     }

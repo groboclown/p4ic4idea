@@ -195,13 +195,6 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
 
 
 
-
-
-
-
-
-
-
     @SuppressWarnings("WeakerAccess")
     public P4ServerComponent(@NotNull Project project) {
         this.project = project;

@@ -17,6 +17,8 @@ package net.groboclown.p4plugin.components;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.Storage;
+import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
@@ -46,7 +48,12 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 @State(
-        name = "P4ProjectCache"
+        name = "P4ProjectCache",
+        storages = {
+                @Storage(
+                        file = StoragePathMacros.WORKSPACE_FILE
+                )
+        }
 )
 public class CacheComponent implements ProjectComponent, PersistentStateComponent<ProjectCacheStore.State> {
     private static final Logger LOG = Logger.getInstance(CacheComponent.class);

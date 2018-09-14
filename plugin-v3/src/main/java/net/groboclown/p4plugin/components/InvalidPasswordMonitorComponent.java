@@ -33,6 +33,7 @@ import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
+import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.extension.P4Vcs;
 import net.groboclown.p4plugin.messages.UserMessage;
@@ -57,14 +58,14 @@ public class InvalidPasswordMonitorComponent
     @Override
     public void initComponent() {
         MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(this);
-        LoginFailureMessage.addListener(mbClient, new LoginFailureMessage.Listener() {
+        LoginFailureMessage.addListener(mbClient, this, new LoginFailureMessage.Listener() {
             @Override
-            public void singleSignOnFailed(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
-                if (shouldHandleProblem(config, FailureType.SSO)) {
+            public void singleSignOnFailed(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                if (shouldHandleProblem(e.getConfig(), FailureType.SSO)) {
                     // No explicit action to take
                     UserMessage.showNotification(null, UserMessage.ERROR,
                             P4Bundle.message("error.loginsso.exec-failed",
-                                    config.getLoginSso(), e.getLocalizedMessage()),
+                                    e.getConfig().getLoginSso(), e.getError().getLocalizedMessage()),
                             P4Bundle.message("error.loginsso.exec-failed.title"),
                             NotificationType.ERROR);
 
@@ -73,12 +74,11 @@ public class InvalidPasswordMonitorComponent
             }
 
             @Override
-            public void singleSignOnExecutionFailed(@NotNull ServerConfig config,
-                    @NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
+            public void singleSignOnExecutionFailed(@NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
                 // No explicit action to take
                 UserMessage.showNotification(null, UserMessage.ERROR,
                         P4Bundle.message("error.loginsso.exec-failed.long",
-                                config.getLoginSso(), e.getExitCode(), e.getStdout(), e.getStderr()),
+                                e.getConfig().getLoginSso(), e.getExitCode(), e.getStdout(), e.getStderr()),
                         P4Bundle.message("error.loginsso.exec-failed.title"),
                         NotificationType.ERROR);
 
@@ -86,54 +86,54 @@ public class InvalidPasswordMonitorComponent
             }
 
             @Override
-            public void sessionExpired(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
+            public void sessionExpired(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
                 // Force a log-in.  If this fails, another message will be handled.
-                if (shouldHandleProblem(config, FailureType.SESSION_EXPIRED)) {
-                    P4ServerComponent.perform(findBestProject(), config,
+                if (shouldHandleProblem(e.getConfig(), FailureType.SESSION_EXPIRED)) {
+                    P4ServerComponent.perform(findBestProject(), e.getConfig(),
                             new LoginAction());
                 }
             }
 
             @Override
-            public void passwordInvalid(@NotNull final ServerConfig config, @NotNull AuthenticationFailedException e) {
+            public void passwordInvalid(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
                 // Remove the stored password.
-                if (shouldHandleProblem(config, FailureType.PASSWORD_INVALID)) {
+                if (shouldHandleProblem(e.getConfig(), FailureType.PASSWORD_INVALID)) {
                     // Ask for the password.  Use the fancy notification stuff.
                     UserMessage.showNotification(null, UserMessage.ERROR,
-                            P4Bundle.message("login.password.error", config.getServerName().getDisplayName()),
+                            P4Bundle.message("login.password.error", e.getName().getDisplayName()),
                             P4Bundle.getString("login.password.error.title"),
                             NotificationType.ERROR,
                             (notification, hyperlinkEvent) -> {
-                                forgetLoginProblem(config);
+                                forgetLoginProblem(e.getConfig());
                                 ApplicationPasswordRegistry.getInstance()
-                                        .askForNewPassword(null, config);
+                                        .askForNewPassword(null, e.getConfig());
                             },
                             () -> {
                                 // Timed out waiting for a user action.  Reset the password login
                                 // state, so the user can be asked again.
-                                forgetLoginProblem(config);
+                                forgetLoginProblem(e.getConfig());
                             }
                     );
                 }
             }
 
             @Override
-            public void passwordUnnecessary(@NotNull ServerConfig config, @NotNull AuthenticationFailedException e) {
+            public void passwordUnnecessary(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
                 // Inform the user about the unnecessary password.
-                if (shouldHandleProblem(config, FailureType.PASSWORD_UNNECESSARY)) {
+                if (shouldHandleProblem(e.getConfig(), FailureType.PASSWORD_UNNECESSARY)) {
                     UserMessage.showNotification(null, UserMessage.WARNING,
                             P4Bundle.message("connection.password.unnecessary.details",
-                                    config.getServerName().getDisplayName()),
+                                    e.getName().getDisplayName()),
                             P4Bundle.message("connection.password.unnecessary.title"),
                             NotificationType.INFORMATION);
 
                     // Update the password to remove the stored password.
-                    ApplicationPasswordRegistry.getInstance().remove(config);
+                    ApplicationPasswordRegistry.getInstance().remove(e.getConfig());
                 }
             }
         });
 
-        ServerConnectedMessage.addListener(mbClient, (serverConfig, loggedIn) -> {
+        ServerConnectedMessage.addListener(mbClient, this, (serverConfig, loggedIn) -> {
             // Force a no-issue connection state.
             if (loggedIn) {
                 forgetLoginProblem(serverConfig);
@@ -147,9 +147,9 @@ public class InvalidPasswordMonitorComponent
             public void projectOpened(Project project) {
                 MessageBusClient.ProjectClient projectMbClient =
                         MessageBusClient.forProject(project, InvalidPasswordMonitorComponent.this);
-                ClientConfigAddedMessage.addListener(projectMbClient,
-                        (root, clientConfig) -> forgetLoginProblem(clientConfig.getServerConfig()));
-                ClientConfigRemovedMessage.addListener(projectMbClient,
+                ClientConfigAddedMessage.addListener(projectMbClient, this,
+                        e -> forgetLoginProblem(e.getClientConfig().getServerConfig()));
+                ClientConfigRemovedMessage.addListener(projectMbClient, this,
                         event -> forgetLoginProblem(event.getClientConfig().getServerConfig()));
             }
 

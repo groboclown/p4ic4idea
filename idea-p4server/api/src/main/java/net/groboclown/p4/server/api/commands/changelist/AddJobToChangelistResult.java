@@ -14,20 +14,31 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
+import com.perforce.p4java.core.IFix;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
+import java.util.List;
+
 public class AddJobToChangelistResult implements P4CommandRunner.ClientResult {
     private final ClientConfig config;
+    private final List<IFix> fixes;
 
-    public AddJobToChangelistResult(ClientConfig config) {
+    public AddJobToChangelistResult(@NotNull ClientConfig config, List<IFix> fixes) {
         this.config = config;
+        this.fixes = fixes == null ? Collections.emptyList() : fixes;
     }
 
     @NotNull
     @Override
     public ClientConfig getClientConfig() {
         return config;
+    }
+
+    @NotNull
+    public List<IFix> getFixes() {
+        return fixes;
     }
 }

@@ -36,67 +36,49 @@ public class P4ServerErrorMessage extends ProjectMessage<P4ServerErrorMessage.Li
 
         /**
          * The server returned an error message
-         * @param msg message sent
-         * @param re source
+         * @param e source
          */
-        void requestCausedError(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                @NotNull IServerMessage msg, @NotNull RequestException re);
+        void requestCausedError(@NotNull ServerErrorEvent.ServerMessageEvent e);
 
-        void requestCausedWarning(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                @NotNull IServerMessage msg, @NotNull RequestException re);
+        void requestCausedWarning(@NotNull ServerErrorEvent.ServerMessageEvent e);
 
-        void requestCausedInfoMsg(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                @NotNull IServerMessage msg, @NotNull RequestException re);
+        void requestCausedInfoMsg(@NotNull ServerErrorEvent.ServerMessageEvent e);
 
         /**
          * The plugin generated a RequestException
          *
-         * @param name source name
-         * @param config source, possibly null
-         * @param re generated error
+         * @param e source
          */
-        void requestException(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                @NotNull RequestException re);
+        void requestException(@NotNull ServerErrorEvent.ServerMessageEvent e);
 
-        void requestException(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                @NotNull P4JavaException e);
+        void requestException(@NotNull ServerErrorEvent.ServerNameErrorEvent<P4JavaException> e);
     }
 
     public static class ListenerAdapter implements Listener {
-
         @Override
-        public void requestCausedError(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                @NotNull IServerMessage msg, @NotNull RequestException re) {
-
+        public void requestCausedError(@NotNull ServerErrorEvent.ServerMessageEvent e) {
         }
 
         @Override
-        public void requestCausedWarning(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                @NotNull IServerMessage msg, @NotNull RequestException re) {
-
+        public void requestCausedWarning(@NotNull ServerErrorEvent.ServerMessageEvent e) {
         }
 
         @Override
-        public void requestCausedInfoMsg(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                @NotNull IServerMessage msg, @NotNull RequestException re) {
-
+        public void requestCausedInfoMsg(@NotNull ServerErrorEvent.ServerMessageEvent e) {
         }
 
         @Override
-        public void requestException(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                @NotNull RequestException re) {
-
+        public void requestException(@NotNull ServerErrorEvent.ServerMessageEvent e) {
         }
 
         @Override
-        public void requestException(@NotNull P4ServerName name, @Nullable ServerConfig config,
-                @NotNull P4JavaException e) {
-
+        public void requestException(@NotNull ServerErrorEvent.ServerNameErrorEvent<P4JavaException> e) {
         }
     }
 
-    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
-        addListener(client, TOPIC, listener);
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client,
+            @NotNull Object listenerOwner, @NotNull Listener listener) {
+        addListener(client, TOPIC, listener, Listener.class, listenerOwner);
     }
 
     public static Listener send(@NotNull Project project) {

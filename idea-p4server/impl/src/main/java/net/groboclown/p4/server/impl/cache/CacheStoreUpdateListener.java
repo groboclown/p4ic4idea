@@ -55,7 +55,7 @@ public class CacheStoreUpdateListener implements Disposable {
     private final Project project;
     private final ProjectCacheStore cache;
     private final CachePendingActionHandler pendingCache;
-    private final String cacheId = AbstractCacheMessage.createCacheId();
+    private final String cacheId = AbstractCacheMessage.createCacheId(CacheStoreUpdateListener.class);
     private boolean disposed = false;
 
     public CacheStoreUpdateListener(@NotNull Project project,

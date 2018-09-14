@@ -30,9 +30,10 @@ import org.apache.commons.lang3.Validate;
  *
  */
 public abstract class BaseDelegator {
-    protected static int MAX_LIMIT_SUPPORTED_MIN_VERSION = 20061;
-    protected static int USER_RESTRICTIONS_SUPPORTED_MIN_VERSION = 20062;
-    protected static int QUERY_EXPRESSIONS_SUPPORTED_MIN_VERSION = 20082;
+    // p4ic4idea: final
+    protected static final int MAX_LIMIT_SUPPORTED_MIN_VERSION = 20061;
+    protected static final int USER_RESTRICTIONS_SUPPORTED_MIN_VERSION = 20062;
+    protected static final int QUERY_EXPRESSIONS_SUPPORTED_MIN_VERSION = 20082;
 
     /** The server object */
 

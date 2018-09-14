@@ -501,6 +501,8 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
                         cache.removeUpdateFor(update);
                         break;
                     // TODO if "moved" files are ever supported, then both sides need to be reverted.
+
+                    // default: ignore
                 }
             }
         }

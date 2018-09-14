@@ -17,68 +17,74 @@ package p4ic.ext
 import org.junit.Test
 import org.junit.Assert
 
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertNull
+
 class IdeaVersionTest {
     @Test
     void testMatches_exact() {
-        Set<String> remaining = asSet("a.jar", "b")
-        IdeaVersion.matches("a.jar", remaining)
-        assertSetContains(remaining, "b")
+        Set<String> values = asSet("a.jar", "b")
+        assertEquals("a.jar", IdeaVersion.matches("a.jar", values))
     }
 
     @Test
     void testMatches_strippedExt() {
-        Set<String> remaining = asSet("a", "b")
-        IdeaVersion.matches("a.jar", remaining)
-        assertSetContains(remaining, "b")
+        Set<String> values = asSet("a", "b")
+        assertEquals("a", IdeaVersion.matches("a.jar", values))
     }
 
     @Test
     void testMatches_strippedSnapshot() {
-        Set<String> remaining = asSet("a", "b")
-        IdeaVersion.matches("a-SNAPSHOT.jar", remaining)
-        assertSetContains(remaining, "b")
+        Set<String> values = asSet("a", "b")
+        assertEquals("a", IdeaVersion.matches("a-SNAPSHOT.jar", values))
     }
 
     @Test
     void testMatches_strippedPatched() {
-        Set<String> remaining = asSet("a", "b")
-        IdeaVersion.matches("a-patched.jar", remaining)
-        assertSetContains(remaining, "b")
+        Set<String> values = asSet("a", "b")
+        assertEquals("a", IdeaVersion.matches("a-patched.jar", values))
     }
 
     @Test
     void testMatches_strippedVersion1() {
-        Set<String> remaining = asSet("abc", "b")
-        IdeaVersion.matches("abc-1.jar", remaining)
-        assertSetContains(remaining, "b")
+        Set<String> values = asSet("abc", "b")
+        assertEquals("abc", IdeaVersion.matches("abc-1.jar", values))
     }
 
     @Test
     void testMatches_strippedVersion2() {
-        Set<String> remaining = asSet("abc", "b")
-        IdeaVersion.matches("abc-1.2.jar", remaining)
-        assertSetContains(remaining, "b")
+        Set<String> values = asSet("abc", "b")
+        assertEquals("abc", IdeaVersion.matches("abc-1.2.jar", values))
     }
 
     @Test
     void testMatches_strippedVersion3() {
-        Set<String> remaining = asSet("abc", "b")
-        IdeaVersion.matches("abc-12.20.313.jar", remaining)
-        assertSetContains(remaining, "b")
+        Set<String> values = asSet("abc", "b")
+        assertEquals("abc", IdeaVersion.matches("abc-12.20.313.jar", values))
     }
 
     @Test
     void testMatches_strippedSnapshotVersion() {
-        Set<String> remaining = asSet("a", "b")
-        IdeaVersion.matches("a-1.2-SNAPSHOT.jar", remaining)
-        assertSetContains(remaining, "b")
+        Set<String> values = asSet("a", "b")
+        assertEquals("a", IdeaVersion.matches("a-1.2-SNAPSHOT.jar", values))
+    }
+
+    @Test
+    void testMatches_idea18Name() {
+        Set<String> values = asSet("a-b-c")
+        assertEquals("a-b-c", IdeaVersion.matches("intellij.a.b.c.jar", values))
+    }
+
+    @Test
+    void testMatches_idea18PlatformName() {
+        Set<String> values = asSet("a-b-c")
+        assertEquals("a-b-c", IdeaVersion.matches("intellij.platform.a.b.c.jar", values))
     }
 
     @Test
     void testMatches_NoMatch() {
-        Set<String> remaining = asSet("abc", "b")
-        IdeaVersion.matches("a-1.2-SNAPSHOT.jar", remaining)
-        assertSetContains(remaining, "abc", "b")
+        Set<String> values = asSet("abc", "b")
+        assertNull(IdeaVersion.matches("a-1.2-SNAPSHOT.jar", values))
     }
 
 

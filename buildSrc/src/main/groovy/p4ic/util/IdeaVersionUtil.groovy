@@ -14,6 +14,8 @@
 
 package p4ic.util
 
+import org.apache.tools.ant.util.DeweyDecimal
+import org.apache.tools.ant.util.JavaEnvUtils
 import org.gradle.api.Project
 import p4ic.ext.IdeaVersion
 
@@ -21,9 +23,23 @@ import javax.annotation.Nonnull
 
 class IdeaVersionUtil {
     public static final String LOWEST_COMPATIBLE_VERSION_NAME = "171"
+    public static final String LOWEST_COMPATIBLE_VERSION_NAME_JDK9 = "181"
 
     @Nonnull
     static IdeaVersion lowestCompatible(@Nonnull Project project) {
+        return new IdeaVersion(project, LOWEST_COMPATIBLE_VERSION_NAME)
+    }
+
+    static boolean isJdk9() {
+        return JavaEnvUtils.getParsedJavaVersion().isGreaterThanOrEqual(new DeweyDecimal(9))
+    }
+
+    @Nonnull
+    static IdeaVersion lowestCompatibleBuildVersion(@Nonnull Project project) {
+        if (isJdk9()) {
+            // Due to module break up, this requires a different version of the IDE.
+            return new IdeaVersion(project, LOWEST_COMPATIBLE_VERSION_NAME_JDK9)
+        }
         return new IdeaVersion(project, LOWEST_COMPATIBLE_VERSION_NAME)
     }
 

@@ -3,6 +3,7 @@ package p4ic.tasks
 import org.apache.tools.ant.BuildException
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
+import org.gradle.api.file.FileVisitDetails
 import org.gradle.api.internal.ConventionTask
 import org.gradle.api.tasks.*
 import org.gradle.api.tasks.compile.JavaCompile
@@ -71,7 +72,7 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
         def outputDir = getOutputDir()
         copyOriginalClasses(outputDir)
 
-        def classpath = IdeaVersionUtil.lowestCompatible(project).jars(
+        def classpath = IdeaVersionUtil.lowestCompatibleBuildVersion(project).jars(
                 // jars required by the instrumentation
                 "javac2",
                 "jdom",
@@ -81,9 +82,6 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
                 "forms-compiler",
                 "forms_rt"
         )
-
-        logger.info("Setting up instrumentation with classpath " +
-            classpath.asPath)
 
         ant.taskdef(name: 'instrumentIdeaExtensions',
                 classpath: classpath.asPath,
@@ -124,7 +122,14 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
     private void instrumentCode(@Nonnull FileCollection srcDirs, @Nonnull File outputDir, boolean instrumentNotNull) {
         def headlessOldValue = System.setProperty('java.awt.headless', 'true')
         FileCollection cp = classPath.call()
+        if (IdeaVersionUtil.isJdk9()) {
+            cp = project.files(cp, findJMods())
+        }
+        logger.info("Setting up instrumentation with classpath " + cp.asPath)
+
         // TODO this fails on JDK 10
+        // It doesn't correctly load in the JDK libraries (jmod files)
+        // It could also be the instrumentation class.
         ant.instrumentIdeaExtensions(srcdir: srcDirs.asPath,
                 destdir: outputDir, classpath: cp.asPath,
                 includeantruntime: false, instrumentNotNull: instrumentNotNull) {
@@ -139,4 +144,15 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
         }
     }
 
+    private File[] findJMods() {
+        List<File> files = new ArrayList<>()
+        logger.info("Finding jmod files in " + System.properties."java.home")
+        def jreHome = System.properties."java.home"
+        project.fileTree(jreHome).visit { FileVisitDetails details ->
+            if (details.file.name.endsWith('.jmod')) {
+                files.add(details.file)
+            }
+        }
+        return files.toArray(new File[0])
+    }
 }

@@ -32,37 +32,34 @@ public class InternalErrorMessage extends ProjectMessage<InternalErrorMessage.Li
          *
          * @param t error
          */
-        void internalError(@NotNull Throwable t);
+        void internalError(@NotNull ErrorEvent<Throwable> t);
 
         /**
          * the P4 API layer of code caused a problem.
          *
          * @param t error
          */
-        void p4ApiInternalError(@NotNull Throwable t);
+        void p4ApiInternalError(@NotNull ErrorEvent<Throwable> t);
 
         /**
          * Some exception that was not expected was thrown.
          *
          * @param t error
          */
-        void unexpectedError(@NotNull Throwable t);
+        void unexpectedError(@NotNull ErrorEvent<Throwable> t);
     }
 
     public static class ListenerAdapter implements Listener {
         @Override
-        public void internalError(@NotNull Throwable t) {
-            // do nothing
+        public void internalError(@NotNull ErrorEvent<Throwable> t) {
         }
 
         @Override
-        public void p4ApiInternalError(@NotNull Throwable t) {
-            // do nothing
+        public void p4ApiInternalError(@NotNull ErrorEvent<Throwable> t) {
         }
 
         @Override
-        public void unexpectedError(@NotNull Throwable t) {
-            // do nothing
+        public void unexpectedError(@NotNull ErrorEvent<Throwable> t) {
         }
     }
 
@@ -70,7 +67,8 @@ public class InternalErrorMessage extends ProjectMessage<InternalErrorMessage.Li
         return getListener(project, TOPIC, DEFAULT_LISTENER);
     }
 
-    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
-        addListener(client, TOPIC, listener);
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client,
+            @NotNull Object listenerOwner, @NotNull Listener listener) {
+        addListener(client, TOPIC, listener, Listener.class, listenerOwner);
     }
 }

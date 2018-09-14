@@ -272,6 +272,11 @@
             <implementation-class>net.groboclown.p4plugin.components.UserErrorComponent</implementation-class>
         </component>
 
+        <component>
+            <interface-class>net.groboclown.p4.server.api.config.PersistentRootConfigComponent</interface-class>
+            <implementation-class>net.groboclown.p4.server.impl.config.PersistentRootConfigComponentImpl</implementation-class>
+        </component>
+
         <!-- FIXME re-add this
         <component>
             <implementation-class>net.groboclown.p4plugin.ui.pending.PendingChangesView</implementation-class>

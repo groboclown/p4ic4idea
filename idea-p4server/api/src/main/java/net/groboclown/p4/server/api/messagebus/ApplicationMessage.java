@@ -49,7 +49,8 @@ public abstract class ApplicationMessage<L> {
     }
 
     protected static <L> void addTopicListener(@NotNull MessageBusClient.ApplicationClient client,
-            @NotNull Topic<L> topic, @NotNull L listener) {
-        client.add(topic, listener);
+            @NotNull Topic<L> topic, @NotNull L listener, @NotNull Class<? extends L> listenerClass,
+            @NotNull Object listenerOwner) {
+        client.add(topic, ListenerProxy.createProxy(listener, listenerClass, listenerOwner));
     }
 }

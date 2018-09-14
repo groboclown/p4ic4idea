@@ -31,6 +31,7 @@ import net.groboclown.p4.server.api.config.P4VcsRootSettings;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.config.part.MultipleConfigPart;
+import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.util.FilteredIterable;
 import net.groboclown.p4.server.impl.cache.ClientConfigRootImpl;
 import net.groboclown.p4.server.impl.cache.ServerStatusImpl;
@@ -215,10 +216,10 @@ public class ProjectConfigRegistryImpl
     }
 
     @Override
-    protected void onUserSelectedOffline(@NotNull P4ServerName serverName) {
+    protected void onUserSelectedOffline(@NotNull UserSelectedOfflineMessage.OfflineEvent event) {
         // Note: does not check disposed state.
 
-        getServersFor(serverName)
+        getServersFor(event.getName())
                 .forEach((sc) -> sc.setUserOffline(true));
 
     }

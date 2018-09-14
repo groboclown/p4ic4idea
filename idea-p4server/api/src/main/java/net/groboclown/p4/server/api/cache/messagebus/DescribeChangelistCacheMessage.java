@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class DescribeChangelistCacheMessage
         extends AbstractCacheMessage<DescribeChangelistCacheMessage.Event> {
-    private static final String DISPLAY_NAME = "p4ic4idea:client action copmleted";
+    private static final String DISPLAY_NAME = "p4ic4idea:client action completed";
     private static final Topic<TopicListener<Event>> TOPIC = createTopic(DISPLAY_NAME);
 
     public interface Listener {

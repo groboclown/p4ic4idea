@@ -31,8 +31,8 @@ import org.jetbrains.annotations.NotNull;
     reloadable = true,
     storages = {
         @Storage(
-                // FIXME 2017.1
-                id = "other",
+                // removed in 181
+                // id = "other",
                 file = StoragePathMacros.WORKSPACE_FILE
         )
     }

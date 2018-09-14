@@ -344,7 +344,7 @@ public class AlertManager implements ApplicationComponent {
                                 pendingWarnings.clear();
                             }
                             if (errorMsg == null && warningMessages == null) {
-                                // wait
+                                // Wait.  It's okay to elapse the timeout (hence, don't check return value)
                                 eventPending.await(POLL_TIMEOUT, POLL_TIMEOUT_UNIT);
                             }
                         }

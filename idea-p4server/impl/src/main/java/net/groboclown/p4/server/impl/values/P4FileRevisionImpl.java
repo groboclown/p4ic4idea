@@ -82,7 +82,7 @@ public class P4FileRevisionImpl
         this.type = type;
         this.integratedFrom = integratedFrom;
         this.revisionNumber = revisionNumber;
-        this.date = date;
+        this.date = date == null ? null : new Date(date.getTime());
         this.charset = charset;
     }
 

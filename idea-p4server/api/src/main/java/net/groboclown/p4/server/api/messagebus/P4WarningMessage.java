@@ -33,21 +33,21 @@ public class P4WarningMessage extends ProjectMessage<P4WarningMessage.Listener> 
          *
          * @param e one of {@link ConnectionException} or {@link AccessException}
          */
-        void disconnectCausedError(@NotNull Exception e);
+        void disconnectCausedError(@NotNull ErrorEvent<Exception> e);
 
-        void charsetTranslationError(@NotNull ClientError e);
+        void charsetTranslationError(@NotNull ErrorEvent<ClientError> e);
     }
 
 
     public static class ListenerAdapter implements Listener {
 
         @Override
-        public void disconnectCausedError(@NotNull Exception e) {
+        public void disconnectCausedError(@NotNull ErrorEvent<Exception> e) {
 
         }
 
         @Override
-        public void charsetTranslationError(@NotNull ClientError e) {
+        public void charsetTranslationError(@NotNull ErrorEvent<ClientError> e) {
 
         }
     }
@@ -55,27 +55,28 @@ public class P4WarningMessage extends ProjectMessage<P4WarningMessage.Listener> 
 
     public static void sendDisconnectCausedError(@NotNull Project project, @NotNull ConnectionException e) {
         if (canSendMessage(project)) {
-            project.getMessageBus().syncPublisher(TOPIC).disconnectCausedError(e);
+            project.getMessageBus().syncPublisher(TOPIC).disconnectCausedError(new ErrorEvent<>(e));
         }
     }
 
 
     public static void sendDisconnectCausedError(@NotNull Project project, @NotNull AccessException e) {
         if (canSendMessage(project)) {
-            project.getMessageBus().syncPublisher(TOPIC).disconnectCausedError(e);
+            project.getMessageBus().syncPublisher(TOPIC).disconnectCausedError(new ErrorEvent<>(e));
         }
     }
 
 
     public static void sendCharsetTranslationError(@NotNull Project project, @NotNull ClientError e) {
         if (canSendMessage(project)) {
-            project.getMessageBus().syncPublisher(TOPIC).charsetTranslationError(e);
+            project.getMessageBus().syncPublisher(TOPIC).charsetTranslationError(new ErrorEvent<>(e));
         }
     }
 
     // Note: no generic "send" call, so that  the exact error cause is used instead.
 
-    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
-        client.add(TOPIC, listener);
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client,
+            @NotNull Object listenerOwner, @NotNull Listener listener) {
+        addListener(client, TOPIC, listener, Listener.class, listenerOwner);
     }
 }

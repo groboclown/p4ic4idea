@@ -92,10 +92,8 @@ class Synchronizer {
                         throw new InterruptedException("timed out waiting for critical alerts to clear");
                     }
                     // Ignore return code.
-                    // If this times out, then the loop will
-                    // cause an InterruptedException.
-                    // If it doesn't time out, the loop will
-                    // cause a return value.
+                    // If this times out, then the loop will cause an InterruptedException.
+                    // If it doesn't time out, the loop will cause a return value.
                     alertCriticalActiveCondition.await(expires - now, TimeUnit.MILLISECONDS);
                 }
             }
@@ -157,7 +155,10 @@ class Synchronizer {
                         if (now > expires) {
                             throw new InterruptedException("timed out waiting for connection to go online");
                         }
-                        offlineCondition.await(expires - now, TimeUnit.MILLISECONDS);
+                        if (!offlineCondition.await(expires - now, TimeUnit.MILLISECONDS)) {
+                            // Expired the wait time.
+                            throw new InterruptedException("Expired offline wait timeout");
+                        }
                     }
                 }
             } finally {

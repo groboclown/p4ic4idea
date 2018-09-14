@@ -76,8 +76,9 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
     public void apply()
             throws ConfigurationException {
         if (isModified()) {
+            // TODO do we need to keep the old config around?
             ClientConfig oldConfig = loadConfigFromSettings();
-            P4VcsRootSettings settings = new P4VcsRootSettingsImpl(vcsRoot);
+            P4VcsRootSettings settings = new P4VcsRootSettingsImpl(project, vcsRoot);
             MultipleConfigPart parentPart = loadParentPartFromUI();
             settings.setConfigParts(parentPart.getChildren());
             mapping.setRootSettings(settings);
@@ -147,7 +148,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
     private P4VcsRootSettings getRootSettings() {
         VcsRootSettings rawSettings = mapping.getRootSettings();
         if (rawSettings == null) {
-            P4VcsRootSettingsImpl ret = new P4VcsRootSettingsImpl(vcsRoot);
+            P4VcsRootSettingsImpl ret = new P4VcsRootSettingsImpl(project, vcsRoot);
             mapping.setRootSettings(ret);
             return ret;
         }

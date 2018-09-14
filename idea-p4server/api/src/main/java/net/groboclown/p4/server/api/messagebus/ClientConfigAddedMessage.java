@@ -36,42 +36,76 @@ public class ClientConfigAddedMessage extends ProjectMessage<ClientConfigAddedMe
             SERVER_DISPLAY_NAME, ServerListener.class, Topic.BroadcastDirection.TO_CHILDREN
     );
 
+    public static class ClientConfigAddedEvent extends AbstractMessageEvent {
+        private final VirtualFile root;
+        private final ClientConfig clientConfig;
+
+        ClientConfigAddedEvent(@Nullable VirtualFile root, @NotNull ClientConfig clientConfig) {
+            this.root = root;
+            this.clientConfig = clientConfig;
+        }
+
+        @Nullable
+        public VirtualFile getRoot() {
+            return root;
+        }
+
+        @NotNull
+        public ClientConfig getClientConfig() {
+            return clientConfig;
+        }
+    }
+
     public interface Listener {
-        void clientConfigurationAdded(@Nullable VirtualFile root, @NotNull ClientConfig clientConfig);
+        void clientConfigurationAdded(@NotNull ClientConfigAddedEvent e);
     }
 
     public static class ListenerAdapter implements Listener {
         @Override
-        public void clientConfigurationAdded(@Nullable VirtualFile root, @NotNull ClientConfig clientConfig) {
+        public void clientConfigurationAdded(@NotNull ClientConfigAddedEvent e) {
+        }
+    }
 
+    public static class ServerConfigAddedEvent extends AbstractMessageEvent {
+        private final ServerConfig serverConfig;
+
+        ServerConfigAddedEvent(@NotNull ServerConfig serverConfig) {
+            this.serverConfig = serverConfig;
+        }
+
+        @NotNull
+        public ServerConfig getServerConfig() {
+            return serverConfig;
         }
     }
 
     public interface ServerListener {
-        void serverConfigAdded(@NotNull ServerConfig serverConfig);
+        void serverConfigAdded(@NotNull ServerConfigAddedEvent e);
     }
 
     /**
-     * Should only be called by {@link net.groboclown.p4.server.api.ProjectConfigRegistry}.
+     * Should only be called by {@link net.groboclown.p4.server.api.ProjectConfigRegistry}.  Doesn't conform to
+     * the "send(Project)" standard API, because it can trigger 2 events.
      *
      * @param project project to send the message on.
-     * @return the listener proxy for this message
      */
     public static void sendClientConfigurationAdded(@NotNull Project project,
             @Nullable VirtualFile root, @NotNull ClientConfig clientConfig) {
         ServerListener serverListener = ApplicationMessage.getListener(SERVER_TOPIC);
         if (serverListener != null) {
-            serverListener.serverConfigAdded(clientConfig.getServerConfig());
+            serverListener.serverConfigAdded(new ServerConfigAddedEvent(clientConfig.getServerConfig()));
         }
-        getListener(project, TOPIC, DEFAULT_LISTENER).clientConfigurationAdded(root, clientConfig);
+        getListener(project, TOPIC, DEFAULT_LISTENER).clientConfigurationAdded(new ClientConfigAddedEvent(
+                root, clientConfig));
     }
 
-    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
-        addListener(client, TOPIC, listener);
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client,
+            @NotNull Object listenerOwner, @NotNull Listener listener) {
+        addListener(client, TOPIC, listener, Listener.class, listenerOwner);
     }
 
     public static void addServerListener(@NotNull MessageBusClient.ApplicationClient client,
-            @NotNull ServerListener listener) {
-        client.add(SERVER_TOPIC, listener);
+            @NotNull Object listenerOwner, @NotNull ServerListener listener) {
+        ApplicationMessage.addTopicListener(client, SERVER_TOPIC, listener, ServerListener.class, listenerOwner);
     }
 }

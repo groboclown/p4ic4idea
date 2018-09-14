@@ -292,12 +292,13 @@ class AuthenticatedServer {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Not connected to server; reconnecting for " + this);
             }
+            IOptionsServer reconnected;
             try {
-                reconnect(true);
+                reconnected = reconnect(true);
             } catch (URISyntaxException e) {
                 return authenticator.createStatusFor(e);
             }
-            status = authenticator.discoverAuthenticationStatus(server);
+            status = authenticator.discoverAuthenticationStatus(reconnected);
             if (status.isAuthenticated()) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Reconnected and seems authenticated for " + this);
@@ -402,6 +403,7 @@ class AuthenticatedServer {
     }
 
 
+    @NotNull
     private IOptionsServer reconnect(boolean forceReconnect)
             throws P4JavaException, URISyntaxException, InterruptedException {
         if (checkedOutBy != null) {

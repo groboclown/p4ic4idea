@@ -47,11 +47,13 @@ import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.messagebus.CancellationMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
 import net.groboclown.p4.server.api.messagebus.FileErrorMessage;
 import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import net.groboclown.p4.server.api.messagebus.P4ServerErrorMessage;
 import net.groboclown.p4.server.api.messagebus.P4WarningMessage;
+import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
 import net.groboclown.p4.server.impl.connection.P4RequestErrorHandler;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
@@ -110,35 +112,35 @@ public abstract class MessageP4RequestErrorHandler
         }
         if (e instanceof NullPointerError) {
             // Happens due to bug in code (invalid API)
-            InternalErrorMessage.send(project).internalError(e);
+            InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
             return createServerResultException(e,
                     getMessage("error.NullPointerError", e),
                     P4CommandRunner.ErrorCategory.INTERNAL);
         }
         if (e instanceof ProtocolError) {
             // client API expectations of server responses failed
-            InternalErrorMessage.send(project).p4ApiInternalError(e);
+            InternalErrorMessage.send(project).p4ApiInternalError(new ErrorEvent<>(e));
             return createServerResultException(e,
                     getMessage("error.ProtocolError", e),
                     P4CommandRunner.ErrorCategory.INTERNAL);
         }
         if (e instanceof UnimplementedError) {
             // server probably supports functions that the client API doesn't
-            InternalErrorMessage.send(project).p4ApiInternalError(e);
+            InternalErrorMessage.send(project).p4ApiInternalError(new ErrorEvent<>(e));
             return createServerResultException(e,
                     getMessage("error.UnimplementedError", e),
                     P4CommandRunner.ErrorCategory.INTERNAL);
         }
         if (e instanceof P4JavaError) {
             // some other client API issue
-            InternalErrorMessage.send(project).p4ApiInternalError(e);
+            InternalErrorMessage.send(project).p4ApiInternalError(new ErrorEvent<>(e));
             return createServerResultException(e,
                     getMessage("error.P4JavaError", e),
                     P4CommandRunner.ErrorCategory.INTERNAL);
         }
         // Unexpected error
         LOG.info("Don't know how to handle this error.", e);
-        InternalErrorMessage.send(project).internalError(e);
+        InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
         return createServerResultException(e,
                 getMessage("error.Error", e),
                 P4CommandRunner.ErrorCategory.INTERNAL);
@@ -160,7 +162,7 @@ public abstract class MessageP4RequestErrorHandler
             // This exception is abstract.  If we've
             // made it into this block, then that means a new exception type
             // was added, but not updated here.
-            InternalErrorMessage.send(project).internalError(e);
+            InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
             return createServerResultException(e,
                     getMessage("error.AccessException", e),
                     P4CommandRunner.ErrorCategory.ACCESS_DENIED);
@@ -178,7 +180,7 @@ public abstract class MessageP4RequestErrorHandler
             } else {
                 // At this point, the exception means that the server wasn't connected.
                 // That means there's an API error somewhere that isn't connecting right.
-                InternalErrorMessage.send(project).internalError(e);
+                InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
                 return createServerResultException(e,
                         getMessage("error.internal.connection", e),
                         P4CommandRunner.ErrorCategory.INTERNAL);
@@ -199,7 +201,7 @@ public abstract class MessageP4RequestErrorHandler
                     case UNINSTALL:
                         // problem while saving the new trust fingerprint to the trust file.
                         // Should have been handled as a ConfigException.
-                        InternalErrorMessage.send(project).internalError(e);
+                        InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
                         return createServerResultException(e,
                                 getMessage("error.internal.missing-case", e),
                                 P4CommandRunner.ErrorCategory.INTERNAL);
@@ -207,13 +209,14 @@ public abstract class MessageP4RequestErrorHandler
                         // server isn't in the fingerprint registry, and the user didn't
                         // accept the new fingerprint.
                         if (info.hasServerConfig()) {
-                            ConnectionErrorMessage.send().sslHostTrustNotEstablished(info.getServerConfig());
+                            ConnectionErrorMessage.send().sslHostTrustNotEstablished(
+                                    new ServerErrorEvent.ServerConfigProblemEvent(info.getServerConfig()));
                             return createServerResultException(e,
                                     getMessage("error.TrustException.NEW_CONNECTION", e),
                                     P4CommandRunner.ErrorCategory.CONNECTION);
                         } else {
                             // No SSL information with the minimal setup.
-                            InternalErrorMessage.send(project).internalError(e);
+                            InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
                             return createServerResultException(e,
                                     getMessage("error.internal.no-ssl-info", e),
                                     P4CommandRunner.ErrorCategory.INTERNAL);
@@ -221,13 +224,14 @@ public abstract class MessageP4RequestErrorHandler
                     case NEW_KEY:
                         // fingerprint on record doesn't match server's fingerprint.
                         if (info.hasServerConfig()) {
-                            ConnectionErrorMessage.send().sslHostFingerprintMismatch(info.getServerConfig(), te);
+                            ConnectionErrorMessage.send().sslHostFingerprintMismatch(
+                                    new ServerErrorEvent.ServerConfigErrorEvent<>(info.getServerConfig(), te));
                             return createServerResultException(e,
                                     getMessage("error.TrustException.NEW_KEY", e),
                                     P4CommandRunner.ErrorCategory.CONNECTION);
                         } else {
                             // No SSL information with the minimal setup.
-                            InternalErrorMessage.send(project).internalError(e);
+                            InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
                             return createServerResultException(e,
                                     getMessage("error.internal.no-ssl-info", e),
                                     P4CommandRunner.ErrorCategory.INTERNAL);
@@ -235,7 +239,7 @@ public abstract class MessageP4RequestErrorHandler
                     default:
                         // An unknown trust type, which means that the API was updated
                         // without this block being updated.
-                        InternalErrorMessage.send(project).internalError(e);
+                        InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
                         return createServerResultException(e,
                                 getMessage("error.internal.trust", e),
                                 P4CommandRunner.ErrorCategory.INTERNAL);
@@ -244,27 +248,28 @@ public abstract class MessageP4RequestErrorHandler
             // fall through to config handling.
         }
         if (e instanceof UnknownServerException) {
-            ConnectionErrorMessage.send().unknownServer(
-                    info.getServerName(), info.getServerConfig(), e);
+            ConnectionErrorMessage.send().unknownServer(new ServerErrorEvent.ServerNameErrorEvent<>(
+                    info.getServerName(), info.getServerConfig(), e));
             return createServerResultException(e,
                     getMessage("error.UnknownServerException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);
         }
         if (e instanceof FileSaveException) {
             if (info.hasServerConfig()) {
-                ConnectionErrorMessage.send().couldNotWrite(info.getServerConfig(), (FileSaveException) e);
+                ConnectionErrorMessage.send().couldNotWrite(new ServerErrorEvent.ServerConfigErrorEvent<>(
+                        info.getServerConfig(), (FileSaveException) e));
             } else {
                 // Shouldn't happen.  The information to write to a file should only be
                 // contained in a ServerConfig.
-                InternalErrorMessage.send(project).internalError(e);
+                InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
             }
             return createServerResultException(e,
                     getMessage("error.FileSaveException", e),
                     P4CommandRunner.ErrorCategory.OS);
         }
         if (e instanceof ZeroconfException) {
-            ConnectionErrorMessage.send().zeroconfProblem(
-                    info.getServerName(), info.getServerConfig(), (ZeroconfException) e);
+            ConnectionErrorMessage.send().zeroconfProblem(new ServerErrorEvent.ServerNameErrorEvent<>(
+                    info.getServerName(), info.getServerConfig(), (ZeroconfException) e));
             return createServerResultException(e,
                     getMessage("error.ZeroconfException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);
@@ -272,7 +277,7 @@ public abstract class MessageP4RequestErrorHandler
         if (e instanceof InvalidImplementationException) {
             // The IOptionsServer or IClient implementation objects were not found,
             // or were otherwise setup wrong.
-            InternalErrorMessage.send(project).internalError(e);
+            InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
             return createServerResultException(e,
                     getMessage("error.internal.api", e),
                     P4CommandRunner.ErrorCategory.INTERNAL);
@@ -281,8 +286,8 @@ public abstract class MessageP4RequestErrorHandler
             if (!isUnlimitedStrengthEncryptionInstalled()) {
                 // No such algorithm support - the user probably needs to install the
                 // unlimited strength encryption library.
-                ConnectionErrorMessage.send().sslAlgorithmNotSupported(
-                        info.getServerName(), info.getServerConfig());
+                ConnectionErrorMessage.send().sslAlgorithmNotSupported(new ServerErrorEvent.ServerNameProblemEvent(
+                        info.getServerName(), info.getServerConfig()));
                 return createServerResultException(e,
                         getMessage("error.SslAlgorithmNotSupportedException", e),
                         P4CommandRunner.ErrorCategory.CONNECTION);
@@ -293,15 +298,15 @@ public abstract class MessageP4RequestErrorHandler
             // No certificate, cipher suite doesn't support authentication,
             // no peer authentication established during SSL handshake, user time
             // isn't close enough to the server time.
-            ConnectionErrorMessage.send().sslPeerUnverified(
-                    info.getServerName(), info.getServerConfig(), (SslHandshakeException) e);
+            ConnectionErrorMessage.send().sslPeerUnverified(new ServerErrorEvent.ServerNameErrorEvent<>(
+                    info.getServerName(), info.getServerConfig(), (SslHandshakeException) e));
             return createServerResultException(e,
                     getMessage("error.SslHandshakeException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);
         }
         if (e instanceof SslException) {
-            ConnectionErrorMessage.send().sslCertificateIssue(
-                    info.getServerName(), info.getServerConfig(), (SslException) e);
+            ConnectionErrorMessage.send().sslCertificateIssue(new ServerErrorEvent.ServerNameErrorEvent<>(
+                    info.getServerName(), info.getServerConfig(), (SslException) e));
             return createServerResultException(e,
                     getMessage("error.SslException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);
@@ -314,8 +319,8 @@ public abstract class MessageP4RequestErrorHandler
                 e = (ConfigException) cause;
                 // and fall through.
             } else if (cause instanceof UnknownHostException) {
-                ConnectionErrorMessage.send().unknownServer(
-                        info.getServerName(), info.getServerConfig(), e);
+                ConnectionErrorMessage.send().unknownServer(new ServerErrorEvent.ServerNameErrorEvent<>(
+                        info.getServerName(), info.getServerConfig(), e));
                 return createServerResultException(e,
                         getMessage("error.UnknownServerException", e),
                         P4CommandRunner.ErrorCategory.CONNECTION);
@@ -323,8 +328,8 @@ public abstract class MessageP4RequestErrorHandler
                 // General problem with connection, such as socket disconnected mid-stream,
                 // the server version is incompatible with the plugin, the server sends
                 // garbled information, and so on.
-                ConnectionErrorMessage.send().connectionError(
-                        info.getServerName(), info.getServerConfig(), (ConnectionException) e);
+                ConnectionErrorMessage.send().connectionError(new ServerErrorEvent.ServerNameErrorEvent<>(
+                        info.getServerName(), info.getServerConfig(), (ConnectionException) e));
                 return createServerResultException(e,
                         getMessage("error.ConnectionException", e),
                         P4CommandRunner.ErrorCategory.CONNECTION);
@@ -333,18 +338,18 @@ public abstract class MessageP4RequestErrorHandler
         if (e instanceof FileDecoderException) {
             // The client had a problem with a file's character encoding.
             // client <- server encode problem
-            FileErrorMessage.send(project).fileSendError(
+            FileErrorMessage.send(project).fileSendError(new ServerErrorEvent.ServerNameErrorEvent<>(
                     info.getServerName(), info.getServerConfig(),
-                    e);
+                    e));
             return createServerResultException(e,
                     getMessage("error.FileDecoderException", e),
                     P4CommandRunner.ErrorCategory.OS);
         }
         if (e instanceof FileEncoderException) {
             // Client -> server encoding problem
-            FileErrorMessage.send(project).fileReceiveError(
+            FileErrorMessage.send(project).fileReceiveError(new ServerErrorEvent.ServerNameErrorEvent<>(
                     info.getServerName(), info.getServerConfig(),
-                    e);
+                    e));
             return createServerResultException(e,
                     getMessage("error.FileEncoderException", e),
                     P4CommandRunner.ErrorCategory.OS);
@@ -353,14 +358,14 @@ public abstract class MessageP4RequestErrorHandler
             // Bad arguments to API
             // Signals missing objects within p4java; this is <i>not</i> used for missing objects on the Perforce
             // server side.
-            InternalErrorMessage.send(project).p4ApiInternalError(e);
+            InternalErrorMessage.send(project).p4ApiInternalError(new ErrorEvent<>(e));
             return createServerResultException(e,
                     getMessage("error.internal.api", e),
                     P4CommandRunner.ErrorCategory.INTERNAL);
         }
         if (e instanceof OptionsException) {
             // Bug in plugin
-            InternalErrorMessage.send(project).internalError(e);
+            InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
             return createServerResultException(e,
                     getMessage("error.internal.api", e),
                     P4CommandRunner.ErrorCategory.INTERNAL);
@@ -378,28 +383,28 @@ public abstract class MessageP4RequestErrorHandler
                     return handleAuthenticationFailureType(info, e, afe);
                 }
                 if (msg.isError()) {
-                    P4ServerErrorMessage.send(project).requestCausedError(info.getServerName(), info.getServerConfig(),
-                            msg, re);
+                    P4ServerErrorMessage.send(project).requestCausedError(new ServerErrorEvent.ServerMessageEvent(
+                            info.getServerName(), info.getServerConfig(), msg, re));
                 } else if (msg.isWarning()) {
-                    P4ServerErrorMessage.send(project).requestCausedWarning(info.getServerName(), info.getServerConfig(),
-                            msg, re);
+                    P4ServerErrorMessage.send(project).requestCausedWarning(new ServerErrorEvent.ServerMessageEvent(
+                            info.getServerName(), info.getServerConfig(), msg, re));
                 } else if (msg.isInfo()) {
-                    P4ServerErrorMessage.send(project).requestCausedInfoMsg(info.getServerName(), info.getServerConfig(),
-                            msg, re);
+                    P4ServerErrorMessage.send(project).requestCausedInfoMsg(new ServerErrorEvent.ServerMessageEvent(
+                            info.getServerName(), info.getServerConfig(), msg, re));
                 } else {
                     // This state shouldn't happen.
-                    InternalErrorMessage.send(project).internalError(e);
+                    InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
                 }
             } else {
                 Throwable cause = e.getCause();
                 if (cause instanceof P4JavaException) {
                     // API wrapped a low-level error.
-                    P4ServerErrorMessage.send(project).requestException(info.getServerName(), info.getServerConfig(),
-                            (P4JavaException) cause);
+                    P4ServerErrorMessage.send(project).requestException(new ServerErrorEvent.ServerNameErrorEvent<>(
+                            info.getServerName(), info.getServerConfig(), (P4JavaException) cause));
                 } else {
                     // API generated a pseudo-request error.
-                    P4ServerErrorMessage.send(project).requestException(info.getServerName(), info.getServerConfig(),
-                            re);
+                    P4ServerErrorMessage.send(project).requestException(new ServerErrorEvent.ServerNameErrorEvent<>(
+                            info.getServerName(), info.getServerConfig(), re));
                 }
             }
             return createServerResultException(e,
@@ -409,8 +414,8 @@ public abstract class MessageP4RequestErrorHandler
         if (e instanceof ResourceException) {
             // The ServerFactory doesn't have the resources available to create a
             // new connection to the server.
-            ConnectionErrorMessage.send().resourcesUnavailable(info.getServerName(), info.getServerConfig(),
-                    (ResourceException) e);
+            ConnectionErrorMessage.send().resourcesUnavailable(new ServerErrorEvent.ServerNameErrorEvent<>(
+                    info.getServerName(), info.getServerConfig(), (ResourceException) e));
             return createServerResultException(e,
                     getMessage("error.ResourceException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);
@@ -423,7 +428,7 @@ public abstract class MessageP4RequestErrorHandler
             // This exception is abstract.  If we've
             // made it into this block, then that means a new exception type
             // was added, but not updated here.
-            InternalErrorMessage.send(project).internalError(e);
+            InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
             return createServerResultException(e,
                     getMessage("error.ConfigException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);
@@ -444,8 +449,8 @@ public abstract class MessageP4RequestErrorHandler
             }
 
             // It's some other server error.
-            P4ServerErrorMessage.send(project).requestException(info.getServerName(), info.getServerConfig(),
-                    (P4JavaException) e);
+            P4ServerErrorMessage.send(project).requestException(new ServerErrorEvent.ServerNameErrorEvent<>(
+                    info.getServerName(), info.getServerConfig(), (P4JavaException) e));
             return createServerResultException(e,
                     getMessage("error.P4JavaException", e),
                     P4CommandRunner.ErrorCategory.SERVER_ERROR);
@@ -453,22 +458,22 @@ public abstract class MessageP4RequestErrorHandler
         if (e instanceof IOException) {
             // This shouldn't be a server connection issue, because those are wrapped in ConnectionException classes.
             // That just leaves local file I/O problems.
-            FileErrorMessage.send(project).localFileError(info.getServerName(), info.getServerConfig(),
-                    (IOException) e);
+            FileErrorMessage.send(project).localFileError(new ServerErrorEvent.ServerNameErrorEvent<>(
+                    info.getServerName(), info.getServerConfig(), (IOException) e));
             return createServerResultException(e,
                     getMessage("error.IOException", e),
                     P4CommandRunner.ErrorCategory.SERVER_ERROR);
         }
         if (e instanceof URISyntaxException) {
-            ConnectionErrorMessage.send().connectionError(info.getServerName(), info.getServerConfig(),
-                    new ConnectionException(e));
+            ConnectionErrorMessage.send().connectionError(new ServerErrorEvent.ServerNameErrorEvent<>(
+                    info.getServerName(), info.getServerConfig(), new ConnectionException(e)));
             return createServerResultException(e,
                     getMessage("error.URISyntaxException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);
         }
         if (e instanceof CancellationException) {
             // A user-requested cancellation of the action.
-            CancellationMessage.send(project).cancelled((CancellationException) e);
+            CancellationMessage.send(project).cancelled(new ErrorEvent<>((CancellationException) e));
             return createServerResultException(e,
                     getMessage("error.cancelled", e),
                     P4CommandRunner.ErrorCategory.TIMEOUT);
@@ -482,7 +487,7 @@ public abstract class MessageP4RequestErrorHandler
             // Change to a cancel
             CancellationException ce = new CancellationException(e.getMessage());
             ce.initCause(e);
-            CancellationMessage.send(project).cancelled(ce);
+            CancellationMessage.send(project).cancelled(new ErrorEvent<>(ce));
             return createServerResultException(e,
                     getMessage("error.cancelled", e),
                     P4CommandRunner.ErrorCategory.TIMEOUT);
@@ -490,21 +495,21 @@ public abstract class MessageP4RequestErrorHandler
         if (e instanceof VcsException) {
             // Plugin code generated an error that was intended for the Idea VCS system.
             // This shouldn't happen.
-            InternalErrorMessage.send(project).internalError(e);
+            InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
             return createServerResultException(e,
                     getMessage("error.internal.api", e),
                     P4CommandRunner.ErrorCategory.INTERNAL);
         }
         if (e instanceof RuntimeException) {
             // An API problem.
-            InternalErrorMessage.send(project).internalError(e);
+            InternalErrorMessage.send(project).internalError(new ErrorEvent<>(e));
             return createServerResultException(e,
                     getMessage("error.internal.api", e),
                     P4CommandRunner.ErrorCategory.INTERNAL);
         }
 
         // Something else that we didn't anticipate.
-        InternalErrorMessage.send(project).unexpectedError(e);
+        InternalErrorMessage.send(project).unexpectedError(new ErrorEvent<>(e));
         return createServerResultException(e,
                 getMessage("error.internal.api", e),
                 P4CommandRunner.ErrorCategory.INTERNAL);
@@ -527,28 +532,30 @@ public abstract class MessageP4RequestErrorHandler
             case SESSION_EXPIRED:
                 if (info.hasServerConfig()) {
                     // TODO could be handled before reaching here.
-                    LoginFailureMessage.send().sessionExpired(info.getServerConfig(), sourceAfe);
+                    LoginFailureMessage.send().sessionExpired(new ServerErrorEvent.ServerConfigErrorEvent<>(
+                            info.getServerConfig(), sourceAfe));
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.SESSION_EXPIRED", sourceException),
                             P4CommandRunner.ErrorCategory.ACCESS_DENIED);
                 } else {
                     // Internal API error, because there was an expectation for a session, but
                     // no session information was used in the connection.
-                    InternalErrorMessage.send(project).internalError(sourceException);
+                    InternalErrorMessage.send(project).internalError(new ErrorEvent<>(sourceException));
                     return createServerResultException(sourceException,
                             getMessage("error.internal.login-required", sourceException),
                             P4CommandRunner.ErrorCategory.INTERNAL);
                 }
             case PASSWORD_INVALID:
                 if (info.hasServerConfig()) {
-                    LoginFailureMessage.send().passwordInvalid(info.getServerConfig(), sourceAfe);
+                    LoginFailureMessage.send().passwordInvalid(new ServerErrorEvent.ServerConfigErrorEvent<>(
+                            info.getServerConfig(), sourceAfe));
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.PASSWORD_INVALID", sourceException),
                             P4CommandRunner.ErrorCategory.ACCESS_DENIED);
                 } else {
                     // Internal API error, because there was a login attempt, but
                     // no user information was used in the connection.
-                    InternalErrorMessage.send(project).internalError(sourceException);
+                    InternalErrorMessage.send(project).internalError(new ErrorEvent<>(sourceException));
                     return createServerResultException(sourceException,
                             getMessage("error.internal.login-required", sourceException),
                             P4CommandRunner.ErrorCategory.INTERNAL);
@@ -559,13 +566,14 @@ public abstract class MessageP4RequestErrorHandler
                         // User required a password, but the user is considered not logged in.
                         // This usually means that the user specified an empty password, so log in isn't
                         // required, but the server wants a password.
-                        LoginFailureMessage.send().passwordInvalid(info.getServerConfig(), sourceAfe);
+                        LoginFailureMessage.send().passwordInvalid(new ServerErrorEvent.ServerConfigErrorEvent<>(
+                                info.getServerConfig(), sourceAfe));
                         return createServerResultException(sourceException,
                                 getMessage("error.AuthenticationFailedException.PASSWORD_INVALID", sourceException),
                                 P4CommandRunner.ErrorCategory.ACCESS_DENIED);
                     }
                     // The API should have performed a log in.
-                    InternalErrorMessage.send(project).internalError(sourceException);
+                    InternalErrorMessage.send(project).internalError(new ErrorEvent<>(sourceException));
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.NOT_LOGGED_IN", sourceException),
                             P4CommandRunner.ErrorCategory.INTERNAL);
@@ -573,14 +581,15 @@ public abstract class MessageP4RequestErrorHandler
                     // This is an internal API usage error.  The plugin code should
                     // have already logged the user in, or a command was run that didn't
                     // expect to need to log in, but it was required.
-                    InternalErrorMessage.send(project).internalError(sourceException);
+                    InternalErrorMessage.send(project).internalError(new ErrorEvent<>(sourceException));
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.NOT_LOGGED_IN", sourceException),
                             P4CommandRunner.ErrorCategory.INTERNAL);
                 }
             case SSO_LOGIN:
                 if (info.hasServerConfig()) {
-                    LoginFailureMessage.send().singleSignOnFailed(info.getServerConfig(), sourceAfe);
+                    LoginFailureMessage.send().singleSignOnFailed(new ServerErrorEvent.ServerConfigErrorEvent<>(
+                            info.getServerConfig(), sourceAfe));
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.SSO_LOGIN", sourceException),
                             P4CommandRunner.ErrorCategory.ACCESS_DENIED);
@@ -588,7 +597,7 @@ public abstract class MessageP4RequestErrorHandler
                     // Tried accessing an SSO capable server but with only the server name.
                     // This is doomed to fail.  It also means that the internal API code needs
                     // to be fixed to take SSO information along with the server port.
-                    InternalErrorMessage.send(project).internalError(sourceException);
+                    InternalErrorMessage.send(project).internalError(new ErrorEvent<>(sourceException));
                     return createServerResultException(sourceException,
                             getMessage("error.internal.login-required", sourceException),
                             P4CommandRunner.ErrorCategory.INTERNAL);
@@ -598,7 +607,8 @@ public abstract class MessageP4RequestErrorHandler
                     // By having an explicit message for an unnecessary password, the
                     // rest of the code could perform corrective action.
                     // TODO could be handled before reaching here.
-                    LoginFailureMessage.send().passwordUnnecessary(info.getServerConfig(), sourceAfe);
+                    LoginFailureMessage.send().passwordUnnecessary(new ServerErrorEvent.ServerConfigErrorEvent<>(
+                            info.getServerConfig(), sourceAfe));
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.PASSWORD_UNNECESSARY", sourceException),
                             P4CommandRunner.ErrorCategory.ACCESS_DENIED);
@@ -606,7 +616,7 @@ public abstract class MessageP4RequestErrorHandler
                     // Tried accessing an SSO capable server but with only the server name.
                     // This is doomed to fail.  It also means that the internal API code needs
                     // to be fixed to take SSO information along with the server port.
-                    InternalErrorMessage.send(project).internalError(sourceException);
+                    InternalErrorMessage.send(project).internalError(new ErrorEvent<>(sourceException));
                     return createServerResultException(sourceException,
                             getMessage("error.internal.login-required", sourceException),
                             P4CommandRunner.ErrorCategory.INTERNAL);

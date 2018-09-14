@@ -14,8 +14,9 @@ import com.perforce.p4java.core.IMapEntry;
  */
 
 public class MapEntry implements IMapEntry {
-	protected static String elementPatternStr = "([^\"]\\S*|\".+?\")\\s*";
-	protected static Pattern elementPattern = Pattern.compile(elementPatternStr);
+	// p4ic4idea: final
+	protected static final String elementPatternStr = "([^\"]\\S*|\".+?\")\\s*";
+	protected static final Pattern elementPattern = Pattern.compile(elementPatternStr);
 
 	protected int order = ORDER_UNKNOWN;
 	protected EntryType type = null;

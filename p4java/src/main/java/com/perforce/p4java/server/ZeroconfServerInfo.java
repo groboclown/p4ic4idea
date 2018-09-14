@@ -25,7 +25,8 @@ public class ZeroconfServerInfo {
 	 * The port number used to indicate that the port has not
 	 * been validly set anywhere.
 	 */
-	public static int P4D_ZEROCONF_NOPORT = -1;
+	// p4ic4idea: final
+	public static final int P4D_ZEROCONF_NOPORT = -1;
 	
 	private String name = null;
 	private String type = null;

@@ -32,7 +32,8 @@ public class ZeroconfHelper {
 	 * The zeroconf type string normally used to register
 	 * Perforce servers.
 	 */
-	public static String P4D_ZEROCONF_TYPE = "_p4._tcp.local.";
+	// p4ic4idea: final
+	public static final String P4D_ZEROCONF_TYPE = "_p4._tcp.local.";
 	
 	/**
 	 * The JmDNS zeroconf object. Don't touch this unless you absolutely

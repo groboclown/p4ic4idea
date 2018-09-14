@@ -28,7 +28,7 @@ public class ClientConfigRemovedMessage extends ProjectMessage<ClientConfigRemov
     );
     private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
-    public static class Event {
+    public static class Event extends AbstractMessageEvent {
         // event source is here so that an object that sends this event can tell if
         // it receives the event it just sent out.
         private final Object eventSource;
@@ -64,7 +64,6 @@ public class ClientConfigRemovedMessage extends ProjectMessage<ClientConfigRemov
     public static class ListenerAdapter implements Listener {
         @Override
         public void clientConfigurationRemoved(@NotNull Event event) {
-
         }
     }
 
@@ -73,7 +72,8 @@ public class ClientConfigRemovedMessage extends ProjectMessage<ClientConfigRemov
         getListener(project, TOPIC, DEFAULT_LISTENER).clientConfigurationRemoved(new Event(src, config, vcsRootDir));
     }
 
-    public static void addListener(@NotNull MessageBusClient.ProjectClient client, @NotNull Listener listener) {
-        addListener(client, TOPIC, listener);
+    public static void addListener(@NotNull MessageBusClient.ProjectClient client,
+            @NotNull Object listenerOwner, @NotNull Listener listener) {
+        addListener(client, TOPIC, listener, Listener.class, listenerOwner);
     }
 }

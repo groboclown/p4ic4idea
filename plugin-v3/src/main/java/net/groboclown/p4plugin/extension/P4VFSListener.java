@@ -120,7 +120,8 @@ public class P4VFSListener extends VcsVFSListener {
         Set<FilePath> allFiles = new HashSet<>(movedFiles.size());
         Map<ClientServerRef, P4ChangelistId> activeChangelistIds = getActiveChangelistIds();
         for (MovedFileInfo movedFile : movedFiles) {
-            FilePath src = VcsUtil.getFilePath(movedFile.myOldPath);
+            LOG.info("Moving file `" + movedFile.myOldPath + "` to `" + movedFile.myNewPath + "`");
+            final FilePath src = VcsUtil.getFilePath(movedFile.myOldPath);
             if (src.isDirectory()) {
                 LOG.warn("Attempted to move directory " + src + "; refusing move.");
                 continue;

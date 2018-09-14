@@ -266,6 +266,7 @@ public class GraphCommitLogOptions extends Options {
 	 * @return
 	 */
 	public String getUser() {
-		return this.user = user;
+		// p4ic4idea: correctness
+		return this.user;
 	}
 }

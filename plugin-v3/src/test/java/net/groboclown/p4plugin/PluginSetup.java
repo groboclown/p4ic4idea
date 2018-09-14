@@ -152,8 +152,9 @@ public class PluginSetup
     }
 
     public void goOffline(ClientConfigRoot root) {
-        UserSelectedOfflineMessage.requestOffline(idea.getMockProject(),
-                root.getClientConfig().getClientServerRef().getServerName());
+        UserSelectedOfflineMessage.send(idea.getMockProject()).userSelectedServerOffline(
+                new UserSelectedOfflineMessage.OfflineEvent(
+                        root.getClientConfig().getClientServerRef().getServerName()));
     }
 
     public void goOnline(ClientConfigRoot root) {

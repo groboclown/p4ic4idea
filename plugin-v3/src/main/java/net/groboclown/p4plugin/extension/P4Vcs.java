@@ -181,6 +181,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
     // Capture the VCS roots list.  This is necessary, because the standard call
     // requires getting an IDE read lock, and that leads to all kinds of synchronization issues.
+    // TODO this doesn't look necessary anymore.  Remove?
     private final List<VirtualFile> vcsRootsCache;
 
 
@@ -244,14 +245,15 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     @Override
     public UnnamedConfigurable getRootConfigurable(VcsDirectoryMapping mapping) {
         if (mapping.getRootSettings() == null) {
-            mapping.setRootSettings(new P4VcsRootSettingsImpl(VcsUtil.getFilePath(mapping.getDirectory()).getVirtualFile()));
+            mapping.setRootSettings(new P4VcsRootSettingsImpl(myProject,
+                    VcsUtil.getFilePath(mapping.getDirectory()).getVirtualFile()));
         }
         return new P4VcsRootConfigurable(getProject(), mapping);
     }
 
     @Nullable
     public VcsRootSettings createEmptyVcsRootSettings() {
-        return new P4VcsRootSettingsImpl(myProject.getBaseDir());
+        return new P4VcsRootSettingsImpl(myProject, myProject.getBaseDir());
     }
 
     // This is only needed if the user's defined VCS roots don't

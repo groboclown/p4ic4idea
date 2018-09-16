@@ -22,7 +22,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.exception.AuthenticationFailedException;
 import com.perforce.p4java.impl.mapbased.server.ServerInfo;
 import net.groboclown.p4.server.api.AbstractP4CommandRunner;
-import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.cache.ActionChoice;
 import net.groboclown.p4.server.api.cache.CachePendingActionHandler;
@@ -104,6 +103,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 
@@ -141,19 +141,24 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                 // Creates the state for the server config, if it doesn't already exist.
                 // This prevents issues with the user going offline before any action on the
                 // server happens.
-                (e) -> this.getStateFor(e.getServerConfig()));
-        ServerConnectedMessage.addListener(appClient, this, (serverConfig, loggedIn) -> {
-            ServerConnectionState state = getStateFor(serverConfig);
+                (e) -> this.getProjectStateFor(e.getServerConfig()));
+        ServerConnectedMessage.addListener(appClient, this, (e) -> {
+            // This is an application-level event listener for server config state changes.
+            Optional<ServerConnectionState> op = getAppStateFor(e.getServerConfig());
+            if (!op.isPresent()) {
+                return;
+            }
+            ServerConnectionState state = op.get();
             state.badConnection = false;
             state.userOffline = false;
 
-            if (loggedIn) {
+            if (e.isLoggedIn()) {
                 state.needsLogin = false;
                 state.badLogin = false;
             }
 
             for (ClientConfig clientConfig: clientConfigs.values()) {
-                if (clientConfig.isIn(serverConfig)) {
+                if (clientConfig.isIn(e.getServerConfig())) {
                     sendCachedPendingRequests(clientConfig);
                 }
             }
@@ -199,36 +204,40 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         LoginFailureMessage.addListener(appClient, this, new LoginFailureMessage.Listener() {
             @Override
             public void singleSignOnFailed(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
-                getStateFor(e.getConfig()).badLogin = true;
+                getAppStateFor(e.getConfig()).ifPresent(s -> s.badLogin = true);
             }
 
             @Override
             public void singleSignOnExecutionFailed(@NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
-                getStateFor(e.getConfig()).badLogin = true;
+                getAppStateFor(e.getConfig()).ifPresent(s -> s.badLogin = true);
             }
 
             @Override
             public void sessionExpired(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
-                getStateFor(e.getConfig()).badLogin = false;
-                getStateFor(e.getConfig()).needsLogin = true;
+                getAppStateFor(e.getConfig()).ifPresent(s -> {
+                    s.badLogin = false;
+                    s.needsLogin = true;
+                });
             }
 
             @Override
             public void passwordInvalid(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
-                getStateFor(e.getConfig()).badLogin = true;
+                getAppStateFor(e.getConfig()).ifPresent(s -> s.badLogin = true);
             }
 
             @Override
             public void passwordUnnecessary(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
-                getStateFor(e.getConfig()).badLogin = false;
-                getStateFor(e.getConfig()).passwordUnnecessary = true;
+                getAppStateFor(e.getConfig()).ifPresent(s -> {
+                    s.badLogin = false;
+                    s.passwordUnnecessary = true;
+                });
             }
         });
         ConnectionErrorMessage.addListener(appClient, this, new ConnectionErrorMessage.AllErrorListener() {
             @Override
             public <E extends Exception> void onHostConnectionError(@NotNull ServerErrorEvent<E> event) {
                 if (event.getConfig() != null) {
-                    getStateFor(event.getConfig()).badConnection = true;
+                    getAppStateFor(event.getConfig()).ifPresent(s -> s.badConnection = true);
                 } else {
                     for (ServerConnectionState state : getStatesFor(event.getName())) {
                         state.badConnection = true;
@@ -260,7 +269,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @NotNull
     @Override
     protected ActionAnswer<LoginResult> login(ServerConfig config, LoginAction action) {
-        ServerConnectionState state = getStateFor(config);
+        ServerConnectionState state = getProjectStateFor(config);
 
         // Login has special state checking, because all it cares about is online vs. offline, not login
         // status.
@@ -268,7 +277,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
             return server.perform(config, action)
                     .whenCompleted((resp) -> {
                         // Login was good.
-                        ServerConnectedMessage.send().serverConnected(config, true);
+                        ServerConnectedMessage.send().serverConnected(
+                                new ServerConnectedMessage.ServerConnectedEvent(config, true));
                         state.needsLogin = false;
                         state.badConnection = false;
                     });
@@ -565,7 +575,25 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         return disposed;
     }
 
-    private ServerConnectionState getStateFor(@NotNull ServerConfig config) {
+    /** Should be called for application-level invocations. */
+    @NotNull
+    private Optional<ServerConnectionState> getAppStateFor(@NotNull ServerConfig config) {
+        ServerConnectionState state;
+        synchronized (stateCache) {
+            state = stateCache.get(config.getServerId());
+        }
+        return Optional.ofNullable(state);
+    }
+
+    /**
+     * Should be called for project-level invocations only, because it will create a project-level reference to
+     * the server config.
+     *
+     * @param config config
+     * @return state for the config
+     */
+    @NotNull
+    private ServerConnectionState getProjectStateFor(@NotNull ServerConfig config) {
         ServerConnectionState state;
         synchronized (stateCache) {
             state = stateCache.get(config.getServerId());
@@ -604,6 +632,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     private void sendCachedPendingRequests(ClientConfig clientConfig) {
         try {
             // Note: must be serially applied, because the pending actions have a strict order.
+            // Also note: the error catching is only logged; user reporting is done by
+            // event listeners.
             pendingActionCache.copyActions(clientConfig)
                 .reduce(new DoneActionAnswer(null),
                     (BiFunction<ActionAnswer, ActionChoice, ActionAnswer>) (answer, action) -> answer.mapActionAsync((x) ->
@@ -618,7 +648,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                                     LOG.warn(ex);
                                 }
                             }).whenServerError((ex) -> {
-                                LOG.warn("Problem committing pending action " + action, ex);
+                                // This will be bubbled up to the outer error trap.
+                                // Additionally, the underlying code has its own error reporting.
+                                LOG.debug("Problem committing pending action " + action, ex);
                             }).whenOffline(() -> {
                                 LOG.warn("Went offline while committing pending action " + action);
                             })),
@@ -641,7 +673,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     private <R> ActionAnswer<R> onlineExec(@NotNull ServerConfig serverConfig, Exec<ActionAnswer<R>> serverExec,
             Exec<ActionAnswer<R>> cacheExec) {
-        final ServerConnectionState firstState = getStateFor(serverConfig);
+        final ServerConnectionState firstState = getProjectStateFor(serverConfig);
         final ActionAnswer<R> ret;
         if (firstState.needsLogin && !(firstState.badLogin || firstState.badConnection || firstState.userOffline)) {
             ret = login(serverConfig, new LoginAction()).mapAction((x) -> null);
@@ -649,7 +681,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
             ret = new DoneActionAnswer<>(null);
         }
         return ret.mapActionAsync((x) -> {
-            final ServerConnectionState nextState = getStateFor(serverConfig);
+            final ServerConnectionState nextState = getProjectStateFor(serverConfig);
             if (!(nextState.badConnection || nextState.badLogin || nextState.userOffline || nextState.needsLogin)) {
                 return serverExec.exec();
             }
@@ -664,7 +696,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     private <R> QueryAnswer<R> onlineQuery(@NotNull ServerConfig serverConfig, Exec<QueryAnswer<R>> serverExec,
             Exec<QueryAnswer<R>> cacheExec) {
-        final ServerConnectionState firstState = getStateFor(serverConfig);
+        final ServerConnectionState firstState = getProjectStateFor(serverConfig);
         final QueryAnswer<R> ret;
         if (firstState.needsLogin && !(firstState.badLogin || firstState.badConnection || firstState.userOffline)) {
             ret = login(serverConfig, new LoginAction()).mapQuery((x) -> null);
@@ -672,7 +704,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
             ret = new DoneQueryAnswer<>(null);
         }
         return ret.mapQueryAsync((x) -> {
-            final ServerConnectionState nextState = getStateFor(serverConfig);
+            final ServerConnectionState nextState = getProjectStateFor(serverConfig);
             if (!(nextState.badConnection || nextState.badLogin || nextState.userOffline || nextState.needsLogin)) {
                 return serverExec.exec();
             }

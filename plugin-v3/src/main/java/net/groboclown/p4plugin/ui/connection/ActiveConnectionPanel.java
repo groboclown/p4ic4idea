@@ -30,8 +30,10 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.vcs.VcsDirectoryMapping;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.Tree;
+import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.exception.AuthenticationFailedException;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.P4VcsKey;
@@ -48,6 +50,7 @@ import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
+import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
 import net.groboclown.p4.server.impl.util.IntervalPeriodExecution;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
@@ -110,7 +113,7 @@ public class ActiveConnectionPanel {
 
         ClientConfigAddedMessage.addListener(clientBus, cacheId, e -> refresh());
         ClientConfigRemovedMessage.addListener(clientBus, cacheId, event -> refresh());
-        ServerConnectedMessage.addListener(appBus, cacheId, (serverConfig, loggedIn) -> refresh());
+        ServerConnectedMessage.addListener(appBus, cacheId, (e) -> refresh());
         UserSelectedOfflineMessage.addListener(clientBus, cacheId, name -> refresh());
         ClientActionMessage.addListener(appBus, cacheId, event -> refresh());
         ServerActionCacheMessage.addListener(appBus, cacheId, event -> refresh());
@@ -267,9 +270,13 @@ public class ActiveConnectionPanel {
                         if (sel != null && sel.getClientRootDir() != null) {
                             String dirName = sel.getClientRootDir().getPath();
                             // TODO this is not accurate.  It does not supply the correct VcsDirectoryMapping instance.
-                            UnnamedConfigurable configurable = P4Vcs.getInstance(project).getRootConfigurable(
-                                    new VcsDirectoryMapping(dirName, P4VcsKey.VCS_NAME)
-                            );
+                            VcsDirectoryMapping mapping = new VcsDirectoryMapping(dirName, P4VcsKey.VCS_NAME);
+                            VirtualFile rootDir = VcsUtil.getVirtualFile(dirName);
+                            if (rootDir == null) {
+                                rootDir = project.getBaseDir();
+                            }
+                            mapping.setRootSettings(new P4VcsRootSettingsImpl(project, rootDir));
+                            UnnamedConfigurable configurable = P4Vcs.getInstance(project).getRootConfigurable(mapping);
                             if (configurable != null) {
                                 new ConfigDialog(project, dirName, configurable)
                                         .show();

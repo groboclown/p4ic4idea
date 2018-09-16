@@ -22,7 +22,6 @@ import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.P4CommandRunner;
@@ -33,7 +32,6 @@ import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.commands.sync.SyncListOpenedFilesChangesQuery;
-import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.impl.cache.CachePendingActionHandlerImpl;
 import net.groboclown.p4.server.impl.cache.CacheQueryHandlerImpl;
 import net.groboclown.p4.server.impl.cache.CacheStoreUpdateListener;
@@ -48,7 +46,7 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 @State(
-        name = "P4ProjectCache",
+        name = "p4-ProjectCache",
         storages = {
                 @Storage(
                         file = StoragePathMacros.WORKSPACE_FILE
@@ -68,20 +66,28 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     private CacheStoreUpdateListener updateListener;
 
 
-    public static CacheComponent getInstance(Project project) {
+    @NotNull
+    public static CacheComponent getInstance(@Nullable Project project) {
         // a non-registered component can happen when the config is loaded outside a project.
-        CacheComponent ret = null;
+        CacheComponent ret;
         if (project != null) {
             ret = project.getComponent(CacheComponent.class);
-        }
-        if (ret == null) {
-            ret = new CacheComponent(project);
+            if (ret == null) {
+                LOG.error("No CacheComponent registered project.  Was the load out of order?");
+                throw new IllegalStateException();
+            }
+        } else {
+            // Potentially hazardous situation.  It means multiple cache stores
+            // floating around.  It also means that, if it's a short-term store, that
+            // the
+            ret = new CacheComponent(null);
         }
         return ret;
     }
 
     @SuppressWarnings("WeakerAccess")
-    public CacheComponent(Project project) {
+    public CacheComponent(@Nullable Project project) {
+        LOG.warn("Creating a cache component for " + project);
         this.project = project;
     }
 

@@ -64,6 +64,7 @@ public class VcsRootCacheStore {
 
 
     public VcsRootCacheStore(@NotNull State root, @Nullable ClassLoader classLoader) {
+        // It's possible for a mis-configuration to setup a null root directory.
         this.rootDirectory = root.rootDirectory == null ? null : VcsUtil.getVirtualFile(root.rootDirectory);
         if (root.configParts == null) {
             this.configParts = new ArrayList<>();
@@ -92,7 +93,7 @@ public class VcsRootCacheStore {
         return configParts;
     }
 
-    @NotNull
+    @Nullable
     public VirtualFile getRootDirectory() {
         return rootDirectory;
     }

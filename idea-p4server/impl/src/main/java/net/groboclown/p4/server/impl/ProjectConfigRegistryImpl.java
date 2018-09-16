@@ -31,6 +31,7 @@ import net.groboclown.p4.server.api.config.P4VcsRootSettings;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.config.part.MultipleConfigPart;
+import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.util.FilteredIterable;
 import net.groboclown.p4.server.impl.cache.ClientConfigRootImpl;
@@ -188,13 +189,13 @@ public class ProjectConfigRegistryImpl
    }
 
     @Override
-    protected void onServerConnected(@NotNull ServerConfig server, boolean loggedIn) {
+    protected void onServerConnected(@NotNull ServerConnectedMessage.ServerConnectedEvent e) {
         // Note: does not check disposed state.
 
-        getServersFor(server.getServerName()).forEach((state) -> {
+        getServersFor(e.getServerConfig().getServerName()).forEach((state) -> {
             state.setServerHostProblem(false);
             // If the connectivity and login all lines up, then the login works.
-            if (loggedIn && server.getServerId().equals(state.getServerConfig().getServerId())) {
+            if (e.isLoggedIn() && e.getServerConfig().getServerId().equals(state.getServerConfig().getServerId())) {
                 state.setServerLoginProblem(false);
             }
         });

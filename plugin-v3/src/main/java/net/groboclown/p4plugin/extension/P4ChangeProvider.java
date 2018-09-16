@@ -50,7 +50,6 @@ import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
-import net.groboclown.p4.server.impl.values.P4LocalFileImpl;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
@@ -89,6 +88,9 @@ public class P4ChangeProvider
     private final Project project;
     private final P4Vcs vcs;
     private final HistoryContentLoader loader;
+
+    private volatile boolean active = false;
+    private volatile Exception activeThread = null;
 
     P4ChangeProvider(@NotNull P4Vcs vcs) {
         this.project = vcs.getProject();
@@ -148,132 +150,147 @@ public class P4ChangeProvider
             throw new VcsException(P4Bundle.message("error.vcs.dirty-scope.wrong"));
         }
 
-        double lastFraction = 0.0;
-
-        progress.setFraction(lastFraction);
-
-        // How this is called by IntelliJ:
-        // IntelliJ calls this method on updates to the files or changes;
-        // not for all the files or changes, but just the ones that are
-        // in the dirty scope.  The method is expected to only categorize
-        // the dirty scoped files, nothing more.
-
-        // The biggest issue that this method presents to us (the plugin makers)
-        // is that incorrect usage will cause infinite refresh of the change lists.
-        // If any dirty file is not handled, this will be called again.  If any
-        // file is marked as dirty by calling this method, the method will be
-        // called again.
-
-        // Unfortunately, there are circumstances where a follow-up call can't be
-        // avoided.  An example of this is where a file is mis-marked to be in
-        // a different changelist.  It's up to this method to correctly sort
-        // files into their IDEA changelists.
-
-        // For the purposes of this implementation, we'll always attempt to
-        // refresh the cache from the server.  Then we'll update the requested file
-        // status.
-
-        Collection<ClientConfigRoot> allClientRoots = getClientConfigRoots();
-
-        // This request is performed by the IDE in a background thread.
-
-        Pair<IdeChangelistMap, IdeFileMap> cachedMaps = CacheComponent.getInstance(project)
-                .blockingRefreshServerOpenedCache(
-                        allClientRoots,
-                        UserProjectPreferences.getLockWaitTimeoutMillis(project),
-                        TimeUnit.MILLISECONDS
-                );
-        if (cachedMaps.first == null || cachedMaps.second == null) {
-            // This can happen if a non-P4Vcs project calls into here.
-            progress.setFraction(1.0);
+        if (active) {
+            LOG.warn("Second call into already active getChanges. Ignoring call.");
+            LOG.warn("Original active thread", activeThread);
+            LOG.warn("Current thread", new Exception());
             return;
         }
-
-        lastFraction = 0.6;
-        progress.setFraction(lastFraction);
-
-
         try {
-            // For now, just blocking get right here.
-            updateChangelists(cachedMaps.first, addGate)
-                    .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            LOG.info("Update Changelists interrupted", e);
-            progress.setFraction(1.0);
-            return;
-        }
+            active = true;
+            activeThread = new Exception();
 
-        if (dirtyScope.wasEveryThingDirty()) {
-            // Update all the files.
+            double lastFraction = 0.0;
 
-            double fractionRootIncr = (1.0 - lastFraction) / allClientRoots.size();
-            for (ClientConfigRoot root : allClientRoots) {
-                LOG.info("Processing changes in " + root.getProjectVcsRootDir());
+            progress.setFraction(lastFraction);
 
-                updateFileCache(root.getClientConfig(),
-                        cachedMaps.first, cachedMaps.second, builder);
+            // How this is called by IntelliJ:
+            // IntelliJ calls this method on updates to the files or changes;
+            // not for all the files or changes, but just the ones that are
+            // in the dirty scope.  The method is expected to only categorize
+            // the dirty scoped files, nothing more.
 
-                lastFraction += fractionRootIncr;
-                progress.setFraction(lastFraction);
-            }
-        } else {
-            // Update just the dirty files.
-            final Set<FilePath> dirtyFiles = dirtyScope.getDirtyFiles();
-            if (dirtyFiles == null || dirtyFiles.isEmpty()) {
-                LOG.info("No dirty files.");
+            // The biggest issue that this method presents to us (the plugin makers)
+            // is that incorrect usage will cause infinite refresh of the change lists.
+            // If any dirty file is not handled, this will be called again.  If any
+            // file is marked as dirty by calling this method, the method will be
+            // called again.
+
+            // Unfortunately, there are circumstances where a follow-up call can't be
+            // avoided.  An example of this is where a file is mis-marked to be in
+            // a different changelist.  It's up to this method to correctly sort
+            // files into their IDEA changelists.
+
+            // For the purposes of this implementation, we'll always attempt to
+            // refresh the cache from the server.  Then we'll update the requested file
+            // status.
+
+            Collection<ClientConfigRoot> allClientRoots = getClientConfigRoots();
+
+            // This request is performed by the IDE in a background thread.
+
+            Pair<IdeChangelistMap, IdeFileMap> cachedMaps = CacheComponent.getInstance(project)
+                    .blockingRefreshServerOpenedCache(
+                            allClientRoots,
+                            UserProjectPreferences.getLockWaitTimeoutMillis(project),
+                            TimeUnit.MILLISECONDS
+                    );
+            if (cachedMaps.first == null || cachedMaps.second == null) {
+                // This can happen if a non-P4Vcs project calls into here.
                 progress.setFraction(1.0);
                 return;
             }
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Processing dirty files " + dirtyFiles);
+            lastFraction = 0.6;
+            progress.setFraction(lastFraction);
+
+
+            try {
+                // For now, just blocking get right here.
+                updateChangelists(cachedMaps.first, addGate)
+                        .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                LOG.info("Update Changelists interrupted", e);
+                progress.setFraction(1.0);
+                return;
             }
-            Map<VcsRoot, List<FilePath>> fileRoots = VcsUtil.groupByRoots(project, dirtyFiles, (f) -> f);
-            if (!fileRoots.isEmpty()) {
-                double fractionRootIncr = (1.0 - lastFraction) / fileRoots.size();
-                for (Map.Entry<VcsRoot, List<FilePath>> entry : fileRoots.entrySet()) {
-                    if (entry.getKey().getVcs() != null &&
-                            P4Vcs.getKey().equals(entry.getKey().getVcs().getKeyInstanceMethod())) {
-                        VirtualFile root = entry.getKey().getPath();
-                        LOG.info("Processing changes for " + entry.getValue() + " under " + root);
-                        ClientConfigRoot config = getClientFor(root);
-                        if (config != null) {
-                            Set<FilePath> matched = new HashSet<>();
-                            for (FilePath filePath : entry.getValue()) {
-                                if (dirtyFiles.remove(filePath)) {
-                                    if (LOG.isDebugEnabled()) {
-                                        LOG.debug("Matched " + filePath + " in dirty file list");
-                                    }
-                                    matched.add(filePath);
-                                } else if (LOG.isDebugEnabled()) {
-                                    LOG.debug("Not in dirty file list (" + filePath + "); already processed?");
-                                }
-                            }
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Processing under " + root + ": matched dirty files " +
-                                        entry.getValue() + " to root: " + matched);
-                                LOG.debug("Remaining dirty files: " + dirtyFiles);
-                            }
-                            if (!matched.isEmpty()) {
-                                updateFileCache(config.getClientConfig(),
-                                        matched, cachedMaps.first, cachedMaps.second, builder);
-                            }
-                        } else if (LOG.isDebugEnabled()) {
-                            LOG.debug("Skipping because not under a Perforce root: " + entry.getKey() + " @ " +
-                                    root);
-                        }
-                    }
+
+            if (dirtyScope.wasEveryThingDirty()) {
+                // Update all the files.
+
+                double fractionRootIncr = (1.0 - lastFraction) / allClientRoots.size();
+                for (ClientConfigRoot root : allClientRoots) {
+                    LOG.info("Processing changes in " + root.getProjectVcsRootDir());
+
+                    updateFileCache(root.getClientConfig(),
+                            cachedMaps.first, cachedMaps.second, builder);
 
                     lastFraction += fractionRootIncr;
                     progress.setFraction(lastFraction);
                 }
+            } else {
+                // Update just the dirty files.
+                final Set<FilePath> dirtyFiles = dirtyScope.getDirtyFiles();
+                if (dirtyFiles == null || dirtyFiles.isEmpty()) {
+                    LOG.info("No dirty files.");
+                    progress.setFraction(1.0);
+                    return;
+                }
+
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Processing dirty files " + dirtyFiles);
+                }
+                Map<VcsRoot, List<FilePath>> fileRoots = VcsUtil.groupByRoots(project, dirtyFiles, (f) -> f);
+                if (!fileRoots.isEmpty()) {
+                    double fractionRootIncr = (1.0 - lastFraction) / fileRoots.size();
+                    for (Map.Entry<VcsRoot, List<FilePath>> entry : fileRoots.entrySet()) {
+                        if (entry.getKey().getVcs() != null &&
+                                P4Vcs.getKey().equals(entry.getKey().getVcs().getKeyInstanceMethod())) {
+                            VirtualFile root = entry.getKey().getPath();
+                            LOG.info("Processing changes for " + entry.getValue() + " under " + root);
+                            ClientConfigRoot config = getClientFor(root);
+                            if (config != null) {
+                                Set<FilePath> matched = new HashSet<>();
+                                for (FilePath filePath : entry.getValue()) {
+                                    if (dirtyFiles.remove(filePath)) {
+                                        if (LOG.isDebugEnabled()) {
+                                            LOG.debug("Matched " + filePath + " in dirty file list");
+                                        }
+                                        matched.add(filePath);
+                                    } else if (LOG.isDebugEnabled()) {
+                                        LOG.debug("Not in dirty file list (" + filePath + "); already processed?");
+                                    }
+                                }
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Processing under " + root + ": matched dirty files " +
+                                            entry.getValue() + " to root: " + matched);
+                                    LOG.debug("Remaining dirty files: " + dirtyFiles);
+                                }
+                                if (!matched.isEmpty()) {
+                                    updateFileCache(config.getClientConfig(),
+                                            matched, cachedMaps.first, cachedMaps.second, builder);
+                                }
+                            } else if (LOG.isDebugEnabled()) {
+                                LOG.debug("Skipping because not under a Perforce root: " + entry.getKey() + " @ " +
+                                        root + "; expected key " + P4Vcs.getKey() + ", found " +
+                                        entry.getKey().getVcs().getKeyInstanceMethod());
+                            }
+                        }
+
+                        lastFraction += fractionRootIncr;
+                        progress.setFraction(lastFraction);
+                    }
+                }
+
+                // All the remaining dirty files are not under our VCS, so mark them as ignored.
+                markIgnored(dirtyFiles, builder);
             }
 
-            // All the remaining dirty files are not under our VCS, so mark them as ignored.
-            markIgnored(dirtyFiles, builder);
+            progress.setFraction(1.0);
+        } finally {
+            active = false;
+            activeThread = null;
         }
-
-        progress.setFraction(1.0);
     }
 
     private P4CommandRunner.ActionAnswer<Object> updateChangelists(IdeChangelistMap changelistMap, ChangeListManagerGate addGate)

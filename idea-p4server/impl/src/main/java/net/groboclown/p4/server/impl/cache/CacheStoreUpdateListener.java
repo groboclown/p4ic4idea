@@ -68,9 +68,18 @@ public class CacheStoreUpdateListener implements Disposable {
         MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(this);
         CacheListener listener = new CacheListener();
         ClientActionMessage.addListener(mbClient, cacheId, listener);
+
+        // TODO this causes the event listener to be fired twice.
+        // Somewhere, this ClientOpenCacheMessage call invokes the exact same listener
+        // method twice.  Either the listener is registered twice, or the event object
+        // is being passed to send() twice.
         ClientOpenCacheMessage.addListener(mbClient, cacheId, listener);
+
         DescribeChangelistCacheMessage.addListener(mbClient, cacheId, listener);
+
+        // TODO this causes 2 or 3 repeated calls
         FileActionMessage.addListener(mbClient, cacheId, listener);
+
         JobCacheMessage.addListener(mbClient, cacheId, listener);
         JobSpecCacheMessage.addListener(mbClient, cacheId, listener);
         ListClientsForUserCacheMessage.addListener(mbClient, cacheId, listener);

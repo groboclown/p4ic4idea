@@ -28,9 +28,6 @@ import com.perforce.p4java.exception.SslException;
 import com.perforce.p4java.exception.SslHandshakeException;
 import com.perforce.p4java.exception.TrustException;
 import com.perforce.p4java.exception.ZeroconfException;
-import net.groboclown.p4.server.api.ClientServerRef;
-import net.groboclown.p4.server.api.P4ServerName;
-import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.CancellationMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
 import net.groboclown.p4.server.api.messagebus.ErrorEvent;
@@ -271,13 +268,13 @@ public class UserErrorComponent implements ProjectComponent {
         });
         ServerConnectedMessage.addListener(appClient, this, new ServerConnectedMessage.Listener() {
             @Override
-            public void serverConnected(@NotNull ServerConfig serverConfig, boolean loggedIn) {
+            public void serverConnected(@NotNull ServerConnectedMessage.ServerConnectedEvent e) {
                 // This can be spammy.
                 //simpleInfo("Connected to " + serverConfig.getServerName() +
                 //                (loggedIn ? " and logged in." : ", but not logged in."),
                 //        "Perforce Server Connected");
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Connected to " + serverConfig.getServerName() + ".  Logged in? " + loggedIn);
+                    LOG.debug("Connected to " + e.getServerConfig().getServerName() + ".  Logged in? " + e.isLoggedIn());
                 }
             }
         });
@@ -332,6 +329,9 @@ public class UserErrorComponent implements ProjectComponent {
     private void simpleMessage(@NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String message, int level,
             @NotNull @Nls(capitalization = Nls.Capitalization.Title) String title,
             @NotNull NotificationType icon) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Reporting [" + message + "]", new Exception());
+        }
         UserMessage.showNotification(project, level, message, title, icon);
     }
 }

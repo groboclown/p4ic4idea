@@ -22,10 +22,18 @@ public interface ISingleServerMessage {
 
     String getMessageFormat();
 
+    /**
+     *
+     * @return the documented severity level of the message.
+     */
     int getSeverity();
 
     int getSubSystem();
 
+    /**
+     *
+     * @return the documented generic code for the message.
+     */
     int getGeneric();
 
     int getUniqueCode();

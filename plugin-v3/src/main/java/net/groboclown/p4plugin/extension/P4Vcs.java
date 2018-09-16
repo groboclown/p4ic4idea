@@ -245,8 +245,11 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     @Override
     public UnnamedConfigurable getRootConfigurable(VcsDirectoryMapping mapping) {
         if (mapping.getRootSettings() == null) {
-            mapping.setRootSettings(new P4VcsRootSettingsImpl(myProject,
-                    VcsUtil.getFilePath(mapping.getDirectory()).getVirtualFile()));
+            VirtualFile rootDir = VcsUtil.getVirtualFile(mapping.getDirectory());
+            if (rootDir == null) {
+                rootDir = getProject().getBaseDir();
+            }
+            mapping.setRootSettings(new P4VcsRootSettingsImpl(myProject, rootDir));
         }
         return new P4VcsRootConfigurable(getProject(), mapping);
     }

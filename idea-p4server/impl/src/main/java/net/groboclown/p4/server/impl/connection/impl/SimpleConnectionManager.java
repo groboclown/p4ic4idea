@@ -215,7 +215,8 @@ public class SimpleConnectionManager implements ConnectionManager {
 
         // Seems to be connected.  Tell the world that it can be
         // connected to.  Note that this is independent of login validity.
-        ServerConnectedMessage.send().serverConnected(serverConfig, false);
+        ServerConnectedMessage.send().serverConnected(
+                new ServerConnectedMessage.ServerConnectedEvent(serverConfig, false));
 
         // #147 if the user isn't logged in with an authentication ticket, but has P4LOGINSSO
         // set, then a simple password login attempt should be made.  The P4LOGINSSO will
@@ -235,7 +236,8 @@ public class SimpleConnectionManager implements ConnectionManager {
                     );
             }
             server.login(password, loginOptions);
-            ServerConnectedMessage.send().serverConnected(serverConfig, true);
+            ServerConnectedMessage.send().serverConnected(
+                    new ServerConnectedMessage.ServerConnectedEvent(serverConfig, true));
         } else {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("No attempt made to authenticate with the server.");

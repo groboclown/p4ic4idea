@@ -19,17 +19,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.WriteExternalException;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.xmlb.XmlSerializer;
 import net.groboclown.p4.server.api.config.P4VcsRootSettings;
-import net.groboclown.p4.server.api.config.PersistentRootConfigComponent;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
-import net.groboclown.p4.server.impl.cache.store.VcsRootCacheStore;
 import net.groboclown.p4.server.impl.config.part.EnvCompositePart;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -43,9 +38,8 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
 
     private final Project project;
     private final VirtualFile rootDir;
-    private boolean partsSet = false;
 
-    public P4VcsRootSettingsImpl(@NotNull Project project, @Nullable VirtualFile rootDir) {
+    public P4VcsRootSettingsImpl(@NotNull Project project, @NotNull VirtualFile rootDir) {
         this.project = project;
         this.rootDir = rootDir;
     }
@@ -53,11 +47,8 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
 
     @Override
     public List<ConfigPart> getConfigParts() {
-        if (!partsSet) {
-            return getDefaultConfigParts();
-        }
         List<ConfigPart> ret = PersistentRootConfigComponent.getInstance(project).getConfigPartsForRoot(rootDir);
-        if (ret == null) {
+        if (ret == null || ret.isEmpty()) {
             return getDefaultConfigParts();
         }
         return ret;
@@ -71,7 +62,6 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
             }
         }
         PersistentRootConfigComponent.getInstance(project).setConfigPartsForRoot(rootDir, parts);
-        partsSet = true;
     }
 
     @Override
@@ -81,22 +71,19 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
         if (configElement == null || configElement.getChildren().isEmpty()) {
             // not set.
             LOG.debug("No configuration settings in the external store.");
+            // do not change the existing parts list.
             //setConfigParts(Collections.emptyList());
-            partsSet = false;
             return;
         }
         if (!PersistentRootConfigComponent.getInstance(project).hasConfigPartsForRoot(rootDir)) {
             LOG.warn("Loaded persistent root directory " + rootDir + ", but has no persistent config parts loaded");
         }
-        partsSet = true;
     }
 
     @Override
     public void writeExternal(Element element)
             throws WriteExternalException {
-        if (!partsSet) {
-            LOG.debug("Write external data: no parts set.");
-        }
+        element.addContent(new Element("p4-config"));
     }
 
     private List<ConfigPart> getDefaultConfigParts() {

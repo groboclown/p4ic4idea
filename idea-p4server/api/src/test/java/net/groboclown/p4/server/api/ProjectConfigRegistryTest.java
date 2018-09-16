@@ -20,6 +20,7 @@ import net.groboclown.idea.mock.MockVirtualFile;
 import net.groboclown.idea.mock.MockVirtualFileSystem;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -122,7 +123,7 @@ class ProjectConfigRegistryTest {
         }
 
         @Override
-        protected void onServerConnected(@NotNull ServerConfig server, boolean loggedIn) {
+        protected void onServerConnected(@NotNull ServerConnectedMessage.ServerConnectedEvent e) {
             throw new IllegalStateException();
         }
 

@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
-@State(name = "UserProjectPreferences")
+@State(name = "p4-UserProjectPreferences")
 public class UserProjectPreferences
         implements PersistentStateComponent<UserProjectPreferences.State> {
     public static final int USER_MESSAGE_LEVEL_VERBOSE = 2;

@@ -13,6 +13,12 @@ Due to several other bugs and missing functionality, moving a file that's marked
 source file will still be tried to add, but it doesn't exist, so Perforce reports a failure, which causes the move
 operation to barf up in the event logs.
 
+### Open File For Add
+
+This triggers at least 2 actions to attempt to add the file.  One will succeed, but the second will fail.
+
+Possible sources: `P4EditFileProvider` and `P4VFSListener`.
+
 ### Open directories for add
 
 The plugin incorrectly recognizes directories as files, and attempts to add them.
@@ -115,10 +121,6 @@ Re-add support for showing shelved files and managing shelved files.
 
 Context menus or sidebar actions for viewing additional history for existing items, such as the history of files from
 within the changelist details panel. 
-
-### Active Connection Actions
-
-The Active Connection view should provide interactivity with the files the same as other views.
 
 ### Pending Changes View
 

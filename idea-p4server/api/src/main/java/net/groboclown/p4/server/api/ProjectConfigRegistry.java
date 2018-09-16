@@ -280,7 +280,7 @@ public abstract class ProjectConfigRegistry
 
     protected abstract void onHostConnectionError(@NotNull P4ServerName server);
 
-    protected abstract void onServerConnected(@NotNull ServerConfig server, boolean loggedIn);
+    protected abstract void onServerConnected(@NotNull ServerConnectedMessage.ServerConnectedEvent event);
 
     protected abstract void onClientRemoved(@NotNull ClientConfig config, @Nullable VirtualFile vcsRootDir);
 

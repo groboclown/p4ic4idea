@@ -133,10 +133,10 @@ public class InvalidPasswordMonitorComponent
             }
         });
 
-        ServerConnectedMessage.addListener(mbClient, this, (serverConfig, loggedIn) -> {
+        ServerConnectedMessage.addListener(mbClient, this, (e) -> {
             // Force a no-issue connection state.
-            if (loggedIn) {
-                forgetLoginProblem(serverConfig);
+            if (e.isLoggedIn()) {
+                forgetLoginProblem(e.getServerConfig());
             }
         });
 

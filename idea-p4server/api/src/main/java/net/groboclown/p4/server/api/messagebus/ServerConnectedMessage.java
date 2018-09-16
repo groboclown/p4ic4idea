@@ -34,20 +34,37 @@ public class ServerConnectedMessage
             Topic.BroadcastDirection.TO_CHILDREN);
     private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
+    public static final class ServerConnectedEvent extends AbstractMessageEvent {
+        private final ServerConfig serverConfig;
+        private final boolean loggedIn;
+
+        public ServerConnectedEvent(@NotNull ServerConfig serverConfig, boolean loggedIn) {
+            this.serverConfig = serverConfig;
+            this.loggedIn = loggedIn;
+        }
+
+        public ServerConfig getServerConfig() {
+            return serverConfig;
+        }
+
+        public boolean isLoggedIn() {
+            return loggedIn;
+        }
+    }
 
     public interface Listener {
         /**
          *
-         * @param serverConfig the configuration that connected correctly.
+         * @param event the configuration that connected correctly.
          *                     More than just a server name, because the successful connection
          *                     also depends on the login and connection method.
          */
-        void serverConnected(@NotNull ServerConfig serverConfig, boolean loggedIn);
+        void serverConnected(@NotNull ServerConnectedEvent event);
     }
 
     public static class ListenerAdapter implements Listener {
         @Override
-        public void serverConnected(@NotNull ServerConfig serverConfig, boolean loggedIn) {
+        public void serverConnected(@NotNull ServerConnectedEvent event) {
 
         }
     }

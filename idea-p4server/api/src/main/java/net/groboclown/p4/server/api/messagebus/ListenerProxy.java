@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
 
 class ListenerProxy<L> implements InvocationHandler {
     private static final Logger LOG = Logger.getInstance(ListenerProxy.class);
@@ -43,16 +44,17 @@ class ListenerProxy<L> implements InvocationHandler {
             throws Throwable {
         assert args.length >= 1;
         assert args[0] instanceof AbstractMessageEvent :
-                (method.getName() + " has first argument not AbstractMessageEvent, but " + args);
+                (method.getName() + " has first argument not AbstractMessageEvent, but " + Arrays.toString(args));
 
         AbstractMessageEvent evt = (AbstractMessageEvent) args[0];
         if (evt.visit(owner)) {
             // It has been visited before
-            LOG.warn("DUPLICATE LISTENER VISITED: " + owner + " for " + method.getName());
+            LOG.warn("DUPLICATE LISTENER VISITED: " + owner + " for " + method.getName() + "(" +
+                    args[0].getClass() + ")");
             // Don't allow the duplicate execution.
             return null;
         } else if (LOG.isDebugEnabled()) {
-            LOG.debug("Event call " + method + " for " + owner);
+            LOG.debug("Event call " + method + "(" + args[0].getClass() + ") for " + owner);
         }
 
         return method.invoke(listener, args);

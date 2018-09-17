@@ -18,28 +18,59 @@ package com.perforce.p4java.server;
  * Represents a message from the server, along with the localized version of it.
  */
 public interface ISingleServerMessage {
+    /**
+     * Localized message with argument replacements.
+     *
+     * @return localized message
+     */
     String getLocalizedMessage();
 
+    /**
+     * The localized message format text, without argument replacements.
+     *
+     * @return localized format for the message text.
+     */
     String getMessageFormat();
 
     /**
      *
      * @return the documented severity level of the message.
+     * @see com.perforce.p4java.exception.MessageSeverityCode
      */
     int getSeverity();
 
+    /**
+     *
+     * @return subsystem message code
+     * @see com.perforce.p4java.exception.MessageSubsystemCode
+     */
     int getSubSystem();
 
     /**
      *
      * @return the documented generic code for the message.
+     * @see com.perforce.p4java.exception.MessageGenericCode
      */
     int getGeneric();
 
+    /**
+     * The unique code for the message.  Nearly the same as the raw code.
+     *
+     * @return the unique code
+     */
     int getUniqueCode();
 
+    /**
+     *
+     * @return the sub-code
+     * @see IServerMessageCode
+     */
     int getSubCode();
 
+    /**
+     *
+     * @return the raw, unparsed code.
+     */
     int getRawCode();
 
     /**
@@ -51,5 +82,9 @@ public interface ISingleServerMessage {
      */
     boolean hasMessageFragment(String fragment);
 
+    /**
+     *
+     * @return string version of the status code
+     */
     String getCode();
 }

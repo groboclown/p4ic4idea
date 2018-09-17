@@ -692,7 +692,8 @@ public class ConnectCommandRunner
                 // FIXME if the warning is something like "file is not on server can't delete", then ignore.
                 // Check with a unit test.
                 LOG.warn("FIXME check if the error message says that the file isn't on the server, and, if so, "
-                        + "don't raise this as an error: " + msg.getGeneric() + " - " + msg);
+                        + "don't raise this as an error: " + msg.getSubSystem() + "/" + msg.getGeneric() + "/"
+                        + msg.getSubCode() + " - " + msg);
                 return true;
             }
             return false;

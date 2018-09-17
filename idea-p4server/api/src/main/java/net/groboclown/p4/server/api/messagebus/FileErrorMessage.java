@@ -32,7 +32,6 @@ public class FileErrorMessage extends ProjectMessage<FileErrorMessage.Listener> 
     public static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
     public interface Listener {
-
         void fileReceiveError(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> e);
 
         void fileSendError(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> e);

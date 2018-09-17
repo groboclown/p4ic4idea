@@ -42,7 +42,7 @@ public class TempFileWatchDog {
     private ScheduledFuture<?> cleanup;
 
 
-    public static File getDefaultTempDir() {
+    private static File getDefaultTempDir() {
         try {
             return Files.createTempDirectory("tmp").toFile();
         } catch (IOException e) {

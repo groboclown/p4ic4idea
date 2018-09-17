@@ -28,6 +28,8 @@ import com.perforce.p4java.exception.SslException;
 import com.perforce.p4java.exception.SslHandshakeException;
 import com.perforce.p4java.exception.TrustException;
 import com.perforce.p4java.exception.ZeroconfException;
+import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.server.ISingleServerMessage;
 import net.groboclown.p4.server.api.messagebus.CancellationMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
 import net.groboclown.p4.server.api.messagebus.ErrorEvent;
@@ -41,6 +43,7 @@ import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
+import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.messages.UserMessage;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -71,8 +74,6 @@ public class UserErrorComponent implements ProjectComponent {
 
     }
 
-    // FIXME these are placeholder messages.
-
     @SuppressWarnings("Convert2Lambda")
     @Override
     public void initComponent() {
@@ -81,47 +82,67 @@ public class UserErrorComponent implements ProjectComponent {
         CancellationMessage.addListener(projClient, this, new CancellationMessage.Listener() {
             @Override
             public void cancelled(@NotNull ErrorEvent<CancellationException> e) {
-                simpleInfo("Cancelled operation", "Operation Cancelled");
+                simpleInfo(
+                        P4Bundle.message("user-error.cancelled.message"),
+                        P4Bundle.message("user-error.cancelled.title"));
                 LOG.info(e.getError());
             }
         });
         ConnectionErrorMessage.addListener(appClient, this, new ConnectionErrorMessage.Listener() {
             @Override
             public void unknownServer(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> event) {
-                simpleError("Unknown server " + event.getName(), "Could Not Connect to Server");
+                simpleError(
+                        P4Bundle.message("user-error.unknown-server.message", event.getName()),
+                        P4Bundle.message("user-error.unknown-server.title"));
                 LOG.warn(event.getError());
             }
 
             @Override
             public void couldNotWrite(@NotNull ServerErrorEvent.ServerConfigErrorEvent<FileSaveException> event) {
-                simpleError("Could not write " + event.getConfig().getServerName(), "Could Not Write to Server");
+                simpleError(
+                        P4Bundle.message("user-error.could-not-write.message",
+                                event.getConfig().getServerName(),
+                                event.getError().getLocalizedMessage()),
+                        P4Bundle.message("user-error.could-not-write.title"));
                 LOG.warn(event.getError());
             }
 
             @Override
             public void zeroconfProblem(@NotNull ServerErrorEvent.ServerNameErrorEvent<ZeroconfException> event) {
-                simpleError("zeroconf problem for " + event.getName(), "Zeroconf Problem");
+                simpleError(
+                        P4Bundle.message("user-error.zeroconf-problem.message", event.getName()),
+                        P4Bundle.message("user-error.zeroconf-problem.title"));
                 LOG.warn(event.getError());
             }
 
             @Override
             public void sslHostTrustNotEstablished(@NotNull ServerErrorEvent.ServerConfigProblemEvent event) {
-                simpleError("SSL Host trust not established to " + event.getName(),
-                        "SSL Host Trust Issue");
+                simpleError(
+                        P4Bundle.message("user-error.ssl-host-trust.message", event.getName()),
+                        P4Bundle.message("user-error.ssl-host-trust.title"));
             }
 
             @Override
             public void sslHostFingerprintMismatch(@NotNull ServerErrorEvent.ServerConfigErrorEvent<TrustException> event) {
-                simpleError("SSL host fingerprint did not match known value for " + event.getName(),
-                        "SSL Host Fingerprint Mismatch");
+                simpleError(
+                        P4Bundle.message("user-error.ssl-host-fingerprint.message", event.getName()),
+                        P4Bundle.message("user-error.ssl-host-fingerprint.title")
+                );
                 LOG.warn(event.getError());
             }
 
             @Override
             public void sslAlgorithmNotSupported(@NotNull ServerErrorEvent.ServerNameProblemEvent event) {
-                simpleError("Did you install the extended cryptography package?", "SSL Algorithm Not Supported");
+                simpleError(
+                        P4Bundle.message("exception.java.ssl.keystrength",
+                            System.getProperty("java.version") == null ? "<unknown>" : System.getProperty("java.version"),
+                            System.getProperty("java.vendor") == null ? "<unknown>" : System.getProperty("java.vendor"),
+                            System.getProperty("java.vendor.url") == null ? "<unknown>" : System.getProperty("java.vendor.url"),
+                            System.getProperty("java.home") == null ? "<unknown>" : System.getProperty("java.home")),
+                        P4Bundle.message("user-error.ssl-algorithm.title"));
             }
 
+            // FIXME all below here should use P4Bundle
             @Override
             public void sslPeerUnverified(@NotNull ServerErrorEvent.ServerNameErrorEvent<SslHandshakeException> event) {
                 simpleError("SSL peer unverified for " + event.getName(), "SSL Error");
@@ -195,6 +216,7 @@ public class UserErrorComponent implements ProjectComponent {
 
             @Override
             public void singleSignOnExecutionFailed(@NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
+                // TODO allow a link to show a dialog with the output for the command message.
                 simpleError("Single sign on execution failed for " + e.getConfig().getServerName(),
                         "Login Failure");
                 LOG.warn("SSO error for cmd: " + e.getCmd());
@@ -223,31 +245,31 @@ public class UserErrorComponent implements ProjectComponent {
         P4ServerErrorMessage.addListener(projClient, this, new P4ServerErrorMessage.Listener() {
             @Override
             public void requestCausedError(@NotNull ServerErrorEvent.ServerMessageEvent e) {
-                simpleError("Request error: " + e.getMsg().getAllMessages(), "Perforce Server Error");
+                simpleError("Request error: " + toLocalizedMessage(e.getMsg()), "Perforce Server Error");
                 LOG.warn(e.getError());
             }
 
             @Override
             public void requestCausedWarning(@NotNull ServerErrorEvent.ServerMessageEvent e) {
-                simpleWarning(e.getMsg().getAllMessages().toString(), "Perforce Server Warning");
+                simpleWarning(toLocalizedMessage(e.getMsg()), "Perforce Server Warning");
                 LOG.warn(e.getError());
             }
 
             @Override
             public void requestCausedInfoMsg(@NotNull ServerErrorEvent.ServerMessageEvent e) {
-                simpleInfo(e.getMsg().getAllMessages().toString(), "Perforce Server Information");
+                simpleInfo(toLocalizedMessage(e.getMsg()), "Perforce Server Information");
                 LOG.warn(e.getError());
             }
 
             @Override
             public void requestException(@NotNull ServerErrorEvent.ServerMessageEvent e) {
-                simpleError("Request error: " + e.getError().getMessage(), "Perforce Server Error");
+                simpleError("Request error: " + toLocalizedMessage(e.getMsg()), "Perforce Server Error");
                 LOG.warn(e.getError());
             }
 
             @Override
             public void requestException(@NotNull ServerErrorEvent.ServerNameErrorEvent<P4JavaException> e) {
-                simpleError("Request error: " + e.getError().getMessage(), "Perforce Server Error");
+                simpleError("Request error: " + e.getError().getLocalizedMessage(), "Perforce Server Error");
                 LOG.warn(e.getError());
             }
         });
@@ -309,6 +331,24 @@ public class UserErrorComponent implements ProjectComponent {
     @Override
     public String getComponentName() {
         return COMPONENT_NAME;
+    }
+
+    @NotNull @Nls(capitalization = Nls.Capitalization.Sentence)
+    private String toLocalizedMessage(@NotNull IServerMessage serverMessage) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (ISingleServerMessage msg : serverMessage.getAllMessages()) {
+            String text = P4Bundle.message("user-error.server-message.format",
+                    msg.getSubSystem(), msg.getGeneric(), msg.getSubCode(),
+                    msg.getLocalizedMessage());
+            if (first) {
+                first = false;
+                sb.append(text);
+            } else {
+                sb.append(P4Bundle.message("user-error.server-message.join", text));
+            }
+        }
+        return sb.toString();
     }
 
     private void simpleError(@NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String message,

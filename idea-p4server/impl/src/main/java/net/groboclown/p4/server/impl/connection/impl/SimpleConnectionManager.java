@@ -251,6 +251,7 @@ public class SimpleConnectionManager implements ConnectionManager {
     private IOptionsServer getServer(P4ServerName serverName, Properties props)
             throws ConnectionException, ConfigException, NoSuchObjectException, ResourceException, URISyntaxException {
         setupLogging();
+        setupTempDir();
         final UsageOptions options = new UsageOptions(props);
         // These are not set in the usage options via the properties, so we
         // need to manually configure them.
@@ -390,6 +391,18 @@ public class SimpleConnectionManager implements ConnectionManager {
             // This exception will be thrown again, deep down in the P4Java API.
             // for now, don't report it other than the error message.
             return null;
+        }
+    }
+
+    private void setupTempDir() {
+        // Before invoking the Perforce command, ensure that the temporary directory exists.
+        // Windows has been known to delete the directory on its own from time to time.  See #172.
+        if (!tmpDir.exists()) {
+            if (!tmpDir.mkdirs()) {
+                LOG.warn("Could not create temporary directory (" + tmpDir + ").  Some operations may fail.");
+                // TODO send a message, but it should be project-specific, but this object doesn't have a project
+                // reference.  Application message?  But that just seems wrong.
+            }
         }
     }
 

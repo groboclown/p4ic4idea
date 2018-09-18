@@ -98,7 +98,7 @@ public class P4ChangeProvider
         this.loader = new HistoryContentLoaderImpl(project);
 
         final MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(project);
-        final String cacheId = AbstractCacheMessage.createCacheId(P4ChangeProvider.class);
+        final String cacheId = AbstractCacheMessage.createCacheId(project, P4ChangeProvider.class);
         ClientActionMessage.addListener(mbClient, cacheId, event -> {
             P4CommandRunner.ClientActionCmd cmd = (P4CommandRunner.ClientActionCmd) event.getAction().getCmd();
             try {

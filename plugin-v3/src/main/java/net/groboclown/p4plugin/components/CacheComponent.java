@@ -179,8 +179,9 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
         disposeComponent();
     }
 
+    // Synchronized to help prevent double event listener registration.
     @Override
-    public void initComponent() {
+    public synchronized void initComponent() {
         if (queryHandler == null) {
             queryHandler = new CacheQueryHandlerImpl(projectCache);
         }

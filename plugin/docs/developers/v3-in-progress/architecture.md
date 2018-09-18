@@ -38,7 +38,7 @@ is broken into methods that define the different ways to interact with the
 server, while a robust type system delegates the actual behavior requested
 to other objects.
 
-The runner explicitly works with `Promise` objects in order to make clear the
+The runner explicitly works with `Promise`-like objects in order to make clear the
 commands which can potentially take a while.  Some commands also clearly reference
 potential cached values, allowing for more immediate responses.  This forces
 conformity to the [threading model](threading.md).

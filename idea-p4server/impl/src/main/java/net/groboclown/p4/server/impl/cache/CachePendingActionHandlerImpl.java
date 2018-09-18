@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -81,6 +82,20 @@ public class CachePendingActionHandlerImpl implements CachePendingActionHandler 
         @Nullable private final String clientSourceId;
         private final String serverSourceId;
         private final List<ActionStore.PendingAction> actions;
+        private final PendingActionCurator curator = new PendingActionCurator(
+            new PendingActionCurator.PendingActionFactory() {
+                @Override
+                @NotNull
+                public ActionStore.PendingAction create(@NotNull P4CommandRunner.ClientAction<?> action) {
+                    return ActionStore.createPendingAction(clientServerRef, action);
+                }
+
+                @Override
+                @NotNull
+                public ActionStore.PendingAction create(@NotNull P4CommandRunner.ServerAction<?> action) {
+                    return ActionStore.createPendingAction(serverName, action);
+                }
+            });
 
         private WriteActionCacheImpl(@NotNull ClientServerRef clientServerRef,
                 List<ActionStore.PendingAction> actions) {
@@ -143,27 +158,49 @@ public class CachePendingActionHandlerImpl implements CachePendingActionHandler 
             if (clientSourceId == null) {
                 throw new IllegalStateException("writer is configured for server actions");
             }
-            // Ensure it's not already present
-            for (ActionStore.PendingAction pendingAction: actions) {
-                if (pendingAction.clientAction != null && clientSourceId.equals(pendingAction.sourceId) &&
-                        action.getActionId().equals(pendingAction.clientAction.getActionId())) {
+
+            // Curate the pending list of actions.
+            // Curation MUST be done in reverse order of the existing pending actions.
+            ActionStore.PendingAction addedAction = ActionStore.createPendingAction(clientServerRef, action);
+            final ListIterator<ActionStore.PendingAction> iter = actions.listIterator(actions.size());
+            while (iter.hasPrevious()) {
+                final ActionStore.PendingAction existingAction = iter.previous();
+                PendingActionCurator.CurateResult result = curator.curate(addedAction, existingAction);
+                addedAction = result.replacedAdded(addedAction);
+                if (result.removeExisting) {
+                    iter.remove();
+                }
+                iter.set(result.replacedExisting(existingAction));
+                if (result.removeAdded) {
+                    // Halt the add operation
                     return;
                 }
             }
-            actions.add(ActionStore.createPendingAction(clientServerRef, action));
 
+            actions.add(addedAction);
         }
 
         @Override
         public void addAction(@NotNull P4CommandRunner.ServerAction<?> action) {
-            // Ensure it's not already present
-            for (ActionStore.PendingAction pendingAction: actions) {
-                if (pendingAction.serverAction != null && serverSourceId.equals(pendingAction.sourceId) &&
-                        action.getActionId().equals(pendingAction.serverAction.getActionId())) {
+            // Curate the pending list of actions.
+            // Curation MUST be done in reverse order of the existing pending actions.
+            ActionStore.PendingAction addedAction = ActionStore.createPendingAction(serverName, action);
+            final ListIterator<ActionStore.PendingAction> iter = actions.listIterator(actions.size());
+            while (iter.hasPrevious()) {
+                final ActionStore.PendingAction existingAction = iter.previous();
+                PendingActionCurator.CurateResult result = curator.curate(addedAction, existingAction);
+                addedAction = result.replacedAdded(addedAction);
+                if (result.removeExisting) {
+                    iter.remove();
+                }
+                iter.set(result.replacedExisting(existingAction));
+                if (result.removeAdded) {
+                    // Halt the add operation
                     return;
                 }
             }
-            actions.add(ActionStore.createPendingAction(serverName, action));
+
+            actions.add(addedAction);
         }
 
         @NotNull

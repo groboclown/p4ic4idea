@@ -37,6 +37,7 @@ public class ActionStore {
 
     @SuppressWarnings("WeakerAccess")
     public static class PendingAction {
+        @NotNull
         public final String sourceId;
         public final P4CommandRunner.ClientAction<?> clientAction;
         public final P4CommandRunner.ServerAction<?> serverAction;
@@ -67,14 +68,6 @@ public class ActionStore {
             }
             assert serverAction != null;
             return serverAction.getActionId();
-        }
-
-        boolean isClientAction() {
-            return clientAction != null;
-        }
-
-        boolean isServerAction() {
-            return serverAction != null;
         }
     }
 

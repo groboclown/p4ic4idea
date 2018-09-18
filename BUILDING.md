@@ -56,6 +56,13 @@ must be carefully constructed using the general instructions provided
 in the [README.md](lib/173/README.md) file.
 
 
+## Updates to the Perforce C Client
+
+When new versions of the Perforce C client source are released, the script
+[generate-error-codes.py](p4java/generate-error-codes.py) should be run.  This will
+update the message code ID interface.  It's good practice to compare the update against
+the previous version, so that changes in the code can be tracked.
+
 
 # Source Code Documentation
 

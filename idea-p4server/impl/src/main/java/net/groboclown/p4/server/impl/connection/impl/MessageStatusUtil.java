@@ -40,7 +40,7 @@ public class MessageStatusUtil {
         }
     }
 
-    public static void throwIf(Collection<IFileSpec> specs, Predicate<IServerMessage> predicate)
+    public static void throwIf(Collection<? extends IFileSpec> specs, Predicate<IServerMessage> predicate)
             throws RequestException {
         for (IFileSpec spec : specs) {
             IServerMessage msg = spec.getStatusMessage();

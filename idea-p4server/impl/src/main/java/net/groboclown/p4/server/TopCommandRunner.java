@@ -712,6 +712,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         });
     }
 
+    // Could replace this with "Supplier"
     interface Exec<R> {
         R exec();
     }

@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.api.cache.messagebus;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.Topic;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.messagebus.ApplicationMessage;
@@ -113,9 +114,9 @@ public class AbstractCacheMessage<E extends AbstractCacheUpdateEvent<E>>
         }, t);
     }
 
-    public static String createCacheId(Class<?> cacheClass) {
+    public static String createCacheId(@NotNull Project project, @NotNull Class<?> cacheClass) {
         // This helps protect the cache against multiple registration
-        return cacheClass.getCanonicalName();
+        return cacheClass.getCanonicalName() + '@' + project.getBasePath();
     }
 
     private static <E> Class<E> getTopicListenerClass() {

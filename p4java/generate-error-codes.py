@@ -82,7 +82,7 @@ import com.perforce.p4java.exception.MessageSubsystemCode;
 import com.perforce.p4java.exception.MessageSeverityCode;
 
 /**
- * Error messages loaded from the Perforce C client.
+ * Error messages loaded from the Perforce C client source.
  * <p>
  * p4ic4idea: DO NOT EDIT.
  * This file is generated from the script {0}
@@ -98,9 +98,15 @@ def footer(out):
 
 def to_java_id(name):
     assert isinstance(name, str)
+    ret = ''
+
+    # Special cases...
     if name.startswith('Ex'):
         return 'EX_' + name[2:]
-    ret = ''
+    if name.startswith('Diff2'):
+        ret = 'DIFF2'
+        name = name[5:]
+
     last_upper = False
     for c in name:
         if last_upper:
@@ -111,6 +117,14 @@ def to_java_id(name):
                 ret += '_'
         ret += c.upper()
     return ret
+
+
+def output_msg_lines(out, msg_lines):
+    # Sort the IDs by the message code, so that it's easier to diff changes between
+    # clients.
+    msg_lines.sort(key=lambda x: int(x[2].strip()))
+    for msg in msg_lines:
+        output_line(out, *msg)
 
 
 def output_line(out, name, sub_code, msg_code, severity_code, generic_code, arg_count, text):
@@ -129,9 +143,9 @@ def output_line(out, name, sub_code, msg_code, severity_code, generic_code, arg_
     out.write("""
     /**
      * {name}
-     * Severity {{@link {severity_code}}}
-     * Subsystem code {{@link {sub_code}}}
-     * Generic code {{@link {generic_code}}},
+     * Severity {{@link {severity_code_link}}}
+     * Subsystem code {{@link {sub_code_link}}}
+     * Generic code {{@link {generic_code_link}}},
      * argument count {arg_count},
      * Text: "{text}"
      */
@@ -139,10 +153,10 @@ def output_line(out, name, sub_code, msg_code, severity_code, generic_code, arg_
 """.format(
         name=name,
         id=to_java_id(name),
-        sub_code=sub_code,
+        sub_code_link=sub_code.replace('.', '#'),
         msg_code=msg_code,
-        severity_code=severity_code,
-        generic_code=generic_code,
+        severity_code_link=severity_code.replace('.', '#'),
+        generic_code_link=generic_code.replace('.', '#'),
         arg_count=arg_count,
         text=text
         )
@@ -228,8 +242,7 @@ def main(args):
     msg_lines = parse_msgdm(msg_file)
     with open(java_file, 'w') as f:
         header(f, args[0])
-        for msg in msg_lines:
-            output_line(f, *msg)
+        output_msg_lines(f, msg_lines)
         footer(f)
     return 0
 

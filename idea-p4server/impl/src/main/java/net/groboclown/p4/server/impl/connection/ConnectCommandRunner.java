@@ -45,6 +45,7 @@ import com.perforce.p4java.option.server.GetJobsOptions;
 import com.perforce.p4java.option.server.GetLabelsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.server.IServerMessageCode;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
@@ -803,8 +804,19 @@ public class ConnectCommandRunner
             List<IFileSpec> reverted = cmd.revertFiles(client, srcFile, false);
             MessageStatusUtil.throwIfError(reverted);
         } else if (srcStatus.isNotOnServer()) {
-            // Forces an error, because the messages exist.
-            MessageStatusUtil.throwIfMessageOrEmpty("move file", srcStatusResponse);
+            // The source is not on the server, so it's an add or edit.
+            if (tgtStatus.hasAddEdit() || tgtStatus.hasAdd()) {
+                // Do nothing
+                // TODO bundle message
+                return new MoveFileResult(config, "Nothing to do");
+            }
+            if (tgtStatus.hasOpen()) {
+                List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
+                MessageStatusUtil.throwIfError(reverted);
+            }
+            List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
+            MessageStatusUtil.throwIfError(edited);
+            return new MoveFileResult(config, MessageStatusUtil.getMessages(edited, "\n"));
         }
 
         // Check target status, to see what we need to do there.

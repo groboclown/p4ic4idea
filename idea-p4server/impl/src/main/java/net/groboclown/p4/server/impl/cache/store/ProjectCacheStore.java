@@ -241,8 +241,6 @@ public class ProjectCacheStore {
 
     public void writeActions(Consumer<List<ActionStore.PendingAction>> fun)
             throws InterruptedException {
-        lockTimeout.withWriteLock(lock, () -> {
-            fun.accept(pendingActions);
-        });
+        lockTimeout.withWriteLock(lock, () -> fun.accept(pendingActions));
     }
 }

@@ -55,7 +55,6 @@ public class CacheStoreUpdateListener implements Disposable {
     private final Project project;
     private final ProjectCacheStore cache;
     private final CachePendingActionHandler pendingCache;
-    private final String cacheId = AbstractCacheMessage.createCacheId(CacheStoreUpdateListener.class);
     private boolean disposed = false;
 
     public CacheStoreUpdateListener(@NotNull Project project,
@@ -67,6 +66,7 @@ public class CacheStoreUpdateListener implements Disposable {
 
         MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(this);
         CacheListener listener = new CacheListener();
+        String cacheId = AbstractCacheMessage.createCacheId(project, CacheStoreUpdateListener.class);
         ClientActionMessage.addListener(mbClient, cacheId, listener);
 
         // TODO this causes the event listener to be fired twice.
@@ -232,22 +232,6 @@ public class CacheStoreUpdateListener implements Disposable {
             try {
                 if (event.getState() == FileActionMessage.ActionState.PENDING) {
                     pendingCache.writeActions(event.getClientRef(), (store) -> store.addAction(event.getClientAction()));
-                    switch (event.getClientAction().getCmd()) {
-                        case MOVE_FILE:
-                        case ADD_EDIT_FILE:
-                        case DELETE_FILE:
-                            // FIXME store the contents
-                            LOG.warn("FIXME store the contents of " + event.getFile() + " for revert usage");
-                            break;
-
-                        case REVERT_FILE:
-                            // FIXME restore the contents
-                            LOG.warn("FIXME restore the contents of " + event.getFile());
-                            break;
-
-                        default:
-                            // Ignore extra caching
-                    }
                 } else {
                     pendingCache.writeActions(event.getClientRef(),
                             (store) -> store.removeActionById(event.getClientAction().getActionId()));

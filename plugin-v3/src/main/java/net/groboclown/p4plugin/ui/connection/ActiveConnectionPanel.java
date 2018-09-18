@@ -107,7 +107,7 @@ public class ActiveConnectionPanel {
         }, 5, TimeUnit.SECONDS);
 
         // Listeners must be registered after initializing the base data.
-        final String cacheId = AbstractCacheMessage.createCacheId(ActiveConnectionPanel.class);
+        final String cacheId = AbstractCacheMessage.createCacheId(project, ActiveConnectionPanel.class);
         MessageBusClient.ApplicationClient appBus = MessageBusClient.forApplication(parentDisposable);
         MessageBusClient.ProjectClient clientBus = MessageBusClient.forProject(project, parentDisposable);
 

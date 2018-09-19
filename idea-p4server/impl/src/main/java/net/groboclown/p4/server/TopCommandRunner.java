@@ -149,6 +149,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                 return;
             }
             ServerConnectionState state = op.get();
+            if (state.userOffline) {
+                state.pendingActionsRequireResend = true;
+            }
             state.badConnection = false;
             state.userOffline = false;
 
@@ -157,9 +160,12 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                 state.badLogin = false;
             }
 
-            for (ClientConfig clientConfig: clientConfigs.values()) {
-                if (clientConfig.isIn(e.getServerConfig())) {
-                    sendCachedPendingRequests(clientConfig);
+            if (state.pendingActionsRequireResend) {
+                state.pendingActionsRequireResend = false;
+                for (ClientConfig clientConfig : clientConfigs.values()) {
+                    if (clientConfig.isIn(e.getServerConfig())) {
+                        sendCachedPendingRequests(clientConfig);
+                    }
                 }
             }
         });
@@ -176,6 +182,10 @@ public class TopCommandRunner extends AbstractP4CommandRunner
             @Override
             public void reconnectToAllClients(@NotNull ReconnectRequestMessage.ReconnectAllEvent e) {
                 for (ServerConnectionState state : getAllStates()) {
+
+                    if (state.userOffline) {
+                        state.pendingActionsRequireResend = true;
+                    }
                     state.userOffline = false;
                     state.badConnection = false;
                     state.badLogin = false;
@@ -189,6 +199,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
             @Override
             public void reconnectToClient(@NotNull ReconnectRequestMessage.ReconnectEvent e) {
                 for (ServerConnectionState state : getStatesFor(e.getRef().getServerName())) {
+                    if (state.userOffline) {
+                        state.pendingActionsRequireResend = true;
+                    }
                     state.userOffline = false;
                     state.badConnection = false;
                     state.badLogin = false;
@@ -310,6 +323,11 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @NotNull
     @Override
     protected ActionAnswer<MoveFileResult> moveFile(ClientConfig config, MoveFileAction action) {
+        // FIXME DEBUG
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(new Exception("source of the server perform moveFile"));
+        }
+
         // Move file is turned into 2 messages.
         FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
                 action.getSourceFile(), P4FileAction.MOVE_DELETE, null, action));
@@ -630,6 +648,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
      */
     @SuppressWarnings("unchecked")
     private void sendCachedPendingRequests(ClientConfig clientConfig) {
+        LOG.info("Reconnected to server; re-sending all pending requests for " + clientConfig);
+        // FIXME this looks to be the source of all the double / triple / quadruple message sending.
         try {
             // Note: must be serially applied, because the pending actions have a strict order.
             // Also note: the error catching is only logged; user reporting is done by
@@ -724,6 +744,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         boolean needsLogin;
         boolean passwordUnnecessary;
         boolean userOffline;
+
+        // in order to avoid pushing the old pending list to the server many, many times
+        boolean pendingActionsRequireResend;
 
         private ServerConnectionState(ServerConfig config) {
             this.config = config;

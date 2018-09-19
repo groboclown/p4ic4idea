@@ -25,19 +25,23 @@ import com.intellij.vcsUtil.VcsFileUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
+import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.util.ChangelistUtil;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +50,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class P4VFSListener extends VcsVFSListener {
     private static final Logger LOG = Logger.getInstance(VcsVFSListener.class);
@@ -119,6 +124,10 @@ public class P4VFSListener extends VcsVFSListener {
     protected void performMoveRename(List<MovedFileInfo> movedFiles) {
         Set<FilePath> allFiles = new HashSet<>(movedFiles.size());
         Map<ClientServerRef, P4ChangelistId> activeChangelistIds = getActiveChangelistIds();
+
+        // All the move operations need to complete before we can request an update to the changelist view
+        List<P4CommandRunner.ActionAnswer<?>> pendingAnswers = new ArrayList<>();
+
         for (MovedFileInfo movedFile : movedFiles) {
             LOG.info("Moving file `" + movedFile.myOldPath + "` to `" + movedFile.myNewPath + "`");
             final FilePath src = VcsUtil.getFilePath(movedFile.myOldPath);
@@ -126,10 +135,16 @@ public class P4VFSListener extends VcsVFSListener {
                 LOG.warn("Attempted to move directory " + src + "; refusing move.");
                 continue;
             }
-            FilePath tgt = VcsUtil.getFilePath(movedFile.myNewPath);
-            if (tgt.isDirectory()) {
-                LOG.info("Moving file into directory " + tgt);
-                tgt = VcsUtil.getFilePath(new File(tgt.getIOFile(), src.getName()));
+
+            // For a single move request, all requests must be run serially.
+            P4CommandRunner.ActionAnswer<?> pending = new DoneActionAnswer<>(null);
+
+            final FilePath tgt;
+            if (VcsUtil.getFilePath(movedFile.myNewPath).isDirectory()) {
+                LOG.info("Moving file into directory " + movedFile.myNewPath);
+                tgt = VcsUtil.getFilePath(new File(VcsUtil.getFilePath(movedFile.myNewPath).getIOFile(), src.getName()));
+            } else {
+                tgt = VcsUtil.getFilePath(movedFile.myNewPath);
             }
             allFiles.add(src);
             allFiles.add(tgt);
@@ -142,7 +157,9 @@ public class P4VFSListener extends VcsVFSListener {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Opening for move: " + src + " -> " + tgt + " (@" + id + ")");
                 }
-                P4ServerComponent.perform(myProject, srcRoot.getClientConfig(), new MoveFileAction(src, tgt, id));
+                pending = pending.mapActionAsync((x) ->
+                        P4ServerComponent.perform(myProject, srcRoot.getClientConfig(),
+                                new MoveFileAction(src, tgt, id)));
             } else {
                 // Not a move operation, because they aren't in the same perforce client.
 
@@ -152,7 +169,9 @@ public class P4VFSListener extends VcsVFSListener {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Opening for move/delete: " + src + " (@" + id + ")");
                     }
-                    P4ServerComponent.perform(myProject, srcRoot.getClientConfig(), new DeleteFileAction(src, id));
+                    pending = pending.mapActionAsync((x) ->
+                            P4ServerComponent.perform(myProject, srcRoot.getClientConfig(),
+                                    new DeleteFileAction(src, id)));
                 }
 
                 if (tgtRoot != null) {
@@ -166,11 +185,26 @@ public class P4VFSListener extends VcsVFSListener {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Opening for move/add-edit: " + tgt + " (@" + id + ")");
                     }
-                    P4ServerComponent.perform(myProject,
-                            tgtRoot.getClientConfig(), new AddEditAction(tgt, null, id, (String) null));
+                    pending = pending.mapActionAsync((x) ->
+                            P4ServerComponent.perform(myProject, tgtRoot.getClientConfig(),
+                                    new AddEditAction(tgt, null, id, (String) null)));
                 }
             }
+
+            pendingAnswers.add(pending);
         }
+
+        // Wait for the pending requests to complete before marking files as dirty.
+        // FIXME this method is called from the EDT, so DO NOT WAIT IN THIS THREAD.
+        for (P4CommandRunner.ActionAnswer<?> pendingAnswer : pendingAnswers) {
+            try {
+                pendingAnswer.waitForCompletion(UserProjectPreferences.getLockWaitTimeoutMillis(myProject),
+                        TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                LOG.warn("Interruption waiting on move commands to complete.", e);
+            }
+        }
+
         // Make sure any potential null isn't in the set.
         allFiles.remove(null);
         VcsFileUtil.markFilesDirty(myProject, new ArrayList<>(allFiles));

@@ -45,7 +45,6 @@ import com.perforce.p4java.option.server.GetJobsOptions;
 import com.perforce.p4java.option.server.GetLabelsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
-import com.perforce.p4java.server.IServerMessageCode;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
@@ -774,11 +773,13 @@ public class ConnectCommandRunner
                 new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(), tgtFile, 1));
         if (srcStatus.hasAdd()) {
             // source is open for add.  Revert it and mark the target as open for edit/add.
+            LOG.debug("Source file is open for add.  Reverting add, and will just open for edit or add the target.");
             List<IFileSpec> reverted = cmd.revertFiles(client, srcFile, false);
             MessageStatusUtil.throwIfError(reverted);
             // TODO bundle message for separator
             if (tgtStatus.hasDelete()) {
                 // Currently marked as deleted, so it exists on the server.  Revert the delete then edit it.
+                LOG.debug("Target file open for delete.  Reverting that and just opening it for edit.");
                 reverted = cmd.revertFiles(client, tgtFile, false);
                 MessageStatusUtil.throwIfError(reverted);
                 List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
@@ -786,48 +787,71 @@ public class ConnectCommandRunner
                 return new MoveFileResult(config, MessageStatusUtil.getMessages(edited, "\n"));
             } else if (srcStatus.isNotOnServer()) {
                 // Target not on server
+                LOG.debug("Target file not known by server.  Opening for add.");
                 List<IFileSpec> added = cmd.addFiles(client, tgtFile, null, action.getChangelistId(), null);
                 MessageStatusUtil.throwIfError(added);
                 return new MoveFileResult(config, MessageStatusUtil.getMessages(added, "\n"));
             } else if (!srcStatus.hasOpen()) {
                 // On server and not open
+                LOG.debug("Target file not open.  Opening for edit.");
                 List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
                 MessageStatusUtil.throwIfError(edited);
                 return new MoveFileResult(config, MessageStatusUtil.getMessages(edited, "\n"));
             } else {
                 // Nothing to do
+                LOG.debug("Target file already open for edit or add.  Skipping.");
                 // TODO bundle message
                 return new MoveFileResult(config, "Already open");
             }
         } else if (srcStatus.hasDelete()) {
             // source is already open for delete.  Revert it and continue with normal move.
+            LOG.debug("Source is open for delete.  Reverting delete to allow move operation to do it right.");
             List<IFileSpec> reverted = cmd.revertFiles(client, srcFile, false);
             MessageStatusUtil.throwIfError(reverted);
         } else if (srcStatus.isNotOnServer()) {
             // The source is not on the server, so it's an add or edit.
             if (tgtStatus.hasAddEdit() || tgtStatus.hasAdd()) {
                 // Do nothing
+                LOG.debug("Source not on server, and target already open for add or edit.  Skipping.");
                 // TODO bundle message
                 return new MoveFileResult(config, "Nothing to do");
             }
             if (tgtStatus.hasOpen()) {
+                LOG.debug("Source not on server, and target already open (for delete?).  Reverting target operation.");
                 List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
                 MessageStatusUtil.throwIfError(reverted);
+            } else if (tgtStatus.isNotOnServer()) {
+                LOG.debug("Source and target not on server.  Opening target for add.");
+                List<IFileSpec> added = cmd.addFiles(client, srcFile, null, action.getChangelistId(), null);
+                MessageStatusUtil.throwIfError(added);
+                return new MoveFileResult(config, MessageStatusUtil.getMessages(added, "\n"));
             }
+            LOG.debug("Source not on server, target not open.  Opening target for edit.");
             List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
             MessageStatusUtil.throwIfError(edited);
             return new MoveFileResult(config, MessageStatusUtil.getMessages(edited, "\n"));
+        } else if (!srcStatus.hasOpen()){
+            LOG.debug("Source not open.  Move requires the source to be open for edit.");
+            List<IFileSpec> edited = cmd.editFiles(client, srcFile, null, action.getChangelistId(), null);
+            MessageStatusUtil.throwIfError(edited);
+        } else {
+            LOG.debug("Source file is already open for edit");
         }
 
         // Check target status, to see what we need to do there.
         if (tgtStatus.hasOpen()) {
+            LOG.debug("Target file open for edit.  Reverting before performing move.");
             List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
             MessageStatusUtil.throwIfError(reverted);
         }
 
         // Standard move operation.
+        LOG.debug("Performing move operation");
         List<IFileSpec> results = cmd.moveFile(client, srcFile.get(0), tgtFile.get(0), action.getChangelistId());
         MessageStatusUtil.throwIfError(results);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Move messages: " + MessageStatusUtil.getMessages(results, "; "));
+        }
         return new MoveFileResult(config, MessageStatusUtil.getMessages(results, "\n"));
     }
 

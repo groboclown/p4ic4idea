@@ -83,6 +83,10 @@ public class SimpleConnectionManager implements ConnectionManager {
     @NotNull
     @Override
     public <R> Answer<R> withConnection(@NotNull ClientConfig config, @Nullable File cwd, @Nonnull P4Func<IClient, R> fun) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Performing client execution from cwd " + cwd);
+        }
+
         if (config.getServerConfig().usesStoredPassword()) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Using password stored in registry.");

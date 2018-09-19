@@ -4,45 +4,11 @@ Some of the to-dos are listed in the bug list on Github.  This list itself shoul
 of Github.
 
 
-
 ## Bugs
-
-### Move Files fails horribly
-
-Due to several other bugs and missing functionality, moving a file that's marked for edit will cause big failures.  The
-source file will still be tried to add, but it doesn't exist, so Perforce reports a failure, which causes the move
-operation to barf up in the event logs.
-
-### Open File For Add
-
-This triggers at least 2 actions to attempt to add the file.  One will succeed, but the second will fail.
-
-Possible sources: `P4EditFileProvider` and `P4VFSListener`.
 
 ### Open directories for add
 
 The plugin incorrectly recognizes directories as files, and attempts to add them.
-
-### Files open for edit outside IDE do not show up in IDE changelist
-
-If you open a file for edit outside the IDE, and refresh the changelist view in the IDE, the outside edited files do not
-show up.
-
-### Files moved to another changelist outside IDE do not show up in IDE changelist
-
-If you move a file from one changelist to another outside the IDE, the file is removed from the old changelist, but is
-not added to the new changelist, and is instead "lost" (no longer in the changelist view).
-
-This is happening from `P4ChangeProvider`.  It looks like the provider removes the change from the original, but it
-is never correctly added to the new changelist.
-
-### Pending Action Consolidation
-
-When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or
-duplicates existing pending actions.  The pending action list must be altered to reflect the new action.
-
-This needs to be handled by the `CacheQueryHandler`.  `CacheStoreUpdateListener` seems like the better place, but,
-as it notes, it really shouldn't be messing with that queue due to possible in-flight server requests.
 
 ### Remove Pending Action requires Refresh
 
@@ -65,15 +31,19 @@ won't be updated with the new root.  This could be the source of at least one is
 
 This might be fixed now.  The API has changed to force usage that prevents serious memory leaks from spreading.
 
-### Duplicate event log entries
-
-Notifications are showing up x4 in the event log.  Could be a sign of excessive event generation.
-
 ### Open for Edit doesn't move a file to a changelist.
 
 If a file is writable, the connection is offline, and the "Automatically open for edit..." option is not selected, then
 explicitly checking out the file will not cause the pending action to be reflected in the UI changelists.  It will be
 shown in the cached list of actions.
+
+### Diff Not Reporting Differences
+
+The `diff` functionality shows no differences between versions.
+
+### Move File Changelist View Message
+
+Move file operations show up as "moved from ../../../..//depot/path/".
 
 
 
@@ -98,16 +68,19 @@ Swarm integration needs to be re-instated.
 
 Re-add implementation.
 
+### Pending Action Consolidation
+
+When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or
+duplicates existing pending actions.  The pending action list must be altered to reflect the new action.
+
+Some of this work has started.  It is handled in `PendingActionCurator`.  Further implementation should use
+the LocalHistory standard IDE component to read states, rather than caching file contents itself.
+
 
 
 ## Near-Term Functionality
 
 These pieces of functionality are not required for the 0.10 release, but should be implemented soon after release.
-
-### Caching File Contents
-
-The cache mechanism should support making a copy of a file when an operation happens, to allow for better offline
-support.
 
 ### Repository View
 

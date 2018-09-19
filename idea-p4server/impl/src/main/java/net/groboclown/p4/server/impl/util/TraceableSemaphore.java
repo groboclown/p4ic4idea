@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.impl.util;
 
 import com.intellij.openapi.diagnostic.Logger;
+import net.groboclown.p4.server.impl.connection.impl.LimitedConnectionManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -30,7 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A semaphore that includes tracing the list of who's waiting and who has a lock.
  */
 public class TraceableSemaphore {
-    private static final Logger LOG = Logger.getInstance(TraceableSemaphore.class);
+    // Note: uses the LimitedConnectionManager as the log source.
+    private static final Logger LOG = Logger.getInstance(LimitedConnectionManager.class);
 
     private static final AtomicInteger ID_GEN = new AtomicInteger();
     private final String name;

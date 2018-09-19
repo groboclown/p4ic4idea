@@ -422,7 +422,14 @@ public class P4CommandUtil {
     public List<IFileSpec> moveFile(IClient client, IFileSpec source, IFileSpec target, P4ChangelistId changelistId)
             throws P4JavaException {
         MoveFileOptions options = new MoveFileOptions()
-                .setChangelistId(changelistId.getChangelistId());
+                .setChangelistId(changelistId.getChangelistId())
+                .setForce(true);
+        // No Client Move flag will not work for servers < 2009.2.
+        // However, chances are high that the IDE has already deleted the source file.
+        if (client.getServer().getServerVersionNumber() >= 20092) {
+            options.setNoClientMove(true);
+        }
+
         return client.getServer().moveFile(source, target, options);
     }
 }

@@ -18,11 +18,10 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsVFSListener;
-import com.intellij.openapi.vcs.changes.ChangeListManager;
-import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsFileUtil;
 import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.idea.p4ic.compat.VcsCompat;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
@@ -33,24 +32,21 @@ import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
-import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4plugin.P4Bundle;
-import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.util.ChangelistUtil;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class P4VFSListener extends VcsVFSListener {
     private static final Logger LOG = Logger.getInstance(VcsVFSListener.class);
@@ -72,11 +68,6 @@ public class P4VFSListener extends VcsVFSListener {
         // wants it.  If they are implemented, then the "add" files should first be
         // pruned of the "integrate" files.
 
-        List<VirtualFile> dirty = new ArrayList<>(addedFiles.size() + copyFromMap.size());
-        dirty.addAll(addedFiles);
-        dirty.addAll(copyFromMap.keySet());
-        VcsFileUtil.markFilesDirty(myProject, dirty);
-
         // Bug #102: The keys in the "copyFromMap" will also be in the "addedFiles"
         // list.  If copy rather than integrate is supported, this loop will need to be
         // changed.
@@ -93,8 +84,14 @@ public class P4VFSListener extends VcsVFSListener {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Opening for add/edit: " + fp + " (@" + id + ")");
                 }
-                P4ServerComponent.perform(myProject,
-                        root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, (String) null));
+                P4ServerComponent
+                .perform(myProject, root.getClientConfig(),
+                        new AddEditAction(fp, getFileType(fp), id, (String) null))
+                .after(() -> {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Completed call to add " + addedFiles + "; copy " + copyFromMap);
+                    }
+                });
             } else {
                 LOG.info("Skipped adding " + file + "; not under known P4 client");
             }
@@ -104,8 +101,10 @@ public class P4VFSListener extends VcsVFSListener {
     @Override
     protected void performDeletion(List<FilePath> filesToDelete) {
         VcsFileUtil.markFilesDirty(myProject, filesToDelete);
+        final List<VirtualFile> affectedFiles = filesToDelete.stream().map(FilePath::getVirtualFile)
+                .collect(Collectors.toList());
 
-        Map<ClientServerRef, P4ChangelistId> activeChangelistIds = getActiveChangelistIds();
+                Map<ClientServerRef, P4ChangelistId> activeChangelistIds = getActiveChangelistIds();
         for (FilePath filePath : filesToDelete) {
             ClientConfigRoot root = getClientFor(filePath);
             if (root != null) {
@@ -113,7 +112,14 @@ public class P4VFSListener extends VcsVFSListener {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Opening for delete: " + filePath + " (@" + id + ")");
                 }
-                P4ServerComponent.perform(myProject, root.getClientConfig(), new DeleteFileAction(filePath, id));
+                P4ServerComponent
+                .perform(myProject, root.getClientConfig(),
+                        new DeleteFileAction(filePath, id))
+                .after(() -> {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Completed call to delete file " + filesToDelete);
+                    }
+                });
             } else {
                 LOG.info("Skipped deleting " + filePath + "; not under known P4 client");
             }
@@ -191,11 +197,18 @@ public class P4VFSListener extends VcsVFSListener {
                 }
             }
 
+            pending.after(() -> {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Completed move request for " + src + " -> " + tgt);
+                }
+            });
+
             pendingAnswers.add(pending);
         }
 
+        /*
+        // This method is called from the EDT, so DO NOT WAIT IN THIS THREAD.
         // Wait for the pending requests to complete before marking files as dirty.
-        // FIXME this method is called from the EDT, so DO NOT WAIT IN THIS THREAD.
         for (P4CommandRunner.ActionAnswer<?> pendingAnswer : pendingAnswers) {
             try {
                 pendingAnswer.waitForCompletion(UserProjectPreferences.getLockWaitTimeoutMillis(myProject),
@@ -208,6 +221,7 @@ public class P4VFSListener extends VcsVFSListener {
         // Make sure any potential null isn't in the set.
         allFiles.remove(null);
         VcsFileUtil.markFilesDirty(myProject, new ArrayList<>(allFiles));
+        */
     }
 
     @Override

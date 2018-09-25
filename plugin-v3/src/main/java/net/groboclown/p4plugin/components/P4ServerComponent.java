@@ -31,6 +31,7 @@ import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
+import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
 import net.groboclown.p4.server.impl.connection.ConnectCommandRunner;
 import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4.server.impl.connection.P4RequestErrorHandler;
@@ -178,6 +179,15 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
             ret.after(instance.first::dispose);
         }
         return ret;
+    }
+
+    public static P4CommandRunner.ActionAnswer<Void> sendCachedPendingRequests(
+            @NotNull Project project, @NotNull ClientConfig clientConfig) {
+        P4ServerComponent ret = project.getComponent(P4ServerComponent.class);
+        if (ret == null || ret.getCommandRunner() == null) {
+            return new DoneActionAnswer<>(null);
+        }
+        return ret.getCommandRunner().sendCachedPendingRequests(clientConfig);
     }
 
     private static Pair<P4ServerComponent, Boolean> findInstance(@NotNull Project project) {

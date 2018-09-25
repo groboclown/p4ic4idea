@@ -18,6 +18,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.changelist.CreateJobAction;
+import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
@@ -30,6 +31,8 @@ import java.util.HashSet;
 
 /**
  * Examines newly added actions and checks how that impacts existing actions in the pending list.
+ *
+ * TODO this needs to be part of the PendingAction object lifecycle.
  */
 class PendingActionCurator {
     private static final Logger LOG = Logger.getInstance(PendingActionCurator.class);
@@ -179,9 +182,7 @@ class PendingActionCurator {
                 LOG.warn("FIXME implement revert file action consolidation");
                 return KEEP_BOTH;
             case MOVE_FILES_TO_CHANGELIST:
-                // FIXME implement
-                LOG.warn("FIXME implement changelist action consolidation");
-                return KEEP_BOTH;
+                return curateMoveFilesToChangelistRequest((MoveFilesToChangelistAction) added, existing);
             case EDIT_CHANGELIST_DESCRIPTION:
                 // FIXME implement
                 LOG.warn("FIXME implement changelist action consolidation");
@@ -211,23 +212,38 @@ class PendingActionCurator {
         }
     }
 
-    private boolean haveCommonFiles(P4CommandRunner.ClientAction<?> a, P4CommandRunner.ClientAction<?>  b) {
+    private boolean haveNoCommonFiles(P4CommandRunner.ClientAction<?> a, P4CommandRunner.ClientAction<?>  b) {
         HashSet<FilePath> commonFiles = new HashSet<>(a.getAffectedFiles());
         int aSize = commonFiles.size();
         commonFiles.removeAll(b.getAffectedFiles());
-        return aSize != commonFiles.size();
+        return aSize == commonFiles.size();
     }
 
     @NotNull
     private CurateResult curateAddEditRequest(AddEditAction added, P4CommandRunner.ClientAction<?> existing) {
+        if (haveNoCommonFiles(added, existing)) {
+            return KEEP_BOTH;
+        }
+
         // FIXME implement
         LOG.warn("FIXME implement add/edit action consolidation");
         return KEEP_BOTH;
     }
 
     @NotNull
+    private CurateResult curateDeleteRequest(DeleteFileAction added, P4CommandRunner.ClientAction<?> existing) {
+        if (haveNoCommonFiles(added, existing)) {
+            return KEEP_BOTH;
+        }
+
+        // FIXME implement
+        LOG.warn("FIXME implement delete action consolidation");
+        return KEEP_BOTH;
+    }
+
+    @NotNull
     private CurateResult curateMoveRequest(MoveFileAction added, P4CommandRunner.ClientAction<?> existingSrc) {
-        if (!haveCommonFiles(added, existingSrc)) {
+        if (haveNoCommonFiles(added, existingSrc)) {
             return KEEP_BOTH;
         }
 
@@ -331,10 +347,43 @@ class PendingActionCurator {
         }
     }
 
-    private CurateResult curateDeleteRequest(DeleteFileAction added, P4CommandRunner.ClientAction<?> existing) {
-        // FIXME implement
-        LOG.warn("FIXME implement delete action consolidation");
-        return KEEP_BOTH;
+    @NotNull
+    private CurateResult curateMoveFilesToChangelistRequest(MoveFilesToChangelistAction added, P4CommandRunner.ClientAction<?> existing) {
+        if (haveNoCommonFiles(added, existing)) {
+            return KEEP_BOTH;
+        }
+
+        // This has the potential to modify the existing and added actions.
+        switch (existing.getCmd()) {
+            case MOVE_FILE:
+                // FIXME implement
+                LOG.warn("FIXME implement move moved files to changelist consolidation");
+                return KEEP_BOTH;
+            case ADD_EDIT_FILE:
+                // FIXME implement
+                LOG.warn("FIXME implement move add/edit files to changelist consolidation");
+                return KEEP_BOTH;
+            case DELETE_FILE:
+                // FIXME implement
+                LOG.warn("FIXME implement move delete file to changelist consolidation");
+                return KEEP_BOTH;
+            case MOVE_FILES_TO_CHANGELIST:
+                // FIXME implement
+                LOG.warn("FIXME implement move move-files-to-changelist to changelist consolidation");
+                return KEEP_BOTH;
+
+            // Actions not affected by move-file-to-changelists.
+            case REVERT_FILE:
+            case EDIT_CHANGELIST_DESCRIPTION:
+            case ADD_JOB_TO_CHANGELIST:
+            case REMOVE_JOB_FROM_CHANGELIST:
+            case CREATE_CHANGELIST:
+            case DELETE_CHANGELIST:
+            case FETCH_FILES:
+            case SUBMIT_CHANGELIST:
+            default:
+                return KEEP_BOTH;
+        }
     }
 
     @NotNull

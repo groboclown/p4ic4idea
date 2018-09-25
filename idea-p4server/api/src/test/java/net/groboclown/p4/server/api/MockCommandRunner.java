@@ -142,6 +142,13 @@ public class MockCommandRunner
         throw new IllegalArgumentException("");
     }
 
+    @NotNull
+    @Override
+    public ActionAnswer<Void> sendCachedPendingRequests(@NotNull ClientConfig clientConfig) {
+        fail("Should not be called");
+        throw new IllegalArgumentException("");
+    }
+
 
     static class MockQueryAnswer<R> implements QueryAnswer<R> {
         private final R result;

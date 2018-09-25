@@ -16,36 +16,36 @@ package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckoutProviderEx;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsNotifier;
-import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4VcsKey;
-import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
 import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.impl.commands.AnswerUtil;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.actions.BasicAction;
 import net.groboclown.p4plugin.components.P4ServerComponent;
-import net.groboclown.p4plugin.ui.DummyProgressIndicator;
-import net.groboclown.p4plugin.ui.EdtSinkProcessor;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.ui.sync.SyncProjectDialog;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 public class P4CheckoutProvider extends CheckoutProviderEx {
     private static final Logger LOG = Logger.getInstance(P4CheckoutProvider.class);
 
     /**
-     * Overloads CheckoutProvider#doCheckout(Project, Listener) to provide predefined repository URL
+     * Overloads CheckoutProvider#doCheckout(Project, Listener) to provide predefined repository URL.
+     * <p>
+     * This is expected to run in the current thread.
      */
     @Override
     public void doCheckout(@NotNull Project project, @Nullable final Listener listener,
@@ -62,35 +62,61 @@ public class P4CheckoutProvider extends CheckoutProviderEx {
             return;
         }
         final FilePath rootPath = VcsUtil.getFilePath(rootDir);
-        final ProgressIndicator progressIndicator =
-                DummyProgressIndicator.nullSafe(ProgressManager.getInstance().getProgressIndicator());
-        progressIndicator.setIndeterminate(true);
-        progressIndicator.start();
-        EdtSinkProcessor<FetchFilesResult> processor = new EdtSinkProcessor<>();
-        processor.addConsumer((res) -> {
-            progressIndicator.stop();
-            rootDir.refresh(true, true, () -> {
-                if (project.isOpen() && !project.isDisposed() && !project.isDefault()) {
-                    VcsDirtyScopeManager.getInstance(project).fileDirty(rootDir);
+
+        // Because the listener behavior MUST run in a write context, we can't run this in the
+        // specialized EdtSinkProcessor.
+        new Task.Backgroundable(project,
+                P4Bundle.getString("checkout.config.process")) {
+            final Object sync = new Object();
+            FetchFilesResult res;
+
+            @Override
+            public void run(@NotNull ProgressIndicator progressIndicator) {
+                progressIndicator.setIndeterminate(true);
+                progressIndicator.startNonCancelableSection();
+                try {
+                    LOG.info("Fetching files into " + rootPath);
+                    FetchFilesResult r = P4ServerComponent
+                            .perform(project, clientConfig,
+                                    new FetchFilesAction(Collections.singletonList(rootPath), null, false))
+                            .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project),
+                                    TimeUnit.MILLISECONDS);
+                    progressIndicator.finishNonCancelableSection();
+                    synchronized (sync) {
+                        res = r;
+                    }
+                } catch (InterruptedException e) {
+                    progressIndicator.finishNonCancelableSection();
+                    onCancel();
+                } catch (P4CommandRunner.ServerResultException e) {
+                    progressIndicator.finishNonCancelableSection();
+                    VcsNotifier.getInstance(project).notifyError(P4Bundle.getString("checkout.config.error.title"),
+                            e.getMessage());
+                    synchronized (sync) {
+                        res = null;
+                    }
                 }
-            });
-            if (listener != null) {
-                listener.directoryCheckedOut(rootPath.getIOFile(), P4Vcs.getKey());
-                listener.checkoutCompleted();
+                progressIndicator.stop();
             }
-        });
-        processor.addErrorHandler((e) -> {
-            VcsNotifier.getInstance(project).notifyError(P4Bundle.getString("checkout.config.error.title"),
-                    e.getMessage());
-        });
-        LOG.info("Fetching tiles into " + rootPath);
-        processor.processBatchAnswer(() -> Answer.background(sink ->
-            P4ServerComponent
-                .perform(project, clientConfig,
-                        new FetchFilesAction(Collections.singletonList(rootPath), null, false))
-                .whenCompleted(r -> sink.resolve(Collections.singletonList(r)))
-                .whenServerError(sink::reject)
-                .whenOffline(() -> sink.reject(AnswerUtil.createOfflineError()))), true);
+
+            @Override
+            public void onSuccess() {
+                FetchFilesResult r;
+                synchronized (sync) {
+                    r = res;
+                }
+                if (r == null) {
+                    return;
+                }
+                // Sync does not mark the directory as dirty.  Otherwise, when the refresh is completed,
+                // it would need to run VcsDirtyScopeManager.getInstance(project).fileDirty(rootPath);
+                rootDir.refresh(true, true, null);
+                if (listener != null) {
+                    listener.directoryCheckedOut(rootPath.getIOFile(), P4Vcs.getKey());
+                    listener.checkoutCompleted();
+                }
+            }
+        }.queue();
     }
 
     @Override

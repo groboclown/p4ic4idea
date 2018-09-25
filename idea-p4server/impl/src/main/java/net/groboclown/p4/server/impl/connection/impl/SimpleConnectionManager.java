@@ -29,7 +29,9 @@ import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.ServerFactory;
+import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.server.callback.ILogCallback;
 import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
 import net.groboclown.p4.server.api.P4CommandRunner;
@@ -254,7 +256,6 @@ public class SimpleConnectionManager implements ConnectionManager {
 
     private IOptionsServer getServer(P4ServerName serverName, Properties props)
             throws ConnectionException, ConfigException, NoSuchObjectException, ResourceException, URISyntaxException {
-        setupLogging();
         setupTempDir();
         final UsageOptions options = new UsageOptions(props);
         // These are not set in the usage options via the properties, so we
@@ -316,11 +317,13 @@ public class SimpleConnectionManager implements ConnectionManager {
                 }
             }
         }
-        return ServerFactory.getOptionsServer(uri, props, options);
+        IOptionsServer ret = ServerFactory.getOptionsServer(uri, props, options);
+        setupLogging(ret);
+        return ret;
     }
 
 
-    private void setupLogging() {
+    private void setupLogging(@NotNull IOptionsServer server) {
         if (Log.getLogCallback() == null) {
             Log.setLogCallback(new ILogCallback() {
                 // errors are pushed up to the normal logging mechanisms,
@@ -368,6 +371,33 @@ public class SimpleConnectionManager implements ConnectionManager {
                 }
             });
         }
+
+        server.registerCallback(new ICommandCallback() {
+            @Override
+            public void issuingServerCommand(int key, String commandString) {
+                P4LOG.debug("Running cmd p4 " + commandString);
+            }
+
+            @Override
+            public void completedServerCommand(int key, long millisecsTaken) {
+
+            }
+
+            @Override
+            public void receivedServerInfoLine(int key, IServerMessage infoLine) {
+
+            }
+
+            @Override
+            public void receivedServerErrorLine(int key, IServerMessage errorLine) {
+
+            }
+
+            @Override
+            public void receivedServerMessage(int key, IServerMessage message) {
+
+            }
+        });
     }
 
 

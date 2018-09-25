@@ -126,7 +126,6 @@ public class P4EditAction
                 (base, next) -> base.mapActionAsync((x) -> next))
         .whenCompleted((x) -> {
             LOG.debug("added or edited files: " + affectedFiles);
-            VcsCompat.getInstance().refreshFiles(project, affectedFiles);
         })
         ;
     }

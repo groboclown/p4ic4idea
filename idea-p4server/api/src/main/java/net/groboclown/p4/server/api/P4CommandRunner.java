@@ -704,5 +704,12 @@ public interface P4CommandRunner {
     @NotNull
     <R extends ClientResult> FutureResult<R> syncQuery(@NotNull ClientConfig config, @NotNull SyncClientQuery<R> query);
 
-
+    /**
+     * Attempts to resend all the cached requests.
+     *
+     * @param clientConfig configuration to retry.
+     * @return an answer with no valid data when the cached requests have all been resent.
+     */
+    @NotNull
+    ActionAnswer<Void> sendCachedPendingRequests(@NotNull ClientConfig clientConfig);
 }

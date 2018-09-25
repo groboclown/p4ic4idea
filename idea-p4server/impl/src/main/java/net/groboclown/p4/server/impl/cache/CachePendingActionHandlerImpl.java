@@ -42,13 +42,13 @@ public class CachePendingActionHandlerImpl implements CachePendingActionHandler 
     }
 
     @Override
-    public <R> R readActions(@NotNull ClientConfig clientConfig, @NotNull Function<Stream<ActionChoice>, R> f)
+    public <R> R readActions(@NotNull ClientServerRef clientConfig, @NotNull Function<Stream<ActionChoice>, R> f)
             throws InterruptedException {
         return f.apply(copyActions(clientConfig));
     }
 
     @Override
-    public void readActionItems(@NotNull ClientConfig clientConfig, @NotNull Consumer<ActionChoice> f)
+    public void readActionItems(@NotNull ClientServerRef clientConfig, @NotNull Consumer<ActionChoice> f)
             throws InterruptedException {
         copyActions(clientConfig).forEach(f);
     }
@@ -56,8 +56,14 @@ public class CachePendingActionHandlerImpl implements CachePendingActionHandler 
     @Override
     public Stream<ActionChoice> copyActions(ClientConfig clientConfig)
             throws InterruptedException {
+        return copyActions(clientConfig.getClientServerRef());
+    }
+
+    @Override
+    public Stream<ActionChoice> copyActions(ClientServerRef clientConfig)
+            throws InterruptedException {
         final String clientId = ActionStore.getSourceId(clientConfig);
-        final String serverId = ActionStore.getSourceId(clientConfig.getServerConfig());
+        final String serverId = ActionStore.getSourceId(clientConfig.getServerName());
         return cache.copyActions().stream()
                 .filter((a) -> (a.clientAction != null && a.sourceId.equals(clientId)) ||
                         (a.serverAction != null && a.sourceId.equals(serverId)))

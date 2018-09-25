@@ -17,15 +17,18 @@ package net.groboclown.p4.server.impl.cache;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.cache.ActionChoice;
 import net.groboclown.p4.server.api.cache.CachePendingActionHandler;
 import net.groboclown.p4.server.api.cache.messagebus.AbstractCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientActionMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.DescribeChangelistCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.FileActionMessage;
+import net.groboclown.p4.server.api.cache.messagebus.FileCacheUpdatedMessage;
 import net.groboclown.p4.server.api.cache.messagebus.JobCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.JobSpecCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ListClientsForUserCacheMessage;
@@ -45,6 +48,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Listens to cache update events, and updates the local project cache store.
@@ -156,6 +161,10 @@ public class CacheStoreUpdateListener implements Disposable {
             }
         }
 
+        // Cache store completed refresh.  Send a notification.
+        //FileCacheUpdatedMessage.send(project).onFilesCacheUpdated(new FileCacheUpdatedMessage.FileCacheUpdateEvent(
+        //        openedFiles.toArray(new P4LocalFile[0])));
+
         if (LOG.isDebugEnabled() && !unusedFiles.isEmpty()) {
             LOG.debug("Unused file associations: " + unusedFiles);
         }
@@ -190,6 +199,20 @@ public class CacheStoreUpdateListener implements Disposable {
 
                 break;
         }
+        if (event.getClientRef() != null) {
+            sendCachedFiles(event.getClientRef());
+        }
+    }
+
+    private void sendCachedFiles(@NotNull ClientServerRef config)
+            throws InterruptedException {
+        FileCacheUpdatedMessage.send(project).onFilesCacheUpdated(new FileCacheUpdatedMessage.FileCacheUpdateEvent(
+                pendingCache.readActions(config, (Function<Stream<ActionChoice>, FilePath[]>) actions -> {
+                    List<FilePath> files = new ArrayList<>();
+                    actions.forEach((a) -> files.addAll(a.getAffectedFiles()));
+                    return files.toArray(new FilePath[0]);
+                })
+        ));
     }
 
 
@@ -239,6 +262,9 @@ public class CacheStoreUpdateListener implements Disposable {
             } catch (InterruptedException e) {
                 LOG.error("Waited too long for the write lock for accessing the server cache.", e);
             }
+            //FileCacheUpdatedMessage.send(project).onFilesCacheUpdated(new FileCacheUpdatedMessage
+            // .FileCacheUpdateEvent(
+            //        event.getFile()));
         }
 
         @Override

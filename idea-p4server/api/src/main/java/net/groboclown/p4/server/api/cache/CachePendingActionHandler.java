@@ -26,11 +26,13 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 public interface CachePendingActionHandler {
-    <R> R readActions(@NotNull ClientConfig clientConfig, @NotNull Function<Stream<ActionChoice>, R> f)
+    <R> R readActions(@NotNull ClientServerRef clientConfig, @NotNull Function<Stream<ActionChoice>, R> f)
             throws InterruptedException;
-    void readActionItems(@NotNull ClientConfig clientConfig, @NotNull Consumer<ActionChoice> f)
+    void readActionItems(@NotNull ClientServerRef clientConfig, @NotNull Consumer<ActionChoice> f)
             throws InterruptedException;
     Stream<ActionChoice> copyActions(ClientConfig clientConfig)
+            throws InterruptedException;
+    Stream<ActionChoice> copyActions(ClientServerRef clientConfig)
             throws InterruptedException;
     void writeActions(ClientServerRef config, Consumer<WriteActionCache> fun)
             throws InterruptedException;

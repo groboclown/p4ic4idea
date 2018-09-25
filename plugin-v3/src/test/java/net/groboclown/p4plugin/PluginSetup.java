@@ -160,7 +160,7 @@ public class PluginSetup
     public void goOnline(ClientConfigRoot root) {
         ClientConfigAddedMessage.sendClientConfigurationAdded(idea.getMockProject(),
                 root.getClientRootDir(), root.getClientConfig());
-        ServerConnectedMessage.send().serverConnected(root.getServerConfig(), true);
+        ServerConnectedMessage.send().serverConnected(new ServerConnectedMessage.ServerConnectedEvent(root.getServerConfig(), true));
     }
 
     public P4ChangelistId addNewChangelist(ClientConfigRoot root, int p4ChangelistId, String description) {

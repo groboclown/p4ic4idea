@@ -646,15 +646,17 @@ public class TopCommandRunner extends AbstractP4CommandRunner
      *
      * @param clientConfig configuration
      */
+    @Override
     @SuppressWarnings("unchecked")
-    private void sendCachedPendingRequests(ClientConfig clientConfig) {
-        LOG.info("Reconnected to server; re-sending all pending requests for " + clientConfig);
-        // FIXME this looks to be the source of all the double / triple / quadruple message sending.
+    public ActionAnswer<Void> sendCachedPendingRequests(@NotNull ClientConfig clientConfig) {
+        LOG.info("Re-sending all pending requests for " + clientConfig);
+        // This needs to be protected by sending ONLY on reconnect.  If it's done more  often than that,
+        // then this causes 2-4 additional messages that don't need to be sent.
         try {
             // Note: must be serially applied, because the pending actions have a strict order.
             // Also note: the error catching is only logged; user reporting is done by
             // event listeners.
-            pendingActionCache.copyActions(clientConfig)
+            return pendingActionCache.copyActions(clientConfig)
                 .reduce(new DoneActionAnswer(null),
                     (BiFunction<ActionAnswer, ActionChoice, ActionAnswer>) (answer, action) -> answer.mapActionAsync((x) ->
                             action.when(
@@ -667,6 +669,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                                 } catch (InterruptedException ex) {
                                     LOG.warn(ex);
                                 }
+                                // Note: does not notify the file state of updates.
                             }).whenServerError((ex) -> {
                                 // This will be bubbled up to the outer error trap.
                                 // Additionally, the underlying code has its own error reporting.
@@ -683,6 +686,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                 });
         } catch (InterruptedException e) {
             LOG.warn(e);
+            return new DoneActionAnswer<>(null);
         }
     }
 

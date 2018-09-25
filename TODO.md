@@ -6,18 +6,60 @@ of Github.
 
 ## Bugs
 
+### Open for Edit doesn't move a file to a changelist.
+
+**Priority: Critical**
+
+**Current observed behavior:** If a file is writable, the connection is offline, and the "Automatically open for
+edit..." option is not selected, then editing the file manually and explicitly opening for edit (Ctrl-Alt-A)
+will only move the file to the "Modified locally without checkout" section in the changelist view.
+The only way to make it checked out is to explicitly right click on the file in the changelist view and select
+"checkout".
+
+### Diff Not Reporting Differences
+
+**Priority: Critical**
+
+The `diff` functionality shows no differences between versions.
+
+### Add / Edit Files Doesn't Trigger Changelist Refresh At The Right Time
+
+**Priority: Critical** 
+
 ### Open directories for add
+
+**Priority: Major**
 
 The plugin incorrectly recognizes directories as files, and attempts to add them.
 
+Some protections have been put in place around this, but it may not be prevented.  Additional testing is
+required.  It might have been a Windows Subsystem for Linux issue.
+
+### Move File Changelist View Message
+
+**Priority: Major**
+
+Move file operations show up as "moved from ../../../..//depot/path/".
+
 ### Remove Pending Action requires Refresh
+
+**Priority: Minor**
 
 When the pending actions in the Active Connection panel are removed, the UI does not refresh.  A forced refresh shows it
 removed.   `CachePendingActionHandlerImpl` will need to send out an event on remove.
 
 This will need to be done in order to have IdeChangelistCacheStore remove action links if the action is deleted.
 
+### Requesting Online Mode Doesn't Change Active Connection State
+
+**Priority: Minor**
+
+When offline, pressing the "connect" button doesn't change the connection state.  The user must perform some other
+server action to have this state change.
+
 ### Check Connection from VCS Root Directory Configuration memory leak
+
+**Priority: Minor**
 
 If you check the connection from the VCS root directory configuration dialog, a serious memory leak happens that puts
 the breaks on the IDE.
@@ -31,20 +73,12 @@ won't be updated with the new root.  This could be the source of at least one is
 
 This might be fixed now.  The API has changed to force usage that prevents serious memory leaks from spreading.
 
-### Open for Edit doesn't move a file to a changelist.
+### File Change Operations Do Not Refresh Change List View
 
-If a file is writable, the connection is offline, and the "Automatically open for edit..." option is not selected, then
-explicitly checking out the file will not cause the pending action to be reflected in the UI changelists.  It will be
-shown in the cached list of actions.
+**Priority: Minor** ?
 
-### Diff Not Reporting Differences
-
-The `diff` functionality shows no differences between versions.
-
-### Move File Changelist View Message
-
-Move file operations show up as "moved from ../../../..//depot/path/".
-
+After file operations (add, edit, delete, move), the change list view does not refresh itself.  The user must manually
+refresh the view before the changes show up.  Revert works correctly. 
 
 
 ## Required Missing Functionality
@@ -54,11 +88,6 @@ In the 0.10 release, these pieces of old functionality are either broken or disa
 ### SSO and Manual Passwords
 
 The SSO and asking the user for passwords are not well tested.
-
-### Manage Pending Operations
-
-If there are pending actions that failed to go through due to errors, the user needs a way to manage these operations.
-This should be done through the active connection panel.
 
 ### Swarm Integration
 
@@ -73,8 +102,7 @@ Re-add implementation.
 When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or
 duplicates existing pending actions.  The pending action list must be altered to reflect the new action.
 
-Some of this work has started.  It is handled in `PendingActionCurator`.  Further implementation should use
-the LocalHistory standard IDE component to read states, rather than caching file contents itself.
+Some of this work has started.  It is handled in `PendingActionCurator`.
 
 
 
@@ -111,3 +139,10 @@ The choice was made to eliminate the use of relative P4CONFIG files, and instead
 However, without this, the full environment support won't work.  This needs to be re-added, with support of the VSC Root
 mapping mechanism in `P4Vcs`.  However, the user needs to be able to manage it, and that requires new UI support.  This
 is a big feature, and will require some careful planning to handle correctly.
+
+### Locally Cache Pending Changes
+
+When a user makes a change to file (add, delete, move, edit), a cached version of the before-change should be kept.
+See `com.intellij.history.integration.IdeaGateway#acquireAndUpdateActualContent()` for how the local data is preserved.
+Use `VirtualFile#putUserData(custom key)` and `VirtualFile#getUserData(custom key)` to save off the data.  Note that
+extreme care must be taken to properly clean up the cached data.  This means tight object lifecycle management.

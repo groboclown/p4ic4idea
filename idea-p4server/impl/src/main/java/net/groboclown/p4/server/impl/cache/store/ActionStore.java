@@ -35,7 +35,14 @@ import org.jetbrains.annotations.NotNull;
 
 public class ActionStore {
 
-    @SuppressWarnings("WeakerAccess")
+    /**
+     * Contains the cached information about a requested pending change.  These can
+     * have a very short lifecycle, like when the server is online, or a very long one, for when the
+     * user performs operations offline.
+     *
+     * TODO the action will allow for storing more information, such as cached history of files for reverts.
+     * This will require tightly managed lifecycle for the object.
+     */
     public static class PendingAction {
         @NotNull
         public final String sourceId;

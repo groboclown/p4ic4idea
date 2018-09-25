@@ -54,6 +54,7 @@ import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
 import net.groboclown.p4.server.impl.util.IntervalPeriodExecution;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
+import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -222,7 +223,7 @@ public class ActiveConnectionPanel {
                 new ConnectionAction(
                         P4Bundle.getString("active-connection.toolbar.connect.name"),
                         P4Bundle.getString("active-connection.toolbar.connect.tooltip"),
-                        AllIcons.Actions.Upload) { // Lightning?
+                        AllIcons.Actions.Lightning) { // Upload?
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
@@ -249,7 +250,7 @@ public class ActiveConnectionPanel {
                         if (sel != null && sel.isOnline()) {
                             UserSelectedOfflineMessage.send(project).userSelectedServerOffline(
                                     new UserSelectedOfflineMessage.OfflineEvent(
-                                        sel.getClientConfig().getClientServerRef().getServerName()));
+                                            sel.getClientConfig().getClientServerRef().getServerName()));
                         }
                     }
 
@@ -295,8 +296,24 @@ public class ActiveConnectionPanel {
                     }
                 },
 
-                // TODO add an action that allows retrying the pending actions.
-                // (these cannot be done in isolation - they are strictly ordered).
+                new ConnectionAction(
+                        P4Bundle.getString("active-connection.toolbar.resend-action.name"),
+                        P4Bundle.getString("active-connection.toolbar.resend-action.tooltip"),
+                        AllIcons.Actions.Upload) {
+                    @Override
+                    boolean isEnabled() {
+                        ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        return sel != null && sel.isOnline();
+                    }
+
+                    @Override
+                    public void actionPerformed(AnActionEvent anActionEvent) {
+                        final ClientConfigRoot selRoot = getSelected(ClientConfigRoot.class);
+                        if (selRoot != null) {
+                            P4ServerComponent.sendCachedPendingRequests(project, selRoot.getClientConfig());
+                        }
+                    }
+                },
 
                 new ConnectionAction(
                         P4Bundle.getString("active-connection.toolbar.remove-action.name"),

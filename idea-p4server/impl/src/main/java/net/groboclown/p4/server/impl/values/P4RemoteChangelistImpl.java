@@ -103,6 +103,11 @@ public class P4RemoteChangelistImpl implements P4RemoteChangelist {
             return this;
         }
 
+        public Builder withJobStatus(JobStatus status) {
+            this.jobStatus = status;
+            return this;
+        }
+
         public Builder withChangelist(ServerConfig config, IChangelist changelist) {
             ClientServerRef ref = new ClientServerRef(config.getServerName(), changelist.getClientId());
             this.changelistId = new P4ChangelistIdImpl(changelist.getId(), ref);

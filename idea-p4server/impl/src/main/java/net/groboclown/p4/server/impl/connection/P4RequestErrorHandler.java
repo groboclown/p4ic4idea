@@ -197,6 +197,17 @@ public abstract class P4RequestErrorHandler {
         public P4ServerName getServerName() {
             return serverName;
         }
+
+        @Override
+        public String toString() {
+            if (clientConfig != null) {
+                return "client:" + clientConfig.toString();
+            }
+            if (serverConfig != null) {
+                return "server:" + serverConfig.toString();
+            }
+            return "name:" + serverName.toString();
+        }
     }
 
 

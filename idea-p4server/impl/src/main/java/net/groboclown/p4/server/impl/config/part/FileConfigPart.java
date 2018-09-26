@@ -373,16 +373,17 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
                 // an escape character, whereas the Perforce config file
                 // will keep it.
 
-                BufferedReader inp = new BufferedReader(reader);
-                String line;
-                while ((line = inp.readLine()) != null) {
-                    int pos = line.indexOf('=');
-                    if (pos > 0) {
-                        final String key = line.substring(0, pos).trim();
-                        final String value = line.substring(pos + 1).trim();
-                        // NOTE: an empty value is a set value!
-                        if (key.length() > 0) {
-                            props.setProperty(key, value);
+                try (BufferedReader inp = new BufferedReader(reader)) {
+                    String line;
+                    while ((line = inp.readLine()) != null) {
+                        int pos = line.indexOf('=');
+                        if (pos > 0) {
+                            final String key = line.substring(0, pos).trim();
+                            final String value = line.substring(pos + 1).trim();
+                            // NOTE: an empty value is a set value!
+                            if (key.length() > 0) {
+                                props.setProperty(key, value);
+                            }
                         }
                     }
                 }

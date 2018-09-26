@@ -6,6 +6,23 @@ of Github.
 
 ## Bugs
 
+### Diff Not Reporting Differences
+
+**Priority: Critical**
+
+The `diff` functionality shows no differences between versions.  If you go through the explicit P4 sub-menu, it works,
+but, for example, the Version Control panel's "Show Diffs" button does not work right.  This probably comes from
+actions named `action.name.show.difference` and `ShowDiffPreviewAction`.
+
+### Removing a Config Does Not Remove Its Cached Data
+
+**Priority: Critical**
+
+If you remove a server or client configuration from a project does not delete its cached values.  File and changelist
+associations remain, causing bad UI display.
+
+This looks to be due to a poor server cache lifecycle management.  Cache lifecycle looks to need an overhaul.
+
 ### Open for Edit doesn't move a file to a changelist.
 
 **Priority: Critical**
@@ -15,16 +32,6 @@ edit..." option is not selected, then editing the file manually and explicitly o
 will only move the file to the "Modified locally without checkout" section in the changelist view.
 The only way to make it checked out is to explicitly right click on the file in the changelist view and select
 "checkout".
-
-### Diff Not Reporting Differences
-
-**Priority: Critical**
-
-The `diff` functionality shows no differences between versions.
-
-### Add / Edit Files Doesn't Trigger Changelist Refresh At The Right Time
-
-**Priority: Critical** 
 
 ### Open directories for add
 
@@ -40,6 +47,25 @@ required.  It might have been a Windows Subsystem for Linux issue.
 **Priority: Major**
 
 Move file operations show up as "moved from ../../../..//depot/path/".
+
+### After Setting Password Active Connection is Still Offline
+
+**Priority: Major**
+
+Once the user has fixed the login problem by entering a password, the Active Connection panel always shows the
+connection as offline, even after a refresh of both the Active Connection panel and the changelist view. 
+
+### File Change Operations Do Not Refresh Change List View
+
+**Priority: Minor** (first minor to tackle)
+
+After file operations (add, edit, delete, move), the change list view does not refresh itself.  The user must manually
+refresh the view before the changes show up.  Revert works correctly.
+
+Looks like it could be due to pushing events off into worker threads.  The view refresh is triggered *after* the cache
+updates, which should be a correct time for it.  However, even with that fix, it's still not refreshing.  Perhaps a
+delay (in case the requested refresh happens too soon after the previous refresh), or a forced wait in-thread would do
+the trick?
 
 ### Remove Pending Action requires Refresh
 
@@ -73,21 +99,14 @@ won't be updated with the new root.  This could be the source of at least one is
 
 This might be fixed now.  The API has changed to force usage that prevents serious memory leaks from spreading.
 
-### File Change Operations Do Not Refresh Change List View
-
-**Priority: Minor** ?
-
-After file operations (add, edit, delete, move), the change list view does not refresh itself.  The user must manually
-refresh the view before the changes show up.  Revert works correctly. 
-
 
 ## Required Missing Functionality
 
 In the 0.10 release, these pieces of old functionality are either broken or disabled.
 
-### SSO and Manual Passwords
+### SSO
 
-The SSO and asking the user for passwords are not well tested.
+The SSO is not tested.
 
 ### Swarm Integration
 
@@ -140,7 +159,7 @@ However, without this, the full environment support won't work.  This needs to b
 mapping mechanism in `P4Vcs`.  However, the user needs to be able to manage it, and that requires new UI support.  This
 is a big feature, and will require some careful planning to handle correctly.
 
-### Locally Cache Pending Changes
+### Locally Cached Pending Changes
 
 When a user makes a change to file (add, delete, move, edit), a cached version of the before-change should be kept.
 See `com.intellij.history.integration.IdeaGateway#acquireAndUpdateActualContent()` for how the local data is preserved.

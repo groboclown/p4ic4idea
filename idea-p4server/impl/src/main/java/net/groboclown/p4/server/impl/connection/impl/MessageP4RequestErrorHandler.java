@@ -150,7 +150,7 @@ public abstract class MessageP4RequestErrorHandler
     @Override
     protected P4CommandRunner.ServerResultException handleException(
             @NotNull ConnectionInfo info, @NotNull Exception e) {
-        LOG.warn("Running an action with the Perforce server generated an error.", e);
+        LOG.warn("Running an action with the Perforce server " + info + " generated an error.", e);
 
         // Note: the "if" statements in here should be eliminated as much as possible,
         // and instead pushed into the P4Java plugin.
@@ -528,6 +528,7 @@ public abstract class MessageP4RequestErrorHandler
             @NotNull Exception sourceException,
             @NotNull AuthenticationFailedException sourceAfe) {
         AuthenticationFailedException.ErrorType errorType = sourceAfe.getErrorType();
+        LOG.debug("Handling login failure " + errorType + " for " + info, new Exception());
         switch (errorType) {
             case SESSION_EXPIRED:
                 if (info.hasServerConfig()) {
@@ -562,21 +563,15 @@ public abstract class MessageP4RequestErrorHandler
                 }
             case NOT_LOGGED_IN:
                 if (info.hasServerConfig()) {
-                    if (info.getServerConfig().usesStoredPassword()) {
-                        // User required a password, but the user is considered not logged in.
-                        // This usually means that the user specified an empty password, so log in isn't
-                        // required, but the server wants a password.
-                        LoginFailureMessage.send().passwordInvalid(new ServerErrorEvent.ServerConfigErrorEvent<>(
-                                info.getServerConfig(), sourceAfe));
-                        return createServerResultException(sourceException,
-                                getMessage("error.AuthenticationFailedException.PASSWORD_INVALID", sourceException),
-                                P4CommandRunner.ErrorCategory.ACCESS_DENIED);
-                    }
-                    // The API should have performed a log in.
-                    InternalErrorMessage.send(project).internalError(new ErrorEvent<>(sourceException));
+                    // Server required a login, but it wasn't done, most probably because the password isn't known,
+                    // so no login attempt was made (see PASSWORD_UNNECESSARY below).  We'll classify this as a
+                    // invalid password error, and it's up to the listener to figure out if a password should be
+                    // asked for.
+                    LoginFailureMessage.send().passwordInvalid(new ServerErrorEvent.ServerConfigErrorEvent<>(
+                            info.getServerConfig(), sourceAfe));
                     return createServerResultException(sourceException,
-                            getMessage("error.AuthenticationFailedException.NOT_LOGGED_IN", sourceException),
-                            P4CommandRunner.ErrorCategory.INTERNAL);
+                            getMessage("error.AuthenticationFailedException.PASSWORD_INVALID", sourceException),
+                            P4CommandRunner.ErrorCategory.ACCESS_DENIED);
                 } else {
                     // This is an internal API usage error.  The plugin code should
                     // have already logged the user in, or a command was run that didn't

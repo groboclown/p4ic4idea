@@ -142,7 +142,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
      * @return the opened cache pair.  The values can be null if the cache has not yet been initialized.
      */
     @NotNull
-    public Pair<IdeChangelistMap, IdeFileMap> getServerOpenedCache() {
+    public synchronized Pair<IdeChangelistMap, IdeFileMap> getServerOpenedCache() {
         return new Pair<>(changelistMap, fileMap);
     }
 
@@ -156,8 +156,8 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
             return BlockingAnswer.defaultBlockingGet(refreshServerOpenedCache(clients), timeout, timeoutUnit,
                     this::getServerOpenedCache);
         } catch (P4CommandRunner.ServerResultException e) {
-            // TODO better error handling!
-            LOG.info(e);
+            // User error handling is done through events.
+            LOG.debug(e);
             return getServerOpenedCache();
         }
     }
@@ -200,7 +200,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     }
 
     @Override
-    public void disposeComponent() {
+    public synchronized void disposeComponent() {
         if (queryHandler != null) {
             queryHandler = null;
         }

@@ -374,12 +374,15 @@ public class ServerConnection {
         if (disposed) {
             throw new P4ConnectionDisposedException();
         }
-        // double-check locking.  This is why clientExec must be volatile.
-        synchronized (clientExecLock) {
+
+        clientExecLock.lock();
+        try {
             if (clientExec == null) {
                 clientExec = ClientExec.createFor(config, statusController);
             }
             return new P4Exec2(project, clientExec);
+        } finally {
+            clientExecLock.unlock();
         }
     }
 
@@ -453,11 +456,14 @@ public class ServerConnection {
 
 
     void goOffline() {
-        synchronized (clientExecLock) {
+        clientExecLock.lock();
+        try {
             if (clientExec != null) {
                 clientExec.dispose();
                 clientExec = null;
             }
+        } finally {
+            clientExecLock.unlock();
         }
     }
 

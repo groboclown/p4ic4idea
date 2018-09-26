@@ -382,28 +382,26 @@ public class FileDataPart implements DataPart {
         Properties props = new Properties();
         if (filePath != null) {
             // TODO use correct locale
-            FileReader reader = new FileReader(filePath);
-            try {
+            try (FileReader reader = new FileReader(filePath)) {
                 // The Perforce config file is NOT the same as a Java
                 // config file.  Java config files will read the "\" as
                 // an escape character, whereas the Perforce config file
                 // will keep it.
 
-                BufferedReader inp = new BufferedReader(reader);
-                String line;
-                while ((line = inp.readLine()) != null) {
-                    int pos = line.indexOf('=');
-                    if (pos > 0) {
-                        final String key = line.substring(0, pos).trim();
-                        final String value = line.substring(pos + 1).trim();
-                        // NOTE: an empty value is a set value!
-                        if (key.length() > 0) {
-                            props.setProperty(key, value);
+                try (BufferedReader inp = new BufferedReader(reader)) {
+                    String line;
+                    while ((line = inp.readLine()) != null) {
+                        int pos = line.indexOf('=');
+                        if (pos > 0) {
+                            final String key = line.substring(0, pos).trim();
+                            final String value = line.substring(pos + 1).trim();
+                            // NOTE: an empty value is a set value!
+                            if (key.length() > 0) {
+                                props.setProperty(key, value);
+                            }
                         }
                     }
                 }
-            } finally {
-                reader.close();
             }
         }
         LOG.debug("Loaded property file " + filePath + " keys " + props.keySet());

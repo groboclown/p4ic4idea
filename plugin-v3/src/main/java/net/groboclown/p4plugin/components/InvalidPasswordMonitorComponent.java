@@ -17,6 +17,7 @@ package net.groboclown.p4plugin.components;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ApplicationComponent;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.project.ProjectManagerListener;
@@ -44,6 +45,8 @@ import java.util.Map;
 
 public class InvalidPasswordMonitorComponent
         implements ApplicationComponent, Disposable {
+    private static final Logger LOG = Logger.getInstance(InvalidPasswordMonitorComponent.class);
+
     private static final String COMPONENT_NAME = "p4ic: Invalid Password Monitor";
 
     // Note: without a server add/remove listener, this can be a potential memory leak.
@@ -57,10 +60,12 @@ public class InvalidPasswordMonitorComponent
 
     @Override
     public void initComponent() {
+        LOG.info("Initializing InvalidPasswordMonitorComponent");
         MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(this);
         LoginFailureMessage.addListener(mbClient, this, new LoginFailureMessage.Listener() {
             @Override
             public void singleSignOnFailed(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                LOG.info("Processing single sign on failure: " + e.getError().getMessage());
                 if (shouldHandleProblem(e.getConfig(), FailureType.SSO)) {
                     // No explicit action to take
                     UserMessage.showNotification(null, UserMessage.ERROR,
@@ -70,6 +75,8 @@ public class InvalidPasswordMonitorComponent
                             NotificationType.ERROR);
 
                     // TODO once the Single Sign On can take an argument, let this prompt for the argument.
+                } else {
+                    LOG.info("Not handling SSO problem for " + e.getConfig());
                 }
             }
 
@@ -83,22 +90,38 @@ public class InvalidPasswordMonitorComponent
                         NotificationType.ERROR);
 
                 // TODO once the Single Sign On can take an argument, let this prompt for the argument.
+                // TODO look at showing messages for the command executed, and the output from the command.
             }
 
             @Override
             public void sessionExpired(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
                 // Force a log-in.  If this fails, another message will be handled.
                 if (shouldHandleProblem(e.getConfig(), FailureType.SESSION_EXPIRED)) {
+                    LOG.info("Session expired.  Performing another login.");
                     P4ServerComponent.perform(findBestProject(), e.getConfig(),
                             new LoginAction());
+                } else {
+                    LOG.info("Not handling session expired error for " + e.getConfig());
                 }
             }
 
             @Override
             public void passwordInvalid(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
-                // Remove the stored password.
+                // The stored password is wrong or not given.
                 if (shouldHandleProblem(e.getConfig(), FailureType.PASSWORD_INVALID)) {
+                    if (!e.getConfig().usesStoredPassword()) {
+                        // TODO quick link to the configuration.
+                        // However, that requires a Project object, which this method does not have.
+                        // It needs to be an accurate project object, not just a best guess.
+                        LOG.info("User didn't specify that a password should be asked for by the IDE.");
+                        UserMessage.showNotification(null, UserMessage.ERROR,
+                                P4Bundle.message("login.password-not-stored.error", e.getName().getDisplayName()),
+                                P4Bundle.getString("login.password-not-stored.error.title"),
+                                NotificationType.ERROR);
+                        return;
+                    }
                     // Ask for the password.  Use the fancy notification stuff.
+                    LOG.info("Show a user notification, and use hyperlink to ask for password for " + e.getConfig());
                     UserMessage.showNotification(null, UserMessage.ERROR,
                             P4Bundle.message("login.password.error", e.getName().getDisplayName()),
                             P4Bundle.getString("login.password.error.title"),
@@ -114,6 +137,8 @@ public class InvalidPasswordMonitorComponent
                                 forgetLoginProblem(e.getConfig());
                             }
                     );
+                } else {
+                    LOG.info("Not handling password invalid for " + e.getConfig());
                 }
             }
 
@@ -129,6 +154,8 @@ public class InvalidPasswordMonitorComponent
 
                     // Update the password to remove the stored password.
                     ApplicationPasswordRegistry.getInstance().remove(e.getConfig());
+                } else {
+                    LOG.info("Not handling password uncessary issue for " + e.getConfig());
                 }
             }
         });

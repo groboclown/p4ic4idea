@@ -82,12 +82,13 @@ class BasicResponse {
     private static String read(HttpEntity entity)
             throws IOException {
         StringBuilder sb = new StringBuilder();
-        InputStreamReader in = new InputStreamReader(
-                entity.getContent(), getEncoding(entity));
-        char[] buff = new char[4096];
-        int len;
-        while ((len = in.read(buff, 0, 4096)) > 0) {
-            sb.append(buff, 0, len);
+        try (InputStreamReader in = new InputStreamReader(
+                entity.getContent(), getEncoding(entity))) {
+            char[] buff = new char[4096];
+            int len;
+            while ((len = in.read(buff, 0, 4096)) > 0) {
+                sb.append(buff, 0, len);
+            }
         }
         return sb.toString();
     }

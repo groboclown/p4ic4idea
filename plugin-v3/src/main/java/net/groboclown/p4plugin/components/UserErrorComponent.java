@@ -210,15 +210,16 @@ public class UserErrorComponent implements ProjectComponent {
         LoginFailureMessage.addListener(appClient, this, new LoginFailureMessage.Listener() {
             @Override
             public void singleSignOnFailed(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
-                simpleError("Single sign on failed for " + e.getName(), "Login Failure");
+                // Login Errors are handled by the InvalidPasswordMonitorComponent
+                // simpleError("Single sign on failed for " + e.getName(), "Login Failure");
                 LOG.warn(e.getError());
             }
 
             @Override
             public void singleSignOnExecutionFailed(@NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
-                // TODO allow a link to show a dialog with the output for the command message.
-                simpleError("Single sign on execution failed for " + e.getConfig().getServerName(),
-                        "Login Failure");
+                // Login Errors are handled by the InvalidPasswordMonitorComponent
+                //simpleError("Single sign on execution failed for " + e.getConfig().getServerName(),
+                //        "Login Failure");
                 LOG.warn("SSO error for cmd: " + e.getCmd());
                 LOG.warn("Stdout: " + e.getStdout());
                 LOG.warn("StdErr: " + e.getStderr());
@@ -226,19 +227,22 @@ public class UserErrorComponent implements ProjectComponent {
 
             @Override
             public void sessionExpired(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
-                simpleError("Session expired for " + e.getName(), "Login Failure");
+                // Login Errors are handled by the InvalidPasswordMonitorComponent
+                //simpleError("Session expired for " + e.getName(), "Login Failure");
                 LOG.warn(e.getError());
             }
 
             @Override
             public void passwordInvalid(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
-                simpleError("Password invalid for " + e.getName(), "Login Failure");
+                // Login Errors are handled by the InvalidPasswordMonitorComponent
+                //simpleError("Password invalid for " + e.getName(), "Login Failure");
                 LOG.warn(e.getError());
             }
 
             @Override
             public void passwordUnnecessary(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
-                simpleError("Password unnecessary for " + e.getName(), "Login Failure");
+                // Login Errors are handled by the InvalidPasswordMonitorComponent
+                //simpleError("Password unnecessary for " + e.getName(), "Login Failure");
                 LOG.warn(e.getError());
             }
         });

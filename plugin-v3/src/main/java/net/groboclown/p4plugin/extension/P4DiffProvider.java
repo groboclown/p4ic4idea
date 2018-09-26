@@ -54,12 +54,13 @@ public class P4DiffProvider extends DiffProviderEx
     private static final Logger LOG = Logger.getInstance(P4DiffProvider.class);
 
     private final Project project;
-    private final HistoryMessageFormatter formatter = new HistoryMessageFormatterImpl();
+    private final HistoryMessageFormatter formatter;
     private final HistoryContentLoader loader;
 
     P4DiffProvider(Project project) {
         this.project = project;
         this.loader = new HistoryContentLoaderImpl(project);
+        this.formatter = new HistoryMessageFormatterImpl();
     }
 
     @Nullable

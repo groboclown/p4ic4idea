@@ -39,7 +39,7 @@ import java.util.List;
  * a client workspace (say, a different branch), which is useful when looking
  * at the revision history across branches.
  */
-public class P4FileRevision extends VcsFileRevisionEx {
+public final class P4FileRevision extends VcsFileRevisionEx {
     private static final Logger LOG = Logger.getInstance(P4FileRevision.class);
     private final Project project;
 
@@ -187,10 +187,7 @@ public class P4FileRevision extends VcsFileRevisionEx {
         if (o == this) {
             return true;
         }
-        if (o == null) {
-            return false;
-        }
-        if (o.getClass().equals(P4FileRevision.class)) {
+        if (o instanceof P4FileRevision) {
             P4FileRevision that = (P4FileRevision) o;
             return baseFile.equals(that.baseFile) &&
                     revision.getRev() == that.revision.getRev();

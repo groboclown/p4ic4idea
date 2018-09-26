@@ -70,13 +70,9 @@ public class PersistentRootConfigComponent
     }
 
 
-    @NotNull
+    @Nullable
     public static PersistentRootConfigComponent getInstance(@NotNull Project project) {
-        PersistentRootConfigComponent ret = (PersistentRootConfigComponent) project.getComponent(COMPONENT_NAME);
-        if (ret == null) {
-            throw new IllegalStateException("PersistentRootConfigComponent not initialized");
-        }
-        return ret;
+        return (PersistentRootConfigComponent) project.getComponent(COMPONENT_NAME);
     }
 
     @NotNull

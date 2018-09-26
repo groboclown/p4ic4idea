@@ -242,13 +242,14 @@ public class SimpleConnectionManager implements ConnectionManager {
                     );
             }
             server.login(password, loginOptions);
-            ServerConnectedMessage.send().serverConnected(
-                    new ServerConnectedMessage.ServerConnectedEvent(serverConfig, true));
         } else {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("No attempt made to authenticate with the server.");
             }
         }
+        // TODO should this always be sent???
+        ServerConnectedMessage.send().serverConnected(
+                new ServerConnectedMessage.ServerConnectedEvent(serverConfig, true));
 
         return server;
     }

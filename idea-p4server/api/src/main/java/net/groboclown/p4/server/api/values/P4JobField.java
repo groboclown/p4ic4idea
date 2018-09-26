@@ -30,8 +30,6 @@ public interface P4JobField {
     String PRESET_NOW = "$now";
     String PRESET_BLANK = "$blank";
 
-    DateFormat FIELD_DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd kk:mm:ss");
-
     enum DataType {
         /** a single word (any value) */
         WORD {
@@ -58,7 +56,8 @@ public interface P4JobField {
                 if (PRESET_NOW.equals(sv)) {
                     return new Date();
                 }
-                return FIELD_DATE_FORMAT.format(fieldValue.toString());
+                // SimpleDateFormat is not thread safe, so we can't use a constant here.
+                return new SimpleDateFormat("yyyy/MM/dd kk:mm:ss").format(fieldValue.toString());
             }
         },
 

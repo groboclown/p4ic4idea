@@ -19,6 +19,7 @@ import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.VcsNotifier;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.extension.P4Vcs;
@@ -26,6 +27,9 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * TODO see if this should use VcsNotifier instead.
+ */
 public class UserMessage {
     public static final int VERBOSE = UserProjectPreferences.USER_MESSAGE_LEVEL_VERBOSE;
     public static final int INFO = UserProjectPreferences.USER_MESSAGE_LEVEL_INFO;

@@ -1003,6 +1003,9 @@ public class FileSpec extends ServerResource implements IFileSpec {
 		if (usefulDescription == null && repoName != null) {
 			usefulDescription = repoName + ": " + sha;
 		}
+		if (usefulDescription == null) {
+			usefulDescription = "???";
+		}
 		return usefulDescription;
 	}
 

@@ -171,7 +171,7 @@ public final class SyncOptionConfigurable implements Configurable {
             if (obj == this) {
                 return true;
             }
-            if (obj == null || ! obj.getClass().equals(SyncOptions.class)) {
+            if (!(obj instanceof SyncOptions)) {
                 return false;
             }
             SyncOptions that = (SyncOptions) obj;

@@ -96,13 +96,13 @@ public class P4OptionsServerConnectionFactory {
         {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Connecting to server [" + uri + "]");
-                LOG.debug(String.format("Usage options:\n"
-                                + "  Host Name: %s\n"
-                                + "  Program Name: %s\n"
-                                + "  Program Version: %s\n"
-                                + "  Text Language: %s\n"
-                                + "  Unset Client Name: %s\n"
-                                + "  Unset User Name: %s\n"
+                LOG.debug(String.format("Usage options:%n"
+                                + "  Host Name: %s%n"
+                                + "  Program Name: %s%n"
+                                + "  Program Version: %s%n"
+                                + "  Text Language: %s%n"
+                                + "  Unset Client Name: %s%n"
+                                + "  Unset User Name: %s%n"
                                 + "  Working Directory: %s",
                         options.getHostName(),
                         options.getProgramName(),

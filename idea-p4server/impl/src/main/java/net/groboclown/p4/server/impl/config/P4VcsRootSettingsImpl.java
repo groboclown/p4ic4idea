@@ -47,7 +47,11 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
 
     @Override
     public List<ConfigPart> getConfigParts() {
-        List<ConfigPart> ret = PersistentRootConfigComponent.getInstance(project).getConfigPartsForRoot(rootDir);
+        final PersistentRootConfigComponent config = PersistentRootConfigComponent.getInstance(project);
+        if (config == null) {
+            return getDefaultConfigParts();
+        }
+        List<ConfigPart> ret = config.getConfigPartsForRoot(rootDir);
         if (ret == null || ret.isEmpty()) {
             return getDefaultConfigParts();
         }
@@ -61,7 +65,12 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
                 LOG.warn("Added null part" + parts);
             }
         }
-        PersistentRootConfigComponent.getInstance(project).setConfigPartsForRoot(rootDir, parts);
+        final PersistentRootConfigComponent config = PersistentRootConfigComponent.getInstance(project);
+        if (config == null) {
+            LOG.warn("Could not save configuration parts: PersistentRootConfigComponent not initialized");
+            return;
+        }
+        config.setConfigPartsForRoot(rootDir, parts);
     }
 
     @Override
@@ -75,7 +84,11 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
             //setConfigParts(Collections.emptyList());
             return;
         }
-        if (!PersistentRootConfigComponent.getInstance(project).hasConfigPartsForRoot(rootDir)) {
+        final PersistentRootConfigComponent config = PersistentRootConfigComponent.getInstance(project);
+        if (config == null) {
+            LOG.warn("Loaded persistent root directory " + rootDir +
+                    ", but PersistentRootConfigComponent not initialized");
+        } else if (!config.hasConfigPartsForRoot(rootDir)) {
             LOG.warn("Loaded persistent root directory " + rootDir + ", but has no persistent config parts loaded");
         }
     }

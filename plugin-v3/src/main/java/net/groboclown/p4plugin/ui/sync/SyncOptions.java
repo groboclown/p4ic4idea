@@ -19,7 +19,7 @@ import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class SyncOptions {
+public final class SyncOptions {
     private static final int INVALID_REV = Integer.MIN_VALUE;
 
     private @NotNull SyncType type;
@@ -132,7 +132,7 @@ public class SyncOptions {
         if (obj == this) {
             return true;
         }
-        if (obj == null || ! obj.getClass().equals(SyncOptions.class)) {
+        if (!(obj instanceof SyncOptions)) {
             return false;
         }
         SyncOptions that = (SyncOptions) obj;

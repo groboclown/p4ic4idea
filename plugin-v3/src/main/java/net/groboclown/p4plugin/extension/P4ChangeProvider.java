@@ -27,6 +27,7 @@ import com.intellij.openapi.vcs.changes.ChangeListManagerGate;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.ChangelistBuilder;
 import com.intellij.openapi.vcs.changes.ContentRevision;
+import com.intellij.openapi.vcs.changes.CurrentContentRevision;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -544,7 +545,7 @@ public class P4ChangeProvider
         switch (file.getFileAction()) {
             case ADD:
             case ADD_EDIT:
-                after = new P4LocalFileContentRevision(file);
+                after = new CurrentContentRevision(file.getFilePath());
                 status = FileStatus.ADDED;
                 break;
             case EDIT:
@@ -554,11 +555,12 @@ public class P4ChangeProvider
                 // think we set the wrong status, and set it to a "move" operation.
                 // before = new P4RemoteFileContentRevision(project,
                 //        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig());
-                before = after = new P4LocalFileContentRevision(file);
+                before = new P4LocalFileContentRevision(file);
+                after = new CurrentContentRevision(file.getFilePath());
                 status = FileStatus.MODIFIED;
                 break;
             case INTEGRATE:
-                after = new P4LocalFileContentRevision(file);
+                after = new CurrentContentRevision(file.getFilePath());
                 if (file.getIntegrateFrom() != null) {
                     // TODO find the right charset
                     before = new P4RemoteFileContentRevision(project,
@@ -568,7 +570,7 @@ public class P4ChangeProvider
                     before = new P4RemoteFileContentRevision(project,
                             file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
                 } else {
-                    before = after;
+                    before = new P4LocalFileContentRevision(file);
                 }
                 status = FileStatus.MERGE;
                 break;
@@ -588,7 +590,7 @@ public class P4ChangeProvider
                     before = new P4RemoteFileContentRevision(project,
                             file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
                 }
-                after = new P4LocalFileContentRevision(file);
+                after = new CurrentContentRevision(file.getFilePath());
                 status = FileStatus.MERGE;
                 break;
             case MOVE_DELETE:
@@ -609,6 +611,7 @@ public class P4ChangeProvider
                     // TODO needs to reference the source file.
                     before = null;
                 } else {
+                    // FIXME this causes a source file location bug.  The UI shows a relative path to the depot path.
                     before = new P4RemoteFileContentRevision(project,
                             file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
                 }

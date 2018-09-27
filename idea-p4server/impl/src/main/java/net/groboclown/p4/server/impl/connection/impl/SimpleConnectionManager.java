@@ -57,7 +57,9 @@ import java.util.concurrent.Callable;
 
 public class SimpleConnectionManager implements ConnectionManager {
     private static final Logger LOG = Logger.getInstance(SimpleConnectionManager.class);
-    private static final Logger P4LOG = Logger.getInstance("p4");
+    private static final Logger P4LOG = Logger.getInstance("p4.api");
+    private static final Logger P4CMDLOG = Logger.getInstance("p4");
+    private static final Logger P4STATSLOG = Logger.getInstance("p4.stats");
 
     private static final String PLUGIN_P4HOST_KEY = "P4HOST";
     private static final String PLUGIN_LANGUAGE_KEY = "P4LANGUAGE";
@@ -355,7 +357,7 @@ public class SimpleConnectionManager implements ConnectionManager {
                 @Override
                 public void internalStats(final String statsString) {
                     if (P4LOG.isDebugEnabled()) {
-                        P4LOG.debug("p4java stats: " + statsString);
+                        P4STATSLOG.debug("p4java stats: " + statsString);
                     }
                 }
 
@@ -376,22 +378,26 @@ public class SimpleConnectionManager implements ConnectionManager {
         server.registerCallback(new ICommandCallback() {
             @Override
             public void issuingServerCommand(int key, String commandString) {
-                P4LOG.debug("Running cmd p4 " + commandString);
+                P4CMDLOG.info("cmd (" + key + "): p4 " + commandString);
             }
 
             @Override
             public void completedServerCommand(int key, long millisecsTaken) {
-
+                if (P4CMDLOG.isDebugEnabled()) {
+                    P4CMDLOG.debug("Command " + key + " ran in " + millisecsTaken + " milliseconds");
+                }
             }
 
             @Override
             public void receivedServerInfoLine(int key, IServerMessage infoLine) {
-
+                if (P4CMDLOG.isDebugEnabled()) {
+                    P4CMDLOG.debug("cmd (" + key + "): INFO " + infoLine.getAllInfoStrings("\n"));
+                }
             }
 
             @Override
             public void receivedServerErrorLine(int key, IServerMessage errorLine) {
-
+                P4CMDLOG.info("cmd (" + key + "): ERROR " + errorLine.getAllInfoStrings("\n"));
             }
 
             @Override

@@ -6,14 +6,6 @@ of Github.
 
 ## Bugs
 
-### Diff Not Reporting Differences
-
-**Priority: Critical**
-
-The `diff` functionality shows no differences between versions.  If you go through the explicit P4 sub-menu, it works,
-but, for example, the Version Control panel's "Show Diffs" button does not work right.  This probably comes from
-actions named `action.name.show.difference` and `ShowDiffPreviewAction`.
-
 ### Removing a Config Does Not Remove Its Cached Data
 
 **Priority: Critical**

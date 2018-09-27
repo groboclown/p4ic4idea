@@ -171,6 +171,9 @@ public class P4DiffProvider extends DiffProviderEx
         } else {
             iRev = new VcsRevisionNumber.Int(IFileSpec.HEAD_REVISION);
         }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Generating file content for " + selectedFile + " rev " + iRev);
+        }
         return new ContentRevision() {
             @Nullable
             @Override
@@ -186,6 +189,7 @@ public class P4DiffProvider extends DiffProviderEx
                             local,
                             iRev.getValue());
                 } catch (IOException e) {
+                    LOG.info("Problem loading file content for " + local + " rev " + iRev, e);
                     throw new VcsException(e);
                 }
             }

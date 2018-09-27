@@ -38,7 +38,8 @@ required.  It might have been a Windows Subsystem for Linux issue.
 
 **Priority: Major**
 
-Move file operations show up as "moved from ../../../..//depot/path/".
+Move file operations show up as "moved from ../../../..//depot/path/".  Looks to be an issue with the creation of 
+the Change object in `P4ChangeProvider`.
 
 ### After Setting Password Active Connection is Still Offline
 

@@ -14,43 +14,23 @@
 
 package net.groboclown.p4plugin.revision;
 
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.changes.ContentRevision;
-import com.intellij.openapi.vcs.changes.CurrentContentRevision;
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import net.groboclown.p4.server.api.commands.HistoryContentLoader;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static com.intellij.openapi.util.Comparing.equal;
 
-public class P4LocalFileContentRevision implements ContentRevision {
+public class P4LocalFileContentRevision extends AbstractP4FileContentRevision {
     private final P4LocalFile file;
-    private final ContentRevision contentProxy;
 
-    public P4LocalFileContentRevision(@NotNull P4LocalFile file) {
+    public P4LocalFileContentRevision(@Nullable ClientConfig clientConfig, @NotNull P4LocalFile file,
+            @Nullable HistoryContentLoader loader) {
+        super(clientConfig, file.getFilePath(), file.getFilePath().getPath(), file.getHaveRevision(), loader,
+                // TODO use the correct charset
+                null);
         this.file = file;
-        this.contentProxy = CurrentContentRevision.create(file.getFilePath());
-    }
-
-    @Nullable
-    @Override
-    public String getContent()
-            throws VcsException {
-        return contentProxy.getContent();
-    }
-
-    @NotNull
-    @Override
-    public FilePath getFile() {
-        return file.getFilePath();
-    }
-
-    @NotNull
-    @Override
-    public VcsRevisionNumber getRevisionNumber() {
-        return file.getHaveRevision();
     }
 
     @Override
@@ -61,7 +41,7 @@ public class P4LocalFileContentRevision implements ContentRevision {
         if (o instanceof P4LocalFileContentRevision) {
             P4LocalFileContentRevision that = (P4LocalFileContentRevision) o;
             return equal(that.file.getDepotPath(), file.getDepotPath())
-                    && equal(that.contentProxy.getRevisionNumber(), contentProxy.getRevisionNumber());
+                    && equal(that.getRevisionNumber(), getRevisionNumber());
         }
         return false;
     }
@@ -69,7 +49,7 @@ public class P4LocalFileContentRevision implements ContentRevision {
     @Override
     public int hashCode() {
         return (file.getDepotPath() == null ? 0 : file.getDepotPath().hashCode()) +
-                contentProxy.getRevisionNumber().hashCode();
+                getRevisionNumber().hashCode();
     }
 
     @Override

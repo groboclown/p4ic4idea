@@ -555,7 +555,7 @@ public class P4ChangeProvider
                 // think we set the wrong status, and set it to a "move" operation.
                 // before = new P4RemoteFileContentRevision(project,
                 //        file.getDepotPath(), file.getHaveRevision(), config.getServerConfig());
-                before = new P4LocalFileContentRevision(file);
+                before = new P4LocalFileContentRevision(config, file, loader);
                 after = new CurrentContentRevision(file.getFilePath());
                 status = FileStatus.MODIFIED;
                 break;
@@ -563,31 +563,31 @@ public class P4ChangeProvider
                 after = new CurrentContentRevision(file.getFilePath());
                 if (file.getIntegrateFrom() != null) {
                     // TODO find the right charset
-                    before = new P4RemoteFileContentRevision(project,
+                    before = new P4RemoteFileContentRevision(
                             file.getIntegrateFrom(), null, config.getServerConfig(), loader, null);
                 } else if (file.getDepotPath() != null) {
                     // TODO find the right charset
-                    before = new P4RemoteFileContentRevision(project,
+                    before = new P4RemoteFileContentRevision(
                             file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
                 } else {
-                    before = new P4LocalFileContentRevision(file);
+                    before = new P4LocalFileContentRevision(config, file, loader);
                 }
                 status = FileStatus.MERGE;
                 break;
             case DELETE:
-                before = new P4LocalFileContentRevision(file);
+                before = new P4LocalFileContentRevision(config, file, loader);
                 status = FileStatus.DELETED;
                 break;
             case REVERTED:
             case NONE:
-                before = after = new P4LocalFileContentRevision(file);
+                before = after = new P4LocalFileContentRevision(config, file, loader);
                 status = FileStatus.NOT_CHANGED;
                 break;
             case EDIT_RESOLVED:
                 if (file.getDepotPath() == null) {
                     before = null;
                 } else {
-                    before = new P4RemoteFileContentRevision(project,
+                    before = new P4RemoteFileContentRevision(
                             file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
                 }
                 after = new CurrentContentRevision(file.getFilePath());
@@ -599,7 +599,7 @@ public class P4ChangeProvider
                     before = new P4DeletedLocalFileRevision(file);
                 } else {
                     // TODO find the right charset
-                    before = new P4RemoteFileContentRevision(project,
+                    before = new P4RemoteFileContentRevision(
                             file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
                 }
                 status = FileStatus.DELETED;
@@ -612,17 +612,17 @@ public class P4ChangeProvider
                     before = null;
                 } else {
                     // FIXME this causes a source file location bug.  The UI shows a relative path to the depot path.
-                    before = new P4RemoteFileContentRevision(project,
+                    before = new P4RemoteFileContentRevision(
                             file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
                 }
-                // TODO find the right charset
-                after = new P4LocalFileContentRevision(file);
+                after = new CurrentContentRevision(file.getFilePath());
                 // Even though the status is "ADD", the UI will notice the different before/after
                 // and show the files as moved.
                 status = FileStatus.ADDED;
                 break;
             case UNKNOWN:
-                before = after = new P4LocalFileContentRevision(file);
+                before = new P4LocalFileContentRevision(config, file, loader);
+                after = new CurrentContentRevision(file.getFilePath());
                 status = FileStatus.UNKNOWN;
                 break;
             default:

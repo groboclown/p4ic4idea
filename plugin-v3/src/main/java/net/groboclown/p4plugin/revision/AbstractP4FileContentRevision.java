@@ -46,7 +46,7 @@ public class AbstractP4FileContentRevision
             @NotNull String serverFilePath,
             @NotNull VcsRevisionNumber.Int rev,
             @Nullable HistoryContentLoader loader,
-            @Nullable String charset) {
+            @Nullable Charset charset) {
         this.clientConfig = clientConfig;
         this.serverConfig = clientConfig.getServerConfig();
         this.filePath = filePath;
@@ -55,7 +55,7 @@ public class AbstractP4FileContentRevision
         this.charset = charset == null
                 // TODO better charset
                 ? Charset.defaultCharset()
-                : Charset.forName(charset);
+                : charset;
         this.rev = rev;
     }
 
@@ -66,7 +66,7 @@ public class AbstractP4FileContentRevision
             @NotNull String serverFilePath,
             @NotNull VcsRevisionNumber.Int rev,
             @Nullable HistoryContentLoader loader,
-            @Nullable String charset) {
+            @Nullable Charset charset) {
         this.clientConfig = null;
         this.serverConfig = serverConfig;
         this.filePath = filePath;
@@ -75,7 +75,7 @@ public class AbstractP4FileContentRevision
         this.charset = charset == null
             // TODO better charset
             ? Charset.defaultCharset()
-            : Charset.forName(charset);
+            : charset;
         this.rev = rev;
     }
 

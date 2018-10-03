@@ -76,7 +76,7 @@
         <li>No resolving merge conflicts.</li>
       </ul>
       <p>
-      The plugin will keep Your client's open changelists
+      The plugin will keep your client's open changelists
       synchronized with the IDEA backed changelists, viewable
       under the "Changes" view.  If the changelists become
       out of sync, you can force the plugin to re-examine the
@@ -95,10 +95,8 @@
       Once you install the plugin, you can associate a project directory
       with Perforce in the project settings (<b>File</b> - <b>Settings...</b>,
       then navigate to the <b>Version Control</b> panel).
-      Make sure to edit the Perforce configuration to set the proper server
-      connection settings.  You can see how the plugin evaluates the
-      properties across your project by viewing the <b>Server Connection</b>
-      tab.
+      Click on the "edit" icon for the version control root directories to setup
+      the server connection.
       </p>
       <p>
       For most people, the environment variables will be sufficient to use the

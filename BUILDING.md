@@ -8,7 +8,8 @@ First, you need to install the prerequisite software.
 1. **JDK 1.8** - Starting with IntelliJ IDEA 16, you need to be running with
    a version of JDK 1.8.  Note that only the IDEA 16 and later compatible modules
    actually needs JDK 1.8; the rest are written for JDK 1.6 for earlier
-   IDE version compatibility.
+   IDE version compatibility.  *Additionally, the build is not currently working for JDK10 or better.  Haven't tried
+   with JDK9.*
 1. **Git repo** - clone the Git repo from GitHub.
    
    ```

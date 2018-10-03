@@ -122,16 +122,19 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
     private void instrumentCode(@Nonnull FileCollection srcDirs, @Nonnull File outputDir, boolean instrumentNotNull) {
         def headlessOldValue = System.setProperty('java.awt.headless', 'true')
         FileCollection cp = classPath.call()
-        if (IdeaVersionUtil.isJdk9()) {
-            cp = project.files(cp, findJMods())
-        }
         logger.info("Setting up instrumentation with classpath " + cp.asPath)
+
+        def modpath = ""
+        if (IdeaVersionUtil.isJdk9()) {
+            modpath = findJModPath()
+        }
 
         // TODO this fails on JDK 10
         // It doesn't correctly load in the JDK libraries (jmod files)
         // It could also be the instrumentation class.
         ant.instrumentIdeaExtensions(srcdir: srcDirs.asPath,
                 destdir: outputDir, classpath: cp.asPath,
+                modulepath: modpath,
                 includeantruntime: false, instrumentNotNull: instrumentNotNull) {
             if (instrumentNotNull) {
                 ant.skip(pattern: 'kotlin/Metadata')
@@ -144,15 +147,22 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
         }
     }
 
-    private File[] findJMods() {
-        List<File> files = new ArrayList<>()
-        logger.info("Finding jmod files in " + System.properties."java.home")
+    private String findJModPath() {
+        Set<File> dirs = new HashSet<>()
+        logger.info("Finding jmod paths in " + System.properties."java.home")
         def jreHome = System.properties."java.home"
         project.fileTree(jreHome).visit { FileVisitDetails details ->
             if (details.file.name.endsWith('.jmod')) {
-                files.add(details.file)
+                dirs.add(details.file.parentFile)
             }
         }
-        return files.toArray(new File[0])
+        def ret = ""
+        for (File f in dirs) {
+            if (ret.length() > 0) {
+                ret += File.pathSeparator
+            }
+            ret += f.getAbsolutePath()
+        }
+        return ret
     }
 }

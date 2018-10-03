@@ -14,6 +14,7 @@
 
 package net.groboclown.p4plugin.revision;
 
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.RemoteFilePath;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -23,6 +24,8 @@ import net.groboclown.p4.server.api.values.P4RemoteFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.charset.Charset;
+
 public class P4RemoteFileContentRevision extends AbstractP4FileContentRevision {
     private static final VcsRevisionNumber.Int HEAD_REVISION = new VcsRevisionNumber.Int(IFileSpec.HEAD_REVISION);
     private final P4RemoteFile file;
@@ -30,11 +33,13 @@ public class P4RemoteFileContentRevision extends AbstractP4FileContentRevision {
 
     public P4RemoteFileContentRevision(
             @NotNull P4RemoteFile file,
+            @Nullable FilePath path,
             @Nullable VcsRevisionNumber.Int rev,
             @Nullable ServerConfig serverConfig,
             @Nullable HistoryContentLoader loader,
-            @Nullable String charset) {
-        super(serverConfig, new RemoteFilePath(file.getDisplayName(), false),
+            @Nullable Charset charset) {
+        super(serverConfig,
+                path == null ? new RemoteFilePath(file.getDisplayName(), false) : path,
                 file.getDepotPath(), rev == null ? HEAD_REVISION : rev, loader, charset);
         this.file = file;
     }

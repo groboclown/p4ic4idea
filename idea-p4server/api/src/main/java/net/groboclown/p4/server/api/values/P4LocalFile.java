@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.concurrent.Immutable;
+import java.nio.charset.Charset;
 
 /**
  * A local filesystem file, used for representing its state as the
@@ -69,4 +70,7 @@ public interface P4LocalFile {
 
     @Nullable
     P4RemoteFile getIntegrateFrom();
+
+    @Nullable
+    Charset getCharset();
 }

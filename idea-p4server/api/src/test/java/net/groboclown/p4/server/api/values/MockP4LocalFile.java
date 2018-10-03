@@ -21,6 +21,8 @@ import net.groboclown.p4.server.api.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.charset.Charset;
+
 // Supposed to be immutable, but it's for testing...
 public class MockP4LocalFile implements P4LocalFile {
     private P4RemoteFile depotPath;
@@ -130,6 +132,12 @@ public class MockP4LocalFile implements P4LocalFile {
     @Override
     public P4RemoteFile getIntegrateFrom() {
         return integrateFrom;
+    }
+
+    @Nullable
+    @Override
+    public Charset getCharset() {
+        return null;
     }
 
     public MockP4LocalFile withIntegrateFrom(P4RemoteFile f) {

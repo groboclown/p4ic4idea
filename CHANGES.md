@@ -10,7 +10,7 @@
 * Complete rewrite of connection and caching mechanism.
 * Active Connection view.
 * New Browsing Features.
-* Project from Version Control support added.
+* New Project from Version Control support added.
 * Upgraded p4java dependency to r18-1.
 * Shipping as single Jar file.
 * Updated build.
@@ -20,44 +20,31 @@
 * No longer compatible with versions before 2017.1.
 * Updated code to work with 2017.1 features.
     * Included major release libraries from IDEA, built from source.
-    * These are broken up into small libraries to reduce their size,
-      so we don't need to include the normal gigabyte sized jar.
-    * Removed dependency upon the external lib project.  Pulling the project
-      gets everything.
+    * These are broken up into small libraries to reduce their size, so we don't need to include the normal gigabyte sized jar.
+    * Removed dependency upon the external lib project.  Pulling the project gets everything.
 * Complete rewrite of connection and caching mechanism.
-    * In order to support the 2017.1 per-VCS Root configuration, the
-      plugin now maintains the connection information in the VCS root
-      level.
+    * In order to support the 2017.1 per-VCS Root configuration, the plugin now maintains the connection information in the VCS root level.
     * Relative configuration files are no longer supported.
-    * Offline support is better handled through an integrated caching
-      mechanism.
-    * Connection and caching are now designed for proper multi-threaded
-      operation, so there should be a significant performance boost.
-    * Passwords are no longer kept in memory by the plugin, but instead
-      use the IDE's password storage mechanism.  Before, only passwords
-      that the user entered through the dialog were stored by the IDE.
+    * Offline support is better handled through an integrated caching mechanism.
+    * Connection and caching are now designed for proper multi-threaded operation, so there should be a significant performance boost.
+    * Passwords are no longer kept in memory by the plugin, but instead use the IDE's password storage mechanism.  Before, only passwords that the user entered through the dialog were stored by the IDE.
     * File annotations should be faster now.
     * Works when running in one of the `AltRoot` for a client workspace.
 * Active Connection view.
-    * Rather than using a small status-bar widget, connections are now
-      viewed through a VCS tab called "Active Connections".
-    * Gives a better view of online status.
-    * Permits viewing what changes are cached, ready to be sent to the
-      server.
+    * Rather than using a small status-bar widget, connections are now viewed through a VCS tab called "Active Connections".
+    * Gives a better view of online status for each server.
+    * Permits viewing what changes are cached, ready to be sent to the server.
 * New Browsing Features.
     * You can browse for jobs when submitting a file.
     * You can browse for labels when synchronizing a directory.
 * New Project from Version Control support.
     * The plugin now supports **File** -> **New** -> **Project from Version Control**
-    * The new project will need to be configured after the synchronize; the settings used
-       to synchronize the project directory, unfortunately, cannot be put into the new
-       project settings.
+    * The new project will need to be configured after the synchronize; the settings used to synchronize the project directory, unfortunately, cannot be put into the new project settings.
 * Upgraded p4java dependency to r18-1
     * Requires additional dependent jars.
-    * Will allow for more thorough unit testing.
-* Shipping as single Jar file.
-    * Due to unknown issues with IDEA loading a zip file, the plugin is
-      now distributed as a single jar file with all dependencies unpacked inside it.
+    * Allows for more thorough unit testing.
+* Shipped as single Jar file.
+    * Due to unknown issues with IDEA loading a zip file, the plugin is now distributed as a single jar file with all dependencies unpacked inside it.
 * Updated build.
     * Builds now use Gradle.
     * Project split into smaller pieces, to hopefully make the project easier to comprehend.

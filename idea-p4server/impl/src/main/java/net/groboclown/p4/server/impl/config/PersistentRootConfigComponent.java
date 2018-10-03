@@ -21,8 +21,11 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.vcs.VcsRoot;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.xmlb.XmlSerializer;
+import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.impl.cache.store.VcsRootCacheStore;
 import org.jdom.Element;
@@ -117,6 +120,10 @@ public class PersistentRootConfigComponent
     public Element getState() {
         Element ret = new Element("all-root-configs");
         for (Map.Entry<VirtualFile, List<ConfigPart>> entry : rootPartMap.entrySet()) {
+            if (!isValidRoot(entry.getKey())) {
+                LOG.info("Skipped writing root " + entry.getKey() +
+                        " because it does not appear to be a valid Perforce VCS root");
+            }
             VcsRootCacheStore store = new VcsRootCacheStore(entry.getKey());
             store.setConfigParts(entry.getValue());
             Element rootElement = XmlSerializer.serialize(store.getState());
@@ -169,5 +176,29 @@ public class PersistentRootConfigComponent
     public void noStateLoaded() {
         // Really means "state loading completed."
         LOG.debug("No state loaded");
+    }
+
+    private boolean isValidRoot(final VirtualFile file) {
+        if (project.isDisposed()) {
+            // Err on the side of caution
+            return true;
+        }
+        ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance(project);
+        if (mgr == null) {
+            // Err on the side of caution
+            return true;
+        }
+        for (VcsRoot root : mgr.getAllVcsRoots()) {
+            if (root == null || root.getVcs() == null || root.getPath() == null) {
+                continue;
+            }
+            if (!P4VcsKey.VCS_NAME.equals(root.getVcs().getKeyInstanceMethod().getName())) {
+                continue;
+            }
+            if (file.equals(root.getPath())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

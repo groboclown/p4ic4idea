@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.impl.values;
 
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vfs.CharsetToolkit;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -30,6 +31,8 @@ import net.groboclown.p4.server.api.values.P4Revision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.charset.Charset;
+
 
 public class P4LocalFileImpl implements P4LocalFile {
     private final P4RemoteFile depot;
@@ -41,6 +44,7 @@ public class P4LocalFileImpl implements P4LocalFile {
     private final P4ResolveType resolveType;
     @NotNull private final P4FileType fileType;
     private final P4RemoteFile integrateFrom;
+    private final Charset charset;
 
 
     public static class Builder {
@@ -53,6 +57,7 @@ public class P4LocalFileImpl implements P4LocalFile {
         private P4ResolveType resolveType;
         private P4FileType fileType;
         private P4RemoteFile integrateFrom;
+        private Charset charset;
 
         public Builder withLocalFile(P4LocalFile file) {
             this.depot = file.getDepotPath();
@@ -64,6 +69,7 @@ public class P4LocalFileImpl implements P4LocalFile {
             this.resolveType = file.getResolveType();
             this.fileType = file.getFileType();
             this.integrateFrom = file.getIntegrateFrom();
+            this.charset = file.getCharset();
             return this;
         }
 
@@ -116,9 +122,14 @@ public class P4LocalFileImpl implements P4LocalFile {
             return this;
         }
 
+        public Builder withCharset(Charset c) {
+            this.charset = c;
+            return this;
+        }
+
         public P4LocalFileImpl build() {
             return new P4LocalFileImpl(depot, local, haveRev, headRev, changelistId, action, resolveType,
-                    fileType, integrateFrom);
+                    fileType, integrateFrom, charset);
         }
 
     }
@@ -164,6 +175,7 @@ public class P4LocalFileImpl implements P4LocalFile {
                     : (spec.getOriginalPath() != null
                         ? new P4RemoteFileImpl(spec.getOriginalPath().getPathString())
                         : null);
+        charset = CharsetToolkit.forName(spec.getCharset());
     }
 
     public P4LocalFileImpl(@NotNull ClientServerRef ref, @NotNull IFileSpec spec) {
@@ -174,13 +186,15 @@ public class P4LocalFileImpl implements P4LocalFile {
             P4FileAction.NONE,
             P4ResolveType.convert(null, null),
             P4FileType.convert(spec.getFileType()),
+            null,
             null);
     }
 
 
     private P4LocalFileImpl(@Nullable P4RemoteFile depot, @NotNull FilePath local, @NotNull P4Revision haveRev,
             @Nullable P4FileRevision headRev, @Nullable P4ChangelistId changelistId, @NotNull P4FileAction action,
-            @NotNull P4ResolveType resolveType, @Nullable P4FileType fileType, @Nullable P4RemoteFile integrateFrom) {
+            @NotNull P4ResolveType resolveType, @Nullable P4FileType fileType, @Nullable P4RemoteFile integrateFrom,
+            @Nullable Charset charset) {
         this.depot = depot;
         this.local = local;
         this.haveRev = haveRev;
@@ -190,6 +204,7 @@ public class P4LocalFileImpl implements P4LocalFile {
         this.resolveType = resolveType;
         this.fileType = fileType == null ? P4FileType.convert("unknown") : fileType;
         this.integrateFrom = integrateFrom;
+        this.charset = charset;
     }
 
 
@@ -245,6 +260,12 @@ public class P4LocalFileImpl implements P4LocalFile {
     @Override
     public P4RemoteFile getIntegrateFrom() {
         return integrateFrom;
+    }
+
+    @Nullable
+    @Override
+    public Charset getCharset() {
+        return charset;
     }
 
     @Override

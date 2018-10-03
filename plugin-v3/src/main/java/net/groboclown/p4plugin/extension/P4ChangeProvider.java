@@ -50,6 +50,7 @@ import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
+import net.groboclown.p4plugin.util.RemoteFileUtil;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
@@ -563,12 +564,13 @@ public class P4ChangeProvider
                 after = new CurrentContentRevision(file.getFilePath());
                 if (file.getIntegrateFrom() != null) {
                     // TODO find the right charset
-                    before = new P4RemoteFileContentRevision(
-                            file.getIntegrateFrom(), null, config.getServerConfig(), loader, null);
+                    before = new P4RemoteFileContentRevision(file.getIntegrateFrom(),
+                            RemoteFileUtil.findRelativeRemotePath(file, file.getIntegrateFrom()),
+                            null, config.getServerConfig(), loader, null);
                 } else if (file.getDepotPath() != null) {
-                    // TODO find the right charset
                     before = new P4RemoteFileContentRevision(
-                            file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
+                            file.getDepotPath(), file.getFilePath(), file.getHaveRevision(), config.getServerConfig(),
+                            loader, file.getCharset());
                 } else {
                     before = new P4LocalFileContentRevision(config, file, loader);
                 }
@@ -588,7 +590,8 @@ public class P4ChangeProvider
                     before = null;
                 } else {
                     before = new P4RemoteFileContentRevision(
-                            file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
+                            file.getDepotPath(), file.getFilePath(),
+                            file.getHaveRevision(), config.getServerConfig(), loader, file.getCharset());
                 }
                 after = new CurrentContentRevision(file.getFilePath());
                 status = FileStatus.MERGE;
@@ -598,28 +601,32 @@ public class P4ChangeProvider
                     // TODO needs to reference the source file.
                     before = new P4DeletedLocalFileRevision(file);
                 } else {
-                    // TODO find the right charset
                     before = new P4RemoteFileContentRevision(
-                            file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
+                            file.getDepotPath(), file.getFilePath(),
+                            file.getHaveRevision(), config.getServerConfig(), loader, file.getCharset());
                 }
                 status = FileStatus.DELETED;
                 break;
             case MOVE_ADD:
             case MOVE_ADD_EDIT:
-            case MOVE_EDIT:
-                if (file.getDepotPath() == null) {
-                    // TODO needs to reference the source file.
-                    before = null;
-                } else {
-                    // FIXME this causes a source file location bug.  The UI shows a relative path to the depot path.
+            case MOVE_EDIT: {
+                FilePath relativeFrom = RemoteFileUtil.findRelativeRemotePath(file, file.getIntegrateFrom());
+                FilePath relativeDepot = RemoteFileUtil.findRelativeRemotePath(file, file.getDepotPath());
+                if (relativeFrom != null) {
                     before = new P4RemoteFileContentRevision(
-                            file.getDepotPath(), file.getHaveRevision(), config.getServerConfig(), loader, null);
+                            file.getIntegrateFrom(), relativeFrom,
+                            file.getHaveRevision(), config.getServerConfig(), loader, file.getCharset());
+                } else if (relativeDepot != null) {
+                    before = new P4RemoteFileContentRevision(
+                            file.getDepotPath(), relativeDepot,
+                            file.getHaveRevision(), config.getServerConfig(), loader, file.getCharset());
                 }
                 after = new CurrentContentRevision(file.getFilePath());
                 // Even though the status is "ADD", the UI will notice the different before/after
                 // and show the files as moved.
                 status = FileStatus.ADDED;
                 break;
+            }
             case UNKNOWN:
                 before = new P4LocalFileContentRevision(config, file, loader);
                 after = new CurrentContentRevision(file.getFilePath());

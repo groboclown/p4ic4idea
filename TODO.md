@@ -6,40 +6,32 @@ of Github.
 
 ## Bugs
 
+### Submit changelist that includes files not in project
+
+**Priority: Critical**
+
+When you submit a changelist, it can include files that are not visible, because they are ouside the scope of the
+project.  The submission should only submit the files that the user sees.
+
+The unseen files should be moved to the default changelist before submission.  If the default changelist is
+submitted, then the code will need to create a changelist before submission, just like how the job association works.
+
 ### Removing a Config Does Not Remove Its Cached Data
 
 **Priority: Critical**
 
-If you remove a server or client configuration from a project does not delete its cached values.  File and changelist
+If you remove a server or client configuration from a project, its cached values do not get deleted.  File and changelist
 associations remain, causing bad UI display.
 
-This looks to be due to a poor server cache lifecycle management.  Cache lifecycle looks to need an overhaul.
-
-### Open for Edit doesn't move a file to a changelist.
-
-**Priority: Critical**
-
-**Current observed behavior:** If a file is writable, the connection is offline, and the "Automatically open for
-edit..." option is not selected, then editing the file manually and explicitly opening for edit (Ctrl-Alt-A)
-will only move the file to the "Modified locally without checkout" section in the changelist view.
-The only way to make it checked out is to explicitly right click on the file in the changelist view and select
-"checkout".
-
-### Open directories for add
-
-**Priority: Major**
-
-The plugin incorrectly recognizes directories as files, and attempts to add them.
-
-Some protections have been put in place around this, but it may not be prevented.  Additional testing is
-required.  It might have been a Windows Subsystem for Linux issue.
+This looks to be fixed, but it needs testing.  Fix was in `PersistentRootConfigComponent`, where it now only loads root
+paths that are declared as roots in the project.
 
 ### Move File Changelist View Message
 
 **Priority: Major**
 
 Move file operations show up as "moved from ../../../..//depot/path/".  Looks to be an issue with the creation of 
-the Change object in `P4ChangeProvider`.
+the Change object in `RemoteFileUtil`.
 
 ### After Setting Password Active Connection is Still Offline
 
@@ -91,6 +83,10 @@ Note that, under New Project from Version Control, the Vcs Root in the `P4RootCo
 won't be updated with the new root.  This could be the source of at least one issue.
 
 This might be fixed now.  The API has changed to force usage that prevents serious memory leaks from spreading.
+
+### Plugin Option Screen Revamp
+
+Some options are not shown, some are not used.  These need to be cleaned up.
 
 
 ## Required Missing Functionality

@@ -97,7 +97,7 @@ public class P4DiffProvider extends DiffProviderEx
             }
             return result.getFiles().get(0).getRevision();
         } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
-            LOG.warn(e);
+            LOG.info(e);
             return null;
         }
     }
@@ -142,7 +142,7 @@ public class P4DiffProvider extends DiffProviderEx
                     res.getFileAction() != P4FileAction.DELETE && res.getFileAction() != P4FileAction.MOVE_DELETE,
                     true);
         } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
-            LOG.warn(e);
+            LOG.info(e);
             return null;
         }
     }
@@ -252,7 +252,7 @@ public class P4DiffProvider extends DiffProviderEx
             return revisions.get(0);
         } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
             // TODO better exception?
-            LOG.warn(e);
+            LOG.info(e);
             return null;
         }
     }

@@ -45,8 +45,21 @@ public class P4RemoteFileImpl implements P4RemoteFile {
     }
 
     public P4RemoteFileImpl(@NotNull IFileSpec spec) {
-        this.path = spec.getDepotPath().getPathString();
-        this.displayName = HandleFileSpecUtil.getDepotDisplayName(spec);
+        if (spec.getDepotPath() != null) {
+            this.path = spec.getDepotPath().getPathString();
+            this.displayName = HandleFileSpecUtil.getDepotDisplayName(spec);
+        } else if (spec.getClientPath() != null) {
+            this.path = spec.getClientPath().getPathString();
+            this.displayName = spec.getClientPath().getPathString();
+        } else if (spec.getLocalPath() != null) {
+            this.path = spec.getLocalPath().getPathString();
+            this.displayName = spec.getLocalPath().getPathString();
+        } else if (spec.getOriginalPath() != null) {
+            this.path = spec.getOriginalPath().getPathString();
+            this.displayName = spec.getOriginalPath().getPathString();
+        } else {
+            throw new NullPointerException("Invalid spec path " + spec);
+        }
     }
 
     P4RemoteFileImpl(@NotNull String path) {

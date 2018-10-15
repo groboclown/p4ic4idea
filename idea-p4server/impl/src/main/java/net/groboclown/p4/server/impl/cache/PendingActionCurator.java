@@ -55,6 +55,9 @@ class PendingActionCurator {
             this.removeExisting = !keepExisting;
             this.replacedAddedAction = replacedAddedAction;
             this.replacedExistingAction = replacedExistingAction;
+            if (removeExisting && replacedExistingAction != null) {
+                throw new IllegalStateException("Cannot both replace existing and remove existing");
+            }
         }
 
         @NotNull

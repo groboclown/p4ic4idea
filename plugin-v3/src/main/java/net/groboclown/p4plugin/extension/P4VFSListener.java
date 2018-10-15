@@ -48,6 +48,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+/**
+ * Handles the file change requests: add, edit, delete, move.
+ */
 public class P4VFSListener extends VcsVFSListener {
     private static final Logger LOG = Logger.getInstance(VcsVFSListener.class);
 
@@ -60,6 +63,8 @@ public class P4VFSListener extends VcsVFSListener {
     protected void performAdding(
             @NotNull final Collection<VirtualFile> addedFiles,
             @NotNull final Map<VirtualFile, VirtualFile> copyFromMap) {
+
+        // TODO all add requests must go through the IgnoreFileSet.
 
         // Copies are handled as add commands, so we don't need to worry about
         // performing integrations - this is the common use case desired by the

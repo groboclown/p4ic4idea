@@ -24,7 +24,6 @@ import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.idea.p4ic.compat.VcsCompat;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
@@ -95,6 +94,8 @@ public class P4EditAction
             return new DoneActionAnswer(null);
         }
 
+        // Note: the user is forcing the add action.  Do not inspect the IgnoreFileSet status.
+
         LocalChangeList defaultChangeList =
                 ChangeListManager.getInstance(project).getDefaultChangeList();
 
@@ -124,9 +125,8 @@ public class P4EditAction
         })
         .reduce((P4CommandRunner.ActionAnswer<?>) new DoneActionAnswer(null),
                 (base, next) -> base.mapActionAsync((x) -> next))
-        .whenCompleted((x) -> {
-            LOG.debug("added or edited files: " + affectedFiles);
-        })
+        .whenCompleted((x) ->
+                LOG.debug("added or edited files: " + affectedFiles))
         ;
     }
 }

@@ -39,6 +39,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Synchronizes local client files with the server.
+ */
 public class P4CheckoutProvider extends CheckoutProviderEx {
     private static final Logger LOG = Logger.getInstance(P4CheckoutProvider.class);
 

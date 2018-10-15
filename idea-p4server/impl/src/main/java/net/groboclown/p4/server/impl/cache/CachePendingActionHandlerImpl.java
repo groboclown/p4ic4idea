@@ -175,8 +175,9 @@ public class CachePendingActionHandlerImpl implements CachePendingActionHandler 
                 addedAction = result.replacedAdded(addedAction);
                 if (result.removeExisting) {
                     iter.remove();
+                } else {
+                    iter.set(result.replacedExisting(existingAction));
                 }
-                iter.set(result.replacedExisting(existingAction));
                 if (result.removeAdded) {
                     // Halt the add operation
                     return;

@@ -248,6 +248,9 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
             VirtualFile rootDir = VcsUtil.getVirtualFile(mapping.getDirectory());
             if (rootDir == null) {
                 rootDir = getProject().getBaseDir();
+                if (rootDir == null) {
+                    throw new IllegalStateException("null project base directory");
+                }
             }
             mapping.setRootSettings(new P4VcsRootSettingsImpl(myProject, rootDir));
         }

@@ -6,6 +6,68 @@ of Github.
 
 ## Bugs
 
+Weird error:
+
+```
+java.lang.Throwable: Skipping invalid VCS root: VcsRoot{vcs=p4ic, path=null}
+	at com.intellij.openapi.diagnostic.Logger.error(Logger.java:134)
+	at com.intellij.vcs.log.impl.VcsLogManager.findLogProviders(VcsLogManager.java:150)
+	at com.intellij.vcs.log.util.VcsLogUtil.getActualRoot(VcsLogUtil.java:277)
+	at com.intellij.vcs.log.history.VcsLogFileHistoryProviderImpl.canShowFileHistory(VcsLogFileHistoryProviderImpl.java:44)
+	at com.intellij.openapi.vcs.actions.TabbedShowHistoryAction.canShowNewFileHistory(TabbedShowHistoryAction.java:85)
+	at com.intellij.openapi.vcs.actions.TabbedShowHistoryAction.isEnabled(TabbedShowHistoryAction.java:73)
+	at com.intellij.openapi.vcs.actions.TabbedShowHistoryAction.isEnabled(TabbedShowHistoryAction.java:59)
+	at com.intellij.openapi.vcs.actions.TabbedShowHistoryAction.update(TabbedShowHistoryAction.java:47)
+	at com.intellij.openapi.vcs.actions.AbstractVcsAction.performUpdate(AbstractVcsAction.java:71)
+	at com.intellij.openapi.vcs.actions.AbstractVcsAction.update(AbstractVcsAction.java:43)
+	at com.intellij.openapi.actionSystem.ex.ActionUtil.performDumbAwareUpdate(ActionUtil.java:171)
+	at com.intellij.openapi.actionSystem.impl.Utils.doUpdate(Utils.java:202)
+	at com.intellij.openapi.actionSystem.impl.Utils.expandActionGroup(Utils.java:151)
+	at com.intellij.openapi.actionSystem.impl.Utils.expandActionGroup(Utils.java:177)
+	at com.intellij.openapi.actionSystem.impl.Utils.expandActionGroup(Utils.java:177)
+	at com.intellij.openapi.actionSystem.impl.ActionToolbarImpl.updateActionsImpl(ActionToolbarImpl.java:1120)
+	at com.intellij.openapi.actionSystem.impl.ActionToolbarImpl.access$000(ActionToolbarImpl.java:53)
+	at com.intellij.openapi.actionSystem.impl.ActionToolbarImpl$2.updateActionsImpl(ActionToolbarImpl.java:175)
+	at com.intellij.openapi.actionSystem.impl.ToolbarUpdater$MyUpdateRunnable.run(ToolbarUpdater.java:186)
+	at com.intellij.util.ui.UIUtil.invokeLaterIfNeeded(UIUtil.java:3157)
+	at com.intellij.ide.IdeEventQueue.ifFocusEventsInTheQueue(IdeEventQueue.java:172)
+	at com.intellij.ide.IdeEventQueue.executeWhenAllFocusEventsLeftTheQueue(IdeEventQueue.java:124)
+	at com.intellij.openapi.wm.impl.FocusManagerImpl.doWhenFocusSettlesDown(FocusManagerImpl.java:179)
+	at com.intellij.openapi.actionSystem.impl.ToolbarUpdater.updateActions(ToolbarUpdater.java:108)
+	at com.intellij.openapi.actionSystem.impl.ToolbarUpdater.access$400(ToolbarUpdater.java:40)
+	at com.intellij.openapi.actionSystem.impl.ToolbarUpdater$MyTimerListener.run(ToolbarUpdater.java:158)
+	at com.intellij.openapi.actionSystem.impl.WeakTimerListener.run(WeakTimerListener.java:54)
+	at com.intellij.openapi.actionSystem.impl.ActionManagerImpl$MyTimer.runListenerAction(ActionManagerImpl.java:1441)
+	at com.intellij.openapi.actionSystem.impl.ActionManagerImpl$MyTimer.notifyListeners(ActionManagerImpl.java:1430)
+	at com.intellij.openapi.actionSystem.impl.ActionManagerImpl$MyTimer.actionPerformed(ActionManagerImpl.java:1414)
+	at javax.swing.Timer.fireActionPerformed(Timer.java:313)
+	at javax.swing.Timer$DoPostEvent.run(Timer.java:245)
+	at java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:311)
+	at java.awt.EventQueue.dispatchEventImpl(EventQueue.java:762)
+	at java.awt.EventQueue.access$500(EventQueue.java:98)
+	at java.awt.EventQueue$3.run(EventQueue.java:715)
+	at java.awt.EventQueue$3.run(EventQueue.java:709)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:80)
+	at java.awt.EventQueue.dispatchEvent(EventQueue.java:732)
+	at com.intellij.ide.IdeEventQueue.defaultDispatchEvent(IdeEventQueue.java:719)
+	at com.intellij.ide.IdeEventQueue._dispatchEvent(IdeEventQueue.java:668)
+	at com.intellij.ide.IdeEventQueue.dispatchEvent(IdeEventQueue.java:363)
+	at java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:201)
+	at java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:116)
+	at java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:105)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
+	at java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
+```
+
+### Move Added Files Marks Old File As Deleted
+
+If you open a file for edit, then move or rename the file, then the old file is marked as deleted, even though it
+isn't marked as deleted according to the server.
+
+This can take several refreshes to get itself into a rational state again, including some manual reverts.
+
 ### Submit changelist that includes files not in project
 
 **Priority: Critical**
@@ -92,6 +154,14 @@ Some options are not shown, some are not used.  These need to be cleaned up.
 ## Required Missing Functionality
 
 In the 0.10 release, these pieces of old functionality are either broken or disabled.
+
+### Ignore File
+
+The `P4ChangeProvider` and `P4VFSListener` and `P4EditFileProvider` classes must inspect the `IgnoreFileSet` for
+the corresponding .p4ignore file, to ensure that the add operation (and only add operation) acknowledges the ignore
+file status.
+
+The `P4EditAction` should respect the user's request and force the add.
 
 ### SSO
 

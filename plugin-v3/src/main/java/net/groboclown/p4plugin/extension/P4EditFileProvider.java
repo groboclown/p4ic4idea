@@ -59,7 +59,8 @@ public class P4EditFileProvider implements EditFileProvider {
 
 
     // This method is called with nearly every keystroke, so it must be very, very
-    // performant.
+    // performant.  That seems to be the case with older IDE verseions; now, it's called
+    // only on changes from read-only to writable.
     @Override
     public void editFiles(final VirtualFile[] allFiles) throws VcsException {
         if (LOG.isDebugEnabled()) {
@@ -68,6 +69,8 @@ public class P4EditFileProvider implements EditFileProvider {
         if (allFiles == null || allFiles.length <= 0) {
             return;
         }
+
+        // TODO inspect the IgnoreFileSet ignore state.
 
         // In order to speed up the operation of this call, we will not care who
         // has this open for edit or not.  Make the file writable, then pass on

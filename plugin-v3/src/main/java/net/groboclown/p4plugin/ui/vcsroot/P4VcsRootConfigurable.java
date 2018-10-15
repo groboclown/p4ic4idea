@@ -76,8 +76,8 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
     public void apply()
             throws ConfigurationException {
         if (isModified()) {
-            // TODO do we need to keep the old config around?
-            ClientConfig oldConfig = loadConfigFromSettings();
+            // TODO do we need to keep the old config around?  This would be to send a message that it's not used.
+            // ClientConfig oldConfig = loadConfigFromSettings();
             P4VcsRootSettings settings = new P4VcsRootSettingsImpl(project, vcsRoot);
             MultipleConfigPart parentPart = loadParentPartFromUI();
             settings.setConfigParts(parentPart.getChildren());

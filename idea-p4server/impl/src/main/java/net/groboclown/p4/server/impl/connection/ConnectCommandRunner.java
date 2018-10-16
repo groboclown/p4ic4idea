@@ -785,13 +785,13 @@ public class ConnectCommandRunner
                 List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
                 MessageStatusUtil.throwIfError(edited);
                 return new MoveFileResult(config, MessageStatusUtil.getMessages(edited, "\n"));
-            } else if (srcStatus.isNotOnServer()) {
+            } else if (tgtStatus.isNotOnServer()) {
                 // Target not on server
                 LOG.debug("Target file not known by server.  Opening for add.");
                 List<IFileSpec> added = cmd.addFiles(client, tgtFile, null, action.getChangelistId(), null);
                 MessageStatusUtil.throwIfError(added);
                 return new MoveFileResult(config, MessageStatusUtil.getMessages(added, "\n"));
-            } else if (!srcStatus.hasOpen()) {
+            } else if (!tgtStatus.hasOpen()) {
                 // On server and not open
                 LOG.debug("Target file not open.  Opening for edit.");
                 List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
@@ -822,7 +822,7 @@ public class ConnectCommandRunner
                 MessageStatusUtil.throwIfError(reverted);
             } else if (tgtStatus.isNotOnServer()) {
                 LOG.debug("Source and target not on server.  Opening target for add.");
-                List<IFileSpec> added = cmd.addFiles(client, srcFile, null, action.getChangelistId(), null);
+                List<IFileSpec> added = cmd.addFiles(client, tgtFile, null, action.getChangelistId(), null);
                 MessageStatusUtil.throwIfError(added);
                 return new MoveFileResult(config, MessageStatusUtil.getMessages(added, "\n"));
             }

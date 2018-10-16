@@ -53,6 +53,7 @@ import net.groboclown.p4.server.api.commands.file.DeleteFileResult;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
 import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
+import net.groboclown.p4.server.api.commands.file.MoveFileResult;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
 import net.groboclown.p4.server.api.commands.file.RevertFileResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
@@ -96,11 +97,9 @@ class ConnectCommandRunnerTest {
     private static final String JOB_ID = "job-123";
     private static final String JOB_DESCRIPTION = "this is the job description";
 
-    @SuppressWarnings("WeakerAccess")
     @RegisterExtension
     IdeaLightweightExtension idea = new IdeaLightweightExtension();
 
-    @SuppressWarnings("WeakerAccess")
     @RegisterExtension
     P4ServerExtension server = new P4ServerExtension(false);
 
@@ -415,7 +414,7 @@ class ConnectCommandRunnerTest {
         final ServerConfig serverConfig = ServerConfig.createFrom(part);
         final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
         final File clientRoot = tmpDir.newFile("clientRoot");
-        final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
+        touchFile(clientRoot, "a@b.txt");
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
         final Map<String, Object> jobDetails = new HashMap<>();
         jobDetails.put("Status", "closed");
@@ -463,7 +462,7 @@ class ConnectCommandRunnerTest {
         final ServerConfig serverConfig = ServerConfig.createFrom(part);
         final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
         final File clientRoot = tmpDir.newFile("clientRoot");
-        final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
+        touchFile(clientRoot, "a@b.txt");
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
@@ -500,7 +499,6 @@ class ConnectCommandRunnerTest {
         final ServerConfig serverConfig = ServerConfig.createFrom(part);
         final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
         final File clientRoot = tmpDir.newFile("clientRoot");
-        final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
@@ -598,7 +596,7 @@ class ConnectCommandRunnerTest {
         final ServerConfig serverConfig = ServerConfig.createFrom(part);
         final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
         final File clientRoot = tmpDir.newFile("clientRoot");
-        final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
+        touchFile(clientRoot, "a@b.txt");
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
@@ -638,7 +636,7 @@ class ConnectCommandRunnerTest {
         final ServerConfig serverConfig = ServerConfig.createFrom(part);
         final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
         final File clientRoot = tmpDir.newFile("clientRoot");
-        final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
+        touchFile(clientRoot, "a@b.txt");
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
@@ -656,9 +654,7 @@ class ConnectCommandRunnerTest {
                     assertEquals("", res.getMessage());
                     assertEmpty(res.getFiles());
                 })
-                .whenFailed((e) -> {
-                    fail("Should have returned a result with an empty message");
-                });
+                .whenFailed(Assertions::fail);
     }
 
 
@@ -679,26 +675,32 @@ class ConnectCommandRunnerTest {
         final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
         assertNotNull(clientConfig);
         final File clientRoot = tmpDir.newFile("clientRoot");
-        final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
+        final FilePath srcFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@src.txt"));
+        final FilePath tgtFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@tgt.txt"));
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
+
+        // Perform a move operation, but with neither the source nor the target being on the
+        // server.  This means the command should perform an add action for the target file.
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new MoveFileAction(newFile, newFile,
+                        runner.perform(clientConfig, new MoveFileAction(srcFile, tgtFile,
                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef())))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
                 .whenCompleted((r) -> {
-                    fail("Should have thrown an error");
+                    assertNotNull(r);
+                    assertThat(r, instanceOf(MoveFileResult.class));
+                    MoveFileResult mfr = (MoveFileResult) r;
+                    assertSame(clientConfig, mfr.getClientConfig());
+
+                    // We didn't create the target file, so this message comes back.
+                    // TODO remove language-dependent fragility
+                    assertThat(mfr.getMessages(), containsString("a%40tgt.txt - missing, assuming text"));
                 })
-                .whenFailed((e) -> {
-                    assertThat(e.getCause(), instanceOf(RequestException.class));
-                    // TODO remove language-dependent fragility.
-                    assertEquals(clientRoot + File.separator + "a%40b.txt - no such file(s).",
-                            e.getCause().getMessage());
-                });
+                .whenFailed(Assertions::fail);
     }
 
 
@@ -814,6 +816,7 @@ class ConnectCommandRunnerTest {
         final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
         final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
+        assertNotNull(clientConfig.getClientname());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map(ConnectCommandRunner::new)
@@ -864,7 +867,6 @@ class ConnectCommandRunnerTest {
         final ServerConfig serverConfig = ServerConfig.createFrom(part);
         final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
         final File clientRoot = tmpDir.newFile("clientRoot");
-        final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
@@ -916,7 +918,6 @@ class ConnectCommandRunnerTest {
         final ServerConfig serverConfig = ServerConfig.createFrom(part);
         final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
         final File clientRoot = tmpDir.newFile("clientRoot");
-        final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)

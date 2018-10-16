@@ -418,12 +418,16 @@ public class SimpleConnectionManager implements ConnectionManager {
             if (hostname != null) {
                 int pos = hostname.indexOf('.');
                 if (pos >= 0) {
-                    LOG.debug("Default client hostname includes domain: [" + hostname + "]");
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Default client hostname includes domain: [" + hostname + "]");
+                    }
                     hostname = hostname.substring(0, pos);
                 }
                 hostname = hostname.trim();
             }
-            LOG.debug("Using client hostname [" + hostname + "]");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Using client hostname [" + hostname + "]");
+            }
 
             return hostname;
         } catch (Exception e) {

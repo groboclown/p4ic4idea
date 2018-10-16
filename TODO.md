@@ -6,7 +6,54 @@ of Github.
 
 ## Bugs
 
-Weird error:
+### Move Added Files Marks Old File As Deleted
+
+**Priority: Critical**
+
+If you open a file for edit, then move or rename the file, then the old file is marked as deleted, even though it
+isn't marked as deleted according to the server.
+
+This can take several refreshes to get itself into a rational state again, including some manual reverts.
+
+**Should be fixed now.  Need to check.**
+
+### Submit changelist that includes files not in project
+
+**Priority: Critical**
+
+When you submit a changelist, it can include files that are not visible, because they are ouside the scope of the
+project.  The submission should only submit the files that the user sees.
+
+The unseen files should be moved to the default changelist before submission.  If the default changelist is
+submitted, then the code will need to create a changelist before submission, just like how the job association works.
+
+### Removing a Config Does Not Remove Its Cached Data
+
+**Priority: Critical**
+
+If you remove a server or client configuration from a project, its cached values do not get deleted.  File and changelist
+associations remain, causing bad UI display.
+
+**This looks to be fixed, but it needs testing.**  Fix was in `PersistentRootConfigComponent`, where it now only loads
+root paths that are declared as roots in the project.
+
+### Move File Changelist View Message
+
+**Priority: Major**
+
+Move file operations show up as "moved from ../../../..//depot/path/".  Looks to be an issue with the creation of 
+the Change object in `RemoteFileUtil`.
+
+### After Setting Password Active Connection is Still Offline
+
+**Priority: Major**
+
+Once the user has fixed the login problem by entering a password, the Active Connection panel always shows the
+connection as offline, even after a refresh of both the Active Connection panel and the changelist view. 
+
+### Weird Error
+
+**Priority: Major**
 
 ```
 java.lang.Throwable: Skipping invalid VCS root: VcsRoot{vcs=p4ic, path=null}
@@ -29,78 +76,8 @@ java.lang.Throwable: Skipping invalid VCS root: VcsRoot{vcs=p4ic, path=null}
 	at com.intellij.openapi.actionSystem.impl.ActionToolbarImpl.access$000(ActionToolbarImpl.java:53)
 	at com.intellij.openapi.actionSystem.impl.ActionToolbarImpl$2.updateActionsImpl(ActionToolbarImpl.java:175)
 	at com.intellij.openapi.actionSystem.impl.ToolbarUpdater$MyUpdateRunnable.run(ToolbarUpdater.java:186)
-	at com.intellij.util.ui.UIUtil.invokeLaterIfNeeded(UIUtil.java:3157)
-	at com.intellij.ide.IdeEventQueue.ifFocusEventsInTheQueue(IdeEventQueue.java:172)
-	at com.intellij.ide.IdeEventQueue.executeWhenAllFocusEventsLeftTheQueue(IdeEventQueue.java:124)
-	at com.intellij.openapi.wm.impl.FocusManagerImpl.doWhenFocusSettlesDown(FocusManagerImpl.java:179)
-	at com.intellij.openapi.actionSystem.impl.ToolbarUpdater.updateActions(ToolbarUpdater.java:108)
-	at com.intellij.openapi.actionSystem.impl.ToolbarUpdater.access$400(ToolbarUpdater.java:40)
-	at com.intellij.openapi.actionSystem.impl.ToolbarUpdater$MyTimerListener.run(ToolbarUpdater.java:158)
-	at com.intellij.openapi.actionSystem.impl.WeakTimerListener.run(WeakTimerListener.java:54)
-	at com.intellij.openapi.actionSystem.impl.ActionManagerImpl$MyTimer.runListenerAction(ActionManagerImpl.java:1441)
-	at com.intellij.openapi.actionSystem.impl.ActionManagerImpl$MyTimer.notifyListeners(ActionManagerImpl.java:1430)
-	at com.intellij.openapi.actionSystem.impl.ActionManagerImpl$MyTimer.actionPerformed(ActionManagerImpl.java:1414)
-	at javax.swing.Timer.fireActionPerformed(Timer.java:313)
-	at javax.swing.Timer$DoPostEvent.run(Timer.java:245)
-	at java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:311)
-	at java.awt.EventQueue.dispatchEventImpl(EventQueue.java:762)
-	at java.awt.EventQueue.access$500(EventQueue.java:98)
-	at java.awt.EventQueue$3.run(EventQueue.java:715)
-	at java.awt.EventQueue$3.run(EventQueue.java:709)
-	at java.security.AccessController.doPrivileged(Native Method)
-	at java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:80)
-	at java.awt.EventQueue.dispatchEvent(EventQueue.java:732)
-	at com.intellij.ide.IdeEventQueue.defaultDispatchEvent(IdeEventQueue.java:719)
-	at com.intellij.ide.IdeEventQueue._dispatchEvent(IdeEventQueue.java:668)
-	at com.intellij.ide.IdeEventQueue.dispatchEvent(IdeEventQueue.java:363)
-	at java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:201)
-	at java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:116)
-	at java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:105)
-	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
-	at java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
-	at java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
+	...
 ```
-
-### Move Added Files Marks Old File As Deleted
-
-If you open a file for edit, then move or rename the file, then the old file is marked as deleted, even though it
-isn't marked as deleted according to the server.
-
-This can take several refreshes to get itself into a rational state again, including some manual reverts.
-
-### Submit changelist that includes files not in project
-
-**Priority: Critical**
-
-When you submit a changelist, it can include files that are not visible, because they are ouside the scope of the
-project.  The submission should only submit the files that the user sees.
-
-The unseen files should be moved to the default changelist before submission.  If the default changelist is
-submitted, then the code will need to create a changelist before submission, just like how the job association works.
-
-### Removing a Config Does Not Remove Its Cached Data
-
-**Priority: Critical**
-
-If you remove a server or client configuration from a project, its cached values do not get deleted.  File and changelist
-associations remain, causing bad UI display.
-
-This looks to be fixed, but it needs testing.  Fix was in `PersistentRootConfigComponent`, where it now only loads root
-paths that are declared as roots in the project.
-
-### Move File Changelist View Message
-
-**Priority: Major**
-
-Move file operations show up as "moved from ../../../..//depot/path/".  Looks to be an issue with the creation of 
-the Change object in `RemoteFileUtil`.
-
-### After Setting Password Active Connection is Still Offline
-
-**Priority: Major**
-
-Once the user has fixed the login problem by entering a password, the Active Connection panel always shows the
-connection as offline, even after a refresh of both the Active Connection panel and the changelist view. 
 
 ### File Change Operations Do Not Refresh Change List View
 
@@ -224,3 +201,7 @@ When a user makes a change to file (add, delete, move, edit), a cached version o
 See `com.intellij.history.integration.IdeaGateway#acquireAndUpdateActualContent()` for how the local data is preserved.
 Use `VirtualFile#putUserData(custom key)` and `VirtualFile#getUserData(custom key)` to save off the data.  Note that
 extreme care must be taken to properly clean up the cached data.  This means tight object lifecycle management.
+
+### Check Description Length in Submit Dialog
+
+Really old, long standing issue.  Can't submit with an empty description.

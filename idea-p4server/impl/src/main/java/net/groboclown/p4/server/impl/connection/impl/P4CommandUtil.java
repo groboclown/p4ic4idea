@@ -16,6 +16,7 @@ package net.groboclown.p4.server.impl.connection.impl;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.vcs.FilePath;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.CoreFactory;
@@ -23,6 +24,7 @@ import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.core.IJobSpec;
+import com.perforce.p4java.core.ILabelSummary;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.FileStatAncilliaryOptions;
 import com.perforce.p4java.core.file.FileStatOutputOptions;
@@ -39,11 +41,14 @@ import com.perforce.p4java.option.client.AddFilesOptions;
 import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
+import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.ChangelistOptions;
 import com.perforce.p4java.option.server.GetChangelistsOptions;
 import com.perforce.p4java.option.server.GetExtendedFilesOptions;
 import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
 import com.perforce.p4java.option.server.GetFileContentsOptions;
+import com.perforce.p4java.option.server.GetJobsOptions;
+import com.perforce.p4java.option.server.GetLabelsOptions;
 import com.perforce.p4java.option.server.GetRevisionHistoryOptions;
 import com.perforce.p4java.option.server.MoveFileOptions;
 import com.perforce.p4java.server.IOptionsServer;
@@ -52,6 +57,7 @@ import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.api.values.P4Job;
+import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
@@ -151,6 +157,30 @@ public class P4CommandUtil {
         return server.getJobSpec();
     }
 
+    @NotNull
+    public List<IJob> findJobs(IServer server, String query, int maxResults)
+            throws P4JavaException {
+        GetJobsOptions options = new GetJobsOptions()
+                .setJobView(query)
+                .setLongDescriptions(true)
+                .setMaxJobs(maxResults);
+        List<IJob> jobsFound = server.getJobs(null, options);
+        return jobsFound == null ? Collections.emptyList() : jobsFound;
+    }
+
+    @NotNull
+    public List<ILabelSummary> findLabels(IServer server, String nameFilter, int maxResults)
+            throws P4JavaException {
+        GetLabelsOptions options = new GetLabelsOptions()
+                .setMaxResults(maxResults);
+        if (nameFilter != null) {
+            options.setCaseInsensitiveNameFilter(nameFilter);
+        }
+        // TODO allow for a list of files to trim down the query.
+        List<ILabelSummary> labels = server.getLabels(null, options);
+        return labels == null ? Collections.emptyList() : labels;
+    }
+
     /**
      *
      * @param server server
@@ -240,16 +270,23 @@ public class P4CommandUtil {
         return client.editFiles(files, editOptions);
     }
 
+    public List<IFileSpec> reopenFiles(IClient client, List<FilePath> files, P4ChangelistId changelist)
+            throws ConnectionException, AccessException {
+        List<IFileSpec> fileSpecs = FileSpecBuildUtil.escapedForFilePaths(files);
+        return client.reopenFiles(fileSpecs, changelist.getChangelistId(), null);
+    }
+
     public List<IFileSpec> deleteFiles(IClient client, List<IFileSpec> files, P4ChangelistId changelistId)
             throws P4JavaException {
         DeleteFilesOptions options = new DeleteFilesOptions();
         if (changelistId != null && changelistId.getState() == P4ChangelistId.State.NUMBERED) {
             options.setChangelistId(changelistId.getChangelistId());
         }
+        options.setNoUpdate(false);
+        options.setDeleteNonSyncedFiles(false);
 
-        // Let the IDE perform the delete.
-        // FIXME double check if this is right.
-        options.setBypassClientDelete(true);
+        // We need to delete the file ourselves.
+        // options.setBypassClientDelete(true);
 
         return client.deleteFiles(files, options);
     }
@@ -276,6 +313,24 @@ public class P4CommandUtil {
     public IChangelist createChangelist(IClient client, String description)
             throws P4JavaException {
         return CoreFactory.createChangelist(client, description, true);
+    }
+
+    public void updateChangelistDescription(IClient client, P4ChangelistId changelistId, String newDescrption)
+            throws P4JavaException {
+        if (newDescrption == null || newDescrption.trim().isEmpty()) {
+            throw new IllegalArgumentException("Changelist comment cannot be null or empty");
+        }
+        IChangelist changelist = client.getServer().getChangelist(changelistId.getChangelistId());
+        if (changelist == null) {
+            throw new P4JavaException("No such changelist " + changelistId.getChangelistId());
+        }
+        changelist.setDescription(newDescrption);
+        changelist.update();
+    }
+
+    public String deletePendingChangelist(IClient client, P4ChangelistId changelist)
+            throws ConnectionException, AccessException, RequestException {
+        return client.getServer().deletePendingChangelist(changelist.getChangelistId());
     }
 
     public IExtendedFileSpec getFileDetails(IServer server, String clientname, List<IFileSpec> sources)
@@ -316,13 +371,20 @@ public class P4CommandUtil {
                 if (!sourceIter.hasNext()) {
                     throw new P4JavaException("Incorrect Perforce server result: too many responses for fstat; "
                             + "invoked p4 fstat " +
-                            String.join(" ",
-                                    sources.stream().map(IFileSpec::toString).collect(Collectors.toList())));
+                            sources.stream().map(IFileSpec::toString).collect(Collectors.joining(" ")));
                 }
             }
             ret.put(sourceIter.next(), extendedFileSpec);
         }
         return ret;
+    }
+
+    public List<IFileSpec> syncFiles(IClient client, List<IFileSpec> files,
+            boolean force)
+            throws P4JavaException {
+        SyncOptions options = new SyncOptions(force, false, false, false);
+        List<IFileSpec> res = client.sync(files, options);
+        return res == null ? Collections.emptyList() : res;
     }
 
     public byte[] loadContents(IServer server, IFileSpec spec, String clientname)

@@ -78,7 +78,7 @@ public class CommitUtil {
                             entry.getKey().getClientConfig(), entry.getValue())))
                     .map((pair) -> getJobsIn(project, pair.first.getServerConfig(), jobs)
                             .mapActionAsync((associatedJobs) -> {
-                                // FIXME have a better message report.
+                                // TODO have a better message report.
                                 P4CommandRunner.ActionAnswer<SubmitChangelistResult> ret =
                                         new DoneActionAnswer<>(null);
                                 for (P4ChangelistId changelistId : pair.second) {

@@ -37,12 +37,8 @@ import com.perforce.p4java.exception.MessageGenericCode;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.mapbased.server.Server;
-import com.perforce.p4java.option.client.DeleteFilesOptions;
-import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.FixJobsOptions;
 import com.perforce.p4java.option.server.GetClientsOptions;
-import com.perforce.p4java.option.server.GetJobsOptions;
-import com.perforce.p4java.option.server.GetLabelsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.p4.server.api.ClientServerRef;
@@ -373,27 +369,19 @@ public class ConnectCommandRunner
     @Override
     public P4CommandRunner.QueryAnswer<ListJobsResult> listJobs(ServerConfig config, ListJobsQuery query) {
         return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
-            // FIXME use P4CommandUtil
-            LOG.warn("FIXME use P4CommandUtil");
-
             List<P4Job> jobs = new ArrayList<>();
             if (query.getJobId() != null) {
-                IJob job = server.getJob(query.getJobId());
+                IJob job = cmd.getJob(server, query.getJobId());
                 if (job != null) {
                     jobs.add(new P4JobImpl(job));
                 }
             }
+
             // TODO Finding the assigned-to user requires additional knowledge of the job spec that we don't have.
             // So for now, we only have job ID exact search and description search
             if (query.getDescription() != null) {
-                GetJobsOptions options = new GetJobsOptions()
-                        .setJobView(query.getDescription())
-                        .setLongDescriptions(true)
-                        .setMaxJobs(query.getMaxResults());
-                List<IJob> jobsFound = server.getJobs(null, options);
-                if (jobsFound != null) {
-                    jobsFound.forEach((j) -> jobs.add(new P4JobImpl(j)));
-                }
+                cmd.findJobs(server, query.getDescription(), query.getMaxResults())
+                        .forEach((j) -> jobs.add(new P4JobImpl(j)));
             }
             return new ListJobsResult(config, jobs);
         }));
@@ -403,16 +391,9 @@ public class ConnectCommandRunner
     @Override
     public P4CommandRunner.QueryAnswer<ListLabelsResult> listLabels(ServerConfig config, ListLabelsQuery query) {
         return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
-            // FIXME use P4CommandUtil
-            LOG.warn("FIXME use P4CommandUtil");
-
-            GetLabelsOptions options = new GetLabelsOptions()
-                    .setMaxResults(query.getMaxResults());
-            if (query.hasNameFilter()) {
-                options.setCaseInsensitiveNameFilter(query.getNameFilter());
-            }
-            // TODO allow for a list of files to trim down the query.
-            List<ILabelSummary> labels = server.getLabels(null, options);
+            List<ILabelSummary> labels = cmd.findLabels(server,
+                    query.hasNameFilter() ? query.getNameFilter() : null,
+                    query.getMaxResults());
             return new ListLabelsResult(config, labels.stream().map(P4LabelImpl::new).collect(Collectors.toList()));
         }));
     }
@@ -582,11 +563,7 @@ public class ConnectCommandRunner
                     action.getFiles());
         }
 
-        // FIXME use P4CommandUtil
-        LOG.warn("FIXME use P4CommandUtil");
-
-        List<IFileSpec> fileSpecs = FileSpecBuildUtil.escapedForFilePaths(action.getFiles());
-        List<IFileSpec> res = client.reopenFiles(fileSpecs, action.getChangelistId().getChangelistId(), null);
+        List<IFileSpec> res = cmd.reopenFiles(client, action.getFiles(), action.getChangelistId());
         String info = null;
         List<P4RemoteFile> files = new ArrayList<>(res.size());
         for (IFileSpec spec : res) {
@@ -637,10 +614,7 @@ public class ConnectCommandRunner
             LOG.debug("Running delete changelist against the server for " + action.getChangelistId());
         }
 
-        // FIXME use P4CommandUtil
-        LOG.warn("FIXME use P4CommandUtil");
-
-        String res = client.getServer().deletePendingChangelist(action.getChangelistId().getChangelistId());
+        String res = cmd.deletePendingChangelist(client, action.getChangelistId());
         return new DeleteChangelistResult(config, res);
     }
 
@@ -680,12 +654,7 @@ public class ConnectCommandRunner
             LOG.debug("Opening " + files + " for delete");
         }
 
-        // FIXME use P4CommandUtil
-        LOG.warn("FIXME use P4CommandUtil");
-        DeleteFilesOptions opts = new DeleteFilesOptions(
-                action.getChangelistId().getChangelistId(),
-                false, false);
-        List<IFileSpec> res = client.deleteFiles(files, opts);
+        List<IFileSpec> res = cmd.deleteFiles(client, files, action.getChangelistId());
 
         MessageStatusUtil.throwIf(res, (msg) -> {
             if (msg.isWarning() || msg.isError()) {
@@ -706,27 +675,16 @@ public class ConnectCommandRunner
     private EditChangelistResult editChangelistDescription(IClient client, ClientConfig config,
             EditChangelistAction action)
             throws P4JavaException {
-        // FIXME use P4CommandUtil
-        LOG.warn("FIXME use P4CommandUtil");
-
-        IChangelist changelist = client.getServer().getChangelist(action.getChangelistId().getChangelistId());
-        if (changelist == null) {
-            throw new P4JavaException("No such changelist " + action.getChangelistId().getChangelistId());
-        }
-        changelist.setDescription(action.getComment());
-        changelist.update();
+        cmd.updateChangelistDescription(client, action.getChangelistId(), action.getComment());
         return new EditChangelistResult(config);
     }
 
     private FetchFilesResult fetchFiles(IClient client, ClientConfig config, FetchFilesAction action)
             throws P4JavaException {
-        // FIXME use P4CommandUtil
-        LOG.warn("FIXME use P4CommandUtil");
-
         List<IFileSpec> files = FileSpecBuildUtil.escapedForFilePathsAnnotated(
                 action.getSyncPaths(), action.getPathAnnotation(), true);
-        SyncOptions options = new SyncOptions(action.isForce(), false, false, false);
-        List<IFileSpec> res = client.sync(files, options);
+        List<IFileSpec> res = cmd.syncFiles(client, files, action.isForce());
+
         List<P4LocalFile> resFiles = new ArrayList<>(res.size());
         StringBuilder info = new StringBuilder();
         for (IFileSpec spec : res) {

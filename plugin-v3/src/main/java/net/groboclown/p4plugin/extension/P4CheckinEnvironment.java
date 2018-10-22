@@ -303,7 +303,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
                         if (first) {
                             first = false;
                         } else {
-                            // FIXME bundle
+                            // TODO use bundle for value
                             exMessages.append("\n");
                         }
                         exMessages.append(String.join(", ", problem.getMessages()));

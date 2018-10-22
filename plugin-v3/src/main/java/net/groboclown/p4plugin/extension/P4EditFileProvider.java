@@ -13,6 +13,7 @@
  */
 package net.groboclown.p4plugin.extension;
 
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileTypes.FileType;
@@ -36,6 +37,7 @@ import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
+import net.groboclown.p4plugin.messages.UserMessage;
 import net.groboclown.p4plugin.util.ChangelistUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -124,7 +126,7 @@ public class P4EditFileProvider implements EditFileProvider {
                     try {
                         file.setWritable(true);
                     } catch (IOException e) {
-                        handleError(e);
+                        handleError(file, e);
                     }
                 }
             }
@@ -154,9 +156,11 @@ public class P4EditFileProvider implements EditFileProvider {
         return P4FileType.convert("text");
     }
 
-    private void handleError(IOException e) {
-        // FIXME
-        LOG.warn("FIXME implement error handler", e);
+    private void handleError(VirtualFile file, IOException e) {
+        UserMessage.showNotification(project, UserMessage.ERROR,
+                e.getLocalizedMessage(),
+                file.getName(),
+                NotificationType.ERROR);
     }
 
 

@@ -323,11 +323,6 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @NotNull
     @Override
     protected ActionAnswer<MoveFileResult> moveFile(ClientConfig config, MoveFileAction action) {
-        // FIXME DEBUG
-        if (LOG.isDebugEnabled()) {
-            LOG.debug(new Exception("source of the server perform moveFile"));
-        }
-
         // Move file is turned into 2 messages.
         FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
                 action.getSourceFile(), P4FileAction.MOVE_DELETE, null, action));

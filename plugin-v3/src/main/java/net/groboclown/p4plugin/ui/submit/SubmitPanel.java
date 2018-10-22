@@ -145,7 +145,7 @@ public class SubmitPanel {
     }
 
     private void loadModelState() {
-        // FIXME - is there anything to do here?
+        // TODO - is there anything to do here?
     }
 
     private void createUIComponents() {

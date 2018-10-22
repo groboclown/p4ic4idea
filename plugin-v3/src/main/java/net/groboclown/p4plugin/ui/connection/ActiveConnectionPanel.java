@@ -183,8 +183,8 @@ public class ActiveConnectionPanel {
                         actionButtons, false);
         root.add(toolbar.getComponent(), BorderLayout.WEST);
 
-        // FIXME add context menu support for each selected node type.
-        // FIXME add support for navigating to a file if a FilePath is selected.
+        // TODO add context menu support for each selected node type.
+        // TODO add support for navigating to a file if a FilePath is selected.
     }
 
     private ActionGroup createActionGroup() {

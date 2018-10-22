@@ -20,6 +20,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
@@ -52,6 +53,9 @@ import static com.intellij.openapi.vfs.VirtualFileVisitor.SKIP_ROOT;
  * Basic abstract action handler for all actions to extend.
  */
 public abstract class BasicAction extends DumbAwareAction {
+    protected final Logger LOG = Logger.getInstance(getClass());
+
+
     BasicAction(String title) {
         super(title);
     }
@@ -77,7 +81,7 @@ public abstract class BasicAction extends DumbAwareAction {
         final List<VcsException> exceptions = new ArrayList<VcsException>();
         perform(project, vcs, exceptions, affectedFiles)
             .after(() -> {
-                // FIXME report errors
+                exceptions.forEach(LOG::info);
             });
     }
 

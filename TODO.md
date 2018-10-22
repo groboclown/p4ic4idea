@@ -17,6 +17,12 @@ This can take several refreshes to get itself into a rational state again, inclu
 
 **Should be fixed now.  Need to check.**
 
+### File Cache Conflict
+
+"File Cache Conflict" popup happens every 5-10 minutes (#174).  Typically happens during heavy iteration of perforce
+backed files. "I do a lot of editing followed by alt+tab to another application, back and forth. I think idea
+automatically saves the file any time the window loses focus."
+
 ### Submit changelist that includes files not in project
 
 **Priority: Critical**
@@ -44,6 +50,8 @@ root paths that are declared as roots in the project.
 Move file operations show up as "moved from ../../../..//depot/path/".  Looks to be an issue with the creation of 
 the Change object in `RemoteFileUtil`.
 
+**Should be fixed now.  Need to check.**
+
 ### After Setting Password Active Connection is Still Offline
 
 **Priority: Major**
@@ -54,6 +62,8 @@ connection as offline, even after a refresh of both the Active Connection panel 
 ### Weird Error
 
 **Priority: Major**
+
+Is this still happening?  May have been due to a preview idea issue.
 
 ```
 java.lang.Throwable: Skipping invalid VCS root: VcsRoot{vcs=p4ic, path=null}
@@ -159,6 +169,95 @@ duplicates existing pending actions.  The pending action list must be altered to
 
 Some of this work has started.  It is handled in `PendingActionCurator`.
 
+
+## Code Items Needing Attention
+
+All the "FIXME" items in the codebase.
+
+### ClientNamePartUI
+
+If there's a login issue, such as a bad password, the user is not notified.
+Specifically, the user isn't given an opportunity to enter the correct password.
+
+### RemoteFileUtil
+
+Causes the UI to show a relative path instead of the depot path.
+
+### ActiveConnectionPanel
+
+The tree is collapsed every time it is refreshed.
+
+### P4LineAnnotationAspect
+
+Implement showAffectedPaths
+
+### P4MergeProvider
+
+Needs implementation, and tie into P4Vcs.  If not, then delete it.
+
+### P4IntegrateEnvironment
+
+Needs implementation, and tie into P4Vcs.  If not, then delete it.
+
+### P4CommittedChangesProvider
+
+Implement getForNonLocal, createFilters for shelved files, and HAS_SHELVED.getValue.
+
+### P4CheckinEnvironment
+
+Implement the cache cleanup.
+
+### UserErrorComponent
+
+Use bundle messages.
+
+### InvalidPasswordMonitorComponent
+
+Better project detection.
+
+### TopCommandRunner
+
+A few low-level commands aren't implemented, because they aren't needed yet.
+
+### ProjectConfigRegistryImpl
+
+Needs to correctly dispose of removed client configs.
+
+### P4LocalChangelistBuilder and P4LocalChangelistImpl.Builder
+
+Choose one.
+
+### ConnectCommandRunner
+
+Few fiddly bits need corrections.
+
+### SimpleConnectionManager
+
+Some connection questions need answers.
+
+### FileConfigPart
+
+Need to figure out how to bundle message referenced here.
+
+### AnswerUtil
+
+Need message localization
+
+### CacheQueryHandlerImpl
+
+Implement getCachedChangelist callback, and getCachedClientsForUser.
+
+### P4ResolveType
+
+Implement correct resolve types.
+
+### AbstractAction
+
+Need message localization
+
+### RevertFileAction
+
+Need message localization
 
 
 ## Near-Term Functionality

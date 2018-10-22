@@ -151,7 +151,7 @@ public class ConnectionTreeCellRenderer extends ColoredTreeCellRenderer {
     }
 
     private void renderFilePath(FilePath value) {
-        // FIXME make this look and act like the display for the changelist files.
+        // TODO make this look and act like the display for the changelist files.
         // You should be able to navigate to the file from here.
         append(value.getName(), FILENAME_STYLE);
         FilePath parent = value.getParentPath();
